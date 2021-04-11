@@ -90,6 +90,7 @@ var templateParser = parse.All(asTemplate,
 	templateExpressionInstructionParser, // templ
 	templateExpressionNameParser,        // FuncName(
 	templateExpressionParametersParser,  // p Person, other Other, t thing.Thing)
+	parse.String(")"),                   // )
 	tagEnd,                              //  %}
 	newLine,                             // \n
 	templateWhitespaceParser,            // whitespace?
@@ -177,15 +178,17 @@ var attributeConstantValueParser = parse.StringUntil(parse.Rune('"'))
 func asConstantAttribute(parts []interface{}) (result interface{}, ok bool) {
 	return ConstantAttribute{
 		Name:  parts[1].(string),
-		Value: parts[3].(string),
+		Value: parts[4].(string),
 	}, true
 }
 
 var constAttrParser = parse.All(asConstantAttribute,
 	attributeWhitespaceParser,
 	attributeNameParser,
+	parse.Rune('='),
 	parse.Rune('"'),
 	attributeConstantValueParser,
+	parse.Rune('"'),
 )
 
 //TODO: Add in the expression attribute later.
@@ -220,6 +223,9 @@ func (p elementParser) asElement(parts []interface{}) (result interface{}, ok bo
 						Attributes: ce.Attributes,
 					})
 				}
+				if nse, isNodeStringExpression := arr[j].(NodeStringExpression); isNodeStringExpression {
+					e.Children = append(e.Children, nse)
+				}
 			}
 		}
 	}
@@ -251,4 +257,5 @@ func asNodeStringExpression(parts []interface{}) (result interface{}, ok bool) {
 var nodeStringExpressionParser = parse.All(asNodeStringExpression,
 	parse.String("{%= "),
 	parse.StringUntil(parse.String(" %}")),
+	parse.String(" %}"),
 )

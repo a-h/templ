@@ -251,7 +251,7 @@ func TestParsers(t *testing.T) {
 			input:  `<div>{%= "test" %}</div>`,
 			parser: elementParser{}.Parse,
 			expected: Element{
-				Name:       "a",
+				Name:       "div",
 				Attributes: []Attribute{},
 				Children: []Node{
 					NodeStringExpression{
