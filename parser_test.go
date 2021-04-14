@@ -66,21 +66,23 @@ func TestParsers(t *testing.T) {
 		{
 			name: "template: no parameters",
 			input: `{% templ Name() %}
-			{% endtmpl %}`,
+{% endtmpl %}`,
 			parser: templateParser,
 			expected: Template{
 				Name:                "Name",
 				ParameterExpression: "",
+				Children:            []Node{},
 			},
 		},
 		{
 			name: "template: single parameter",
 			input: `{% templ Name(p Parameter) %}
-			{% endtmpl %}`,
+{% endtmpl %}`,
 			parser: templateParser,
 			expected: Template{
 				Name:                "Name",
 				ParameterExpression: "p Parameter",
+				Children:            []Node{},
 			},
 		},
 		{
@@ -214,6 +216,21 @@ func TestParsers(t *testing.T) {
 			},
 		},
 		{
+			name:   "element: containing space",
+			input:  `<a> <b> </b> </a>`,
+			parser: elementParser{}.Parse,
+			expected: Element{
+				Name:       "a",
+				Attributes: []Attribute{},
+				Children: []Node{
+					Element{
+						Name:       "b",
+						Attributes: []Attribute{},
+					},
+				},
+			},
+		},
+		{
 			name:   "element: with multiple child elements",
 			input:  `<a><b></b><c><d/></c></a>`,
 			parser: elementParser{}.Parse,
@@ -260,16 +277,77 @@ func TestParsers(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "template: containing element",
+			input: `{% templ Name(p Parameter) %}
+<span>{%= "span content" %}</span>
+{% endtmpl %}`,
+			parser: templateParser,
+			expected: Template{
+				Name:                "Name",
+				ParameterExpression: "p Parameter",
+				Children: []Node{
+					Element{
+						Name:       "span",
+						Attributes: []Attribute{},
+						Children: []Node{
+							NodeStringExpression{
+								Expression: `"span content"`,
+							},
+						},
+					},
+					Whitespace{
+						Value: "\n",
+					},
+				},
+			},
+		},
+		{
+			name: "template: containing nested elements",
+			input: `{% templ Name(p Parameter) %}
+<div>
+  {%= "div content" %}
+  <span>
+	{%= "span content" %}
+  </span>
+</div>
+{% endtmpl %}`,
+			parser: templateParser,
+			expected: Template{
+				Name:                "Name",
+				ParameterExpression: "p Parameter",
+				Children: []Node{
+					Element{
+						Name:       "div",
+						Attributes: []Attribute{},
+						Children: []Node{
+							NodeStringExpression{Expression: `"div content"`},
+							Element{
+								Name:       "span",
+								Attributes: []Attribute{},
+								Children: []Node{
+									NodeStringExpression{Expression: `"span content"`},
+								},
+							},
+						},
+					},
+					Whitespace{
+						Value: "\n",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.parser(input.NewFromString(tt.input))
+			input := input.NewFromString(tt.input)
+			result := tt.parser(input)
 			if result.Error != nil {
 				t.Fatalf("paser error: %v", result.Error)
 			}
 			if !result.Success {
-				t.Fatalf("failed to parse!")
+				t.Fatalf("failed to parse at %d", input.Index())
 			}
 			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
 				t.Errorf(diff)

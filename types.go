@@ -100,6 +100,15 @@ type AttributeStringExpression struct {
 
 // Nodes.
 
+// Whitespace within a template.
+type Whitespace struct {
+	Value string
+}
+
+func (w Whitespace) IsNode() bool {
+	return true
+}
+
 // {%= ... %}
 type NodeStringExpression struct {
 	Expression string
