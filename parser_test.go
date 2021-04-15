@@ -19,7 +19,7 @@ func TestParsers(t *testing.T) {
 			name:   "package: standard",
 			input:  `{% package templ %}`,
 			parser: packageParser,
-			expected: PackageExpression{
+			expected: Package{
 				Expression: "templ",
 			},
 		},
@@ -27,7 +27,7 @@ func TestParsers(t *testing.T) {
 			name:   "import: named",
 			input:  `{% import name "github.com/a-h/something" %}`,
 			parser: importParser,
-			expected: ImportExpression{
+			expected: Import{
 				Expression: `name "github.com/a-h/something"`,
 			},
 		},
@@ -35,32 +35,32 @@ func TestParsers(t *testing.T) {
 			name:   "import: default",
 			input:  `{% import "github.com/a-h/something" %}`,
 			parser: importParser,
-			expected: ImportExpression{
+			expected: Import{
 				Expression: `"github.com/a-h/something"`,
 			},
 		},
 		{
 			name:   "templateFileWhitespace: various spaces",
 			input:  "  \t ",
-			parser: templateFileWhitespaceParser,
-			expected: templateFileWhitespace{
-				Text: "  \t ",
+			parser: whitespaceParser,
+			expected: Whitespace{
+				Value: "  \t ",
 			},
 		},
 		{
 			name:   "templateFileWhitespace: spaces and newline",
 			input:  " \n",
-			parser: templateFileWhitespaceParser,
-			expected: templateFileWhitespace{
-				Text: " \n",
+			parser: whitespaceParser,
+			expected: Whitespace{
+				Value: " \n",
 			},
 		},
 		{
 			name:   "templateFileWhitespace: newline",
 			input:  "\n",
-			parser: templateFileWhitespaceParser,
-			expected: templateFileWhitespace{
-				Text: "\n",
+			parser: whitespaceParser,
+			expected: Whitespace{
+				Value: "\n",
 			},
 		},
 		{
@@ -95,7 +95,7 @@ func TestParsers(t *testing.T) {
 			},
 		},
 		{
-			name:   "element self-closing with single constant attribute",
+			name:   "element: self-closing with single constant attribute",
 			input:  `<a href="test"/>`,
 			parser: elementSelfClosingParser,
 			expected: elementSelfClosing{
@@ -109,7 +109,23 @@ func TestParsers(t *testing.T) {
 			},
 		},
 		{
-			name:   "element self-closing with multiple attributes",
+			name:   "element: self-closing with single expression attribute",
+			input:  `<a href={%= "test" %}/>`,
+			parser: elementSelfClosingParser,
+			expected: elementSelfClosing{
+				Name: "a",
+				Attributes: []Attribute{
+					ExpressionAttribute{
+						Name: "href",
+						Value: StringExpression{
+							Expression: `"test"`,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "element: self-closing with multiple constant attributes",
 			input:  `<a href="test" style="text-underline: auto"/>`,
 			parser: elementSelfClosingParser,
 			expected: elementSelfClosing{
@@ -118,6 +134,30 @@ func TestParsers(t *testing.T) {
 					ConstantAttribute{
 						Name:  "href",
 						Value: "test",
+					},
+					ConstantAttribute{
+						Name:  "style",
+						Value: "text-underline: auto",
+					},
+				},
+			},
+		},
+		{
+			name:   "element: self-closing with multiple constant and expr attributes",
+			input:  `<a href="test" title={%= localisation.Get("a_title") %} style="text-underline: auto"/>`,
+			parser: elementSelfClosingParser,
+			expected: elementSelfClosing{
+				Name: "a",
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "href",
+						Value: "test",
+					},
+					ExpressionAttribute{
+						Name: "title",
+						Value: StringExpression{
+							`localisation.Get("a_title")`,
+						},
 					},
 					ConstantAttribute{
 						Name:  "style",
@@ -258,8 +298,8 @@ func TestParsers(t *testing.T) {
 		{
 			name:   "nodestringexpression: constant",
 			input:  `{%= "test" %}`,
-			parser: nodeStringExpressionParser,
-			expected: NodeStringExpression{
+			parser: stringExpressionParser,
+			expected: StringExpression{
 				Expression: `"test"`,
 			},
 		},
@@ -271,7 +311,7 @@ func TestParsers(t *testing.T) {
 				Name:       "div",
 				Attributes: []Attribute{},
 				Children: []Node{
-					NodeStringExpression{
+					StringExpression{
 						Expression: `"test"`,
 					},
 				},
@@ -291,7 +331,7 @@ func TestParsers(t *testing.T) {
 						Name:       "span",
 						Attributes: []Attribute{},
 						Children: []Node{
-							NodeStringExpression{
+							StringExpression{
 								Expression: `"span content"`,
 							},
 						},
@@ -321,15 +361,133 @@ func TestParsers(t *testing.T) {
 						Name:       "div",
 						Attributes: []Attribute{},
 						Children: []Node{
-							NodeStringExpression{Expression: `"div content"`},
+							StringExpression{Expression: `"div content"`},
 							Element{
 								Name:       "span",
 								Attributes: []Attribute{},
 								Children: []Node{
-									NodeStringExpression{Expression: `"span content"`},
+									StringExpression{Expression: `"span content"`},
 								},
 							},
 						},
+					},
+					Whitespace{
+						Value: "\n",
+					},
+				},
+			},
+		},
+		{
+			name: "if: simple expression",
+			input: `{% if p.Test %}
+<span>
+  {%= "span content" %}
+</span>
+{% endif %}
+`,
+			parser: ifExpressionParser{}.Parse,
+			expected: IfExpression{
+				Expression: `p.Test`,
+				Then: []Node{
+					Element{
+						Name:       "span",
+						Attributes: []Attribute{},
+						Children: []Node{
+							StringExpression{Expression: `"span content"`},
+						},
+					},
+					Whitespace{
+						Value: "\n",
+					},
+				},
+				Else: []Node{},
+			},
+		},
+		{
+			name: "if: else",
+			input: `{% if p.A %}
+	{%= "A" %}
+{% else %}
+	{%= "B" %}
+{% endif %}`,
+			parser: ifExpressionParser{}.Parse,
+			expected: IfExpression{
+				Expression: `p.A`,
+				Then: []Node{
+					Whitespace{Value: "\t"},
+					StringExpression{Expression: `"A"`},
+					Whitespace{Value: "\n"},
+				},
+				Else: []Node{
+					Whitespace{Value: "\n\t"},
+					StringExpression{Expression: `"B"`},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
+		{
+			name: "if: nested",
+			input: `{% if p.A %}
+					{% if p.B %}
+						<div>{%= "B" %}</div>
+					{% endif %}
+				{% endif %}`,
+			parser: ifExpressionParser{}.Parse,
+			expected: IfExpression{
+				Expression: `p.A`,
+				Then: []Node{
+					Whitespace{Value: "\t\t\t\t\t"},
+					IfExpression{
+						Expression: `p.B`,
+						Then: []Node{
+							Whitespace{Value: "\t\t\t\t\t\t"},
+							Element{
+								Name:       "div",
+								Attributes: []Attribute{},
+								Children: []Node{
+									StringExpression{Expression: `"B"`},
+								},
+							},
+							Whitespace{Value: "\n\t\t\t\t\t"},
+						},
+						Else: []Node{},
+					},
+					Whitespace{Value: "\n\t\t\t\t"},
+				},
+				Else: []Node{},
+			},
+		},
+		{
+			name: "template: containing if element",
+			input: `{% templ Name(p Parameter) %}
+	{% if p.Test %}
+		<span>
+			{%= "span content" %}
+		</span>
+	{% endif %}
+{% endtmpl %}`,
+			parser: templateParser,
+			expected: Template{
+				Name:                "Name",
+				ParameterExpression: "p Parameter",
+				Children: []Node{
+					Whitespace{Value: "\t"},
+					IfExpression{
+						Expression: `p.Test`,
+						Then: []Node{
+							Whitespace{Value: "\t\t"},
+							Element{
+								Name:       "span",
+								Attributes: []Attribute{},
+								Children: []Node{
+									StringExpression{Expression: `"span content"`},
+								},
+							},
+							Whitespace{
+								Value: "\n\t",
+							},
+						},
+						Else: []Node{},
 					},
 					Whitespace{
 						Value: "\n",

@@ -11,51 +11,44 @@ var tagStart = parse.String("{% ")
 var tagEnd = parse.String(" %}")
 var newLine = parse.Rune('\n')
 
-// PackageExpression.
-func asPackageExpression(parts []interface{}) (result interface{}, ok bool) {
-	result = PackageExpression{
+// Package.
+func asPackage(parts []interface{}) (result interface{}, ok bool) {
+	result = Package{
 		Expression: parts[2].(string),
 	}
 	return result, true
 }
 
-var packageParser = parse.All(asPackageExpression,
+var packageParser = parse.All(asPackage,
 	tagStart,
 	parse.String("package "),
 	parse.StringUntil(tagEnd),
 )
 
-// ImportExpression.
-func asImportExpression(parts []interface{}) (result interface{}, ok bool) {
-	result = ImportExpression{
+// Whitespace.
+func asWhitespace(parts []interface{}) (result interface{}, ok bool) {
+	var w Whitespace
+	for _, ip := range parts {
+		w.Value += string(ip.(rune))
+	}
+	return w, true
+}
+
+var whitespaceParser = parse.AtLeast(asWhitespace, 1, parse.RuneInRanges(unicode.White_Space))
+
+// Import.
+func asImport(parts []interface{}) (result interface{}, ok bool) {
+	result = Import{
 		Expression: parts[2].(string),
 	}
 	return result, true
 }
 
-var importParser = parse.All(asImportExpression,
+var importParser = parse.All(asImport,
 	tagStart,
 	parse.String("import "),
 	parse.StringUntil(tagEnd),
 )
-
-// TemplateFileWhitespace.
-type templateFileWhitespace struct {
-	Text string
-}
-
-func asTemplateFileWhitespace(parts []interface{}) (result interface{}, ok bool) {
-	result, ok = parse.WithStringConcatCombiner(parts)
-	if !ok {
-		return
-	}
-	result = templateFileWhitespace{
-		Text: result.(string),
-	}
-	return
-}
-
-var templateFileWhitespaceParser = parse.AtLeast(asTemplateFileWhitespace, 1, parse.RuneInRanges(unicode.White_Space))
 
 // Template
 
@@ -72,16 +65,6 @@ func asTemplateExpressionName(parts []interface{}) (result interface{}, ok bool)
 
 var templateExpressionNameParser = parse.All(asTemplateExpressionName, templateNameParser, parse.Rune('('))
 var templateExpressionParametersParser = parse.StringUntil(parse.Rune(')'))
-
-func asTemplateWhitesapce(parts []interface{}) (result interface{}, ok bool) {
-	var w Whitespace
-	for _, ip := range parts {
-		w.Value += string(ip.(rune))
-	}
-	return w, true
-}
-
-var templateWhitespaceParser = parse.AtLeast(asTemplateWhitesapce, 1, parse.RuneInRanges(unicode.White_Space))
 
 var templateEndParser = parse.String("{% endtmpl %}")
 
@@ -102,7 +85,7 @@ var templateParser = parse.All(asTemplate,
 	parse.String(")"),                   // )
 	tagEnd,                              //  %}
 	newLine,                             // \n
-	templateNodeParser,                  // template whitespace, if/switch/for, or node string expression
+	templateNodeParser{}.Parse,          // template whitespace, if/switch/for, or node string expression
 	templateEndParser,                   // {% endtempl %}
 )
 
@@ -134,7 +117,7 @@ var elementSelfClosingParser = parse.All(asElementSelfClosing,
 	parse.Rune('<'),
 	elementNameParser,
 	attributesParser,
-	parse.Optional(parse.WithStringConcatCombiner, attributeWhitespaceParser),
+	parse.Optional(parse.WithStringConcatCombiner, whitespaceParser),
 	parse.String("/>"),
 )
 
@@ -155,7 +138,7 @@ var elementOpenTagParser = parse.All(asElementOpenTag,
 	parse.Rune('<'),
 	elementNameParser,
 	attributesParser,
-	parse.Optional(parse.WithStringConcatCombiner, attributeWhitespaceParser),
+	parse.Optional(parse.WithStringConcatCombiner, whitespaceParser),
 	parse.Rune('>'),
 )
 
@@ -180,8 +163,6 @@ var elementCloseTagParser = parse.All(asElementCloseTag,
 var attributeNameParser = parse.StringUntil(parse.Rune('='))
 
 // Constant attribute.
-var attributeWhitespaceParser = parse.AtLeast(parse.WithStringConcatCombiner, 1, parse.RuneInRanges(unicode.White_Space))
-
 var attributeConstantValueParser = parse.StringUntil(parse.Rune('"'))
 
 func asConstantAttribute(parts []interface{}) (result interface{}, ok bool) {
@@ -192,7 +173,7 @@ func asConstantAttribute(parts []interface{}) (result interface{}, ok bool) {
 }
 
 var constAttrParser = parse.All(asConstantAttribute,
-	attributeWhitespaceParser,
+	whitespaceParser,
 	attributeNameParser,
 	parse.Rune('='),
 	parse.Rune('"'),
@@ -200,16 +181,35 @@ var constAttrParser = parse.All(asConstantAttribute,
 	parse.Rune('"'),
 )
 
-//TODO: Add in the expression attribute later.
-func asAttributeList(parts []interface{}) (result interface{}, ok bool) {
+func asAttributeArray(parts []interface{}) (result interface{}, ok bool) {
 	op := make([]Attribute, len(parts))
 	for i := 0; i < len(parts); i++ {
-		op[i] = parts[i].(ConstantAttribute)
+		switch v := parts[i].(type) {
+		case ConstantAttribute:
+			op[i] = v
+		case ExpressionAttribute:
+			op[i] = v
+		}
 	}
 	return op, true
 }
 
-var attributesParser = parse.Many(asAttributeList, 0, 255, constAttrParser)
+// ExpressionAttribute.
+func asExpressionAttribute(parts []interface{}) (result interface{}, ok bool) {
+	return ExpressionAttribute{
+		Name:  parts[1].(string),
+		Value: parts[3].(StringExpression),
+	}, true
+}
+
+var exprAttrParser = parse.All(asExpressionAttribute,
+	whitespaceParser,
+	attributeNameParser,
+	parse.Rune('='),
+	stringExpressionParser,
+)
+
+var attributesParser = parse.Many(asAttributeArray, 0, 255, parse.Or(exprAttrParser, constAttrParser))
 
 // Element with children.
 type elementParser struct{}
@@ -232,7 +232,7 @@ func (p elementParser) asElement(parts []interface{}) (result interface{}, ok bo
 						Attributes: ce.Attributes,
 					})
 				}
-				if nse, isNodeStringExpression := arr[j].(NodeStringExpression); isNodeStringExpression {
+				if nse, isStringExpression := arr[j].(StringExpression); isStringExpression {
 					e.Children = append(e.Children, nse)
 				}
 			}
@@ -250,32 +250,78 @@ func (p elementParser) Parse(pi parse.Input) parse.Result {
 		elementOpenTagParser,
 		parse.Many(p.asChildren, 0, 100,
 			// All of the allowed children.
-			parse.Any(nodeStringExpressionParser, elementSelfClosingParser, p.Parse, templateWhitespaceParser),
+			parse.Any(stringExpressionParser, elementSelfClosingParser, p.Parse, whitespaceParser),
 		),
 		elementCloseTagParser,
 	)(pi)
 }
 
-// NodeStringExpression.
-func asNodeStringExpression(parts []interface{}) (result interface{}, ok bool) {
-	return NodeStringExpression{
+// StringExpression.
+func asStringExpression(parts []interface{}) (result interface{}, ok bool) {
+	return StringExpression{
 		Expression: parts[1].(string),
 	}, true
 }
 
-var nodeStringExpressionParser = parse.All(asNodeStringExpression,
+var stringExpressionParser = parse.All(asStringExpression,
 	parse.String("{%= "),
 	parse.StringUntil(parse.String(" %}")),
 	parse.String(" %}"),
 )
 
-// Template node.
-func asTemplateNodeArray(parts []interface{}) (result interface{}, ok bool) {
+// IfExpression.
+type ifExpressionParser struct{}
+
+func (p ifExpressionParser) asIfExpression(parts []interface{}) (result interface{}, ok bool) {
+	return IfExpression{
+		Expression: parts[1].(string),
+		Then:       parts[4].([]Node),
+		Else:       parts[5].([]Node),
+	}, true
+}
+
+func (p ifExpressionParser) asChildren(parts []interface{}) (result interface{}, ok bool) {
+	if len(parts) == 0 {
+		return []Node{}, true
+	}
+	return parts[0].([]Node), true
+}
+
+func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
+	return parse.All(p.asIfExpression,
+		parse.String("{% if "),
+		parse.StringUntil(parse.String(" %}")),
+		parse.String(" %}"),
+		newLine,
+		templateNodeParser{}.Parse, // if contents
+		parse.Optional(p.asChildren, elseExpressionParser{}.Parse), // else
+		parse.String("{% endif %}"),                                // endif
+	)(pi)
+}
+
+type elseExpressionParser struct{}
+
+func (p elseExpressionParser) asElseExpression(parts []interface{}) (result interface{}, ok bool) {
+	return parts[1].([]Node), true // the array of nodes from templateNodeParser
+}
+
+func (p elseExpressionParser) Parse(pi parse.Input) parse.Result {
+	return parse.All(p.asElseExpression,
+		parse.String("{% else %}"),
+		templateNodeParser{}.Parse, // else contents
+	)(pi)
+}
+
+// Template node (element, call, if, switch, for, whitespace etc.)
+type templateNodeParser struct{}
+
+func (p templateNodeParser) asTemplateNodeArray(parts []interface{}) (result interface{}, ok bool) {
 	op := make([]Node, len(parts))
 	for i := 0; i < len(parts); i++ {
 		op[i] = parts[i].(Node)
 	}
 	return op, true
 }
-
-var templateNodeParser = parse.AtLeast(asTemplateNodeArray, 0, parse.Any(elementParser{}.Parse, templateWhitespaceParser, nodeStringExpressionParser))
+func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
+	return parse.AtLeast(p.asTemplateNodeArray, 0, parse.Any(elementParser{}.Parse, whitespaceParser, stringExpressionParser, ifExpressionParser{}.Parse))(pi)
+}

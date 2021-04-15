@@ -1,5 +1,7 @@
 package templ
 
+//TODO: Add comment line?
+
 // {% package templ %}
 //
 // {% import "strings" %}
@@ -30,19 +32,28 @@ package templ
 // {% endtempl %}
 
 type TemplateFile struct {
-	Package   PackageExpression
-	Imports   []ImportExpression
+	Package   Package
+	Imports   []Import
 	Templates []Template
 }
 
 // {% package templ %}
-type PackageExpression struct {
+type Package struct {
 	Expression string
+}
+
+// Whitespace.
+type Whitespace struct {
+	Value string
+}
+
+func (w Whitespace) IsNode() bool {
+	return true
 }
 
 // {% import "strings" %}
 // {% import strs "strings" %}
-type ImportExpression struct {
+type Import struct {
 	Expression string
 }
 
@@ -88,33 +99,19 @@ func (ca ConstantAttribute) IsAttribute() bool { return true }
 // href={%= ... }
 type ExpressionAttribute struct {
 	Name  string
-	Value AttributeStringExpression
+	Value StringExpression
 }
 
 func (ea ExpressionAttribute) IsAttribute() bool { return true }
 
-// {%= ... %}
-type AttributeStringExpression struct {
-	Expression string
-}
-
 // Nodes.
 
-// Whitespace within a template.
-type Whitespace struct {
-	Value string
-}
-
-func (w Whitespace) IsNode() bool {
-	return true
-}
-
 // {%= ... %}
-type NodeStringExpression struct {
+type StringExpression struct {
 	Expression string
 }
 
-func (ns NodeStringExpression) IsNode() bool {
+func (se StringExpression) IsNode() bool {
 	return true
 }
 
@@ -129,14 +126,12 @@ type CallTemplateExpression struct {
 // {% endif %}
 type IfExpression struct {
 	Expression string
-	True       []Node
-	ElseIf     []ElseIfExpression
+	Then       []Node
 	Else       []Node
 }
 
-type ElseIfExpression struct {
-	Expression string
-	True       []Node
+func (n IfExpression) IsNode() bool {
+	return true
 }
 
 // {% switch p.Type %}
