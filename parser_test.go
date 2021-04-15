@@ -495,6 +495,27 @@ func TestParsers(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "for: simple",
+			input: `{% for _, item := range p.Items %}
+					<div>{%= item %}</div>
+				{% endfor %}`,
+			parser: forExpressionParser{}.Parse,
+			expected: ForExpression{
+				Expression: `_, item := range p.Items`,
+				Children: []Node{
+					Whitespace{Value: "\t\t\t\t\t"},
+					Element{
+						Name:       "div",
+						Attributes: []Attribute{},
+						Children: []Node{
+							StringExpression{Expression: `item`},
+						},
+					},
+					Whitespace{Value: "\n\t\t\t\t"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

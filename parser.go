@@ -312,6 +312,27 @@ func (p elseExpressionParser) Parse(pi parse.Input) parse.Result {
 	)(pi)
 }
 
+// ForExpression.
+type forExpressionParser struct{}
+
+func (p forExpressionParser) asForExpression(parts []interface{}) (result interface{}, ok bool) {
+	return ForExpression{
+		Expression: parts[1].(string),
+		Children:   parts[4].([]Node),
+	}, true
+}
+
+func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
+	return parse.All(p.asForExpression,
+		parse.String("{% for "),
+		parse.StringUntil(parse.String(" %}")),
+		parse.String(" %}"),
+		newLine,
+		templateNodeParser{}.Parse,   // for contents
+		parse.String("{% endfor %}"), // endfor
+	)(pi)
+}
+
 // Template node (element, call, if, switch, for, whitespace etc.)
 type templateNodeParser struct{}
 
@@ -323,5 +344,5 @@ func (p templateNodeParser) asTemplateNodeArray(parts []interface{}) (result int
 	return op, true
 }
 func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
-	return parse.AtLeast(p.asTemplateNodeArray, 0, parse.Any(elementParser{}.Parse, whitespaceParser, stringExpressionParser, ifExpressionParser{}.Parse))(pi)
+	return parse.AtLeast(p.asTemplateNodeArray, 0, parse.Any(elementParser{}.Parse, whitespaceParser, stringExpressionParser, ifExpressionParser{}.Parse, forExpressionParser{}.Parse))(pi)
 }

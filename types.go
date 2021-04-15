@@ -155,7 +155,7 @@ type CaseExpression struct {
 // {% for i, v := range p.Addresses %}
 //   {% call Address(v) %}
 // {% endfor %}
-type ForRangeExpression struct {
+type ForExpression struct {
 	Expression string
 	Children   []Node
 }
