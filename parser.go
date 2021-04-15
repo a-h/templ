@@ -265,8 +265,8 @@ func asStringExpression(parts []interface{}) (result interface{}, ok bool) {
 
 var stringExpressionParser = parse.All(asStringExpression,
 	parse.String("{%= "),
-	parse.StringUntil(parse.String(" %}")),
-	parse.String(" %}"),
+	parse.StringUntil(tagEnd),
+	tagEnd,
 )
 
 // IfExpression.
@@ -290,8 +290,8 @@ func (p ifExpressionParser) asChildren(parts []interface{}) (result interface{},
 func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.All(p.asIfExpression,
 		parse.String("{% if "),
-		parse.StringUntil(parse.String(" %}")),
-		parse.String(" %}"),
+		parse.StringUntil(tagEnd),
+		tagEnd,
 		newLine,
 		templateNodeParser{}.Parse, // if contents
 		parse.Optional(p.asChildren, elseExpressionParser{}.Parse), // else
@@ -325,8 +325,8 @@ func (p forExpressionParser) asForExpression(parts []interface{}) (result interf
 func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.All(p.asForExpression,
 		parse.String("{% for "),
-		parse.StringUntil(parse.String(" %}")),
-		parse.String(" %}"),
+		parse.StringUntil(tagEnd),
+		tagEnd,
 		newLine,
 		templateNodeParser{}.Parse,   // for contents
 		parse.String("{% endfor %}"), // endfor
