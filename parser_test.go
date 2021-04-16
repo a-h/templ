@@ -48,7 +48,7 @@ func TestParsers(t *testing.T) {
 			},
 		},
 		{
-			name:   "templateFileWhitespace: spaces and newline",
+			name:   "whitespace: spaces and newline",
 			input:  " \n",
 			parser: whitespaceParser,
 			expected: Whitespace{
@@ -56,7 +56,7 @@ func TestParsers(t *testing.T) {
 			},
 		},
 		{
-			name:   "templateFileWhitespace: newline",
+			name:   "whitespace: newline",
 			input:  "\n",
 			parser: whitespaceParser,
 			expected: Whitespace{
@@ -514,6 +514,15 @@ func TestParsers(t *testing.T) {
 					},
 					Whitespace{Value: "\n\t\t\t\t"},
 				},
+			},
+		},
+		{
+			name:   "call: simple",
+			input:  `{% call Other(p.Test) %}`,
+			parser: callTemplateExpressionParser{}.Parse,
+			expected: CallTemplateExpression{
+				Name:               "Other",
+				ArgumentExpression: `p.Test`,
 			},
 		},
 	}

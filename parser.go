@@ -1,28 +1,29 @@
 package templ
 
 import (
+	"fmt"
 	"unicode"
 
+	"github.com/a-h/lexical/input"
 	"github.com/a-h/lexical/parse"
 )
 
 // Constants.
-var tagStart = parse.String("{% ")
 var tagEnd = parse.String(" %}")
 var newLine = parse.Rune('\n')
 
 // Package.
 func asPackage(parts []interface{}) (result interface{}, ok bool) {
 	result = Package{
-		Expression: parts[2].(string),
+		Expression: parts[1].(string),
 	}
 	return result, true
 }
 
 var packageParser = parse.All(asPackage,
-	tagStart,
-	parse.String("package "),
+	parse.String("{% package "),
 	parse.StringUntil(tagEnd),
+	tagEnd,
 )
 
 // Whitespace.
@@ -39,15 +40,15 @@ var whitespaceParser = parse.AtLeast(asWhitespace, 1, parse.RuneInRanges(unicode
 // Import.
 func asImport(parts []interface{}) (result interface{}, ok bool) {
 	result = Import{
-		Expression: parts[2].(string),
+		Expression: parts[1].(string),
 	}
 	return result, true
 }
 
 var importParser = parse.All(asImport,
-	tagStart,
-	parse.String("import "),
+	parse.String("{% import "),
 	parse.StringUntil(tagEnd),
+	tagEnd,
 )
 
 // Template
@@ -64,29 +65,25 @@ func asTemplateExpressionName(parts []interface{}) (result interface{}, ok bool)
 }
 
 var templateExpressionNameParser = parse.All(asTemplateExpressionName, templateNameParser, parse.Rune('('))
-var templateExpressionParametersParser = parse.StringUntil(parse.Rune(')'))
-
-var templateEndParser = parse.String("{% endtmpl %}")
 
 func asTemplate(parts []interface{}) (result interface{}, ok bool) {
 	t := Template{
-		Name:                parts[2].(string),
-		ParameterExpression: parts[3].(string),
+		Name:                parts[1].(string),
+		ParameterExpression: parts[2].(string),
 	}
-	t.Children = parts[7].([]Node)
+	t.Children = parts[5].([]Node)
 	return t, true
 }
 
 var templateParser = parse.All(asTemplate,
-	tagStart,                            // {%
-	templateExpressionInstructionParser, // templ
-	templateExpressionNameParser,        // FuncName(
-	templateExpressionParametersParser,  // p Person, other Other, t thing.Thing)
-	parse.String(")"),                   // )
-	tagEnd,                              //  %}
-	newLine,                             // \n
-	templateNodeParser{}.Parse,          // template whitespace, if/switch/for, or node string expression
-	templateEndParser,                   // {% endtempl %}
+	parse.String("{% templ "),          // {% templ
+	templateExpressionNameParser,       // FuncName(
+	parse.StringUntil(parse.Rune(')')), // p Person, other Other, t thing.Thing)
+	parse.String(") %}"),               // ) %}
+	newLine,                            // \n
+	templateNodeParser{}.Parse,         // template whitespace, if/switch/for, or node string expression
+	parse.String("{% endtmpl %}"),      // {% endtempl %}
+	parse.Optional(parse.WithStringConcatCombiner, whitespaceParser),
 )
 
 // Element.
@@ -292,8 +289,8 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 		parse.String("{% if "),
 		parse.StringUntil(tagEnd),
 		tagEnd,
-		newLine,
-		templateNodeParser{}.Parse, // if contents
+		parse.Optional(parse.WithStringConcatCombiner, parse.String("\n")),
+		templateNodeParser{}.Parse,                                 // if contents
 		parse.Optional(p.asChildren, elseExpressionParser{}.Parse), // else
 		parse.String("{% endif %}"),                                // endif
 	)(pi)
@@ -333,6 +330,26 @@ func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
 	)(pi)
 }
 
+// CallTemplateExpressionParser.
+type callTemplateExpressionParser struct{}
+
+func (p callTemplateExpressionParser) asCallTemplateExpression(parts []interface{}) (result interface{}, ok bool) {
+	return CallTemplateExpression{
+		Name:               parts[1].(string),
+		ArgumentExpression: parts[3].(string),
+	}, true
+}
+
+func (p callTemplateExpressionParser) Parse(pi parse.Input) parse.Result {
+	return parse.All(p.asCallTemplateExpression,
+		parse.String("{% call "),                // {% call
+		parse.StringUntil(parse.String("(")),    // TemplateName
+		parse.Rune('('),                         // (
+		parse.StringUntil(parse.String(") %}")), // p.Test, p.Other()
+		parse.String(") %}"),                    // ) %}
+	)(pi)
+}
+
 // Template node (element, call, if, switch, for, whitespace etc.)
 type templateNodeParser struct{}
 
@@ -343,6 +360,102 @@ func (p templateNodeParser) asTemplateNodeArray(parts []interface{}) (result int
 	}
 	return op, true
 }
+
 func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
-	return parse.AtLeast(p.asTemplateNodeArray, 0, parse.Any(elementParser{}.Parse, whitespaceParser, stringExpressionParser, ifExpressionParser{}.Parse, forExpressionParser{}.Parse))(pi)
+	return parse.AtLeast(p.asTemplateNodeArray, 0, parse.Any(elementParser{}.Parse, whitespaceParser, stringExpressionParser, ifExpressionParser{}.Parse, forExpressionParser{}.Parse, callTemplateExpressionParser{}.Parse))(pi)
+}
+
+// Parse error.
+func newParseError(msg string, index int64, line, col int) parseError {
+	return parseError{
+		Message: msg,
+		Index:   index,
+		Line:    line,
+		Col:     col,
+	}
+}
+
+type parseError struct {
+	Message string
+	Index   int64
+	Line    int
+	Col     int
+}
+
+func (pe parseError) Error() string {
+	return fmt.Sprintf("%v at index %d, (line %d, col %d)", pe.Message, pe.Index, pe.Line, pe.Col)
+}
+
+// TemplateFile.
+type TemplateFileParser struct {
+	SourceRangeToItemLookup SourceRangeToItemLookup
+}
+
+func (p TemplateFileParser) asImportArray(parts []interface{}) (result interface{}, ok bool) {
+	if len(parts) == 0 {
+		return []Import{}, true
+	}
+	return parts[0].([]Import), true
+}
+
+func (p TemplateFileParser) asTemplateArray(parts []interface{}) (result interface{}, ok bool) {
+	if len(parts) == 0 {
+		return []Template{}, true
+	}
+	return parts[0].([]Template), true
+}
+
+func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
+	var tf TemplateFile
+	from := NewPositionFromInput(pi)
+
+	// Required package.
+	// {% package name %}
+	pr := packageParser(pi)
+	if pr.Error != nil {
+		return pr
+	}
+	if !pr.Success {
+		l, c := pi.Position()
+		return parse.Failure("package not found", newParseError("package not found", pi.Index(), l, c))
+	}
+	tf.Package = pr.Item.(Package)
+	//TODO: Think about making sure they don't cross over.
+	from = p.SourceRangeToItemLookup.Add(tf.Package, from, NewPositionFromInput(pi))
+
+	// Optional whitespace.
+	parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+
+	// Optional imports.
+	// {% import "strings" %}
+	ipr := parse.Many(p.asImportArray, 0, -1, importParser)(pi)
+	if ipr.Error != nil {
+		return ipr
+	}
+	tf.Imports = ipr.Item.([]Import)
+
+	// Optional whitespace.
+	parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+
+	// Optional templates.
+	// {% templ Name(p Parameter) %}
+	tr := parse.Many(p.asTemplateArray, 0, 1, templateParser)(pi)
+	if tr.Error != nil {
+		return tr
+	}
+	tf.Templates = tr.Item.([]Template)
+
+	// Success.
+	return parse.Success("template file", tf, nil)
+}
+
+func ParseString(template string) (TemplateFile, SourceRangeToItemLookup, error) {
+	srl := SourceRangeToItemLookup{}
+	tfr := TemplateFileParser{
+		SourceRangeToItemLookup: srl,
+	}.Parse(input.NewFromString(template))
+	if tfr.Error != nil {
+		return TemplateFile{}, srl, tfr.Error
+	}
+	return tfr.Item.(TemplateFile), srl, nil
 }

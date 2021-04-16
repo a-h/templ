@@ -1,4 +1,4 @@
-module github.com/a-h/tepml
+module github.com/a-h/templ
 
 go 1.16
 

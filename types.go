@@ -31,6 +31,11 @@ package templ
 //    </div>
 // {% endtempl %}
 
+// Item defines that the item is a template item.
+type Item interface {
+	IsItem() bool
+}
+
 type TemplateFile struct {
 	Package   Package
 	Imports   []Import
@@ -42,20 +47,23 @@ type Package struct {
 	Expression string
 }
 
+func (p Package) IsItem() bool { return true }
+
 // Whitespace.
 type Whitespace struct {
 	Value string
 }
 
-func (w Whitespace) IsNode() bool {
-	return true
-}
+func (w Whitespace) IsItem() bool { return true }
+func (w Whitespace) IsNode() bool { return true }
 
 // {% import "strings" %}
 // {% import strs "strings" %}
 type Import struct {
 	Expression string
 }
+
+func (imp Import) IsItem() bool { return true }
 
 // Template definition.
 // {% templ Name(p Parameter) %}
@@ -68,7 +76,9 @@ type Template struct {
 	Children            []Node
 }
 
-// Node can be an expression or an element.
+func (t Template) IsItem() bool { return true }
+
+// A Node appears within a template, e.g. a StringExpression, Element, IfExpression etc.
 type Node interface {
 	IsNode() bool
 }
@@ -80,11 +90,11 @@ type Element struct {
 	Children   []Node
 }
 
-func (e Element) IsNode() bool {
-	return true
-}
+func (e Element) IsItem() bool { return true }
+func (e Element) IsNode() bool { return true }
 
 type Attribute interface {
+	IsItem() bool
 	IsAttribute() bool
 }
 
@@ -94,6 +104,7 @@ type ConstantAttribute struct {
 	Value string
 }
 
+func (ca ConstantAttribute) IsItem() bool      { return true }
 func (ca ConstantAttribute) IsAttribute() bool { return true }
 
 // href={%= ... }
@@ -102,6 +113,7 @@ type ExpressionAttribute struct {
 	Value StringExpression
 }
 
+func (ea ExpressionAttribute) IsItem() bool      { return true }
 func (ea ExpressionAttribute) IsAttribute() bool { return true }
 
 // Nodes.
@@ -111,9 +123,8 @@ type StringExpression struct {
 	Expression string
 }
 
-func (se StringExpression) IsNode() bool {
-	return true
-}
+func (se StringExpression) IsItem() bool { return true }
+func (se StringExpression) IsNode() bool { return true }
 
 // {% call Other(p.First, p.Last) %}
 type CallTemplateExpression struct {
@@ -121,6 +132,9 @@ type CallTemplateExpression struct {
 	Name               string
 	ArgumentExpression string
 }
+
+func (cte CallTemplateExpression) IsItem() bool { return true }
+func (cte CallTemplateExpression) IsNode() bool { return true }
 
 // {% if p.Type == "test" && p.thing %}
 // {% endif %}
@@ -130,9 +144,8 @@ type IfExpression struct {
 	Else       []Node
 }
 
-func (n IfExpression) IsNode() bool {
-	return true
-}
+func (n IfExpression) IsItem() bool { return true }
+func (n IfExpression) IsNode() bool { return true }
 
 // {% switch p.Type %}
 //  {% case "Something" %}
@@ -144,6 +157,9 @@ type SwitchExpression struct {
 	Default    *CaseExpression
 }
 
+func (se SwitchExpression) IsItem() bool { return true }
+func (se SwitchExpression) IsNode() bool { return true }
+
 // {% case "Something" %}
 // ...
 // {% endcase %}
@@ -152,6 +168,8 @@ type CaseExpression struct {
 	Children   []Node
 }
 
+func (ce CaseExpression) IsItem() bool { return true }
+
 // {% for i, v := range p.Addresses %}
 //   {% call Address(v) %}
 // {% endfor %}
@@ -159,3 +177,5 @@ type ForExpression struct {
 	Expression string
 	Children   []Node
 }
+
+func (fe ForExpression) IsItem() bool { return true }
