@@ -2,6 +2,7 @@ package templ
 
 import (
 	"fmt"
+	"io"
 	"unicode"
 
 	"github.com/a-h/lexical/input"
@@ -10,21 +11,44 @@ import (
 
 // Constants.
 var tagEnd = parse.String(" %}")
-var newLine = parse.Rune('\n')
+var newLine = parse.Or(parse.String("\r\n"), parse.Rune('\n'))
 
 // Package.
-func asPackage(parts []interface{}) (result interface{}, ok bool) {
+type packageParser struct {
+	SourceRangeToItemLookup SourceRangeToItemLookup
+}
+
+func (pp packageParser) asPackage(parts []interface{}) (result interface{}, ok bool) {
 	result = Package{
 		Expression: parts[1].(string),
 	}
 	return result, true
 }
 
-var packageParser = parse.All(asPackage,
-	parse.String("{% package "),
-	parse.StringUntil(tagEnd),
-	tagEnd,
-)
+func (pp packageParser) Parse(pi parse.Input) parse.Result {
+	from := NewPositionFromInput(pi)
+
+	// Check the prefix first.
+	prefixResult := parse.String("{% package")(pi)
+	if !prefixResult.Success {
+		return prefixResult
+	}
+
+	// Once we have the prefix, we must have an expression and tag end.
+	pr := parse.All(pp.asPackage,
+		parse.Rune(' '),
+		parse.StringUntil(parse.Or(tagEnd, newLine)),
+		tagEnd)(pi)
+	if pr.Error != nil && pr.Error != io.EOF {
+		return pr
+	}
+	if !pr.Success {
+		return parse.Failure("packageParser", newParseError("package literal not terminated", from, NewPositionFromInput(pi)))
+	}
+	p := pr.Item.(Package)
+	from = pp.SourceRangeToItemLookup.Add(p, from, NewPositionFromInput(pi))
+	return pr
+}
 
 // Whitespace.
 func asWhitespace(parts []interface{}) (result interface{}, ok bool) {
@@ -80,7 +104,7 @@ var templateParser = parse.All(asTemplate,
 	templateExpressionNameParser,       // FuncName(
 	parse.StringUntil(parse.Rune(')')), // p Person, other Other, t thing.Thing)
 	parse.String(") %}"),               // ) %}
-	newLine,                            // \n
+	newLine,                            // \r\n or \n
 	templateNodeParser{}.Parse,         // template whitespace, if/switch/for, or node string expression
 	parse.String("{% endtmpl %}"),      // {% endtempl %}
 	parse.Optional(parse.WithStringConcatCombiner, whitespaceParser),
@@ -289,7 +313,7 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 		parse.String("{% if "),
 		parse.StringUntil(tagEnd),
 		tagEnd,
-		parse.Optional(parse.WithStringConcatCombiner, parse.String("\n")),
+		parse.Optional(parse.WithStringConcatCombiner, newLine),
 		templateNodeParser{}.Parse,                                 // if contents
 		parse.Optional(p.asChildren, elseExpressionParser{}.Parse), // else
 		parse.String("{% endif %}"),                                // endif
@@ -366,24 +390,22 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 }
 
 // Parse error.
-func newParseError(msg string, index int64, line, col int) parseError {
+func newParseError(msg string, from Position, to Position) parseError {
 	return parseError{
 		Message: msg,
-		Index:   index,
-		Line:    line,
-		Col:     col,
+		From:    from,
+		To:      to,
 	}
 }
 
 type parseError struct {
 	Message string
-	Index   int64
-	Line    int
-	Col     int
+	From    Position
+	To      Position
 }
 
 func (pe parseError) Error() string {
-	return fmt.Sprintf("%v at index %d, (line %d, col %d)", pe.Message, pe.Index, pe.Line, pe.Col)
+	return fmt.Sprintf("%v from %v to %v", pe.Message, pe.From, pe.To)
 }
 
 // TemplateFile.
@@ -411,13 +433,14 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 
 	// Required package.
 	// {% package name %}
-	pr := packageParser(pi)
+	pr := packageParser{
+		SourceRangeToItemLookup: p.SourceRangeToItemLookup,
+	}.Parse(pi)
 	if pr.Error != nil {
 		return pr
 	}
 	if !pr.Success {
-		l, c := pi.Position()
-		return parse.Failure("package not found", newParseError("package not found", pi.Index(), l, c))
+		return parse.Failure("TemplateFileParser", newParseError("package not found", from, NewPositionFromInput(pi)))
 	}
 	tf.Package = pr.Item.(Package)
 	//TODO: Think about making sure they don't cross over.

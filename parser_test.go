@@ -8,6 +8,62 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestPackageParserErrors(t *testing.T) {
+	var tests = []struct {
+		name     string
+		input    string
+		expected parseError
+	}{
+		{
+			name:  "unterminated package",
+			input: "{% package",
+			expected: newParseError(
+				"package literal not terminated",
+				Position{
+					Index: 0,
+					Line:  1,
+					Col:   0,
+				},
+				Position{
+					Index: 10,
+					Line:  1,
+					Col:   10,
+				},
+			),
+		},
+		{
+			name:  "unterminated package, new line",
+			input: "{% package \n%}",
+			expected: newParseError(
+				"package literal not terminated",
+				Position{
+					Index: 0,
+					Line:  1,
+					Col:   0,
+				},
+				Position{
+					Index: 10,
+					Line:  1,
+					Col:   10,
+				},
+			),
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			pi := input.NewFromString(tt.input)
+			actual := packageParser{}.Parse(pi)
+			if actual.Success {
+				t.Errorf("expected parsing to fail, but it succeeded")
+			}
+			if diff := cmp.Diff(tt.expected, actual.Error); diff != "" {
+				t.Errorf(diff)
+			}
+		})
+	}
+}
+
 func TestParsers(t *testing.T) {
 	var tests = []struct {
 		name     string
@@ -18,7 +74,7 @@ func TestParsers(t *testing.T) {
 		{
 			name:   "package: standard",
 			input:  `{% package templ %}`,
-			parser: packageParser,
+			parser: packageParser{}.Parse,
 			expected: Package{
 				Expression: "templ",
 			},

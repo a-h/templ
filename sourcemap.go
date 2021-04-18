@@ -1,6 +1,10 @@
 package templ
 
-import "github.com/a-h/lexical/parse"
+import (
+	"fmt"
+
+	"github.com/a-h/lexical/parse"
+)
 
 // Source mapping to map from the source code of the template to the
 // in-memory representation.
@@ -8,6 +12,10 @@ type Position struct {
 	Index int64
 	Line  int
 	Col   int
+}
+
+func (p Position) String() string {
+	return fmt.Sprintf("line %d, col %d (index %d)", p.Line, p.Col, p.Index)
 }
 
 // NewPositionFromInput creates a position from a parse input.
