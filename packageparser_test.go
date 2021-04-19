@@ -111,17 +111,27 @@ func TestPackageParserLocations(t *testing.T) {
 	if !result.Success {
 		t.Fatalf("failed to parse at %d", input.Index())
 	}
-
 	var expected Package
-
-	actualItemRange, ok := parser.SourceRangeToItemLookup.LookupByIndex(1)
-	if !ok {
-		t.Errorf("expected package, got %v, %+v", ok, parser.SourceRangeToItemLookup)
-	}
-
 	expected = result.Item.(Package)
-	actual := actualItemRange.Item.(Package)
-	if expected != actual {
-		t.Errorf("expected %v, got %v", expected, actual)
-	}
+
+	t.Run("lookup by index", func(t *testing.T) {
+		actualItemRange, ok := parser.SourceRangeToItemLookup.LookupByIndex(1)
+		if !ok {
+			t.Errorf("expected ok, got %v from %+v", ok, parser.SourceRangeToItemLookup)
+		}
+		actual := actualItemRange.Item.(Package)
+		if expected != actual {
+			t.Errorf("expected %v, got %v", expected, actual)
+		}
+	})
+	t.Run("lookup by line, col", func(t *testing.T) {
+		actualItemRange, ok := parser.SourceRangeToItemLookup.LookupByLineCol(1, 3)
+		if !ok {
+			t.Errorf("expected ok, got %v from %+v", ok, parser.SourceRangeToItemLookup)
+		}
+		actual := actualItemRange.Item.(Package)
+		if expected != actual {
+			t.Errorf("expected %v, got %v", expected, actual)
+		}
+	})
 }
