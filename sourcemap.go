@@ -38,8 +38,8 @@ type ItemRange struct {
 type SourceRangeToItemLookup []ItemRange
 
 // Add an item to the lookup.
-func (ir SourceRangeToItemLookup) Add(item Item, from, to Position) (updatedFrom Position) {
-	ir = append(ir, ItemRange{
+func (sril *SourceRangeToItemLookup) Add(item Item, from, to Position) (updatedFrom Position) {
+	*sril = append(*sril, ItemRange{
 		Item: item,
 		From: from,
 		To:   to,
@@ -49,8 +49,9 @@ func (ir SourceRangeToItemLookup) Add(item Item, from, to Position) (updatedFrom
 
 func (sril SourceRangeToItemLookup) LookupByIndex(index int64) (ir ItemRange, ok bool) {
 	//TODO: Update the design so it's not looping through all the items!
+	//TODO: Also find the smallest match.
 	for _, cc := range sril {
-		if cc.From.Index >= index && cc.To.Index <= index {
+		if index >= cc.From.Index && index < cc.To.Index {
 			return cc, true
 		}
 	}
