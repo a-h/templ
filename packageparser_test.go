@@ -52,7 +52,7 @@ func TestPackageParserErrors(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			pi := input.NewFromString(tt.input)
-			sril := make(SourceRangeToItemLookup, 0)
+			sril := NewSourceRangeToItemLookup()
 			actual := newPackageParser(sril).Parse(pi)
 			if actual.Success {
 				t.Errorf("expected parsing to fail, but it succeeded")
@@ -82,7 +82,7 @@ func TestPackageParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
-			sril := make(SourceRangeToItemLookup, 0)
+			sril := NewSourceRangeToItemLookup()
 			parser := newPackageParser(sril)
 			result := parser.Parse(input)
 			if result.Error != nil {
@@ -100,9 +100,8 @@ func TestPackageParser(t *testing.T) {
 
 func TestPackageParserLocations(t *testing.T) {
 	input := input.NewFromString(`{% package templ %}`)
-	parser := packageParser{
-		SourceRangeToItemLookup: make(SourceRangeToItemLookup, 0),
-	}
+	sril := NewSourceRangeToItemLookup()
+	parser := newPackageParser(sril)
 
 	result := parser.Parse(input)
 	if result.Error != nil {

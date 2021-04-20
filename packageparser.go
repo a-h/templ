@@ -7,24 +7,24 @@ import (
 )
 
 // Package.
-func newPackageParser(sril SourceRangeToItemLookup) *packageParser {
+func newPackageParser(sril *SourceRangeToItemLookup) *packageParser {
 	return &packageParser{
 		SourceRangeToItemLookup: sril,
 	}
 }
 
 type packageParser struct {
-	SourceRangeToItemLookup SourceRangeToItemLookup
+	SourceRangeToItemLookup *SourceRangeToItemLookup
 }
 
-func (pp *packageParser) asPackage(parts []interface{}) (result interface{}, ok bool) {
+func (p *packageParser) asPackage(parts []interface{}) (result interface{}, ok bool) {
 	result = Package{
 		Expression: parts[1].(string),
 	}
 	return result, true
 }
 
-func (pp *packageParser) Parse(pi parse.Input) parse.Result {
+func (p *packageParser) Parse(pi parse.Input) parse.Result {
 	from := NewPositionFromInput(pi)
 
 	// Check the prefix first.
@@ -34,7 +34,7 @@ func (pp *packageParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Once we have the prefix, we must have an expression and tag end.
-	pr := parse.All(pp.asPackage,
+	pr := parse.All(p.asPackage,
 		parse.Rune(' '),
 		parse.StringUntil(parse.Or(tagEnd, newLine)),
 		tagEnd)(pi)
@@ -44,7 +44,7 @@ func (pp *packageParser) Parse(pi parse.Input) parse.Result {
 	if !pr.Success {
 		return parse.Failure("packageParser", newParseError("package literal not terminated", from, NewPositionFromInput(pi)))
 	}
-	p := pr.Item.(Package)
-	from = pp.SourceRangeToItemLookup.Add(p, from, NewPositionFromInput(pi))
+	r := pr.Item.(Package)
+	from = p.SourceRangeToItemLookup.Add(r, from, NewPositionFromInput(pi))
 	return pr
 }

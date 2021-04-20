@@ -35,11 +35,21 @@ type ItemRange struct {
 	To   Position
 }
 
-type SourceRangeToItemLookup []ItemRange
+// NewSourceRangeToItemLookup creates a new lookup to map templ source code to items in the
+// parsed template.
+func NewSourceRangeToItemLookup() *SourceRangeToItemLookup {
+	return &SourceRangeToItemLookup{
+		Items: make([]ItemRange, 0),
+	}
+}
+
+type SourceRangeToItemLookup struct {
+	Items []ItemRange
+}
 
 // Add an item to the lookup.
 func (sril *SourceRangeToItemLookup) Add(item Item, from, to Position) (updatedFrom Position) {
-	*sril = append(*sril, ItemRange{
+	sril.Items = append(sril.Items, ItemRange{
 		Item: item,
 		From: from,
 		To:   to,
@@ -50,7 +60,7 @@ func (sril *SourceRangeToItemLookup) Add(item Item, from, to Position) (updatedF
 func (sril SourceRangeToItemLookup) LookupByIndex(index int64) (ir ItemRange, ok bool) {
 	//TODO: Update the design so it's not looping through all the items!
 	//TODO: Also find the smallest match.
-	for _, cc := range sril {
+	for _, cc := range sril.Items {
 		if index >= cc.From.Index && index < cc.To.Index {
 			return cc, true
 		}
@@ -59,7 +69,7 @@ func (sril SourceRangeToItemLookup) LookupByIndex(index int64) (ir ItemRange, ok
 }
 
 func (sril SourceRangeToItemLookup) LookupByLineCol(line, col int) (ir ItemRange, ok bool) {
-	for _, cc := range sril {
+	for _, cc := range sril.Items {
 		// Single line.
 		if cc.From.Line == cc.To.Line && cc.To.Line == line && ((col >= cc.From.Col && col <= cc.To.Col) ||
 			(col <= cc.From.Col && col >= cc.To.Col)) {
