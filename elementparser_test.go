@@ -18,7 +18,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "element: open",
 			input:  `<a>`,
-			parser: newElementOpenTagParser(NewSourceRangeToItemLookup()).Parse,
+			parser: newElementOpenTagParser().Parse,
 			expected: elementOpenTag{
 				Name:       "a",
 				Attributes: []Attribute{},
@@ -27,7 +27,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "element: open with attributes",
 			input:  `<div id="123" style="padding: 10px">`,
-			parser: newElementOpenTagParser(NewSourceRangeToItemLookup()).Parse,
+			parser: newElementOpenTagParser().Parse,
 			expected: elementOpenTag{
 				Name: "div",
 				Attributes: []Attribute{
@@ -45,18 +45,10 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "constant attribute",
 			input:  ` href="test"`,
-			parser: newConstantAttributeParser(NewSourceRangeToItemLookup()).Parse,
+			parser: newConstantAttributeParser().Parse,
 			expected: ConstantAttribute{
 				Name:  "href",
 				Value: "test",
-			},
-		},
-		{
-			name:   "stringexpression: constant",
-			input:  `{%= "test" %}`,
-			parser: newStringExpressionParser(NewSourceRangeToItemLookup()).Parse,
-			expected: StringExpression{
-				Expression: `"test"`,
 			},
 		},
 	}
@@ -66,7 +58,7 @@ func TestAttributeParser(t *testing.T) {
 			input := input.NewFromString(tt.input)
 			result := tt.parser(input)
 			if result.Error != nil {
-				t.Fatalf("paser error: %v", result.Error)
+				t.Fatalf("parser error: %v", result.Error)
 			}
 			if !result.Success {
 				t.Fatalf("failed to parse at %d", input.Index())
@@ -106,7 +98,22 @@ func TestElementParser(t *testing.T) {
 					ExpressionAttribute{
 						Name: "href",
 						Value: StringExpression{
-							Expression: `"test"`,
+							Expression: Expression{
+								Value: `"test"`,
+								Range: Range{
+									From: Position{
+										Index: 12,
+										Line:  1,
+										Col:   12,
+									},
+									To: Position{
+
+										Index: 18,
+										Line:  1,
+										Col:   18,
+									},
+								},
+							},
 						},
 					},
 				},
@@ -142,7 +149,22 @@ func TestElementParser(t *testing.T) {
 					ExpressionAttribute{
 						Name: "title",
 						Value: StringExpression{
-							`localisation.Get("a_title")`,
+							Expression: Expression{
+								Value: `localisation.Get("a_title")`,
+								Range: Range{
+									From: Position{
+										Index: 25,
+										Line:  1,
+										Col:   25,
+									},
+									To: Position{
+
+										Index: 52,
+										Line:  1,
+										Col:   52,
+									},
+								},
+							},
 						},
 					},
 					ConstantAttribute{
@@ -260,7 +282,21 @@ func TestElementParser(t *testing.T) {
 				Attributes: []Attribute{},
 				Children: []Node{
 					StringExpression{
-						Expression: `"test"`,
+						Expression: Expression{
+							Value: `"test"`,
+							Range: Range{
+								From: Position{
+									Index: 9,
+									Line:  1,
+									Col:   9,
+								},
+								To: Position{
+									Index: 15,
+									Line:  1,
+									Col:   15,
+								},
+							},
+						},
 					},
 				},
 			},
@@ -270,11 +306,9 @@ func TestElementParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
-			sril := NewSourceRangeToItemLookup()
-			parser := newElementParser(sril)
-			result := parser.Parse(input)
+			result := newElementParser().Parse(input)
 			if result.Error != nil {
-				t.Fatalf("paser error: %v", result.Error)
+				t.Fatalf("parser error: %v", result.Error)
 			}
 			if !result.Success {
 				t.Fatalf("failed to parse at %d", input.Index())
@@ -284,32 +318,4 @@ func TestElementParser(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestElementParserLocations(t *testing.T) {
-	input := input.NewFromString(`<div id="123">{%= "test" %}</div>`)
-	sril := NewSourceRangeToItemLookup()
-	parser := newElementParser(sril)
-
-	result := parser.Parse(input)
-	if result.Error != nil {
-		t.Fatalf("paser error: %v", result.Error)
-	}
-	if !result.Success {
-		t.Fatalf("failed to parse at %d", input.Index())
-	}
-	element := result.Item.(Element)
-
-	t.Run("lookup child string expression by index", func(t *testing.T) {
-		actualItemRange, ok := parser.SourceRangeToItemLookup.LookupByIndex(18)
-		if !ok {
-			t.Errorf("expected ok, got %v from %+v", ok, parser.SourceRangeToItemLookup)
-			return
-		}
-		a := element.Children[0].(StringExpression)
-		actual := actualItemRange.Item.(StringExpression)
-		if a != actual {
-			t.Errorf("expected %v, got %v", element, actual)
-		}
-	})
 }

@@ -1,5 +1,11 @@
 package templ
 
+import (
+	"fmt"
+
+	"github.com/a-h/lexical/parse"
+)
+
 //TODO: Add comment line?
 
 // {% package templ %}
@@ -31,6 +37,60 @@ package templ
 //    </div>
 // {% endtempl %}
 
+// Source mapping to map from the source code of the template to the
+// in-memory representation.
+type Position struct {
+	Index int64
+	Line  int
+	Col   int
+}
+
+func (p Position) String() string {
+	return fmt.Sprintf("line %d, col %d (index %d)", p.Line, p.Col, p.Index)
+}
+
+// NewPosition initialises a position.
+func NewPosition() Position {
+	return Position{
+		Index: 0,
+		Line:  1,
+		Col:   0,
+	}
+}
+
+// NewPositionFromInput creates a position from a parse input.
+func NewPositionFromInput(pi parse.Input) Position {
+	l, c := pi.Position()
+	return Position{
+		Index: pi.Index(),
+		Line:  l,
+		Col:   c,
+	}
+}
+
+// NewExpression creates a Go expression.
+func NewExpression(value string, from, to Position) Expression {
+	return Expression{
+		Value: value,
+		Range: Range{
+			From: from,
+			To:   to,
+		},
+	}
+}
+
+// Range of text within a file.
+type Range struct {
+	From Position
+	To   Position
+}
+
+// Expression containing Go code.
+type Expression struct {
+	Value string
+	Range Range
+}
+
 // Item defines that the item is a template item.
 type Item interface {
 	IsItem() bool
@@ -44,7 +104,7 @@ type TemplateFile struct {
 
 // {% package templ %}
 type Package struct {
-	Expression string
+	Expression Expression
 }
 
 func (p Package) IsItem() bool { return true }
@@ -60,7 +120,7 @@ func (w Whitespace) IsNode() bool { return true }
 // {% import "strings" %}
 // {% import strs "strings" %}
 type Import struct {
-	Expression string
+	Expression Expression
 }
 
 func (imp Import) IsItem() bool { return true }
@@ -71,9 +131,9 @@ func (imp Import) IsItem() bool { return true }
 //   <Element></Element>
 // {% endtempl %}
 type Template struct {
-	Name                string
-	ParameterExpression string
-	Children            []Node
+	Name       Expression
+	Parameters Expression
+	Children   []Node
 }
 
 func (t Template) IsItem() bool { return true }
@@ -120,7 +180,7 @@ func (ea ExpressionAttribute) IsAttribute() bool { return true }
 
 // {%= ... %}
 type StringExpression struct {
-	Expression string
+	Expression Expression
 }
 
 func (se StringExpression) IsItem() bool { return true }
@@ -128,9 +188,10 @@ func (se StringExpression) IsNode() bool { return true }
 
 // {% call Other(p.First, p.Last) %}
 type CallTemplateExpression struct {
-	// Name of the template to execute
-	Name               string
-	ArgumentExpression string
+	// Name of the template to execute.
+	Name Expression
+	// Arguments to pass.
+	Arguments Expression
 }
 
 func (cte CallTemplateExpression) IsItem() bool { return true }
@@ -139,7 +200,7 @@ func (cte CallTemplateExpression) IsNode() bool { return true }
 // {% if p.Type == "test" && p.thing %}
 // {% endif %}
 type IfExpression struct {
-	Expression string
+	Expression Expression
 	Then       []Node
 	Else       []Node
 }
@@ -152,7 +213,7 @@ func (n IfExpression) IsNode() bool { return true }
 //  {% endcase %}
 // {% endswitch %}
 type SwitchExpression struct {
-	Expression string
+	Expression Expression
 	Cases      []CaseExpression
 	Default    *CaseExpression
 }
@@ -164,7 +225,7 @@ func (se SwitchExpression) IsNode() bool { return true }
 // ...
 // {% endcase %}
 type CaseExpression struct {
-	Expression string
+	Expression Expression
 	Children   []Node
 }
 
@@ -174,7 +235,7 @@ func (ce CaseExpression) IsItem() bool { return true }
 //   {% call Address(v) %}
 // {% endfor %}
 type ForExpression struct {
-	Expression string
+	Expression Expression
 	Children   []Node
 }
 

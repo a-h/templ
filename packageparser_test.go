@@ -52,8 +52,7 @@ func TestPackageParserErrors(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			pi := input.NewFromString(tt.input)
-			sril := NewSourceRangeToItemLookup()
-			actual := newPackageParser(sril).Parse(pi)
+			actual := newPackageParser().Parse(pi)
 			if actual.Success {
 				t.Errorf("expected parsing to fail, but it succeeded")
 			}
@@ -74,7 +73,9 @@ func TestPackageParser(t *testing.T) {
 			name:  "package: standard",
 			input: `{% package templ %}`,
 			expected: Package{
-				Expression: "templ",
+				Expression: Expression{
+					Value: "templ",
+				},
 			},
 		},
 	}
@@ -82,11 +83,9 @@ func TestPackageParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
-			sril := NewSourceRangeToItemLookup()
-			parser := newPackageParser(sril)
-			result := parser.Parse(input)
+			result := newPackageParser().Parse(input)
 			if result.Error != nil {
-				t.Fatalf("paser error: %v", result.Error)
+				t.Fatalf("parser error: %v", result.Error)
 			}
 			if !result.Success {
 				t.Fatalf("failed to parse at %d", input.Index())
@@ -96,41 +95,4 @@ func TestPackageParser(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestPackageParserLocations(t *testing.T) {
-	input := input.NewFromString(`{% package templ %}`)
-	sril := NewSourceRangeToItemLookup()
-	parser := newPackageParser(sril)
-
-	result := parser.Parse(input)
-	if result.Error != nil {
-		t.Fatalf("paser error: %v", result.Error)
-	}
-	if !result.Success {
-		t.Fatalf("failed to parse at %d", input.Index())
-	}
-	var expected Package
-	expected = result.Item.(Package)
-
-	t.Run("lookup by index", func(t *testing.T) {
-		actualItemRange, ok := parser.SourceRangeToItemLookup.LookupByIndex(1)
-		if !ok {
-			t.Errorf("expected ok, got %v from %+v", ok, parser.SourceRangeToItemLookup)
-		}
-		actual := actualItemRange.Item.(Package)
-		if expected != actual {
-			t.Errorf("expected %v, got %v", expected, actual)
-		}
-	})
-	t.Run("lookup by line, col", func(t *testing.T) {
-		actualItemRange, ok := parser.SourceRangeToItemLookup.LookupByLineCol(1, 3)
-		if !ok {
-			t.Errorf("expected ok, got %v from %+v", ok, parser.SourceRangeToItemLookup)
-		}
-		actual := actualItemRange.Item.(Package)
-		if expected != actual {
-			t.Errorf("expected %v, got %v", expected, actual)
-		}
-	})
 }
