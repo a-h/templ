@@ -23,9 +23,33 @@ func TestTemplateParser(t *testing.T) {
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 12,
+							Line:  1,
+							Col:   12,
+						},
+					},
 				},
 				Parameters: Expression{
 					Value: "",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+					},
 				},
 				Children: []Node{},
 			},
@@ -38,9 +62,33 @@ func TestTemplateParser(t *testing.T) {
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 12,
+							Line:  1,
+							Col:   12,
+						},
+					},
 				},
 				Parameters: Expression{
 					Value: "p Parameter",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 25,
+							Line:  1,
+							Col:   25,
+						},
+					},
 				},
 				Children: []Node{},
 			},
@@ -54,9 +102,33 @@ func TestTemplateParser(t *testing.T) {
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 12,
+							Line:  1,
+							Col:   12,
+						},
+					},
 				},
 				Parameters: Expression{
 					Value: "p Parameter",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 25,
+							Line:  1,
+							Col:   25,
+						},
+					},
 				},
 				Children: []Node{
 					Element{
@@ -66,6 +138,18 @@ func TestTemplateParser(t *testing.T) {
 							StringExpression{
 								Expression: Expression{
 									Value: `"span content"`,
+									Range: Range{
+										From: Position{
+											Index: 40,
+											Line:  2,
+											Col:   10,
+										},
+										To: Position{
+											Index: 54,
+											Line:  2,
+											Col:   24,
+										},
+									},
 								},
 							},
 						},
@@ -90,9 +174,33 @@ func TestTemplateParser(t *testing.T) {
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 12,
+							Line:  1,
+							Col:   12,
+						},
+					},
 				},
 				Parameters: Expression{
 					Value: "p Parameter",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 25,
+							Line:  1,
+							Col:   25,
+						},
+					},
 				},
 				Children: []Node{
 					Element{
@@ -103,6 +211,18 @@ func TestTemplateParser(t *testing.T) {
 							StringExpression{
 								Expression: Expression{
 									Value: `"div content"`,
+									Range: Range{
+										From: Position{
+											Index: 42,
+											Line:  3,
+											Col:   6,
+										},
+										To: Position{
+											Index: 55,
+											Line:  3,
+											Col:   19,
+										},
+									},
 								},
 							},
 							Whitespace{Value: "\n  "},
@@ -114,6 +234,18 @@ func TestTemplateParser(t *testing.T) {
 									StringExpression{
 										Expression: Expression{
 											Value: `"span content"`,
+											Range: Range{
+												From: Position{
+													Index: 73,
+													Line:  5,
+													Col:   5,
+												},
+												To: Position{
+													Index: 87,
+													Line:  5,
+													Col:   19,
+												},
+											},
 										},
 									},
 									Whitespace{Value: "\n  "},
@@ -139,15 +271,51 @@ func TestTemplateParser(t *testing.T) {
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 12,
+							Line:  1,
+							Col:   12,
+						},
+					},
 				},
 				Parameters: Expression{
 					Value: "p Parameter",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 25,
+							Line:  1,
+							Col:   25,
+						},
+					},
 				},
 				Children: []Node{
 					Whitespace{Value: "\t"},
 					IfExpression{
 						Expression: Expression{
 							Value: `p.Test`,
+							Range: Range{
+								From: Position{
+									Index: 37,
+									Line:  2,
+									Col:   7,
+								},
+								To: Position{
+									Index: 43,
+									Line:  2,
+									Col:   13,
+								},
+							},
 						},
 						Then: []Node{
 							Whitespace{Value: "\t\t"},
@@ -159,6 +327,18 @@ func TestTemplateParser(t *testing.T) {
 									StringExpression{
 										Expression: Expression{
 											Value: `"span content"`,
+											Range: Range{
+												From: Position{
+													Index: 63,
+													Line:  4,
+													Col:   7,
+												},
+												To: Position{
+													Index: 77,
+													Line:  4,
+													Col:   21,
+												},
+											},
 										},
 									},
 									Whitespace{"\n\t\t"},

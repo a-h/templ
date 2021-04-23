@@ -24,7 +24,7 @@ func (p packageParser) Parse(pi parse.Input) parse.Result {
 
 	// Once we have the prefix, we must have an expression and tag end on the same line.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.Or(tagEnd, newLine))(pi)
+	pr := parse.StringUntil(parse.Or(newLine, tagEnd))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -34,16 +34,14 @@ func (p packageParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Success!
-	// Include "package " in the Go expression.
-	from.Col -= len(packageStmtPrefix)
 	to := NewPositionFromInput(pi)
 	r := Package{
-		Expression: NewExpression(packageStmtPrefix+pr.Item.(string), from, to),
+		Expression: NewExpression(pr.Item.(string), from, to),
 	}
 
 	// Eat the tag end.
 	if te := tagEnd(pi); !te.Success {
-		return te
+		return parse.Failure("packageParser", newParseError("package literal not terminated", from, NewPositionFromInput(pi)))
 	}
 
 	return parse.Success("packageParser", r, nil)

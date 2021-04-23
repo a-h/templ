@@ -1,6 +1,7 @@
 package templ
 
 import (
+	"io"
 	"testing"
 
 	"github.com/a-h/lexical/input"
@@ -15,18 +16,18 @@ func TestPackageParserErrors(t *testing.T) {
 	}{
 		{
 			name:  "unterminated package",
-			input: "{% package",
+			input: "{% package ",
 			expected: newParseError(
 				"package literal not terminated",
 				Position{
-					Index: 0,
+					Index: 11,
 					Line:  1,
-					Col:   0,
+					Col:   11,
 				},
 				Position{
-					Index: 10,
+					Index: 15,
 					Line:  1,
-					Col:   10,
+					Col:   15,
 				},
 			),
 		},
@@ -36,14 +37,14 @@ func TestPackageParserErrors(t *testing.T) {
 			expected: newParseError(
 				"package literal not terminated",
 				Position{
-					Index: 0,
+					Index: 11,
 					Line:  1,
-					Col:   0,
+					Col:   11,
 				},
 				Position{
-					Index: 10,
+					Index: 11,
 					Line:  1,
-					Col:   10,
+					Col:   11,
 				},
 			),
 		},
@@ -75,6 +76,18 @@ func TestPackageParser(t *testing.T) {
 			expected: Package{
 				Expression: Expression{
 					Value: "templ",
+					Range: Range{
+						From: Position{
+							Index: 11,
+							Line:  1,
+							Col:   11,
+						},
+						To: Position{
+							Index: 16,
+							Line:  1,
+							Col:   16,
+						},
+					},
 				},
 			},
 		},
@@ -84,7 +97,7 @@ func TestPackageParser(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
 			result := newPackageParser().Parse(input)
-			if result.Error != nil {
+			if result.Error != nil && result.Error != io.EOF {
 				t.Fatalf("parser error: %v", result.Error)
 			}
 			if !result.Success {
