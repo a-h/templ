@@ -5,6 +5,7 @@ import (
 	"html"
 	"io"
 	"reflect"
+	"strings"
 
 	"github.com/a-h/templ"
 )
@@ -350,16 +351,21 @@ func (g *generator) writeElement(n templ.Element) error {
 
 func (g *generator) writeWhitespace(n templ.Whitespace) error {
 	var err error
-	// io.WriteString(w, `
-	if _, err = g.w.Write("io.WriteString(w, `"); err != nil {
-		return err
+	var spaces strings.Builder
+	for _, r := range n.Value {
+		switch r {
+		case '\n':
+			spaces.WriteString(`\n`)
+		case '\r':
+			spaces.WriteString(`\r`)
+		case '\t':
+			spaces.WriteString(`\t`)
+		default:
+			spaces.WriteRune(r)
+		}
 	}
-	// <spaces>
-	if _, err = g.w.Write(n.Value); err != nil {
-		return err
-	}
-	// `)
-	if _, err = g.w.Write("`)\n"); err != nil {
+	// io.WriteString(w, "<spaces>")
+	if _, err = g.w.Write(fmt.Sprintf(`io.WriteString(w, "%s")`+"\n", spaces.String())); err != nil {
 		return err
 	}
 	return nil
