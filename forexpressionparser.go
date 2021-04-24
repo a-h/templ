@@ -67,7 +67,7 @@ func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat the required "endfor".
 	if pr = parse.String("{% endfor %}")(pi); !pr.Success {
-		return parse.Failure("ifExpressionParser", newParseError("if: missing end (expected '{% endif %}')", from, NewPositionFromInput(pi)))
+		return parse.Failure("forExpressionParser", newParseError("for: missing end (expected '{% endfor %}')", from, NewPositionFromInput(pi)))
 	}
 
 	return parse.Success("for", r, nil)
