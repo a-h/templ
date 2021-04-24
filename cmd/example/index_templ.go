@@ -45,7 +45,7 @@ io.WriteString(w, `
 `)
 for i, v := range p.Addresses{ 
 io.WriteString(w, `	`)
-Unhandled type: templ.CallTemplateExpression
+Address(w, v)
 io.WriteString(w, `
 `)
 }
