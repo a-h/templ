@@ -56,7 +56,7 @@ func compileCmd(args []string) {
 		cmd.PrintDefaults()
 		return
 	}
-	//TODO: Glob for *.templ files and compile them.
+	// Search for *.templ files and compile them.
 	templates, err := getTemplates(".")
 	if err != nil {
 		fmt.Printf("error getting templates: %v\n", err)

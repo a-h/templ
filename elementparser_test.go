@@ -74,7 +74,7 @@ func TestElementParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected interface{}
+		expected Element
 	}{
 		{
 			name:  "element: self-closing with single constant attribute",
@@ -314,6 +314,40 @@ func TestElementParser(t *testing.T) {
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
 			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
+				t.Errorf(diff)
+			}
+		})
+	}
+}
+
+func TestElementParserErrors(t *testing.T) {
+	var tests = []struct {
+		name     string
+		input    string
+		expected error
+	}{
+		{
+			name:  "element: mismatched end tag",
+			input: `<a></b>`,
+			expected: newParseError("element: mismatched end tag, expected '</a>', got '</b>'",
+				Position{
+					Index: 3,
+					Line:  1,
+					Col:   3,
+				},
+				Position{
+					Index: 7,
+					Line:  1,
+					Col:   7,
+				}),
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			input := input.NewFromString(tt.input)
+			result := newElementParser().Parse(input)
+			if diff := cmp.Diff(tt.expected, result.Error); diff != "" {
 				t.Errorf(diff)
 			}
 		})

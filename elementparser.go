@@ -1,6 +1,9 @@
 package templ
 
 import (
+	"fmt"
+	"io"
+
 	"github.com/a-h/lexical/parse"
 )
 
@@ -172,12 +175,37 @@ func (p elementOpenCloseParser) asChildren(parts []interface{}) (result interfac
 }
 
 func (p elementOpenCloseParser) Parse(pi parse.Input) parse.Result {
-	//TODO: Don't use parse.All, check that the close tag name matches the start name!
-	return parse.All(p.asElement,
-		newElementOpenTagParser().Parse,
-		newTemplateNodeParser().Parse,
-		elementCloseTagParser,
-	)(pi)
+	var r Element
+
+	// Check the open tag.
+	otr := newElementOpenTagParser().Parse(pi)
+	if !otr.Success {
+		return otr
+	}
+	ot := otr.Item.(elementOpenTag)
+	r.Name = ot.Name
+	r.Attributes = ot.Attributes
+
+	// Once we've got an open tag, the rest must be present.
+	from := NewPositionFromInput(pi)
+	tnpr := newTemplateNodeParser().Parse(pi)
+	if !tnpr.Success {
+		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("element: element node parsing failed: %v", tnpr.Error), from, NewPositionFromInput(pi)))
+	}
+	if arr, isArray := tnpr.Item.([]Node); isArray {
+		r.Children = append(r.Children, arr...)
+	}
+
+	// Close tag.
+	ectpr := elementCloseTagParser(pi)
+	if !ectpr.Success {
+		return parse.Failure("elementOpenCloseParser", newParseError("element: missing end tag", from, NewPositionFromInput(pi)))
+	}
+	if ct := ectpr.Item.(elementCloseTag); ct.Name != r.Name {
+		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("element: mismatched end tag, expected '</%s>', got '</%s>'", r.Name, ct.Name), from, NewPositionFromInput(pi)))
+	}
+
+	return parse.Success("elementOpenCloseParser", r, nil)
 }
 
 // Element self-closing tag.
@@ -215,8 +243,27 @@ type elementParser struct {
 }
 
 func (p elementParser) Parse(pi parse.Input) parse.Result {
-	return parse.Or(
-		newElementSelfClosingParser().Parse,
-		newElementOpenCloseParser().Parse,
-	)(pi)
+	var r Element
+
+	// Self closing.
+	scr := newElementSelfClosingParser().Parse(pi)
+	if scr.Error != nil && scr.Error != io.EOF {
+		return scr
+	}
+	if scr.Success {
+		r = scr.Item.(Element)
+		return parse.Success("elementParser", r, nil)
+	}
+
+	// Open/close pair.
+	ocr := newElementOpenCloseParser().Parse(pi)
+	if ocr.Error != nil && ocr.Error != io.EOF {
+		return ocr
+	}
+	if ocr.Success {
+		r = ocr.Item.(Element)
+		return parse.Success("elementParser", r, nil)
+	}
+
+	return parse.Failure("elementParser", nil)
 }
