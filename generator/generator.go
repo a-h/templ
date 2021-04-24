@@ -226,6 +226,10 @@ func (g *generator) writeElement(n templ.Element) error {
 					return err
 				}
 				// Value.
+				// Open quote.
+				if _, err = g.w.Write(`io.WriteString(w, "\"")` + "\n"); err != nil {
+					return err
+				}
 				// io.WriteString(w, html.EscapeString(
 				if _, err = g.w.Write("io.WriteString(w, html.EscapeString("); err != nil {
 					return err
@@ -237,6 +241,10 @@ func (g *generator) writeElement(n templ.Element) error {
 				g.sourceMap.Add(attr.Value.Expression, r)
 				// ))
 				if _, err = g.w.Write("))\n"); err != nil {
+					return err
+				}
+				// Close quote.
+				if _, err = g.w.Write(`io.WriteString(w, "\"")` + "\n"); err != nil {
 					return err
 				}
 			default:

@@ -4,7 +4,7 @@
 {% import strs "strings" %}
 
 {% templ Person(p Person) %}
-<div style="font-weight: bold">{%= p.Name() %}</div>
+<div style="font-weight: bold" id={%= p.ID %}>{%= p.Name() %}</div>
 {% endtempl %}
 
 {% templ Person2(p Person) %}
