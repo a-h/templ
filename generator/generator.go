@@ -187,13 +187,40 @@ func (g *generator) writeNode(node templ.Node) error {
 		g.writeWhitespace(n)
 	case templ.StringExpression:
 		g.writeStringExpression(n)
+	case templ.ForExpression:
+		g.writeForExpression(n)
 	default:
 		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
 	}
 
 	//TODO: CallTemplateExpression.
 	//TODO: SwitchExpression.
-	//TODO: ForExpression.
+	//TODO: IfExpression
+	return nil
+}
+
+func (g *generator) writeForExpression(n templ.ForExpression) error {
+	var r templ.Range
+	var err error
+	// if
+	if _, err = g.w.Write(`for `); err != nil {
+		return err
+	}
+	// i, v := range p.Stuff
+	if r, err = g.w.Write(n.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(n.Expression, r)
+	// {
+	if _, err = g.w.Write(`{ ` + "\n"); err != nil {
+		return err
+	}
+	// Children.
+	g.writeNodes(n.Children)
+	// }
+	if _, err = g.w.Write(`}` + "\n"); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -240,3 +240,4 @@ type ForExpression struct {
 }
 
 func (fe ForExpression) IsItem() bool { return true }
+func (fe ForExpression) IsNode() bool { return true }

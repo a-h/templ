@@ -3,8 +3,19 @@
 {% import "strings" %}
 {% import strs "strings" %}
 
+{% templ Address(addr Address) %}
+	<div>{%= addr.Address1 %}</div>
+	<div>{%= addr.Address2 %}</div>
+	<div>{%= addr.Address3 %}</div>
+	<div>{%= addr.Address4 %}</div>
+{% endtempl %}
+
 {% templ Person(p Person) %}
 <div style="font-weight: bold" id={%= p.ID %}>{%= p.Name() %}</div>
+
+{% for i, v := range p.Addresses %}
+	{% call Address(v) %}
+{% endfor %}
 {% endtempl %}
 
 {% templ Person2(p Person) %}
