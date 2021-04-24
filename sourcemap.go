@@ -1,32 +1,33 @@
 package templ
 
-// SourceAndTargetExpression is a record of a template Item, along with its start and end positions.
-type SourceAndTargetExpression struct {
-	Source, Target Expression
+// SourceExpressionTo is a record of a template Item, along with its start and end positions.
+type SourceExpressionTo struct {
+	Source Expression
+	To     Range
 }
 
 // NewSourceMap creates a new lookup to map templ source code to items in the
 // parsed template.
 func NewSourceMap() *SourceMap {
 	return &SourceMap{
-		Items: make([]SourceAndTargetExpression, 0),
+		Items: make([]SourceExpressionTo, 0),
 	}
 }
 
 type SourceMap struct {
-	Items []SourceAndTargetExpression
+	Items []SourceExpressionTo
 }
 
 // Add an item to the lookup.
-func (sm *SourceMap) Add(src, tgt Expression) (updatedFrom Position) {
-	sm.Items = append(sm.Items, SourceAndTargetExpression{
+func (sm *SourceMap) Add(src Expression, to Range) (updatedFrom Position) {
+	sm.Items = append(sm.Items, SourceExpressionTo{
 		Source: src,
-		Target: tgt,
+		To:     to,
 	})
 	return src.Range.From
 }
 
-func (sm *SourceMap) LookupByIndex(index int64) (ir SourceAndTargetExpression, ok bool) {
+func (sm *SourceMap) LookupByIndex(index int64) (ir SourceExpressionTo, ok bool) {
 	//TODO: Update the design so it's not looping through all the items!
 	//TODO: Also find the smallest match.
 	for _, cc := range sm.Items {
@@ -34,10 +35,10 @@ func (sm *SourceMap) LookupByIndex(index int64) (ir SourceAndTargetExpression, o
 			return cc, true
 		}
 	}
-	return SourceAndTargetExpression{}, false
+	return SourceExpressionTo{}, false
 }
 
-func (sm *SourceMap) LookupByLineCol(line, col int) (ir SourceAndTargetExpression, ok bool) {
+func (sm *SourceMap) LookupByLineCol(line, col int) (ir SourceExpressionTo, ok bool) {
 	for _, cc := range sm.Items {
 		// Single line.
 		if cc.Source.Range.From.Line == cc.Source.Range.To.Line && cc.Source.Range.To.Line == line && ((col >= cc.Source.Range.From.Col && col <= cc.Source.Range.To.Col) ||
@@ -53,5 +54,5 @@ func (sm *SourceMap) LookupByLineCol(line, col int) (ir SourceAndTargetExpressio
 			return cc, true
 		}
 	}
-	return SourceAndTargetExpression{}, false
+	return SourceExpressionTo{}, false
 }

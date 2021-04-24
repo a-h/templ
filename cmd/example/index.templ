@@ -1,0 +1,32 @@
+{% package templ %}
+
+{% import "strings" %}
+{% import strs "strings" %}
+
+{% templ Person(p Person) %}
+{%= p.Name() %}
+{% endtempl %}
+
+{% templ Person2(p Person) %}
+   <div>
+     <div>{%= p.Name() %}</div>
+     <a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
+     <div>
+         {% call Other(p) %}
+         {% if p.Type == "test" && p.thing %}
+     	<span>{ p.type }</span>
+         {% else %}
+     	<span>Not test</span>
+         {% endif %}
+         {% switch p.Type %}
+            {% case "Something" %}
+             <h1>Something</h1>
+            {% end case %}
+         {% endswitch %}
+         {% for i, v := range p.Addresses %}
+            {% call Address(v) %}
+         {% endfor %}
+         {%= Complex(TypeName{Field: p.PhoneNumber}) %}
+     </div>
+   </div>
+{% endtempl %}

@@ -1,7 +1,10 @@
 package templ
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"os"
 	"unicode"
 
 	"github.com/a-h/lexical/input"
@@ -46,7 +49,7 @@ func (p templateParser) Parse(pi parse.Input) parse.Result {
 	return parse.All(p.asTemplate,
 		newTemplateExpressionParser().Parse, // {% templ FuncName(p Person, other Other) %}
 		newTemplateNodeParser().Parse,       // template whitespace, if/switch/for, or node string expression
-		parse.String("{% endtmpl %}"),       // {% endtempl %}
+		parse.String("{% endtempl %}"),      // {% endtempl %}
 		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser),
 	)(pi)
 }
@@ -68,6 +71,7 @@ func (p templateNodeParser) asTemplateNodeArray(parts []interface{}) (result int
 }
 
 func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
+	//TODO: Replace this to give better error messages.
 	return parse.AtLeast(p.asTemplateNodeArray, 0, parse.Any(
 		newElementParser().Parse, // <a>, <br/> etc.
 		whitespaceParser,
@@ -103,20 +107,6 @@ func NewTemplateFileParser() TemplateFileParser { return TemplateFileParser{} }
 type TemplateFileParser struct {
 }
 
-func (p TemplateFileParser) asImportArray(parts []interface{}) (result interface{}, ok bool) {
-	if len(parts) == 0 {
-		return []Import{}, true
-	}
-	return parts[0].([]Import), true
-}
-
-func (p TemplateFileParser) asTemplateArray(parts []interface{}) (result interface{}, ok bool) {
-	if len(parts) == 0 {
-		return []Template{}, true
-	}
-	return parts[0].([]Template), true
-}
-
 func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 	var tf TemplateFile
 	from := NewPositionFromInput(pi)
@@ -137,34 +127,59 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 
 	// Optional imports.
 	// {% import "strings" %}
-	ipr := parse.Many(p.asImportArray, 0, -1, newImportParser().Parse)(pi)
-	if ipr.Error != nil {
-		return ipr
-	}
-	tf.Imports = ipr.Item.([]Import)
+	ip := newImportParser()
+	for {
+		ipr := ip.Parse(pi)
+		if ipr.Error != nil {
+			return ipr
+		}
+		if !ipr.Success {
+			break
+		}
+		tf.Imports = append(tf.Imports, ipr.Item.(Import))
 
-	// Optional whitespace.
-	parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+		// Eat optional whitespace.
+		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+	}
 
 	// Optional templates.
 	// {% templ Name(p Parameter) %}
-	tr := parse.Optional(p.asTemplateArray,
-		newTemplateParser().Parse,
-	)(pi)
-	if tr.Error != nil {
-		return tr
+	tp := newTemplateParser()
+	for {
+		tpr := tp.Parse(pi)
+		if tpr.Error != nil && tpr.Error != io.EOF {
+			return tpr
+		}
+		if !tpr.Success {
+			break
+		}
+		tf.Templates = append(tf.Templates, tpr.Item.(Template))
+
+		// Eat optional whitespace.
+		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
 	}
-	tf.Templates = tr.Item.([]Template)
 
 	// Success.
 	return parse.Success("template file", tf, nil)
 }
 
-func ParseString(template string) (TemplateFile, *SourceMap, error) {
-	srl := NewSourceMap()
+func Parse(fileName string) (TemplateFile, error) {
+	f, err := os.Open(fileName)
+	if err != nil {
+		return TemplateFile{}, err
+	}
+	reader := bufio.NewReader(f)
+	tfr := NewTemplateFileParser().Parse(input.New(reader))
+	if tfr.Error != nil {
+		return TemplateFile{}, tfr.Error
+	}
+	return tfr.Item.(TemplateFile), nil
+}
+
+func ParseString(template string) (TemplateFile, error) {
 	tfr := NewTemplateFileParser().Parse(input.NewFromString(template))
 	if tfr.Error != nil {
-		return TemplateFile{}, srl, tfr.Error
+		return TemplateFile{}, tfr.Error
 	}
-	return tfr.Item.(TemplateFile), srl, nil
+	return tfr.Item.(TemplateFile), nil
 }

@@ -18,7 +18,7 @@ func TestTemplateParser(t *testing.T) {
 		{
 			name: "template: no parameters",
 			input: `{% templ Name() %}
-{% endtmpl %}`,
+{% endtempl %}`,
 			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
@@ -57,7 +57,7 @@ func TestTemplateParser(t *testing.T) {
 		{
 			name: "template: single parameter",
 			input: `{% templ Name(p Parameter) %}
-{% endtmpl %}`,
+{% endtempl %}`,
 			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
@@ -97,7 +97,7 @@ func TestTemplateParser(t *testing.T) {
 			name: "template: containing element",
 			input: `{% templ Name(p Parameter) %}
 <span>{%= "span content" %}</span>
-{% endtmpl %}`,
+{% endtempl %}`,
 			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
@@ -169,7 +169,7 @@ func TestTemplateParser(t *testing.T) {
 	{%= "span content" %}
   </span>
 </div>
-{% endtmpl %}`,
+{% endtempl %}`,
 			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
@@ -266,7 +266,7 @@ func TestTemplateParser(t *testing.T) {
 			{%= "span content" %}
 		</span>
 	{% endif %}
-{% endtmpl %}`,
+{% endtempl %}`,
 			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
