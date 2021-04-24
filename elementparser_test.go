@@ -275,6 +275,14 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "element: empty",
+			input: `<div></div>`,
+			expected: Element{
+				Name:       "div",
+				Attributes: []Attribute{},
+			},
+		},
+		{
 			name:  "element: containing string expression",
 			input: `<div>{%= "test" %}</div>`,
 			expected: Element{

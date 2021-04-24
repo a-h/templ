@@ -71,14 +71,13 @@ func (p templateNodeParser) asTemplateNodeArray(parts []interface{}) (result int
 }
 
 func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
-	//TODO: Replace this to give better error messages.
 	return parse.AtLeast(p.asTemplateNodeArray, 0, parse.Any(
-		newElementParser().Parse, // <a>, <br/> etc.
-		whitespaceParser,
+		newElementParser().Parse,                // <a>, <br/> etc.
 		newStringExpressionParser().Parse,       // {%= strings.ToUpper("abc") %}
 		newIfExpressionParser().Parse,           // if {}
 		newForExpressionParser().Parse,          // for {}
 		newCallTemplateExpressionParser().Parse, // {% call TemplateName(a, b, c) %}
+		whitespaceParser,
 	))(pi)
 }
 
