@@ -16,6 +16,10 @@
 {% for i, v := range p.Addresses %}
 	{% call Address(v) %}
 {% endfor %}
+
+{% if p.IsAdmin() %}
+	<h1>{%= "Admin" %}</h1>
+{% endif %}
 {% endtempl %}
 
 {% templ Person2(p Person) %}

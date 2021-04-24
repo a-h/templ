@@ -191,12 +191,43 @@ func (g *generator) writeNode(node templ.Node) error {
 		g.writeForExpression(n)
 	case templ.CallTemplateExpression:
 		g.writeCallTemplateExpression(n)
+	case templ.IfExpression:
+		g.writeIfExpression(n)
 	default:
 		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
 	}
 
 	//TODO: SwitchExpression.
-	//TODO: IfExpression
+	return nil
+}
+
+func (g *generator) writeIfExpression(n templ.IfExpression) error {
+	var r templ.Range
+	var err error
+	// if
+	if _, err = g.w.Write(`if `); err != nil {
+		return err
+	}
+	// x == y
+	if r, err = g.w.Write(n.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(n.Expression, r)
+	// Then.
+	// {
+	if _, err = g.w.Write(`{ ` + "\n"); err != nil {
+		return err
+	}
+	g.writeNodes(n.Then)
+	// } else {
+	if _, err = g.w.Write(`} else {` + "\n"); err != nil {
+		return err
+	}
+	g.writeNodes(n.Else)
+	// }
+	if _, err = g.w.Write(`}` + "\n"); err != nil {
+		return err
+	}
 	return nil
 }
 

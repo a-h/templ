@@ -50,6 +50,18 @@ io.WriteString(w, `
 `)
 }
 io.WriteString(w, `
+
+`)
+if p.IsAdmin(){ 
+io.WriteString(w, `	`)
+io.WriteString(w, "<h1>")
+io.WriteString(w, html.EscapeString("Admin"))
+io.WriteString(w, "</h1>")
+io.WriteString(w, `
+`)
+} else {
+}
+io.WriteString(w, `
 `)
 return nil
 }
