@@ -1,7 +1,10 @@
 package generator
 
 import (
+	"fmt"
+	"html"
 	"io"
+	"reflect"
 
 	"github.com/a-h/templ"
 )
@@ -149,7 +152,7 @@ func (g *generator) writeTemplate(t templ.Template) error {
 	}
 	g.sourceMap.Add(t.Parameters, r)
 	// ) error {
-	if _, err = g.w.Write(") {\n"); err != nil {
+	if _, err = g.w.Write(") error {\n"); err != nil {
 		return err
 	}
 	// Write out the nodes.
@@ -178,15 +181,96 @@ func (g *generator) writeNodes(nodes []templ.Node) error {
 
 func (g *generator) writeNode(node templ.Node) error {
 	switch n := node.(type) {
+	case templ.Element:
+		g.writeElement(n)
+	case templ.Whitespace:
+		g.writeWhitespace(n)
 	case templ.StringExpression:
 		g.writeStringExpression(n)
+	default:
+		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
 	}
 
-	//TODO: Whitespace.
-	//TODO: Element.
 	//TODO: CallTemplateExpression.
 	//TODO: SwitchExpression.
 	//TODO: ForExpression.
+	return nil
+}
+
+func (g *generator) writeElement(n templ.Element) error {
+	var r templ.Range
+	var err error
+	// Attributes.
+	if len(n.Attributes) == 0 {
+		// <div>
+		if _, err = g.w.Write(fmt.Sprintf(`io.WriteString(w, "<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
+			return err
+		}
+	} else {
+		// <div
+		if _, err = g.w.Write(fmt.Sprintf(`io.WriteString(w, "<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
+			return err
+		}
+		for i := 0; i < len(n.Attributes); i++ {
+			switch attr := n.Attributes[i].(type) {
+			case templ.ConstantAttribute:
+				name := html.EscapeString(attr.Name)
+				value := html.EscapeString(attr.Value)
+				if _, err = g.w.Write(fmt.Sprintf(`io.WriteString(w, " %s=\"%s\"")`+"\n", name, value)); err != nil {
+					return err
+				}
+			case templ.ExpressionAttribute:
+				name := html.EscapeString(attr.Name)
+				// Name
+				if _, err = g.w.Write(fmt.Sprintf(`io.WriteString(w, " %s=")`+"\n", name)); err != nil {
+					return err
+				}
+				// Value.
+				// io.WriteString(w, html.EscapeString(
+				if _, err = g.w.Write("io.WriteString(w, html.EscapeString("); err != nil {
+					return err
+				}
+				// p.Name()
+				if r, err = g.w.Write(attr.Value.Expression.Value); err != nil {
+					return err
+				}
+				g.sourceMap.Add(attr.Value.Expression, r)
+				// ))
+				if _, err = g.w.Write("))\n"); err != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("unknown attribute type %s", reflect.TypeOf(n.Attributes[i]))
+			}
+		}
+		// >
+		if _, err = g.w.Write(`io.WriteString(w, ">")` + "\n"); err != nil {
+			return err
+		}
+	}
+	// Children.
+	g.writeNodes(n.Children)
+	// </div>
+	if _, err = g.w.Write(fmt.Sprintf(`io.WriteString(w, "</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) writeWhitespace(n templ.Whitespace) error {
+	var err error
+	// io.WriteString(w, `
+	if _, err = g.w.Write("io.WriteString(w, `"); err != nil {
+		return err
+	}
+	// <spaces>
+	if _, err = g.w.Write(n.Value); err != nil {
+		return err
+	}
+	// `)
+	if _, err = g.w.Write("`)\n"); err != nil {
+		return err
+	}
 	return nil
 }
 
