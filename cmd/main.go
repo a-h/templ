@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -83,10 +84,21 @@ func compileCmd(args []string) {
 			fmt.Printf("  error compiling: %v\n", err)
 			continue
 		}
-		//TODO: Use the sourcemap to run the language server.
-		_, err = generator.Generate(t, w)
+		sm, err := generator.Generate(t, w)
 		if err != nil {
 			fmt.Printf("  error compiling: %v\n", err)
+			continue
+		}
+		targetSourceMapFileName := strings.TrimSuffix(sourceFileName, ".templ") + "_sourcemap.json"
+		smFile, err := os.Create(targetSourceMapFileName)
+		if err != nil {
+			fmt.Printf("  error creating sourcemap file: %v\n", err)
+			continue
+		}
+		d := json.NewEncoder(smFile)
+		err = d.Encode(sm)
+		if err != nil {
+			fmt.Printf("   error writing sourcemap: %v\n", err)
 			continue
 		}
 		fmt.Printf("  compiled in %s\n", time.Now().Sub(templateStart))
