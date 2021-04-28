@@ -10,38 +10,19 @@
 	<div>{%= addr.Address4 %}</div>
 {% endtempl %}
 
-{% templ RenderPerson(p Person) %}
-<div style="font-weight: bold" id={%= p.ID %}>{%= p.Name() %}</div>
-
-{% for i, v := range p.Addresses %}
-	{% call Address(v) %}
-{% endfor %}
-
-{% if p.IsAdmin() %}
-	<h1>{%= "Admin" %}</h1>
-{% endif %}
-{% endtempl %}
-
-{% templ RenderPerson2(p Person) %}
+{% templ Render(p Person) %}
    <div>
      <div>{%= p.Name() %}</div>
      <a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
      <div>
-         {% call Other(p) %}
-         {% if p.Type == "test" && p.thing %}
-     	<span>{ p.type }</span>
+         {% if p.Type == "test" %}
+            <span>{%= "Test user" %}</span>
          {% else %}
-     	<span>Not test</span>
+	    <span>{%= "Not test user" %}</span>
          {% endif %}
-         {% switch p.Type %}
-            {% case "Something" %}
-             <h1>Something</h1>
-            {% end case %}
-         {% endswitch %}
-         {% for i, v := range p.Addresses %}
+         {% for _, v := range p.Addresses %}
             {% call Address(v) %}
          {% endfor %}
-         {%= Complex(TypeName{Field: p.PhoneNumber}) %}
      </div>
    </div>
 {% endtempl %}

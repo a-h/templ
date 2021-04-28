@@ -122,7 +122,7 @@ func getTemplates(srcPath string) (fileNames []string, err error) {
 }
 
 func lspCmd(args []string) {
-	cmd := flag.NewFlagSet("init", flag.ExitOnError)
+	cmd := flag.NewFlagSet("lsp", flag.ExitOnError)
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {

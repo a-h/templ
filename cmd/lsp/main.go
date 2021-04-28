@@ -34,7 +34,7 @@ func Run(args []string, stdout io.Writer) error {
 		<-signalChan // second signal, hard exit
 		os.Exit(exitCodeInterrupt)
 	}()
-	return run(ctx, os.Args)
+	return run(ctx, args)
 }
 
 type rpcLogger struct {
