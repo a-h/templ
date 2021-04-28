@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/a-h/templ"
+	"github.com/a-h/templ/cmd/lsp"
 	"github.com/a-h/templ/generator"
 )
 
@@ -129,4 +130,9 @@ func lspCmd(args []string) {
 		return
 	}
 	//TODO: Run the language server.
+	err = lsp.Run(args, os.Stdout)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }

@@ -1,0 +1,12 @@
+{
+  "capabilities": {
+    "textDocumentSync": 2,
+    "hoverProvider": true,
+    "signatureHelpProvider": { "triggerCharacters": ["(", ","] },
+    "definitionProvider": true,
+    "typeDefinitionProvider": true,
+    "referencesProvider": true,
+    "documentSymbolProvider": true,
+    "implementationProvider": true
+  }
+}
