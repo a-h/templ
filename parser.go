@@ -25,6 +25,7 @@ func asWhitespace(parts []interface{}) (result interface{}, ok bool) {
 }
 
 var whitespaceParser = parse.AtLeast(asWhitespace, 1, parse.RuneInRanges(unicode.White_Space))
+var optionalWhitespaceParser = parse.AtLeast(asWhitespace, 0, parse.RuneInRanges(unicode.White_Space))
 
 // Template
 
@@ -54,33 +55,6 @@ func (p templateParser) Parse(pi parse.Input) parse.Result {
 	)(pi)
 }
 
-// Template node (element, call, if, switch, for, whitespace etc.)
-func newTemplateNodeParser() templateNodeParser {
-	return templateNodeParser{}
-}
-
-type templateNodeParser struct {
-}
-
-func (p templateNodeParser) asTemplateNodeArray(parts []interface{}) (result interface{}, ok bool) {
-	op := make([]Node, len(parts))
-	for i := 0; i < len(parts); i++ {
-		op[i] = parts[i].(Node)
-	}
-	return op, true
-}
-
-func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
-	return parse.AtLeast(p.asTemplateNodeArray, 0, parse.Any(
-		newElementParser().Parse,                // <a>, <br/> etc.
-		newStringExpressionParser().Parse,       // {%= strings.ToUpper("abc") %}
-		newIfExpressionParser().Parse,           // if {}
-		newForExpressionParser().Parse,          // for {}
-		newCallTemplateExpressionParser().Parse, // {% call TemplateName(a, b, c) %}
-		whitespaceParser,
-	))(pi)
-}
-
 // Parse error.
 func newParseError(msg string, from Position, to Position) parseError {
 	return parseError{
@@ -97,7 +71,7 @@ type parseError struct {
 }
 
 func (pe parseError) Error() string {
-	return fmt.Sprintf("%v from %v to %v", pe.Message, pe.From, pe.To)
+	return fmt.Sprintf("%v at %v", pe.Message, pe.From)
 }
 
 // TemplateFile.

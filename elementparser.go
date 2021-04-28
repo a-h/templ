@@ -179,7 +179,7 @@ func (p elementOpenCloseParser) Parse(pi parse.Input) parse.Result {
 
 	// Check the open tag.
 	otr := newElementOpenTagParser().Parse(pi)
-	if !otr.Success {
+	if otr.Error != nil || !otr.Success {
 		return otr
 	}
 	ot := otr.Item.(elementOpenTag)
@@ -190,7 +190,10 @@ func (p elementOpenCloseParser) Parse(pi parse.Input) parse.Result {
 	from := NewPositionFromInput(pi)
 	tnpr := newTemplateNodeParser().Parse(pi)
 	if !tnpr.Success {
-		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("element: element node parsing failed: %v", tnpr.Error), from, NewPositionFromInput(pi)))
+		if _, isParseError := tnpr.Error.(parseError); isParseError {
+			return tnpr
+		}
+		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("<%s>: %v", r.Name, tnpr.Error), from, NewPositionFromInput(pi)))
 	}
 	if arr, isArray := tnpr.Item.([]Node); isArray {
 		r.Children = append(r.Children, arr...)
@@ -199,10 +202,10 @@ func (p elementOpenCloseParser) Parse(pi parse.Input) parse.Result {
 	// Close tag.
 	ectpr := elementCloseTagParser(pi)
 	if !ectpr.Success {
-		return parse.Failure("elementOpenCloseParser", newParseError("element: missing end tag", from, NewPositionFromInput(pi)))
+		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("<%s>: expected end tag not present or invalid tag contents", r.Name), from, NewPositionFromInput(pi)))
 	}
 	if ct := ectpr.Item.(elementCloseTag); ct.Name != r.Name {
-		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("element: mismatched end tag, expected '</%s>', got '</%s>'", r.Name, ct.Name), from, NewPositionFromInput(pi)))
+		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("<%s>: mismatched end tag, expected '</%s>', got '</%s>'", r.Name, r.Name, ct.Name), from, NewPositionFromInput(pi)))
 	}
 
 	return parse.Success("elementOpenCloseParser", r, nil)

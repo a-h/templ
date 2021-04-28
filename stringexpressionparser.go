@@ -1,6 +1,7 @@
 package templ
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/a-h/lexical/parse"
@@ -25,7 +26,7 @@ func (p stringExpressionParser) Parse(pi parse.Input) parse.Result {
 	from := NewPositionFromInput(pi)
 	pr := parse.StringUntil(tagEnd)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+		return parse.Failure("stringExpressionParser", fmt.Errorf("stringExpressionParser: failed to read until tag end: %w", pr.Error))
 	}
 	// If there's no tag end, the string expression parser wasn't terminated.
 	if !pr.Success {
@@ -40,7 +41,7 @@ func (p stringExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat the tag end.
 	if te := tagEnd(pi); !te.Success {
-		return te
+		return parse.Failure("stringExpressionParser", newParseError("could not terminate string expression", from, NewPositionFromInput(pi)))
 	}
 
 	return parse.Success("stringExpressionParser", r, nil)

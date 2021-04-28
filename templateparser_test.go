@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/a-h/lexical/input"
-	"github.com/a-h/lexical/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -12,14 +11,12 @@ func TestTemplateParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		parser   parse.Function
-		expected interface{}
+		expected Template
 	}{
 		{
 			name: "template: no parameters",
 			input: `{% templ Name() %}
 {% endtempl %}`,
-			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
@@ -58,7 +55,6 @@ func TestTemplateParser(t *testing.T) {
 			name: "template: single parameter",
 			input: `{% templ Name(p Parameter) %}
 {% endtempl %}`,
-			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
@@ -98,7 +94,6 @@ func TestTemplateParser(t *testing.T) {
 			input: `{% templ Name(p Parameter) %}
 <span>{%= "span content" %}</span>
 {% endtempl %}`,
-			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
@@ -170,7 +165,6 @@ func TestTemplateParser(t *testing.T) {
   </span>
 </div>
 {% endtempl %}`,
-			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
@@ -267,7 +261,6 @@ func TestTemplateParser(t *testing.T) {
 		</span>
 	{% endif %}
 {% endtempl %}`,
-			parser: newTemplateParser().Parse,
 			expected: Template{
 				Name: Expression{
 					Value: "Name",
@@ -361,7 +354,7 @@ func TestTemplateParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
-			result := tt.parser(input)
+			result := newTemplateParser().Parse(input)
 			if result.Error != nil {
 				t.Fatalf("parser error: %v", result.Error)
 			}

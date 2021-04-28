@@ -6,8 +6,6 @@ import (
 	"github.com/a-h/lexical/parse"
 )
 
-//TODO: Add comment line?
-
 // {% package templ %}
 //
 // {% import "strings" %}

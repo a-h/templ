@@ -337,7 +337,7 @@ func TestElementParserErrors(t *testing.T) {
 		{
 			name:  "element: mismatched end tag",
 			input: `<a></b>`,
-			expected: newParseError("element: mismatched end tag, expected '</a>', got '</b>'",
+			expected: newParseError("<a>: mismatched end tag, expected '</a>', got '</b>'",
 				Position{
 					Index: 3,
 					Line:  1,

@@ -86,3 +86,86 @@ func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	return parse.Success("templateExpressionParser", r, nil)
 }
+
+// Template node (element, call, if, switch, for, whitespace etc.)
+func newTemplateNodeParser() templateNodeParser {
+	return templateNodeParser{}
+}
+
+type templateNodeParser struct {
+}
+
+func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
+	op := make([]Node, 0)
+	for {
+		var pr parse.Result
+
+		// Try for an element.
+		// <a>, <br/> etc.
+		pr = newElementParser().Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
+		// Try for a string expression.
+		// {%= strings.ToUpper("abc") %}
+		pr = newStringExpressionParser().Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
+		// Try for an if expression.
+		// if {}
+		pr = newIfExpressionParser().Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
+		// Try for a for expression.
+		// for {}
+		pr = newForExpressionParser().Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
+		// Try for a call template expression.
+		// {% call TemplateName(a, b, c) %}
+		pr = newCallTemplateExpressionParser().Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
+		// Eat any whitespace.
+		pr = optionalWhitespaceParser(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success && len(pr.Item.(Whitespace).Value) > 0 {
+			op = append(op, pr.Item.(Whitespace))
+			continue
+		}
+
+		break
+	}
+	return parse.Success("templateNodeParser", op, nil)
+}
