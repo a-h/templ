@@ -1,1 +1,3 @@
 cmd/example/*.go
+dist
+cmd/templ

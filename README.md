@@ -29,7 +29,6 @@ The project is looking for help with:
 * Adding an integration test suite that, in each subdirectory, is an templ file, a `main.go` file that will render it, and an exected output file. The integration test will compile the `templ` files, run the `main.go` file and compare the expected vs the actual output.
 * Adding features to the Language Server implementation, it's just at "Hello World!" stage at the moment. It needs to be able to do definition (should be easiest, because the `gopls` CLI supports it) and then autocomplete.
 * Writing a VS Code plugin that uses the LSP support.
-* Packaging the compiler using `goreleaser` (I've done this on several other projects, just need to copy and modify the config).
 * Examples and testing of the tools.
 * Adding a `hot` option to the compiler that recompiles the `*.templ` files when they change on disk. This could be achieved by documenting and making it easy to use external tools such as `ag`, ripgrep (`rg`) and `entr` in the short term.
 * Writing documentation of the components.
@@ -234,6 +233,35 @@ Neovim 5 supports Language Servers directly. For the moment, I'm using https://g
 ## vscode
 
 Yes please, talk to me about it!
+
+# Development
+
+## Local builds
+
+To build a local version you can use the `go build` tool:
+
+```
+cd cmd
+go build -o templ
+```
+
+## Testing
+
+Unit tests use the `go test` tool:
+
+```
+go test ./...
+```
+
+## Release testing
+
+This project uses https://github.com/goreleaser/goreleaser to build the command line binary and deploy it to Github. You will need to install this to test releases.
+
+```
+make build-snapshot
+```
+
+The binaries are created by me and signed by my GPG key. You can verify with my key https://adrianhesketh.com/a-h.gpg
 
 # Inspiration
 
