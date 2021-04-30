@@ -1,3 +1,6 @@
+install-snapshot:
+	cd cmd && go build -o ~/bin/templ
+
 build-snapshot:
 	goreleaser build --snapshot --rm-dist
 

@@ -65,7 +65,7 @@ Please get in touch if you're interested in building a feature as I don't want p
 	    <span>{%= "Not test user" %}</span>
          {% endif %}
          {% for _, v := range p.Addresses %}
-            {% call Address(v) %}
+            {% call RenderAddress(v) %}
          {% endfor %}
      </div>
    </div>
@@ -224,7 +224,8 @@ Neovim 5 supports Language Servers directly. For the moment, I'm using https://g
 {
   "languageserver": {
     "templ": {
-      "command": "templ lsp",
+      "command": "templ",
+      "args": ["lsp"],
       "filetypes": ["templ"]
     }
 }
