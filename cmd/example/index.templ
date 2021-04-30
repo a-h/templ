@@ -1,7 +1,6 @@
 {% package templ %}
 
 {% import "strings" %}
-{% import strs "strings" %}
 
 {% templ RenderAddress(addr Address) %}
 	<div>{%= addr.Address1 %}</div>
@@ -21,7 +20,7 @@
 	    <span>{%= "Not test user" %}</span>
          {% endif %}
          {% for _, v := range p.Addresses %}
-            {% call Address(v) %}
+            {% call RenderAddress(v) %}
          {% endfor %}
      </div>
    </div>
