@@ -10,29 +10,32 @@ import (
 	"go.uber.org/zap"
 )
 
-type RPCHandler struct {
-	log             *zap.Logger
-	onServerRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request)
-}
-
-func (h RPCHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
-	h.onServerRequest(ctx, conn, r)
-}
-
-func NewGopls(zapLogger *zap.Logger, onServerRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request)) (conn *jsonrpc2.Conn, err error) {
+// NewGopls starts gopls and opens up a jsonrpc2 connection to it.
+func NewGopls(zapLogger *zap.Logger, onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request)) (conn *jsonrpc2.Conn, err error) {
 	//TODO: Configure the log location.
 	cmd := exec.Command("gopls", "-logfile", "/Users/adrian/github.com/a-h/templ/cmd/lsp/gopls-log.txt", "-rpc.trace")
-	rwc, err := NewProcessReadWriteCloser(zapLogger, cmd)
+	rwc, err := newProcessReadWriteCloser(zapLogger, cmd)
 	if err != nil {
 		return
 	}
 	stream := jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{})
-	handler := RPCHandler{log: zapLogger, onServerRequest: onServerRequest}
+	handler := fromGoplsToClientHandler{onGoplsRequest: onGoplsRequest}
 	conn = jsonrpc2.NewConn(context.Background(), stream, handler)
 	return
 }
 
-func NewProcessReadWriteCloser(zapLogger *zap.Logger, cmd *exec.Cmd) (rwc ProcessReadWriteCloser, err error) {
+// fromGoplsToClientHandler is a jsonrpc2 message handler that proxies the request to a function.
+type fromGoplsToClientHandler struct {
+	onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request)
+}
+
+func (h fromGoplsToClientHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
+	h.onGoplsRequest(ctx, conn, r)
+}
+
+// newProcessReadWriteCloser creates a processReadWriteCloser to allow stdin/stdout to be used as
+// a JSON RPC 2.0 transport.
+func newProcessReadWriteCloser(zapLogger *zap.Logger, cmd *exec.Cmd) (rwc processReadWriteCloser, err error) {
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return
@@ -41,7 +44,7 @@ func NewProcessReadWriteCloser(zapLogger *zap.Logger, cmd *exec.Cmd) (rwc Proces
 	if err != nil {
 		return
 	}
-	rwc = ProcessReadWriteCloser{
+	rwc = processReadWriteCloser{
 		in:  stdin,
 		out: stdout,
 	}
@@ -53,20 +56,20 @@ func NewProcessReadWriteCloser(zapLogger *zap.Logger, cmd *exec.Cmd) (rwc Proces
 	return
 }
 
-type ProcessReadWriteCloser struct {
+type processReadWriteCloser struct {
 	in  io.WriteCloser
 	out io.ReadCloser
 }
 
-func (prwc ProcessReadWriteCloser) Read(p []byte) (n int, err error) {
+func (prwc processReadWriteCloser) Read(p []byte) (n int, err error) {
 	return prwc.out.Read(p)
 }
 
-func (prwc ProcessReadWriteCloser) Write(p []byte) (n int, err error) {
+func (prwc processReadWriteCloser) Write(p []byte) (n int, err error) {
 	return prwc.in.Write(p)
 }
 
-func (prwc ProcessReadWriteCloser) Close() error {
+func (prwc processReadWriteCloser) Close() error {
 	errInClose := prwc.in.Close()
 	errOutClose := prwc.out.Close()
 	if errInClose != nil || errOutClose != nil {

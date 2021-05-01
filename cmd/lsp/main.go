@@ -2,19 +2,15 @@ package lsp
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/signal"
 
+	"github.com/a-h/templ/cmd/lsp/pls"
 	"github.com/sourcegraph/jsonrpc2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-)
-
-const (
-	exitCodeInterrupt = 2
 )
 
 func Run(args []string, stdout io.Writer) error {
@@ -28,22 +24,14 @@ func Run(args []string, stdout io.Writer) error {
 	}()
 	go func() {
 		select {
-		case <-signalChan: // first signal, cancel context
+		case <-signalChan: // First signal, cancel context.
 			cancel()
 		case <-ctx.Done():
 		}
-		<-signalChan // second signal, hard exit
-		os.Exit(exitCodeInterrupt)
+		<-signalChan // Second signal, hard exit.
+		os.Exit(2)
 	}()
 	return run(ctx, args)
-}
-
-type rpcLogger struct {
-	log *zap.Logger
-}
-
-func (l rpcLogger) Printf(format string, v ...interface{}) {
-	l.log.Info(fmt.Sprintf(format, v...))
 }
 
 func run(ctx context.Context, args []string) error {
@@ -59,24 +47,46 @@ func run(ctx context.Context, args []string) error {
 	}
 	defer logger.Sync()
 	logger.Info("Starting up...")
-	handler, err := NewProxy(logger)
+
+	// Create the proxy.
+	proxy := NewProxy(logger)
+
+	// Create the lsp server for the text editor client.
+	clientStream := jsonrpc2.NewBufferedStream(stdrwc{log: logger}, jsonrpc2.VSCodeObjectCodec{})
+	// If detailed logging is required, it can be enabled with:
+	// rpcLogger := jsonrpc2.LogMessages(rpcLogger{log: logger})
+	// conn := jsonrpc2.NewConn(ctx, stream, handler, rpcLogger)
+	client := jsonrpc2.NewConn(ctx, clientStream, proxy)
+
+	// Start gopls and make a client connection to it.
+	gopls, err := pls.NewGopls(logger, proxy.proxyFromGoplsToClient)
 	if err != nil {
 		log.Printf("failed to create gopls handler: %v\n", err)
 		os.Exit(1)
 	}
-	stream := jsonrpc2.NewBufferedStream(stdrwc{log: logger}, jsonrpc2.VSCodeObjectCodec{})
-	//rpcLogger := jsonrpc2.LogMessages(rpcLogger{log: logger})
-	conn := jsonrpc2.NewConn(ctx, stream, handler) //, rpcLogger)
-	handler.client = conn
+
+	// Initialize the proxy.
+	proxy.Init(client, gopls)
+
+	// Close the server and gopls client when we're complete.
 	select {
 	case <-ctx.Done():
 		logger.Info("Signal received")
-		conn.Close()
-	case <-conn.DisconnectNotify():
+		client.Close()
+		gopls.Close()
+	case <-client.DisconnectNotify():
 		logger.Info("Client disconnected")
 	}
 	logger.Info("Stopped...")
 	return nil
+}
+
+type rpcLogger struct {
+	log *zap.Logger
+}
+
+func (l rpcLogger) Printf(format string, v ...interface{}) {
+	l.log.Sugar().Infof(format, v...)
 }
 
 type stdrwc struct {

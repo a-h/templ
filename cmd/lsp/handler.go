@@ -3,7 +3,6 @@ package lsp
 import (
 	"context"
 
-	"github.com/a-h/templ/cmd/lsp/pls"
 	"github.com/sourcegraph/jsonrpc2"
 	"go.uber.org/zap"
 )
@@ -14,12 +13,18 @@ type Proxy struct {
 	client *jsonrpc2.Conn
 }
 
-func NewProxy(logger *zap.Logger) (h *Proxy, err error) {
-	h = &Proxy{
+// NewProxy returns a new proxy to send messages from the client to and from gopls,
+// however, init needs to be called before it is usable.
+func NewProxy(logger *zap.Logger) (h *Proxy) {
+	return &Proxy{
 		log: logger,
 	}
-	h.gopls, err = pls.NewGopls(logger, h.proxyFromGoplsToClient)
-	return h, err
+}
+
+// Init the proxy.
+func (h *Proxy) Init(client, gopls *jsonrpc2.Conn) {
+	h.client = client
+	h.gopls = gopls
 }
 
 func (h *Proxy) proxyFromGoplsToClient(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
