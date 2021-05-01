@@ -1,4 +1,7 @@
 install-snapshot:
+	# Clear logs.
+	rm cmd/lsp/*.txt
+	# Install the latest version.
 	cd cmd && go build -o ~/bin/templ
 
 build-snapshot:

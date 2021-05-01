@@ -66,7 +66,7 @@ func (h RPCHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2
 }
 
 func runRPC() (s string, err error) {
-	cmd := exec.Command("gopls", "-logfile", "/Users/adrian/github.com/a-h/templ/cmd/lsp/proxy/mainrpc.txt", "-rpc.trace")
+	cmd := exec.Command("templ", "lsp")
 	rwc, err := NewProcessReadWriteCloser(cmd)
 	if err != nil {
 		return
@@ -106,6 +106,18 @@ func runRPC() (s string, err error) {
 		fmt.Println("<-- Response:", string(jd))
 	}
 	return "", rwc.Error
+}
+
+func New() (conn *jsonrpc2.Conn, err error) {
+	//TODO: Be able to configure logging.
+	cmd := exec.Command("gopls", "-logfile", "/Users/adrian/github.com/a-h/templ/cmd/lsp/proxy/main.txt", "-rpc.trace")
+	rwc, err := NewProcessReadWriteCloser(cmd)
+	if err != nil {
+		return
+	}
+	stream := jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{})
+	conn = jsonrpc2.NewConn(context.Background(), stream, RPCHandler{})
+	return conn, err
 }
 
 func NewProcessReadWriteCloser(cmd *exec.Cmd) (rwc ProcessReadWriteCloser, err error) {

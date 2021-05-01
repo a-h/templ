@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -38,15 +39,16 @@ func Run(args []string, stdout io.Writer) error {
 }
 
 type rpcLogger struct {
-	zapLogger *zap.Logger
+	log *zap.Logger
 }
 
 func (l rpcLogger) Printf(format string, v ...interface{}) {
-	l.zapLogger.Info(fmt.Sprintf(format, v...))
+	l.log.Info(fmt.Sprintf(format, v...))
 }
 
 func run(ctx context.Context, args []string) error {
 	cfg := zap.NewProductionConfig()
+	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 	cfg.OutputPaths = []string{
 		"/Users/adrian/github.com/a-h/templ/cmd/lsp/log.txt",
 	}
@@ -57,11 +59,15 @@ func run(ctx context.Context, args []string) error {
 	}
 	defer logger.Sync()
 	logger.Info("Starting up...")
-	handler := NewHandler(logger)
-
-	stream := jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{})
-	rpcLogger := jsonrpc2.LogMessages(rpcLogger{zapLogger: logger})
-	conn := jsonrpc2.NewConn(ctx, stream, handler, rpcLogger)
+	handler, err := NewProxy(logger)
+	if err != nil {
+		log.Printf("failed to create gopls handler: %v\n", err)
+		os.Exit(1)
+	}
+	stream := jsonrpc2.NewBufferedStream(stdrwc{log: logger}, jsonrpc2.VSCodeObjectCodec{})
+	//rpcLogger := jsonrpc2.LogMessages(rpcLogger{log: logger})
+	conn := jsonrpc2.NewConn(ctx, stream, handler) //, rpcLogger)
+	handler.client = conn
 	select {
 	case <-ctx.Done():
 		logger.Info("Signal received")
@@ -69,24 +75,31 @@ func run(ctx context.Context, args []string) error {
 	case <-conn.DisconnectNotify():
 		logger.Info("Client disconnected")
 	}
-
 	logger.Info("Stopped...")
 	return nil
 }
 
-type stdrwc struct{}
+type stdrwc struct {
+	log *zap.Logger
+}
 
-func (stdrwc) Read(p []byte) (int, error) {
+func (s stdrwc) Read(p []byte) (int, error) {
 	return os.Stdin.Read(p)
 }
 
-func (stdrwc) Write(p []byte) (int, error) {
+func (s stdrwc) Write(p []byte) (int, error) {
 	return os.Stdout.Write(p)
 }
 
-func (stdrwc) Close() error {
+func (s stdrwc) Close() error {
+	s.log.Info("closing connection from LSP to editor")
 	if err := os.Stdin.Close(); err != nil {
+		s.log.Error("error closing stdin", zap.Error(err))
 		return err
 	}
-	return os.Stdout.Close()
+	if err := os.Stdout.Close(); err != nil {
+		s.log.Error("error closing stdout", zap.Error(err))
+		return err
+	}
+	return nil
 }
