@@ -11,26 +11,26 @@ import (
 // {% import "strings" %}
 // {% import strs "strings" %}
 //
-// {% templ Person(p Person) %}
+// {% templ RenderAddress(addr Address) %}
+// 	<div>{%= addr.Address1 %}</div>
+// 	<div>{%= addr.Address2 %}</div>
+// 	<div>{%= addr.Address3 %}</div>
+// 	<div>{%= addr.Address4 %}</div>
+// {% endtempl %}
+//
+// {% templ Render(p Person) %}
 //    <div>
 //      <div>{%= p.Name() %}</div>
 //      <a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
 //      <div>
-//          {% call Other(p) %}
-//          {% if p.Type == "test" && p.thing %}
-//      	<span>{ p.type }</span>
+//          {% if p.Type == "test" %}
+//             <span>{%= "Test user" %}</span>
 //          {% else %}
-//      	<span>Not test</span>
+// 	    <span>{%= "Not test user" %}</span>
 //          {% endif %}
-//          {% switch p.Type %}
-//             {% case "Something" %}
-//              <h1>Something</h1>
-//             {% end case %}
-//          {% endswitch %}
-//          {% for i, v := range p.Addresses %}
-//             {% call Address(v) %}
+//          {% for _, v := range p.Addresses %}
+//             {% call RenderAddress(v) %}
 //          {% endfor %}
-//          {%= Complex(TypeName{Field: p.PhoneNumber}) %}
 //      </div>
 //    </div>
 // {% endtempl %}
@@ -56,6 +56,15 @@ func NewPosition() Position {
 	}
 }
 
+// NewPositionFromValues initialises a position.
+func NewPositionFromValues(index int64, line, col int) Position {
+	return Position{
+		Index: index,
+		Line:  line,
+		Col:   col,
+	}
+}
+
 // NewPositionFromInput creates a position from a parse input.
 func NewPositionFromInput(pi parse.Input) Position {
 	l, c := pi.Position()
@@ -74,6 +83,14 @@ func NewExpression(value string, from, to Position) Expression {
 			From: from,
 			To:   to,
 		},
+	}
+}
+
+// NewRange creates a range.
+func NewRange(from, to Position) Range {
+	return Range{
+		From: from,
+		To:   to,
 	}
 }
 
