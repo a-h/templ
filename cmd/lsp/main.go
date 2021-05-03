@@ -2,7 +2,6 @@ package lsp
 
 import (
 	"context"
-	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -13,7 +12,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func Run(args []string, stdout io.Writer) error {
+func Run(args []string) error {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	signalChan := make(chan os.Signal, 1)
