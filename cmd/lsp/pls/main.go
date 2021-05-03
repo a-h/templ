@@ -10,10 +10,27 @@ import (
 	"go.uber.org/zap"
 )
 
+// Options for the gopls client.
+type Options struct {
+	Log      string
+	RPCTrace bool
+}
+
+// AsArguments converts the options into command line arguments for gopls.
+func (opts Options) AsArguments() []string {
+	var args []string
+	if opts.Log != "" {
+		args = append(args, "-logfile", opts.Log)
+	}
+	if opts.RPCTrace {
+		args = append(args, "-rpc.trace")
+	}
+	return args
+}
+
 // NewGopls starts gopls and opens up a jsonrpc2 connection to it.
-func NewGopls(zapLogger *zap.Logger, onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request)) (conn *jsonrpc2.Conn, err error) {
-	//TODO: Configure the log location.
-	cmd := exec.Command("gopls", "-logfile", "/Users/adrian/github.com/a-h/templ/cmd/lsp/gopls-log.txt", "-rpc.trace")
+func NewGopls(zapLogger *zap.Logger, onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request), opts Options) (conn *jsonrpc2.Conn, err error) {
+	cmd := exec.Command("gopls", opts.AsArguments()...)
 	rwc, err := newProcessReadWriteCloser(zapLogger, cmd)
 	if err != nil {
 		return

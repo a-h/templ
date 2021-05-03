@@ -12,7 +12,13 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func Run(args []string) error {
+type Arguments struct {
+	Log           string
+	GoplsLog      string
+	GoplsRPCTrace bool
+}
+
+func Run(args Arguments) error {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	signalChan := make(chan os.Signal, 1)
@@ -33,16 +39,19 @@ func Run(args []string) error {
 	return run(ctx, args)
 }
 
-func run(ctx context.Context, args []string) error {
-	cfg := zap.NewProductionConfig()
-	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-	cfg.OutputPaths = []string{
-		"/Users/adrian/github.com/a-h/templ/cmd/lsp/log.txt",
-	}
-	logger, err := cfg.Build()
-	if err != nil {
-		log.Printf("failed to create logger: %v\n", err)
-		os.Exit(1)
+func run(ctx context.Context, args Arguments) (err error) {
+	logger := zap.NewNop()
+	if args.Log != "" {
+		cfg := zap.NewProductionConfig()
+		cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+		cfg.OutputPaths = []string{
+			args.Log,
+		}
+		logger, err = cfg.Build()
+		if err != nil {
+			log.Printf("failed to create logger: %v\n", err)
+			os.Exit(1)
+		}
 	}
 	defer logger.Sync()
 	logger.Info("Starting up...")
@@ -58,7 +67,10 @@ func run(ctx context.Context, args []string) error {
 	client := jsonrpc2.NewConn(ctx, clientStream, proxy)
 
 	// Start gopls and make a client connection to it.
-	gopls, err := pls.NewGopls(logger, proxy.proxyFromGoplsToClient)
+	gopls, err := pls.NewGopls(logger, proxy.proxyFromGoplsToClient, pls.Options{
+		Log:      args.GoplsLog,
+		RPCTrace: args.GoplsRPCTrace,
+	})
 	if err != nil {
 		log.Printf("failed to create gopls handler: %v\n", err)
 		os.Exit(1)

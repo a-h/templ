@@ -231,6 +231,23 @@ Neovim 5 supports Language Servers directly. For the moment, I'm using https://g
 }
 ```
 
+To add extensive debug information, you can include additional args to the LSP, like this:
+
+```json
+{
+  "languageserver": {
+    "templ": {
+      "command": "templ",
+      "args": ["lsp",
+        "--log", "/Users/adrian/github.com/a-h/templ/cmd/lsp/templ-log.txt", 
+	"--goplsLog", "/Users/adrian/github.com/a-h/templ/cmd/lsp/gopls-log.txt",
+	"--goplsRPCTrace", "true"
+      ],
+      "filetypes": ["templ"]
+    }
+}
+```
+
 ## vscode
 
 Yes please, talk to me about it!

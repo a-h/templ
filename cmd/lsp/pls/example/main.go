@@ -109,7 +109,6 @@ func runRPC() (s string, err error) {
 }
 
 func New() (conn *jsonrpc2.Conn, err error) {
-	//TODO: Be able to configure logging.
 	cmd := exec.Command("gopls", "-logfile", "/Users/adrian/github.com/a-h/templ/cmd/lsp/proxy/main.txt", "-rpc.trace")
 	rwc, err := NewProcessReadWriteCloser(cmd)
 	if err != nil {

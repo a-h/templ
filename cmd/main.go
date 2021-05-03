@@ -61,13 +61,20 @@ func compileCmd(args []string) {
 
 func lspCmd(args []string) {
 	cmd := flag.NewFlagSet("lsp", flag.ExitOnError)
+	log := cmd.String("log", "", "The file to log templ LSP output to, or leave empty to disable logging.")
+	goplsLog := cmd.String("goplsLog", "", "The file to log gopls output, or leave empty to disable logging.")
+	goplsRPCTrace := cmd.Bool("goplsRPCTrace", false, "Set gopls to log input and output messages.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
 		cmd.PrintDefaults()
 		return
 	}
-	err = lsp.Run(args)
+	err = lsp.Run(lsp.Arguments{
+		Log:           *log,
+		GoplsLog:      *goplsLog,
+		GoplsRPCTrace: *goplsRPCTrace,
+	})
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
