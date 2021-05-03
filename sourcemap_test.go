@@ -65,7 +65,7 @@ func TestSourceMapPosition(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actualTarget, ok := tt.data.TargetPositionFromSource(tt.source)
+			actualTarget, _, ok := tt.data.TargetPositionFromSource(tt.source)
 			if tt.expectedOK != ok {
 				t.Errorf("expected ok %v, but got %v", tt.expectedOK, ok)
 				return

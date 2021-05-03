@@ -28,10 +28,10 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 }
 
 // Lookup the target position by using the source position.
-func (sm *SourceMap) TargetPositionFromSource(src Position) (tgt Position, ok bool) {
-	srcTgt, offset, ok := sm.lookupTargetBySourceLineCol(src.Line, src.Col)
+func (sm *SourceMap) TargetPositionFromSource(src Position) (tgt Position, mapping SourceExpressionTo, ok bool) {
+	mapping, offset, ok := sm.lookupTargetBySourceLineCol(src.Line, src.Col)
 	if ok {
-		tgt = srcTgt.Target.From
+		tgt = mapping.Target.From
 		tgt.Col += offset
 	}
 	return
