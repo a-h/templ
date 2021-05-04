@@ -17,18 +17,20 @@ import (
 )
 
 type Proxy struct {
-	log       *zap.Logger
-	gopls     *jsonrpc2.Conn
-	client    *jsonrpc2.Conn
-	fileCache *FileCache
+	log            *zap.Logger
+	gopls          *jsonrpc2.Conn
+	client         *jsonrpc2.Conn
+	fileCache      *fileCache
+	sourceMapCache *sourceMapCache
 }
 
 // NewProxy returns a new proxy to send messages from the client to and from gopls,
 // however, init needs to be called before it is usable.
 func NewProxy(logger *zap.Logger) (p *Proxy) {
 	return &Proxy{
-		log:       logger,
-		fileCache: NewFileCache(),
+		log:            logger,
+		fileCache:      newFileCache(),
+		sourceMapCache: newSourceMapCache(),
 	}
 }
 
@@ -55,7 +57,6 @@ func (p *Proxy) proxyFromGoplsToClient(ctx context.Context, conn *jsonrpc2.Conn,
 			p.log.Error("gopls -> client: call: error", zap.Error(err))
 		}
 		p.log.Info("gopls -> client -> gopls", zap.String("method", r.Method), zap.Any("reply", result))
-		// Reply to gopls.
 		err = conn.Reply(ctx, r.ID, result)
 		if err != nil {
 			p.log.Error("gopls -> client -> gopls: call reply: error", zap.Error(err))
@@ -70,100 +71,133 @@ func (p *Proxy) proxyFromGoplsToClient(ctx context.Context, conn *jsonrpc2.Conn,
 func (p *Proxy) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
 	p.log.Info("client -> gopls", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
 	if r.Notif {
-		//TODO: Log potential errors here.
+		var err error
 		switch r.Method {
 		case "textDocument/didOpen":
 			p.rewriteDidOpenRequest(r)
 		case "textDocument/didChange":
 			p.rewriteDidChangeRequest(r)
 		case "textDocument/didSave":
-			//TODO: Probably just needs the filename adjusting.
+			p.rewriteDidSaveRequest(r)
 		case "textDocument/didClose":
 			p.rewriteDidCloseRequest(r)
 		}
-		err := p.gopls.Notify(ctx, r.Method, &r.Params)
 		if err != nil {
-			p.log.Error("client -> gopls: error proxying to gopls", zap.Error(err))
+			p.log.Error("client -> gopls: error rewriting notification", zap.Error(err))
 			return
 		}
-		p.log.Info("client -> gopls: notification: complete", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
+		err = p.gopls.Notify(ctx, r.Method, &r.Params)
+		if err != nil {
+			p.log.Error("client -> gopls: error proxying notification to gopls", zap.Error(err))
+			return
+		}
+		p.log.Info("client -> gopls: notification complete", zap.String("method", r.Method))
 	} else {
-		//TODO: Log potential errors here.
 		switch r.Method {
 		case "textDocument/completion":
-			p.rewriteCompletionRequest(r)
+			p.proxyCompletion(ctx, conn, r)
+			return
+		default:
+			p.proxyCall(ctx, conn, r)
+			return
 		}
-		var resp interface{}
-		err := p.gopls.Call(ctx, r.Method, &r.Params, &resp)
-		p.log.Info("client -> gopls -> client: reply", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
-		err = conn.Reply(ctx, r.ID, resp)
-		if err != nil {
-			p.log.Info("client -> gopls -> client: error sending response", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
-		}
-		p.log.Info("client -> gopls -> client: complete", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
 	}
 }
 
-func (p *Proxy) rewriteCompletionRequest(r *jsonrpc2.Request) (err error) {
+func (p *Proxy) proxyCall(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
+	var resp interface{}
+	err := p.gopls.Call(ctx, r.Method, &r.Params, &resp)
+	p.log.Info("client -> gopls -> client: reply", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
+	err = conn.Reply(ctx, r.ID, resp)
+	if err != nil {
+		p.log.Info("client -> gopls -> client: error sending response", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
+	}
+	p.log.Info("client -> gopls -> client: complete", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
+}
+
+func (p *Proxy) proxyCompletion(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	// Unmarshal the params.
 	var params lsp.CompletionParams
-	if err = json.Unmarshal(*r.Params, &params); err != nil {
-		return err
+	err := json.Unmarshal(*req.Params, &params)
+	if err != nil {
+		p.log.Error("proxyCompletion: failed to unmarshal request params", zap.Error(err))
 	}
+	// Rewrite the request.
+	err = p.rewriteCompletionRequest(&params)
+	if err != nil {
+		p.log.Error("proxyCompletion: error rewriting request", zap.Error(err))
+	}
+	// Call gopls and get the response.
+	var resp lsp.CompletionList
+	err = p.gopls.Call(ctx, req.Method, &params, &resp)
+	if err != nil {
+		p.log.Error("proxyCompletion: client -> gopls: error sending request", zap.Error(err))
+	}
+	// Rewrite the response.
+	err = p.rewriteCompletionResponse(string(params.TextDocument.URI), &resp)
+	if err != nil {
+		p.log.Error("proxyCompletion: error rewriting response", zap.Error(err))
+	}
+	// Reply to the client.
+	err = conn.Reply(ctx, req.ID, &resp)
+	if err != nil {
+		p.log.Error("proxyCompletion: error sending response", zap.Error(err))
+	}
+	p.log.Info("proxyCompletion: client -> gopls -> client: complete", zap.Any("resp", resp))
+}
+
+func (p *Proxy) rewriteCompletionResponse(uri string, resp *lsp.CompletionList) (err error) {
+	// Get the sourcemap from the cache.
+	uri = strings.TrimSuffix(uri, "_templ.go") + ".templ"
+	sourceMap, ok := p.sourceMapCache.Get(uri)
+	if !ok {
+		return fmt.Errorf("unable to complete because the sourcemap doesn't exist in the cache, has the didOpen notification been sent yet?")
+	}
+	// Rewrite the positions.
+	for i := 0; i < len(resp.Items); i++ {
+		item := resp.Items[i]
+		if item.TextEdit != nil {
+			start, _, ok := sourceMap.SourcePositionFromTarget(item.TextEdit.Range.Start.Line+1, item.TextEdit.Range.Start.Character)
+			if ok {
+				p.log.Info("rewriteCompletionResponse: found new start position", zap.Any("from", item.TextEdit.Range.Start), zap.Any("start", start))
+				item.TextEdit.Range.Start.Line = start.Line - 1
+				item.TextEdit.Range.Start.Character = start.Col + 1
+			}
+			end, _, ok := sourceMap.SourcePositionFromTarget(item.TextEdit.Range.End.Line+1, item.TextEdit.Range.End.Character)
+			if ok {
+				p.log.Info("rewriteCompletionResponse: found new end position", zap.Any("from", item.TextEdit.Range.End), zap.Any("end", end))
+				item.TextEdit.Range.End.Line = end.Line - 1
+				item.TextEdit.Range.End.Character = end.Col + 1
+			}
+		}
+		resp.Items[i] = item
+	}
+	return nil
+}
+
+func (p *Proxy) rewriteCompletionRequest(params *lsp.CompletionParams) (err error) {
 	base, fileName := path.Split(string(params.TextDocument.URI))
 	if !strings.HasSuffix(fileName, ".templ") {
 		return
 	}
-	// Parse the template from the cache.
-	templateText, ok := p.fileCache.Get(string(params.TextDocument.URI))
+	// Get the sourcemap from the cache.
+	sourceMap, ok := p.sourceMapCache.Get(string(params.TextDocument.URI))
 	if !ok {
-		return fmt.Errorf("unable to complete because the document doesn't exist in the cache, has the didOpen notification been sent yet?")
+		return fmt.Errorf("unable to complete because the sourcemap doesn't exist in the cache, has the didOpen notification been sent yet?")
 	}
-	template, err := templ.ParseString(string(templateText))
-	if err != nil {
-		p.log.Warn("rewriteCompletionRequest: failed to parse document", zap.Error(err))
-		return
-	}
-	w := new(strings.Builder)
-	sourceMap, err := generator.Generate(template, w)
-	if err != nil {
-		p.log.Warn("rewriteCompletionRequest: failed to generate Go code", zap.Error(err))
-		return
-	}
-	// Map from the source position to target go position.
-	from := templ.Position{
-		Line: params.Position.Line + 1,
-		Col:  params.Position.Character,
-	}
-	to, mapping, ok := sourceMap.TargetPositionFromSource(from)
+	// Map from the source position to target Go position.
+	to, mapping, ok := sourceMap.TargetPositionFromSource(params.Position.Line+1, params.Position.Character)
 	if ok {
-		sourceLine := getLines(from.Line, from.Line, string(templateText))
-		targetLine := getLines(to.Line, to.Line, w.String())
-		p.log.Info("rewriteCompletionRequest: found position", zap.Any("from", from), zap.Any("to", to), zap.Any("mapping", mapping), zap.String("sourceLine", sourceLine), zap.String("targetLine", targetLine))
+		p.log.Info("rewriteCompletionRequest: found position", zap.Int("fromLine", params.Position.Line+1), zap.Int("fromCol", params.Position.Character), zap.Any("to", to), zap.Any("mapping", mapping))
 		params.Position.Line = to.Line - 1
 		params.Position.Character = to.Col - 1
 		params.TextDocumentPositionParams.Position.Line = params.Position.Line
 		params.TextDocumentPositionParams.Position.Character = params.Position.Character
 	}
-
 	// Update the URI to make gopls look at the Go code instead.
 	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
-
-	// Marshal the params back.
-	jsonMessage, err := json.Marshal(params)
-	if err != nil {
-		p.log.Warn("rewriteCompletionRequest: failed to marshal param", zap.Error(err))
-		return
-	}
-	err = r.Params.UnmarshalJSON(jsonMessage)
-
 	// Done.
 	return err
-}
-
-func getLines(from, to int, text string) string {
-	lines := strings.Split(text, "\n")
-	return strings.Join(lines[from-1:to], "\n")
 }
 
 func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
@@ -183,23 +217,24 @@ func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
 	if err != nil {
 		return
 	}
+	// Generate the output code and cache the source map and Go contents to use during completion
+	// requests.
 	w := new(strings.Builder)
-	_, err = generator.Generate(template, w)
+	sm, err := generator.Generate(template, w)
 	if err != nil {
 		return
 	}
-	// Set the go contents.
+	p.sourceMapCache.Set(string(params.TextDocument.URI), sm)
+	// Set the Go contents.
 	params.TextDocument.Text = w.String()
 	// Change the path.
 	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
-
 	// Marshal the params back.
 	jsonMessage, err := json.Marshal(params)
 	if err != nil {
 		return
 	}
 	err = r.Params.UnmarshalJSON(jsonMessage)
-
 	// Done.
 	return err
 }
@@ -214,24 +249,24 @@ func (p *Proxy) rewriteDidChangeRequest(r *jsonrpc2.Request) (err error) {
 	if !strings.HasSuffix(fileName, ".templ") {
 		return
 	}
-
 	// Apply content changes to the cached template.
 	templateText, err := p.fileCache.Apply(string(params.TextDocument.URI), params.ContentChanges)
 	if err != nil {
 		return
 	}
-
-	// Update the go code.
+	// Update the Go code.
 	template, err := templ.ParseString(string(templateText))
 	if err != nil {
 		return
 	}
 	w := new(strings.Builder)
-	_, err = generator.Generate(template, w)
+	sm, err := generator.Generate(template, w)
 	if err != nil {
 		return
 	}
-	// Overwrite all the go contents.
+	// Cache the sourcemap.
+	p.sourceMapCache.Set(string(params.TextDocument.URI), sm)
+	// Overwrite all the Go contents.
 	params.ContentChanges = []lsp.TextDocumentContentChangeEvent{{
 		Range:       nil,
 		RangeLength: 0,
@@ -239,14 +274,34 @@ func (p *Proxy) rewriteDidChangeRequest(r *jsonrpc2.Request) (err error) {
 	}}
 	// Change the path.
 	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
-
 	// Marshal the params back.
 	jsonMessage, err := json.Marshal(params)
 	if err != nil {
 		return
 	}
 	err = r.Params.UnmarshalJSON(jsonMessage)
+	// Done.
+	return err
+}
 
+func (p *Proxy) rewriteDidSaveRequest(r *jsonrpc2.Request) (err error) {
+	// Unmarshal the params.
+	var params lsp.DidSaveTextDocumentParams
+	if err = json.Unmarshal(*r.Params, &params); err != nil {
+		return err
+	}
+	base, fileName := path.Split(string(params.TextDocument.URI))
+	if !strings.HasSuffix(fileName, ".templ") {
+		return
+	}
+	// Update the path.
+	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
+	// Marshal the params back.
+	jsonMessage, err := json.Marshal(params)
+	if err != nil {
+		return
+	}
+	err = r.Params.UnmarshalJSON(jsonMessage)
 	// Done.
 	return err
 }
@@ -261,55 +316,86 @@ func (p *Proxy) rewriteDidCloseRequest(r *jsonrpc2.Request) (err error) {
 	if !strings.HasSuffix(fileName, ".templ") {
 		return
 	}
-	// Delete the template from the cache.
+	// Delete the template and sourcemaps from caches.
 	p.fileCache.Delete(string(params.TextDocument.URI))
-
-	// Get gopls to delete the go file from its cache.
+	p.sourceMapCache.Delete(string(params.TextDocument.URI))
+	// Get gopls to delete the Go file from its cache.
 	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
-
 	// Marshal the params back.
 	jsonMessage, err := json.Marshal(params)
 	if err != nil {
 		return
 	}
 	err = r.Params.UnmarshalJSON(jsonMessage)
-
 	// Done.
 	return err
 }
 
-func NewFileCache() *FileCache {
-	return &FileCache{
+// Cache of .templ file URIs to the source map.
+func newSourceMapCache() *sourceMapCache {
+	return &sourceMapCache{
+		m:              new(sync.Mutex),
+		uriToSourceMap: make(map[string]*templ.SourceMap),
+	}
+}
+
+type sourceMapCache struct {
+	m              *sync.Mutex
+	uriToSourceMap map[string]*templ.SourceMap
+}
+
+func (fc *sourceMapCache) Set(uri string, m *templ.SourceMap) {
+	fc.m.Lock()
+	defer fc.m.Unlock()
+	fc.uriToSourceMap[uri] = m
+}
+
+func (fc *sourceMapCache) Get(uri string) (m *templ.SourceMap, ok bool) {
+	fc.m.Lock()
+	defer fc.m.Unlock()
+	m, ok = fc.uriToSourceMap[uri]
+	return
+}
+
+func (fc *sourceMapCache) Delete(uri string) {
+	fc.m.Lock()
+	defer fc.m.Unlock()
+	delete(fc.uriToSourceMap, uri)
+}
+
+// Cache of files to their contents.
+func newFileCache() *fileCache {
+	return &fileCache{
 		m:             new(sync.Mutex),
 		uriToContents: make(map[string][]byte),
 	}
 }
 
-type FileCache struct {
+type fileCache struct {
 	m             *sync.Mutex
 	uriToContents map[string][]byte
 }
 
-func (fc *FileCache) Set(uri string, contents []byte) {
+func (fc *fileCache) Set(uri string, contents []byte) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
 	fc.uriToContents[uri] = contents
 }
 
-func (fc *FileCache) Get(uri string) (contents []byte, ok bool) {
+func (fc *fileCache) Get(uri string) (contents []byte, ok bool) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
 	contents, ok = fc.uriToContents[uri]
 	return
 }
 
-func (fc *FileCache) Delete(uri string) {
+func (fc *fileCache) Delete(uri string) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
 	delete(fc.uriToContents, uri)
 }
 
-func (fc *FileCache) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (updated []byte, err error) {
+func (fc *fileCache) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (updated []byte, err error) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
 	contents, ok := fc.uriToContents[uri]

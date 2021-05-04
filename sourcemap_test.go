@@ -27,51 +27,53 @@ func TestSourceMapPosition(t *testing.T) {
 	sm.Add(NewExpression("s", NewPositionFromValues(-1, 3, 4), NewPositionFromValues(-1, 3, 4)),
 		NewRange(NewPositionFromValues(-1, 8, 7), NewPositionFromValues(-1, 8, 7)))
 
+	// Test that out of bounds requests don't return results.
+	actualTarget, _, ok := sm.TargetPositionFromSource(NewPositionFromValues(100, 10, 10))
+	if ok {
+		t.Errorf("searching for a source position that's not in the map should not result in a target position, but got %v", actualTarget)
+	}
+	actualSource, _, ok := sm.SourcePositionFromTarget(NewPositionFromValues(100, 10, 10))
+	if ok {
+		t.Errorf("searching for a target position that's not in the map should not result in a source position, but got %v", actualSource)
+	}
+
 	var tests = []struct {
-		name       string
-		data       *SourceMap
-		source     Position
-		expectedOK bool
-		target     Position
+		name   string
+		source Position
+		target Position
 	}{
 		{
-			name:       "searching for a position that's not in the map results in no position being returned",
-			data:       sm,
-			source:     NewPositionFromValues(100, 10, 10),
-			expectedOK: false,
+			name:   "searching within the map returns a result",
+			source: NewPositionFromValues(-1, 1, 1), // a
+			target: NewPositionFromValues(-1, 5, 1),
 		},
 		{
-			name:       "searching within the map returns a result",
-			data:       sm,
-			source:     NewPositionFromValues(-1, 1, 1), // a
-			expectedOK: true,
-			target:     NewPositionFromValues(-1, 5, 1),
+			name:   "offsets within the match are handled",
+			source: NewPositionFromValues(-1, 1, 2), // b
+			target: NewPositionFromValues(-1, 5, 2),
 		},
 		{
-			name:       "offsets within the match are handled",
-			data:       sm,
-			source:     NewPositionFromValues(-1, 1, 2), // b
-			expectedOK: true,
-			target:     NewPositionFromValues(-1, 5, 2),
-		},
-		{
-			name:       "the match that starts closes to the source is returned",
-			data:       sm,
-			source:     NewPositionFromValues(-1, 3, 4), // s
-			expectedOK: true,
-			target:     NewPositionFromValues(-1, 8, 7),
+			name:   "the match that starts closes to the source is returned",
+			source: NewPositionFromValues(-1, 3, 4), // s
+			target: NewPositionFromValues(-1, 8, 7),
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actualTarget, _, ok := tt.data.TargetPositionFromSource(tt.source)
-			if tt.expectedOK != ok {
-				t.Errorf("expected ok %v, but got %v", tt.expectedOK, ok)
-				return
+			actualTarget, _, ok := sm.TargetPositionFromSource(tt.source)
+			if !ok {
+				t.Errorf("TargetPositionFromSource: expected result, got no results")
 			}
 			if diff := cmp.Diff(tt.target, actualTarget); diff != "" {
-				t.Error(diff)
+				t.Error("TargetPositionFromSource\n\n" + diff)
+			}
+			actualSource, _, ok := sm.SourcePositionFromTarget(actualTarget)
+			if !ok {
+				t.Errorf("SourcePositionFromTarget: expected result, got no results")
+			}
+			if diff := cmp.Diff(tt.source, actualSource); diff != "" {
+				t.Error("SourcePositionFromTarget\n\n" + diff)
 			}
 		})
 	}
