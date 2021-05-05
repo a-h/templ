@@ -1,7 +1,6 @@
 package compile
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -11,9 +10,10 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator"
+	"github.com/hashicorp/go-multierror"
 )
 
-func Run(args []string) error {
+func Run(args []string) (err error) {
 	// Search for *.templ files and compile them.
 	templates, err := getTemplates(".")
 	if err != nil {
@@ -24,42 +24,34 @@ func Run(args []string) error {
 		return nil
 	}
 	start := time.Now()
+	var errorCount int
+	var result error
 	for i := 0; i < len(templates); i++ {
 		templateStart := time.Now()
 		sourceFileName := templates[i]
-		fmt.Printf("Compiling template %s", sourceFileName)
 		t, err := templ.Parse(sourceFileName)
 		if err != nil {
-			fmt.Printf("  error compiling: %v\n", err)
+			errorCount++
+			result = multierror.Append(err, fmt.Errorf("%s parsing error: %w", sourceFileName, err))
 			continue
 		}
 		targetFileName := strings.TrimSuffix(sourceFileName, ".templ") + "_templ.go"
 		w, err := os.Create(targetFileName)
 		if err != nil {
-			fmt.Printf("  error compiling: %v\n", err)
+			errorCount++
+			result = multierror.Append(err, fmt.Errorf("%s compilation error: %w", sourceFileName, err))
 			continue
 		}
-		sm, err := generator.Generate(t, w)
+		_, err = generator.Generate(t, w)
 		if err != nil {
-			fmt.Printf("  error compiling: %v\n", err)
+			errorCount++
+			result = multierror.Append(err, fmt.Errorf("%s generation error: %w", sourceFileName, err))
 			continue
 		}
-		targetSourceMapFileName := strings.TrimSuffix(sourceFileName, ".templ") + "_sourcemap.json"
-		smFile, err := os.Create(targetSourceMapFileName)
-		if err != nil {
-			fmt.Printf("  error creating sourcemap file: %v\n", err)
-			continue
-		}
-		d := json.NewEncoder(smFile)
-		err = d.Encode(sm)
-		if err != nil {
-			fmt.Printf("   error writing sourcemap: %v\n", err)
-			continue
-		}
-		fmt.Printf("  compiled in %s\n", time.Now().Sub(templateStart))
+		fmt.Printf("%s compiled in %v\n", sourceFileName, time.Now().Sub(templateStart))
 	}
-	fmt.Printf("Done. Compiled %d templates in %s\n", len(templates), time.Now().Sub(start))
-	return nil
+	fmt.Printf("Compiled %d templates with %d errors in %s\n", len(templates), errorCount, time.Now().Sub(start))
+	return result
 }
 
 func getTemplates(srcPath string) (fileNames []string, err error) {
