@@ -28,11 +28,11 @@ func TestSourceMapPosition(t *testing.T) {
 		NewRange(NewPositionFromValues(-1, 8, 7), NewPositionFromValues(-1, 8, 7)))
 
 	// Test that out of bounds requests don't return results.
-	actualTarget, _, ok := sm.TargetPositionFromSource(NewPositionFromValues(100, 10, 10))
+	actualTarget, _, ok := sm.TargetPositionFromSource(10, 10)
 	if ok {
 		t.Errorf("searching for a source position that's not in the map should not result in a target position, but got %v", actualTarget)
 	}
-	actualSource, _, ok := sm.SourcePositionFromTarget(NewPositionFromValues(100, 10, 10))
+	actualSource, _, ok := sm.SourcePositionFromTarget(10, 10)
 	if ok {
 		t.Errorf("searching for a target position that's not in the map should not result in a source position, but got %v", actualSource)
 	}
@@ -61,14 +61,14 @@ func TestSourceMapPosition(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			actualTarget, _, ok := sm.TargetPositionFromSource(tt.source)
+			actualTarget, _, ok := sm.TargetPositionFromSource(tt.source.Line, tt.source.Col)
 			if !ok {
 				t.Errorf("TargetPositionFromSource: expected result, got no results")
 			}
 			if diff := cmp.Diff(tt.target, actualTarget); diff != "" {
 				t.Error("TargetPositionFromSource\n\n" + diff)
 			}
-			actualSource, _, ok := sm.SourcePositionFromTarget(actualTarget)
+			actualSource, _, ok := sm.SourcePositionFromTarget(actualTarget.Line, actualTarget.Col)
 			if !ok {
 				t.Errorf("SourcePositionFromTarget: expected result, got no results")
 			}
