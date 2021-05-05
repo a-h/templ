@@ -215,6 +215,8 @@ func (g *generator) writeNode(indentLevel int, node templ.Node) error {
 		g.writeCallTemplateExpression(indentLevel, n)
 	case templ.IfExpression:
 		g.writeIfExpression(indentLevel, n)
+	case templ.SwitchExpression:
+		g.writeSwitchExpression(indentLevel, n)
 	default:
 		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
 	}
@@ -250,6 +252,58 @@ func (g *generator) writeIfExpression(indentLevel int, n templ.IfExpression) err
 		}
 		indentLevel++
 		g.writeNodes(indentLevel, n.Else)
+		indentLevel--
+	}
+	// }
+	if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) writeSwitchExpression(indentLevel int, n templ.SwitchExpression) error {
+	var r templ.Range
+	var err error
+	// switch
+	if _, err = g.w.WriteIndent(indentLevel, `switch `); err != nil {
+		return err
+	}
+	// val
+	if r, err = g.w.Write(n.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(n.Expression, r)
+	// {
+	if _, err = g.w.Write(` {` + "\n"); err != nil {
+		return err
+	}
+
+	if len(n.Cases) > 0 {
+		for _, c := range n.Cases {
+			// case
+			if _, err = g.w.WriteIndent(indentLevel, `case `); err != nil {
+				return err
+			}
+			//val
+			if r, err = g.w.Write(c.Expression.Value); err != nil {
+				return err
+			}
+			g.sourceMap.Add(c.Expression, r)
+			if _, err = g.w.Write(`:` + "\n"); err != nil {
+				return err
+			}
+			indentLevel++
+			g.writeNodes(indentLevel, c.Children)
+			indentLevel--
+		}
+	}
+
+	if n.Default != nil && len(n.Default.Children) > 0 {
+		if _, err = g.w.WriteIndent(indentLevel, `default:`); err != nil {
+			return err
+		}
+		indentLevel++
+		g.writeNodes(indentLevel, n.Default.Children)
 		indentLevel--
 	}
 	// }

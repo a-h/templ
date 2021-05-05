@@ -17,11 +17,24 @@
          {% if p.Type == "test" %}
             <span>{%= "Test user" %}</span>
          {% else %}
-	    <span>{%= "Not test user" %}</span>
+	       <span>{%= "Not test user" %}</span>
          {% endif %}
          {% for _, v := range p.Addresses %}
             {% call RenderAddress(v) %}
          {% endfor %}
+         {% switch p.Type %}
+         {% case "test" %}
+            <span>{%= "Test user" %}</span>
+         {% endcase %}
+         {% case "admin" %}
+            <span>{%= "Admin user" %}</span>
+         {% endcase %}
+         {% default %}
+            <span>{%= "Unknown user" %}</span>
+         {% enddefault %}
+         {% endswitch %}
      </div>
    </div>
 {% endtempl %}
+
+
