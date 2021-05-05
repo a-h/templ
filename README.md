@@ -25,9 +25,7 @@ The project is in alpha stage at present, but the aim is to provide a core set o
 The project is looking for help with:
 
 * Writing the `fmt` tool.
-* Adding support for switch/case statements based on the existing statements.
-* Adding an integration test suite that, in each subdirectory, is an templ file, a `main.go` file that will render it, and an exected output file. The integration test will compile the `templ` files, run the `main.go` file and compare the expected vs the actual output.
-* Adding features to the Language Server implementation, it's just at "Hello World!" stage at the moment. It needs to be able to do definition (should be easiest, because the `gopls` CLI supports it) and then autocomplete.
+* Adding features to the Language Server implementation, it just does autocomplete the moment. It needs to be able to do definition and add imports automatically.
 * Writing a VS Code plugin that uses the LSP support.
 * Examples and testing of the tools.
 * Adding a `hot` option to the compiler that recompiles the `*.templ` files when they change on disk. This could be achieved by documenting and making it easy to use external tools such as `ag`, ripgrep (`rg`) and `entr` in the short term.
