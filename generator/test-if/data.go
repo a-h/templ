@@ -1,8 +1,8 @@
-package iffalse
+package testif
 
 type data struct {
 }
 
 func (d data) IsTrue() bool {
-	return false
+	return true
 }

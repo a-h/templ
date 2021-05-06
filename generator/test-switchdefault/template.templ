@@ -1,0 +1,12 @@
+{% package testswitchdefault %}
+
+{% templ render(input string) %}
+   {% switch input %}
+      {% case "a" %}
+         {%= "it was 'a'" %}
+      {% endcase %}
+      {% default %}
+         {%= "it was something else" %}
+      {% enddefault %}
+   {% endswitch %}
+{% endtempl %}

@@ -205,8 +205,6 @@ func (g *generator) writeNode(indentLevel int, node templ.Node) error {
 	switch n := node.(type) {
 	case templ.Element:
 		g.writeElement(indentLevel, n)
-	case templ.Whitespace:
-		g.writeWhitespace(indentLevel, n)
 	case templ.StringExpression:
 		g.writeStringExpression(indentLevel, n)
 	case templ.ForExpression:
@@ -217,11 +215,11 @@ func (g *generator) writeNode(indentLevel int, node templ.Node) error {
 		g.writeIfExpression(indentLevel, n)
 	case templ.SwitchExpression:
 		g.writeSwitchExpression(indentLevel, n)
+	case templ.Whitespace:
+		// Whitespace is removed from template output to minify HTML.
 	default:
 		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
 	}
-
-	//TODO: SwitchExpression.
 	return nil
 }
 
@@ -472,31 +470,6 @@ func (g *generator) writeElement(indentLevel int, n templ.Element) error {
 	g.writeNodes(indentLevel, n.Children)
 	// </div>
 	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
-		return err
-	}
-	if err = g.writeErrorHandler(indentLevel); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (g *generator) writeWhitespace(indentLevel int, n templ.Whitespace) error {
-	var err error
-	var spaces strings.Builder
-	for _, r := range n.Value {
-		switch r {
-		case '\n':
-			spaces.WriteString(`\n`)
-		case '\r':
-			spaces.WriteString(`\r`)
-		case '\t':
-			spaces.WriteString(`\t`)
-		default:
-			spaces.WriteRune(r)
-		}
-	}
-	// io.WriteString(w, "<spaces>")
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "%s")`+"\n", spaces.String())); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {

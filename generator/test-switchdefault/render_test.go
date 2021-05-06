@@ -1,4 +1,4 @@
-package iffalse
+package testswitchdefault
 
 import (
 	"context"
@@ -8,14 +8,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-const expected = `   
-      False
-   
-`
+var input = "b"
+
+const expected = `it was something else`
 
 func TestRender(t *testing.T) {
 	w := new(strings.Builder)
-	err := render(context.Background(), w, data{})
+	err := render(context.Background(), w, input)
 	if err != nil {
 		t.Errorf("failed to render: %v", err)
 	}

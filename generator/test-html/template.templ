@@ -1,0 +1,12 @@
+{% package testhtml %}
+
+{% templ render(p person) %}
+   <div>
+      <h1>{%= p.name %}</h1>
+      <div style="font-family: 'sans-serif'" id="test" data-contents={%= `something with "quotes" and a <tag>` %}>
+         <div>
+            {%= "email:" %}<a href={%= p.email %}>{%= p.email %}</a>
+         </div>
+      </div>
+   </div>
+{% endtempl %}

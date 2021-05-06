@@ -1,0 +1,7 @@
+{% package testfor %}
+
+{% templ render(items []string) %}
+   {% for _, item := range items %}
+      <div>{%= item %}</div>
+   {% endfor %}
+{% endtempl %}

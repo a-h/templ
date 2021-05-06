@@ -1,4 +1,4 @@
-package iftrue
+package ifelse
 
 import (
 	"context"
@@ -8,9 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-const expected = `         True
-   
-`
+const expected = `False`
 
 func TestRender(t *testing.T) {
 	w := new(strings.Builder)
