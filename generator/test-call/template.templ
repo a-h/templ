@@ -1,0 +1,16 @@
+{% package testcall %}
+
+{% templ render(p person) %}
+   <div>
+      <h1>{%= p.name %}</h1>
+      <div style="font-family: 'sans-serif'" id="test" data-contents={%= `something with "quotes" and a <tag>` %}>
+         {% call email(p.email) %}
+      </div>
+   </div>
+{% endtempl %}
+
+{% templ email(s string) %}
+      <div>
+         {%= "email:" %}<a href={%= s %}>{%= s %}</a>
+      </div>
+{% endtempl %}
