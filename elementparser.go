@@ -2,6 +2,7 @@ package templ
 
 import (
 	"fmt"
+	"html"
 	"io"
 
 	"github.com/a-h/lexical/parse"
@@ -72,7 +73,7 @@ type constantAttributeParser struct {
 func (p constantAttributeParser) asConstantAttribute(parts []interface{}) (result interface{}, ok bool) {
 	return ConstantAttribute{
 		Name:  parts[1].(string),
-		Value: parts[4].(string),
+		Value: html.UnescapeString(parts[4].(string)),
 	}, true
 }
 

@@ -51,6 +51,15 @@ func TestAttributeParser(t *testing.T) {
 				Value: "test",
 			},
 		},
+		{
+			name:   "attribute containing escaped text",
+			input:  ` href="&lt;&quot;&gt;"`,
+			parser: newConstantAttributeParser().Parse,
+			expected: ConstantAttribute{
+				Name:  "href",
+				Value: `<">`,
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
