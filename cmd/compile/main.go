@@ -25,6 +25,7 @@ func Run(args []string) (err error) {
 			errorCount++
 			continue
 		}
+		successCount++
 		fmt.Printf("%s complete in %v\n", r.FileName, r.Duration)
 	}
 	fmt.Printf("Compiled %d templates with %d errors in %s\n", successCount+errorCount, errorCount, time.Now().Sub(start))
