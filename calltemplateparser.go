@@ -37,8 +37,8 @@ func (p callTemplateExpressionParser) Parse(pi parse.Input) parse.Result {
 	}
 	// Remove the final "(" from the position.
 	to := NewPositionFromInput(pi)
-	to.Col -= 1
-	to.Index -= 1
+	to.Col--
+	to.Index--
 	r.Name = NewExpression(strings.TrimSuffix(pr.Item.(string), "("), from, to)
 
 	// Eat the left bracket.

@@ -74,7 +74,7 @@ func (pe parseError) Error() string {
 	return fmt.Sprintf("%v at %v", pe.Message, pe.From)
 }
 
-// TemplateFile.
+// NewTemplateFileParser creates a new TemplateFileParser.
 func NewTemplateFileParser() TemplateFileParser { return TemplateFileParser{} }
 
 type TemplateFileParser struct {
