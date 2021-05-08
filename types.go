@@ -275,7 +275,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 		}
 		indent++
 	} else {
-		if err := writeIndent(w, indent, ">"); err != nil {
+		if _, err := w.Write([]byte(">")); err != nil {
 			return err
 		}
 		indent = 0
