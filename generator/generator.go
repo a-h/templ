@@ -70,19 +70,20 @@ type generator struct {
 	sourceMap *templ.SourceMap
 }
 
-func (g *generator) generate() error {
-	ops := []func() error{
-		g.writeCodeGeneratedComment,
-		g.writePackage,
-		g.writeImports,
-		g.writeTemplates,
+func (g *generator) generate() (err error) {
+	if err = g.writeCodeGeneratedComment(); err != nil {
+		return
 	}
-	for i := 0; i < len(ops); i++ {
-		if err := ops[i](); err != nil {
-			return err
-		}
+	if err = g.writePackage(); err != nil {
+		return
 	}
-	return nil
+	if err = g.writeImports(); err != nil {
+		return
+	}
+	if err = g.writeTemplates(); err != nil {
+		return
+	}
+	return err
 }
 
 func (g *generator) writeCodeGeneratedComment() error {
@@ -296,12 +297,12 @@ func (g *generator) writeSwitchExpression(indentLevel int, n templ.SwitchExpress
 		}
 	}
 
-	if n.Default != nil && len(n.Default.Children) > 0 {
+	if len(n.Default) > 0 {
 		if _, err = g.w.WriteIndent(indentLevel, `default:`); err != nil {
 			return err
 		}
 		indentLevel++
-		g.writeNodes(indentLevel, n.Default.Children)
+		g.writeNodes(indentLevel, n.Default)
 		indentLevel--
 	}
 	// }

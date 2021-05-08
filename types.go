@@ -2,6 +2,9 @@ package templ
 
 import (
 	"fmt"
+	"html"
+	"io"
+	"strings"
 
 	"github.com/a-h/lexical/parse"
 )
@@ -106,15 +109,40 @@ type Expression struct {
 	Range Range
 }
 
-// Item defines that the item is a template item.
-type Item interface {
-	IsItem() bool
-}
-
 type TemplateFile struct {
 	Package   Package
 	Imports   []Import
 	Templates []Template
+}
+
+func (tf TemplateFile) Write(w io.Writer) error {
+	var indent int
+	if err := tf.Package.Write(w, indent); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte("\n\n")); err != nil {
+		return err
+	}
+	for i := 0; i < len(tf.Imports); i++ {
+		if err := tf.Imports[i].Write(w, indent); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte("\n")); err != nil {
+		return err
+	}
+	for i := 0; i < len(tf.Templates); i++ {
+		if err := tf.Templates[i].Write(w, indent); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte("\n\n")); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // {% package templ %}
@@ -122,15 +150,28 @@ type Package struct {
 	Expression Expression
 }
 
-func (p Package) IsItem() bool { return true }
+func (p Package) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, "{% package "+p.Expression.Value+" %}")
+}
+
+func writeIndent(w io.Writer, level int, s string) (err error) {
+	if _, err = w.Write([]byte(strings.Repeat("\t", level))); err != nil {
+		return
+	}
+	_, err = w.Write([]byte(s))
+	return
+}
 
 // Whitespace.
 type Whitespace struct {
 	Value string
 }
 
-func (w Whitespace) IsItem() bool { return true }
-func (w Whitespace) IsNode() bool { return true }
+func (ws Whitespace) IsNode() bool { return true }
+func (ws Whitespace) Write(w io.Writer, indent int) error {
+	// Explicit whitespace nodes are removed from templates because they're auto-formatted.
+	return nil
+}
 
 // {% import "strings" %}
 // {% import strs "strings" %}
@@ -138,7 +179,9 @@ type Import struct {
 	Expression Expression
 }
 
-func (imp Import) IsItem() bool { return true }
+func (imp Import) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, "{% import "+imp.Expression.Value+" %}\n")
+}
 
 // Template definition.
 // {% templ Name(p Parameter) %}
@@ -151,11 +194,24 @@ type Template struct {
 	Children   []Node
 }
 
-func (t Template) IsItem() bool { return true }
+func (t Template) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "{% templ "+t.Name.Value+"("+t.Parameters.Value+") %}\n"); err != nil {
+		return err
+	}
+	if err := writeNodes(w, indent+1, t.Children); err != nil {
+		return err
+	}
+	if err := writeIndent(w, indent, "{% endtempl %}\n\n"); err != nil {
+		return err
+	}
+	return nil
+}
 
 // A Node appears within a template, e.g. a StringExpression, Element, IfExpression etc.
 type Node interface {
 	IsNode() bool
+	// Write out the string.
+	Write(w io.Writer, indent int) error
 }
 
 // <a .../> or <div ...>...</div>
@@ -165,12 +221,88 @@ type Element struct {
 	Children   []Node
 }
 
-func (e Element) IsItem() bool { return true }
+var blockElements = map[string]struct{}{
+	"br":  {},
+	"hr":  {},
+	"div": {},
+}
+
+func (e Element) isBlockElement() bool {
+	_, ok := blockElements[e.Name]
+	return ok
+}
+
 func (e Element) IsNode() bool { return true }
+func (e Element) Write(w io.Writer, indent int) error {
+	// If it's a block element, start a newline and indent.
+	if e.isBlockElement() {
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
+		if err := writeIndent(w, indent, "<"+e.Name); err != nil {
+			return err
+		}
+	} else {
+		if err := writeIndent(w, 0, "<"+e.Name); err != nil {
+			return err
+		}
+	}
+	for i := 0; i < len(e.Attributes); i++ {
+		if _, err := w.Write([]byte(" ")); err != nil {
+			return err
+		}
+		a := e.Attributes[i]
+		if _, err := w.Write([]byte(a.String())); err != nil {
+			return err
+		}
+	}
+	// Doesn't have children, close up and exit.
+	if len(e.Children) == 0 {
+		if err := writeIndent(w, indent, "/>"); err != nil {
+			return err
+		}
+		if e.isBlockElement() {
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	// Has children.
+	if e.isBlockElement() {
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
+		indent++
+	} else {
+		indent = 0
+	}
+	if err := writeNodes(w, indent, e.Children); err != nil {
+		return err
+	}
+	if e.isBlockElement() {
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
+		indent--
+	}
+	return writeIndent(w, indent, "</"+e.Name+">")
+}
+
+func writeNodes(w io.Writer, indent int, nodes []Node) error {
+	for i := 0; i < len(nodes); i++ {
+		c := nodes[i]
+		//TODO: Add newlines depending on what type of node it is.
+		if err := c.Write(w, indent); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 type Attribute interface {
-	IsItem() bool
 	IsAttribute() bool
+	String() string
 }
 
 // href=""
@@ -179,8 +311,10 @@ type ConstantAttribute struct {
 	Value string
 }
 
-func (ca ConstantAttribute) IsItem() bool      { return true }
 func (ca ConstantAttribute) IsAttribute() bool { return true }
+func (ca ConstantAttribute) String() string {
+	return ca.Name + `"` + html.EscapeString(ca.Value) + `"`
+}
 
 // href={%= ... }
 type ExpressionAttribute struct {
@@ -188,8 +322,10 @@ type ExpressionAttribute struct {
 	Value StringExpression
 }
 
-func (ea ExpressionAttribute) IsItem() bool      { return true }
 func (ea ExpressionAttribute) IsAttribute() bool { return true }
+func (ea ExpressionAttribute) String() string {
+	return ea.Name + `{%= ` + ea.Value.Expression.Value + ` %}`
+}
 
 // Nodes.
 
@@ -198,8 +334,10 @@ type StringExpression struct {
 	Expression Expression
 }
 
-func (se StringExpression) IsItem() bool { return true }
 func (se StringExpression) IsNode() bool { return true }
+func (se StringExpression) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, `{%= `+se.Expression.Value+` %}`)
+}
 
 // {% call Other(p.First, p.Last) %}
 type CallTemplateExpression struct {
@@ -209,8 +347,10 @@ type CallTemplateExpression struct {
 	Arguments Expression
 }
 
-func (cte CallTemplateExpression) IsItem() bool { return true }
 func (cte CallTemplateExpression) IsNode() bool { return true }
+func (cte CallTemplateExpression) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, `{% call `+cte.Name.Value+`(`+cte.Arguments.Value+`) %}`)
+}
 
 // {% if p.Type == "test" && p.thing %}
 // {% endif %}
@@ -220,8 +360,31 @@ type IfExpression struct {
 	Else       []Node
 }
 
-func (n IfExpression) IsItem() bool { return true }
 func (n IfExpression) IsNode() bool { return true }
+func (n IfExpression) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "{% if "+n.Expression.Value+" %}\n"); err != nil {
+		return err
+	}
+	indent++
+	if err := writeNodes(w, indent, n.Then); err != nil {
+		return err
+	}
+	indent--
+	if len(n.Else) > 0 {
+		if err := writeIndent(w, indent, "{% else %}\n"); err != nil {
+			return err
+		}
+		indent++
+		if err := writeNodes(w, indent, n.Else); err != nil {
+			return err
+		}
+		indent--
+	}
+	if err := writeIndent(w, indent, "{% endif %}\n"); err != nil {
+		return err
+	}
+	return nil
+}
 
 // {% switch p.Type %}
 //  {% case "Something" %}
@@ -230,11 +393,48 @@ func (n IfExpression) IsNode() bool { return true }
 type SwitchExpression struct {
 	Expression Expression
 	Cases      []CaseExpression
-	Default    *CaseExpression
+	Default    []Node
 }
 
-func (se SwitchExpression) IsItem() bool { return true }
 func (se SwitchExpression) IsNode() bool { return true }
+func (se SwitchExpression) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "{% switch "+se.Expression.Value+" %}\n"); err != nil {
+		return err
+	}
+	indent++
+	for i := 0; i < len(se.Cases); i++ {
+		c := se.Cases[i]
+		if err := writeIndent(w, indent, "{% case "+c.Expression.Value+" %}\n"); err != nil {
+			return err
+		}
+		indent++
+		if err := writeNodes(w, indent, c.Children); err != nil {
+			return err
+		}
+		indent--
+		if err := writeIndent(w, indent, "{% endcase %}\n"); err != nil {
+			return err
+		}
+	}
+	if len(se.Default) > 0 {
+		if err := writeIndent(w, indent, "{% default %}\n"); err != nil {
+			return err
+		}
+		indent++
+		if err := writeNodes(w, indent, se.Default); err != nil {
+			return err
+		}
+		indent--
+		if err := writeIndent(w, indent, "{% enddefault %}\n"); err != nil {
+			return err
+		}
+	}
+	indent--
+	if err := writeIndent(w, indent, "{% endswitch %}\n"); err != nil {
+		return err
+	}
+	return nil
+}
 
 // {% case "Something" %}
 // ...
@@ -244,8 +444,6 @@ type CaseExpression struct {
 	Children   []Node
 }
 
-func (ce CaseExpression) IsItem() bool { return true }
-
 // {% for i, v := range p.Addresses %}
 //   {% call Address(v) %}
 // {% endfor %}
@@ -254,5 +452,18 @@ type ForExpression struct {
 	Children   []Node
 }
 
-func (fe ForExpression) IsItem() bool { return true }
 func (fe ForExpression) IsNode() bool { return true }
+func (fe ForExpression) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "{% for "+fe.Expression.Value+" %}\n"); err != nil {
+		return err
+	}
+	indent++
+	if err := writeNodes(w, indent, fe.Children); err != nil {
+		return err
+	}
+	indent--
+	if err := writeIndent(w, indent, "{% endfor %}\n"); err != nil {
+		return err
+	}
+	return nil
+}

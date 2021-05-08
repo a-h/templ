@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/a-h/templ/cmd/compile"
-	"github.com/a-h/templ/cmd/lsp"
+	"github.com/a-h/templ/cmd/fmtcmd"
+	"github.com/a-h/templ/cmd/generatecmd"
+	"github.com/a-h/templ/cmd/lspcmd"
 )
 
 var Version = ""
@@ -17,8 +18,11 @@ func main() {
 		os.Exit(1)
 	}
 	switch os.Args[1] {
-	case "compile":
-		compileCmd(os.Args[2:])
+	case "generate":
+		generateCmd(os.Args[2:])
+		return
+	case "fmt":
+		fmtCmd(os.Args[2:])
 		return
 	case "lsp":
 		lspCmd(os.Args[2:])
@@ -36,7 +40,8 @@ func main() {
 func usage() {
 	fmt.Println(`usage: templ <command> [parameters]
 To see help text, you can run:
-  templ compile --help
+  templ generate --help
+  templ fmt --help
   templ lsp --help
   templ version
 examples:
@@ -44,15 +49,30 @@ examples:
 	os.Exit(1)
 }
 
-func compileCmd(args []string) {
-	cmd := flag.NewFlagSet("compile", flag.ExitOnError)
+func generateCmd(args []string) {
+	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
 		cmd.PrintDefaults()
 		return
 	}
-	err = compile.Run(args)
+	err = generatecmd.Run(args)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func fmtCmd(args []string) {
+	cmd := flag.NewFlagSet("fmt", flag.ExitOnError)
+	helpFlag := cmd.Bool("help", false, "Print help and exit.")
+	err := cmd.Parse(args)
+	if err != nil || *helpFlag {
+		cmd.PrintDefaults()
+		return
+	}
+	err = fmtcmd.Run(args)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
@@ -70,7 +90,7 @@ func lspCmd(args []string) {
 		cmd.PrintDefaults()
 		return
 	}
-	err = lsp.Run(lsp.Arguments{
+	err = lspcmd.Run(lspcmd.Arguments{
 		Log:           *log,
 		GoplsLog:      *goplsLog,
 		GoplsRPCTrace: *goplsRPCTrace,

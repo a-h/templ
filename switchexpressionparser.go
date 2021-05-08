@@ -69,26 +69,23 @@ func (p switchExpressionParser) Parse(pi parse.Input) parse.Result {
 		return lb
 	}
 
-	// Read the optional 'case' Node.
+	// Read the optional 'case' nodes.
 	from = NewPositionFromInput(pi)
 	pr = parse.Many(p.asMany, 0, -1, newCaseExpressionParser().Parse)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
-
-	if ce, ok := pr.Item.([]CaseExpression); ok {
-		r.Cases = ce
+	if pr.Success {
+		r.Cases = pr.Item.([]CaseExpression)
 	}
 
-	// Read the optional 'default' Node.
-	from = NewPositionFromInput(pi)
-	pr = parse.Optional(p.asSingleExpression, newDefaultCaseExpressionParser().Parse)(pi)
+	// Read the optional 'default' node.
+	pr = newDefaultCaseExpressionParser().Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
-
-	if ce, ok := pr.Item.(CaseExpression); ok {
-		r.Default = &ce
+	if pr.Success {
+		r.Default = pr.Item.([]Node)
 	}
 
 	// Read the required "endswitch" statement.
@@ -107,15 +104,14 @@ type defaultCaseExpressionParser struct {
 }
 
 func (p defaultCaseExpressionParser) Parse(pi parse.Input) parse.Result {
-	var r CaseExpression
+	var r []Node
 
-	from := NewPositionFromInput(pi)
-	// Read the required "default" statement.
+	// Start parsing if we have the required "default" statement.
 	if ie := parse.String("{% default %}")(pi); !ie.Success {
-		return parse.Failure("defaultCaseExpressionParser", newParseError("defaultCase: missing start (expected '{% default %}')", from, NewPositionFromInput(pi)))
+		return parse.Failure("defaultCaseExpressionParser", nil)
 	}
 
-	from = NewPositionFromInput(pi)
+	from := NewPositionFromInput(pi)
 	pr := newTemplateNodeParser().Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
@@ -124,7 +120,7 @@ func (p defaultCaseExpressionParser) Parse(pi parse.Input) parse.Result {
 	if !pr.Success {
 		return parse.Failure("defaultCaseExpressionParser", newParseError("defaultCase: expected nodes, but none were found", from, NewPositionFromInput(pi)))
 	}
-	r.Children = pr.Item.([]Node)
+	r = pr.Item.([]Node)
 
 	// Read the required "enddefault" statement.
 	if ie := parse.String("{% enddefault %}")(pi); !ie.Success {
@@ -191,7 +187,6 @@ func (p caseExpressionParser) Parse(pi parse.Input) parse.Result {
 	if !pr.Success {
 		return parse.Failure("caseExpressionParser", newParseError("case: expected nodes, but none were found", from, NewPositionFromInput(pi)))
 	}
-
 	r.Children = pr.Item.([]Node)
 
 	// Read the required "endif" statement.

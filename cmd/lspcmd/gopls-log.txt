@@ -1,0 +1,184 @@
+[Trace - 14:15:02.116 PM] Sending request 'initialize - (0)'.
+Params: {"processId":10411,"rootPath":"/Users/adrian/github.com/a-h","rootUri":"file:///Users/adrian/github.com/a-h","capabilities":{"workspace":{"applyEdit":true,"workspaceEdit":{"documentChanges":true,"resourceOperations":["create","rename","delete"],"failureHandling":"textOnlyTransactional"},"didChangeConfiguration":{"dynamicRegistration":true},"didChangeWatchedFiles":{"dynamicRegistration":true},"symbol":{"dynamicRegistration":true,"symbolKind":{"valueSet":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]},"tagSupport":{"valueSet":[1]}},"executeCommand":{"dynamicRegistration":true},"configuration":true,"workspaceFolders":true},"textDocument":{"publishDiagnostics":{"relatedInformation":true,"versionSupport":false,"tagSupport":{"valueSet":[1,2]}},"synchronization":{"dynamicRegistration":true,"willSave":true,"willSaveWaitUntil":true,"didSave":true},"completion":{"dynamicRegistration":true,"contextSupport":true,"completionItem":{"snippetSupport":true,"commitCharactersSupport":true,"documentationFormat":["markdown","plaintext"],"deprecatedSupport":true,"preselectSupport":true,"tagSupport":{"valueSet":[1]}},"completionItemKind":{"valueSet":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25]}},"hover":{"dynamicRegistration":true,"contentFormat":["markdown","plaintext"]},"signatureHelp":{"dynamicRegistration":true,"contextSupport":true,"signatureInformation":{"documentationFormat":["markdown","plaintext"],"activeParameterSupport":true,"parameterInformation":{"labelOffsetSupport":true}}},"definition":{"dynamicRegistration":true},"references":{"dynamicRegistration":true},"documentHighlight":{"dynamicRegistration":true},"documentSymbol":{"dynamicRegistration":true,"symbolKind":{"valueSet":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]},"hierarchicalDocumentSymbolSupport":true,"tagSupport":{"valueSet":[1]}},"codeAction":{"dynamicRegistration":true,"isPreferredSupport":true,"codeActionLiteralSupport":{"codeActionKind":{"valueSet":["","quickfix","refactor","refactor.extract","refactor.inline","refactor.rewrite","source","source.organizeImports"]}}},"codeLens":{"dynamicRegistration":true},"formatting":{"dynamicRegistration":true},"rangeFormatting":{"dynamicRegistration":true},"onTypeFormatting":{"dynamicRegistration":true},"rename":{"dynamicRegistration":true,"prepareSupport":true},"documentLink":{"dynamicRegistration":true,"tooltipSupport":true},"typeDefinition":{"dynamicRegistration":true},"implementation":{"dynamicRegistration":true},"declaration":{"dynamicRegistration":true},"colorProvider":{"dynamicRegistration":true},"foldingRange":{"dynamicRegistration":true,"rangeLimit":5000,"lineFoldingOnly":true},"selectionRange":{"dynamicRegistration":true}},"window":{"workDoneProgress":true}},"initializationOptions":{},"trace":"off","workspaceFolders":[{"uri":"file:///nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go/src","name":"src"},{"uri":"file:///Users/adrian/github.com/a-h/templ","name":"templ"},{"uri":"file:///Users/adrian/github.com/a-h","name":"a-h"}],"clientInfo":{"name":"coc.nvim","version":"0.0.80"},"workDoneToken":"74c8649f-1949-4302-801a-7d5bbc9f1773"}
+
+
+[Trace - 14:15:02.117 PM] Received response 'initialize - (0)' in 1ms.
+Result: {"capabilities":{"textDocumentSync":{"openClose":true,"change":2,"save":{}},"completionProvider":{"triggerCharacters":["."]},"hoverProvider":true,"signatureHelpProvider":{"triggerCharacters":["(",","]},"definitionProvider":true,"typeDefinitionProvider":true,"implementationProvider":true,"referencesProvider":true,"documentHighlightProvider":true,"documentSymbolProvider":true,"codeActionProvider":{"codeActionKinds":["quickfix","refactor.extract","refactor.rewrite","source.fixAll","source.organizeImports"]},"codeLensProvider":{},"documentLinkProvider":{},"workspaceSymbolProvider":true,"documentFormattingProvider":true,"documentOnTypeFormattingProvider":{"firstTriggerCharacter":""},"renameProvider":{"prepareProvider":true},"foldingRangeProvider":true,"executeCommandProvider":{"commands":["gopls.add_dependency","gopls.add_import","gopls.apply_fix","gopls.check_upgrades","gopls.gc_details","gopls.generate","gopls.generate_gopls_mod","gopls.go_get_package","gopls.list_known_packages","gopls.regenerate_cgo","gopls.remove_dependency","gopls.run_tests","gopls.test","gopls.tidy","gopls.toggle_gc_details","gopls.update_go_sum","gopls.upgrade_dependency","gopls.vendor"]},"callHierarchyProvider":true,"workspace":{"workspaceFolders":{"supported":true,"changeNotifications":"workspace/didChangeWorkspaceFolders"}}},"serverInfo":{"name":"gopls","version":"{\"path\":\"golang.org/x/tools/gopls\",\"version\":\"v0.6.9\",\"sum\":\"h1:LBBcE2y3Tb4bp79JVLWCQBbvYCFEs5ADGWsQDoSLk1Q=\",\"deps\":[{\"path\":\"github.com/BurntSushi/toml\",\"version\":\"v0.3.1\",\"sum\":\"h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=\"},{\"path\":\"github.com/google/go-cmp\",\"version\":\"v0.5.4\",\"sum\":\"h1:L8R9j+yAqZuZjsqh/z+F1NCffTKKLShY6zXTItVIZ8M=\"},{\"path\":\"github.com/sergi/go-diff\",\"version\":\"v1.1.0\",\"sum\":\"h1:we8PVUC3FE2uYfodKH/nBHMSetSfHDR6scGdBi+erh0=\"},{\"path\":\"golang.org/x/mod\",\"version\":\"v0.4.1\",\"sum\":\"h1:Kvvh58BN8Y9/lBi7hTekvtMpm07eUZ0ck5pRHpsMWrY=\"},{\"path\":\"golang.org/x/sync\",\"version\":\"v0.0.0-20201020160332-67f06af15bc9\",\"sum\":\"h1:SQFwaSi55rU7vdNs9Yr0Z324VNlrF+0wMqRXT4St8ck=\"},{\"path\":\"golang.org/x/sys\",\"version\":\"v0.0.0-20210124154548-22da62e12c0c\",\"sum\":\"h1:VwygUrnw9jn88c4u8GD3rZQbqrP/tgas88tPUbBxQrk=\"},{\"path\":\"golang.org/x/tools\",\"version\":\"v0.1.1-0.20210319172145-bda8f5cee399\",\"sum\":\"h1:O5bm8buX/OaamnfcBrkjn0SPUIU30jFmaS8lP+ikkxs=\"},{\"path\":\"golang.org/x/xerrors\",\"version\":\"v0.0.0-20200804184101-5ec99f83aff1\",\"sum\":\"h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=\"},{\"path\":\"honnef.co/go/tools\",\"version\":\"v0.1.1\",\"sum\":\"h1:EVDuO03OCZwpV2t/tLLxPmPiomagMoBOgfPt0FM+4IY=\"},{\"path\":\"mvdan.cc/gofumpt\",\"version\":\"v0.1.0\",\"sum\":\"h1:hsVv+Y9UsZ/mFZTxJZuHVI6shSQCtzZ11h1JEFPAZLw=\"},{\"path\":\"mvdan.cc/xurls/v2\",\"version\":\"v2.2.0\",\"sum\":\"h1:NSZPykBXJFCetGZykLAxaL6SIpvbVy/UFEniIfHAa8A=\"}]}"}}
+
+
+[Trace - 14:15:02.119 PM] Sending notification 'initialized'.
+Params: {}
+
+
+[Trace - 14:15:02.119 PM] Received request 'window/workDoneProgress/create - (1)'.
+Params: {"token":"5577006791947779410"}
+
+
+[Trace - 14:15:02.120 PM] Sending notification 'textDocument/didOpen'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/generator/test-switchdefault/template_templ.go","languageId":"templ","version":1,"text":"// Code generated by templ DO NOT EDIT.\n\npackage testswitchdefault\n\nimport \"html\"\nimport \"context\"\nimport \"io\"\n\nfunc render(ctx context.Context, w io.Writer, input string) (err error) {\n\tswitch input {\n\tcase \"a\":\n\t\t_, err = io.WriteString(w, html.EscapeString(\"it was 'a'\"))\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\tdefault:\t\t_, err = io.WriteString(w, html.EscapeString(\"it was something else\"))\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\treturn err\n}\n\n"}}
+
+
+[Trace - 14:15:02.124 PM] Sending response 'window/workDoneProgress/create - (1)' in 4ms.
+Result: 
+
+
+[Trace - 14:15:02.124 PM] Received notification '$/progress'.
+Params: {"token":"5577006791947779410","value":{"kind":"begin","title":"Setting up workspace","message":"Loading packages..."}}
+
+
+[Trace - 14:15:02.124 PM] Received request 'workspace/configuration - (2)'.
+Params: {"items":[{"scopeUri":"file:///nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go/src","section":"gopls"}]}
+
+
+[Trace - 14:15:02.125 PM] Sending response 'workspace/configuration - (2)' in 1ms.
+Result: 
+
+
+[Trace - 14:15:02.230 PM] Received request 'window/workDoneProgress/create - (3)'.
+Params: {"token":"8674665223082153551"}
+
+
+[Trace - 14:15:02.230 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:15:02 go env for /nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go/src\n(root /nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go/src)\n(go version go version go1.16 darwin/amd64)\n(valid build configuration = true)\n(build flags: [])\nGOROOT=/nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go\nGOMOD=/nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go/src/go.mod\nGOSUMDB=sum.golang.org\nGONOSUMDB=\nGOINSECURE=\nGOPROXY=https://proxy.golang.org,direct\nGO111MODULE=\nGOCACHE=/Users/adrian/Library/Caches/go-build\nGOFLAGS=\nGOPRIVATE=\nGOMODCACHE=/Users/adrian/go/pkg/mod\nGONOPROXY=\nGOPATH=/Users/adrian/go\n\n"}
+
+
+[Trace - 14:15:02.230 PM] Sending response 'window/workDoneProgress/create - (3)' in 0ms.
+Result: 
+
+
+[Trace - 14:15:02.230 PM] Received notification '$/progress'.
+Params: {"token":"8674665223082153551","value":{"kind":"begin","title":"Setting up workspace","message":"Loading packages..."}}
+
+
+[Trace - 14:15:02.231 PM] Received request 'workspace/configuration - (4)'.
+Params: {"items":[{"scopeUri":"file:///Users/adrian/github.com/a-h/templ","section":"gopls"}]}
+
+
+[Trace - 14:15:02.232 PM] Sending response 'workspace/configuration - (4)' in 0ms.
+Result: 
+
+
+[Trace - 14:15:02.290 PM] Received request 'window/workDoneProgress/create - (5)'.
+Params: {"token":"6129484611666145821"}
+
+
+[Trace - 14:15:02.290 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:15:02 go env for /Users/adrian/github.com/a-h/templ\n(root /Users/adrian/github.com/a-h/templ)\n(go version go version go1.16 darwin/amd64)\n(valid build configuration = true)\n(build flags: [])\nGONOPROXY=\nGO111MODULE=\nGOPATH=/Users/adrian/go\nGOPRIVATE=\nGOPROXY=https://proxy.golang.org,direct\nGOROOT=/nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go\nGOSUMDB=sum.golang.org\nGOFLAGS=\nGOMOD=/Users/adrian/github.com/a-h/templ/go.mod\nGOCACHE=/Users/adrian/Library/Caches/go-build\nGOINSECURE=\nGOMODCACHE=/Users/adrian/go/pkg/mod\nGONOSUMDB=\n\n"}
+
+
+[Trace - 14:15:02.290 PM] Sending response 'window/workDoneProgress/create - (5)' in 0ms.
+Result: 
+
+
+[Trace - 14:15:02.291 PM] Received notification '$/progress'.
+Params: {"token":"6129484611666145821","value":{"kind":"begin","title":"Setting up workspace","message":"Loading packages..."}}
+
+
+[Trace - 14:15:02.291 PM] Received request 'workspace/configuration - (6)'.
+Params: {"items":[{"scopeUri":"file:///Users/adrian/github.com/a-h","section":"gopls"}]}
+
+
+[Trace - 14:15:02.292 PM] Sending response 'workspace/configuration - (6)' in 1ms.
+Result: 
+
+
+[Trace - 14:15:02.293 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:15:02 go/packages.Load\n\tsnapshot=0\n\tdirectory=/nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go/src\n\tquery=[builtin std/...]\n\tpackages=1\n"}
+
+
+[Trace - 14:15:02.293 PM] Received notification '$/progress'.
+Params: {"token":"5577006791947779410","value":{"kind":"end","message":"Finished loading packages."}}
+
+
+[Trace - 14:15:02.298 PM] Received notification 'window/logMessage'.
+Params: {"type":1,"message":"2021/05/08 14:15:02 creating workspace dir: mkdir /var/folders/zz/yrqp3xx513sf6drry24cw8r40000gp/T/nvim9RsKOE/gopls-10411.workspace: file exists\n"}
+
+
+[Trace - 14:15:02.597 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:15:02 go/packages.Load\n\tsnapshot=0\n\tdirectory=/Users/adrian/github.com/a-h/templ\n\tquery=[builtin github.com/a-h/templ/...]\n\tpackages=38\n"}
+
+
+[Trace - 14:15:02.680 PM] Received notification '$/progress'.
+Params: {"token":"8674665223082153551","value":{"kind":"end","message":"Finished loading packages."}}
+
+
+[Trace - 14:15:46.408 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:15:46 go env for /Users/adrian/github.com/a-h\n(root /Users/adrian/github.com/a-h)\n(go version go version go1.16 darwin/amd64)\n(valid build configuration = false)\n(build flags: [])\nGOFLAGS=\nGOINSECURE=\nGONOPROXY=\nGONOSUMDB=\nGOPROXY=https://proxy.golang.org,direct\nGOSUMDB=sum.golang.org\nGO111MODULE=\nGOCACHE=/Users/adrian/Library/Caches/go-build\nGOMOD=/dev/null\nGOPATH=/Users/adrian/go\nGOROOT=/nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go\nGOPRIVATE=\nGOMODCACHE=/Users/adrian/go/pkg/mod\n\n"}
+
+
+[Trace - 14:15:46.470 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:15:46 go/packages.Load\n\tsnapshot=0\n\tdirectory=/Users/adrian/github.com/a-h\n\tquery=[./ builtin]\n\tpackages=2\n"}
+
+
+[Trace - 14:15:46.472 PM] Received notification '$/progress'.
+Params: {"token":"6129484611666145821","value":{"kind":"end","message":"Finished loading packages."}}
+
+
+[Trace - 14:15:46.477 PM] Received request 'client/registerCapability - (7)'.
+Params: {"registrations":[{"id":"workspace/didChangeWatchedFiles-0","method":"workspace/didChangeWatchedFiles","registerOptions":{"watchers":[{"globPattern":"**/*.{go,mod,sum}","kind":7},{"globPattern":"{/Users/adrian/github.com/a-h/templ/cmd,/Users/adrian/github.com/a-h/templ/cmd/compile,/Users/adrian/github.com/a-h/templ/cmd/example,/Users/adrian/github.com/a-h/templ/cmd/fmtcmd,/Users/adrian/github.com/a-h/templ/cmd/lsp,/Users/adrian/github.com/a-h/templ/cmd/lsp/pls,/Users/adrian/github.com/a-h/templ/cmd/processor,/Users/adrian/github.com/a-h/templ/example,/Users/adrian/github.com/a-h/templ/formatter,/Users/adrian/github.com/a-h/templ/generator,/Users/adrian/github.com/a-h/templ/generator/test-call,/Users/adrian/github.com/a-h/templ/generator/test-for,/Users/adrian/github.com/a-h/templ/generator/test-html,/Users/adrian/github.com/a-h/templ/generator/test-if,/Users/adrian/github.com/a-h/templ/generator/test-ifelse,/Users/adrian/github.com/a-h/templ/generator/test-string,/Users/adrian/github.com/a-h/templ/generator/test-switch,/Users/adrian/github.com/a-h/templ/generator/test-switchdefault}","kind":7}]}}]}
+
+
+[Trace - 14:15:46.488 PM] Sending response 'client/registerCapability - (7)' in 11ms.
+Result: 
+
+
+[Trace - 14:15:46.488 PM] Received request 'client/registerCapability - (8)'.
+Params: {"registrations":[{"id":"workspace/didChangeConfiguration","method":"workspace/didChangeConfiguration"},{"id":"workspace/didChangeWorkspaceFolders","method":"workspace/didChangeWorkspaceFolders"}]}
+
+
+[Trace - 14:15:46.489 PM] Sending response 'client/registerCapability - (8)' in 0ms.
+Result: 
+
+
+[Trace - 14:15:46.495 PM] Received request 'client/registerCapability - (9)'.
+Params: {"registrations":[{"id":"workspace/didChangeWatchedFiles-1","method":"workspace/didChangeWatchedFiles","registerOptions":{"watchers":[{"globPattern":"**/*.{go,mod,sum}","kind":7},{"globPattern":"{/Users/adrian/github.com/a-h/templ/cmd,/Users/adrian/github.com/a-h/templ/cmd/compile,/Users/adrian/github.com/a-h/templ/cmd/example,/Users/adrian/github.com/a-h/templ/cmd/fmtcmd,/Users/adrian/github.com/a-h/templ/cmd/lsp,/Users/adrian/github.com/a-h/templ/cmd/lsp/pls,/Users/adrian/github.com/a-h/templ/cmd/processor,/Users/adrian/github.com/a-h/templ/example,/Users/adrian/github.com/a-h/templ/formatter,/Users/adrian/github.com/a-h/templ/generator,/Users/adrian/github.com/a-h/templ/generator/test-call,/Users/adrian/github.com/a-h/templ/generator/test-for,/Users/adrian/github.com/a-h/templ/generator/test-html,/Users/adrian/github.com/a-h/templ/generator/test-if,/Users/adrian/github.com/a-h/templ/generator/test-ifelse,/Users/adrian/github.com/a-h/templ/generator/test-string,/Users/adrian/github.com/a-h/templ/generator/test-switch,/Users/adrian/github.com/a-h/templ/generator/test-switchdefault}","kind":7},{"globPattern":"{/Users/adrian/github.com/a-h/templ,/Users/adrian/github.com/a-h/templ/generator,/Users/adrian/github.com/a-h/templ/generator/test-switchdefault}","kind":7}]}}]}
+
+
+[Trace - 14:15:46.501 PM] Sending response 'client/registerCapability - (9)' in 6ms.
+Result: 
+
+
+[Trace - 14:15:46.502 PM] Received request 'client/unregisterCapability - (10)'.
+Params: {"unregisterations":[{"id":"workspace/didChangeWatchedFiles-0","method":"workspace/didChangeWatchedFiles"}]}
+
+
+[Trace - 14:15:46.502 PM] Sending response 'client/unregisterCapability - (10)' in 0ms.
+Result: 
+
+
+[Trace - 14:15:46.702 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","diagnostics":[{"range":{"start":{"line":70,"character":11},"end":{"line":70,"character":14}},"severity":1,"code":"UndeclaredImportedName","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#UndeclaredImportedName"},"source":"compiler","message":"Run not declared by package fmt"}]}
+
+
+[Trace - 14:15:46.702 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/switchexpressionparser.go","diagnostics":[{"range":{"start":{"line":90,"character":14},"end":{"line":90,"character":17}},"severity":1,"code":"IncompatibleAssign","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#IncompatibleAssign"},"source":"compiler","message":"cannot use \u0026ce (value of type *CaseExpression) as []Node value in assignment"}]}
+
+
+[Trace - 14:15:46.717 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/switchexpressionparser_test.go","diagnostics":[{"range":{"start":{"line":35,"character":13},"end":{"line":35,"character":30}},"severity":1,"code":"IncompatibleAssign","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#IncompatibleAssign"},"source":"compiler","message":"cannot use \u0026(CaseExpression literal) (value of type *CaseExpression) as []Node value in struct literal"},{"range":{"start":{"line":65,"character":13},"end":{"line":95,"character":5}},"severity":1,"code":"IncompatibleAssign","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#IncompatibleAssign"},"source":"compiler","message":"cannot use \u0026(CaseExpression literal) (value of type *CaseExpression) as []Node value in struct literal"},{"range":{"start":{"line":170,"character":13},"end":{"line":170,"character":30}},"severity":1,"code":"IncompatibleAssign","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#IncompatibleAssign"},"source":"compiler","message":"cannot use \u0026(CaseExpression literal) (value of type *CaseExpression) as []Node value in struct literal"},{"range":{"start":{"line":294,"character":13},"end":{"line":294,"character":30}},"severity":1,"code":"IncompatibleAssign","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#IncompatibleAssign"},"source":"compiler","message":"cannot use \u0026(CaseExpression literal) (value of type *CaseExpression) as []Node value in struct literal"}]}
+
+
+[Trace - 14:15:46.717 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/formatter/formatter.go","diagnostics":[{"range":{"start":{"line":67,"character":0},"end":{"line":67,"character":1}},"severity":1,"code":"MissingReturn","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#MissingReturn"},"source":"compiler","message":"missing return"}]}
+
+
+[Trace - 14:15:46.717 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/generator/generator.go","diagnostics":[{"range":{"start":{"line":210,"character":6},"end":{"line":210,"character":25}},"severity":1,"code":"ImpossibleAssert","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#ImpossibleAssert"},"source":"compiler","message":"node (variable of type templ.Node) cannot have dynamic type templ.ForExpression (missing method Write)"},{"range":{"start":{"line":299,"character":38},"end":{"line":299,"character":46}},"severity":1,"code":"MissingFieldOrMethod","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#MissingFieldOrMethod"},"source":"compiler","message":"n.Default.Children undefined (type []templ.Node has no field or method Children)"},{"range":{"start":{"line":304,"character":38},"end":{"line":304,"character":46}},"severity":1,"code":"MissingFieldOrMethod","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#MissingFieldOrMethod"},"source":"compiler","message":"n.Default.Children undefined (type []templ.Node has no field or method Children)"}]}
+
+
+[Trace - 14:15:46.736 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:15:46 go/packages.Load\n\tsnapshot=0\n\tdirectory=/Users/adrian/github.com/a-h\n\tquery=[./]\n\tpackages=1\n"}
+
+
+[Trace - 14:15:46.762 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:15:46 go/packages.Load\n\tsnapshot=0\n\tdirectory=/Users/adrian/github.com/a-h\n\tquery=[./]\n\tpackages=1\n"}
+
+
+[Trace - 14:15:46.788 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:15:46 go/packages.Load\n\tsnapshot=0\n\tdirectory=/Users/adrian/github.com/a-h\n\tquery=[./]\n\tpackages=1\n"}
+
+
+[Trace - 14:26:31.014 PM] Sending notification 'textDocument/didClose'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/generator/test-switchdefault/template_templ.go"}}
+
+

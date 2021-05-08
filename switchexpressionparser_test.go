@@ -33,7 +33,7 @@ func TestSwitchExpressionParser(t *testing.T) {
 						},
 					},
 				},
-				Default: &CaseExpression{},
+				Default: nil,
 				Cases:   []CaseExpression{},
 			},
 		},
@@ -63,36 +63,34 @@ func TestSwitchExpressionParser(t *testing.T) {
 					},
 				},
 				Cases: []CaseExpression{},
-				Default: &CaseExpression{
-					Children: []Node{
-						Whitespace{Value: "\n"},
-						Element{
-							Name:       "span",
-							Attributes: []Attribute{},
-							Children: []Node{
-								Whitespace{Value: "\n  "},
-								StringExpression{
-									Expression: Expression{
-										Value: `"span content"`,
-										Range: Range{
-											From: Position{
-												Index: 50,
-												Line:  4,
-												Col:   6,
-											},
-											To: Position{
-												Index: 64,
-												Line:  4,
-												Col:   20,
-											},
+				Default: []Node{
+					Whitespace{Value: "\n"},
+					Element{
+						Name:       "span",
+						Attributes: []Attribute{},
+						Children: []Node{
+							Whitespace{Value: "\n  "},
+							StringExpression{
+								Expression: Expression{
+									Value: `"span content"`,
+									Range: Range{
+										From: Position{
+											Index: 50,
+											Line:  4,
+											Col:   6,
+										},
+										To: Position{
+											Index: 64,
+											Line:  4,
+											Col:   20,
 										},
 									},
 								},
-								Whitespace{Value: "\n"},
 							},
+							Whitespace{Value: "\n"},
 						},
-						Whitespace{Value: "\n"},
 					},
+					Whitespace{Value: "\n"},
 				},
 			},
 		},
@@ -168,7 +166,7 @@ func TestSwitchExpressionParser(t *testing.T) {
 						},
 					},
 				},
-				Default: &CaseExpression{},
+				Default: nil,
 			},
 		},
 		{
@@ -292,7 +290,7 @@ func TestSwitchExpressionParser(t *testing.T) {
 						},
 					},
 				},
-				Default: &CaseExpression{},
+				Default: nil,
 			},
 		},
 	}

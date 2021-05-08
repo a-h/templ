@@ -1,0 +1,204 @@
+[Trace - 14:38:12.219 PM] Sending request 'initialize - (0)'.
+Params: {"processId":47402,"rootPath":"/Users/adrian/github.com/a-h/templ","rootUri":"file:///Users/adrian/github.com/a-h/templ","capabilities":{"workspace":{"applyEdit":true,"workspaceEdit":{"documentChanges":true,"resourceOperations":["create","rename","delete"],"failureHandling":"textOnlyTransactional"},"didChangeConfiguration":{"dynamicRegistration":true},"didChangeWatchedFiles":{"dynamicRegistration":true},"symbol":{"dynamicRegistration":true,"symbolKind":{"valueSet":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]},"tagSupport":{"valueSet":[1]}},"executeCommand":{"dynamicRegistration":true},"configuration":true,"workspaceFolders":true},"textDocument":{"publishDiagnostics":{"relatedInformation":true,"versionSupport":false,"tagSupport":{"valueSet":[1,2]}},"synchronization":{"dynamicRegistration":true,"willSave":true,"willSaveWaitUntil":true,"didSave":true},"completion":{"dynamicRegistration":true,"contextSupport":true,"completionItem":{"snippetSupport":true,"commitCharactersSupport":true,"documentationFormat":["markdown","plaintext"],"deprecatedSupport":true,"preselectSupport":true,"tagSupport":{"valueSet":[1]}},"completionItemKind":{"valueSet":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25]}},"hover":{"dynamicRegistration":true,"contentFormat":["markdown","plaintext"]},"signatureHelp":{"dynamicRegistration":true,"contextSupport":true,"signatureInformation":{"documentationFormat":["markdown","plaintext"],"activeParameterSupport":true,"parameterInformation":{"labelOffsetSupport":true}}},"definition":{"dynamicRegistration":true},"references":{"dynamicRegistration":true},"documentHighlight":{"dynamicRegistration":true},"documentSymbol":{"dynamicRegistration":true,"symbolKind":{"valueSet":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26]},"hierarchicalDocumentSymbolSupport":true,"tagSupport":{"valueSet":[1]}},"codeAction":{"dynamicRegistration":true,"isPreferredSupport":true,"codeActionLiteralSupport":{"codeActionKind":{"valueSet":["","quickfix","refactor","refactor.extract","refactor.inline","refactor.rewrite","source","source.organizeImports"]}}},"codeLens":{"dynamicRegistration":true},"formatting":{"dynamicRegistration":true},"rangeFormatting":{"dynamicRegistration":true},"onTypeFormatting":{"dynamicRegistration":true},"rename":{"dynamicRegistration":true,"prepareSupport":true},"documentLink":{"dynamicRegistration":true,"tooltipSupport":true},"typeDefinition":{"dynamicRegistration":true},"implementation":{"dynamicRegistration":true},"declaration":{"dynamicRegistration":true},"colorProvider":{"dynamicRegistration":true},"foldingRange":{"dynamicRegistration":true,"rangeLimit":5000,"lineFoldingOnly":true},"selectionRange":{"dynamicRegistration":true}},"window":{"workDoneProgress":true}},"initializationOptions":{},"trace":"off","workspaceFolders":[{"uri":"file:///Users/adrian/github.com/a-h/templ","name":"templ"}],"clientInfo":{"name":"coc.nvim","version":"0.0.80"},"workDoneToken":"04e9bfdc-1580-484b-837e-bce58a4ba8d8"}
+
+
+[Trace - 14:38:12.221 PM] Received response 'initialize - (0)' in 1ms.
+Result: {"capabilities":{"textDocumentSync":{"openClose":true,"change":2,"save":{}},"completionProvider":{"triggerCharacters":["."]},"hoverProvider":true,"signatureHelpProvider":{"triggerCharacters":["(",","]},"definitionProvider":true,"typeDefinitionProvider":true,"implementationProvider":true,"referencesProvider":true,"documentHighlightProvider":true,"documentSymbolProvider":true,"codeActionProvider":{"codeActionKinds":["quickfix","refactor.extract","refactor.rewrite","source.fixAll","source.organizeImports"]},"codeLensProvider":{},"documentLinkProvider":{},"workspaceSymbolProvider":true,"documentFormattingProvider":true,"documentOnTypeFormattingProvider":{"firstTriggerCharacter":""},"renameProvider":{"prepareProvider":true},"foldingRangeProvider":true,"executeCommandProvider":{"commands":["gopls.add_dependency","gopls.add_import","gopls.apply_fix","gopls.check_upgrades","gopls.gc_details","gopls.generate","gopls.generate_gopls_mod","gopls.go_get_package","gopls.list_known_packages","gopls.regenerate_cgo","gopls.remove_dependency","gopls.run_tests","gopls.test","gopls.tidy","gopls.toggle_gc_details","gopls.update_go_sum","gopls.upgrade_dependency","gopls.vendor"]},"callHierarchyProvider":true,"workspace":{"workspaceFolders":{"supported":true,"changeNotifications":"workspace/didChangeWorkspaceFolders"}}},"serverInfo":{"name":"gopls","version":"{\"path\":\"golang.org/x/tools/gopls\",\"version\":\"v0.6.9\",\"sum\":\"h1:LBBcE2y3Tb4bp79JVLWCQBbvYCFEs5ADGWsQDoSLk1Q=\",\"deps\":[{\"path\":\"github.com/BurntSushi/toml\",\"version\":\"v0.3.1\",\"sum\":\"h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=\"},{\"path\":\"github.com/google/go-cmp\",\"version\":\"v0.5.4\",\"sum\":\"h1:L8R9j+yAqZuZjsqh/z+F1NCffTKKLShY6zXTItVIZ8M=\"},{\"path\":\"github.com/sergi/go-diff\",\"version\":\"v1.1.0\",\"sum\":\"h1:we8PVUC3FE2uYfodKH/nBHMSetSfHDR6scGdBi+erh0=\"},{\"path\":\"golang.org/x/mod\",\"version\":\"v0.4.1\",\"sum\":\"h1:Kvvh58BN8Y9/lBi7hTekvtMpm07eUZ0ck5pRHpsMWrY=\"},{\"path\":\"golang.org/x/sync\",\"version\":\"v0.0.0-20201020160332-67f06af15bc9\",\"sum\":\"h1:SQFwaSi55rU7vdNs9Yr0Z324VNlrF+0wMqRXT4St8ck=\"},{\"path\":\"golang.org/x/sys\",\"version\":\"v0.0.0-20210124154548-22da62e12c0c\",\"sum\":\"h1:VwygUrnw9jn88c4u8GD3rZQbqrP/tgas88tPUbBxQrk=\"},{\"path\":\"golang.org/x/tools\",\"version\":\"v0.1.1-0.20210319172145-bda8f5cee399\",\"sum\":\"h1:O5bm8buX/OaamnfcBrkjn0SPUIU30jFmaS8lP+ikkxs=\"},{\"path\":\"golang.org/x/xerrors\",\"version\":\"v0.0.0-20200804184101-5ec99f83aff1\",\"sum\":\"h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=\"},{\"path\":\"honnef.co/go/tools\",\"version\":\"v0.1.1\",\"sum\":\"h1:EVDuO03OCZwpV2t/tLLxPmPiomagMoBOgfPt0FM+4IY=\"},{\"path\":\"mvdan.cc/gofumpt\",\"version\":\"v0.1.0\",\"sum\":\"h1:hsVv+Y9UsZ/mFZTxJZuHVI6shSQCtzZ11h1JEFPAZLw=\"},{\"path\":\"mvdan.cc/xurls/v2\",\"version\":\"v2.2.0\",\"sum\":\"h1:NSZPykBXJFCetGZykLAxaL6SIpvbVy/UFEniIfHAa8A=\"}]}"}}
+
+
+[Trace - 14:38:12.223 PM] Sending notification 'initialized'.
+Params: {}
+
+
+[Trace - 14:38:12.224 PM] Received request 'window/workDoneProgress/create - (1)'.
+Params: {"token":"5577006791947779410"}
+
+
+[Trace - 14:38:12.224 PM] Sending notification 'textDocument/didOpen'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","languageId":"go","version":1,"text":"package main\n\nimport (\n\t\"flag\"\n\t\"fmt\"\n\t\"os\"\n\n\t\"github.com/a-h/templ/cmd/compile\"\n\t\"github.com/a-h/templ/cmd/lsp\"\n)\n\nvar Version = \"\"\n\nfunc main() {\n\tif len(os.Args) < 2 {\n\t\tusage()\n\t\tos.Exit(1)\n\t}\n\tswitch os.Args[1] {\n\tcase \"compile\":\n\t\tcompileCmd(os.Args[2:])\n\t\treturn\n\tcase \"lsp\":\n\t\tlspCmd(os.Args[2:])\n\t\treturn\n\tcase \"version\":\n\t\tfmt.Println(Version)\n\t\treturn\n\tcase \"--version\":\n\t\tfmt.Println(Version)\n\t\treturn\n\t}\n\tusage()\n}\n\nfunc usage() {\n\tfmt.Println(`usage: templ <command> [parameters]\nTo see help text, you can run:\n  templ compile --help\n  templ fmt --help\n  templ lsp --help\n  templ version\nexamples:\n  templ compile`)\n\tos.Exit(1)\n}\n\nfunc compileCmd(args []string) {\n\tcmd := flag.NewFlagSet(\"compile\", flag.ExitOnError)\n\thelpFlag := cmd.Bool(\"help\", false, \"Print help and exit.\")\n\terr := cmd.Parse(args)\n\tif err != nil || *helpFlag {\n\t\tcmd.PrintDefaults()\n\t\treturn\n\t}\n\terr = compile.Run(args)\n\tif err != nil {\n\t\tfmt.Println(err.Error())\n\t\tos.Exit(1)\n\t}\n}\n\nfunc fmtCmd(args []string) {\n\tcmd := flag.NewFlagSet(\"fmt\", flag.ExitOnError)\n\thelpFlag := cmd.Bool(\"help\", false, \"Print help and exit.\")\n\terr := cmd.Parse(args)\n\tif err != nil || *helpFlag {\n\t\tcmd.PrintDefaults()\n\t\treturn\n\t}\n\terr = fmt.Run(args)\n\tif err != nil {\n\t\tfmt.Println(err.Error())\n\t\tos.Exit(1)\n\t}\n}\n\nfunc lspCmd(args []string) {\n\tcmd := flag.NewFlagSet(\"lsp\", flag.ExitOnError)\n\tlog := cmd.String(\"log\", \"\", \"The file to log templ LSP output to, or leave empty to disable logging.\")\n\tgoplsLog := cmd.String(\"goplsLog\", \"\", \"The file to log gopls output, or leave empty to disable logging.\")\n\tgoplsRPCTrace := cmd.Bool(\"goplsRPCTrace\", false, \"Set gopls to log input and output messages.\")\n\thelpFlag := cmd.Bool(\"help\", false, \"Print help and exit.\")\n\terr := cmd.Parse(args)\n\tif err != nil || *helpFlag {\n\t\tcmd.PrintDefaults()\n\t\treturn\n\t}\n\terr = lsp.Run(lsp.Arguments{\n\t\tLog:           *log,\n\t\tGoplsLog:      *goplsLog,\n\t\tGoplsRPCTrace: *goplsRPCTrace,\n\t})\n\tif err != nil {\n\t\tfmt.Println(err.Error())\n\t\tos.Exit(1)\n\t}\n}\n"}}
+
+
+[Trace - 14:38:12.230 PM] Sending response 'window/workDoneProgress/create - (1)' in 6ms.
+Result: 
+
+
+[Trace - 14:38:12.230 PM] Received notification '$/progress'.
+Params: {"token":"5577006791947779410","value":{"kind":"begin","title":"Setting up workspace","message":"Loading packages..."}}
+
+
+[Trace - 14:38:12.231 PM] Received request 'workspace/configuration - (2)'.
+Params: {"items":[{"scopeUri":"file:///Users/adrian/github.com/a-h/templ","section":"gopls"}]}
+
+
+[Trace - 14:38:12.232 PM] Sending response 'workspace/configuration - (2)' in 1ms.
+Result: [null]
+
+
+[Trace - 14:38:12.300 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:38:12 go env for /Users/adrian/github.com/a-h/templ\n(root /Users/adrian/github.com/a-h/templ)\n(go version go version go1.16 darwin/amd64)\n(valid build configuration = true)\n(build flags: [])\nGOPROXY=https://proxy.golang.org,direct\nGOINSECURE=\nGOCACHE=/Users/adrian/Library/Caches/go-build\nGOPRIVATE=\nGOSUMDB=sum.golang.org\nGOMOD=/Users/adrian/github.com/a-h/templ/go.mod\nGONOPROXY=\nGONOSUMDB=\nGO111MODULE=\nGOFLAGS=\nGOPATH=/Users/adrian/go\nGOROOT=/nix/store/1kxvwk77952rppirjn258z7s3i3680zx-go-1.16/share/go\nGOMODCACHE=/Users/adrian/go/pkg/mod\n\n"}
+
+
+[Trace - 14:38:12.648 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:38:12 go/packages.Load\n\tsnapshot=0\n\tdirectory=/Users/adrian/github.com/a-h/templ\n\tquery=[builtin github.com/a-h/templ/...]\n\tpackages=37\n"}
+
+
+[Trace - 14:38:12.753 PM] Received notification '$/progress'.
+Params: {"token":"5577006791947779410","value":{"kind":"end","message":"Finished loading packages."}}
+
+
+[Trace - 14:38:12.761 PM] Received request 'client/registerCapability - (3)'.
+Params: {"registrations":[{"id":"workspace/didChangeWatchedFiles-0","method":"workspace/didChangeWatchedFiles","registerOptions":{"watchers":[{"globPattern":"**/*.{go,mod,sum}","kind":7},{"globPattern":"{/Users/adrian/github.com/a-h/templ/cmd,/Users/adrian/github.com/a-h/templ/cmd/compile,/Users/adrian/github.com/a-h/templ/cmd/example,/Users/adrian/github.com/a-h/templ/cmd/fmtcmd,/Users/adrian/github.com/a-h/templ/cmd/lsp,/Users/adrian/github.com/a-h/templ/cmd/lsp/pls,/Users/adrian/github.com/a-h/templ/cmd/processor,/Users/adrian/github.com/a-h/templ/example,/Users/adrian/github.com/a-h/templ/generator,/Users/adrian/github.com/a-h/templ/generator/test-call,/Users/adrian/github.com/a-h/templ/generator/test-for,/Users/adrian/github.com/a-h/templ/generator/test-html,/Users/adrian/github.com/a-h/templ/generator/test-if,/Users/adrian/github.com/a-h/templ/generator/test-ifelse,/Users/adrian/github.com/a-h/templ/generator/test-string,/Users/adrian/github.com/a-h/templ/generator/test-switch,/Users/adrian/github.com/a-h/templ/generator/test-switchdefault}","kind":7}]}}]}
+
+
+[Trace - 14:38:12.778 PM] Sending response 'client/registerCapability - (3)' in 17ms.
+Result: 
+
+
+[Trace - 14:38:12.779 PM] Received request 'client/registerCapability - (4)'.
+Params: {"registrations":[{"id":"workspace/didChangeConfiguration","method":"workspace/didChangeConfiguration"},{"id":"workspace/didChangeWorkspaceFolders","method":"workspace/didChangeWorkspaceFolders"}]}
+
+
+[Trace - 14:38:12.788 PM] Sending response 'client/registerCapability - (4)' in 8ms.
+Result: 
+
+
+[Trace - 14:38:13.168 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","version":1,"diagnostics":[{"range":{"start":{"line":70,"character":11},"end":{"line":70,"character":14}},"severity":1,"code":"UndeclaredImportedName","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#UndeclaredImportedName"},"source":"compiler","message":"Run not declared by package fmt"}]}
+
+
+[Trace - 14:38:13.872 PM] Sending notification 'textDocument/didChange'.
+Params: {"textDocument":{"version":2,"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"contentChanges":[{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":10}},"rangeLength":3,"text":""}]}
+
+
+[Trace - 14:38:13.878 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","version":2,"diagnostics":[{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":7}},"severity":1,"source":"syntax","message":"expected operand, found '.'"}]}
+
+
+[Trace - 14:38:14.499 PM] Sending notification 'textDocument/didChange'.
+Params: {"textDocument":{"version":3,"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"contentChanges":[{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":7}},"rangeLength":0,"text":"f"}]}
+
+
+[Trace - 14:38:14.513 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","version":3,"diagnostics":[{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":8}},"severity":1,"code":"UndeclaredName","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#UndeclaredName"},"source":"compiler","message":"undeclared name: f"}]}
+
+
+[Trace - 14:38:14.516 PM] Sending notification 'textDocument/didChange'.
+Params: {"textDocument":{"version":4,"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"contentChanges":[{"range":{"start":{"line":70,"character":8},"end":{"line":70,"character":8}},"rangeLength":0,"text":"m"}]}
+
+
+[Trace - 14:38:14.520 PM] Sending request 'textDocument/completion - (1)'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"position":{"line":70,"character":9},"context":{"triggerKind":1}}
+
+
+[Trace - 14:38:14.524 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","version":4,"diagnostics":[{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":9}},"severity":1,"code":"UndeclaredName","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#UndeclaredName"},"source":"compiler","message":"undeclared name: fm"}]}
+
+
+[Trace - 14:38:14.623 PM] Received response 'textDocument/completion - (1)' in 103ms.
+Result: {"isIncomplete":true,"items":[{"label":"fmt.Errorf","kind":3,"detail":"func(format string, a ...interface{}) error","documentation":"Errorf formats according to a format specifier and returns the string as a\nvalue that satisfies error.\n\nIf the format specifier includes a %w verb with an error operand,\nthe returned error will implement an Unwrap method returning the operand. It is\ninvalid to include more than one %w verb or to supply it with an operand\nthat does not implement the error interface. The %w verb is otherwise\na synonym for %v.\n","preselect":true,"sortText":"00000","filterText":"fmt.Errorf","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":9}},"newText":"fmt.Errorf"}},{"label":"fmt","kind":9,"detail":"\"fmt\"","sortText":"00001","filterText":"fmt","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":9}},"newText":"fmt"}},{"label":"flag.CommandLine.Parse","kind":2,"detail":"func(arguments []string) error","documentation":"Parse parses flag definitions from the argument list, which should not\ninclude the command name. Must be called after all flags in the FlagSet\nare defined and before flags are accessed by the program.\nThe return value will be ErrHelp if -help or -h were set but not defined.\n","sortText":"00002","filterText":"flag.CommandLine.Parse","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":9}},"newText":"flag.CommandLine.Parse"}},{"label":"flag.CommandLine.Set","kind":2,"detail":"func(name string, value string) error","documentation":"Set sets the value of the named flag.\n","sortText":"00003","filterText":"flag.CommandLine.Set","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":9}},"newText":"flag.CommandLine.Set"}},{"label":"fmtcmd","kind":9,"detail":"\"github.com/a-h/templ/cmd/fmtcmd\"","sortText":"00004","filterText":"fmtcmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":9}},"newText":"fmtcmd"},"additionalTextEdits":[{"range":{"start":{"line":8,"character":27},"end":{"line":8,"character":27}},"newText":"fmtcmd\"\n\t\"github.com/a-h/templ/cmd/"}]},{"label":"fmtsort","kind":9,"detail":"\"internal/fmtsort\"","sortText":"00005","filterText":"fmtsort","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":9}},"newText":"fmtsort"},"additionalTextEdits":[{"range":{"start":{"line":5,"character":2},"end":{"line":5,"character":2}},"newText":"internal/fmtsort\"\n\t\""}]},{"label":"fmtCmd","kind":3,"detail":"func(args []string)","sortText":"00008","filterText":"fmtCmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":9}},"newText":"fmtCmd"}}]}
+
+
+[Trace - 14:38:15.313 PM] Sending notification 'textDocument/didChange'.
+Params: {"textDocument":{"version":5,"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"contentChanges":[{"range":{"start":{"line":70,"character":9},"end":{"line":70,"character":9}},"rangeLength":0,"text":"t"}]}
+
+
+[Trace - 14:38:15.315 PM] Sending request 'textDocument/completion - (2)'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"position":{"line":70,"character":10},"context":{"triggerKind":3}}
+
+
+[Trace - 14:38:15.332 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","version":5,"diagnostics":[{"range":{"start":{"line":70,"character":11},"end":{"line":70,"character":14}},"severity":1,"code":"UndeclaredImportedName","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#UndeclaredImportedName"},"source":"compiler","message":"Run not declared by package fmt"}]}
+
+
+[Trace - 14:38:15.427 PM] Received response 'textDocument/completion - (2)' in 111ms.
+Result: {"isIncomplete":true,"items":[{"label":"fmt.Errorf","kind":3,"detail":"func(format string, a ...interface{}) error","documentation":"Errorf formats according to a format specifier and returns the string as a\nvalue that satisfies error.\n\nIf the format specifier includes a %w verb with an error operand,\nthe returned error will implement an Unwrap method returning the operand. It is\ninvalid to include more than one %w verb or to supply it with an operand\nthat does not implement the error interface. The %w verb is otherwise\na synonym for %v.\n","preselect":true,"sortText":"00000","filterText":"fmt.Errorf","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":10}},"newText":"fmt.Errorf"}},{"label":"fmt","kind":9,"detail":"\"fmt\"","sortText":"00001","filterText":"fmt","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":10}},"newText":"fmt"}},{"label":"fmtcmd","kind":9,"detail":"\"github.com/a-h/templ/cmd/fmtcmd\"","sortText":"00002","filterText":"fmtcmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":10}},"newText":"fmtcmd"},"additionalTextEdits":[{"range":{"start":{"line":8,"character":27},"end":{"line":8,"character":27}},"newText":"fmtcmd\"\n\t\"github.com/a-h/templ/cmd/"}]},{"label":"fmtcmd","kind":9,"detail":"\"github.com/hashicorp/hcl/hcl/fmtcmd\"","sortText":"00003","filterText":"fmtcmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":10}},"newText":"fmtcmd"},"additionalTextEdits":[{"range":{"start":{"line":9,"character":0},"end":{"line":9,"character":0}},"newText":"\t\"github.com/hashicorp/hcl/hcl/fmtcmd\"\n"}]},{"label":"fmtsort","kind":9,"detail":"\"internal/fmtsort\"","sortText":"00004","filterText":"fmtsort","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":10}},"newText":"fmtsort"},"additionalTextEdits":[{"range":{"start":{"line":5,"character":2},"end":{"line":5,"character":2}},"newText":"internal/fmtsort\"\n\t\""}]},{"label":"fmt.Formatter","kind":8,"detail":"interface{...}","documentation":"Formatter is implemented by any value that has a Format method.\nThe implementation controls how State and rune are interpreted,\nand may call Sprint(f) or Fprint(f) etc. to generate its output.\n","sortText":"00005","filterText":"fmt.Formatter","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":10}},"newText":"fmt.Formatter"}},{"label":"fmt.GoStringer","kind":8,"detail":"interface{...}","documentation":"GoStringer is implemented by any value that has a GoString method,\nwhich defines the Go syntax for that value.\nThe GoString method is used to print values passed as an operand\nto a %#v format.\n","sortText":"00006","filterText":"fmt.GoStringer","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":10}},"newText":"fmt.GoStringer"}},{"label":"fmtCmd","kind":3,"detail":"func(args []string)","sortText":"00007","filterText":"fmtCmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":10}},"newText":"fmtCmd"}}]}
+
+
+[Trace - 14:38:15.554 PM] Sending notification 'textDocument/didChange'.
+Params: {"textDocument":{"version":6,"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"contentChanges":[{"range":{"start":{"line":70,"character":10},"end":{"line":70,"character":10}},"rangeLength":0,"text":"c"}]}
+
+
+[Trace - 14:38:15.554 PM] Sending request 'textDocument/completion - (3)'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"position":{"line":70,"character":11},"context":{"triggerKind":3}}
+
+
+[Trace - 14:38:15.559 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","version":6,"diagnostics":[{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":11}},"severity":1,"code":"UndeclaredName","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#UndeclaredName"},"source":"compiler","message":"undeclared name: fmtc"}]}
+
+
+[Trace - 14:38:15.612 PM] Received response 'textDocument/completion - (3)' in 58ms.
+Result: {"isIncomplete":true,"items":[{"label":"fmtcmd","kind":9,"detail":"\"github.com/a-h/templ/cmd/fmtcmd\"","preselect":true,"sortText":"00000","filterText":"fmtcmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":11}},"newText":"fmtcmd"},"additionalTextEdits":[{"range":{"start":{"line":8,"character":27},"end":{"line":8,"character":27}},"newText":"fmtcmd\"\n\t\"github.com/a-h/templ/cmd/"}]},{"label":"fmtcmd","kind":9,"detail":"\"github.com/hashicorp/hcl/hcl/fmtcmd\"","sortText":"00001","filterText":"fmtcmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":11}},"newText":"fmtcmd"},"additionalTextEdits":[{"range":{"start":{"line":9,"character":0},"end":{"line":9,"character":0}},"newText":"\t\"github.com/hashicorp/hcl/hcl/fmtcmd\"\n"}]},{"label":"fmtCmd","kind":3,"detail":"func(args []string)","sortText":"00002","filterText":"fmtCmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":11}},"newText":"fmtCmd"}},{"label":"fmt.ScanState","kind":8,"detail":"interface{...}","documentation":"ScanState represents the scanner state passed to custom scanners.\nScanners may do rune-at-a-time scanning or ask the ScanState\nto discover the next space-delimited token.\n","sortText":"00003","filterText":"fmt.ScanState","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":11}},"newText":"fmt.ScanState"}},{"label":"fmt.Scanner","kind":8,"detail":"interface{...}","documentation":"Scanner is implemented by any value that has a Scan method, which scans\nthe input for the representation of a value and stores the result in the\nreceiver, which must be a pointer to be useful. The Scan method is called\nfor any argument to Scan, Scanf, or Scanln that implements it.\n","sortText":"00004","filterText":"fmt.Scanner","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":11}},"newText":"fmt.Scanner"}},{"label":"fmt.Fscan","kind":3,"detail":"func(r io.Reader, a ...interface{}) (n int, err error)","documentation":"Fscan scans text read from r, storing successive space-separated\nvalues into successive arguments. Newlines count as space. It\nreturns the number of items successfully scanned. If that is less\nthan the number of arguments, err will report why.\n","sortText":"00005","filterText":"fmt.Fscan","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":11}},"newText":"fmt.Fscan"}}]}
+
+
+[Trace - 14:38:15.679 PM] Sending notification 'textDocument/didChange'.
+Params: {"textDocument":{"version":7,"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"contentChanges":[{"range":{"start":{"line":70,"character":11},"end":{"line":70,"character":11}},"rangeLength":0,"text":"m"}]}
+
+
+[Trace - 14:38:15.679 PM] Sending request 'textDocument/completion - (4)'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"position":{"line":70,"character":12},"context":{"triggerKind":3}}
+
+
+[Trace - 14:38:15.686 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","version":7,"diagnostics":[{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":12}},"severity":1,"code":"UndeclaredName","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#UndeclaredName"},"source":"compiler","message":"undeclared name: fmtcm"}]}
+
+
+[Trace - 14:38:15.719 PM] Received response 'textDocument/completion - (4)' in 39ms.
+Result: {"isIncomplete":true,"items":[{"label":"fmtcmd","kind":9,"detail":"\"github.com/a-h/templ/cmd/fmtcmd\"","preselect":true,"sortText":"00000","filterText":"fmtcmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":12}},"newText":"fmtcmd"},"additionalTextEdits":[{"range":{"start":{"line":8,"character":27},"end":{"line":8,"character":27}},"newText":"fmtcmd\"\n\t\"github.com/a-h/templ/cmd/"}]},{"label":"fmtcmd","kind":9,"detail":"\"github.com/hashicorp/hcl/hcl/fmtcmd\"","sortText":"00001","filterText":"fmtcmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":12}},"newText":"fmtcmd"},"additionalTextEdits":[{"range":{"start":{"line":9,"character":0},"end":{"line":9,"character":0}},"newText":"\t\"github.com/hashicorp/hcl/hcl/fmtcmd\"\n"}]},{"label":"fmtCmd","kind":3,"detail":"func(args []string)","sortText":"00002","filterText":"fmtCmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":12}},"newText":"fmtCmd"}}]}
+
+
+[Trace - 14:38:15.730 PM] Sending notification 'textDocument/didChange'.
+Params: {"textDocument":{"version":8,"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"contentChanges":[{"range":{"start":{"line":70,"character":12},"end":{"line":70,"character":12}},"rangeLength":0,"text":"d"}]}
+
+
+[Trace - 14:38:15.730 PM] Sending request 'textDocument/completion - (5)'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"position":{"line":70,"character":13},"context":{"triggerKind":3}}
+
+
+[Trace - 14:38:15.735 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","version":8,"diagnostics":[{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":13}},"severity":1,"code":"UndeclaredName","codeDescription":{"href":"https://pkg.go.dev/golang.org/x/tools/internal/typesinternal#UndeclaredName"},"source":"compiler","message":"undeclared name: fmtcmd"}]}
+
+
+[Trace - 14:38:15.768 PM] Received response 'textDocument/completion - (5)' in 37ms.
+Result: {"isIncomplete":true,"items":[{"label":"fmtcmd","kind":9,"detail":"\"github.com/a-h/templ/cmd/fmtcmd\"","preselect":true,"sortText":"00000","filterText":"fmtcmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":13}},"newText":"fmtcmd"},"additionalTextEdits":[{"range":{"start":{"line":8,"character":27},"end":{"line":8,"character":27}},"newText":"fmtcmd\"\n\t\"github.com/a-h/templ/cmd/"}]},{"label":"fmtcmd","kind":9,"detail":"\"github.com/hashicorp/hcl/hcl/fmtcmd\"","sortText":"00001","filterText":"fmtcmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":13}},"newText":"fmtcmd"},"additionalTextEdits":[{"range":{"start":{"line":9,"character":0},"end":{"line":9,"character":0}},"newText":"\t\"github.com/hashicorp/hcl/hcl/fmtcmd\"\n"}]},{"label":"fmtCmd","kind":3,"detail":"func(args []string)","sortText":"00002","filterText":"fmtCmd","insertTextFormat":2,"textEdit":{"range":{"start":{"line":70,"character":7},"end":{"line":70,"character":13}},"newText":"fmtCmd"}}]}
+
+
+[Trace - 14:38:17.458 PM] Sending notification 'textDocument/didClose'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"}}
+
+
+[Trace - 14:38:17.503 PM] Sending notification 'textDocument/didOpen'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","languageId":"go","version":1,"text":"package main\n\nimport (\n\t\"flag\"\n\t\"fmt\"\n\t\"os\"\n\n\t\"github.com/a-h/templ/cmd/compile\"\n\t\"github.com/a-h/templ/cmd/fmtcmd\"\n\t\"github.com/a-h/templ/cmd/lsp\"\n)\n\nvar Version = \"\"\n\nfunc main() {\n\tif len(os.Args) < 2 {\n\t\tusage()\n\t\tos.Exit(1)\n\t}\n\tswitch os.Args[1] {\n\tcase \"compile\":\n\t\tcompileCmd(os.Args[2:])\n\t\treturn\n\tcase \"lsp\":\n\t\tlspCmd(os.Args[2:])\n\t\treturn\n\tcase \"version\":\n\t\tfmt.Println(Version)\n\t\treturn\n\tcase \"--version\":\n\t\tfmt.Println(Version)\n\t\treturn\n\t}\n\tusage()\n}\n\nfunc usage() {\n\tfmt.Println(`usage: templ <command> [parameters]\nTo see help text, you can run:\n  templ compile --help\n  templ fmt --help\n  templ lsp --help\n  templ version\nexamples:\n  templ compile`)\n\tos.Exit(1)\n}\n\nfunc compileCmd(args []string) {\n\tcmd := flag.NewFlagSet(\"compile\", flag.ExitOnError)\n\thelpFlag := cmd.Bool(\"help\", false, \"Print help and exit.\")\n\terr := cmd.Parse(args)\n\tif err != nil || *helpFlag {\n\t\tcmd.PrintDefaults()\n\t\treturn\n\t}\n\terr = compile.Run(args)\n\tif err != nil {\n\t\tfmt.Println(err.Error())\n\t\tos.Exit(1)\n\t}\n}\n\nfunc fmtCmd(args []string) {\n\tcmd := flag.NewFlagSet(\"fmt\", flag.ExitOnError)\n\thelpFlag := cmd.Bool(\"help\", false, \"Print help and exit.\")\n\terr := cmd.Parse(args)\n\tif err != nil || *helpFlag {\n\t\tcmd.PrintDefaults()\n\t\treturn\n\t}\n\terr = fmtcmd.Run(args)\n\tif err != nil {\n\t\tfmt.Println(err.Error())\n\t\tos.Exit(1)\n\t}\n}\n\nfunc lspCmd(args []string) {\n\tcmd := flag.NewFlagSet(\"lsp\", flag.ExitOnError)\n\tlog := cmd.String(\"log\", \"\", \"The file to log templ LSP output to, or leave empty to disable logging.\")\n\tgoplsLog := cmd.String(\"goplsLog\", \"\", \"The file to log gopls output, or leave empty to disable logging.\")\n\tgoplsRPCTrace := cmd.Bool(\"goplsRPCTrace\", false, \"Set gopls to log input and output messages.\")\n\thelpFlag := cmd.Bool(\"help\", false, \"Print help and exit.\")\n\terr := cmd.Parse(args)\n\tif err != nil || *helpFlag {\n\t\tcmd.PrintDefaults()\n\t\treturn\n\t}\n\terr = lsp.Run(lsp.Arguments{\n\t\tLog:           *log,\n\t\tGoplsLog:      *goplsLog,\n\t\tGoplsRPCTrace: *goplsRPCTrace,\n\t})\n\tif err != nil {\n\t\tfmt.Println(err.Error())\n\t\tos.Exit(1)\n\t}\n}\n"}}
+
+
+[Trace - 14:38:17.786 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:38:17 go/packages.Load\n\tsnapshot=10\n\tdirectory=/Users/adrian/github.com/a-h/templ\n\tquery=[file=/Users/adrian/github.com/a-h/templ/cmd/main.go]\n\tpackages=1\n"}
+
+
+[Trace - 14:38:17.786 PM] Received notification 'window/logMessage'.
+Params: {"type":3,"message":"2021/05/08 14:38:17 go/packages.Load\n\tsnapshot=10\n\tpackage=\"github.com/a-h/templ/cmd\"\n\tfiles=[/Users/adrian/github.com/a-h/templ/cmd/main.go]\n"}
+
+
+[Trace - 14:38:17.788 PM] Received notification 'textDocument/publishDiagnostics'.
+Params: {"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go","version":1,"diagnostics":[]}
+
+
+[Trace - 14:38:20.020 PM] Sending request 'textDocument/definition - (6)'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"},"position":{"line":71,"character":14}}
+
+
+[Trace - 14:38:20.021 PM] Received response 'textDocument/definition - (6)' in 0ms.
+Result: [{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/fmtcmd/main.go","range":{"start":{"line":15,"character":5},"end":{"line":15,"character":8}}}]
+
+
+[Trace - 14:38:20.068 PM] Sending notification 'textDocument/didOpen'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/fmtcmd/main.go","languageId":"go","version":1,"text":"package fmtcmd\n\nimport (\n\t\"bytes\"\n\t\"fmt\"\n\t\"time\"\n\n\t\"github.com/a-h/templ\"\n\t\"github.com/a-h/templ/cmd/processor\"\n\t\"github.com/hashicorp/go-multierror\"\n\t\"github.com/natefinch/atomic\"\n)\n\nconst workerCount = 4\n\nfunc Run(args []string) (err error) {\n\tstart := time.Now()\n\tresults := make(chan processor.Result)\n\tgo processor.Process(\".\", format, workerCount, results)\n\tvar successCount, errorCount int\n\tfor r := range results {\n\t\tif r.Error != nil {\n\t\t\terr = multierror.Append(err, fmt.Errorf(\"%s: %w\", r.FileName, r.Error))\n\t\t\terrorCount++\n\t\t\tcontinue\n\t\t}\n\t\tfmt.Printf(\"%s complete in %v\\n\", r.FileName, r.Duration)\n\t}\n\tfmt.Printf(\"Formatted %d templates with %d errors in %s\\n\", successCount+errorCount, errorCount, time.Now().Sub(start))\n\treturn\n}\n\nfunc format(fileName string) (err error) {\n\tt, err := templ.Parse(fileName)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"%s parsing error: %w\", fileName, err)\n\t}\n\tw := new(bytes.Buffer)\n\terr = t.Write(w)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"%s formatting error: %w\", fileName, err)\n\t}\n\terr = atomic.WriteFile(fileName, w)\n\tif err != nil {\n\t\treturn fmt.Errorf(\"%s file write error: %w\", fileName, err)\n\t}\n\treturn\n}\n"}}
+
+
+[Trace - 14:38:28.125 PM] Sending notification 'textDocument/didClose'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/main.go"}}
+
+
+[Trace - 14:38:28.126 PM] Sending notification 'textDocument/didClose'.
+Params: {"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/cmd/fmtcmd/main.go"}}
+
+
