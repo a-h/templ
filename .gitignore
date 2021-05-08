@@ -1,4 +1,4 @@
 cmd/example/*.go
 dist
 cmd/templ
-cmd/lsp/*log.txt
+cmd/lspcmd/*log.txt

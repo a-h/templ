@@ -4,34 +4,30 @@
 
 ## Current state
 
-This is alpha software, it will change a lot, and often. There's no guarantees of correctness or that APIs won't change at the moment.
-
-The `templ compile` command works, and the `templ lsp` is in a basic "Hello World" state right now.
+This is beta software, the template language may still have breaking changes. There's no guarantees of stability or correctness at the moment.
 
 If you're keen to see Go be practical for Web projects, see "Help needed" for where the project needs your help.
 
 ## Features
 
-The language compiles to Go syntax, some sections of the template (e.g. `package`, `import`, `if`, `for` and `switch` statements) are directly as Go expressions in the compiled output, while HTML elements are converted to Go code that renders their output.
+The language generates Go code, some sections of the template (e.g. `package`, `import`, `if`, `for` and `switch` statements) are output directly as Go expressions in the generated output, while HTML elements are converted to Go code that renders their output.
 
-The project is in alpha stage at present, but the aim is to provide a core set of functionality.
-
-* `templ compile` compiles `*.templ` files into Go files.
+* `templ generate` generates Go code from `*.templ` files.
+* `templ fmt` formats template files in the current directory tree.
 * `templ lsp` provides a Language Server to support IDE integrations. The compile command generates a sourcemap which maps from the `*.templ` files to the compiled Go file. This enables the `templ` LSP to use the Go language `gopls` language server as is, providing a thin shim to do the source remapping. This is used to provide autocomplete for template variables and functions.
-* `templ fmt` formats the template file by parsing it and rewriting it out.
 
 ### Help needed
 
 The project is looking for help with:
 
-* Writing the `fmt` tool.
+* Testing the `fmt` tool.
 * Adding features to the Language Server implementation, it just does autocomplete the moment. It needs to be able to do definition and add imports automatically.
 * Writing a VS Code plugin that uses the LSP support.
 * Examples and testing of the tools.
 * Adding a `hot` option to the compiler that recompiles the `*.templ` files when they change on disk. This could be achieved by documenting and making it easy to use external tools such as `ag`, ripgrep (`rg`) and `entr` in the short term.
 * Writing documentation of the components.
 * Writing a blog post that demonstrates using the tool to build a form-based Web application.
-* Testing, it's alpha stage right now.
+* Testing (including fuzzing), benchmarking and optimisation.
 * An example of a web-based UI component library would be very useful, a more advanced version of the integration test suite, thatwould be a Go web server that runs the compiled `templ` file along with example JSON payloads that match the expected data structure types and renders the content - a UI playground. If it could do hot-reload, amazing.
 * Low priority, but I'm thinking of developing a CSS-in-Go implementation to work in parallel. This might take the form of a pre-processor which would collect all "style" attributes of elements and automatically calculate a minimum set of CSS classes that could be created and applied to the elements - but a first pass could just be a way to define CSS classes in Go to allow the use of CSS variables.
 
@@ -237,8 +233,8 @@ To add extensive debug information, you can include additional args to the LSP, 
     "templ": {
       "command": "templ",
       "args": ["lsp",
-        "--log", "/Users/adrian/github.com/a-h/templ/cmd/lsp/templ-log.txt", 
-	"--goplsLog", "/Users/adrian/github.com/a-h/templ/cmd/lsp/gopls-log.txt",
+        "--log", "/Users/adrian/github.com/a-h/templ/cmd/lspcmd/templ-log.txt", 
+	"--goplsLog", "/Users/adrian/github.com/a-h/templ/cmd/lspcmd/gopls-log.txt",
 	"--goplsRPCTrace", "true"
       ],
       "filetypes": ["templ"]
