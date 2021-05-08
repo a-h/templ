@@ -269,9 +269,6 @@ func (e Element) Write(w io.Writer, indent int) error {
 		return nil
 	}
 	// Has children.
-	if err := writeIndent(w, indent, ">"); err != nil {
-		return err
-	}
 	if e.isBlockElement() {
 		if _, err := w.Write([]byte(">\n")); err != nil {
 			return err
