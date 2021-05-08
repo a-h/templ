@@ -20,7 +20,7 @@ The language generates Go code, some sections of the template (e.g. `package`, `
 
 The project is looking for help with:
 
-* Testing the `fmt` tool.
+* Testing the `fmt` tool, and updating the formatter so that inline elements aren't separated onto newlines.
 * Adding features to the Language Server implementation, it just does autocomplete the moment. It needs to be able to do definition and add imports automatically.
 * Writing a VS Code plugin that uses the LSP support.
 * Examples and testing of the tools.
