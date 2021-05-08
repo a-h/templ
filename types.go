@@ -289,7 +289,15 @@ func (e Element) Write(w io.Writer, indent int) error {
 		}
 		indent--
 	}
-	return writeIndent(w, indent, "</"+e.Name+">")
+	if err := writeIndent(w, indent, "</"+e.Name+">"); err != nil {
+		return err
+	}
+	if e.isBlockElement() {
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func writeNodes(w io.Writer, indent int, nodes []Node) error {
