@@ -1,12 +1,18 @@
 {% package main %}
 
+
 {% templ renderPosts(posts []Post) %}
-{% for _, p := range posts %}
-	{% call renderPost(p) %}
-{% endfor %}
+	{% for _, p := range posts %}
+		{% call renderPost(p) %}
+	{% endfor %}
 {% endtempl %}
 
 {% templ renderPost(post Post) %}
-	<div>{%= post.Name %}</div>
-	<div>{%= post.Author %}</div>
+	<div>
+		{%= post.Name %}
+	</div>
+	<div>
+		{%= post.Author %}
+	</div>
 {% endtempl %}
+

@@ -201,7 +201,7 @@ func (t Template) Write(w io.Writer, indent int) error {
 	if err := writeNodes(w, indent+1, t.Children); err != nil {
 		return err
 	}
-	if err := writeIndent(w, indent, "{% endtempl %}\n\n"); err != nil {
+	if err := writeIndent(w, indent, "{% endtempl %}"); err != nil {
 		return err
 	}
 	return nil
@@ -221,31 +221,10 @@ type Element struct {
 	Children   []Node
 }
 
-var blockElements = map[string]struct{}{
-	"br":  {},
-	"hr":  {},
-	"div": {},
-}
-
-func (e Element) isBlockElement() bool {
-	_, ok := blockElements[e.Name]
-	return ok
-}
-
 func (e Element) IsNode() bool { return true }
 func (e Element) Write(w io.Writer, indent int) error {
-	// If it's a block element, start a newline and indent.
-	if e.isBlockElement() {
-		if _, err := w.Write([]byte("\n")); err != nil {
-			return err
-		}
-		if err := writeIndent(w, indent, "<"+e.Name); err != nil {
-			return err
-		}
-	} else {
-		if err := writeIndent(w, 0, "<"+e.Name); err != nil {
-			return err
-		}
+	if err := writeIndent(w, indent, "<"+e.Name); err != nil {
+		return err
 	}
 	for i := 0; i < len(e.Attributes); i++ {
 		if _, err := w.Write([]byte(" ")); err != nil {
@@ -258,53 +237,30 @@ func (e Element) Write(w io.Writer, indent int) error {
 	}
 	// Doesn't have children, close up and exit.
 	if len(e.Children) == 0 {
-		if err := writeIndent(w, indent, "/>"); err != nil {
-			return err
-		}
-		if e.isBlockElement() {
-			if _, err := w.Write([]byte("\n")); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeIndent(w, indent, "/>")
 	}
 	// Has children.
-	if e.isBlockElement() {
-		if _, err := w.Write([]byte(">\n")); err != nil {
-			return err
-		}
-		indent++
-	} else {
-		if _, err := w.Write([]byte(">")); err != nil {
-			return err
-		}
-		indent = 0
-	}
-	if err := writeNodes(w, indent, e.Children); err != nil {
+	if _, err := w.Write([]byte(">\n")); err != nil {
 		return err
 	}
-	if e.isBlockElement() {
-		if _, err := w.Write([]byte("\n")); err != nil {
-			return err
-		}
-		indent--
+	if err := writeNodes(w, indent+1, e.Children); err != nil {
+		return err
 	}
 	if err := writeIndent(w, indent, "</"+e.Name+">"); err != nil {
 		return err
-	}
-	if e.isBlockElement() {
-		if _, err := w.Write([]byte("\n")); err != nil {
-			return err
-		}
 	}
 	return nil
 }
 
 func writeNodes(w io.Writer, indent int, nodes []Node) error {
 	for i := 0; i < len(nodes); i++ {
-		c := nodes[i]
-		//TODO: Add newlines depending on what type of node it is.
-		if err := c.Write(w, indent); err != nil {
+		if _, isWhitespace := nodes[i].(Whitespace); isWhitespace {
+			continue
+		}
+		if err := nodes[i].Write(w, indent); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte("\n")); err != nil {
 			return err
 		}
 	}
@@ -324,7 +280,7 @@ type ConstantAttribute struct {
 
 func (ca ConstantAttribute) IsAttribute() bool { return true }
 func (ca ConstantAttribute) String() string {
-	return ca.Name + `"` + html.EscapeString(ca.Value) + `"`
+	return ca.Name + `="` + html.EscapeString(ca.Value) + `"`
 }
 
 // href={%= ... }
@@ -335,7 +291,7 @@ type ExpressionAttribute struct {
 
 func (ea ExpressionAttribute) IsAttribute() bool { return true }
 func (ea ExpressionAttribute) String() string {
-	return ea.Name + `{%= ` + ea.Value.Expression.Value + ` %}`
+	return ea.Name + `={%= ` + ea.Value.Expression.Value + ` %}`
 }
 
 // Nodes.
@@ -385,13 +341,11 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 		if err := writeIndent(w, indent, "{% else %}\n"); err != nil {
 			return err
 		}
-		indent++
-		if err := writeNodes(w, indent, n.Else); err != nil {
+		if err := writeNodes(w, indent+1, n.Else); err != nil {
 			return err
 		}
-		indent--
 	}
-	if err := writeIndent(w, indent, "{% endif %}\n"); err != nil {
+	if err := writeIndent(w, indent, "{% endif %}"); err != nil {
 		return err
 	}
 	return nil
@@ -418,11 +372,9 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 		if err := writeIndent(w, indent, "{% case "+c.Expression.Value+" %}\n"); err != nil {
 			return err
 		}
-		indent++
-		if err := writeNodes(w, indent, c.Children); err != nil {
+		if err := writeNodes(w, indent+1, c.Children); err != nil {
 			return err
 		}
-		indent--
 		if err := writeIndent(w, indent, "{% endcase %}\n"); err != nil {
 			return err
 		}
@@ -431,17 +383,15 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 		if err := writeIndent(w, indent, "{% default %}\n"); err != nil {
 			return err
 		}
-		indent++
-		if err := writeNodes(w, indent, se.Default); err != nil {
+		if err := writeNodes(w, indent+1, se.Default); err != nil {
 			return err
 		}
-		indent--
 		if err := writeIndent(w, indent, "{% enddefault %}\n"); err != nil {
 			return err
 		}
 	}
 	indent--
-	if err := writeIndent(w, indent, "{% endswitch %}\n"); err != nil {
+	if err := writeIndent(w, indent, "{% endswitch %}"); err != nil {
 		return err
 	}
 	return nil
@@ -468,12 +418,10 @@ func (fe ForExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "{% for "+fe.Expression.Value+" %}\n"); err != nil {
 		return err
 	}
-	indent++
-	if err := writeNodes(w, indent, fe.Children); err != nil {
+	if err := writeNodes(w, indent+1, fe.Children); err != nil {
 		return err
 	}
-	indent--
-	if err := writeIndent(w, indent, "{% endfor %}\n"); err != nil {
+	if err := writeIndent(w, indent, "{% endfor %}"); err != nil {
 		return err
 	}
 	return nil
