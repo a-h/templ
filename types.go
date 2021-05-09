@@ -180,7 +180,7 @@ type Import struct {
 }
 
 func (imp Import) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, "{% import "+imp.Expression.Value+" %}\n")
+	return writeIndent(w, indent, "{% import "+imp.Expression.Value+" %}")
 }
 
 // Template definition.
