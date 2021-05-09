@@ -131,6 +131,26 @@ func TestFormatting(t *testing.T) {
 
 `,
 		},
+		{
+			name: "if the element only contains inline elements, they end up on the same line",
+			input: ` // first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(value, validation string) %}
+<div><p>{%= "the" %}<a href="http://example.com">{%= "data" %}</a></p></div>
+{% endtempl %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(value, validation string) %}
+	<div>
+		<p>{%= "the" %}<a href="http://example.com">{%= "data" %}</a></p>
+	</div>
+{% endtempl %}
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
