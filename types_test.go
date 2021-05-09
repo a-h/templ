@@ -156,17 +156,43 @@ func TestFormatting(t *testing.T) {
 			input: ` // first line removed to make indentation clear in Go code
 {% package test %}
 
-{% templ input(value, validation string) %}
+{% templ nested() %}
 <div>{%= "the" %}<div>{%= "other" %}</div></div>
 {% endtempl %}
 `,
 			expected: `// first line removed to make indentation clear in Go code
 {% package test %}
 
-{% templ input(value, validation string) %}
+{% templ nested() %}
 	<div>
 		{%= "the" %}
 		<div>{%= "other" %}</div>
+	</div>
+{% endtempl %}
+
+`,
+		},
+		{
+			name: "for loops are placed on a new line",
+			input: ` // first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(items []string) %}
+<div>{%= "the" %}<div>{%= "other" %}</div>{% for _, item := range items %}
+		<div>{%= item %}</div>
+	{% endfor %}</div>
+{% endtempl %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(items []string) %}
+	<div>
+		{%= "the" %}
+		<div>{%= "other" %}</div>
+		{% for _, item := range items %}
+			<div>{%= item %}</div>
+		{% endfor %}
 	</div>
 {% endtempl %}
 
