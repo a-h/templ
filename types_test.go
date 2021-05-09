@@ -151,6 +151,27 @@ func TestFormatting(t *testing.T) {
 
 `,
 		},
+		{
+			name: "if an element contains any block elements, all of the child elements are split onto new lines",
+			input: ` // first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(value, validation string) %}
+<div>{%= "the" %}<div>{%= "other" %}</div></div>
+{% endtempl %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(value, validation string) %}
+	<div>
+		{%= "the" %}
+		<div>{%= "other" %}</div>
+	</div>
+{% endtempl %}
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
