@@ -2,58 +2,35 @@
 
 {% import "strings" %}
 
-
 {% templ RenderAddress(addr Address) %}
-	<div>
-		{%= addr.Address1 %}
-	</div>
-	<div>
-		{%= addr.Address2 %}
-	</div>
-	<div>
-		{%= addr.Address3 %}
-	</div>
-	<div>
-		{%= addr.Address4 %}
-	</div>
+	<div>{%= addr.Address1 %}</div>
+	<div>{%= addr.Address2 %}</div>
+	<div>{%= addr.Address3 %}</div>
+	<div>{%= addr.Address4 %}</div>
 {% endtempl %}
 
 {% templ Render(p Person) %}
 	<div>
-		<div>
-			{%= p.Name() %}
-		</div>
-		<a href={%= p.URL %}>
-			{%= strings.ToUpper(p.Name()) %}
-		</a>
+		<div>{%= p.Name() %}</div>
+		<a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
 		<div>
 			{% if p.Type == "test" %}
-				<span>
-					{%= "Test user" %}
-				</span>
+				<span>{%= "Test user" %}</span>
 			{% else %}
-				<span>
-					{%= "Not test user" %}
-				</span>
+				<span>{%= "Not test user" %}</span>
 			{% endif %}
 			{% for _, v := range p.Addresses %}
 				{% call RenderAddress(v) %}
 			{% endfor %}
 			{% switch p.Type %}
 				{% case "test" %}
-					<span>
-						{%= "Test user" %}
-					</span>
+					<span>{%= "Test user" %}</span>
 				{% endcase %}
 				{% case "admin" %}
-					<span>
-						{%= "Admin user" %}
-					</span>
+					<span>{%= "Admin user" %}</span>
 				{% endcase %}
 				{% default %}
-					<span>
-						{%= "Unknown user" %}
-					</span>
+					<span>{%= "Unknown user" %}</span>
 				{% enddefault %}
 			{% endswitch %}
 		</div>

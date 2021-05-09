@@ -252,9 +252,19 @@ func (e Element) hasNonWhitespaceChildren() bool {
 
 func (e Element) containsBlockElement() bool {
 	for _, c := range e.Children {
-		if ee, isElement := c.(Element); isElement && ee.isBlockElement() {
-			return true
+		switch n := c.(type) {
+		case Whitespace:
+			continue
+		case Element:
+			if n.isBlockElement() {
+				return true
+			}
+			continue
+		case StringExpression:
+			continue
 		}
+		// Any template elements should be considered block.
+		return true
 	}
 	return false
 }
