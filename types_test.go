@@ -108,6 +108,29 @@ func TestFormatting(t *testing.T) {
 
 `,
 		},
+		{
+			name: "empty elements stay on the same line",
+			input: ` // first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(value, validation string) %}
+<div>
+<p>
+</p>
+</div>
+{% endtempl %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(value, validation string) %}
+	<div>
+		<p></p>
+	</div>
+{% endtempl %}
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

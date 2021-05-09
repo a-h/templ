@@ -248,6 +248,15 @@ func (e Element) isVoidElement() bool {
 	return ok
 }
 
+func (e Element) hasNonWhitespaceChildren() bool {
+	for _, c := range e.Children {
+		if _, isWhitespace := c.(Whitespace); !isWhitespace {
+			return true
+		}
+	}
+	return false
+}
+
 func (e Element) IsNode() bool { return true }
 func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<"+e.Name); err != nil {
@@ -262,21 +271,25 @@ func (e Element) Write(w io.Writer, indent int) error {
 			return err
 		}
 	}
-	// Doesn't have children, close up and exit.
-	if e.isVoidElement() && len(e.Children) == 0 {
+	if e.hasNonWhitespaceChildren() {
+		if _, err := w.Write([]byte(">\n")); err != nil {
+			return err
+		}
+		if err := writeNodes(w, indent+1, e.Children); err != nil {
+			return err
+		}
+		if err := writeIndent(w, indent, "</"+e.Name+">"); err != nil {
+			return err
+		}
+		return nil
+	}
+	if e.isVoidElement() {
 		if _, err := w.Write([]byte("/>")); err != nil {
 			return err
 		}
 		return nil
 	}
-	// Has children.
-	if _, err := w.Write([]byte(">\n")); err != nil {
-		return err
-	}
-	if err := writeNodes(w, indent+1, e.Children); err != nil {
-		return err
-	}
-	if err := writeIndent(w, indent, "</"+e.Name+">"); err != nil {
+	if _, err := w.Write([]byte("></" + e.Name + ">")); err != nil {
 		return err
 	}
 	return nil
