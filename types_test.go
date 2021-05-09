@@ -59,6 +59,55 @@ func TestFormatting(t *testing.T) {
 
 `,
 		},
+		{
+			name: "void elements are converted to self-closing elements",
+			input: ` // first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(value, validation string) %}
+<area></area>
+<base></base>
+<br></br>
+<col></col>
+<command></command>
+<embed></embed>
+<hr></hr>
+<img></img>
+<input></input>
+<keygen></keygen>
+<link></link>
+<meta></meta>
+<param></param>
+<source></source>
+<track></track>
+<wbr></wbr>
+
+{% endtempl %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+{% package test %}
+
+{% templ input(value, validation string) %}
+	<area/>
+	<base/>
+	<br/>
+	<col/>
+	<command/>
+	<embed/>
+	<hr/>
+	<img/>
+	<input/>
+	<keygen/>
+	<link/>
+	<meta/>
+	<param/>
+	<source/>
+	<track/>
+	<wbr/>
+{% endtempl %}
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

@@ -123,16 +123,18 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	if _, err := w.Write([]byte("\n\n")); err != nil {
 		return err
 	}
-	for i := 0; i < len(tf.Imports); i++ {
-		if err := tf.Imports[i].Write(w, indent); err != nil {
-			return err
+	if len(tf.Imports) > 0 {
+		for i := 0; i < len(tf.Imports); i++ {
+			if err := tf.Imports[i].Write(w, indent); err != nil {
+				return err
+			}
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
 		}
 		if _, err := w.Write([]byte("\n")); err != nil {
 			return err
 		}
-	}
-	if _, err := w.Write([]byte("\n")); err != nil {
-		return err
 	}
 	for i := 0; i < len(tf.Templates); i++ {
 		if err := tf.Templates[i].Write(w, indent); err != nil {
@@ -221,6 +223,31 @@ type Element struct {
 	Children   []Node
 }
 
+var voidElements = map[string]struct{}{
+	"area":    {},
+	"base":    {},
+	"br":      {},
+	"col":     {},
+	"command": {},
+	"embed":   {},
+	"hr":      {},
+	"img":     {},
+	"input":   {},
+	"keygen":  {},
+	"link":    {},
+	"meta":    {},
+	"param":   {},
+	"source":  {},
+	"track":   {},
+	"wbr":     {},
+}
+
+// https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#void-element
+func (e Element) isVoidElement() bool {
+	_, ok := voidElements[e.Name]
+	return ok
+}
+
 func (e Element) IsNode() bool { return true }
 func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<"+e.Name); err != nil {
@@ -236,8 +263,11 @@ func (e Element) Write(w io.Writer, indent int) error {
 		}
 	}
 	// Doesn't have children, close up and exit.
-	if len(e.Children) == 0 {
-		return writeIndent(w, indent, "/>")
+	if e.isVoidElement() && len(e.Children) == 0 {
+		if _, err := w.Write([]byte("/>")); err != nil {
+			return err
+		}
+		return nil
 	}
 	// Has children.
 	if _, err := w.Write([]byte(">\n")); err != nil {
