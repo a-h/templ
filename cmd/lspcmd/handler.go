@@ -22,6 +22,8 @@ type Proxy struct {
 	client         *jsonrpc2.Conn
 	fileCache      *fileCache
 	sourceMapCache *sourceMapCache
+	clientInUse    *sync.Mutex
+	toClient       chan toClientRequest
 }
 
 // NewProxy returns a new proxy to send messages from the client to and from gopls,
@@ -29,8 +31,13 @@ type Proxy struct {
 func NewProxy(logger *zap.Logger) (p *Proxy) {
 	return &Proxy{
 		log:            logger,
-		fileCache:      newFileCache(),
+		fileCache:      newFileCache(logger),
 		sourceMapCache: newSourceMapCache(),
+		// Prevent trying to send to the client when message handling is taking place.
+		// The proxy can place up to 32 requests onto the toClient buffered channel
+		// during handling. They're processed when the clientInUse mutex is released.
+		clientInUse: new(sync.Mutex),
+		toClient:    make(chan toClientRequest, 32),
 	}
 }
 
@@ -38,6 +45,41 @@ func NewProxy(logger *zap.Logger) (p *Proxy) {
 func (p *Proxy) Init(client, gopls *jsonrpc2.Conn) {
 	p.client = client
 	p.gopls = gopls
+	go func() {
+		for r := range p.toClient {
+			r := r
+			p.sendToClient(r)
+		}
+	}()
+}
+
+type toClientRequest struct {
+	Method string
+	Notif  bool
+	Params interface{}
+}
+
+// sendToClient should not be called directly. Instead, send a message to the non-blocking
+// toClient channel.
+func (p *Proxy) sendToClient(r toClientRequest) {
+	p.clientInUse.Lock()
+	defer p.clientInUse.Unlock()
+	p.log.Info("sendToClient: start", zap.String("method", r.Method))
+	if r.Notif {
+		err := p.client.Notify(context.Background(), r.Method, r.Params)
+		if err != nil {
+			p.log.Error("sendToClient: error", zap.String("type", "notification"), zap.String("method", r.Method), zap.Error(err))
+			return
+		}
+	} else {
+		var result map[string]interface{}
+		err := p.client.Call(context.Background(), r.Method, r.Params, &result)
+		if err != nil {
+			p.log.Error("sendToClient: error", zap.String("type", "call"), zap.String("method", r.Method), zap.Error(err))
+			return
+		}
+	}
+	p.log.Info("sendToClient: success", zap.String("method", r.Method))
 }
 
 func (p *Proxy) proxyFromGoplsToClient(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
@@ -69,18 +111,20 @@ func (p *Proxy) proxyFromGoplsToClient(ctx context.Context, conn *jsonrpc2.Conn,
 // Handle implements jsonrpc2.Handler. This function receives from the text editor client, and calls the proxy function
 // to determine how to play it back to the client.
 func (p *Proxy) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
+	p.clientInUse.Lock()
+	defer p.clientInUse.Unlock()
 	p.log.Info("client -> gopls", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
 	if r.Notif {
 		var err error
 		switch r.Method {
 		case "textDocument/didOpen":
-			p.rewriteDidOpenRequest(r)
+			err = p.rewriteDidOpenRequest(r)
 		case "textDocument/didChange":
-			p.rewriteDidChangeRequest(r)
+			err = p.rewriteDidChangeRequest(ctx, r)
 		case "textDocument/didSave":
-			p.rewriteDidSaveRequest(r)
+			err = p.rewriteDidSaveRequest(r)
 		case "textDocument/didClose":
-			p.rewriteDidCloseRequest(r)
+			err = p.rewriteDidCloseRequest(r)
 		}
 		if err != nil {
 			p.log.Error("client -> gopls: error rewriting notification", zap.Error(err))
@@ -239,20 +283,29 @@ func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
 	return err
 }
 
-func (p *Proxy) rewriteDidChangeRequest(r *jsonrpc2.Request) (err error) {
+type applyWorkspaceEditParams struct {
+	Label string            `json:"label"`
+	Edit  lsp.WorkspaceEdit `json:"edit"`
+}
+
+func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request) (err error) {
 	// Unmarshal the params.
 	var params lsp.DidChangeTextDocumentParams
 	if err = json.Unmarshal(*r.Params, &params); err != nil {
-		return err
+		return
 	}
 	base, fileName := path.Split(string(params.TextDocument.URI))
 	if !strings.HasSuffix(fileName, ".templ") {
 		return
 	}
 	// Apply content changes to the cached template.
-	templateText, err := p.fileCache.Apply(string(params.TextDocument.URI), params.ContentChanges)
+	templateText, requestsToClient, err := p.fileCache.Apply(string(params.TextDocument.URI), params.ContentChanges)
 	if err != nil {
 		return
+	}
+	// Apply changes to the client.
+	for i := 0; i < len(requestsToClient); i++ {
+		p.toClient <- requestsToClient[i]
 	}
 	// Update the Go code.
 	template, err := templ.ParseString(string(templateText))
@@ -281,7 +334,7 @@ func (p *Proxy) rewriteDidChangeRequest(r *jsonrpc2.Request) (err error) {
 	}
 	err = r.Params.UnmarshalJSON(jsonMessage)
 	// Done.
-	return err
+	return
 }
 
 func (p *Proxy) rewriteDidSaveRequest(r *jsonrpc2.Request) (err error) {
@@ -364,16 +417,18 @@ func (fc *sourceMapCache) Delete(uri string) {
 }
 
 // Cache of files to their contents.
-func newFileCache() *fileCache {
+func newFileCache(logger *zap.Logger) *fileCache {
 	return &fileCache{
 		m:             new(sync.Mutex),
 		uriToContents: make(map[string][]byte),
+		log:           logger,
 	}
 }
 
 type fileCache struct {
 	m             *sync.Mutex
 	uriToContents map[string][]byte
+	log           *zap.Logger
 }
 
 func (fc *fileCache) Set(uri string, contents []byte) {
@@ -395,7 +450,7 @@ func (fc *fileCache) Delete(uri string) {
 	delete(fc.uriToContents, uri)
 }
 
-func (fc *fileCache) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (updated []byte, err error) {
+func (fc *fileCache) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (updated []byte, requestsToClient []toClientRequest, err error) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
 	contents, ok := fc.uriToContents[uri]
@@ -403,20 +458,68 @@ func (fc *fileCache) Apply(uri string, changes []lsp.TextDocumentContentChangeEv
 		err = fmt.Errorf("document not found")
 		return
 	}
-	updated, err = applyContentChanges(lsp.DocumentURI(uri), contents, changes)
+	updated, insertCloses, err := applyContentChanges(fc.log, lsp.DocumentURI(uri), contents, changes)
 	if err != nil {
 		return
+	}
+	requestsToClient = make([]toClientRequest, len(insertCloses))
+	for i := 0; i < len(insertCloses); i++ {
+		requestsToClient[i] = createWorkspaceApplyEditInsert(uri, " %}\n", insertCloses[i], insertAfter)
 	}
 	fc.uriToContents[uri] = updated
 	return
 }
 
+type insertPosition int
+
+const (
+	insertBefore insertPosition = iota
+	insertAfter
+)
+
+func createWorkspaceApplyEditInsert(documentURI, text string, at lsp.Position, position insertPosition) toClientRequest {
+	textRange := lsp.Range{
+		Start: at,
+		End:   at,
+	}
+	if position == insertAfter {
+		textRange.Start.Character++
+		textRange.End.Character += len(text) + 1
+	}
+	return toClientRequest{
+		Method: "workspace/applyEdit",
+		Notif:  false,
+		Params: applyWorkspaceEditParams{
+			Label: "templ close tag",
+			Edit: lsp.WorkspaceEdit{
+				Changes: map[string][]lsp.TextEdit{
+					documentURI: {
+						{
+							Range:   textRange,
+							NewText: text,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// Check the last couple of bytes for "{%= " and "{% ".
+func shouldInsertCloseTag(prefix, change string) (shouldInsert bool) {
+	last := 4
+	if last > len(prefix) {
+		last = len(prefix)
+	}
+	upToCaret := prefix[len(prefix)-last:] + change
+	return strings.HasSuffix(upToCaret, "{% ") || strings.HasSuffix(upToCaret, "{%= ")
+}
+
 // Contents below adapted from https://github.com/sourcegraph/go-langserver/blob/4b49d01c8a692968252730d45980091dcec7752e/langserver/fs.go#L141
 // It implements the ability to react to changes on document edits.
 // MIT licensed.
-
 // applyContentChanges updates `contents` based on `changes`
-func applyContentChanges(uri lsp.DocumentURI, contents []byte, changes []lsp.TextDocumentContentChangeEvent) ([]byte, error) {
+func applyContentChanges(log *zap.Logger, uri lsp.DocumentURI, contents []byte, changes []lsp.TextDocumentContentChangeEvent) (c []byte, insertCloses []lsp.Position, err error) {
 	for _, change := range changes {
 		if change.Range == nil && change.RangeLength == 0 {
 			contents = []byte(change.Text) // new full content
@@ -424,7 +527,7 @@ func applyContentChanges(uri lsp.DocumentURI, contents []byte, changes []lsp.Tex
 		}
 		start, ok, why := offsetForPosition(contents, change.Range.Start)
 		if !ok {
-			return nil, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
+			return nil, insertCloses, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
 		}
 		var end int
 		if change.RangeLength != 0 {
@@ -433,12 +536,21 @@ func applyContentChanges(uri lsp.DocumentURI, contents []byte, changes []lsp.Tex
 			// RangeLength not specified, work it out from Range.End
 			end, ok, why = offsetForPosition(contents, change.Range.End)
 			if !ok {
-				return nil, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
+				return nil, insertCloses, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
 			}
 		}
 		if start < 0 || end > len(contents) || end < start {
-			return nil, fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, uri)
+			return nil, insertCloses, fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, uri)
 		}
+		// Custom code to check for autocomplete.
+		if shouldInsertCloseTag(string(contents[:start]), change.Text) {
+			end := lsp.Position{
+				Line:      change.Range.End.Line,
+				Character: change.Range.End.Character,
+			}
+			insertCloses = append(insertCloses, end)
+		}
+		// End of custom code.
 		// Try avoid doing too many allocations, so use bytes.Buffer
 		b := &bytes.Buffer{}
 		b.Grow(start + len(change.Text) + len(contents) - end)
@@ -447,7 +559,7 @@ func applyContentChanges(uri lsp.DocumentURI, contents []byte, changes []lsp.Tex
 		b.Write(contents[end:])
 		contents = b.Bytes()
 	}
-	return contents, nil
+	return contents, insertCloses, nil
 }
 
 func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool, whyInvalid string) {

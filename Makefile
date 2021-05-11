@@ -1,6 +1,6 @@
 install-snapshot:
 	# Clear logs.
-	rm cmd/lsp/*.txt || true
+	rm cmd/lspcmd/*.txt || true
 	# Install the latest version.
 	cd cmd && go build -o ~/bin/templ
 
