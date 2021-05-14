@@ -135,7 +135,7 @@ HTML elements look like HTML and you can write static attributes into them, just
 <div id="address1">{%= addr.Address1 %}</div>
 ```
 
-You can also have dynamic attributes that use template parameter, other Go variables that happen to be in scope, or call Go functions that return a string. Don't worry about HTML encoding element text and attribute value, that will be taken care of.
+You can also have dynamic attributes that use template parameter, other Go variables that happen to be in scope, or call Go functions that return a string. Don't worry about HTML encoding element text and attribute values, that will be taken care of automatically.
 
 ```
 <a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
