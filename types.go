@@ -395,9 +395,9 @@ func (ea ExpressionAttribute) String() string {
 // Nodes.
 
 // CallTemplateExpression can be used to create and render a template using data.
-// {%= Other(p.First, p.Last) %}
+// {%! Other(p.First, p.Last) %}
 // or it can be used to render a template parameter.
-// {%= v %}
+// {%! v %}
 type CallTemplateExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
@@ -405,7 +405,7 @@ type CallTemplateExpression struct {
 
 func (cte CallTemplateExpression) IsNode() bool { return true }
 func (cte CallTemplateExpression) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, `{%= `+cte.Expression.Value+` %}`)
+	return writeIndent(w, indent, `{%! `+cte.Expression.Value+` %}`)
 }
 
 // {% if p.Type == "test" && p.thing %}

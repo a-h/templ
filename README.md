@@ -59,7 +59,7 @@ Please get in touch if you're interested in building a feature as I don't want p
 	    <span>{%= "Not test user" %}</span>
          {% endif %}
          {% for _, v := range p.Addresses %}
-            {% call RenderAddress(v) %}
+            {%! RenderAddress(v) %}
          {% endfor %}
      </div>
    </div>
