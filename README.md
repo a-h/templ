@@ -124,7 +124,7 @@ func Raw(s string) templ.Component {
 Then call it in a template. So long as the `Raw` function is in scope, you can use it.
 
 ```
-{! Raw("<script>alert('xss vector');</script>") %}
+{%! Raw("<script>alert('xss vector');</script>") %}
 ```
 
 ### Elements
