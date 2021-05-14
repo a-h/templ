@@ -13,7 +13,7 @@ const expected = `Strings are HTML escaped. So ampersands (&amp;), greater than 
 
 func TestRender(t *testing.T) {
 	w := new(strings.Builder)
-	err := render(context.Background(), w, input)
+	err := render(input).Render(context.Background(), w)
 	if err != nil {
 		t.Errorf("failed to render: %v", err)
 	}

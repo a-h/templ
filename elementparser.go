@@ -96,20 +96,58 @@ func newExpressionAttributeParser() expressionAttributeParser {
 type expressionAttributeParser struct {
 }
 
-func (p expressionAttributeParser) asExpressionAttribute(parts []interface{}) (result interface{}, ok bool) {
-	return ExpressionAttribute{
-		Name:  parts[1].(string),
-		Value: parts[3].(StringExpression),
-	}, true
+func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
+	var r ExpressionAttribute
+
+	start := pi.Index()
+	from := NewPositionFromInput(pi)
+	pr := whitespaceParser(pi)
+	if !pr.Success {
+		return pr
+	}
+
+	pr = attributeNameParser(pi)
+	if !pr.Success {
+		rewind(pi, start)
+		return pr
+	}
+	r.Name = pr.Item.(string)
+
+	if pr = parse.String("={%= ")(pi); !pr.Success {
+		rewind(pi, start)
+		return pr
+	}
+
+	// Once we've seen a expression prefix, read until the tag end.
+	from = NewPositionFromInput(pi)
+	pr = parse.StringUntil(tagEnd)(pi)
+	if pr.Error != nil && pr.Error != io.EOF {
+		return parse.Failure("expressionAttributeParser", fmt.Errorf("expressionAttributeParser: failed to read until tag end: %w", pr.Error))
+	}
+	// If there's no tag end, the string expression parser wasn't terminated.
+	if !pr.Success {
+		return parse.Failure("expressionAttributeParser", newParseError("expression attribute not terminated", from, NewPositionFromInput(pi)))
+	}
+
+	// Success! Create the expression.
+	to := NewPositionFromInput(pi)
+	r.Expression = NewExpression(pr.Item.(string), from, to)
+
+	// Eat the tag end.
+	if te := tagEnd(pi); !te.Success {
+		return parse.Failure("expressionAttributeParser", newParseError("could not terminate string expression", from, NewPositionFromInput(pi)))
+	}
+
+	return parse.Success("expressionAttributeParser", r, nil)
 }
 
-func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
-	return parse.All(p.asExpressionAttribute,
-		whitespaceParser,
-		attributeNameParser,
-		parse.Rune('='),
-		newStringExpressionParser().Parse,
-	)(pi)
+func rewind(pi parse.Input, to int64) error {
+	for i := pi.Index(); i > to; i-- {
+		if _, err := pi.Retreat(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Attributes.

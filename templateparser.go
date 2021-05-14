@@ -112,6 +112,7 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 		}
 
 		// Try for a string expression.
+		// {%= "abc" %}
 		// {%= strings.ToUpper("abc") %}
 		pr = newStringExpressionParser().Parse(pi)
 		if pr.Error != nil {
@@ -156,7 +157,7 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 		}
 
 		// Try for a call template expression.
-		// {% call TemplateName(a, b, c) %}
+		// {%! TemplateName(a, b, c) %}
 		pr = newCallTemplateExpressionParser().Parse(pi)
 		if pr.Error != nil {
 			return pr

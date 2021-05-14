@@ -2,7 +2,6 @@ package templ
 
 import (
 	"io"
-	"strings"
 
 	"github.com/a-h/lexical/parse"
 )
@@ -18,50 +17,27 @@ func (p callTemplateExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r CallTemplateExpression
 
 	// Check the prefix first.
-	templPrefix := "call "
-	prefixResult := parse.String("{% " + templPrefix)(pi)
+	prefixResult := parse.String("{%! ")(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
-	// Once we have the prefix, we must have a name and parameters.
-	// Read the name of the function.
+	// Once we have a prefix, we must have an expression that returns a template, followed by a tagEnd.
 	from := NewPositionFromInput(pi)
-	pr := templateNameParser(pi)
+	pr := parse.StringUntil(parse.Or(tagEnd, newLine))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
-	// If there's no match, the name wasn't correctly terminated.
+	// If there's no match, there's no tagEnd or newLine, which is an error.
 	if !pr.Success {
-		return parse.Failure("callTemplateExpressionParser", newParseError("call template: invalid template name", from, NewPositionFromInput(pi)))
+		return parse.Failure("callTemplateExpressionParser", newParseError("call: unterminated (missing closing ' %}')", from, NewPositionFromInput(pi)))
 	}
-	// Remove the final "(" from the position.
-	to := NewPositionFromInput(pi)
-	to.Col--
-	to.Index--
-	r.Name = NewExpression(strings.TrimSuffix(pr.Item.(string), "("), from, to)
+	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
-	// Eat the left bracket.
-	if lb := parse.Rune('(')(pi); !lb.Success {
-		return parse.Failure("callTemplateExpressionParser", newParseError("call template: parameters missing open bracket", from, NewPositionFromInput(pi)))
-	}
-
-	// Read the parameters.
+	// Eat " %}".
 	from = NewPositionFromInput(pi)
-	pr = parse.StringUntil(parse.Rune(')'))(pi) // p Person, other Other, t thing.Thing)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
-	}
-	// If there's no match, the name wasn't correctly terminated.
-	if !pr.Success {
-		return parse.Failure("callTemplateExpressionParser", newParseError("call template: parameters missing close bracket", from, NewPositionFromInput(pi)))
-	}
-	r.Arguments = NewExpression(strings.TrimSuffix(pr.Item.(string), ")"), from, NewPositionFromInput(pi))
-
-	// Eat ") %}".
-	from = NewPositionFromInput(pi)
-	if lb := parse.String(") %}")(pi); !lb.Success {
-		return parse.Failure("callTemplateExpressionParser", newParseError("call template: unterminated (missing ' %}')", from, NewPositionFromInput(pi)))
+	if te := tagEnd(pi); !te.Success {
+		return parse.Failure("callTemplateExpressionParser", newParseError("call: unterminated (missing closing ' %}')", from, NewPositionFromInput(pi)))
 	}
 
 	return parse.Success("callTemplate", r, nil)

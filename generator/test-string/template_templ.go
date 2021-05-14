@@ -2,15 +2,17 @@
 
 package teststring
 
-import "html"
+import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func render(ctx context.Context, w io.Writer, s string) (err error) {
-	_, err = io.WriteString(w, html.EscapeString(s))
-	if err != nil {
+func render(s string) (t templ.Component) {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		_, err = io.WriteString(w, templ.EscapeString(s))
+		if err != nil {
+			return err
+		}
 		return err
-	}
-	return err
+	})
 }
 

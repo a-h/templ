@@ -2,45 +2,49 @@
 
 package main
 
-import "html"
+import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func renderPosts(ctx context.Context, w io.Writer, posts []Post) (err error) {
-	for _, p := range posts {
-		err = renderPost(ctx, w, p)
+func postsTemplate(posts []Post) (t templ.Component) {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		for _, p := range posts {
+			err = postTemplate(p).Render(ctx, w)
+			if err != nil {
+				return err
+			}
+		}
+		return err
+	})
+}
+
+func postTemplate(post Post) (t templ.Component) {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err
 		}
-	}
-	return err
-}
-
-func renderPost(ctx context.Context, w io.Writer, post Post) (err error) {
-	_, err = io.WriteString(w, "<div>")
-	if err != nil {
+		_, err = io.WriteString(w, templ.EscapeString(post.Name))
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</div>")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "<div>")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, templ.EscapeString(post.Author))
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</div>")
+		if err != nil {
+			return err
+		}
 		return err
-	}
-	_, err = io.WriteString(w, html.EscapeString(post.Name))
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "</div>")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "<div>")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, html.EscapeString(post.Author))
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "</div>")
-	if err != nil {
-		return err
-	}
-	return err
+	})
 }
 

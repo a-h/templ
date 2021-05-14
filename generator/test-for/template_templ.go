@@ -2,25 +2,27 @@
 
 package testfor
 
-import "html"
+import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func render(ctx context.Context, w io.Writer, items []string) (err error) {
-	for _, item := range items {
-		_, err = io.WriteString(w, "<div>")
-		if err != nil {
-			return err
+func render(items []string) (t templ.Component) {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		for _, item := range items {
+			_, err = io.WriteString(w, "<div>")
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, templ.EscapeString(item))
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, "</div>")
+			if err != nil {
+				return err
+			}
 		}
-		_, err = io.WriteString(w, html.EscapeString(item))
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "</div>")
-		if err != nil {
-			return err
-		}
-	}
-	return err
+		return err
+	})
 }
 

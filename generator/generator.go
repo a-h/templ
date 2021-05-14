@@ -111,8 +111,8 @@ func (g *generator) writePackage() error {
 func (g *generator) writeImports() error {
 	var r templ.Range
 	var err error
-	// Always import html because it's used to encode attribute and HTML element content.
-	if _, err = g.w.Write("import \"html\"\n"); err != nil {
+	// Always import templ because it's the interface type of all templates.
+	if _, err = g.w.Write("import \"github.com/a-h/templ\"\n"); err != nil {
 		return err
 	}
 	// Always import context because it's the first parameter of a template function.
@@ -155,6 +155,9 @@ func (g *generator) writeTemplate(t templ.Template) error {
 	var r templ.Range
 	var err error
 	var indentLevel int
+
+	// Create thew new function.
+
 	// func
 	if _, err = g.w.Write("func "); err != nil {
 		return err
@@ -164,7 +167,7 @@ func (g *generator) writeTemplate(t templ.Template) error {
 	}
 	g.sourceMap.Add(t.Name, r)
 	// (ctx context.Context, w io.Writer,
-	if _, err = g.w.Write("(ctx context.Context, w io.Writer, "); err != nil {
+	if _, err = g.w.Write("("); err != nil {
 		return err
 	}
 	// Write parameters.
@@ -172,22 +175,33 @@ func (g *generator) writeTemplate(t templ.Template) error {
 		return err
 	}
 	g.sourceMap.Add(t.Parameters, r)
-	// ) (err error) {
-	if _, err = g.w.Write(") (err error) {\n"); err != nil {
+	// ) (t templ.Component error) {
+	if _, err = g.w.Write(") (t templ.Component) {\n"); err != nil {
 		return err
 	}
-	// Write out the nodes.
 	indentLevel++
-	if err = g.writeNodes(indentLevel, t.Children); err != nil {
+	// return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+	if _, err = g.w.WriteIndent(indentLevel, "return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {\n"); err != nil {
 		return err
 	}
-	// return nil
-	if _, err = g.w.WriteIndent(indentLevel, "return err\n"); err != nil {
+	{
+		indentLevel++
+		if err = g.writeNodes(indentLevel, t.Children); err != nil {
+			return err
+		}
+		// return nil
+		if _, err = g.w.WriteIndent(indentLevel, "return err\n"); err != nil {
+			return err
+		}
+		indentLevel--
+	}
+	// })
+	if _, err = g.w.WriteIndent(indentLevel, "})\n"); err != nil {
 		return err
 	}
 	indentLevel--
 	// }
-	if _, err = g.w.Write("}\n\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
 		return err
 	}
 	return nil
@@ -206,8 +220,6 @@ func (g *generator) writeNode(indentLevel int, node templ.Node) error {
 	switch n := node.(type) {
 	case templ.Element:
 		g.writeElement(indentLevel, n)
-	case templ.StringExpression:
-		g.writeStringExpression(indentLevel, n)
 	case templ.ForExpression:
 		g.writeForExpression(indentLevel, n)
 	case templ.CallTemplateExpression:
@@ -216,6 +228,8 @@ func (g *generator) writeNode(indentLevel int, node templ.Node) error {
 		g.writeIfExpression(indentLevel, n)
 	case templ.SwitchExpression:
 		g.writeSwitchExpression(indentLevel, n)
+	case templ.StringExpression:
+		g.writeStringExpression(indentLevel, n.Expression)
 	case templ.Whitespace:
 		// Whitespace is removed from template output to minify HTML.
 	default:
@@ -315,22 +329,16 @@ func (g *generator) writeSwitchExpression(indentLevel int, n templ.SwitchExpress
 func (g *generator) writeCallTemplateExpression(indentLevel int, n templ.CallTemplateExpression) error {
 	var r templ.Range
 	var err error
-	// Function name.
-	if r, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`err = %s`, n.Name.Value)); err != nil {
+	if r, err = g.w.WriteIndent(indentLevel, `err = `); err != nil {
 		return err
 	}
-	g.sourceMap.Add(n.Name, r)
-	// (ctx w,
-	if _, err = g.w.Write(`(ctx, w, `); err != nil {
+	// Template expression.
+	if r, err = g.w.Write(fmt.Sprintf(`%s`, n.Expression.Value)); err != nil {
 		return err
 	}
-	// Arguments expression.
-	if r, err = g.w.Write(n.Arguments.Value); err != nil {
-		return err
-	}
-	g.sourceMap.Add(n.Arguments, r)
-	// Close up arguments.
-	if _, err = g.w.Write(`)` + "\n"); err != nil {
+	g.sourceMap.Add(n.Expression, r)
+	// .Render(ctx w)
+	if _, err = g.w.Write(".Render(ctx, w)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -432,15 +440,15 @@ func (g *generator) writeElement(indentLevel int, n templ.Element) error {
 				if err = g.writeErrorHandler(indentLevel); err != nil {
 					return err
 				}
-				// io.WriteString(w, html.EscapeString(
-				if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, html.EscapeString("); err != nil {
+				// io.WriteString(w, templ.EscapeString(
+				if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
 					return err
 				}
 				// p.Name()
-				if r, err = g.w.Write(attr.Value.Expression.Value); err != nil {
+				if r, err = g.w.Write(attr.Expression.Value); err != nil {
 					return err
 				}
-				g.sourceMap.Add(attr.Value.Expression, r)
+				g.sourceMap.Add(attr.Expression, r)
 				// ))
 				if _, err = g.w.Write("))\n"); err != nil {
 					return err
@@ -479,18 +487,18 @@ func (g *generator) writeElement(indentLevel int, n templ.Element) error {
 	return nil
 }
 
-func (g *generator) writeStringExpression(indentLevel int, n templ.StringExpression) error {
+func (g *generator) writeStringExpression(indentLevel int, e templ.Expression) error {
 	var r templ.Range
 	var err error
-	// io.WriteString(w, html.EscapeString(
-	if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, html.EscapeString("); err != nil {
+	// io.WriteString(w, templ.EscapeString(
+	if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
 		return err
 	}
 	// p.Name()
-	if r, err = g.w.Write(n.Expression.Value); err != nil {
+	if r, err = g.w.Write(e.Value); err != nil {
 		return err
 	}
-	g.sourceMap.Add(n.Expression, r)
+	g.sourceMap.Add(e, r)
 	// ))
 	if _, err = g.w.Write("))\n"); err != nil {
 		return err

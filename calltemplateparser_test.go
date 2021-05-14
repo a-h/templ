@@ -15,35 +15,20 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 	}{
 		{
 			name:  "call: simple",
-			input: `{% call Other(p.Test) %}`,
+			input: `{%! Other(p.Test) %}`,
 			expected: CallTemplateExpression{
-				Name: Expression{
-					Value: "Other",
+				Expression: Expression{
+					Value: "Other(p.Test)",
 					Range: Range{
 						From: Position{
-							Index: 8,
+							Index: 4,
 							Line:  1,
-							Col:   8,
+							Col:   4,
 						},
 						To: Position{
-							Index: 12,
+							Index: 17,
 							Line:  1,
-							Col:   12,
-						},
-					},
-				},
-				Arguments: Expression{
-					Value: `p.Test`,
-					Range: Range{
-						From: Position{
-							Index: 14,
-							Line:  1,
-							Col:   14,
-						},
-						To: Position{
-							Index: 20,
-							Line:  1,
-							Col:   20,
+							Col:   17,
 						},
 					},
 				},

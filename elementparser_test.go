@@ -106,21 +106,19 @@ func TestElementParser(t *testing.T) {
 				Attributes: []Attribute{
 					ExpressionAttribute{
 						Name: "href",
-						Value: StringExpression{
-							Expression: Expression{
-								Value: `"test"`,
-								Range: Range{
-									From: Position{
-										Index: 12,
-										Line:  1,
-										Col:   12,
-									},
-									To: Position{
+						Expression: Expression{
+							Value: `"test"`,
+							Range: Range{
+								From: Position{
+									Index: 12,
+									Line:  1,
+									Col:   12,
+								},
+								To: Position{
 
-										Index: 18,
-										Line:  1,
-										Col:   18,
-									},
+									Index: 18,
+									Line:  1,
+									Col:   18,
 								},
 							},
 						},
@@ -157,21 +155,19 @@ func TestElementParser(t *testing.T) {
 					},
 					ExpressionAttribute{
 						Name: "title",
-						Value: StringExpression{
-							Expression: Expression{
-								Value: `localisation.Get("a_title")`,
-								Range: Range{
-									From: Position{
-										Index: 25,
-										Line:  1,
-										Col:   25,
-									},
-									To: Position{
+						Expression: Expression{
+							Value: `localisation.Get("a_title")`,
+							Range: Range{
+								From: Position{
+									Index: 25,
+									Line:  1,
+									Col:   25,
+								},
+								To: Position{
 
-										Index: 52,
-										Line:  1,
-										Col:   52,
-									},
+									Index: 52,
+									Line:  1,
+									Col:   52,
 								},
 							},
 						},

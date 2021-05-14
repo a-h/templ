@@ -19,7 +19,7 @@ func (ph PostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Author: "author",
 		},
 	}
-	err := renderPosts(r.Context(), w, posts)
+	err := postsTemplate(posts).Render(r.Context(), w)
 	if err != nil {
 		log.Println("error", err)
 	}

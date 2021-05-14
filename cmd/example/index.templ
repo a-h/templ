@@ -2,14 +2,14 @@
 
 {% import "strings" %}
 
-{% templ RenderAddress(addr Address) %}
+{% templ AddressTemplate(addr Address) %}
 	<div>{%= addr.Address1 %}</div>
 	<div>{%= addr.Address2 %}</div>
 	<div>{%= addr.Address3 %}</div>
 	<div>{%= addr.Address4 %}</div>
 {% endtempl %}
 
-{% templ Render(p Person) %}
+{% templ PersonTemplate(p Person) %}
 	<div>
 		<div>{%= p.Name() %}</div>
 		<a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
@@ -20,7 +20,7 @@
 				<span>{%= "Not test user" %}</span>
 			{% endif %}
 			{% for _, v := range p.Addresses %}
-				{% call RenderAddress(v) %}
+				{%! AddressTemplate(v) %}
 			{% endfor %}
 			{% switch p.Type %}
 				{% case "test" %}

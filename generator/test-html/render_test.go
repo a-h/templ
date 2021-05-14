@@ -12,10 +12,10 @@ const expected = `<div><h1>Luiz Bonfa</h1><div style="font-family: &#39;sans-ser
 
 func TestRender(t *testing.T) {
 	w := new(strings.Builder)
-	err := render(context.Background(), w, person{
+	err := render(person{
 		name:  "Luiz Bonfa",
 		email: "luiz@example.com",
-	})
+	}).Render(context.Background(), w)
 	if err != nil {
 		t.Errorf("failed to render: %v", err)
 	}

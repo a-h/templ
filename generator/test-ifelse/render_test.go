@@ -12,7 +12,7 @@ const expected = `False`
 
 func TestRender(t *testing.T) {
 	w := new(strings.Builder)
-	err := render(context.Background(), w, data{})
+	err := render(data{}).Render(context.Background(), w)
 	if err != nil {
 		t.Errorf("failed to render: %v", err)
 	}

@@ -14,7 +14,7 @@ const expected = `it was &#39;a&#39;`
 
 func TestRender(t *testing.T) {
 	w := new(strings.Builder)
-	err := render(context.Background(), w, input)
+	err := render(input).Render(context.Background(), w)
 	if err != nil {
 		t.Errorf("failed to render: %v", err)
 	}

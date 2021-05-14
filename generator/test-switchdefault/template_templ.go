@@ -2,22 +2,24 @@
 
 package testswitchdefault
 
-import "html"
+import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func render(ctx context.Context, w io.Writer, input string) (err error) {
-	switch input {
-	case "a":
-		_, err = io.WriteString(w, html.EscapeString("it was 'a'"))
-		if err != nil {
-			return err
+func template(input string) (t templ.Component) {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		switch input {
+		case "a":
+			_, err = io.WriteString(w, templ.EscapeString("it was 'a'"))
+			if err != nil {
+				return err
+			}
+		default:			_, err = io.WriteString(w, templ.EscapeString("it was something else"))
+			if err != nil {
+				return err
+			}
 		}
-	default:		_, err = io.WriteString(w, html.EscapeString("it was something else"))
-		if err != nil {
-			return err
-		}
-	}
-	return err
+		return err
+	})
 }
 

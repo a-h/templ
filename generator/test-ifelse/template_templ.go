@@ -2,22 +2,24 @@
 
 package ifelse
 
-import "html"
+import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func render(ctx context.Context, w io.Writer, d data) (err error) {
-	if d.IsTrue() {
-		_, err = io.WriteString(w, html.EscapeString("True"))
-		if err != nil {
-			return err
+func render(d data) (t templ.Component) {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		if d.IsTrue() {
+			_, err = io.WriteString(w, templ.EscapeString("True"))
+			if err != nil {
+				return err
+			}
+		} else {
+			_, err = io.WriteString(w, templ.EscapeString("False"))
+			if err != nil {
+				return err
+			}
 		}
-	} else {
-		_, err = io.WriteString(w, html.EscapeString("False"))
-		if err != nil {
-			return err
-		}
-	}
-	return err
+		return err
+	})
 }
 

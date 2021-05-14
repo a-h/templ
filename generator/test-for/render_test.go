@@ -14,7 +14,7 @@ const expected = `<div>a</div><div>b</div><div>c</div>`
 
 func TestRender(t *testing.T) {
 	w := new(strings.Builder)
-	err := render(context.Background(), w, input)
+	err := render(input).Render(context.Background(), w)
 	if err != nil {
 		t.Errorf("failed to render: %v", err)
 	}

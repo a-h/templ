@@ -1,6 +1,7 @@
 package templ
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"io"
@@ -8,6 +9,26 @@ import (
 
 	"github.com/a-h/lexical/parse"
 )
+
+// Component is the interface that all templates implement.
+type Component interface {
+	// Render the template.
+	Render(ctx context.Context, w io.Writer) error
+}
+
+// ComponentFunc converts a function that matches the Component interface's
+// Render method into a Component.
+type ComponentFunc func(ctx context.Context, w io.Writer) error
+
+// Render the template.
+func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
+	return cf(ctx, w)
+}
+
+// EscapeString escapes HTML text within templates.
+func EscapeString(s string) string {
+	return html.EscapeString(s)
+}
 
 // {% package templ %}
 //
@@ -209,7 +230,7 @@ func (t Template) Write(w io.Writer, indent int) error {
 	return nil
 }
 
-// A Node appears within a template, e.g. a StringExpression, Element, IfExpression etc.
+// A Node appears within a template, e.g. an StringExpression, Element, IfExpression etc.
 type Node interface {
 	IsNode() bool
 	// Write out the string.
@@ -362,38 +383,29 @@ func (ca ConstantAttribute) String() string {
 
 // href={%= ... }
 type ExpressionAttribute struct {
-	Name  string
-	Value StringExpression
+	Name       string
+	Expression Expression
 }
 
 func (ea ExpressionAttribute) IsAttribute() bool { return true }
 func (ea ExpressionAttribute) String() string {
-	return ea.Name + `={%= ` + ea.Value.Expression.Value + ` %}`
+	return ea.Name + `={%= ` + ea.Expression.Value + ` %}`
 }
 
 // Nodes.
 
-// {%= ... %}
-type StringExpression struct {
-	Expression Expression
-}
-
-func (se StringExpression) IsNode() bool { return true }
-func (se StringExpression) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, `{%= `+se.Expression.Value+` %}`)
-}
-
-// {% call Other(p.First, p.Last) %}
+// CallTemplateExpression can be used to create and render a template using data.
+// {%= Other(p.First, p.Last) %}
+// or it can be used to render a template parameter.
+// {%= v %}
 type CallTemplateExpression struct {
-	// Name of the template to execute.
-	Name Expression
-	// Arguments to pass.
-	Arguments Expression
+	// Expression returns a template to execute.
+	Expression Expression
 }
 
 func (cte CallTemplateExpression) IsNode() bool { return true }
 func (cte CallTemplateExpression) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, `{% call `+cte.Name.Value+`(`+cte.Arguments.Value+`) %}`)
+	return writeIndent(w, indent, `{%= `+cte.Expression.Value+` %}`)
 }
 
 // {% if p.Type == "test" && p.thing %}
@@ -502,4 +514,15 @@ func (fe ForExpression) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+
+// StringExpression is used within HTML elements.
+// {%= ... %}
+type StringExpression struct {
+	Expression Expression
+}
+
+func (se StringExpression) IsNode() bool { return true }
+func (se StringExpression) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, `{%= `+se.Expression.Value+` %}`)
 }
