@@ -2,6 +2,12 @@
 
 * A strongly typed HTML templating language that compiles to Go code, and has great developer tooling.
 
+## Getting started
+
+* Install the `templ` command-line tool.
+* Create a `*.templ` file containing a template.
+* Run `templ generate` to create Go code from the template.
+
 ## Current state
 
 This is beta software, the template language may still have breaking changes. There's no guarantees of stability or correctness at the moment.
@@ -33,176 +39,276 @@ The project is looking for help with:
 
 Please get in touch if you're interested in building a feature as I don't want people to spend time on something that's already being worked on, or ends up being a waste of their time because it can't be integrated.
 
-## Language example
+## Design
+
+### Overview
+
+* `*.templ` files are used to generate Go code to efficiently render the template at runtime.
+* Go code is generated from template files using the `templ generate` command, while templates can be formatted with the `templ fmt` command. The `templ lsp` command provides an LSP (Language Server Protocol) server to enable autocomplete.
+* Each `{% templ ComponentName(params Params) %}` section compiles into a function that creates a `templ.Component`.
+* `templ.Component` is an interface with a single function - `Render(ctx context.Context, io.Writer) (err error)`. You can make a component entirely in Go code and interact with it via `templ`.
+* `templ` aims for correctness, simplicity, developer experience and raw performance, in that order. The goal is to make writing Go web applications more practical, achievable and desirable.
+* Provides minified HTML output only.
+* Components can be composed into layouts.
+
+### Package
+
+Since `templ` files are as close to Go as possible, they start with a package expression.
+
+```
+{% package templ %}
+```
+
+### Importing packages
+
+After the package expression, they might import other Go packages, just like Go files. There's no multi-line import statement, just a single import per line.
+
+```
+{% import "strings" %}
+```
+
+### Components
+
+Once the package and import statements are done, we can define components using the `{% templ Name(params Params) %}` expression. The `templ` expressions are converted into Go functions when the `templ generate` command is executed.
+
+```
+{% templ AddressView(addr Address) %}
+	<div>{%= addr.Address1 %}</div>
+	<div>{%= addr.Address2 %}</div>
+	<div>{%= addr.Address3 %}</div>
+	<div>{%= addr.Address4 %}</div>
+{% endtempl %}
+```
+
+Each `templ.Component` can contain HTML elements, strings, for loops, switch statements and references to other templates.
+
+#### Referencing other components
+
+Components can be referenced in the body of the template, and can pass data between then, for example, using the `AddressTemplate` from the `PersonTemplate`.
+
+```
+{% templ PersonTemplate(p Person) %}
+	<div>
+	    {% for _, v := range p.Addresses %}
+		    {%! AddressTemplate(v) %}
+	    {% endfor %}
+	</div>
+{% endtempl %}
+```
+
+It's also possible to create "higher order components" that compose other instances of `templ.Component` without passing data, or even knowing what the concrete type of the component will be ahead of time. So long as is implements `templ.Component`, it can be used.
+
+For example, this template accepts 3 templates (header, footer, body) and renders all 3 of them in the expected order.
+
+```
+{% templ Layout(header, footer, body templ.Component) %}
+	{%! header %}
+	{%! body %}
+	{%! footer %}
+{% endtempl %}
+```
+
+#### Code-only components
+
+It's possible to create a `templ.Component` entirely in Go code. Within `templ`, strings are automatically escaped to reduce the risk of cross-site-scripting attacks, but it's possible to create your own "Raw" component that bypasses this behaviour: 
+
+```go
+func Raw(s string) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		_, err = io.WriteString(w, s)
+		return
+	})
+}
+```
+
+Then call it in a template. So long as the `Raw` function is in scope, you can use it.
+
+```
+{! Raw("<script>alert('xss vector');</script>") %}
+```
+
+### Elements
+
+HTML elements look like HTML and you can write static attributes into them, just like with normal HTML. Don't worry about the spacing, the HTML will be minified when it's rendered.
+
+```
+<div id="address1">{%= addr.Address1 %}</div>
+```
+
+You can also have dynamic attributes that use template parameter, other Go variables that happen to be in scope, or call Go functions that return a string. Don't worry about HTML encoding element text and attribute value, that will be taken care of.
+
+```
+<a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
+```
+
+### If/Else
+
+Templates can contain if/else statements that follow the same pattern as Go.
+
+```
+{% if p.Type == "test" %}
+	<span>{%= "Test user" %}</span>
+{% else %}
+	<span>{%= "Not test user" %}</span>
+{% endif %}
+```
+
+### For
+
+Templates have the same loop behaviour as Go.
+
+```
+{% for _, v := range p.Addresses %}
+	<li>{%= v.City %}</li>
+{% endfor %}
+```
+
+### Switch/Case
+
+Switch statements work in the same way as they do in Go. 
+
+```
+{% switch p.Type %}
+	{% case "test" %}
+		<span>{%= "Test user" %}</span>
+	{% endcase %}
+	{% case "admin" %}
+		<span>{%= "Admin user" %}</span>
+	{% endcase %}
+	{% default %}
+		<span>{%= "Unknown user" %}</span>
+	{% enddefault %}
+{% endswitch %}
+```
+
+## Full example
 
 ```templ
 {% package templ %}
 
 {% import "strings" %}
-{% import strs "strings" %}
 
-{% templ RenderAddress(addr Address) %}
+{% templ Layout(header, footer, body templ.Component) %}
+	{%! header %}
+	{%! body %}
+	{%! footer %}
+{% endtempl %}
+
+{% templ AddressTemplate(addr Address) %}
 	<div>{%= addr.Address1 %}</div>
 	<div>{%= addr.Address2 %}</div>
 	<div>{%= addr.Address3 %}</div>
 	<div>{%= addr.Address4 %}</div>
 {% endtempl %}
 
-{% templ Render(p Person) %}
-   <div>
-     <div>{%= p.Name() %}</div>
-     <a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
-     <div>
-         {% if p.Type == "test" %}
-            <span>{%= "Test user" %}</span>
-         {% else %}
-	    <span>{%= "Not test user" %}</span>
-         {% endif %}
-         {% for _, v := range p.Addresses %}
-            {%! RenderAddress(v) %}
-         {% endfor %}
-     </div>
-   </div>
+{% templ PersonTemplate(p Person) %}
+	<div>
+		<div>{%= p.Name() %}</div>
+		<a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
+		<div>
+			{% if p.Type == "test" %}
+				<span>{%= "Test user" %}</span>
+			{% else %}
+				<span>{%= "Not test user" %}</span>
+			{% endif %}
+			{% for _, v := range p.Addresses %}
+				{%! AddressTemplate(v) %}
+			{% endfor %}
+			{% switch p.Type %}
+				{% case "test" %}
+					<span>{%= "Test user" %}</span>
+				{% endcase %}
+				{% case "admin" %}
+					<span>{%= "Admin user" %}</span>
+				{% endcase %}
+				{% default %}
+					<span>{%= "Unknown user" %}</span>
+				{% enddefault %}
+			{% endswitch %}
+		</div>
+	</div>
 {% endtempl %}
 ```
 
-Will compile to Go code similar to:
+Will compile to Go code similar to the following (error handling removed for brevity):
 
 ```go
 // Code generated by templ DO NOT EDIT.
 
 package templ
 
-import "html"
+import "github.com/a-h/templ"
 import "context"
 import "io"
 import "strings"
-import strs "strings"
 
-func RenderAddress(ctx context.Context, w io.Writer, addr Address) (err error) {
-	_, err = io.WriteString(w, "<div>")
-	if err != nil {
+func Layout(header, footer, body templ.Component) (t templ.Component) {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		err = header.Render(ctx, w)
+		err = body.Render(ctx, w)
+		err = footer.Render(ctx, w)
 		return err
-	}
-	_, err = io.WriteString(w, html.EscapeString(addr.Address1))
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "</div>")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "<div>")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, html.EscapeString(addr.Address2))
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "</div>")
-	if err != nil {
-		return err
-	}
-	// You get the idea...
-	return err
+	})
 }
 
-func Render(ctx context.Context, w io.Writer, p Person) (err error) {
-	_, err = io.WriteString(w, "<div>")
-	if err != nil {
+func AddressTemplate(addr Address) (t templ.Component) {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		_, err = io.WriteString(w, "<div>")
+		_, err = io.WriteString(w, templ.EscapeString(addr.Address1))
+		_, err = io.WriteString(w, "</div>")
+		_, err = io.WriteString(w, "<div>")
+		_, err = io.WriteString(w, templ.EscapeString(addr.Address2))
+		_, err = io.WriteString(w, "</div>")
+		// Cut for brevity.
 		return err
-	}
-	_, err = io.WriteString(w, "<div>")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, html.EscapeString(p.Name()))
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "</div>")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "<a")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, " href=")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "\"")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, html.EscapeString(p.URL))
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "\"")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, ">")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, html.EscapeString(strings.ToUpper(p.Name())))
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "</a>")
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, "<div>")
-	if err != nil {
-		return err
-	}
-	if p.Type == "test" {
-		_, err = io.WriteString(w, "<span>")
-		if err != nil {
-			return err
+	})
+}
+
+func PersonTemplate(p Person) (t templ.Component) {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		_, err = io.WriteString(w, "<div>")
+		_, err = io.WriteString(w, "<div>")
+		_, err = io.WriteString(w, templ.EscapeString(p.Name()))
+		_, err = io.WriteString(w, "</div>")
+		_, err = io.WriteString(w, "<a")
+		_, err = io.WriteString(w, " href=")
+		_, err = io.WriteString(w, "\"")
+		_, err = io.WriteString(w, templ.EscapeString(p.URL))
+		_, err = io.WriteString(w, "\"")
+		_, err = io.WriteString(w, ">")
+		_, err = io.WriteString(w, templ.EscapeString(strings.ToUpper(p.Name())))
+		_, err = io.WriteString(w, "</a>")
+		_, err = io.WriteString(w, "<div>")
+		if p.Type == "test" {
+			_, err = io.WriteString(w, "<span>")
+			_, err = io.WriteString(w, templ.EscapeString("Test user"))
+			_, err = io.WriteString(w, "</span>")
+		} else {
+			_, err = io.WriteString(w, "<span>")
+			_, err = io.WriteString(w, templ.EscapeString("Not test user"))
+			_, err = io.WriteString(w, "</span>")
 		}
-		_, err = io.WriteString(w, html.EscapeString("Test user"))
-		if err != nil {
-			return err
+		for _, v := range p.Addresses {
+			err = AddressTemplate(v).Render(ctx, w)
 		}
-		_, err = io.WriteString(w, "</span>")
-		if err != nil {
-			return err
+		switch p.Type {
+		case "test":
+			_, err = io.WriteString(w, "<span>")
+			_, err = io.WriteString(w, templ.EscapeString("Test user"))
+			_, err = io.WriteString(w, "</span>")
+		case "admin":
+			_, err = io.WriteString(w, "<span>")
+			_, err = io.WriteString(w, templ.EscapeString("Admin user"))
+			_, err = io.WriteString(w, "</span>")
+		default:
+		        _, err = io.WriteString(w, "<span>")
+			_, err = io.WriteString(w, templ.EscapeString("Unknown user"))
+			_, err = io.WriteString(w, "</span>")
 		}
-	} else {
-		_, err = io.WriteString(w, "<span>")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, html.EscapeString("Not test user"))
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "</span>")
-		if err != nil {
-			return err
-		}
-	}
-	for _, v := range p.Addresses {
-		err = Address(ctx, w, v)
-		if err != nil {
-			return err
-		}
-	}
-	_, err = io.WriteString(w, "</div>")
-	if err != nil {
+		_, err = io.WriteString(w, "</div>")
+		_, err = io.WriteString(w, "</div>")
 		return err
-	}
-	_, err = io.WriteString(w, "</div>")
-	if err != nil {
-		return err
-	}
-	return err
+	})
 }
 ```
 

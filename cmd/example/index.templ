@@ -2,6 +2,12 @@
 
 {% import "strings" %}
 
+{% templ Layout(header, footer, body templ.Component) %}
+	{%! header %}
+	{%! body %}
+	{%! footer %}
+{% endtempl %}
+
 {% templ AddressTemplate(addr Address) %}
 	<div>{%= addr.Address1 %}</div>
 	<div>{%= addr.Address2 %}</div>
