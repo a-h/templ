@@ -181,12 +181,11 @@ func (p attributesParser) Parse(pi parse.Input) parse.Result {
 }
 
 // Element name.
-var lowerAZ = "abcdefghijklmnopqrstuvwxyz"
-var upperAZ = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-var numbers = "0123456789"
+var elementNameFirst = "abcdefghijklmnopqrstuvwxyz"
+var elementNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
 var elementNameParser = parse.Then(parse.WithStringConcatCombiner,
-	parse.RuneIn(lowerAZ),
-	parse.Many(parse.WithStringConcatCombiner, 0, 15, parse.RuneIn(lowerAZ+upperAZ+numbers)),
+	parse.RuneIn(elementNameFirst),
+	parse.Many(parse.WithStringConcatCombiner, 0, 15, parse.RuneIn(elementNameSubsequent)),
 )
 
 // Element.

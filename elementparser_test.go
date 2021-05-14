@@ -25,6 +25,15 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
+			name:   "element: hyphen in name",
+			input:  `<turbo-frame>`,
+			parser: newElementOpenTagParser().Parse,
+			expected: elementOpenTag{
+				Name:       "turbo-frame",
+				Attributes: []Attribute{},
+			},
+		},
+		{
 			name:   "element: open with attributes",
 			input:  `<div id="123" style="padding: 10px">`,
 			parser: newElementOpenTagParser().Parse,
