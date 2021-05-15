@@ -141,6 +141,34 @@ You can also have dynamic attributes that use template parameter, other Go varia
 <a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
 ```
 
+### Text
+
+Text is rendered from Go expressions, which includes constant values:
+
+```
+{%= "this is a string" %}
+```
+
+Using the backtick format (single-line only):
+
+```
+{%= `this is also a string` %}
+```
+
+Calling a function that returns a string:
+
+```
+{%= time.Now().String() %}
+```
+
+Or using a string parameter, or variable that's in scope.
+
+```
+{%= v.s %}
+```
+
+What you can't do, is write text directly between elements (e.g. `<div>Some text</div>`, because the parser would have to become more complex to support HTML entities and the various mistakes people make when they're doing that (bare ampersands etc.). Go strings support UTF-8 which is much easier, and the escaping rules are well known by Go programmers.
+
 ### If/Else
 
 Templates can contain if/else statements that follow the same pattern as Go.
