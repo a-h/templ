@@ -18,6 +18,7 @@ func newDocumentContents(logger *zap.Logger) *documentContents {
 		log:           logger,
 		editors: []documentEditor{
 			autoInsertClosingTag,
+			autoInsertExpressionClose,
 		},
 	}
 }
@@ -67,59 +68,6 @@ func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentC
 		return
 	}
 	fc.uriToContents[uri] = updated
-	return
-}
-
-type insertPosition int
-
-const (
-	insertBefore insertPosition = iota
-	insertAfter
-)
-
-func createWorkspaceApplyEditInsert(documentURI, text string, at lsp.Position, position insertPosition) toClientRequest {
-	textRange := lsp.Range{
-		Start: at,
-		End:   at,
-	}
-	if position == insertAfter {
-		textRange.Start.Character++
-		textRange.End.Character += len(text) + 1
-	}
-	return toClientRequest{
-		Method: "workspace/applyEdit",
-		Notif:  false,
-		Params: applyWorkspaceEditParams{
-			Label: "templ close tag",
-			Edit: lsp.WorkspaceEdit{
-				Changes: map[string][]lsp.TextEdit{
-					documentURI: {
-						{
-							Range:   textRange,
-							NewText: text,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func autoInsertClosingTag(uri, prefix string, change lsp.TextDocumentContentChangeEvent) (requests []toClientRequest) {
-	if change.Text == "" {
-		// It's a deletion.
-		return
-	}
-	// Check the last couple of bytes for "{%= " and "{% ".
-	last := 4
-	if last > len(prefix) {
-		last = len(prefix)
-	}
-	upToCaret := prefix[len(prefix)-last:] + change.Text
-	if shouldInsert := strings.HasSuffix(upToCaret, "{% ") || strings.HasSuffix(upToCaret, "{%= "); !shouldInsert {
-		return
-	}
-	requests = append(requests, createWorkspaceApplyEditInsert(uri, " %}\n", change.Range.End, insertAfter))
 	return
 }
 
@@ -195,4 +143,102 @@ func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool,
 		return 0, false, fmt.Sprintf("character %d (zero-based) is beyond first line boundary", p.Character)
 	}
 	return 0, false, fmt.Sprintf("file only has %d lines", line+1)
+}
+
+// end of content from SourceGraph.
+
+// LSP text edit features for automatically inserting values.
+
+// When you type "{% ", " %}" is inserted afterwards.
+// When you type "{%= ", " %}" is inserted afterwards.
+// When you type "{%! ", " %}" is inserted afterwards.
+func autoInsertExpressionClose(uri, prefix string, change lsp.TextDocumentContentChangeEvent) (requests []toClientRequest) {
+	if change.Text == "" {
+		// It's a deletion.
+		return
+	}
+	// Check the last couple of bytes for "{%= ", "{% " and "{%! ".
+	last := 4
+	if last > len(prefix) {
+		last = len(prefix)
+	}
+	upToCaret := prefix[len(prefix)-last:] + change.Text
+	if shouldInsert := strings.HasSuffix(upToCaret, "{% ") || strings.HasSuffix(upToCaret, "{%= ") || strings.HasSuffix(upToCaret, "{%! "); !shouldInsert {
+		return
+	}
+	requests = append(requests, createWorkspaceApplyEditInsert(uri, " %}\n", change.Range.End, insertAfter))
+	return
+}
+
+// When you type "{% templ ", "{% endtempl %}" is inserted on the next line.
+func autoInsertClosingTag(uri, prefix string, change lsp.TextDocumentContentChangeEvent) (requests []toClientRequest) {
+	if change.Text == "" {
+		// It's a deletion.
+		return
+	}
+	last := 10
+	if last > len(prefix) {
+		last = len(prefix)
+	}
+	upToCaret := prefix[len(prefix)-last:] + change.Text
+	tags := []string{
+		"{% templ ",
+		"{% if ",
+		"{% for ",
+		"{% switch ",
+		"{% case ",
+		"{% default ",
+	}
+	var insertEnd string
+	for i := 0; i < len(tags); i++ {
+		tag := tags[i]
+		if strings.HasSuffix(upToCaret, tag) {
+			insertEnd = tag[3 : len(tag)-1]
+			break
+		}
+	}
+	if insertEnd == "" {
+		return
+	}
+	insertAt := lsp.Position{
+		Line:      change.Range.End.Line + 1,
+		Character: 0,
+	}
+	requests = append(requests, createWorkspaceApplyEditInsert(uri, "{% end"+insertEnd+" %}\n", insertAt, insertAfter))
+	return
+}
+
+type insertPosition int
+
+const (
+	insertBefore insertPosition = iota
+	insertAfter
+)
+
+func createWorkspaceApplyEditInsert(documentURI, text string, at lsp.Position, position insertPosition) toClientRequest {
+	textRange := lsp.Range{
+		Start: at,
+		End:   at,
+	}
+	if position == insertAfter {
+		textRange.Start.Character++
+		textRange.End.Character += len(text) + 1
+	}
+	return toClientRequest{
+		Method: "workspace/applyEdit",
+		Notif:  false,
+		Params: applyWorkspaceEditParams{
+			Label: "templ close tag",
+			Edit: lsp.WorkspaceEdit{
+				Changes: map[string][]lsp.TextEdit{
+					documentURI: {
+						{
+							Range:   textRange,
+							NewText: text,
+						},
+					},
+				},
+			},
+		},
+	}
 }
