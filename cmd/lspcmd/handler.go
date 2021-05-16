@@ -1,7 +1,6 @@
 package lspcmd
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -17,22 +16,22 @@ import (
 )
 
 type Proxy struct {
-	log            *zap.Logger
-	gopls          *jsonrpc2.Conn
-	client         *jsonrpc2.Conn
-	fileCache      *fileCache
-	sourceMapCache *sourceMapCache
-	toClient       chan toClientRequest
-	context        context.Context
+	log              *zap.Logger
+	gopls            *jsonrpc2.Conn
+	client           *jsonrpc2.Conn
+	documentContents *documentContents
+	sourceMapCache   *sourceMapCache
+	toClient         chan toClientRequest
+	context          context.Context
 }
 
 // NewProxy returns a new proxy to send messages from the client to and from gopls,
 // however, init needs to be called before it is usable.
 func NewProxy(logger *zap.Logger) (p *Proxy) {
 	return &Proxy{
-		log:            logger,
-		fileCache:      newFileCache(logger),
-		sourceMapCache: newSourceMapCache(),
+		log:              logger,
+		documentContents: newDocumentContents(logger),
+		sourceMapCache:   newSourceMapCache(),
 		// Prevent trying to send to the client when message handling is taking place.
 		// The proxy can place up to 32 requests onto the toClient buffered channel
 		// during handling. They're processed when the clientInUse mutex is released.
@@ -251,7 +250,7 @@ func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
 		return
 	}
 	// Cache the template doc.
-	p.fileCache.Set(string(params.TextDocument.URI), []byte(params.TextDocument.Text))
+	p.documentContents.Set(string(params.TextDocument.URI), []byte(params.TextDocument.Text))
 	// Parse the template.
 	template, err := templ.ParseString(params.TextDocument.Text)
 	if err != nil {
@@ -295,7 +294,7 @@ func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request
 		return
 	}
 	// Apply content changes to the cached template.
-	templateText, requestsToClient, err := p.fileCache.Apply(string(params.TextDocument.URI), params.ContentChanges)
+	templateText, requestsToClient, err := p.documentContents.Apply(string(params.TextDocument.URI), params.ContentChanges)
 	if err != nil {
 		return
 	}
@@ -366,7 +365,7 @@ func (p *Proxy) rewriteDidCloseRequest(r *jsonrpc2.Request) (err error) {
 		return
 	}
 	// Delete the template and sourcemaps from caches.
-	p.fileCache.Delete(string(params.TextDocument.URI))
+	p.documentContents.Delete(string(params.TextDocument.URI))
 	p.sourceMapCache.Delete(string(params.TextDocument.URI))
 	// Get gopls to delete the Go file from its cache.
 	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
@@ -410,180 +409,4 @@ func (fc *sourceMapCache) Delete(uri string) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
 	delete(fc.uriToSourceMap, uri)
-}
-
-// Cache of files to their contents.
-func newFileCache(logger *zap.Logger) *fileCache {
-	return &fileCache{
-		m:             new(sync.Mutex),
-		uriToContents: make(map[string][]byte),
-		log:           logger,
-	}
-}
-
-type fileCache struct {
-	m             *sync.Mutex
-	uriToContents map[string][]byte
-	log           *zap.Logger
-}
-
-func (fc *fileCache) Set(uri string, contents []byte) {
-	fc.m.Lock()
-	defer fc.m.Unlock()
-	fc.uriToContents[uri] = contents
-}
-
-func (fc *fileCache) Get(uri string) (contents []byte, ok bool) {
-	fc.m.Lock()
-	defer fc.m.Unlock()
-	contents, ok = fc.uriToContents[uri]
-	return
-}
-
-func (fc *fileCache) Delete(uri string) {
-	fc.m.Lock()
-	defer fc.m.Unlock()
-	delete(fc.uriToContents, uri)
-}
-
-func (fc *fileCache) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (updated []byte, requestsToClient []toClientRequest, err error) {
-	fc.m.Lock()
-	defer fc.m.Unlock()
-	contents, ok := fc.uriToContents[uri]
-	if !ok {
-		err = fmt.Errorf("document not found")
-		return
-	}
-	updated, insertCloses, err := applyContentChanges(fc.log, lsp.DocumentURI(uri), contents, changes)
-	if err != nil {
-		return
-	}
-	requestsToClient = make([]toClientRequest, len(insertCloses))
-	for i := 0; i < len(insertCloses); i++ {
-		requestsToClient[i] = createWorkspaceApplyEditInsert(uri, " %}\n", insertCloses[i], insertAfter)
-	}
-	fc.uriToContents[uri] = updated
-	return
-}
-
-type insertPosition int
-
-const (
-	insertBefore insertPosition = iota
-	insertAfter
-)
-
-func createWorkspaceApplyEditInsert(documentURI, text string, at lsp.Position, position insertPosition) toClientRequest {
-	textRange := lsp.Range{
-		Start: at,
-		End:   at,
-	}
-	if position == insertAfter {
-		textRange.Start.Character++
-		textRange.End.Character += len(text) + 1
-	}
-	return toClientRequest{
-		Method: "workspace/applyEdit",
-		Notif:  false,
-		Params: applyWorkspaceEditParams{
-			Label: "templ close tag",
-			Edit: lsp.WorkspaceEdit{
-				Changes: map[string][]lsp.TextEdit{
-					documentURI: {
-						{
-							Range:   textRange,
-							NewText: text,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-// Check the last couple of bytes for "{%= " and "{% ".
-func shouldInsertCloseTag(prefix, change string) (shouldInsert bool) {
-	last := 4
-	if last > len(prefix) {
-		last = len(prefix)
-	}
-	upToCaret := prefix[len(prefix)-last:] + change
-	return strings.HasSuffix(upToCaret, "{% ") || strings.HasSuffix(upToCaret, "{%= ")
-}
-
-// Contents below adapted from https://github.com/sourcegraph/go-langserver/blob/4b49d01c8a692968252730d45980091dcec7752e/langserver/fs.go#L141
-// It implements the ability to react to changes on document edits.
-// MIT licensed.
-// applyContentChanges updates `contents` based on `changes`
-func applyContentChanges(log *zap.Logger, uri lsp.DocumentURI, contents []byte, changes []lsp.TextDocumentContentChangeEvent) (c []byte, insertCloses []lsp.Position, err error) {
-	for _, change := range changes {
-		if change.Range == nil && change.RangeLength == 0 {
-			contents = []byte(change.Text) // new full content
-			continue
-		}
-		start, ok, why := offsetForPosition(contents, change.Range.Start)
-		if !ok {
-			return nil, insertCloses, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
-		}
-		var end int
-		if change.RangeLength != 0 {
-			end = start + int(change.RangeLength)
-		} else {
-			// RangeLength not specified, work it out from Range.End
-			end, ok, why = offsetForPosition(contents, change.Range.End)
-			if !ok {
-				return nil, insertCloses, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
-			}
-		}
-		if start < 0 || end > len(contents) || end < start {
-			return nil, insertCloses, fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, uri)
-		}
-		// Custom code to check for autocomplete.
-		if len(change.Text) > 0 && shouldInsertCloseTag(string(contents[:start]), change.Text) {
-			end := lsp.Position{
-				Line:      change.Range.End.Line,
-				Character: change.Range.End.Character,
-			}
-			insertCloses = append(insertCloses, end)
-		}
-		// End of custom code.
-		// Try avoid doing too many allocations, so use bytes.Buffer
-		b := &bytes.Buffer{}
-		b.Grow(start + len(change.Text) + len(contents) - end)
-		b.Write(contents[:start])
-		b.WriteString(change.Text)
-		b.Write(contents[end:])
-		contents = b.Bytes()
-	}
-	return contents, insertCloses, nil
-}
-
-func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool, whyInvalid string) {
-	line := 0
-	col := 0
-	// TODO(sqs): count chars, not bytes, per LSP. does that mean we
-	// need to maintain 2 separate counters since we still need to
-	// return the offset as bytes?
-	for _, b := range contents {
-		if line == p.Line && col == p.Character {
-			return offset, true, ""
-		}
-		if (line == p.Line && col > p.Character) || line > p.Line {
-			return 0, false, fmt.Sprintf("character %d (zero-based) is beyond line %d boundary (zero-based)", p.Character, p.Line)
-		}
-		offset++
-		if b == '\n' {
-			line++
-			col = 0
-		} else {
-			col++
-		}
-	}
-	if line == p.Line && col == p.Character {
-		return offset, true, ""
-	}
-	if line == 0 {
-		return 0, false, fmt.Sprintf("character %d (zero-based) is beyond first line boundary", p.Character)
-	}
-	return 0, false, fmt.Sprintf("file only has %d lines", line+1)
 }
