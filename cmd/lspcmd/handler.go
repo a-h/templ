@@ -22,8 +22,8 @@ type Proxy struct {
 	client         *jsonrpc2.Conn
 	fileCache      *fileCache
 	sourceMapCache *sourceMapCache
-	clientInUse    *sync.Mutex
 	toClient       chan toClientRequest
+	context        context.Context
 }
 
 // NewProxy returns a new proxy to send messages from the client to and from gopls,
@@ -36,13 +36,13 @@ func NewProxy(logger *zap.Logger) (p *Proxy) {
 		// Prevent trying to send to the client when message handling is taking place.
 		// The proxy can place up to 32 requests onto the toClient buffered channel
 		// during handling. They're processed when the clientInUse mutex is released.
-		clientInUse: new(sync.Mutex),
-		toClient:    make(chan toClientRequest, 32),
+		toClient: make(chan toClientRequest, 32),
 	}
 }
 
 // Init the proxy.
-func (p *Proxy) Init(client, gopls *jsonrpc2.Conn) {
+func (p *Proxy) Init(ctx context.Context, client, gopls *jsonrpc2.Conn) {
+	p.context = ctx
 	p.client = client
 	p.gopls = gopls
 	go func() {
@@ -62,18 +62,16 @@ type toClientRequest struct {
 // sendToClient should not be called directly. Instead, send a message to the non-blocking
 // toClient channel.
 func (p *Proxy) sendToClient(r toClientRequest) {
-	p.clientInUse.Lock()
-	defer p.clientInUse.Unlock()
-	p.log.Info("sendToClient: start", zap.String("method", r.Method))
+	p.log.Info("sendToClient: starting", zap.String("method", r.Method))
 	if r.Notif {
-		err := p.client.Notify(context.Background(), r.Method, r.Params)
+		err := p.client.Notify(p.context, r.Method, r.Params)
 		if err != nil {
 			p.log.Error("sendToClient: error", zap.String("type", "notification"), zap.String("method", r.Method), zap.Error(err))
 			return
 		}
 	} else {
 		var result map[string]interface{}
-		err := p.client.Call(context.Background(), r.Method, r.Params, &result)
+		err := p.client.Call(p.context, r.Method, r.Params, &result)
 		if err != nil {
 			p.log.Error("sendToClient: error", zap.String("type", "call"), zap.String("method", r.Method), zap.Error(err))
 			return
@@ -111,8 +109,6 @@ func (p *Proxy) proxyFromGoplsToClient(ctx context.Context, conn *jsonrpc2.Conn,
 // Handle implements jsonrpc2.Handler. This function receives from the text editor client, and calls the proxy function
 // to determine how to play it back to the client.
 func (p *Proxy) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
-	p.clientInUse.Lock()
-	defer p.clientInUse.Unlock()
 	p.log.Info("client -> gopls", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
 	if r.Notif {
 		var err error
@@ -543,7 +539,7 @@ func applyContentChanges(log *zap.Logger, uri lsp.DocumentURI, contents []byte, 
 			return nil, insertCloses, fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, uri)
 		}
 		// Custom code to check for autocomplete.
-		if shouldInsertCloseTag(string(contents[:start]), change.Text) {
+		if len(change.Text) > 0 && shouldInsertCloseTag(string(contents[:start]), change.Text) {
 			end := lsp.Position{
 				Line:      change.Range.End.Line,
 				Character: change.Range.End.Character,

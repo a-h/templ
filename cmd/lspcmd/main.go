@@ -62,12 +62,12 @@ func run(ctx context.Context, args Arguments) (err error) {
 	// Create the lsp server for the text editor client.
 	clientStream := jsonrpc2.NewBufferedStream(stdrwc{log: logger}, jsonrpc2.VSCodeObjectCodec{})
 	// If detailed logging is required, it can be enabled with:
-	// rpcLogger := jsonrpc2.LogMessages(rpcLogger{log: logger})
-	// conn := jsonrpc2.NewConn(ctx, stream, handler, rpcLogger)
+	//rpcLogger := jsonrpc2.LogMessages(rpcLogger{log: logger})
+	//client := jsonrpc2.NewConn(ctx, clientStream, proxy, rpcLogger)
 	client := jsonrpc2.NewConn(ctx, clientStream, proxy)
 
 	// Start gopls and make a client connection to it.
-	gopls, err := pls.NewGopls(logger, proxy.proxyFromGoplsToClient, pls.Options{
+	gopls, err := pls.NewGopls(ctx, logger, proxy.proxyFromGoplsToClient, pls.Options{
 		Log:      args.GoplsLog,
 		RPCTrace: args.GoplsRPCTrace,
 	})
@@ -77,7 +77,7 @@ func run(ctx context.Context, args Arguments) (err error) {
 	}
 
 	// Initialize the proxy.
-	proxy.Init(client, gopls)
+	proxy.Init(ctx, client, gopls)
 
 	// Close the server and gopls client when we're complete.
 	select {

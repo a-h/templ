@@ -29,7 +29,7 @@ func (opts Options) AsArguments() []string {
 }
 
 // NewGopls starts gopls and opens up a jsonrpc2 connection to it.
-func NewGopls(zapLogger *zap.Logger, onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request), opts Options) (conn *jsonrpc2.Conn, err error) {
+func NewGopls(ctx context.Context, zapLogger *zap.Logger, onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request), opts Options) (conn *jsonrpc2.Conn, err error) {
 	cmd := exec.Command("gopls", opts.AsArguments()...)
 	rwc, err := newProcessReadWriteCloser(zapLogger, cmd)
 	if err != nil {
@@ -37,7 +37,7 @@ func NewGopls(zapLogger *zap.Logger, onGoplsRequest func(ctx context.Context, co
 	}
 	stream := jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{})
 	handler := fromGoplsToClientHandler{onGoplsRequest: onGoplsRequest}
-	conn = jsonrpc2.NewConn(context.Background(), stream, handler)
+	conn = jsonrpc2.NewConn(ctx, stream, handler)
 	return
 }
 
