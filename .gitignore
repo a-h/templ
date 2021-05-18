@@ -2,3 +2,4 @@ cmd/example/*.go
 dist
 cmd/templ
 cmd/lspcmd/*log.txt
+.DS_Store

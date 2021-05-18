@@ -17,7 +17,7 @@
 
 {% templ PersonTemplate(p Person) %}
 	<div>
-		<div>{%= p.Name() %}</div>
+		<div id="id123">{%= p.Name() %}</div>
 		<a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
 		<div>
 			{% if p.Type == "test" %}
