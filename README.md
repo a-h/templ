@@ -22,23 +22,6 @@ The language generates Go code, some sections of the template (e.g. `package`, `
 * `templ fmt` formats template files in the current directory tree.
 * `templ lsp` provides a Language Server to support IDE integrations. The compile command generates a sourcemap which maps from the `*.templ` files to the compiled Go file. This enables the `templ` LSP to use the Go language `gopls` language server as is, providing a thin shim to do the source remapping. This is used to provide autocomplete for template variables and functions.
 
-### Help needed
-
-The project is looking for help with:
-
-* Testing the `fmt` tool, and updating the formatter so that inline elements aren't separated onto newlines.
-* Adding features to the Language Server implementation, it just does autocomplete the moment. It needs to be able to do definition and add imports automatically.
-* Writing a VS Code plugin that uses the LSP support.
-* Examples and testing of the tools.
-* Adding a `hot` option to the compiler that recompiles the `*.templ` files when they change on disk. This could be achieved by documenting and making it easy to use external tools such as `ag`, ripgrep (`rg`) and `entr` in the short term.
-* Writing documentation of the components.
-* Writing a blog post that demonstrates using the tool to build a form-based Web application.
-* Testing (including fuzzing), benchmarking and optimisation.
-* An example of a web-based UI component library would be very useful, a more advanced version of the integration test suite, thatwould be a Go web server that runs the compiled `templ` file along with example JSON payloads that match the expected data structure types and renders the content - a UI playground. If it could do hot-reload, amazing.
-* Low priority, but I'm thinking of developing a CSS-in-Go implementation to work in parallel. This might take the form of a pre-processor which would collect all "style" attributes of elements and automatically calculate a minimum set of CSS classes that could be created and applied to the elements - but a first pass could just be a way to define CSS classes in Go to allow the use of CSS variables.
-
-Please get in touch if you're interested in building a feature as I don't want people to spend time on something that's already being worked on, or ends up being a waste of their time because it can't be integrated.
-
 ## Design
 
 ### Overview
@@ -418,3 +401,20 @@ Yes, yes it does. I looked at the landscape of Go templating languages before I 
 The package author didn't respond (hey, we're all busy), and looking through the code, I realised that it would be hard to modify what's there to have the concept of source mapping, mostly because there's no internal object model of the language, it reads and emits code in one go.
 
 It's also a really feature rich project, with all sorts of formatters, and support for various languages (JSON etc.), so I borrowed some syntax ideas, but left the code. If `valyala` is up for it, I'd be happy to help integrate the ideas from here. I just want Go to have a templating language with great IDE support.
+
+### Help needed
+
+The project is looking for help with:
+
+* Testing the `fmt` tool, and updating the formatter so that inline elements aren't separated onto newlines.
+* Adding features to the Language Server implementation, it just does autocomplete the moment. It needs to be able to do definition and add imports automatically.
+* Writing a VS Code plugin that uses the LSP support.
+* Examples and testing of the tools.
+* Adding a `hot` option to the compiler that recompiles the `*.templ` files when they change on disk. This could be achieved by documenting and making it easy to use external tools such as `ag`, ripgrep (`rg`) and `entr` in the short term.
+* Writing documentation of the components.
+* Writing a blog post that demonstrates using the tool to build a form-based Web application.
+* Testing (including fuzzing), benchmarking and optimisation.
+* An example of a web-based UI component library would be very useful, a more advanced version of the integration test suite, thatwould be a Go web server that runs the compiled `templ` file along with example JSON payloads that match the expected data structure types and renders the content - a UI playground. If it could do hot-reload, amazing.
+* Low priority, but I'm thinking of developing a CSS-in-Go implementation to work in parallel. This might take the form of a pre-processor which would collect all "style" attributes of elements and automatically calculate a minimum set of CSS classes that could be created and applied to the elements - but a first pass could just be a way to define CSS classes in Go to allow the use of CSS variables.
+
+Please get in touch if you're interested in building a feature as I don't want people to spend time on something that's already being worked on, or ends up being a waste of their time because it can't be integrated.
