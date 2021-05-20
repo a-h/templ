@@ -22,7 +22,7 @@ The language generates Go code, some sections of the template (e.g. `package`, `
 * `templ fmt` formats template files in the current directory tree.
 * `templ lsp` provides a Language Server to support IDE integrations. The compile command generates a sourcemap which maps from the `*.templ` files to the compiled Go file. This enables the `templ` LSP to use the Go language `gopls` language server as is, providing a thin shim to do the source remapping. This is used to provide autocomplete for template variables and functions.
 
-# Security
+## Security
 
 templ currently uses context unaware escaping, see https://github.com/a-h/templ/issues/6 for a proposal to add context-aware content escaping.
 
