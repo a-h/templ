@@ -6,7 +6,7 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func postsTemplate(posts []Post) (t templ.Component) {
+func postsTemplate(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		for _, p := range posts {
 			err = postTemplate(p).Render(ctx, w)
@@ -18,7 +18,7 @@ func postsTemplate(posts []Post) (t templ.Component) {
 	})
 }
 
-func postTemplate(post Post) (t templ.Component) {
+func postTemplate(post Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {

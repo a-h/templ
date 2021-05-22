@@ -175,8 +175,8 @@ func (g *generator) writeTemplate(t templ.Template) error {
 		return err
 	}
 	g.sourceMap.Add(t.Parameters, r)
-	// ) (t templ.Component error) {
-	if _, err = g.w.Write(") (t templ.Component) {\n"); err != nil {
+	// ) templ.Component {
+	if _, err = g.w.Write(") templ.Component {\n"); err != nil {
 		return err
 	}
 	indentLevel++

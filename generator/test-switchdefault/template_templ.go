@@ -6,7 +6,7 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func template(input string) (t templ.Component) {
+func template(input string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		switch input {
 		case "a":

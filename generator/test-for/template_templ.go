@@ -6,7 +6,7 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func render(items []string) (t templ.Component) {
+func render(items []string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		for _, item := range items {
 			_, err = io.WriteString(w, "<div>")

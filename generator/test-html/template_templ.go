@@ -6,7 +6,7 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func render(p person) (t templ.Component) {
+func render(p person) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {

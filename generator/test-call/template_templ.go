@@ -6,7 +6,7 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func personTemplate(p person) (t templ.Component) {
+func personTemplate(p person) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
@@ -72,7 +72,7 @@ func personTemplate(p person) (t templ.Component) {
 	})
 }
 
-func email(s string) (t templ.Component) {
+func email(s string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {

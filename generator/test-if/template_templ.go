@@ -6,7 +6,7 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func render(d data) (t templ.Component) {
+func render(d data) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		if d.IsTrue() {
 			_, err = io.WriteString(w, templ.EscapeString("True"))
