@@ -349,6 +349,63 @@ func TestTemplateParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "template: inputs",
+			input: `{% templ Name(p Parameter) %}
+<input type="text" value="a" />
+<input type="text" value="b" />
+{% endtempl %}`,
+			expected: Template{
+				Name: Expression{
+					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 12,
+							Line:  1,
+							Col:   12,
+						},
+					},
+				},
+				Parameters: Expression{
+					Value: "p Parameter",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 25,
+							Line:  1,
+							Col:   25,
+						},
+					},
+				},
+				Children: []Node{
+					Element{
+						Name: "input",
+						Attributes: []Attribute{
+							ConstantAttribute{Name: "type", Value: "text"},
+							ConstantAttribute{Name: "value", Value: "a"},
+						},
+					},
+					Whitespace{Value: "\n"},
+					Element{
+						Name: "input",
+						Attributes: []Attribute{
+							ConstantAttribute{Name: "type", Value: "text"},
+							ConstantAttribute{Name: "value", Value: "b"},
+						},
+					},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

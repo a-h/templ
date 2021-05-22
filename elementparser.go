@@ -58,7 +58,12 @@ var elementCloseTagParser = parse.All(asElementCloseTag,
 )
 
 // Attribute name.
-var attributeNameParser = parse.StringUntil(parse.Rune('='))
+var attributeNameFirst = "abcdefghijklmnopqrstuvwxyz"
+var attributeNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+var attributeNameParser = parse.Then(parse.WithStringConcatCombiner,
+	parse.RuneIn(elementNameFirst),
+	parse.Many(parse.WithStringConcatCombiner, 0, 15, parse.RuneIn(elementNameSubsequent)),
+)
 
 // Constant attribute.
 var attributeConstantValueParser = parse.StringUntil(parse.Rune('"'))
@@ -270,7 +275,7 @@ func (p elementSelfClosingParser) Parse(pi parse.Input) parse.Result {
 		parse.Rune('<'),
 		elementNameParser,
 		newAttributesParser().Parse,
-		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser),
+		optionalWhitespaceParser,
 		parse.String("/>"),
 	)(pi)
 }
