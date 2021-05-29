@@ -233,7 +233,7 @@ func (p elementOpenCloseParser) Parse(pi parse.Input) parse.Result {
 	from := NewPositionFromInput(pi)
 	tnpr := newTemplateNodeParser().Parse(pi)
 	if !tnpr.Success {
-		if _, isParseError := tnpr.Error.(parseError); isParseError {
+		if _, isParseError := tnpr.Error.(ParseError); isParseError {
 			return tnpr
 		}
 		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("<%s>: %v", r.Name, tnpr.Error), from, NewPositionFromInput(pi)))

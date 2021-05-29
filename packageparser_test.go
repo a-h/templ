@@ -12,7 +12,7 @@ func TestPackageParserErrors(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected parseError
+		expected ParseError
 	}{
 		{
 			name:  "unterminated package",

@@ -56,21 +56,22 @@ func (p templateParser) Parse(pi parse.Input) parse.Result {
 }
 
 // Parse error.
-func newParseError(msg string, from Position, to Position) parseError {
-	return parseError{
+func newParseError(msg string, from Position, to Position) ParseError {
+	return ParseError{
 		Message: msg,
 		From:    from,
 		To:      to,
 	}
 }
 
-type parseError struct {
+// ParseError details where the error occurred in the file.
+type ParseError struct {
 	Message string
 	From    Position
 	To      Position
 }
 
-func (pe parseError) Error() string {
+func (pe ParseError) Error() string {
 	return fmt.Sprintf("%v at %v", pe.Message, pe.From)
 }
 

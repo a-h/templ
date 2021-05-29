@@ -34,7 +34,7 @@ func NewProxy(logger *zap.Logger) (p *Proxy) {
 		sourceMapCache:   newSourceMapCache(),
 		// Prevent trying to send to the client when message handling is taking place.
 		// The proxy can place up to 32 requests onto the toClient buffered channel
-		// during handling. They're processed when the clientInUse mutex is released.
+		// during handling.
 		toClient: make(chan toClientRequest, 32),
 	}
 }
@@ -45,10 +45,12 @@ func (p *Proxy) Init(ctx context.Context, client, gopls *jsonrpc2.Conn) {
 	p.client = client
 	p.gopls = gopls
 	go func() {
+		p.log.Info("sendToClient: starting up")
 		for r := range p.toClient {
 			r := r
 			p.sendToClient(r)
 		}
+		p.log.Info("sendToClient: closed")
 	}()
 }
 
@@ -61,7 +63,7 @@ type toClientRequest struct {
 // sendToClient should not be called directly. Instead, send a message to the non-blocking
 // toClient channel.
 func (p *Proxy) sendToClient(r toClientRequest) {
-	p.log.Info("sendToClient: starting", zap.String("method", r.Method))
+	p.log.Info("sendToClient: sending", zap.String("method", r.Method))
 	if r.Notif {
 		err := p.client.Notify(p.context, r.Method, r.Params)
 		if err != nil {
@@ -290,8 +292,10 @@ func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
 	// Parse the template.
 	template, err := templ.ParseString(params.TextDocument.Text)
 	if err != nil {
+		p.sendParseErrorDiagnosticNotifications(params.TextDocument.URI, err)
 		return
 	}
+	p.sendDiagnosticClearNotification(params.TextDocument.URI)
 	// Generate the output code and cache the source map and Go contents to use during completion
 	// requests.
 	w := new(strings.Builder)
@@ -341,8 +345,10 @@ func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request
 	// Update the Go code.
 	template, err := templ.ParseString(string(templateText))
 	if err != nil {
+		p.sendParseErrorDiagnosticNotifications(params.TextDocument.URI, err)
 		return
 	}
+	p.sendDiagnosticClearNotification(params.TextDocument.URI)
 	w := new(strings.Builder)
 	sm, err := generator.Generate(template, w)
 	if err != nil {
@@ -366,6 +372,47 @@ func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request
 	err = r.Params.UnmarshalJSON(jsonMessage)
 	// Done.
 	return
+}
+
+func (p *Proxy) sendDiagnosticClearNotification(uri lsp.DocumentURI) {
+	p.toClient <- toClientRequest{
+		Method: "textDocument/publishDiagnostics",
+		Notif:  true,
+		Params: lsp.PublishDiagnosticsParams{
+			URI:         uri,
+			Diagnostics: []lsp.Diagnostic{},
+		},
+	}
+}
+
+func (p *Proxy) sendParseErrorDiagnosticNotifications(uri lsp.DocumentURI, err error) {
+	pe, ok := err.(templ.ParseError)
+	if !ok {
+		return
+	}
+	p.toClient <- toClientRequest{
+		Method: "textDocument/publishDiagnostics",
+		Notif:  true,
+		Params: lsp.PublishDiagnosticsParams{
+			URI: uri,
+			Diagnostics: []lsp.Diagnostic{
+				{
+					Range: lsp.Range{
+						Start: templatePositionToLSPPosition(pe.From),
+						End:   templatePositionToLSPPosition(pe.To),
+					},
+					Severity: lsp.Error,
+					Code:     "",
+					Source:   "templ",
+					Message:  pe.Message,
+				},
+			},
+		},
+	}
+}
+
+func templatePositionToLSPPosition(p templ.Position) lsp.Position {
+	return lsp.Position{Line: p.Line - 1, Character: p.Col + 1}
 }
 
 func (p *Proxy) rewriteDidSaveRequest(r *jsonrpc2.Request) (err error) {
