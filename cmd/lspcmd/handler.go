@@ -151,6 +151,9 @@ func (p *Proxy) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Req
 		case "textDocument/completion":
 			p.proxyCompletion(ctx, conn, r)
 			return
+		case "textDocument/formatting":
+			p.handleFormatting(ctx, conn, r)
+			return
 		default:
 			p.proxyCall(ctx, conn, r)
 			return
@@ -275,6 +278,52 @@ func (p *Proxy) rewriteCompletionRequest(params *lsp.CompletionParams) (err erro
 	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
 	// Done.
 	return err
+}
+
+func (p *Proxy) handleFormatting(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+	// Unmarshal the params.
+	var params lsp.DocumentFormattingParams
+	err := json.Unmarshal(*req.Params, &params)
+	if err != nil {
+		p.log.Error("handleFormatting: failed to unmarshal request params", zap.Error(err))
+	}
+	var resp []lsp.TextEdit
+	defer func() {
+		// Reply to the client, even if there's been a failure.
+		err = conn.Reply(ctx, req.ID, &resp)
+		if err != nil {
+			p.log.Error("handleFormatting: error sending response", zap.Error(err))
+		}
+		p.log.Info("handleFormatting: client -> textDocument.formatting -> client: complete", zap.Any("resp", resp))
+	}()
+	// Format the current document.
+	contents, _ := p.documentContents.Get(string(params.TextDocument.URI))
+	var lines int
+	for _, c := range contents {
+		if c == '\n' {
+			lines++
+		}
+	}
+	template, err := templ.ParseString(string(contents))
+	if err != nil {
+		p.sendParseErrorDiagnosticNotifications(params.TextDocument.URI, err)
+		return
+	}
+	p.sendDiagnosticClearNotification(params.TextDocument.URI)
+	w := new(strings.Builder)
+	err = template.Write(w)
+	if err != nil {
+		p.log.Error("handleFormatting: faled to write template", zap.Error(err))
+		return
+	}
+	// Replace everything.
+	resp = append(resp, lsp.TextEdit{
+		Range: lsp.Range{
+			Start: lsp.Position{},
+			End:   lsp.Position{Line: lines + 1, Character: 0},
+		},
+		NewText: w.String(),
+	})
 }
 
 func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
