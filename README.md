@@ -409,16 +409,18 @@ The package author didn't respond (hey, we're all busy), and looking through the
 
 It's also a really feature rich project, with all sorts of formatters, and support for various languages (JSON etc.), so I borrowed some syntax ideas, but left the code. If `valyala` is up for it, I'd be happy to help integrate the ideas from here. I just want Go to have a templating language with great IDE support.
 
+## Hot reload
+
+For hot reload, you can use https://github.com/cosmtrek/air
+
+For documentation on how to use it with templ see https://adrianhesketh.com/2021/05/28/templ-hot-reload-with-air/
+
 ### Help needed
 
 The project is looking for help with:
 
-* Testing the `fmt` tool, and updating the formatter so that inline elements aren't separated onto newlines.
-* Adding features to the Language Server implementation, it just does autocomplete the moment. It needs to be able to do definition and add imports automatically.
-* Writing a VS Code plugin that uses the LSP support.
+* Adding features to the Language Server implementation, it just does autocomplete and error reporting the moment. It needs to be able to do definition and add imports automatically.
 * Examples and testing of the tools.
-* Adding a `hot` option to the compiler that recompiles the `*.templ` files when they change on disk. This could be achieved by documenting and making it easy to use external tools such as `ag`, ripgrep (`rg`) and `entr` in the short term.
-* Writing documentation of the components.
 * Writing a blog post that demonstrates using the tool to build a form-based Web application.
 * Testing (including fuzzing), benchmarking and optimisation.
 * An example of a web-based UI component library would be very useful, a more advanced version of the integration test suite, thatwould be a Go web server that runs the compiled `templ` file along with example JSON payloads that match the expected data structure types and renders the content - a UI playground. If it could do hot-reload, amazing.
