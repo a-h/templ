@@ -365,7 +365,10 @@ To add extensive debug information, you can include additional args to the LSP, 
 
 ## vscode
 
-Yes please, talk to me about it!
+There's a VS Code extension, just make sure you've already installed templ and that it's on your path. 
+
+* https://marketplace.visualstudio.com/items?itemName=a-h.templ
+* https://github.com/a-h/templ-vscode
 
 # Development
 
