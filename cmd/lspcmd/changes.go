@@ -3,7 +3,6 @@ package lspcmd
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/go-lsp"
@@ -16,10 +15,6 @@ func newDocumentContents(logger *zap.Logger) *documentContents {
 		m:             new(sync.Mutex),
 		uriToContents: make(map[string][]byte),
 		log:           logger,
-		editors: []documentEditor{
-			autoInsertClosingTag,
-			autoInsertExpressionClose,
-		},
 	}
 }
 
@@ -27,7 +22,6 @@ type documentContents struct {
 	m             *sync.Mutex
 	uriToContents map[string][]byte
 	log           *zap.Logger
-	editors       []documentEditor
 }
 
 type documentEditor func(uri, prefix string, change lsp.TextDocumentContentChangeEvent) (requests []toClientRequest)
@@ -55,7 +49,7 @@ func (fc *documentContents) Delete(uri string) {
 }
 
 // Apply changes to the document from the client, and return a list of change requests to send back to the client.
-func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (updated []byte, requestsToClient []toClientRequest, err error) {
+func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (updated []byte, err error) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
 	contents, ok := fc.uriToContents[uri]
@@ -63,7 +57,7 @@ func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentC
 		err = fmt.Errorf("document not found")
 		return
 	}
-	updated, requestsToClient, err = fc.applyContentChanges(lsp.DocumentURI(uri), contents, changes)
+	updated, err = fc.applyContentChanges(lsp.DocumentURI(uri), contents, changes)
 	if err != nil {
 		return
 	}
@@ -75,7 +69,7 @@ func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentC
 // It implements the ability to react to changes on document edits.
 // MIT licensed.
 // applyContentChanges updates `contents` based on `changes`
-func (fc *documentContents) applyContentChanges(uri lsp.DocumentURI, contents []byte, changes []lsp.TextDocumentContentChangeEvent) (c []byte, toClientWorkspaceEdits []toClientRequest, err error) {
+func (fc *documentContents) applyContentChanges(uri lsp.DocumentURI, contents []byte, changes []lsp.TextDocumentContentChangeEvent) (c []byte, err error) {
 	for _, change := range changes {
 		if change.Range == nil && change.RangeLength == 0 {
 			contents = []byte(change.Text) // new full content
@@ -83,7 +77,7 @@ func (fc *documentContents) applyContentChanges(uri lsp.DocumentURI, contents []
 		}
 		start, ok, why := offsetForPosition(contents, change.Range.Start)
 		if !ok {
-			return nil, toClientWorkspaceEdits, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
+			return nil, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
 		}
 		var end int
 		if change.RangeLength != 0 {
@@ -92,16 +86,11 @@ func (fc *documentContents) applyContentChanges(uri lsp.DocumentURI, contents []
 			// RangeLength not specified, work it out from Range.End
 			end, ok, why = offsetForPosition(contents, change.Range.End)
 			if !ok {
-				return nil, toClientWorkspaceEdits, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
+				return nil, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
 			}
 		}
 		if start < 0 || end > len(contents) || end < start {
-			return nil, toClientWorkspaceEdits, fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, uri)
-		}
-		// Custom code to check for automatic text changes (insertion etc.).
-		for _, editor := range fc.editors {
-			editor := editor
-			toClientWorkspaceEdits = append(toClientWorkspaceEdits, editor(string(uri), string(contents[:start]), change)...)
+			return nil, fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, uri)
 		}
 		// End of custom code.
 		// Try avoid doing too many allocations, so use bytes.Buffer
@@ -112,7 +101,7 @@ func (fc *documentContents) applyContentChanges(uri lsp.DocumentURI, contents []
 		b.Write(contents[end:])
 		contents = b.Bytes()
 	}
-	return contents, toClientWorkspaceEdits, nil
+	return contents, nil
 }
 
 func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool, whyInvalid string) {
@@ -146,99 +135,3 @@ func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool,
 }
 
 // end of content from SourceGraph.
-
-// LSP text edit features for automatically inserting values.
-
-// When you type "{% ", " %}" is inserted afterwards.
-// When you type "{%= ", " %}" is inserted afterwards.
-// When you type "{%! ", " %}" is inserted afterwards.
-func autoInsertExpressionClose(uri, prefix string, change lsp.TextDocumentContentChangeEvent) (requests []toClientRequest) {
-	if change.Text == "" {
-		// It's a deletion.
-		return
-	}
-	// Check the last couple of bytes for "{%= ", "{% " and "{%! ".
-	last := 4
-	if last > len(prefix) {
-		last = len(prefix)
-	}
-	upToCaret := prefix[len(prefix)-last:] + change.Text
-	if shouldInsert := strings.HasSuffix(upToCaret, "{% ") || strings.HasSuffix(upToCaret, "{%= ") || strings.HasSuffix(upToCaret, "{%! "); !shouldInsert {
-		return
-	}
-	requests = append(requests, createWorkspaceApplyEditInsert(uri, " %}\n", change.Range.End, insertAfter))
-	return
-}
-
-// When you type "{% templ ", "{% endtempl %}" is inserted on the next line.
-func autoInsertClosingTag(uri, prefix string, change lsp.TextDocumentContentChangeEvent) (requests []toClientRequest) {
-	if change.Text == "" {
-		// It's a deletion.
-		return
-	}
-	last := 10
-	if last > len(prefix) {
-		last = len(prefix)
-	}
-	upToCaret := prefix[len(prefix)-last:] + change.Text
-	tags := []string{
-		"{% templ ",
-		"{% if ",
-		"{% for ",
-		"{% switch ",
-		"{% case ",
-		"{% default ",
-	}
-	var insertEnd string
-	for i := 0; i < len(tags); i++ {
-		tag := tags[i]
-		if strings.HasSuffix(upToCaret, tag) {
-			insertEnd = tag[3 : len(tag)-1]
-			break
-		}
-	}
-	if insertEnd == "" {
-		return
-	}
-	insertAt := lsp.Position{
-		Line:      change.Range.End.Line + 1,
-		Character: 0,
-	}
-	requests = append(requests, createWorkspaceApplyEditInsert(uri, "{% end"+insertEnd+" %}\n", insertAt, insertAfter))
-	return
-}
-
-type insertPosition int
-
-const (
-	insertBefore insertPosition = iota
-	insertAfter
-)
-
-func createWorkspaceApplyEditInsert(documentURI, text string, at lsp.Position, position insertPosition) toClientRequest {
-	textRange := lsp.Range{
-		Start: at,
-		End:   at,
-	}
-	if position == insertAfter {
-		textRange.Start.Character++
-		textRange.End.Character += len(text) + 1
-	}
-	return toClientRequest{
-		Method: "workspace/applyEdit",
-		Notif:  false,
-		Params: applyWorkspaceEditParams{
-			Label: "templ close tag",
-			Edit: lsp.WorkspaceEdit{
-				Changes: map[string][]lsp.TextEdit{
-					documentURI: {
-						{
-							Range:   textRange,
-							NewText: text,
-						},
-					},
-				},
-			},
-		},
-	}
-}

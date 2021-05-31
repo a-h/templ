@@ -231,6 +231,8 @@ func (p *Proxy) proxyInitialize(ctx context.Context, conn *jsonrpc2.Conn, req *j
 	if err != nil {
 		p.log.Error("proxyInitialize: client -> gopls: error sending request", zap.Error(err))
 	}
+	// Add the '<' and '{' trigger so that we can do snippets for tags.
+	resp.Capabilities.CompletionProvider.TriggerCharacters = append(resp.Capabilities.CompletionProvider.TriggerCharacters, "{", "<")
 	// Remove all the gopls commands.
 	resp.Capabilities.ExecuteCommandProvider.Commands = []string{}
 	// Reply to the client.
@@ -248,21 +250,28 @@ func (p *Proxy) proxyCompletion(ctx context.Context, conn *jsonrpc2.Conn, req *j
 	if err != nil {
 		p.log.Error("proxyCompletion: failed to unmarshal request params", zap.Error(err))
 	}
-	// Rewrite the request.
-	err = p.rewriteCompletionRequest(&params)
-	if err != nil {
-		p.log.Error("proxyCompletion: error rewriting request", zap.Error(err))
-	}
-	// Call gopls and get the response.
 	var resp lsp.CompletionList
-	err = p.gopls.Call(ctx, req.Method, &params, &resp)
-	if err != nil {
-		p.log.Error("proxyCompletion: client -> gopls: error sending request", zap.Error(err))
-	}
-	// Rewrite the response.
-	err = p.rewriteCompletionResponse(string(params.TextDocument.URI), &resp)
-	if err != nil {
-		p.log.Error("proxyCompletion: error rewriting response", zap.Error(err))
+	switch params.Context.TriggerCharacter {
+	case "<":
+		resp.Items = htmlSnippets
+	case "{":
+		resp.Items = templateSnippets
+	default:
+		// Rewrite the request.
+		err = p.rewriteCompletionRequest(&params)
+		if err != nil {
+			p.log.Error("proxyCompletion: error rewriting request", zap.Error(err))
+		}
+		// Call gopls and get the response.
+		err = p.gopls.Call(ctx, req.Method, &params, &resp)
+		if err != nil {
+			p.log.Error("proxyCompletion: client -> gopls: error sending request", zap.Error(err))
+		}
+		// Rewrite the response.
+		err = p.rewriteCompletionResponse(string(params.TextDocument.URI), &resp)
+		if err != nil {
+			p.log.Error("proxyCompletion: error rewriting response", zap.Error(err))
+		}
 	}
 	// Reply to the client.
 	err = conn.Reply(ctx, req.ID, &resp)
@@ -429,13 +438,9 @@ func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request
 		return
 	}
 	// Apply content changes to the cached template.
-	templateText, requestsToClient, err := p.documentContents.Apply(string(params.TextDocument.URI), params.ContentChanges)
+	templateText, err := p.documentContents.Apply(string(params.TextDocument.URI), params.ContentChanges)
 	if err != nil {
 		return
-	}
-	// Apply changes to the client.
-	for i := 0; i < len(requestsToClient); i++ {
-		p.toClient <- requestsToClient[i]
 	}
 	// Update the Go code.
 	template, err := templ.ParseString(string(templateText))
