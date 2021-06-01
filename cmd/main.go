@@ -4,13 +4,20 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/a-h/templ/cmd/fmtcmd"
 	"github.com/a-h/templ/cmd/generatecmd"
 	"github.com/a-h/templ/cmd/lspcmd"
 )
 
-var Version = ""
+func version() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "unknown"
+	}
+	return info.Main.Version
+}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -28,10 +35,10 @@ func main() {
 		lspCmd(os.Args[2:])
 		return
 	case "version":
-		fmt.Println(Version)
+		fmt.Println(version())
 		return
 	case "--version":
-		fmt.Println(Version)
+		fmt.Println(version())
 		return
 	}
 	usage()
