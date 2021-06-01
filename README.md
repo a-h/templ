@@ -2,6 +2,8 @@
 
 * A strongly typed HTML templating language that compiles to Go code, and has great developer tooling.
 
+![vscode-autocomplete](https://user-images.githubusercontent.com/1029947/120372693-66b51000-c30f-11eb-8924-41a65616f620.gif)
+
 ## Getting started
 
 * Install the `templ` command-line tool.
