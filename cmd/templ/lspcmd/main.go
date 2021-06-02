@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/a-h/templ/cmd/lspcmd/pls"
+	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
 	"github.com/sourcegraph/jsonrpc2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

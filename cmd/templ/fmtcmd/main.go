@@ -1,15 +1,14 @@
-package generatecmd
+package fmtcmd
 
 import (
+	"bytes"
 	"fmt"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/a-h/templ"
-	"github.com/a-h/templ/cmd/processor"
-	"github.com/a-h/templ/generator"
+	"github.com/a-h/templ/cmd/templ/processor"
 	"github.com/hashicorp/go-multierror"
+	"github.com/natefinch/atomic"
 )
 
 const workerCount = 4
@@ -17,7 +16,7 @@ const workerCount = 4
 func Run(args []string) (err error) {
 	start := time.Now()
 	results := make(chan processor.Result)
-	go processor.Process(".", compile, workerCount, results)
+	go processor.Process(".", format, workerCount, results)
 	var successCount, errorCount int
 	for r := range results {
 		if r.Error != nil {
@@ -25,26 +24,25 @@ func Run(args []string) (err error) {
 			errorCount++
 			continue
 		}
-		successCount++
 		fmt.Printf("%s complete in %v\n", r.FileName, r.Duration)
 	}
-	fmt.Printf("Generated code for %d templates with %d errors in %s\n", successCount+errorCount, errorCount, time.Now().Sub(start))
+	fmt.Printf("Formatted %d templates with %d errors in %s\n", successCount+errorCount, errorCount, time.Now().Sub(start))
 	return
 }
 
-func compile(fileName string) (err error) {
+func format(fileName string) (err error) {
 	t, err := templ.Parse(fileName)
 	if err != nil {
 		return fmt.Errorf("%s parsing error: %w", fileName, err)
 	}
-	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
-	w, err := os.Create(targetFileName)
+	w := new(bytes.Buffer)
+	err = t.Write(w)
 	if err != nil {
-		return fmt.Errorf("%s compilation error: %w", fileName, err)
+		return fmt.Errorf("%s formatting error: %w", fileName, err)
 	}
-	_, err = generator.Generate(t, w)
+	err = atomic.WriteFile(fileName, w)
 	if err != nil {
-		return fmt.Errorf("%s generation error: %w", fileName, err)
+		return fmt.Errorf("%s file write error: %w", fileName, err)
 	}
 	return
 }
