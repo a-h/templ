@@ -6,13 +6,13 @@
 
 ## Getting started
 
-* Install the `templ` command-line tool.
+* Install the `templ` command-line tool: `go install github.com/a-h/templ/cmd/templ`
 * Create a `*.templ` file containing a template.
 * Run `templ generate` to create Go code from the template.
 
 ## Current state
 
-This is beta software, the template language may still have breaking changes. There's no guarantees of stability or correctness at the moment.
+This is beta software, and the template language may still have breaking changes. There's no guarantees of stability or correctness at the moment.
 
 If you're keen to see Go be practical for Web projects, see "Help needed" for where the project needs your help.
 
@@ -379,8 +379,8 @@ There's a VS Code extension, just make sure you've already installed templ and t
 To build a local version you can use the `go build` tool:
 
 ```
-cd cmd
-go build -o templ
+cd cmd/templ
+go build
 ```
 
 ## Testing

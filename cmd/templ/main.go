@@ -6,9 +6,9 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/a-h/templ/cmd/fmtcmd"
-	"github.com/a-h/templ/cmd/generatecmd"
-	"github.com/a-h/templ/cmd/lspcmd"
+	"github.com/a-h/templ/cmd/templ/fmtcmd"
+	"github.com/a-h/templ/cmd/templ/generatecmd"
+	"github.com/a-h/templ/cmd/templ/lspcmd"
 )
 
 func version() string {
