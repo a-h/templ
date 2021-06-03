@@ -1,8 +1,8 @@
 install-snapshot:
 	# Clear logs.
-	rm cmd/lspcmd/*.txt || true
+	rm cmd/templ/lspcmd/*.txt || true
 	# Install the latest version.
-	cd cmd && go build -o ~/bin/templ
+	cd cmd/templ && go build -o ~/bin/templ
 
 build-snapshot:
 	goreleaser build --snapshot --rm-dist

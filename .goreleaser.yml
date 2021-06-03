@@ -2,7 +2,7 @@
 builds:
 - env:
   - CGO_ENABLED=0
-  dir: cmd
+  dir: cmd/templ
   goos:
   - linux
   - windows

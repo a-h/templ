@@ -6,7 +6,7 @@
 
 ## Getting started
 
-* Install the `templ` command-line tool: `go install github.com/a-h/templ/cmd/templ`
+* Install the `templ` command-line tool: `go install github.com/a-h/templ/cmd/templ@latest`
 * Create a `*.templ` file containing a template.
 * Run `templ generate` to create Go code from the template.
 
@@ -356,8 +356,8 @@ To add extensive debug information, you can include additional args to the LSP, 
     "templ": {
       "command": "templ",
       "args": ["lsp",
-        "--log", "/Users/adrian/github.com/a-h/templ/cmd/lspcmd/templ-log.txt", 
-	"--goplsLog", "/Users/adrian/github.com/a-h/templ/cmd/lspcmd/gopls-log.txt",
+        "--log", "/Users/adrian/github.com/a-h/templ/cmd/templ/lspcmd/templ-log.txt", 
+	"--goplsLog", "/Users/adrian/github.com/a-h/templ/cmd/templ/lspcmd/gopls-log.txt",
 	"--goplsRPCTrace", "true"
       ],
       "filetypes": ["templ"]
