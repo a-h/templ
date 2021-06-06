@@ -429,3 +429,9 @@ The project is looking for help with:
 * Low priority, but I'm thinking of developing a CSS-in-Go implementation to work in parallel. This might take the form of a pre-processor which would collect all "style" attributes of elements and automatically calculate a minimum set of CSS classes that could be created and applied to the elements - but a first pass could just be a way to define CSS classes in Go to allow the use of CSS variables.
 
 Please get in touch if you're interested in building a feature as I don't want people to spend time on something that's already being worked on, or ends up being a waste of their time because it can't be integrated.
+
+# Writing and examples
+
+* https://adrianhesketh.com/2021/05/18/introducing-templ/
+* https://adrianhesketh.com/2021/05/28/templ-hot-reload-with-air/
+* https://adrianhesketh.com/2021/06/04/hotwired-go-with-templ/
