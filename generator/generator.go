@@ -393,9 +393,47 @@ func (g *generator) writeErrorHandler(indentLevel int) (err error) {
 }
 
 func (g *generator) writeElement(indentLevel int, n templ.Element) error {
-	var r templ.Range
-	var err error
-	// Attributes.
+	if n.IsVoidElement() {
+		return g.writeVoidElement(indentLevel, n)
+	}
+	return g.writeStandardElement(indentLevel, n)
+}
+
+func (g *generator) writeVoidElement(indentLevel int, n templ.Element) (err error) {
+	if len(n.Children) > 0 {
+		return fmt.Errorf("writeVoidElement: void element %q must not have child elements", n.Name)
+	}
+	if len(n.Attributes) == 0 {
+		// <div/>
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s/>")`+"\n", html.EscapeString(n.Name))); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+	} else {
+		// <div
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+		if err = g.writeElementAttributes(indentLevel, n); err != nil {
+			return err
+		}
+		// />
+		if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, "/>")`+"\n"); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (g *generator) writeStandardElement(indentLevel int, n templ.Element) (err error) {
 	if len(n.Attributes) == 0 {
 		// <div>
 		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
@@ -412,60 +450,8 @@ func (g *generator) writeElement(indentLevel int, n templ.Element) error {
 		if err = g.writeErrorHandler(indentLevel); err != nil {
 			return err
 		}
-		for i := 0; i < len(n.Attributes); i++ {
-			switch attr := n.Attributes[i].(type) {
-			case templ.ConstantAttribute:
-				name := html.EscapeString(attr.Name)
-				value := html.EscapeString(attr.Value)
-				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=\"%s\"")`+"\n", name, value)); err != nil {
-					return err
-				}
-				if err = g.writeErrorHandler(indentLevel); err != nil {
-					return err
-				}
-			case templ.ExpressionAttribute:
-				name := html.EscapeString(attr.Name)
-				// Name
-				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=")`+"\n", name)); err != nil {
-					return err
-				}
-				if err = g.writeErrorHandler(indentLevel); err != nil {
-					return err
-				}
-				// Value.
-				// Open quote.
-				if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, "\"")`+"\n"); err != nil {
-					return err
-				}
-				if err = g.writeErrorHandler(indentLevel); err != nil {
-					return err
-				}
-				// io.WriteString(w, templ.EscapeString(
-				if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
-					return err
-				}
-				// p.Name()
-				if r, err = g.w.Write(attr.Expression.Value); err != nil {
-					return err
-				}
-				g.sourceMap.Add(attr.Expression, r)
-				// ))
-				if _, err = g.w.Write("))\n"); err != nil {
-					return err
-				}
-				if err = g.writeErrorHandler(indentLevel); err != nil {
-					return err
-				}
-				// Close quote.
-				if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, "\"")`+"\n"); err != nil {
-					return err
-				}
-				if err = g.writeErrorHandler(indentLevel); err != nil {
-					return err
-				}
-			default:
-				return fmt.Errorf("unknown attribute type %s", reflect.TypeOf(n.Attributes[i]))
-			}
+		if err = g.writeElementAttributes(indentLevel, n); err != nil {
+			return err
 		}
 		// >
 		if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, ">")`+"\n"); err != nil {
@@ -484,7 +470,67 @@ func (g *generator) writeElement(indentLevel int, n templ.Element) error {
 	if err = g.writeErrorHandler(indentLevel); err != nil {
 		return err
 	}
-	return nil
+	return err
+}
+
+func (g *generator) writeElementAttributes(indentLevel int, n templ.Element) (err error) {
+	var r templ.Range
+	for i := 0; i < len(n.Attributes); i++ {
+		switch attr := n.Attributes[i].(type) {
+		case templ.ConstantAttribute:
+			name := html.EscapeString(attr.Name)
+			value := html.EscapeString(attr.Value)
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=\"%s\"")`+"\n", name, value)); err != nil {
+				return err
+			}
+			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+		case templ.ExpressionAttribute:
+			name := html.EscapeString(attr.Name)
+			// Name
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=")`+"\n", name)); err != nil {
+				return err
+			}
+			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+			// Value.
+			// Open quote.
+			if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, "\"")`+"\n"); err != nil {
+				return err
+			}
+			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+			// io.WriteString(w, templ.EscapeString(
+			if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
+				return err
+			}
+			// p.Name()
+			if r, err = g.w.Write(attr.Expression.Value); err != nil {
+				return err
+			}
+			g.sourceMap.Add(attr.Expression, r)
+			// ))
+			if _, err = g.w.Write("))\n"); err != nil {
+				return err
+			}
+			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+			// Close quote.
+			if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, "\"")`+"\n"); err != nil {
+				return err
+			}
+			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unknown attribute type %s", reflect.TypeOf(n.Attributes[i]))
+		}
+	}
+	return err
 }
 
 func (g *generator) writeStringExpression(indentLevel int, e templ.Expression) error {

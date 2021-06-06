@@ -248,7 +248,7 @@ var voidElements = map[string]struct{}{
 	"area": {}, "base": {}, "br": {}, "col": {}, "command": {}, "embed": {}, "hr": {}, "img": {}, "input": {}, "keygen": {}, "link": {}, "meta": {}, "param": {}, "source": {}, "track": {}, "wbr": {}}
 
 // https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#void-element
-func (e Element) isVoidElement() bool {
+func (e Element) IsVoidElement() bool {
 	_, ok := voidElements[e.Name]
 	return ok
 }
@@ -328,7 +328,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 		}
 		return nil
 	}
-	if e.isVoidElement() {
+	if e.IsVoidElement() {
 		if _, err := w.Write([]byte("/>")); err != nil {
 			return err
 		}
