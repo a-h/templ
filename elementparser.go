@@ -62,7 +62,7 @@ var attributeNameFirst = "abcdefghijklmnopqrstuvwxyz"
 var attributeNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
 var attributeNameParser = parse.Then(parse.WithStringConcatCombiner,
 	parse.RuneIn(elementNameFirst),
-	parse.Many(parse.WithStringConcatCombiner, 0, 15, parse.RuneIn(elementNameSubsequent)),
+	parse.Many(parse.WithStringConcatCombiner, 0, 128, parse.RuneIn(elementNameSubsequent)),
 )
 
 // Constant attribute.

@@ -61,6 +61,24 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
+			name:   "attribute name with hyphens",
+			input:  ` data-turbo-permanent="value"`,
+			parser: newConstantAttributeParser().Parse,
+			expected: ConstantAttribute{
+				Name:  "data-turbo-permanent",
+				Value: "value",
+			},
+		},
+		{
+			name:   "empty attribute",
+			input:  ` data=""`,
+			parser: newConstantAttributeParser().Parse,
+			expected: ConstantAttribute{
+				Name:  "data",
+				Value: "",
+			},
+		},
+		{
 			name:   "attribute containing escaped text",
 			input:  ` href="&lt;&quot;&gt;"`,
 			parser: newConstantAttributeParser().Parse,
