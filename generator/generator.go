@@ -65,9 +65,10 @@ func Generate(template templ.TemplateFile, w io.Writer) (sm *templ.SourceMap, er
 }
 
 type generator struct {
-	tf        templ.TemplateFile
-	w         *RangeWriter
-	sourceMap *templ.SourceMap
+	tf         templ.TemplateFile
+	w          *RangeWriter
+	sourceMap  *templ.SourceMap
+	variableID int
 }
 
 func (g *generator) generate() (err error) {
@@ -503,21 +504,43 @@ func (g *generator) writeElementAttributes(indentLevel int, n templ.Element) (er
 			if err = g.writeErrorHandler(indentLevel); err != nil {
 				return err
 			}
-			// io.WriteString(w, templ.EscapeString(
-			if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
-				return err
-			}
-			// p.Name()
-			if r, err = g.w.Write(attr.Expression.Value); err != nil {
-				return err
-			}
-			g.sourceMap.Add(attr.Expression, r)
-			// ))
-			if _, err = g.w.Write("))\n"); err != nil {
-				return err
-			}
-			if err = g.writeErrorHandler(indentLevel); err != nil {
-				return err
+			if n.Name == "a" && attr.Name == "href" {
+				vn := g.createVariableName()
+				// var vn templ.SafeURL =
+				if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.SafeURL = "); err != nil {
+					return err
+				}
+				// p.Name()
+				if r, err = g.w.Write(attr.Expression.Value); err != nil {
+					return err
+				}
+				g.sourceMap.Add(attr.Expression, r)
+				if _, err = g.w.Write("\n"); err != nil {
+					return err
+				}
+				if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString(string("+vn+")))\n"); err != nil {
+					return err
+				}
+				if err = g.writeErrorHandler(indentLevel); err != nil {
+					return err
+				}
+			} else {
+				// io.WriteString(w, templ.EscapeString(
+				if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
+					return err
+				}
+				// p.Name()
+				if r, err = g.w.Write(attr.Expression.Value); err != nil {
+					return err
+				}
+				g.sourceMap.Add(attr.Expression, r)
+				// ))
+				if _, err = g.w.Write("))\n"); err != nil {
+					return err
+				}
+				if err = g.writeErrorHandler(indentLevel); err != nil {
+					return err
+				}
 			}
 			// Close quote.
 			if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, "\"")`+"\n"); err != nil {
@@ -531,6 +554,11 @@ func (g *generator) writeElementAttributes(indentLevel int, n templ.Element) (er
 		}
 	}
 	return err
+}
+
+func (g *generator) createVariableName() string {
+	g.variableID++
+	return fmt.Sprintf("var_%d", g.variableID)
 }
 
 func (g *generator) writeStringExpression(indentLevel int, e templ.Expression) error {

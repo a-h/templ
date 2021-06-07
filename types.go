@@ -392,6 +392,23 @@ func (ea ExpressionAttribute) String() string {
 	return ea.Name + `={%= ` + ea.Expression.Value + ` %}`
 }
 
+// FailedSanitizationURL is returned if a URL fails sanitization checks.
+const FailedSanitizationURL = SafeURL("about:invalid#TemplFailedSanitizationURL")
+
+// URL sanitizes the input string s and returns a SafeURL.
+func URL(s string) SafeURL {
+	if i := strings.IndexRune(s, ':'); i >= 0 && !strings.ContainsRune(s[:i], '/') {
+		protocol := s[:i]
+		if !strings.EqualFold(protocol, "http") && !strings.EqualFold(protocol, "https") && !strings.EqualFold(protocol, "mailto") {
+			return FailedSanitizationURL
+		}
+	}
+	return SafeURL(s)
+}
+
+// SafeURL is a URL that has been sanitized.
+type SafeURL string
+
 // Nodes.
 
 // CallTemplateExpression can be used to create and render a template using data.
