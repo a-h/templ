@@ -4,13 +4,32 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime/debug"
 
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
 )
 
-var version = "devel"
+// Binary builds set this version string. goreleaser sets the value using Go build ldflags.
+var version string
+
+// Source builds use this value. When installed using `go install github.com/a-h/templ/cmd/templ@latest` the `version` variable is empty, but
+// the debug.ReadBuildInfo return value provides the package version number installed by `go install`
+func goInstallVersion() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "unknown"
+	}
+	return info.Main.Version
+}
+
+func getVersion() string {
+	if version != "" {
+		return version
+	}
+	return goInstallVersion()
+}
 
 func main() {
 	if len(os.Args) < 2 {
