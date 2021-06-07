@@ -76,7 +76,8 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(p.email))
+		var var_1 templ.SafeURL = templ.URL("mailto: " + p.email)
+		_, err = io.WriteString(w, templ.EscapeString(string(var_1)))
 		if err != nil {
 			return err
 		}

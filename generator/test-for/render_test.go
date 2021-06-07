@@ -12,7 +12,7 @@ var input = []string{"a", "b", "c"}
 
 const expected = `<div>a</div><div>b</div><div>c</div>`
 
-func TestRender(t *testing.T) {
+func TestFor(t *testing.T) {
 	w := new(strings.Builder)
 	err := render(input).Render(context.Background(), w)
 	if err != nil {
