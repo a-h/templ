@@ -109,6 +109,21 @@ func (g *generator) writePackage() error {
 	return nil
 }
 
+func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
+	for _, n := range g.tf.Nodes {
+		switch n.(type) {
+		case templ.Template:
+			hasTemplates = true
+		case templ.CSSExpression:
+			hasCSS = true
+		}
+		if hasTemplates && hasCSS {
+			return
+		}
+	}
+	return
+}
+
 func (g *generator) writeImports() error {
 	var r templ.Range
 	var err error
@@ -116,13 +131,22 @@ func (g *generator) writeImports() error {
 	if _, err = g.w.Write("import \"github.com/a-h/templ\"\n"); err != nil {
 		return err
 	}
-	// Always import context because it's the first parameter of a template function.
-	if _, err = g.w.Write("import \"context\"\n"); err != nil {
-		return err
+	hasTemplates, hasCSS := g.templateNodeInfo()
+	if hasTemplates {
+		// The first parameter of a template function.
+		if _, err = g.w.Write("import \"context\"\n"); err != nil {
+			return err
+		}
+		// The second parameter of a template function.
+		if _, err = g.w.Write("import \"io\"\n"); err != nil {
+			return err
+		}
 	}
-	// Always import io because it's the second parameter of a template function.
-	if _, err = g.w.Write("import \"io\"\n"); err != nil {
-		return err
+	if hasCSS {
+		// strings.Builder is used to create CSS.
+		if _, err = g.w.Write("import \"strings\"\n"); err != nil {
+			return err
+		}
 	}
 	for _, im := range g.tf.Imports {
 		// import
@@ -188,17 +212,12 @@ func (g *generator) writeCSS(n templ.CSSExpression) error {
 			switch p := n.Properties[i].(type) {
 			case templ.ConstantCSSProperty:
 				// Carry out sanitization at compile time for constants.
-				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.Append(`%s`)\n", templ.SanitizeCSS(p.Name, p.Value))); err != nil {
+				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.WriteString(`%s`)\n", templ.SanitizeCSS(p.Name, p.Value))); err != nil {
 					return err
 				}
 			case templ.ExpressionCSSProperty:
-				vn := g.createVariableName()
-				// var vn templ.CSS
-				if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.CSS"); err != nil {
-					return err
-				}
-				// templCSSBuilder.Append(templ.SanitizeCSS('name', p.Expression()))
-				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.Append(templ.SanitizeCSS(`%s`, ", p.Name)); err != nil {
+				// templCSSBuilder.WriteString(templ.SanitizeCSS('name', p.Expression()))
+				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.WriteString(templ.SanitizeCSS(`%s`, ", p.Name)); err != nil {
 					return err
 				}
 				if r, err = g.w.Write(p.Value.Expression.Value); err != nil {
@@ -212,18 +231,21 @@ func (g *generator) writeCSS(n templ.CSSExpression) error {
 				return fmt.Errorf("unknown CSS property type: %v", reflect.TypeOf(p))
 			}
 		}
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSID := templ.CSSID(`%s`, templCSSBuilder.String())\n", n.Name.Value)); err != nil {
+			return err
+		}
 		// return templ.CSS {
 		if _, err = g.w.WriteIndent(indentLevel, "return templ.CSS{\n"); err != nil {
 			return err
 		}
 		{
 			indentLevel++
-			// ID: templ.CSSID(`name`, templ.CSSBuilder.String()),
-			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("ID: templ.CSSID(`%s`, templCSSBuilder.String()),\n", n.Name.Value)); err != nil {
+			// ID: templCSSID,
+			if _, err = g.w.WriteIndent(indentLevel, "ID: templCSSID,\n"); err != nil {
 				return err
 			}
-			// Class: templ.SafeCSS(templ.CSSBuilder.String()),
-			if _, err = g.w.WriteIndent(indentLevel, "Class: templCSSBuilder.String(),\n"); err != nil {
+			// Class: templ.SafeCSS(".cssID{" + templ.CSSBuilder.String() + "}"),
+			if _, err = g.w.WriteIndent(indentLevel, "Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),\n"); err != nil {
 				return err
 			}
 			indentLevel--

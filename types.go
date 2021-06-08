@@ -3,6 +3,7 @@ package templ
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"html"
 	"io"
@@ -23,7 +24,8 @@ type CSS struct {
 func CSSID(name string, css string) string {
 	h := sha256.New()
 	h.Write([]byte(css))
-	return fmt.Sprintf("%s_%s", name, h.Sum(nil)[0:4])
+	hp := hex.EncodeToString(h.Sum(nil))[0:4]
+	return fmt.Sprintf("%s_%s", name, hp)
 }
 
 // SafeCSS is CSS that has been sanitized.
@@ -32,7 +34,7 @@ type SafeCSS string
 // SanitizeCSS sanitizes CSS properties to ensure that they are safe.
 func SanitizeCSS(property, value string) string {
 	//TODO: Something to actually sanitize the CSS.
-	return property + ": " + value + ";"
+	return property + ":" + value + ";"
 }
 
 // Component is the interface that all templates implement.
