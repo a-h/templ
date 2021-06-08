@@ -81,7 +81,7 @@ func (g *generator) generate() (err error) {
 	if err = g.writeImports(); err != nil {
 		return
 	}
-	if err = g.writeTemplates(); err != nil {
+	if err = g.writeTemplateNodes(); err != nil {
 		return
 	}
 	return err
@@ -143,11 +143,99 @@ func (g *generator) writeImports() error {
 	return nil
 }
 
-func (g *generator) writeTemplates() error {
-	for i := 0; i < len(g.tf.Templates); i++ {
-		if err := g.writeTemplate(g.tf.Templates[i]); err != nil {
+func (g *generator) writeTemplateNodes() error {
+	for i := 0; i < len(g.tf.Nodes); i++ {
+		switch n := g.tf.Nodes[i].(type) {
+		case templ.Template:
+			if err := g.writeTemplate(n); err != nil {
+				return err
+			}
+		case templ.CSSExpression:
+			if err := g.writeCSS(n); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unknown node type: %v", reflect.TypeOf(n))
+		}
+	}
+	return nil
+}
+
+func (g *generator) writeCSS(n templ.CSSExpression) error {
+	var r templ.Range
+	var err error
+	var indentLevel int
+
+	// func
+	if _, err = g.w.Write("func "); err != nil {
+		return err
+	}
+	if r, err = g.w.Write(n.Name.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(n.Name, r)
+	// ()
+	if _, err = g.w.Write("() templ.CSS {\n"); err != nil {
+		return err
+	}
+	{
+		indentLevel++
+		// var templCSSBuilder strings.Builder
+		if _, err = g.w.WriteIndent(indentLevel, "var templCSSBuilder strings.Builder\n"); err != nil {
 			return err
 		}
+		for i := 0; i < len(n.Properties); i++ {
+			switch p := n.Properties[i].(type) {
+			case templ.ConstantCSSProperty:
+				// Carry out sanitization at compile time for constants.
+				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.Append(`%s`)\n", templ.SanitizeCSS(p.Name, p.Value))); err != nil {
+					return err
+				}
+			case templ.ExpressionCSSProperty:
+				vn := g.createVariableName()
+				// var vn templ.CSS
+				if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.CSS"); err != nil {
+					return err
+				}
+				// templCSSBuilder.Append(templ.SanitizeCSS('name', p.Expression()))
+				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.Append(templ.SanitizeCSS(`%s`, ", p.Name)); err != nil {
+					return err
+				}
+				if r, err = g.w.Write(p.Value.Expression.Value); err != nil {
+					return err
+				}
+				g.sourceMap.Add(p.Value.Expression, r)
+				if _, err = g.w.Write("))\n"); err != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("unknown CSS property type: %v", reflect.TypeOf(p))
+			}
+		}
+		// return templ.CSS {
+		if _, err = g.w.WriteIndent(indentLevel, "return templ.CSS{\n"); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			// ID: templ.CSSID(`name`, templ.CSSBuilder.String()),
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("ID: templ.CSSID(`%s`, templCSSBuilder.String()),\n", n.Name.Value)); err != nil {
+				return err
+			}
+			// Class: templ.SafeCSS(templ.CSSBuilder.String()),
+			if _, err = g.w.WriteIndent(indentLevel, "Class: templCSSBuilder.String(),\n"); err != nil {
+				return err
+			}
+			indentLevel--
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+			return err
+		}
+		indentLevel--
+	}
+	// }
+	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
+		return err
 	}
 	return nil
 }
@@ -157,8 +245,6 @@ func (g *generator) writeTemplate(t templ.Template) error {
 	var err error
 	var indentLevel int
 
-	// Create thew new function.
-
 	// func
 	if _, err = g.w.Write("func "); err != nil {
 		return err
@@ -167,7 +253,7 @@ func (g *generator) writeTemplate(t templ.Template) error {
 		return err
 	}
 	g.sourceMap.Add(t.Name, r)
-	// (ctx context.Context, w io.Writer,
+	// (
 	if _, err = g.w.Write("("); err != nil {
 		return err
 	}

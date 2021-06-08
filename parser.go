@@ -116,21 +116,35 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
 	}
 
-	// Optional templates.
+	// Optional templates and CSS elements.
 	// {% templ Name(p Parameter) %}
+	// {% css Name() %}
 	tp := newTemplateParser()
+	cssp := newCSSParser()
 	for {
+		// Try for a template.
 		tpr := tp.Parse(pi)
 		if tpr.Error != nil && tpr.Error != io.EOF {
 			return tpr
 		}
-		if !tpr.Success {
-			break
+		if tpr.Success {
+			tf.Nodes = append(tf.Nodes, tpr.Item.(Template))
+			// Eat optional whitespace.
+			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+			continue
 		}
-		tf.Templates = append(tf.Templates, tpr.Item.(Template))
-
-		// Eat optional whitespace.
-		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+		// Try for css.
+		cssr := cssp.Parse(pi)
+		if cssr.Error != nil && cssr.Error != io.EOF {
+			return cssr
+		}
+		if cssr.Success {
+			tf.Nodes = append(tf.Nodes, cssr.Item.(CSS))
+			// Eat optional whitespace.
+			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+			continue
+		}
+		break
 	}
 
 	// Success.
