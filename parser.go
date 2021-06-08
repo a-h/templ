@@ -139,7 +139,7 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 			return cssr
 		}
 		if cssr.Success {
-			tf.Nodes = append(tf.Nodes, cssr.Item.(CSS))
+			tf.Nodes = append(tf.Nodes, cssr.Item.(CSSExpression))
 			// Eat optional whitespace.
 			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
 			continue

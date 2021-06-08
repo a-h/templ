@@ -93,13 +93,13 @@ func TestCSSParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected CSS
+		expected CSSExpression
 	}{
 		{
 			name: "css: no parameters, no content",
 			input: `{% css Name() %}
 {% endcss %}`,
-			expected: CSS{
+			expected: CSSExpression{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -123,7 +123,7 @@ func TestCSSParser(t *testing.T) {
 			input: `{% css Name() %}
 background-color: #ffffff;
 {% endcss %}`,
-			expected: CSS{
+			expected: CSSExpression{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -152,7 +152,7 @@ background-color: #ffffff;
 			input: `{% css Name() %}
 background-color: {%= constants.BackgroundColor %};
 {% endcss %}`,
-			expected: CSS{
+			expected: CSSExpression{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
