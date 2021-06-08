@@ -198,6 +198,46 @@ func TestFormatting(t *testing.T) {
 
 `,
 		},
+		{
+			name: "css is indented by one level",
+			input: ` // first line removed to make indentation clear in Go code
+{% package test %}
+
+{% css ClassName() %}
+background-color: #ffffff;
+color: {%= constants.White %};
+{% endcss %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+{% package test %}
+
+{% css ClassName() %}
+	background-color: #ffffff;
+	color: {%= constants.White %};
+{% endcss %}
+
+`,
+		},
+		{
+			name: "css whitespace is tidied",
+			input: ` // first line removed to make indentation clear in Go code
+{% package test %}
+
+{% css ClassName() %}
+  background-color    :   #ffffff	;
+	color	:  {%= constants.White %};
+{% endcss %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+{% package test %}
+
+{% css ClassName() %}
+	background-color: #ffffff;
+	color: {%= constants.White %};
+{% endcss %}
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
