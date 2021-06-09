@@ -8,6 +8,7 @@ import "io"
 
 func postsTemplate(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		for _, p := range posts {
 			err = postTemplate(p).Render(ctx, w)
 			if err != nil {
@@ -20,6 +21,7 @@ func postsTemplate(posts []Post) templ.Component {
 
 func postTemplate(post Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err

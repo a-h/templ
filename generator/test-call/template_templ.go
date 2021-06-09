@@ -8,6 +8,7 @@ import "io"
 
 func personTemplate(p person) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err
@@ -74,6 +75,7 @@ func personTemplate(p person) templ.Component {
 
 func email(s string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err

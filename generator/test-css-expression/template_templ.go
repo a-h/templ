@@ -5,12 +5,12 @@ package testcssexpression
 import "github.com/a-h/templ"
 import "strings"
 
-func className() templ.CSS {
+func className() templ.CSSClass {
 	var templCSSBuilder strings.Builder
 	templCSSBuilder.WriteString(`background-color:#ffffff;`)
 	templCSSBuilder.WriteString(templ.SanitizeCSS(`color`, red))
 	templCSSID := templ.CSSID(`className`, templCSSBuilder.String())
-	return templ.CSS{
+	return templ.ComponentCSSClass{
 		ID: templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
