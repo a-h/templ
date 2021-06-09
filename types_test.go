@@ -1,7 +1,6 @@
 package templ
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -261,24 +260,5 @@ color: {%= constants.White %};
 				t.Error(diff)
 			}
 		})
-	}
-}
-
-func TestContext(t *testing.T) {
-	ctx := context.Background()
-	ctx, classes := RenderedCSSClassesFromContext(ctx)
-	if classes.Contains("test") {
-		t.Fatalf("before the classes have been set, test should not be set")
-	}
-	classes.Add("test")
-	if !classes.Contains("test") {
-		t.Errorf("expected 'test' to be present in the context, after setting")
-	}
-	_, updatedClasses := RenderedCSSClassesFromContext(ctx)
-	if !updatedClasses.Contains("test") {
-		t.Errorf("expected 'test' to be present in the context with new context, but it wasn't")
-	}
-	if classes != updatedClasses {
-		t.Errorf("expected %v to be the same as %v", classes, updatedClasses)
 	}
 }
