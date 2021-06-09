@@ -198,8 +198,8 @@ func (g *generator) writeCSS(n templ.CSSExpression) error {
 		return err
 	}
 	g.sourceMap.Add(n.Name, r)
-	// ()
-	if _, err = g.w.Write("() templ.CSS {\n"); err != nil {
+	// () templ.CSSClass {
+	if _, err = g.w.Write("() templ.CSSClass {\n"); err != nil {
 		return err
 	}
 	{
@@ -235,7 +235,7 @@ func (g *generator) writeCSS(n templ.CSSExpression) error {
 			return err
 		}
 		// return templ.CSS {
-		if _, err = g.w.WriteIndent(indentLevel, "return templ.CSS{\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "return templ.ComponentCSSClass{\n"); err != nil {
 			return err
 		}
 		{
@@ -295,6 +295,11 @@ func (g *generator) writeTemplate(t templ.Template) error {
 	}
 	{
 		indentLevel++
+		// ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
+		if _, err = g.w.WriteIndent(indentLevel, "ctx, _ = templ.RenderedCSSClassesFromContext(ctx)\n"); err != nil {
+			return err
+		}
+		// Nodes.
 		if err = g.writeNodes(indentLevel, t.Children); err != nil {
 			return err
 		}
@@ -340,7 +345,7 @@ func (g *generator) writeNode(indentLevel int, node templ.Node) error {
 	case templ.StringExpression:
 		g.writeStringExpression(indentLevel, n.Expression)
 	case templ.Whitespace:
-		// Whitespace is removed from template output to minify HTML.
+		// Whitespace is not included in template output to minify HTML.
 	default:
 		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
 	}
@@ -552,6 +557,10 @@ func (g *generator) writeStandardElement(indentLevel int, n templ.Element) (err 
 			return err
 		}
 	} else {
+		// <style type="text/css></style>
+		if err = g.writeElementCSS(indentLevel, n); err != nil {
+			return err
+		}
 		// <div
 		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
@@ -578,6 +587,45 @@ func (g *generator) writeStandardElement(indentLevel int, n templ.Element) (err 
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
 		return err
+	}
+	return err
+}
+
+func (g *generator) writeElementCSS(indentLevel int, n templ.Element) (err error) {
+	var r templ.Range
+	for i := 0; i < len(n.Attributes); i++ {
+		if attr, ok := n.Attributes[i].(templ.ExpressionAttribute); ok {
+			name := html.EscapeString(attr.Name)
+			if name != "class" {
+				continue
+			}
+			// Create a class name for the style.
+			// var templCSSClassess templ.CSSClasses =
+			if _, err = g.w.WriteIndent(indentLevel, "var templCSSClassess templ.CSSClasses = "); err != nil {
+				return err
+			}
+			// p.Name()
+			if r, err = g.w.Write(attr.Expression.Value); err != nil {
+				return err
+			}
+			g.sourceMap.Add(attr.Expression, r)
+			if _, err = g.w.Write("\n"); err != nil {
+				return err
+			}
+			// Render the CSS before the element if required.
+			// err = templ.RenderCSS(ctx, w, templCSSClassess)
+			if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderCSS(ctx, w, templCSSClassess)\n"); err != nil {
+				return err
+			}
+			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+			// Rewrite the ExpressionAttribute to point at the new variable.
+			attr.Expression = templ.Expression{
+				Value: "templCSSClassess.String()",
+			}
+			n.Attributes[i] = attr
+		}
 	}
 	return err
 }

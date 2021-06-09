@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var expected = templ.CSS{
+var expected = templ.ComponentCSSClass{
 	ID:    "className_f179",
 	Class: templ.SafeCSS(`.className_f179{background-color:#ffffff;color:#ff0000;}`),
 }
