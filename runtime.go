@@ -8,7 +8,10 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
+
+	"github.com/a-h/templ/safehtml"
 )
 
 // Classes for CSS.
@@ -93,6 +96,18 @@ func (rc *StringSet) Contains(s string) bool {
 	return ok
 }
 
+// All returns a slice of all items in the set.
+func (rc *StringSet) All() (values []string) {
+	values = make([]string, len(rc.ss))
+	var index int
+	for k := range rc.ss {
+		values[index] = k
+		index++
+	}
+	sort.Strings(values)
+	return values
+}
+
 // RenderedCSSClassesFromContext returns a set of the CSS classes that have already been
 // rendered to the response.
 func RenderedCSSClassesFromContext(ctx context.Context) (context.Context, *StringSet) {
@@ -104,29 +119,64 @@ func RenderedCSSClassesFromContext(ctx context.Context) (context.Context, *Strin
 	return ctx, rc
 }
 
-func NewCSSHandler(classes ...CSSClass) CSSHandler {
-	return CSSHandler{
-		classes: classes,
+// NewCSSMiddleware creates HTTP middleware that renders a global stylesheet of ComponentCSSClass
+// CSS if the request path matches, or updates the HTTP context to ensure that any handlers that
+// use templ.Components skip rendering <style> elements for classes that are included in the global
+// stylesheet. By default, the stylesheet path is /styles/templ.css
+func NewCSSMiddleware(next http.Handler, classes ...ComponentCSSClass) CSSMiddleware {
+	return CSSMiddleware{
+		Path:       "/styles/templ.css",
+		CSSHandler: NewCSSHandler(classes...),
+		Next:       next,
 	}
 }
 
+// CSSMiddleware renders a global stylesheet.
+type CSSMiddleware struct {
+	Path       string
+	CSSHandler CSSHandler
+	Next       http.Handler
+}
+
+func (cssm CSSMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == cssm.Path {
+		cssm.CSSHandler.ServeHTTP(w, r)
+		return
+	}
+	// Add registered classes to the context.
+	ctx, classes := RenderedCSSClassesFromContext(r.Context())
+	for _, c := range cssm.CSSHandler.Classes {
+		classes.Add(c.ClassName())
+	}
+	// Serve the request. Templ components will use the updated context
+	// to know to skip rendering <style> elements for any component CSS
+	// classes that have been included in the global stylesheet.
+	cssm.Next.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// NewCSSHandler creates a handler that serves a stylesheet containing the CSS of the
+// classes passed in. This is used by the CSSMiddleware to provide global stylesheets
+// for templ components.
+func NewCSSHandler(classes ...ComponentCSSClass) CSSHandler {
+	return CSSHandler{
+		Classes: classes,
+	}
+}
+
+// CSSHandler is a HTTP handler that serves CSS.
 type CSSHandler struct {
-	classes []CSSClass
+	Classes []ComponentCSSClass
 }
 
 func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/css")
-	for _, c := range cssh.classes {
-		if ccc, ok := c.(ComponentCSSClass); ok {
-			w.Write([]byte(ccc.Class))
-		}
+	for _, c := range cssh.Classes {
+		w.Write([]byte(c.Class))
 	}
 }
 
 // Render CSS renders a <style> element with CSS content, if the styles have not already been rendered.
 func RenderCSS(ctx context.Context, w io.Writer, classes []CSSClass) (err error) {
-	//TODO: Add a HTTP handler that can render CSS.
-	//TODO: Be able to programmatically skip rendering CSS in this way, because it's handed off to a global stylesheet.
 	ctx, rc := RenderedCSSClassesFromContext(ctx)
 	var sb strings.Builder
 	for _, c := range classes {
@@ -155,9 +205,8 @@ func RenderCSS(ctx context.Context, w io.Writer, classes []CSSClass) (err error)
 type SafeCSS string
 
 // SanitizeCSS sanitizes CSS properties to ensure that they are safe.
-func SanitizeCSS(property, value string) string {
-	//TODO: Something to actually sanitize the CSS.
-	return property + ":" + value + ";"
+func SanitizeCSS(property, value string) SafeCSS {
+	return SafeCSS(safehtml.SanitizeCSS(property, value))
 }
 
 // Component is the interface that all templates implement.
