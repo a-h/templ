@@ -217,14 +217,14 @@ func (g *generator) writeCSS(n templ.CSSExpression) error {
 				}
 			case templ.ExpressionCSSProperty:
 				// templCSSBuilder.WriteString(templ.SanitizeCSS('name', p.Expression()))
-				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.WriteString(templ.SanitizeCSS(`%s`, ", p.Name)); err != nil {
+				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.WriteString(string(templ.SanitizeCSS(`%s`, ", p.Name)); err != nil {
 					return err
 				}
 				if r, err = g.w.Write(p.Value.Expression.Value); err != nil {
 					return err
 				}
 				g.sourceMap.Add(p.Value.Expression, r)
-				if _, err = g.w.Write("))\n"); err != nil {
+				if _, err = g.w.Write(")))\n"); err != nil {
 					return err
 				}
 			default:
