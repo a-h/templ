@@ -206,7 +206,8 @@ type SafeCSS string
 
 // SanitizeCSS sanitizes CSS properties to ensure that they are safe.
 func SanitizeCSS(property, value string) SafeCSS {
-	return SafeCSS(safehtml.SanitizeCSS(property, value))
+	p, v := safehtml.SanitizeCSS(property, value)
+	return SafeCSS(p + ":" + v + ";")
 }
 
 // Component is the interface that all templates implement.
