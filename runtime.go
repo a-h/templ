@@ -210,6 +210,23 @@ func SanitizeCSS(property, value string) SafeCSS {
 	return SafeCSS(p + ":" + v + ";")
 }
 
+// FailedSanitizationURL is returned if a URL fails sanitization checks.
+const FailedSanitizationURL = SafeURL("about:invalid#TemplFailedSanitizationURL")
+
+// URL sanitizes the input string s and returns a SafeURL.
+func URL(s string) SafeURL {
+	if i := strings.IndexRune(s, ':'); i >= 0 && !strings.ContainsRune(s[:i], '/') {
+		protocol := s[:i]
+		if !strings.EqualFold(protocol, "http") && !strings.EqualFold(protocol, "https") && !strings.EqualFold(protocol, "mailto") {
+			return FailedSanitizationURL
+		}
+	}
+	return SafeURL(s)
+}
+
+// SafeURL is a URL that has been sanitized.
+type SafeURL string
+
 // Component is the interface that all templates implement.
 type Component interface {
 	// Render the template.
