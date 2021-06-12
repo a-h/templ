@@ -170,7 +170,9 @@ However, the `a` element's `href` attribute is treated differently. Templ expect
 
 Templ provides a `templ.URL` function that sanitizes input URLs and checks that the protocol is http/https/mailto rather than `javascript` or another unexpected protocol.
 
+```
 <a href={%= templ.URL(p.URL) %}>{%= strings.ToUpper(p.Name()) %}</a>
+```
 
 ### Text
 
