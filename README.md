@@ -12,7 +12,7 @@
 
 ## Current state
 
-This is beta software, and the template language may still have breaking changes. There's no guarantees of stability or correctness at the moment.
+This is beta software, and the template language may still have breaking changes. There's no guarantees of stability or correctness at the moment, but it has at least one production user.
 
 If you're keen to see Go be practical for Web projects, see "Help needed" for where the project needs your help.
 
@@ -26,7 +26,43 @@ The language generates Go code, some sections of the template (e.g. `package`, `
 
 ## Security
 
-templ currently uses context unaware escaping, see https://github.com/a-h/templ/issues/6 for a proposal to add context-aware content escaping.
+templ will automatically escape content according to the following rules.
+
+```
+{% templ Example() %}
+  <script type="text/javascript">
+    {%= "will be HTML encoded using templ.Escape, which isn't JavaScript-aware, don't use templ to build scripts" %}
+  </script>
+  <div onClick={%= "will be HTML encoded using templ.Escape, but this isn't JavaScript aware, don't use user-controlled data here" %}>
+    {%= "will be HTML encoded using templ.Escape" %}</div>  
+  </div>
+  <style type="text/css">
+    {%= "will be escaped using templ.Escape, which isn't CSS-aware, don't use user-controlled data here" %}
+  </style>
+  <div style={%= "will be HTML encoded using templ.Escape, which isn't CSS-aware, don't use user controlled data here" %}</div>
+  <div class={%= templ.CSSClasses(templ.Class("will not be escaped, because it's expected to be a constant value")) %}</div>
+  <div>{%= "will be escaped using templ.Escape" %}</div>
+  <a href="http://constants.example.com/are/not/sanitized">Text</a>
+  <a href={%= templ.URL("will be sanitized by templ.URL to remove potential attacks") %}</div>
+  <a href={%= templ.SafeURL("will not be sanitized by templ.URL") %}</div>
+{% endtempl %}
+```
+
+CSS property names, and constant CSS property values are not sanitized or escaped.
+
+```
+{% css className() %}
+	background-color: #ffffff;
+{% endcss %}
+```
+
+CSS property values based on expressions are passed through `templ.SanitizeCSS` to replace potentially unsafe values with placeholders.
+
+```
+{% css className() %}
+	color: {%= red %};
+{% endcss %}
+```
 
 ## Design
 
@@ -127,8 +163,14 @@ HTML elements look like HTML and you can write static attributes into them, just
 You can also have dynamic attributes that use template parameter, other Go variables that happen to be in scope, or call Go functions that return a string. Don't worry about HTML encoding element text and attribute values, that will be taken care of automatically.
 
 ```
-<a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
+<a title={%= p.TitleText %}>{%= strings.ToUpper(p.Name()) %}</a>
 ```
+
+However, the `a` element's `href` attribute is treated differently. Templ expects you to provide a `templ.SafeURL`. A `templ.SafeURL` is a URL that is definitely safe to use (i.e. has come from a configuration system controlled by the developer), or has been through a sanitization process to filter out potential XSS attacks.
+
+Templ provides a `templ.URL` function that sanitizes input URLs and checks that the protocol is http/https/mailto rather than `javascript` or another unexpected protocol.
+
+<a href={%= templ.URL(p.URL) %}>{%= strings.ToUpper(p.Name()) %}</a>
 
 ### Text
 
@@ -157,6 +199,60 @@ Or using a string parameter, or variable that's in scope.
 ```
 
 What you can't do, is write text directly between elements (e.g. `<div>Some text</div>`, because the parser would have to become more complex to support HTML entities and the various mistakes people make when they're doing that (bare ampersands etc.). Go strings support UTF-8 which is much easier, and the escaping rules are well known by Go programmers.
+
+### CSS
+
+Templ components can have CSS associated with them. CSS classes are created with the `css` template expression. CSS properties can be set to string variables or functions (e.g. `{%= red %}`). However, functions should be idempotent - i.e. return the same value every time.
+
+All variable CSS values are passed through a value sanitizer to provide some protection against malicious data being added to CSS.
+
+```
+{% css className() %}
+	background-color: #ffffff;
+	color: {%= red %};
+{% endcss %}
+```
+
+CSS class components can be used within templates.
+
+```
+{% templ Button(text string) %}
+	<button class={%= templ.Classes(className(), templ.Class("other")) %} type="button">{%= text %}</button>
+{% endtempl %}
+```
+
+The first time that the component is rendered in a HTTP request, it will render the CSS class to the output. The next time the same component is rendered, templ will skip rendering the CSS to the output because it is no longer required.
+
+For example, if this template is rendered in a request:
+
+```
+{% templ TwoButtons() %}
+	{%! Button("A") %}
+	{%! Button("B") %}
+{% endtempl %}
+```
+
+The output would contain one class. Note that the name contains a unique value is addition to the class name to reduce the likelihood of clashes. Don't rely on this name being consistent.
+
+```html
+<style type="text/css">.className_f179{background-color:#ffffff;color:#ff0000;}</style>
+<button class="className_f179 other" type="button">A</button>
+<button class="className_f179 other" type="button">B</button>`
+```
+
+#### CSS Middleware
+
+If you want to provide a global stylesheet that includes this CSS to remove `<style>` tags from the output, you can use templ's CSS middleware, and register templ classes.
+
+The middleware adds a HTTP route to the web server (`/styles/templ.css` by default) that renders the `text/css` classes that would otherwise be added to `<style>` tags when components are rendered. It's then your responsibility to add a `<link rel="stylesheet" href="/styles/templ.css">` to your HTML.
+
+For example, to stop the `className` CSS class from being added to the output, the HTTP middleware can be used.
+
+```go
+c1 := className()
+handler := NewCSSMiddleware(httpRoutes, c1)
+http.ListenAndServe(":8000:, handler)
+```
 
 ### If/Else
 
