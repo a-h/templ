@@ -9,8 +9,7 @@
 package safehtml
 
 import (
-	"bytes"
-	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -53,16 +52,15 @@ var cssPropertyNameToValueSanitizer = map[string]func(string) string{
 }
 
 func sanitizeBackgroundImage(v string) string {
-	urls := strings.Split(v, ",")
-	for _, u := range urls {
+	for _, u := range strings.Split(v, ",") {
 		u = strings.TrimSpace(u)
-		if !strings.HasPrefix(u, "url(") {
+		if !strings.HasPrefix(u, `url("`) {
 			return InnocuousPropertyValue
 		}
-		if !strings.HasSuffix(u, ")") {
+		if !strings.HasSuffix(u, `")`) {
 			return InnocuousPropertyValue
 		}
-		u := u[4 : len(u)-1]
+		u := u[5 : len(u)-2]
 		if !urlIsSafe(u) {
 			return InnocuousPropertyValue
 		}
@@ -71,9 +69,12 @@ func sanitizeBackgroundImage(v string) string {
 }
 
 func urlIsSafe(s string) bool {
-	if i := strings.IndexRune(s, ':'); i >= 0 && !strings.ContainsRune(s[:i], '/') {
-		protocol := s[:i]
-		if !strings.EqualFold(protocol, "http") && !strings.EqualFold(protocol, "https") && !strings.EqualFold(protocol, "mailto") {
+	u, err := url.Parse(s)
+	if err != nil {
+		return false
+	}
+	if u.IsAbs() {
+		if strings.EqualFold(u.Scheme, "http") || strings.EqualFold(u.Scheme, "https") || strings.EqualFold(u.Scheme, "mailto") {
 			return true
 		}
 		return false
@@ -84,21 +85,19 @@ func urlIsSafe(s string) bool {
 var genericFontFamilyName = regexp.MustCompile(`^[a-zA-Z][-a-zA-Z]+$`)
 
 func sanitizeFontFamily(s string) string {
-	fonts := strings.Split(s, ",")
-	for i, f := range fonts {
+	for _, f := range strings.Split(s, ",") {
 		f = strings.TrimSpace(f)
 		if strings.HasPrefix(f, `"`) {
 			if !strings.HasSuffix(f, `"`) {
 				return InnocuousPropertyValue
 			}
-			fonts[i] = `"` + cssEscapeString(f[1:len(f)-1]) + `"`
 			continue
 		}
 		if !genericFontFamilyName.MatchString(f) {
 			return InnocuousPropertyValue
 		}
 	}
-	return strings.Join(fonts, ",")
+	return s
 }
 
 func sanitizeEnum(s string) string {
@@ -138,33 +137,3 @@ var safeRegularPropertyValuePattern = regexp.MustCompile(`^(?:[*/]?(?:[0-9a-zA-Z
 // safeEnumPropertyValuePattern matches strings that are safe to use as enumerated property values.
 // Specifically, it matches strings that contain only alphabetic and '-' runes.
 var safeEnumPropertyValuePattern = regexp.MustCompile(`^[a-zA-Z-]*$`)
-
-// cssEscapeString escapes s so that it is safe to put between "" to form a CSS <string-token>.
-// See syntax at https://www.w3.org/TR/css-syntax-3/#string-token-diagram.
-//
-// On top of the escape sequences required in <string-token>, this function also escapes
-// control runes to minimize the risk of these runes triggering browser-specific bugs.
-func cssEscapeString(s string) string {
-	var b bytes.Buffer
-	b.Grow(len(s))
-	// TODO: consider optmizations (e.g. ranging over bytes, batching writes of contiguous sequences of unescaped runes) if
-	// performance becomes an issue.
-	for _, c := range s {
-		switch {
-		case c == '\u0000':
-			// Replace the NULL byte according to https://www.w3.org/TR/css-syntax-3/#input-preprocessing.
-			// We take this extra precaution in case the user agent fails to handle NULL properly.
-			b.WriteString("\uFFFD")
-		case c == '<', // Prevents breaking out of a style element with `</style>`. Escape this in case the Style user forgets to.
-			c == '"', c == '\\', // Must be CSS-escaped in <string-token>. U+000A line feed is handled in the next case.
-			c <= '\u001F', c == '\u007F', // C0 control codes
-			c >= '\u0080' && c <= '\u009F', // C1 control codes
-			c == '\u2028', c == '\u2029':   // Unicode newline characters
-			// See CSS escape sequence syntax at https://www.w3.org/TR/css-syntax-3/#escape-diagram.
-			fmt.Fprintf(&b, "\\%06X", c)
-		default:
-			b.WriteRune(c)
-		}
-	}
-	return b.String()
-}
