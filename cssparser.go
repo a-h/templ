@@ -20,7 +20,7 @@ type cssParser struct {
 var endCssParser = parse.String("{% endcss %}") // {% endcss %}
 
 func (p cssParser) Parse(pi parse.Input) parse.Result {
-	r := CSSExpression{
+	r := CSSTemplate{
 		Properties: []CSSProperty{},
 	}
 

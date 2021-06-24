@@ -11,13 +11,13 @@ func TestTemplateParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected Template
+		expected HTMLTemplate
 	}{
 		{
 			name: "template: no parameters",
 			input: `{% templ Name() %}
 {% endtempl %}`,
-			expected: Template{
+			expected: HTMLTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -55,7 +55,7 @@ func TestTemplateParser(t *testing.T) {
 			name: "template: single parameter",
 			input: `{% templ Name(p Parameter) %}
 {% endtempl %}`,
-			expected: Template{
+			expected: HTMLTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -94,7 +94,7 @@ func TestTemplateParser(t *testing.T) {
 			input: `{% templ Name(p Parameter) %}
 <span>{%= "span content" %}</span>
 {% endtempl %}`,
-			expected: Template{
+			expected: HTMLTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -165,7 +165,7 @@ func TestTemplateParser(t *testing.T) {
   </span>
 </div>
 {% endtempl %}`,
-			expected: Template{
+			expected: HTMLTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -261,7 +261,7 @@ func TestTemplateParser(t *testing.T) {
 		</span>
 	{% endif %}
 {% endtempl %}`,
-			expected: Template{
+			expected: HTMLTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -355,7 +355,7 @@ func TestTemplateParser(t *testing.T) {
 <input type="text" value="a" />
 <input type="text" value="b" />
 {% endtempl %}`,
-			expected: Template{
+			expected: HTMLTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{

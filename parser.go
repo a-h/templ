@@ -38,7 +38,7 @@ type templateParser struct {
 
 func (p templateParser) asTemplate(parts []interface{}) (result interface{}, ok bool) {
 	te := parts[0].(templateExpression)
-	t := Template{
+	t := HTMLTemplate{
 		Name:       te.Name,
 		Parameters: te.Parameters,
 	}
@@ -128,7 +128,7 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 			return tpr
 		}
 		if tpr.Success {
-			tf.Nodes = append(tf.Nodes, tpr.Item.(Template))
+			tf.Nodes = append(tf.Nodes, tpr.Item.(HTMLTemplate))
 			// Eat optional whitespace.
 			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
 			continue
@@ -139,7 +139,7 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 			return cssr
 		}
 		if cssr.Success {
-			tf.Nodes = append(tf.Nodes, cssr.Item.(CSSExpression))
+			tf.Nodes = append(tf.Nodes, cssr.Item.(CSSTemplate))
 			// Eat optional whitespace.
 			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
 			continue

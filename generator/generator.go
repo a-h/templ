@@ -112,9 +112,9 @@ func (g *generator) writePackage() error {
 func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
 	for _, n := range g.tf.Nodes {
 		switch n.(type) {
-		case templ.Template:
+		case templ.HTMLTemplate:
 			hasTemplates = true
-		case templ.CSSExpression:
+		case templ.CSSTemplate:
 			hasCSS = true
 		}
 		if hasTemplates && hasCSS {
@@ -170,11 +170,11 @@ func (g *generator) writeImports() error {
 func (g *generator) writeTemplateNodes() error {
 	for i := 0; i < len(g.tf.Nodes); i++ {
 		switch n := g.tf.Nodes[i].(type) {
-		case templ.Template:
+		case templ.HTMLTemplate:
 			if err := g.writeTemplate(n); err != nil {
 				return err
 			}
-		case templ.CSSExpression:
+		case templ.CSSTemplate:
 			if err := g.writeCSS(n); err != nil {
 				return err
 			}
@@ -185,7 +185,7 @@ func (g *generator) writeTemplateNodes() error {
 	return nil
 }
 
-func (g *generator) writeCSS(n templ.CSSExpression) error {
+func (g *generator) writeCSS(n templ.CSSTemplate) error {
 	var r templ.Range
 	var err error
 	var indentLevel int
@@ -262,7 +262,7 @@ func (g *generator) writeCSS(n templ.CSSExpression) error {
 	return nil
 }
 
-func (g *generator) writeTemplate(t templ.Template) error {
+func (g *generator) writeTemplate(t templ.HTMLTemplate) error {
 	var r templ.Range
 	var err error
 	var indentLevel int

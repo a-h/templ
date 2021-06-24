@@ -202,13 +202,13 @@ func (imp Import) Write(w io.Writer, indent int) error {
 //   background-color: {%= constants.BackgroundColor %};
 //   background-image: url('./somewhere.png');
 // {% endcss %}
-type CSSExpression struct {
+type CSSTemplate struct {
 	Name       Expression
 	Properties []CSSProperty
 }
 
-func (css CSSExpression) IsTemplateFileNode() bool { return true }
-func (css CSSExpression) Write(w io.Writer, indent int) error {
+func (css CSSTemplate) IsTemplateFileNode() bool { return true }
+func (css CSSTemplate) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "{% css "+css.Name.Value+"() %}\n"); err != nil {
 		return err
 	}
@@ -263,20 +263,20 @@ func (c ExpressionCSSProperty) Write(w io.Writer, indent int) error {
 	return nil
 }
 
-// Template definition.
+// HTMLTemplate definition.
 // {% templ Name(p Parameter) %}
 //   {% if ... %}
 //   <Element></Element>
 // {% endtempl %}
-type Template struct {
+type HTMLTemplate struct {
 	Name       Expression
 	Parameters Expression
 	Children   []Node
 }
 
-func (t Template) IsTemplateFileNode() bool { return true }
+func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
 
-func (t Template) Write(w io.Writer, indent int) error {
+func (t HTMLTemplate) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "{% templ "+t.Name.Value+"("+t.Parameters.Value+") %}\n"); err != nil {
 		return err
 	}
