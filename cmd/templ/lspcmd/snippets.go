@@ -43,7 +43,7 @@ var templateSnippets = []lsp.CompletionItem{
 	{
 		Label: "% css",
 		InsertText: `% css ${1:name}(${2}) %}
-	${3}: ${4};$0
+	$0
 {% endcss %}`,
 		Kind:             lsp.CompletionItemKind(lsp.CIKSnippet),
 		InsertTextFormat: lsp.ITFSnippet,
