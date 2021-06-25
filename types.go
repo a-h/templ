@@ -270,7 +270,7 @@ type DocType struct {
 
 func (dt DocType) IsNode() bool { return true }
 func (dt DocType) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, "<!DOCTYPE "+dt.Value+">\n")
+	return writeIndent(w, indent, "<!DOCTYPE "+dt.Value+">")
 }
 
 // HTMLTemplate definition.
