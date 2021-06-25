@@ -1,5 +1,9 @@
 {% package testcssusage %}
 
+{% css green() %}
+    color: #00ff00;
+{% endcss %}
+
 {% css className() %}
 	background-color: #ffffff;
 	color: {%= red %};
@@ -9,7 +13,8 @@
 	<button class={%= templ.Classes(className(), templ.Class("other")) %} type="button">{%= text %}</button>
 {% endtempl %}
 
-{% templ TwoButtons() %}
+{% templ ThreeButtons() %}
 	{%! Button("A") %}
 	{%! Button("B") %}
+	<button class={%= templ.Classes(green()) %} type="button">{%= "Green" %}</button>
 {% endtempl %}

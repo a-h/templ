@@ -7,6 +7,16 @@ import "context"
 import "io"
 import "strings"
 
+func green() templ.CSSClass {
+	var templCSSBuilder strings.Builder
+	templCSSBuilder.WriteString(`color:#00ff00;`)
+	templCSSID := templ.CSSID(`green`, templCSSBuilder.String())
+	return templ.ComponentCSSClass{
+		ID: templCSSID,
+		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
+	}
+}
+
 func className() templ.CSSClass {
 	var templCSSBuilder strings.Builder
 	templCSSBuilder.WriteString(`background-color:#ffffff;`)
@@ -21,8 +31,8 @@ func className() templ.CSSClass {
 func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		var templCSSClassess templ.CSSClasses = templ.Classes(className(), templ.Class("other"))
-		err = templ.RenderCSS(ctx, w, templCSSClassess)
+		var var_1 templ.CSSClasses = templ.Classes(className(), templ.Class("other"))
+		err = templ.RenderCSS(ctx, w, var_1)
 		if err != nil {
 			return err
 		}
@@ -38,7 +48,7 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(templCSSClassess.String()))
+		_, err = io.WriteString(w, templ.EscapeString(var_1.String()))
 		if err != nil {
 			return err
 		}
@@ -66,7 +76,7 @@ func Button(text string) templ.Component {
 	})
 }
 
-func TwoButtons() templ.Component {
+func ThreeButtons() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		err = Button("A").Render(ctx, w)
@@ -74,6 +84,47 @@ func TwoButtons() templ.Component {
 			return err
 		}
 		err = Button("B").Render(ctx, w)
+		if err != nil {
+			return err
+		}
+		var var_2 templ.CSSClasses = templ.Classes(green())
+		err = templ.RenderCSS(ctx, w, var_2)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "<button")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, " class=")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, templ.EscapeString(var_2.String()))
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, " type=\"button\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, ">")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, templ.EscapeString("Green"))
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</button>")
 		if err != nil {
 			return err
 		}
