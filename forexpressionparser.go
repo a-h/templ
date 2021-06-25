@@ -56,7 +56,7 @@ func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Node contents.
 	from = NewPositionFromInput(pi)
-	pr = newTemplateNodeParser().Parse(pi)
+	pr = newTemplateNodeParser(endForParser).Parse(pi)
 	if pr.Error != nil {
 		return pr
 	}
@@ -66,9 +66,11 @@ func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
 	r.Children = pr.Item.([]Node)
 
 	// Eat the required "endfor".
-	if pr = parse.String("{% endfor %}")(pi); !pr.Success {
+	if pr = endForParser(pi); !pr.Success {
 		return parse.Failure("forExpressionParser", newParseError("for: missing end (expected '{% endfor %}')", from, NewPositionFromInput(pi)))
 	}
 
 	return parse.Success("for", r, nil)
 }
+
+var endForParser = parse.String("{% endfor %}")

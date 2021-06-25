@@ -36,24 +36,46 @@ func newTemplateParser() templateParser {
 type templateParser struct {
 }
 
-func (p templateParser) asTemplate(parts []interface{}) (result interface{}, ok bool) {
-	te := parts[0].(templateExpression)
-	t := HTMLTemplate{
-		Name:       te.Name,
-		Parameters: te.Parameters,
+func (p templateParser) Parse(pi parse.Input) parse.Result {
+	var r HTMLTemplate
+
+	// {% templ FuncName(p Person, other Other) %}
+	tepr := newTemplateExpressionParser().Parse(pi)
+	if !tepr.Success {
+		return tepr
 	}
-	t.Children = parts[1].([]Node)
-	return t, true
+	te := tepr.Item.(templateExpression)
+	r.Name = te.Name
+	r.Parameters = te.Parameters
+
+	// Once we're in a template, we should expect some template whitespace, if/switch/for,
+	// or node string expressions etc.
+	from := NewPositionFromInput(pi)
+	tnpr := newTemplateNodeParser(endTemplateParser).Parse(pi)
+	if tnpr.Error != nil && tnpr.Error != io.EOF {
+		return tnpr
+	}
+	// If there's no match, there's no template elements.
+	if !tnpr.Success {
+		return parse.Failure("templateParser", newParseError("templ: expected nodes in templ body, but found none", from, NewPositionFromInput(pi)))
+	}
+	r.Children = tnpr.Item.([]Node)
+
+	// We must have a final {% endtempl %}, or the close has been forgotten.
+	// {% endtempl %}
+	if et := endTemplateParser(pi); !et.Success {
+		return parse.Failure("templateParser", newParseError("templ: missing end (expected '{% endtempl %}')", from, NewPositionFromInput(pi)))
+	}
+
+	// Eat optional whitespace.
+	if wpr := parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi); wpr.Error != nil {
+		return wpr
+	}
+
+	return parse.Success("templ", r, nil)
 }
 
-func (p templateParser) Parse(pi parse.Input) parse.Result {
-	return parse.All(p.asTemplate,
-		newTemplateExpressionParser().Parse, // {% templ FuncName(p Person, other Other) %}
-		newTemplateNodeParser().Parse,       // template whitespace, if/switch/for, or node string expression
-		parse.String("{% endtempl %}"),      // {% endtempl %}
-		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser),
-	)(pi)
-}
+var endTemplateParser = parse.String("{% endtempl %}")
 
 // Parse error.
 func newParseError(msg string, from Position, to Position) ParseError {

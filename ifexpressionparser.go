@@ -58,7 +58,8 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Read the 'Then' nodes.
 	from = NewPositionFromInput(pi)
-	pr = newTemplateNodeParser().Parse(pi)
+	eep := newElseExpressionParser()
+	pr = newTemplateNodeParser(parse.Or(eep.Parse, endIfParser)).Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -70,14 +71,14 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Read the optional 'Else' Nodes.
 	from = NewPositionFromInput(pi)
-	pr = parse.Optional(p.asChildren, newElseExpressionParser().Parse)(pi)
+	pr = parse.Optional(p.asChildren, eep.Parse)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
 	r.Else = pr.Item.([]Node)
 
 	// Read the required "endif" statement.
-	if ie := parse.String("{% endif %}")(pi); !ie.Success {
+	if ie := endIfParser(pi); !ie.Success {
 		return parse.Failure("ifExpressionParser", newParseError("if: missing end (expected '{% endif %}')", from, NewPositionFromInput(pi)))
 	}
 
@@ -98,6 +99,8 @@ func (p elseExpressionParser) asElseExpression(parts []interface{}) (result inte
 func (p elseExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.All(p.asElseExpression,
 		parse.String("{% else %}"),
-		newTemplateNodeParser().Parse, // else contents
+		newTemplateNodeParser(endIfParser).Parse, // else contents
 	)(pi)
 }
+
+var endIfParser = parse.String("{% endif %}")

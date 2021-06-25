@@ -88,11 +88,14 @@ func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
 }
 
 // Template node (element, call, if, switch, for, whitespace etc.)
-func newTemplateNodeParser() templateNodeParser {
-	return templateNodeParser{}
+func newTemplateNodeParser(until parse.Function) templateNodeParser {
+	return templateNodeParser{
+		until: until,
+	}
 }
 
 type templateNodeParser struct {
+	until parse.Function
 }
 
 func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
@@ -188,7 +191,28 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 			continue
 		}
 
-		break
+		// Check if we've reached the end.
+		if p.until == nil {
+			// In this case, we're just reading as many nodes as we can.
+			// The element parser checks the final node returned to make sure it's the expected close tag.
+			break
+		} else {
+			start := pi.Index()
+			pr = p.until(pi)
+			if pr.Error != nil {
+				return pr
+			}
+			if pr.Success {
+				if err := rewind(pi, start); err != nil {
+					return parse.Failure("templateNodeParser", err)
+				}
+				return parse.Success("templateNodeParser", op, nil)
+			}
+
+			pos := NewPositionFromInput(pi)
+			return parse.Failure("templateNodeParser", newParseError("template: unexpected token", pos, pos))
+		}
 	}
+
 	return parse.Success("templateNodeParser", op, nil)
 }

@@ -112,7 +112,7 @@ func (p defaultCaseExpressionParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	from := NewPositionFromInput(pi)
-	pr := newTemplateNodeParser().Parse(pi)
+	pr := newTemplateNodeParser(endDefaultParser).Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -123,7 +123,7 @@ func (p defaultCaseExpressionParser) Parse(pi parse.Input) parse.Result {
 	r = pr.Item.([]Node)
 
 	// Read the required "enddefault" statement.
-	if ie := parse.String("{% enddefault %}")(pi); !ie.Success {
+	if ie := endDefaultParser(pi); !ie.Success {
 		return parse.Failure("defaultCaseExpressionParser", newParseError("defaultCase: missing end (expected '{% enddefault %}')", from, NewPositionFromInput(pi)))
 	}
 
@@ -133,6 +133,8 @@ func (p defaultCaseExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	return parse.Success("defaultCase", r, nil)
 }
+
+var endDefaultParser = parse.String("{% enddefault %}")
 
 func newCaseExpressionParser() caseExpressionParser {
 	return caseExpressionParser{}
@@ -178,7 +180,7 @@ func (p caseExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Read the 'Then' nodes.
 	from = NewPositionFromInput(pi)
-	pr = newTemplateNodeParser().Parse(pi)
+	pr = newTemplateNodeParser(endCaseParser).Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -190,7 +192,7 @@ func (p caseExpressionParser) Parse(pi parse.Input) parse.Result {
 	r.Children = pr.Item.([]Node)
 
 	// Read the required "endif" statement.
-	if ie := parse.String("{% endcase %}")(pi); !ie.Success {
+	if ie := endCaseParser(pi); !ie.Success {
 		return parse.Failure("caseExpressionParser", newParseError("if: missing end (expected '{% endcase %}')", from, NewPositionFromInput(pi)))
 	}
 
@@ -200,3 +202,5 @@ func (p caseExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	return parse.Success("case", r, nil)
 }
+
+var endCaseParser = parse.String("{% endcase %}")
