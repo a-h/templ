@@ -76,9 +76,25 @@ func TestDocTypeParserErrors(t *testing.T) {
 					Col:   0,
 				},
 				Position{
-					Index: 16,
+					Index: 17,
 					Line:  1,
-					Col:   16,
+					Col:   17,
+				}),
+		},
+		{
+			name: "doctype new tag started",
+			input: `<!DOCTYPE html
+		<div>`,
+			expected: newParseError("unclosed DOCTYPE",
+				Position{
+					Index: 17,
+					Line:  2,
+					Col:   2,
+				},
+				Position{
+					Index: 17,
+					Line:  2,
+					Col:   2,
 				}),
 		},
 	}

@@ -26,8 +26,9 @@ func (p docTypeParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Once a doctype has started, take everything until the end.
+	tagOpen := parse.Rune('<')
 	tagClose := parse.Rune('>')
-	dtr = parse.StringUntil(tagClose)(pi)
+	dtr = parse.StringUntil(parse.Or(tagClose, tagOpen))(pi)
 	if dtr.Error != nil && dtr.Error != io.EOF {
 		return dtr
 	}
