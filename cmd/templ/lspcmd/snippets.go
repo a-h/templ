@@ -4,6 +4,14 @@ import "github.com/sourcegraph/go-lsp"
 
 var htmlSnippets = []lsp.CompletionItem{
 	{
+		Label: "<?>",
+		InsertText: `${1}>
+	${0}
+</${1}>`,
+		Kind:             lsp.CompletionItemKind(lsp.CIKSnippet),
+		InsertTextFormat: lsp.ITFSnippet,
+	},
+	{
 		Label:            "a",
 		InsertText:       `a href="${1:}">{%= ${2:""} %}</a>`,
 		Kind:             lsp.CompletionItemKind(lsp.CIKSnippet),
