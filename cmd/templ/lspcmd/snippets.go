@@ -75,7 +75,7 @@ var templateSnippets = []lsp.CompletionItem{
 	{
 		Label: "% switch",
 		InsertText: `% switch ${1} %}
-	case ${2}:
+	{% case ${2} %}
 		$0
 	{% endcase %}
 {% endswitch %}`,
