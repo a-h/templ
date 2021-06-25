@@ -47,10 +47,10 @@ func main() {
 		lspCmd(os.Args[2:])
 		return
 	case "version":
-		fmt.Println(version)
+		fmt.Println(getVersion())
 		return
 	case "--version":
-		fmt.Println(version)
+		fmt.Println(getVersion())
 		return
 	}
 	usage()
