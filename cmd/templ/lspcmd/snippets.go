@@ -30,13 +30,13 @@ var htmlSnippets = []lsp.CompletionItem{
 var templateSnippets = []lsp.CompletionItem{
 	{
 		Label:            "%= string",
-		InsertText:       `= ${1:string} %}`,
+		InsertText:       `%= ${1:string} %}`,
 		Kind:             lsp.CompletionItemKind(lsp.CIKSnippet),
 		InsertTextFormat: lsp.ITFSnippet,
 	},
 	{
 		Label:            "%! template",
-		InsertText:       `! ${1:template} %}`,
+		InsertText:       `%! ${1:template} %}`,
 		Kind:             lsp.CompletionItemKind(lsp.CIKSnippet),
 		InsertTextFormat: lsp.ITFSnippet,
 	},
@@ -66,7 +66,7 @@ var templateSnippets = []lsp.CompletionItem{
 	},
 	{
 		Label: "% for",
-		InsertText: ` for ${1} %}
+		InsertText: `% for ${1} %}
 	$0
 {% endfor %}`,
 		Kind:             lsp.CompletionItemKind(lsp.CIKSnippet),
@@ -74,7 +74,7 @@ var templateSnippets = []lsp.CompletionItem{
 	},
 	{
 		Label: "% switch",
-		InsertText: ` switch ${1} %}
+		InsertText: `% switch ${1} %}
 	case ${2}:
 		$0
 	{% endcase %}
