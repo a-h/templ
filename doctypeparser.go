@@ -1,0 +1,50 @@
+package templ
+
+import (
+	"io"
+
+	"github.com/a-h/lexical/parse"
+)
+
+func newDocTypeParser() docTypeParser {
+	return docTypeParser{}
+}
+
+type docTypeParser struct {
+}
+
+func (p docTypeParser) Parse(pi parse.Input) parse.Result {
+	var r DocType
+
+	from := NewPositionFromInput(pi)
+	dtr := parse.StringInsensitive("<!doctype ")(pi)
+	if dtr.Error != nil && dtr.Error != io.EOF {
+		return dtr
+	}
+	if !dtr.Success {
+		return parse.Failure("docTypeParser", nil)
+	}
+
+	// Once a doctype has started, take everything until the end.
+	tagClose := parse.Rune('>')
+	dtr = parse.StringUntil(tagClose)(pi)
+	if dtr.Error != nil && dtr.Error != io.EOF {
+		return dtr
+	}
+	if !dtr.Success {
+		return parse.Failure("docTypeParser", newParseError("unclosed DOCTYPE", from, NewPositionFromInput(pi)))
+	}
+	r.Value = dtr.Item.(string)
+
+	// Clear the final '>'.
+	from = NewPositionFromInput(pi)
+	dtr = tagClose(pi)
+	if dtr.Error != nil && dtr.Error != io.EOF {
+		return dtr
+	}
+	if !dtr.Success {
+		return parse.Failure("docTypeParser", newParseError("unclosed DOCTYPE", from, NewPositionFromInput(pi)))
+	}
+
+	return parse.Success("docTypeParser", r, nil)
+}

@@ -100,6 +100,17 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 	for {
 		var pr parse.Result
 
+		// Try for a doctype.
+		// <!DOCTYPE html>
+		pr = newDocTypeParser().Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
 		// Try for an element.
 		// <a>, <br/> etc.
 		pr = newElementParser().Parse(pi)

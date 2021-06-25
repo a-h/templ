@@ -263,6 +263,16 @@ func (c ExpressionCSSProperty) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+// <!DOCTYPE html>
+type DocType struct {
+	Value string
+}
+
+func (dt DocType) IsNode() bool { return true }
+func (dt DocType) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, "<!DOCTYPE "+dt.Value+">\n")
+}
+
 // HTMLTemplate definition.
 // {% templ Name(p Parameter) %}
 //   {% if ... %}

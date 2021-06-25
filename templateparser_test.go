@@ -406,6 +406,50 @@ func TestTemplateParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "template: doctype",
+			input: `{% templ Name() %}
+<!DOCTYPE html>
+{% endtempl %}`,
+			expected: HTMLTemplate{
+				Name: Expression{
+					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 12,
+							Line:  1,
+							Col:   12,
+						},
+					},
+				},
+				Parameters: Expression{
+					Value: "",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+					},
+				},
+				Children: []Node{
+					DocType{
+						Value: "html",
+					},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

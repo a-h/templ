@@ -3,7 +3,7 @@ module github.com/a-h/templ
 go 1.16
 
 require (
-	github.com/a-h/lexical v0.0.3
+	github.com/a-h/lexical v0.0.47
 	github.com/google/go-cmp v0.5.5
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/natefinch/atomic v0.0.0-20200526193002-18c0533a5b09

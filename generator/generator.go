@@ -332,6 +332,8 @@ func (g *generator) writeNodes(indentLevel int, nodes []templ.Node) error {
 
 func (g *generator) writeNode(indentLevel int, node templ.Node) error {
 	switch n := node.(type) {
+	case templ.DocType:
+		g.writeDocType(indentLevel, n)
 	case templ.Element:
 		g.writeElement(indentLevel, n)
 	case templ.ForExpression:
@@ -348,6 +350,17 @@ func (g *generator) writeNode(indentLevel int, node templ.Node) error {
 		// Whitespace is not included in template output to minify HTML.
 	default:
 		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
+	}
+	return nil
+}
+
+func (g *generator) writeDocType(indentLevel int, n templ.DocType) error {
+	var err error
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("_, err = io.WriteString(w, `<!DOCTYPE %s>`)\n", n.Value)); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
 	}
 	return nil
 }

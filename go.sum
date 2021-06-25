@@ -2,6 +2,8 @@ github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/a-h/lexical v0.0.3 h1:hQQYIkORWX72ZuE3Jo8uh/OrBWSb+sgQPrl5LQJDMjk=
 github.com/a-h/lexical v0.0.3/go.mod h1:d73jw5cgKXuYypRozNBuxRNFrTWQ3y5hVMG7rUjh1Qw=
+github.com/a-h/lexical v0.0.47 h1:8VshFdJrb1wnDiA1bFqoxPhXsxpMqPFAsLcwLNQ8rq4=
+github.com/a-h/lexical v0.0.47/go.mod h1:d73jw5cgKXuYypRozNBuxRNFrTWQ3y5hVMG7rUjh1Qw=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
