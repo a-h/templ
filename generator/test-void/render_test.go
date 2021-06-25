@@ -8,7 +8,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-const expected = `<br/><img src="https://example.com/image.png"/><br/><br/>`
+const expected = `<br>` +
+	`<img src="https://example.com/image.png">` +
+	`<br>` +
+	`<br>`
 
 func TestRender(t *testing.T) {
 	w := new(strings.Builder)

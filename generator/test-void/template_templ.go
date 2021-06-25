@@ -9,7 +9,7 @@ import "io"
 func render() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		_, err = io.WriteString(w, "<br/>")
+		_, err = io.WriteString(w, "<br>")
 		if err != nil {
 			return err
 		}
@@ -21,15 +21,15 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "/>")
+		_, err = io.WriteString(w, ">")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<br/>")
+		_, err = io.WriteString(w, "<br>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<br/>")
+		_, err = io.WriteString(w, "<br>")
 		if err != nil {
 			return err
 		}

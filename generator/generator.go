@@ -532,7 +532,7 @@ func (g *generator) writeVoidElement(indentLevel int, n templ.Element) (err erro
 	}
 	if len(n.Attributes) == 0 {
 		// <div/>
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s/>")`+"\n", html.EscapeString(n.Name))); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -549,8 +549,8 @@ func (g *generator) writeVoidElement(indentLevel int, n templ.Element) (err erro
 		if err = g.writeElementAttributes(indentLevel, n); err != nil {
 			return err
 		}
-		// />
-		if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, "/>")`+"\n"); err != nil {
+		// >
+		if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, ">")`+"\n"); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
