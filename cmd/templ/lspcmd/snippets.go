@@ -41,6 +41,14 @@ var templateSnippets = []lsp.CompletionItem{
 		InsertTextFormat: lsp.ITFSnippet,
 	},
 	{
+		Label: "% css",
+		InsertText: `% css ${1:name}(${2}) %}
+	${3}: ${4};$0
+{% endcss %}`,
+		Kind:             lsp.CompletionItemKind(lsp.CIKSnippet),
+		InsertTextFormat: lsp.ITFSnippet,
+	},
+	{
 		Label: "% if",
 		InsertText: `% if ${1:true} %}
 	$0
