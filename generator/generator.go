@@ -357,7 +357,7 @@ func (g *generator) writeNode(indentLevel int, node parser.Node) error {
 
 func (g *generator) writeDocType(indentLevel int, n parser.DocType) error {
 	var err error
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("_, err = io.WriteString(w, `<!DOCTYPE %s>`)\n", n.Value)); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("_, err = io.WriteString(w, `<!doctype %s>`)\n", n.Value)); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
