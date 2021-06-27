@@ -1,4 +1,4 @@
-package templ
+package parser
 
 // SourceExpressionTo is a record of an expression, along with its start and end positions.
 type SourceExpressionTo struct {

@@ -1,4 +1,4 @@
-package templ
+package parser
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/a-h/lexical/parse"
 )
 
-// {% package templ %}
+// {% package parser %}
 //
 // {% import "strings" %}
 // {% import strs "strings" %}
@@ -158,7 +158,7 @@ type TemplateFileNode interface {
 	Write(w io.Writer, indent int) error
 }
 
-// {% package templ %}
+// {% package parser %}
 type Package struct {
 	Expression Expression
 }

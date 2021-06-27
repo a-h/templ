@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator"
+	"github.com/a-h/templ/parser"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	"go.uber.org/zap"
@@ -359,7 +359,7 @@ func (p *Proxy) handleFormatting(ctx context.Context, conn *jsonrpc2.Conn, req *
 			lines++
 		}
 	}
-	template, err := templ.ParseString(string(contents))
+	template, err := parser.ParseString(string(contents))
 	if err != nil {
 		p.sendParseErrorDiagnosticNotifications(params.TextDocument.URI, err)
 		return
@@ -394,7 +394,7 @@ func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
 	// Cache the template doc.
 	p.documentContents.Set(string(params.TextDocument.URI), []byte(params.TextDocument.Text))
 	// Parse the template.
-	template, err := templ.ParseString(params.TextDocument.Text)
+	template, err := parser.ParseString(params.TextDocument.Text)
 	if err != nil {
 		p.sendParseErrorDiagnosticNotifications(params.TextDocument.URI, err)
 		return
@@ -443,7 +443,7 @@ func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request
 		return
 	}
 	// Update the Go code.
-	template, err := templ.ParseString(string(templateText))
+	template, err := parser.ParseString(string(templateText))
 	if err != nil {
 		p.sendParseErrorDiagnosticNotifications(params.TextDocument.URI, err)
 		return
@@ -486,7 +486,7 @@ func (p *Proxy) sendDiagnosticClearNotification(uri lsp.DocumentURI) {
 }
 
 func (p *Proxy) sendParseErrorDiagnosticNotifications(uri lsp.DocumentURI, err error) {
-	pe, ok := err.(templ.ParseError)
+	pe, ok := err.(parser.ParseError)
 	if !ok {
 		return
 	}
@@ -511,7 +511,7 @@ func (p *Proxy) sendParseErrorDiagnosticNotifications(uri lsp.DocumentURI, err e
 	}
 }
 
-func templatePositionToLSPPosition(p templ.Position) lsp.Position {
+func templatePositionToLSPPosition(p parser.Position) lsp.Position {
 	return lsp.Position{Line: p.Line - 1, Character: p.Col + 1}
 }
 
@@ -566,22 +566,22 @@ func (p *Proxy) rewriteDidCloseRequest(r *jsonrpc2.Request) (err error) {
 func newSourceMapCache() *sourceMapCache {
 	return &sourceMapCache{
 		m:              new(sync.Mutex),
-		uriToSourceMap: make(map[string]*templ.SourceMap),
+		uriToSourceMap: make(map[string]*parser.SourceMap),
 	}
 }
 
 type sourceMapCache struct {
 	m              *sync.Mutex
-	uriToSourceMap map[string]*templ.SourceMap
+	uriToSourceMap map[string]*parser.SourceMap
 }
 
-func (fc *sourceMapCache) Set(uri string, m *templ.SourceMap) {
+func (fc *sourceMapCache) Set(uri string, m *parser.SourceMap) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
 	fc.uriToSourceMap[uri] = m
 }
 
-func (fc *sourceMapCache) Get(uri string) (m *templ.SourceMap, ok bool) {
+func (fc *sourceMapCache) Get(uri string) (m *parser.SourceMap, ok bool) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
 	m, ok = fc.uriToSourceMap[uri]

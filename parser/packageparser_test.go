@@ -1,4 +1,4 @@
-package templ
+package parser
 
 import (
 	"io"
@@ -72,10 +72,10 @@ func TestPackageParser(t *testing.T) {
 	}{
 		{
 			name:  "package: standard",
-			input: `{% package templ %}`,
+			input: `{% package parser %}`,
 			expected: Package{
 				Expression: Expression{
-					Value: "templ",
+					Value: "parser",
 					Range: Range{
 						From: Position{
 							Index: 11,
@@ -83,9 +83,9 @@ func TestPackageParser(t *testing.T) {
 							Col:   11,
 						},
 						To: Position{
-							Index: 16,
+							Index: 17,
 							Line:  1,
-							Col:   16,
+							Col:   17,
 						},
 					},
 				},

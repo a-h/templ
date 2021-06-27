@@ -1,4 +1,4 @@
-package templ
+package parser
 
 import (
 	"fmt"

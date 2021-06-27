@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/processor"
 	"github.com/a-h/templ/generator"
+	"github.com/a-h/templ/parser"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -33,7 +33,7 @@ func Run(args []string) (err error) {
 }
 
 func compile(fileName string) (err error) {
-	t, err := templ.Parse(fileName)
+	t, err := parser.Parse(fileName)
 	if err != nil {
 		return fmt.Errorf("%s parsing error: %w", fileName, err)
 	}

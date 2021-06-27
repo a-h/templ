@@ -8,21 +8,22 @@ import (
 	"strings"
 
 	"github.com/a-h/templ"
+	"github.com/a-h/templ/parser"
 )
 
 func NewRangeWriter(w io.Writer) *RangeWriter {
 	return &RangeWriter{
-		Current: templ.NewPosition(),
+		Current: parser.NewPosition(),
 		w:       w,
 	}
 }
 
 type RangeWriter struct {
-	Current templ.Position
+	Current parser.Position
 	w       io.Writer
 }
 
-func (rw *RangeWriter) WriteIndent(level int, s string) (r templ.Range, err error) {
+func (rw *RangeWriter) WriteIndent(level int, s string) (r parser.Range, err error) {
 	_, err = rw.Write(strings.Repeat("\t", level))
 	if err != nil {
 		return
@@ -30,8 +31,8 @@ func (rw *RangeWriter) WriteIndent(level int, s string) (r templ.Range, err erro
 	return rw.Write(s)
 }
 
-func (rw *RangeWriter) Write(s string) (r templ.Range, err error) {
-	r.From = templ.Position{
+func (rw *RangeWriter) Write(s string) (r parser.Range, err error) {
+	r.From = parser.Position{
 		Index: rw.Current.Index,
 		Line:  rw.Current.Line,
 		Col:   rw.Current.Col,
@@ -53,11 +54,11 @@ func (rw *RangeWriter) Write(s string) (r templ.Range, err error) {
 	return r, err
 }
 
-func Generate(template templ.TemplateFile, w io.Writer) (sm *templ.SourceMap, err error) {
+func Generate(template parser.TemplateFile, w io.Writer) (sm *parser.SourceMap, err error) {
 	g := generator{
 		tf:        template,
 		w:         NewRangeWriter(w),
-		sourceMap: templ.NewSourceMap(),
+		sourceMap: parser.NewSourceMap(),
 	}
 	err = g.generate()
 	sm = g.sourceMap
@@ -65,9 +66,9 @@ func Generate(template templ.TemplateFile, w io.Writer) (sm *templ.SourceMap, er
 }
 
 type generator struct {
-	tf         templ.TemplateFile
+	tf         parser.TemplateFile
 	w          *RangeWriter
-	sourceMap  *templ.SourceMap
+	sourceMap  *parser.SourceMap
 	variableID int
 }
 
@@ -93,7 +94,7 @@ func (g *generator) writeCodeGeneratedComment() error {
 }
 
 func (g *generator) writePackage() error {
-	var r templ.Range
+	var r parser.Range
 	var err error
 	// package
 	if _, err = g.w.Write("package "); err != nil {
@@ -112,9 +113,9 @@ func (g *generator) writePackage() error {
 func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
 	for _, n := range g.tf.Nodes {
 		switch n.(type) {
-		case templ.HTMLTemplate:
+		case parser.HTMLTemplate:
 			hasTemplates = true
-		case templ.CSSTemplate:
+		case parser.CSSTemplate:
 			hasCSS = true
 		}
 		if hasTemplates && hasCSS {
@@ -125,7 +126,7 @@ func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
 }
 
 func (g *generator) writeImports() error {
-	var r templ.Range
+	var r parser.Range
 	var err error
 	// Always import templ because it's the interface type of all templates.
 	if _, err = g.w.Write("import \"github.com/a-h/templ\"\n"); err != nil {
@@ -170,11 +171,11 @@ func (g *generator) writeImports() error {
 func (g *generator) writeTemplateNodes() error {
 	for i := 0; i < len(g.tf.Nodes); i++ {
 		switch n := g.tf.Nodes[i].(type) {
-		case templ.HTMLTemplate:
+		case parser.HTMLTemplate:
 			if err := g.writeTemplate(n); err != nil {
 				return err
 			}
-		case templ.CSSTemplate:
+		case parser.CSSTemplate:
 			if err := g.writeCSS(n); err != nil {
 				return err
 			}
@@ -185,8 +186,8 @@ func (g *generator) writeTemplateNodes() error {
 	return nil
 }
 
-func (g *generator) writeCSS(n templ.CSSTemplate) error {
-	var r templ.Range
+func (g *generator) writeCSS(n parser.CSSTemplate) error {
+	var r parser.Range
 	var err error
 	var indentLevel int
 
@@ -210,12 +211,12 @@ func (g *generator) writeCSS(n templ.CSSTemplate) error {
 		}
 		for i := 0; i < len(n.Properties); i++ {
 			switch p := n.Properties[i].(type) {
-			case templ.ConstantCSSProperty:
+			case parser.ConstantCSSProperty:
 				// Carry out sanitization at compile time for constants.
 				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.WriteString(`%s`)\n", templ.SanitizeCSS(p.Name, p.Value))); err != nil {
 					return err
 				}
-			case templ.ExpressionCSSProperty:
+			case parser.ExpressionCSSProperty:
 				// templCSSBuilder.WriteString(templ.SanitizeCSS('name', p.Expression()))
 				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.WriteString(string(templ.SanitizeCSS(`%s`, ", p.Name)); err != nil {
 					return err
@@ -262,8 +263,8 @@ func (g *generator) writeCSS(n templ.CSSTemplate) error {
 	return nil
 }
 
-func (g *generator) writeTemplate(t templ.HTMLTemplate) error {
-	var r templ.Range
+func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
+	var r parser.Range
 	var err error
 	var indentLevel int
 
@@ -321,7 +322,7 @@ func (g *generator) writeTemplate(t templ.HTMLTemplate) error {
 	return nil
 }
 
-func (g *generator) writeNodes(indentLevel int, nodes []templ.Node) error {
+func (g *generator) writeNodes(indentLevel int, nodes []parser.Node) error {
 	for i := 0; i < len(nodes); i++ {
 		if err := g.writeNode(indentLevel, nodes[i]); err != nil {
 			return err
@@ -330,23 +331,23 @@ func (g *generator) writeNodes(indentLevel int, nodes []templ.Node) error {
 	return nil
 }
 
-func (g *generator) writeNode(indentLevel int, node templ.Node) error {
+func (g *generator) writeNode(indentLevel int, node parser.Node) error {
 	switch n := node.(type) {
-	case templ.DocType:
+	case parser.DocType:
 		g.writeDocType(indentLevel, n)
-	case templ.Element:
+	case parser.Element:
 		g.writeElement(indentLevel, n)
-	case templ.ForExpression:
+	case parser.ForExpression:
 		g.writeForExpression(indentLevel, n)
-	case templ.CallTemplateExpression:
+	case parser.CallTemplateExpression:
 		g.writeCallTemplateExpression(indentLevel, n)
-	case templ.IfExpression:
+	case parser.IfExpression:
 		g.writeIfExpression(indentLevel, n)
-	case templ.SwitchExpression:
+	case parser.SwitchExpression:
 		g.writeSwitchExpression(indentLevel, n)
-	case templ.StringExpression:
+	case parser.StringExpression:
 		g.writeStringExpression(indentLevel, n.Expression)
-	case templ.Whitespace:
+	case parser.Whitespace:
 		// Whitespace is not included in template output to minify HTML.
 	default:
 		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
@@ -354,7 +355,7 @@ func (g *generator) writeNode(indentLevel int, node templ.Node) error {
 	return nil
 }
 
-func (g *generator) writeDocType(indentLevel int, n templ.DocType) error {
+func (g *generator) writeDocType(indentLevel int, n parser.DocType) error {
 	var err error
 	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("_, err = io.WriteString(w, `<!DOCTYPE %s>`)\n", n.Value)); err != nil {
 		return err
@@ -365,8 +366,8 @@ func (g *generator) writeDocType(indentLevel int, n templ.DocType) error {
 	return nil
 }
 
-func (g *generator) writeIfExpression(indentLevel int, n templ.IfExpression) error {
-	var r templ.Range
+func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) error {
+	var r parser.Range
 	var err error
 	// if
 	if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
@@ -401,8 +402,8 @@ func (g *generator) writeIfExpression(indentLevel int, n templ.IfExpression) err
 	return nil
 }
 
-func (g *generator) writeSwitchExpression(indentLevel int, n templ.SwitchExpression) error {
-	var r templ.Range
+func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpression) error {
+	var r parser.Range
 	var err error
 	// switch
 	if _, err = g.w.WriteIndent(indentLevel, `switch `); err != nil {
@@ -453,8 +454,8 @@ func (g *generator) writeSwitchExpression(indentLevel int, n templ.SwitchExpress
 	return nil
 }
 
-func (g *generator) writeCallTemplateExpression(indentLevel int, n templ.CallTemplateExpression) error {
-	var r templ.Range
+func (g *generator) writeCallTemplateExpression(indentLevel int, n parser.CallTemplateExpression) error {
+	var r parser.Range
 	var err error
 	if r, err = g.w.WriteIndent(indentLevel, `err = `); err != nil {
 		return err
@@ -474,8 +475,8 @@ func (g *generator) writeCallTemplateExpression(indentLevel int, n templ.CallTem
 	return nil
 }
 
-func (g *generator) writeForExpression(indentLevel int, n templ.ForExpression) error {
-	var r templ.Range
+func (g *generator) writeForExpression(indentLevel int, n parser.ForExpression) error {
+	var r parser.Range
 	var err error
 	// if
 	if _, err = g.w.WriteIndent(indentLevel, `for `); err != nil {
@@ -519,14 +520,14 @@ func (g *generator) writeErrorHandler(indentLevel int) (err error) {
 	return err
 }
 
-func (g *generator) writeElement(indentLevel int, n templ.Element) error {
+func (g *generator) writeElement(indentLevel int, n parser.Element) error {
 	if n.IsVoidElement() {
 		return g.writeVoidElement(indentLevel, n)
 	}
 	return g.writeStandardElement(indentLevel, n)
 }
 
-func (g *generator) writeVoidElement(indentLevel int, n templ.Element) (err error) {
+func (g *generator) writeVoidElement(indentLevel int, n parser.Element) (err error) {
 	if len(n.Children) > 0 {
 		return fmt.Errorf("writeVoidElement: void element %q must not have child elements", n.Name)
 	}
@@ -560,7 +561,7 @@ func (g *generator) writeVoidElement(indentLevel int, n templ.Element) (err erro
 	return err
 }
 
-func (g *generator) writeStandardElement(indentLevel int, n templ.Element) (err error) {
+func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err error) {
 	if len(n.Attributes) == 0 {
 		// <div>
 		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
@@ -604,10 +605,10 @@ func (g *generator) writeStandardElement(indentLevel int, n templ.Element) (err 
 	return err
 }
 
-func (g *generator) writeElementCSS(indentLevel int, n templ.Element) (err error) {
-	var r templ.Range
+func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err error) {
+	var r parser.Range
 	for i := 0; i < len(n.Attributes); i++ {
-		if attr, ok := n.Attributes[i].(templ.ExpressionAttribute); ok {
+		if attr, ok := n.Attributes[i].(parser.ExpressionAttribute); ok {
 			name := html.EscapeString(attr.Name)
 			if name != "class" {
 				continue
@@ -635,7 +636,7 @@ func (g *generator) writeElementCSS(indentLevel int, n templ.Element) (err error
 				return err
 			}
 			// Rewrite the ExpressionAttribute to point at the new variable.
-			attr.Expression = templ.Expression{
+			attr.Expression = parser.Expression{
 				Value: classesName + ".String()",
 			}
 			n.Attributes[i] = attr
@@ -644,11 +645,11 @@ func (g *generator) writeElementCSS(indentLevel int, n templ.Element) (err error
 	return err
 }
 
-func (g *generator) writeElementAttributes(indentLevel int, n templ.Element) (err error) {
-	var r templ.Range
+func (g *generator) writeElementAttributes(indentLevel int, n parser.Element) (err error) {
+	var r parser.Range
 	for i := 0; i < len(n.Attributes); i++ {
 		switch attr := n.Attributes[i].(type) {
-		case templ.ConstantAttribute:
+		case parser.ConstantAttribute:
 			name := html.EscapeString(attr.Name)
 			value := html.EscapeString(attr.Value)
 			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=\"%s\"")`+"\n", name, value)); err != nil {
@@ -657,7 +658,7 @@ func (g *generator) writeElementAttributes(indentLevel int, n templ.Element) (er
 			if err = g.writeErrorHandler(indentLevel); err != nil {
 				return err
 			}
-		case templ.ExpressionAttribute:
+		case parser.ExpressionAttribute:
 			name := html.EscapeString(attr.Name)
 			// Name
 			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=")`+"\n", name)); err != nil {
@@ -731,8 +732,8 @@ func (g *generator) createVariableName() string {
 	return fmt.Sprintf("var_%d", g.variableID)
 }
 
-func (g *generator) writeStringExpression(indentLevel int, e templ.Expression) error {
-	var r templ.Range
+func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) error {
+	var r parser.Range
 	var err error
 	// io.WriteString(w, templ.EscapeString(
 	if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
