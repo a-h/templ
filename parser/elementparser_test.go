@@ -75,7 +75,7 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
-			name:   "boolean expression attributes are detected",
+			name:   "attribute parsing handles boolean expression attributes",
 			input:  ` noshade={%= templ.Bool(true) %}"`,
 			parser: attributeParser,
 			expected: BoolExpressionAttribute{
@@ -240,6 +240,41 @@ func TestElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "style",
 						Value: "text-underline: auto",
+					},
+				},
+			},
+		},
+		{
+			name:  "element: self-closing with multiple boolean attributes",
+			input: `<hr optionA optionB={%= templ.Bool(true) %} optionC="other"/>`,
+			expected: Element{
+				Name: "hr",
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Name: "optionA",
+					},
+					BoolExpressionAttribute{
+						Name: "optionB",
+						Expression: Expression{
+							Value: `true`,
+							Range: Range{
+								From: Position{
+									Index: 35,
+									Line:  1,
+									Col:   35,
+								},
+								To: Position{
+
+									Index: 39,
+									Line:  1,
+									Col:   39,
+								},
+							},
+						},
+					},
+					ConstantAttribute{
+						Name:  "optionC",
+						Value: "other",
 					},
 				},
 			},

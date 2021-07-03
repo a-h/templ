@@ -439,6 +439,16 @@ type Attribute interface {
 	String() string
 }
 
+// <hr noshade/>
+type BoolConstantAttribute struct {
+	Name string
+}
+
+func (bca BoolConstantAttribute) IsAttribute() bool { return true }
+func (bca BoolConstantAttribute) String() string {
+	return bca.Name
+}
+
 // href=""
 type ConstantAttribute struct {
 	Name  string

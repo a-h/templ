@@ -649,6 +649,14 @@ func (g *generator) writeElementAttributes(indentLevel int, n parser.Element) (e
 	var r parser.Range
 	for i := 0; i < len(n.Attributes); i++ {
 		switch attr := n.Attributes[i].(type) {
+		case parser.BoolConstantAttribute:
+			name := html.EscapeString(attr.Name)
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s")`+"\n", name)); err != nil {
+				return err
+			}
+			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
 		case parser.ConstantAttribute:
 			name := html.EscapeString(attr.Name)
 			value := html.EscapeString(attr.Value)

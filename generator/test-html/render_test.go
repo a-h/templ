@@ -15,6 +15,8 @@ const expected = `<div>` +
 	`</div>` +
 	`</div>` +
 	`</div>` +
+	`<hr noshade>` +
+	`<hr optionA optionB optionC="other">` +
 	`<hr noshade>`
 
 func TestHTML(t *testing.T) {
