@@ -425,7 +425,7 @@ func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpres
 			if _, err = g.w.WriteIndent(indentLevel, `case `); err != nil {
 				return err
 			}
-			//val
+			// val
 			if r, err = g.w.Write(c.Expression.Value); err != nil {
 				return err
 			}
@@ -478,7 +478,7 @@ func (g *generator) writeCallTemplateExpression(indentLevel int, n parser.CallTe
 func (g *generator) writeForExpression(indentLevel int, n parser.ForExpression) error {
 	var r parser.Range
 	var err error
-	// if
+	// for
 	if _, err = g.w.WriteIndent(indentLevel, `for `); err != nil {
 		return err
 	}
@@ -532,7 +532,7 @@ func (g *generator) writeVoidElement(indentLevel int, n parser.Element) (err err
 		return fmt.Errorf("writeVoidElement: void element %q must not have child elements", n.Name)
 	}
 	if len(n.Attributes) == 0 {
-		// <div/>
+		// <br>
 		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
 		}
@@ -540,7 +540,7 @@ func (g *generator) writeVoidElement(indentLevel int, n parser.Element) (err err
 			return err
 		}
 	} else {
-		// <div
+		// <hr
 		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
 		}
@@ -656,6 +656,35 @@ func (g *generator) writeElementAttributes(indentLevel int, n parser.Element) (e
 				return err
 			}
 			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+		case parser.BoolExpressionAttribute:
+			name := html.EscapeString(attr.Name)
+			// if
+			if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
+				return err
+			}
+			// x == y
+			if r, err = g.w.Write(attr.Expression.Value); err != nil {
+				return err
+			}
+			g.sourceMap.Add(attr.Expression, r)
+			// {
+			if _, err = g.w.Write(` {` + "\n"); err != nil {
+				return err
+			}
+			{
+				indentLevel++
+				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s")`+"\n", name)); err != nil {
+					return err
+				}
+				if err = g.writeErrorHandler(indentLevel); err != nil {
+					return err
+				}
+				indentLevel--
+			}
+			// }
+			if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
 				return err
 			}
 		case parser.ExpressionAttribute:

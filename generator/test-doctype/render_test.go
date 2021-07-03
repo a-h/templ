@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-const expected = `<!DOCTYPE html>` +
+const expected = `<!doctype html>` +
 	`<html lang="en">` +
 	`<head>` +
 	`<meta charset="UTF-8">` +

@@ -52,6 +52,52 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
+			name:   "boolean expression attribute",
+			input:  ` noshade={%= templ.Bool(true) %}"`,
+			parser: newBoolExpressionAttributeParser().Parse,
+			expected: BoolExpressionAttribute{
+				Name: "noshade",
+				Expression: Expression{
+					Value: "true",
+					Range: Range{
+						From: Position{
+							Index: 24,
+							Line:  1,
+							Col:   24,
+						},
+						To: Position{
+							Index: 28,
+							Line:  1,
+							Col:   28,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "boolean expression attributes are detected",
+			input:  ` noshade={%= templ.Bool(true) %}"`,
+			parser: attributeParser,
+			expected: BoolExpressionAttribute{
+				Name: "noshade",
+				Expression: Expression{
+					Value: "true",
+					Range: Range{
+						From: Position{
+							Index: 24,
+							Line:  1,
+							Col:   24,
+						},
+						To: Position{
+							Index: 28,
+							Line:  1,
+							Col:   28,
+						},
+					},
+				},
+			},
+		},
+		{
 			name:   "constant attribute",
 			input:  ` href="test"`,
 			parser: newConstantAttributeParser().Parse,
@@ -121,6 +167,34 @@ func TestElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "href",
 						Value: "test",
+					},
+				},
+			},
+		},
+		{
+			name:  "element: self-closing with single bool expression attribute",
+			input: `<hr noshade={%= templ.Bool(true) %}/>`,
+			expected: Element{
+				Name: "hr",
+				Attributes: []Attribute{
+					BoolExpressionAttribute{
+						Name: "noshade",
+						Expression: Expression{
+							Value: `true`,
+							Range: Range{
+								From: Position{
+									Index: 27,
+									Line:  1,
+									Col:   27,
+								},
+								To: Position{
+
+									Index: 31,
+									Line:  1,
+									Col:   31,
+								},
+							},
+						},
 					},
 				},
 			},

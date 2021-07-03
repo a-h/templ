@@ -9,7 +9,7 @@ import "io"
 func Layout(title, content string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		_, err = io.WriteString(w, `<!DOCTYPE html>`)
+		_, err = io.WriteString(w, `<!doctype html>`)
 		if err != nil {
 			return err
 		}

@@ -450,6 +450,17 @@ func (ca ConstantAttribute) String() string {
 	return ca.Name + `="` + html.EscapeString(ca.Value) + `"`
 }
 
+// href={%= templ.Bool(...) }
+type BoolExpressionAttribute struct {
+	Name       string
+	Expression Expression
+}
+
+func (ea BoolExpressionAttribute) IsAttribute() bool { return true }
+func (ea BoolExpressionAttribute) String() string {
+	return ea.Name + `={%= templ.Bool(` + ea.Expression.Value + `) %}`
+}
+
 // href={%= ... }
 type ExpressionAttribute struct {
 	Name       string

@@ -8,7 +8,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-const expected = `<div><h1>Luiz Bonfa</h1><div style="font-family: &#39;sans-serif&#39;" id="test" data-contents="something with &#34;quotes&#34; and a &lt;tag&gt;"><div>email:<a href="mailto: luiz@example.com">luiz@example.com</a></div></div></div>`
+const expected = `<div>` +
+	`<h1>Luiz Bonfa</h1>` +
+	`<div style="font-family: &#39;sans-serif&#39;" id="test" data-contents="something with &#34;quotes&#34; and a &lt;tag&gt;">` +
+	`<div>email:<a href="mailto: luiz@example.com">luiz@example.com</a>` +
+	`</div>` +
+	`</div>` +
+	`</div>` +
+	`<hr noshade>`
 
 func TestHTML(t *testing.T) {
 	w := new(strings.Builder)
