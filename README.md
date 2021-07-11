@@ -156,17 +156,33 @@ Then call it in a template. So long as the `Raw` function is in scope, you can u
 
 HTML elements look like HTML and you can write static attributes into them, just like with normal HTML. Don't worry about the spacing, the HTML will be minified when it's rendered.
 
+All elements must be balanced (have a start and and end tag, or be self-closing).
+
 ```
 <div id="address1">{%= addr.Address1 %}</div>
 ```
 
-You can also have dynamic attributes that use template parameter, other Go variables that happen to be in scope, or call Go functions that return a string. Don't worry about HTML encoding element text and attribute values, that will be taken care of automatically.
+You can also have dynamic attributes that use template parameters, other Go variables that happen to be in scope, or call Go functions that return a string. Don't worry about HTML encoding element text and attribute values, that will be taken care of automatically.
 
 ```
 <a title={%= p.TitleText %}>{%= strings.ToUpper(p.Name()) %}</a>
 ```
 
-However, the `a` element's `href` attribute is treated differently. Templ expects you to provide a `templ.SafeURL`. A `templ.SafeURL` is a URL that is definitely safe to use (i.e. has come from a configuration system controlled by the developer), or has been through a sanitization process to filter out potential XSS attacks.
+Boolean attributes (see https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#boolean-attributes) where the presence of an attribute name without a value means `true`, and the attribute name not being present means false are supported:
+
+With constant values:
+
+```
+<hr noshade/>
+```
+
+To set boolean attributes using variables or template parameters, a question mark after the attribute name is used to denote that the attribute is boolean. In this example, the `noshade` attribute would be omitted from the output altogether:
+
+```
+<hr noshade?={%= false %} />
+```
+
+The `a` element's `href` attribute is treated differently. Templ expects you to provide a `templ.SafeURL`. A `templ.SafeURL` is a URL that is definitely safe to use (i.e. has come from a configuration system controlled by the developer), or has been through a sanitization process to filter out potential XSS attacks.
 
 Templ provides a `templ.URL` function that sanitizes input URLs and checks that the protocol is http/https/mailto rather than `javascript` or another unexpected protocol.
 

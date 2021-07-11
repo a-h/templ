@@ -122,7 +122,7 @@ func (p boolConstantAttributeParser) Parse(pi parse.Input) parse.Result {
 	if err != nil {
 		return parse.Failure("boolConstantAttributeParser", fmt.Errorf("boolConstantAttributeParser: unexpected error reading after attribute name: %w", pr.Error))
 	}
-	if next == '=' {
+	if next == '=' || next == '?' {
 		// It's one of the other attribute types.
 		rewind(pi, start)
 		return parse.Failure("boolConstantAttributeParser", nil)
@@ -159,14 +159,13 @@ func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	}
 	r.Name = pr.Item.(string)
 
-	if pr = parse.String("={%= templ.Bool(")(pi); !pr.Success {
+	if pr = parse.String("?={%= ")(pi); !pr.Success {
 		rewind(pi, start)
 		return pr
 	}
 
 	// Once we've seen a expression prefix, read until the tag end.
 	from = NewPositionFromInput(pi)
-	tagEnd := parse.String(") %}")
 	pr = parse.StringUntil(tagEnd)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return parse.Failure("boolExpressionAttributeParser", fmt.Errorf("boolExpressionAttributeParser: failed to read until tag end: %w", pr.Error))

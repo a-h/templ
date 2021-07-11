@@ -53,7 +53,7 @@ func TestAttributeParser(t *testing.T) {
 		},
 		{
 			name:   "boolean expression attribute",
-			input:  ` noshade={%= templ.Bool(true) %}"`,
+			input:  ` noshade?={%= true %}"`,
 			parser: newBoolExpressionAttributeParser().Parse,
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
@@ -61,14 +61,14 @@ func TestAttributeParser(t *testing.T) {
 					Value: "true",
 					Range: Range{
 						From: Position{
-							Index: 24,
+							Index: 14,
 							Line:  1,
-							Col:   24,
+							Col:   14,
 						},
 						To: Position{
-							Index: 28,
+							Index: 18,
 							Line:  1,
-							Col:   28,
+							Col:   18,
 						},
 					},
 				},
@@ -76,7 +76,7 @@ func TestAttributeParser(t *testing.T) {
 		},
 		{
 			name:   "attribute parsing handles boolean expression attributes",
-			input:  ` noshade={%= templ.Bool(true) %}"`,
+			input:  ` noshade?={%= true %}`,
 			parser: attributeParser,
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
@@ -84,14 +84,14 @@ func TestAttributeParser(t *testing.T) {
 					Value: "true",
 					Range: Range{
 						From: Position{
-							Index: 24,
+							Index: 14,
 							Line:  1,
-							Col:   24,
+							Col:   14,
 						},
 						To: Position{
-							Index: 28,
+							Index: 18,
 							Line:  1,
-							Col:   28,
+							Col:   18,
 						},
 					},
 				},
@@ -173,7 +173,7 @@ func TestElementParser(t *testing.T) {
 		},
 		{
 			name:  "element: self-closing with single bool expression attribute",
-			input: `<hr noshade={%= templ.Bool(true) %}/>`,
+			input: `<hr noshade?={%= true %}/>`,
 			expected: Element{
 				Name: "hr",
 				Attributes: []Attribute{
@@ -183,15 +183,15 @@ func TestElementParser(t *testing.T) {
 							Value: `true`,
 							Range: Range{
 								From: Position{
-									Index: 27,
+									Index: 17,
 									Line:  1,
-									Col:   27,
+									Col:   17,
 								},
 								To: Position{
 
-									Index: 31,
+									Index: 21,
 									Line:  1,
-									Col:   31,
+									Col:   21,
 								},
 							},
 						},
@@ -246,7 +246,7 @@ func TestElementParser(t *testing.T) {
 		},
 		{
 			name:  "element: self-closing with multiple boolean attributes",
-			input: `<hr optionA optionB={%= templ.Bool(true) %} optionC="other"/>`,
+			input: `<hr optionA optionB?={%= true %} optionC="other"/>`,
 			expected: Element{
 				Name: "hr",
 				Attributes: []Attribute{
@@ -259,15 +259,15 @@ func TestElementParser(t *testing.T) {
 							Value: `true`,
 							Range: Range{
 								From: Position{
-									Index: 35,
+									Index: 25,
 									Line:  1,
-									Col:   35,
+									Col:   25,
 								},
 								To: Position{
 
-									Index: 39,
+									Index: 29,
 									Line:  1,
-									Col:   39,
+									Col:   29,
 								},
 							},
 						},

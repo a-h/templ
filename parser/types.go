@@ -468,7 +468,7 @@ type BoolExpressionAttribute struct {
 
 func (ea BoolExpressionAttribute) IsAttribute() bool { return true }
 func (ea BoolExpressionAttribute) String() string {
-	return ea.Name + `={%= templ.Bool(` + ea.Expression.Value + `) %}`
+	return ea.Name + `?={%= ` + ea.Expression.Value + ` %}`
 }
 
 // href={%= ... }
