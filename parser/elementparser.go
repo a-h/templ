@@ -93,6 +93,100 @@ func (p constantAttributeParser) Parse(pi parse.Input) parse.Result {
 	)(pi)
 }
 
+// BoolConstantAttribute.
+func newBoolConstantAttributeParser() boolConstantAttributeParser {
+	return boolConstantAttributeParser{}
+}
+
+type boolConstantAttributeParser struct {
+}
+
+func (p boolConstantAttributeParser) Parse(pi parse.Input) parse.Result {
+	var r BoolConstantAttribute
+
+	start := pi.Index()
+	pr := whitespaceParser(pi)
+	if !pr.Success {
+		return pr
+	}
+
+	pr = attributeNameParser(pi)
+	if !pr.Success {
+		rewind(pi, start)
+		return pr
+	}
+	r.Name = pr.Item.(string)
+
+	// We have a name, but if we have an equals sign, it's not a constant boolean attribute.
+	next, err := pi.Peek()
+	if err != nil {
+		return parse.Failure("boolConstantAttributeParser", fmt.Errorf("boolConstantAttributeParser: unexpected error reading after attribute name: %w", pr.Error))
+	}
+	if next == '=' || next == '?' {
+		// It's one of the other attribute types.
+		rewind(pi, start)
+		return parse.Failure("boolConstantAttributeParser", nil)
+	}
+	if !(next == ' ' || next == '\n' || next == '/') {
+		return parse.Failure("boolConstantAttributeParser", fmt.Errorf("boolConstantAttributeParser: expected attribute name to end with space, newline or '/>', but got %q", string(next)))
+	}
+
+	return parse.Success("boolConstantAttributeParser", r, nil)
+}
+
+// BoolExpressionAttribute.
+func newBoolExpressionAttributeParser() boolExpressionAttributeParser {
+	return boolExpressionAttributeParser{}
+}
+
+type boolExpressionAttributeParser struct {
+}
+
+func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
+	var r BoolExpressionAttribute
+
+	start := pi.Index()
+	from := NewPositionFromInput(pi)
+	pr := whitespaceParser(pi)
+	if !pr.Success {
+		return pr
+	}
+
+	pr = attributeNameParser(pi)
+	if !pr.Success {
+		rewind(pi, start)
+		return pr
+	}
+	r.Name = pr.Item.(string)
+
+	if pr = parse.String("?={%= ")(pi); !pr.Success {
+		rewind(pi, start)
+		return pr
+	}
+
+	// Once we've seen a expression prefix, read until the tag end.
+	from = NewPositionFromInput(pi)
+	pr = parse.StringUntil(tagEnd)(pi)
+	if pr.Error != nil && pr.Error != io.EOF {
+		return parse.Failure("boolExpressionAttributeParser", fmt.Errorf("boolExpressionAttributeParser: failed to read until tag end: %w", pr.Error))
+	}
+	// If there's no tag end, the string expression parser wasn't terminated.
+	if !pr.Success {
+		return parse.Failure("boolExpressionAttributeParser", newParseError("bool expression attribute not terminated", from, NewPositionFromInput(pi)))
+	}
+
+	// Success! Create the expression.
+	to := NewPositionFromInput(pi)
+	r.Expression = NewExpression(pr.Item.(string), from, to)
+
+	// Eat the tag end.
+	if te := tagEnd(pi); !te.Success {
+		return parse.Failure("boolExpressionAttributeParser", newParseError("could not terminate boolean expression", from, NewPositionFromInput(pi)))
+	}
+
+	return parse.Success("boolExpressionAttributeParser", r, nil)
+}
+
 // ExpressionAttribute.
 func newExpressionAttributeParser() expressionAttributeParser {
 	return expressionAttributeParser{}
@@ -167,7 +261,11 @@ func (p attributesParser) asAttributeArray(parts []interface{}) (result interfac
 	op := make([]Attribute, len(parts))
 	for i := 0; i < len(parts); i++ {
 		switch v := parts[i].(type) {
+		case BoolConstantAttribute:
+			op[i] = v
 		case ConstantAttribute:
+			op[i] = v
+		case BoolExpressionAttribute:
 			op[i] = v
 		case ExpressionAttribute:
 			op[i] = v
@@ -176,13 +274,15 @@ func (p attributesParser) asAttributeArray(parts []interface{}) (result interfac
 	return op, true
 }
 
+var attributeParser = parse.Any(
+	newBoolConstantAttributeParser().Parse,
+	newConstantAttributeParser().Parse,
+	newBoolExpressionAttributeParser().Parse,
+	newExpressionAttributeParser().Parse,
+)
+
 func (p attributesParser) Parse(pi parse.Input) parse.Result {
-	return parse.Many(p.asAttributeArray, 0, 255,
-		parse.Or(
-			newExpressionAttributeParser().Parse,
-			newConstantAttributeParser().Parse,
-		),
-	)(pi)
+	return parse.Many(p.asAttributeArray, 0, 255, attributeParser)(pi)
 }
 
 // Element name.

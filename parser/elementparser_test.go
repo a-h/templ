@@ -52,6 +52,52 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
+			name:   "boolean expression attribute",
+			input:  ` noshade?={%= true %}"`,
+			parser: newBoolExpressionAttributeParser().Parse,
+			expected: BoolExpressionAttribute{
+				Name: "noshade",
+				Expression: Expression{
+					Value: "true",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 18,
+							Line:  1,
+							Col:   18,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "attribute parsing handles boolean expression attributes",
+			input:  ` noshade?={%= true %}`,
+			parser: attributeParser,
+			expected: BoolExpressionAttribute{
+				Name: "noshade",
+				Expression: Expression{
+					Value: "true",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 18,
+							Line:  1,
+							Col:   18,
+						},
+					},
+				},
+			},
+		},
+		{
 			name:   "constant attribute",
 			input:  ` href="test"`,
 			parser: newConstantAttributeParser().Parse,
@@ -126,6 +172,34 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "element: self-closing with single bool expression attribute",
+			input: `<hr noshade?={%= true %}/>`,
+			expected: Element{
+				Name: "hr",
+				Attributes: []Attribute{
+					BoolExpressionAttribute{
+						Name: "noshade",
+						Expression: Expression{
+							Value: `true`,
+							Range: Range{
+								From: Position{
+									Index: 17,
+									Line:  1,
+									Col:   17,
+								},
+								To: Position{
+
+									Index: 21,
+									Line:  1,
+									Col:   21,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name:  "element: self-closing with single expression attribute",
 			input: `<a href={%= "test" %}/>`,
 			expected: Element{
@@ -166,6 +240,41 @@ func TestElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "style",
 						Value: "text-underline: auto",
+					},
+				},
+			},
+		},
+		{
+			name:  "element: self-closing with multiple boolean attributes",
+			input: `<hr optionA optionB?={%= true %} optionC="other"/>`,
+			expected: Element{
+				Name: "hr",
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Name: "optionA",
+					},
+					BoolExpressionAttribute{
+						Name: "optionB",
+						Expression: Expression{
+							Value: `true`,
+							Range: Range{
+								From: Position{
+									Index: 25,
+									Line:  1,
+									Col:   25,
+								},
+								To: Position{
+
+									Index: 29,
+									Line:  1,
+									Col:   29,
+								},
+							},
+						},
+					},
+					ConstantAttribute{
+						Name:  "optionC",
+						Value: "other",
 					},
 				},
 			},

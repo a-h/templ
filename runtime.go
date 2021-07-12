@@ -246,3 +246,8 @@ func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
 func EscapeString(s string) string {
 	return html.EscapeString(s)
 }
+
+// Bool attribute value.
+func Bool(value bool) bool {
+	return value
+}

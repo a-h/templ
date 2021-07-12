@@ -439,6 +439,16 @@ type Attribute interface {
 	String() string
 }
 
+// <hr noshade/>
+type BoolConstantAttribute struct {
+	Name string
+}
+
+func (bca BoolConstantAttribute) IsAttribute() bool { return true }
+func (bca BoolConstantAttribute) String() string {
+	return bca.Name
+}
+
 // href=""
 type ConstantAttribute struct {
 	Name  string
@@ -448,6 +458,17 @@ type ConstantAttribute struct {
 func (ca ConstantAttribute) IsAttribute() bool { return true }
 func (ca ConstantAttribute) String() string {
 	return ca.Name + `="` + html.EscapeString(ca.Value) + `"`
+}
+
+// href={%= templ.Bool(...) }
+type BoolExpressionAttribute struct {
+	Name       string
+	Expression Expression
+}
+
+func (ea BoolExpressionAttribute) IsAttribute() bool { return true }
+func (ea BoolExpressionAttribute) String() string {
+	return ea.Name + `?={%= ` + ea.Expression.Value + ` %}`
 }
 
 // href={%= ... }

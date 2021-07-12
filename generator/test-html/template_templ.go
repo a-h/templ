@@ -110,6 +110,60 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		_, err = io.WriteString(w, "<hr")
+		if err != nil {
+			return err
+		}
+		if true {
+			_, err = io.WriteString(w, " noshade")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = io.WriteString(w, ">")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "<hr")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, " optionA")
+		if err != nil {
+			return err
+		}
+		if true {
+			_, err = io.WriteString(w, " optionB")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = io.WriteString(w, " optionC=\"other\"")
+		if err != nil {
+			return err
+		}
+		if false {
+			_, err = io.WriteString(w, " optionD")
+			if err != nil {
+				return err
+			}
+		}
+		_, err = io.WriteString(w, ">")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "<hr")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, " noshade")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, ">")
+		if err != nil {
+			return err
+		}
 		return err
 	})
 }
