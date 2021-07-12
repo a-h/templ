@@ -7,8 +7,8 @@
 			<div>{%= "email:" %}<a href={%= templ.URL("mailto: " + p.email) %}>{%= p.email %}</a></div>
 		</div>
 	</div>
-	<hr noshade={%= templ.Bool(true) %} />
-	<hr optionA optionB={%= templ.Bool(true) %} optionC="other" optionD={%= templ.Bool(false) %} />
+	<hr noshade?={%= true %} />
+	<hr optionA optionB?={%= true %} optionC="other" optionD?={%= false %} />
 	<hr noshade/>
 {% endtempl %}
 
