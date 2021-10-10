@@ -9,7 +9,7 @@ import (
 )
 
 const expected = `<div>` +
-	`<a href="about:invalid#TemplFailedSanitizationURL"` +
+	`<a href="about:invalid#TemplFailedSanitizationURL">text</a>` +
 	`</div>`
 
 func TestHTML(t *testing.T) {

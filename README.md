@@ -24,46 +24,6 @@ The language generates Go code, some sections of the template (e.g. `package`, `
 * `templ fmt` formats template files in the current directory tree.
 * `templ lsp` provides a Language Server to support IDE integrations. The compile command generates a sourcemap which maps from the `*.templ` files to the compiled Go file. This enables the `templ` LSP to use the Go language `gopls` language server as is, providing a thin shim to do the source remapping. This is used to provide autocomplete for template variables and functions.
 
-## Security
-
-templ will automatically escape content according to the following rules.
-
-```
-{% templ Example() %}
-  <script type="text/javascript">
-    {%= "will be HTML encoded using templ.Escape, which isn't JavaScript-aware, don't use templ to build scripts" %}
-  </script>
-  <div onClick={%= "will be HTML encoded using templ.Escape, but this isn't JavaScript aware, don't use user-controlled data here" %}>
-    {%= "will be HTML encoded using templ.Escape" %}</div>  
-  </div>
-  <style type="text/css">
-    {%= "will be escaped using templ.Escape, which isn't CSS-aware, don't use user-controlled data here" %}
-  </style>
-  <div style={%= "will be HTML encoded using templ.Escape, which isn't CSS-aware, don't use user controlled data here" %}</div>
-  <div class={%= templ.CSSClasses(templ.Class("will not be escaped, because it's expected to be a constant value")) %}</div>
-  <div>{%= "will be escaped using templ.Escape" %}</div>
-  <a href="http://constants.example.com/are/not/sanitized">Text</a>
-  <a href={%= templ.URL("will be sanitized by templ.URL to remove potential attacks") %}</div>
-  <a href={%= templ.SafeURL("will not be sanitized by templ.URL") %}</div>
-{% endtempl %}
-```
-
-CSS property names, and constant CSS property values are not sanitized or escaped.
-
-```
-{% css className() %}
-	background-color: #ffffff;
-{% endcss %}
-```
-
-CSS property values based on expressions are passed through `templ.SanitizeCSS` to replace potentially unsafe values with placeholders.
-
-```
-{% css className() %}
-	color: {%= red %};
-{% endcss %}
-```
-
 ## Design
 
 ### Overview
@@ -192,31 +152,37 @@ Templ provides a `templ.URL` function that sanitizes input URLs and checks that 
 
 ### Text
 
-Text is rendered from Go expressions, which includes constant values:
+Text is rendered from HTML included in the template itself, or by using Go expressions. No processing or conversion is applied to HTML included within the template, whereas Go string expressions are HTML encoded on output.
 
-```
-{%= "this is a string" %}
-```
+Plain HTML:
 
-Using the backtick format (single-line only):
-
-```
-{%= `this is also a string` %}
+```html
+<div>Plain HTML is allowed.</div>
 ```
 
-Calling a function that returns a string:
+Constant Go expressions:
 
 ```
-{%= time.Now().String() %}
+<div>{%= "this is a string" %}</div>
 ```
 
-Or using a string parameter, or variable that's in scope.
+The backtick constant expression (single-line only):
 
 ```
-{%= v.s %}
+<div>{%= `this is also a string` %}</div>
 ```
 
-What you can't do, is write text directly between elements (e.g. `<div>Some text</div>`, because the parser would have to become more complex to support HTML entities and the various mistakes people make when they're doing that (bare ampersands etc.). Go strings support UTF-8 which is much easier, and the escaping rules are well known by Go programmers.
+Functions that return a string:
+
+```
+<div>{%= time.Now().String() %}</div>
+```
+
+A string parameter, or variable that's in scope:
+
+```
+<div>{%= v.s %}</div>
+```
 
 ### CSS
 
@@ -549,3 +515,44 @@ Please get in touch if you're interested in building a feature as I don't want p
 * https://adrianhesketh.com/2021/05/18/introducing-templ/
 * https://adrianhesketh.com/2021/05/28/templ-hot-reload-with-air/
 * https://adrianhesketh.com/2021/06/04/hotwired-go-with-templ/
+
+## Security
+
+templ will automatically escape content according to the following rules.
+
+```
+{% templ Example() %}
+  <script type="text/javascript">
+    {%= "will be HTML encoded using templ.Escape, which isn't JavaScript-aware, don't use templ to build scripts" %}
+  </script>
+  <div onClick={%= "will be HTML encoded using templ.Escape, but this isn't JavaScript aware, don't use user-controlled data here" %}>
+    {%= "will be HTML encoded using templ.Escape" %}</div>  
+  </div>
+  <style type="text/css">
+    {%= "will be escaped using templ.Escape, which isn't CSS-aware, don't use user-controlled data here" %}
+  </style>
+  <div style={%= "will be HTML encoded using templ.Escape, which isn't CSS-aware, don't use user controlled data here" %}</div>
+  <div class={%= templ.CSSClasses(templ.Class("will not be escaped, because it's expected to be a constant value")) %}</div>
+  <div>{%= "will be escaped using templ.Escape" %}</div>
+  <a href="http://constants.example.com/are/not/sanitized">Text</a>
+  <a href={%= templ.URL("will be sanitized by templ.URL to remove potential attacks") %}</div>
+  <a href={%= templ.SafeURL("will not be sanitized by templ.URL") %}</div>
+{% endtempl %}
+```
+
+CSS property names, and constant CSS property values are not sanitized or escaped.
+
+```
+{% css className() %}
+	background-color: #ffffff;
+{% endcss %}
+```
+
+CSS property values based on expressions are passed through `templ.SanitizeCSS` to replace potentially unsafe values with placeholders.
+
+```
+{% css className() %}
+	color: {%= red %};
+{% endcss %}
+```
+

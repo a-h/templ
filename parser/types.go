@@ -306,6 +306,17 @@ type Node interface {
 	Write(w io.Writer, indent int) error
 }
 
+// Text node within the document.
+type Text struct {
+	// Value is the raw HTML encoded value.
+	Value string
+}
+
+func (t Text) IsNode() bool { return true }
+func (t Text) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, t.Value)
+}
+
 // <a .../> or <div ...>...</div>
 type Element struct {
 	Name       string

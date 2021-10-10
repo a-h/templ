@@ -38,7 +38,8 @@ func BasicTemplate(url string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString("text"))
+		var_2 := `text`
+		_, err = io.WriteString(w, var_2)
 		if err != nil {
 			return err
 		}

@@ -21,7 +21,8 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString("Ignored"))
+		var_1 := `Ignored`
+		_, err = io.WriteString(w, var_1)
 		if err != nil {
 			return err
 		}
@@ -41,40 +42,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_1 templ.SafeURL = templ.URL("javascript:alert('should be sanitized')")
-		_, err = io.WriteString(w, templ.EscapeString(string(var_1)))
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "\"")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, ">")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, templ.EscapeString("Sanitized"))
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "</a>")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "<a")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, " href=")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "\"")
-		if err != nil {
-			return err
-		}
-		var var_2 templ.SafeURL = templ.SafeURL("javascript:alert('should not be sanitized')")
+		var var_2 templ.SafeURL = templ.URL("javascript:alert('should be sanitized')")
 		_, err = io.WriteString(w, templ.EscapeString(string(var_2)))
 		if err != nil {
 			return err
@@ -87,7 +55,42 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString("Unsanitized"))
+		var_3 := `Sanitized`
+		_, err = io.WriteString(w, var_3)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</a>")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "<a")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, " href=")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "\"")
+		if err != nil {
+			return err
+		}
+		var var_4 templ.SafeURL = templ.SafeURL("javascript:alert('should not be sanitized')")
+		_, err = io.WriteString(w, templ.EscapeString(string(var_4)))
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, ">")
+		if err != nil {
+			return err
+		}
+		var_5 := `Unsanitized`
+		_, err = io.WriteString(w, var_5)
 		if err != nil {
 			return err
 		}

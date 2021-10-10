@@ -61,7 +61,8 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString("email:"))
+		var_1 := `email:`
+		_, err = io.WriteString(w, var_1)
 		if err != nil {
 			return err
 		}
@@ -77,8 +78,8 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_1 templ.SafeURL = templ.URL("mailto: " + p.email)
-		_, err = io.WriteString(w, templ.EscapeString(string(var_1)))
+		var var_2 templ.SafeURL = templ.URL("mailto: " + p.email)
+		_, err = io.WriteString(w, templ.EscapeString(string(var_2)))
 		if err != nil {
 			return err
 		}

@@ -349,6 +349,8 @@ func (g *generator) writeNode(indentLevel int, node parser.Node) error {
 		g.writeStringExpression(indentLevel, n.Expression)
 	case parser.Whitespace:
 		// Whitespace is not included in template output to minify HTML.
+	case parser.Text:
+		g.writeText(indentLevel, n)
 	default:
 		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
 	}
@@ -789,4 +791,34 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 		return err
 	}
 	return nil
+}
+
+func (g *generator) writeText(indentLevel int, e parser.Text) (err error) {
+	vn := g.createVariableName()
+	// vn := sExpr
+	if _, err = g.w.WriteIndent(indentLevel, vn+" := "+createGoString(e.Value)+"\n"); err != nil {
+		return err
+	}
+	// _, err = io.WriteString(w, vn)
+	if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, "+vn+")\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	return nil
+}
+
+func createGoString(s string) string {
+	var sb strings.Builder
+	sb.WriteRune('`')
+	sects := strings.Split(s, "`")
+	for i := 0; i < len(sects); i++ {
+		sb.WriteString(sects[i])
+		if len(sects) > i+1 {
+			sb.WriteString("` + \"`\" + `")
+		}
+	}
+	sb.WriteRune('`')
+	return sb.String()
 }

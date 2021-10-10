@@ -81,7 +81,7 @@ func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
 	// Expect a newline.
 	from = NewPositionFromInput(pi)
 	if lb := newLine(pi); !lb.Success {
-		return parse.Failure("templateExpressionParser", newParseError("template expression missing terminating newline", from, NewPositionFromInput(pi)))
+		return parse.Failure("templateExpressionParser", newParseError("template expression: missing terminating newline", from, NewPositionFromInput(pi)))
 	}
 
 	return parse.Success("templateExpressionParser", r, nil)
@@ -188,6 +188,17 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 		}
 		if pr.Success && len(pr.Item.(Whitespace).Value) > 0 {
 			op = append(op, pr.Item.(Whitespace))
+			continue
+		}
+
+		// Try for text.
+		// anything &amp; everything accepted...
+		pr = newTextParser().Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success && len(pr.Item.(Text).Value) > 0 {
+			op = append(op, pr.Item.(Text))
 			continue
 		}
 

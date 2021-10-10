@@ -10,6 +10,6 @@
 {% endtempl %}
 
 {% templ email(s string) %}
-	<div>{%= "email:" %}<a href={%= templ.URL("mailto: " + s) %}>{%= s %}</a></div>
+	<div>email:<a href={%= templ.URL("mailto: " + s) %}>{%= s %}</a></div>
 {% endtempl %}
 
