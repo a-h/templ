@@ -179,6 +179,10 @@ func (g *generator) writeTemplateNodes() error {
 			if err := g.writeCSS(n); err != nil {
 				return err
 			}
+		case parser.ScriptTemplate:
+			if err := g.writeScript(n); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("unknown node type: %v", reflect.TypeOf(n))
 		}
@@ -298,6 +302,10 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 		indentLevel++
 		// ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		if _, err = g.w.WriteIndent(indentLevel, "ctx, _ = templ.RenderedCSSClassesFromContext(ctx)\n"); err != nil {
+			return err
+		}
+		// ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		if _, err = g.w.WriteIndent(indentLevel, "ctx, _ = templ.RenderedScriptsFromContext(ctx)\n"); err != nil {
 			return err
 		}
 		// Nodes.
@@ -573,8 +581,12 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 			return err
 		}
 	} else {
-		// <style type="text/css></style>
+		// <style type="text/css"></style>
 		if err = g.writeElementCSS(indentLevel, n); err != nil {
+			return err
+		}
+		// <script type="text/javascript"></script>
+		if err = g.writeElementScript(indentLevel, n); err != nil {
 			return err
 		}
 		// <div
@@ -643,6 +655,27 @@ func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err erro
 			}
 			n.Attributes[i] = attr
 		}
+	}
+	return err
+}
+
+func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err error) {
+	var scriptExpressions []string
+	for i := 0; i < len(n.Attributes); i++ {
+		if attr, ok := n.Attributes[i].(parser.ExpressionAttribute); ok {
+			name := html.EscapeString(attr.Name)
+			if strings.HasPrefix(name, "on") {
+				scriptExpressions = append(scriptExpressions, attr.Expression.Value)
+			}
+		}
+	}
+	// Render the scripts before the element if required.
+	// err = templ.RenderScripts(ctx, w, a, b, c)
+	if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderScripts(ctx, w, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
 	}
 	return err
 }
@@ -735,21 +768,44 @@ func (g *generator) writeElementAttributes(indentLevel int, n parser.Element) (e
 					return err
 				}
 			} else {
-				// io.WriteString(w, templ.EscapeString(
-				if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
-					return err
-				}
-				// p.Name()
-				if r, err = g.w.Write(attr.Expression.Value); err != nil {
-					return err
-				}
-				g.sourceMap.Add(attr.Expression, r)
-				// ))
-				if _, err = g.w.Write("))\n"); err != nil {
-					return err
-				}
-				if err = g.writeErrorHandler(indentLevel); err != nil {
-					return err
+				if strings.HasPrefix(attr.Name, "on") {
+					// It's a JavaScript handler, and requires special handling, because we expect a JavaScript expression.
+					vn := g.createVariableName()
+					// var vn templ.ComponentScript =
+					if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.ComponentScript = "); err != nil {
+						return err
+					}
+					// p.Name()
+					if r, err = g.w.Write(attr.Expression.Value); err != nil {
+						return err
+					}
+					g.sourceMap.Add(attr.Expression, r)
+					if _, err = g.w.Write("\n"); err != nil {
+						return err
+					}
+					if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, "+vn+".Call)\n"); err != nil {
+						return err
+					}
+					if err = g.writeErrorHandler(indentLevel); err != nil {
+						return err
+					}
+				} else {
+					// io.WriteString(w, templ.EscapeString(
+					if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
+						return err
+					}
+					// p.Name()
+					if r, err = g.w.Write(attr.Expression.Value); err != nil {
+						return err
+					}
+					g.sourceMap.Add(attr.Expression, r)
+					// ))
+					if _, err = g.w.Write("))\n"); err != nil {
+						return err
+					}
+					if err = g.writeErrorHandler(indentLevel); err != nil {
+						return err
+					}
 				}
 			}
 			// Close quote.
@@ -821,4 +877,75 @@ func createGoString(s string) string {
 	}
 	sb.WriteRune('`')
 	return sb.String()
+}
+
+func (g *generator) writeScript(t parser.ScriptTemplate) error {
+	var r parser.Range
+	var err error
+	var indentLevel int
+
+	// func
+	if _, err = g.w.Write("func "); err != nil {
+		return err
+	}
+	if r, err = g.w.Write(t.Name.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(t.Name, r)
+	// (
+	if _, err = g.w.Write("("); err != nil {
+		return err
+	}
+	// Write parameters.
+	if r, err = g.w.Write(t.Parameters.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(t.Parameters, r)
+	// ) templ.ComponentScript {
+	if _, err = g.w.Write(") templ.ComponentScript {\n"); err != nil {
+		return err
+	}
+	indentLevel++
+	// return templ.ComponentScript{
+	if _, err = g.w.WriteIndent(indentLevel, "return templ.ComponentScript{\n"); err != nil {
+		return err
+	}
+	{
+		indentLevel++
+		// Name: "scriptName",
+		if _, err = g.w.WriteIndent(indentLevel, "Name: "+createGoString(t.Name.Value)+",\n"); err != nil {
+			return err
+		}
+		// Function: `function scriptName(a, b, c){` + `constantScriptValue` + `}`,
+		prefix := "function " + t.Name.Value + "(" + stripTypes(t.Parameters.Value) + "){"
+		suffix := "}"
+		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+strings.TrimSpace(t.Value)+suffix)+",\n"); err != nil {
+			return err
+		}
+		// Call: templ.SafeScript(scriptName, a, b, c)
+		if _, err = g.w.WriteIndent(indentLevel, "Call: templ.SafeScript("+createGoString(t.Name.Value)+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
+			return err
+		}
+		indentLevel--
+	}
+	// }
+	if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+		return err
+	}
+	indentLevel--
+	// }
+	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func stripTypes(parameters string) string {
+	variableNames := []string{}
+	params := strings.Split(parameters, ",")
+	for i := 0; i < len(params); i++ {
+		p := strings.Split(strings.TrimSpace(params[i]), " ")
+		variableNames = append(variableNames, strings.TrimSpace(p[0]))
+	}
+	return strings.Join(variableNames, ", ")
 }

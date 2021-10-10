@@ -628,3 +628,24 @@ func (se StringExpression) IsStyleDeclarationValue() bool { return true }
 func (se StringExpression) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, `{%= `+se.Expression.Value+` %}`)
 }
+
+// ScriptTemplate is a script block.
+type ScriptTemplate struct {
+	Name       Expression
+	Parameters Expression
+	Value      string
+}
+
+func (s ScriptTemplate) IsTemplateFileNode() bool { return true }
+func (s ScriptTemplate) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "{% script "+s.Name.Value+"("+s.Parameters.Value+") %}\n"); err != nil {
+		return err
+	}
+	if _, err := io.WriteString(w, s.Value); err != nil {
+		return err
+	}
+	if err := writeIndent(w, indent, "{% endscript %}"); err != nil {
+		return err
+	}
+	return nil
+}

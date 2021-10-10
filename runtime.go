@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html"
 	"io"
@@ -74,39 +75,9 @@ func CSSID(name string, css string) string {
 	return fmt.Sprintf("%s_%s", name, hp)
 }
 
-type contextKey string
+type cssContextKey string
 
-var (
-	contextKeyRenderedClasses = contextKey("renderedClasses")
-)
-
-// StringSet is a set of strings.
-type StringSet struct {
-	ss map[string]struct{}
-}
-
-// Add string s to the set.
-func (rc *StringSet) Add(s string) {
-	rc.ss[s] = struct{}{}
-}
-
-// Contains returns true if s is within the set.
-func (rc *StringSet) Contains(s string) bool {
-	_, ok := rc.ss[s]
-	return ok
-}
-
-// All returns a slice of all items in the set.
-func (rc *StringSet) All() (values []string) {
-	values = make([]string, len(rc.ss))
-	var index int
-	for k := range rc.ss {
-		values[index] = k
-		index++
-	}
-	sort.Strings(values)
-	return values
-}
+var contextKeyRenderedClasses = cssContextKey("renderedClasses")
 
 // RenderedCSSClassesFromContext returns a set of the CSS classes that have already been
 // rendered to the response.
@@ -175,7 +146,7 @@ func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Render CSS renders a <style> element with CSS content, if the styles have not already been rendered.
+// RenderCSS renders a <style> element with CSS content, if the styles have not already been rendered.
 func RenderCSS(ctx context.Context, w io.Writer, classes []CSSClass) (err error) {
 	ctx, rc := RenderedCSSClassesFromContext(ctx)
 	var sb strings.Builder
@@ -210,6 +181,38 @@ func SanitizeCSS(property, value string) SafeCSS {
 	return SafeCSS(p + ":" + v + ";")
 }
 
+// General purpose StringSet. Used by the Script and CSS middleware.
+
+// StringSet is a set of strings.
+type StringSet struct {
+	ss map[string]struct{}
+}
+
+// Add string s to the set.
+func (rc *StringSet) Add(s string) {
+	rc.ss[s] = struct{}{}
+}
+
+// Contains returns true if s is within the set.
+func (rc *StringSet) Contains(s string) bool {
+	_, ok := rc.ss[s]
+	return ok
+}
+
+// All returns a slice of all items in the set.
+func (rc *StringSet) All() (values []string) {
+	values = make([]string, len(rc.ss))
+	var index int
+	for k := range rc.ss {
+		values[index] = k
+		index++
+	}
+	sort.Strings(values)
+	return values
+}
+
+// Hyperlink sanitization.
+
 // FailedSanitizationURL is returned if a URL fails sanitization checks.
 const FailedSanitizationURL = SafeURL("about:invalid#TemplFailedSanitizationURL")
 
@@ -226,6 +229,8 @@ func URL(s string) SafeURL {
 
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
+
+// Types exposed by all components.
 
 // Component is the interface that all templates implement.
 type Component interface {
@@ -250,4 +255,71 @@ func EscapeString(s string) string {
 // Bool attribute value.
 func Bool(value bool) bool {
 	return value
+}
+
+// Script handling.
+
+// SafeScript encodes unknown parameters for safety.
+func SafeScript(functionName string, params ...interface{}) string {
+	encodedParams := make([]string, len(params))
+	for i := 0; i < len(encodedParams); i++ {
+		enc, _ := json.Marshal(params[i])
+		encodedParams[i] = EscapeString(string(enc))
+	}
+	sb := new(strings.Builder)
+	sb.WriteString(functionName)
+	sb.WriteRune('(')
+	sb.WriteString(strings.Join(encodedParams, ","))
+	sb.WriteRune(')')
+	return sb.String()
+}
+
+// ComponentScript is a templ Script template.
+type ComponentScript struct {
+	// Name of the script, e.g. print.
+	Name string
+	// Function to render.
+	Function string
+	// Call of the function in JavaScript syntax, including parameters.
+	// e.g. print({ x: 1 })
+	Call string
+}
+
+type scriptContextKey string
+
+var contextKeyRenderedScripts = scriptContextKey("scripts")
+
+// RenderedScriptsFromContext returns a set of the scripts that have already been
+// rendered to the response.
+func RenderedScriptsFromContext(ctx context.Context) (context.Context, *StringSet) {
+	if classes, ok := ctx.Value(contextKeyRenderedScripts).(*StringSet); ok {
+		return ctx, classes
+	}
+	rs := &StringSet{ss: make(map[string]struct{})}
+	ctx = context.WithValue(ctx, contextKeyRenderedScripts, rs)
+	return ctx, rs
+}
+
+// RenderScripts renders a <script> element, if the script has not already been rendered.
+func RenderScripts(ctx context.Context, w io.Writer, scripts ...ComponentScript) (err error) {
+	ctx, rs := RenderedScriptsFromContext(ctx)
+	var sb strings.Builder
+	for _, s := range scripts {
+		if !rs.Contains(s.Name) {
+			sb.WriteString(s.Function)
+			rs.Add(s.Name)
+		}
+	}
+	if sb.Len() > 0 {
+		if _, err = io.WriteString(w, `<script type="text/javascript">`); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, sb.String()); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, `</script>`); err != nil {
+			return err
+		}
+	}
+	return nil
 }

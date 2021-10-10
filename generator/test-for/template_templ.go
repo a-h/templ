@@ -9,6 +9,7 @@ import "io"
 func render(items []string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
+		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		for _, item := range items {
 			_, err = io.WriteString(w, "<div>")
 			if err != nil {

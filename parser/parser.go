@@ -138,11 +138,13 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
 	}
 
-	// Optional templates and CSS elements.
+	// Optional templates, CSS, and script templates.
 	// {% templ Name(p Parameter) %}
 	// {% css Name() %}
+	// {% script Name() %}
 	tp := newTemplateParser()
 	cssp := newCSSParser()
+	stp := newScriptTemplateParser()
 	for {
 		// Try for a template.
 		tpr := tp.Parse(pi)
@@ -162,6 +164,17 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 		}
 		if cssr.Success {
 			tf.Nodes = append(tf.Nodes, cssr.Item.(CSSTemplate))
+			// Eat optional whitespace.
+			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+			continue
+		}
+		// Try for script.
+		stpr := stp.Parse(pi)
+		if stpr.Error != nil && stpr.Error != io.EOF {
+			return stpr
+		}
+		if stpr.Success {
+			tf.Nodes = append(tf.Nodes, stpr.Item.(ScriptTemplate))
 			// Eat optional whitespace.
 			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
 			continue

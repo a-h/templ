@@ -9,6 +9,7 @@ import "io"
 func BasicTemplate(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
+		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err

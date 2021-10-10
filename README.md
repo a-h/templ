@@ -112,6 +112,27 @@ Then call it in a template. So long as the `Raw` function is in scope, you can u
 {%! Raw("<script>alert('xss vector');</script>") %}
 ```
 
+For larger scripts you want to embed, you should create a code component that writes the constant to the output writer using the embed feature of Go - see https://pkg.go.dev/embed for more information.
+
+```
+func EmbeddedScript(s string) Component {
+	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		_, err = io.WriteString(w, "<script>")
+		if err != nil {
+			return
+		}
+		//go:embed script.js
+		var b []byte
+		_, err = w.Write(b)
+		if err != nil {
+			return
+		}
+		_, err = io.WriteString(w, "</script>")
+		return
+	})
+}
+```
+
 ### Elements
 
 HTML elements look like HTML and you can write static attributes into them, just like with normal HTML. Don't worry about the spacing, the HTML will be minified when it's rendered.

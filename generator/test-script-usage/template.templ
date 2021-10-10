@@ -1,0 +1,20 @@
+{% package testscriptusage %}
+
+{% script withParameters(a string, b string, c int) %}
+	console.log(a, b, c);
+{% endscript %}
+
+{% script withoutParameters() %}
+	alert("hello");
+{% endscript %}
+
+{% templ Button(text string) %}
+	<button onClick={%= withParameters("test", text, 123) %} onMouseover={%= withoutParameters() %} type="button">{%= text %}</button>
+{% endtempl %}
+
+{% templ ThreeButtons() %}
+	{%! Button("A") %}
+	{%! Button("B") %}
+	<button onMouseover="console.log('mouseover')" type="button">Button C</button>
+{% endtempl %}
+

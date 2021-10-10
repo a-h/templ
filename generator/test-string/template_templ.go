@@ -9,6 +9,7 @@ import "io"
 func render(s string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
+		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		_, err = io.WriteString(w, templ.EscapeString(s))
 		if err != nil {
 			return err
