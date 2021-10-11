@@ -10,7 +10,7 @@
 {% endcss %}
 
 {% templ Button(text string) %}
-	<button class={%= templ.Classes(className(), templ.Class("other")) %} type="button">{%= text %}</button>
+	<button class={%= templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe")) %} type="button">{%= text %}</button>
 {% endtempl %}
 
 {% templ ThreeButtons() %}

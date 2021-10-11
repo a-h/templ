@@ -1,6 +1,8 @@
 package generator
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"html"
 	"io"
@@ -912,18 +914,20 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 	}
 	{
 		indentLevel++
+		fn := functionName(t.Name.Value, t.Value)
+		goFn := createGoString(fn)
 		// Name: "scriptName",
-		if _, err = g.w.WriteIndent(indentLevel, "Name: "+createGoString(t.Name.Value)+",\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "Name: "+goFn+",\n"); err != nil {
 			return err
 		}
 		// Function: `function scriptName(a, b, c){` + `constantScriptValue` + `}`,
-		prefix := "function " + t.Name.Value + "(" + stripTypes(t.Parameters.Value) + "){"
+		prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
 		suffix := "}"
 		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+strings.TrimSpace(t.Value)+suffix)+",\n"); err != nil {
 			return err
 		}
 		// Call: templ.SafeScript(scriptName, a, b, c)
-		if _, err = g.w.WriteIndent(indentLevel, "Call: templ.SafeScript("+createGoString(t.Name.Value)+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "Call: templ.SafeScript("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
 			return err
 		}
 		indentLevel--
@@ -938,6 +942,13 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		return err
 	}
 	return nil
+}
+
+func functionName(name string, body string) string {
+	h := sha256.New()
+	h.Write([]byte(body))
+	hp := hex.EncodeToString(h.Sum(nil))[0:4]
+	return fmt.Sprintf("__templ_%s_%s", name, hp)
 }
 
 func stripTypes(parameters string) string {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"strings"
 
 	"github.com/a-h/lexical/parse"
 )
@@ -392,12 +393,16 @@ func (p elementParser) Parse(pi parse.Input) parse.Result {
 	var r Element
 
 	// Self closing.
+	from := NewPositionFromInput(pi)
 	scr := newElementSelfClosingParser().Parse(pi)
 	if scr.Error != nil && scr.Error != io.EOF {
 		return scr
 	}
 	if scr.Success {
 		r = scr.Item.(Element)
+		if msgs, ok := r.Validate(); !ok {
+			return parse.Failure("elementParser", newParseError(fmt.Sprintf("<%s>: %s", r.Name, strings.Join(msgs, ", ")), from, NewPositionFromInput(pi)))
+		}
 		return parse.Success("elementParser", r, nil)
 	}
 
@@ -408,6 +413,9 @@ func (p elementParser) Parse(pi parse.Input) parse.Result {
 	}
 	if ocr.Success {
 		r = ocr.Item.(Element)
+		if msgs, ok := r.Validate(); !ok {
+			return parse.Failure("elementParser", newParseError(fmt.Sprintf("<%s>: %s", r.Name, strings.Join(msgs, ", ")), from, NewPositionFromInput(pi)))
+		}
 		return parse.Success("elementParser", r, nil)
 	}
 

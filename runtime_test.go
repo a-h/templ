@@ -198,3 +198,33 @@ func TestRenderCSS(t *testing.T) {
 		})
 	}
 }
+
+func TestClassSanitization(t *testing.T) {
+	var tests = []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    `safe`,
+			expected: `safe`,
+		},
+		{
+			input:    `!unsafe`,
+			expected: string(fallbackClassName),
+		},
+		{
+			input:    `</style>`,
+			expected: string(fallbackClassName),
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.input, func(t *testing.T) {
+			actual := Class(tt.input)
+			if actual.ClassName() != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, actual.ClassName())
+			}
+		})
+	}
+
+}

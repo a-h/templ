@@ -28,8 +28,10 @@ The language generates Go code, some sections of the template (e.g. `package`, `
 
 ### Overview
 
-* `*.templ` files are used to generate Go code to efficiently render the template at runtime.
-* Go code is generated from template files using the `templ generate` command, while templates can be formatted with the `templ fmt` command. The `templ lsp` command provides an LSP (Language Server Protocol) server to enable autocomplete.
+* Write `*.templ` files.
+* Generate Go code from the `*.templ` files with `templ generate`.
+* Format templates with `templ fmt`.
+* `templ lsp` starts a LSP (Language Server Protocol) server for IDE autocomplete.
 * Each `{% templ ComponentName(params Params) %}` section compiles into a function that creates a `templ.Component`.
 * `templ.Component` is an interface with a single function - `Render(ctx context.Context, io.Writer) (err error)`. You can make a component entirely in Go code and interact with it via `templ`.
 * `templ` aims for correctness, simplicity, developer experience and raw performance, in that order. The goal is to make writing Go web applications more practical, achievable and desirable.
@@ -203,6 +205,33 @@ A string parameter, or variable that's in scope:
 
 ```
 <div>{%= v.s %}</div>
+```
+
+### onClick etc. handlers
+
+`onClick` and other `on*` handlers have special behaviour, they expect a reference to a `script` template.
+
+```
+{% package testscriptusage %}
+
+{% script withParameters(a string, b string, c int) %}
+	console.log(a, b, c);
+{% endscript %}
+
+{% script withoutParameters() %}
+	alert("hello");
+{% endscript %}
+
+{% templ Button(text string) %}
+	<button onClick={%= withParameters("test", text, 123) %} onMouseover={%= withoutParameters() %} type="button">{%= text %}</button>
+{% endtempl %}
+```
+
+Rendering the button with `A` as the text input, would render the following HTML. Note that the function names are modified to reduce the likelihood of namespace collisions.
+
+```html
+<script type="text/javascript">function __templ_withParameters_rnd(a, b, c){console.log(a, b, c);}function __templ_withoutParameters_rnd(){alert("hello");}</script>
+<button onClick="__templ_withParameters_rnd(&#34;test&#34;,&#34;A&#34;,123)" onMouseover="__templ_withoutParameters_rnd()" type="button">A</button>
 ```
 
 ### CSS
@@ -539,29 +568,71 @@ Please get in touch if you're interested in building a feature as I don't want p
 
 ## Security
 
-templ will automatically escape content according to the following rules.
+templ is designed to prevent user provided data from being used to inject vulnerabilities.
+
+`<script>` and `<style>` tags could allow user data to inject vulnerabilities, so variables are not permitted in these sections.
 
 ```
 {% templ Example() %}
   <script type="text/javascript">
-    {%= "will be HTML encoded using templ.Escape, which isn't JavaScript-aware, don't use templ to build scripts" %}
+    function showAlert() {
+      alert("hello");
+    }
   </script>
-  <div onClick={%= "will be HTML encoded using templ.Escape, but this isn't JavaScript aware, don't use user-controlled data here" %}>
-    {%= "will be HTML encoded using templ.Escape" %}</div>  
-  </div>
   <style type="text/css">
-    {%= "will be escaped using templ.Escape, which isn't CSS-aware, don't use user-controlled data here" %}
+    /* Only CSS is allowed */
   </style>
-  <div style={%= "will be HTML encoded using templ.Escape, which isn't CSS-aware, don't use user controlled data here" %}</div>
-  <div class={%= templ.CSSClasses(templ.Class("will not be escaped, because it's expected to be a constant value")) %}</div>
-  <div>{%= "will be escaped using templ.Escape" %}</div>
-  <a href="http://constants.example.com/are/not/sanitized">Text</a>
-  <a href={%= templ.URL("will be sanitized by templ.URL to remove potential attacks") %}</div>
-  <a href={%= templ.SafeURL("will not be sanitized by templ.URL") %}</div>
 {% endtempl %}
 ```
 
-CSS property names, and constant CSS property values are not sanitized or escaped.
+`onClick` attributes, and other `on*` attributes are used to execute JavaScript. To prevent user data from being unescapted, `on*` attributes accept a `templ.ComponentScript`.
+
+```
+{% script onClickHandler(msg stringg) %}
+  alert(msg);
+{% endscript %}
+
+{% templ Example(msg string) %}
+  <div onClick={%= onClickHandler(msg) %}>
+    {%= "will be HTML encoded using templ.Escape" %}
+  </div>
+{% endtempl %}
+```
+
+Style attributes cannot be expressions, only constants, to avoid escaping vulnerabilities. templ style templates (`{% css className() %}`) should be used instead.
+
+```
+{% templ Example() %}
+  <div style={%= "will throw an error" %}</div>
+{% endtempl %}
+```
+
+Class names are escaped unless bypassed.
+
+```
+{% templ Example() %}
+  <div class={%= templ.CSSClasses(templ.Class("unsafe</style&gt;-will-sanitized"), templ.SafeClass("sanitization bypassed")) %}</div>
+{% endtempl %}
+```
+
+```
+{% templ Example() %}
+  <div>Node text is not modified at all.</div>
+  <div>{%= "will be escaped using templ.Escape" %}</div>
+{% endtempl %}
+```
+
+`href` attributes must be a `templ.SafeURL` and are sanitized to remove JavaScript URLs unless bypassed.
+
+```
+{% templ Example() %}
+  <a href="http://constants.example.com/are/not/sanitized">Text</a>
+  <a href={%= templ.URL("will be sanitized by templ.URL to remove potential attacks") %}</a>
+  <a href={%= templ.SafeURL("will not be sanitized by templ.URL") %}</a>
+{% endtempl %}
+```
+
+Within css blocks, property names, and constant CSS property values are not sanitized or escaped.
 
 ```
 {% css className() %}

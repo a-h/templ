@@ -9,6 +9,7 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -36,8 +37,19 @@ func (classes CSSClasses) String() string {
 	return sb.String()
 }
 
-// Class returns a static CSS class name.
+var safeClassName = regexp.MustCompile(`^-?[_a-zA-Z]+[_-a-zA-Z0-9]*$`)
+var fallbackClassName = ConstantCSSClass("--templ-css-class-safe-name")
+
+// Class returns a sanitized CSS class name.
 func Class(name string) CSSClass {
+	if !safeClassName.MatchString(name) {
+		return fallbackClassName
+	}
+	return SafeClass(name)
+}
+
+// SafeClass bypasses CSS class name validation.
+func SafeClass(name string) CSSClass {
 	return ConstantCSSClass(name)
 }
 

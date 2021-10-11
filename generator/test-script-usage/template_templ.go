@@ -8,17 +8,17 @@ import "io"
 
 func withParameters(a string, b string, c int) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `withParameters`,
-		Function: `function withParameters(a, b, c){console.log(a, b, c);}`,
-		Call: templ.SafeScript(`withParameters`, a, b, c),
+		Name: `__templ_withParameters_1056`,
+		Function: `function __templ_withParameters_1056(a, b, c){console.log(a, b, c);}`,
+		Call: templ.SafeScript(`__templ_withParameters_1056`, a, b, c),
 	}
 }
 
 func withoutParameters() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `withoutParameters`,
-		Function: `function withoutParameters(){alert("hello");}`,
-		Call: templ.SafeScript(`withoutParameters`, ),
+		Name: `__templ_withoutParameters_6bbf`,
+		Function: `function __templ_withoutParameters_6bbf(){alert("hello");}`,
+		Call: templ.SafeScript(`__templ_withoutParameters_6bbf`, ),
 	}
 }
 

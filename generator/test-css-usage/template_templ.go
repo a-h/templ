@@ -32,7 +32,7 @@ func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		var var_1 templ.CSSClasses = templ.Classes(className(), templ.Class("other"))
+		var var_1 templ.CSSClasses = templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe"))
 		err = templ.RenderCSS(ctx, w, var_1)
 		if err != nil {
 			return err

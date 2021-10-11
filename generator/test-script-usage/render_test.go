@@ -10,9 +10,9 @@ import (
 )
 
 const expected = `` +
-	`<script type="text/javascript">function withParameters(a, b, c){console.log(a, b, c);}function withoutParameters(){alert("hello");}</script>` +
-	`<button onClick="withParameters(&#34;test&#34;,&#34;A&#34;,123)" onMouseover="withoutParameters()" type="button">A</button>` +
-	`<button onClick="withParameters(&#34;test&#34;,&#34;B&#34;,123)" onMouseover="withoutParameters()" type="button">B</button>` +
+	`<script type="text/javascript">function __templ_withParameters_1056(a, b, c){console.log(a, b, c);}function __templ_withoutParameters_6bbf(){alert("hello");}</script>` +
+	`<button onClick="__templ_withParameters_1056(&#34;test&#34;,&#34;A&#34;,123)" onMouseover="__templ_withoutParameters_6bbf()" type="button">A</button>` +
+	`<button onClick="__templ_withParameters_1056(&#34;test&#34;,&#34;B&#34;,123)" onMouseover="__templ_withoutParameters_6bbf()" type="button">B</button>` +
 	`<button onMouseover="console.log(&#39;mouseover&#39;)" type="button">Button C</button>`
 
 func TestHTML(t *testing.T) {

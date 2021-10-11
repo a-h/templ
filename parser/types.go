@@ -370,6 +370,40 @@ func (e Element) containsBlockElement() bool {
 	return false
 }
 
+// Validate that no invalid expressions have been used.
+func (e Element) Validate() (msgs []string, ok bool) {
+	// Validate that style attributes are constant.
+	for _, attr := range e.Attributes {
+		if exprAttr, isExprAttr := attr.(ExpressionAttribute); isExprAttr {
+			if strings.EqualFold(exprAttr.Name, "style") {
+				msgs = append(msgs, "invalid style attribute: style attributes cannot be a templ expression")
+			}
+		}
+	}
+	// Validate that script and style tags don't contain expressions.
+	if strings.EqualFold(e.Name, "script") || strings.EqualFold(e.Name, "style") {
+		if containsNonTextNodes(e.Children) {
+			msgs = append(msgs, "invalid node contents: script and style attributes must only contain text")
+		}
+	}
+	return msgs, len(msgs) == 0
+}
+
+func containsNonTextNodes(nodes []Node) bool {
+	for i := 0; i < len(nodes); i++ {
+		n := nodes[i]
+		switch n.(type) {
+		case Text:
+			continue
+		case Whitespace:
+			continue
+		default:
+			return true
+		}
+	}
+	return false
+}
+
 func (e Element) IsNode() bool { return true }
 func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<"+e.Name); err != nil {

@@ -345,6 +345,19 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "element: open and close with text",
+			input: `<a>The text</a>`,
+			expected: Element{
+				Name:       "a",
+				Attributes: []Attribute{},
+				Children: []Node{
+					Text{
+						Value: "The text",
+					},
+				},
+			},
+		},
+		{
 			name:  "element: with self-closing child element",
 			input: `<a><b/></a>`,
 			expected: Element{
@@ -488,6 +501,66 @@ func TestElementParserErrors(t *testing.T) {
 					Index: 7,
 					Line:  1,
 					Col:   7,
+				}),
+		},
+		{
+			name:  "element: attempted use of expression for style attribute (open/close)",
+			input: `<a style={%= value %}></a>`,
+			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
+				Position{
+					Index: 0,
+					Line:  1,
+					Col:   0,
+				},
+				Position{
+					Index: 26,
+					Line:  1,
+					Col:   26,
+				}),
+		},
+		{
+			name:  "element: attempted use of expression for style attribute (self-closing)",
+			input: `<a style={%= value %}/>`,
+			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
+				Position{
+					Index: 0,
+					Line:  1,
+					Col:   0,
+				},
+				Position{
+					Index: 23,
+					Line:  1,
+					Col:   23,
+				}),
+		},
+		{
+			name:  "element: script tags cannot contain non-text nodes",
+			input: `<script>{%= "value" %}</script>`,
+			expected: newParseError("<script>: invalid node contents: script and style attributes must only contain text",
+				Position{
+					Index: 0,
+					Line:  1,
+					Col:   0,
+				},
+				Position{
+					Index: 31,
+					Line:  1,
+					Col:   31,
+				}),
+		},
+		{
+			name:  "element: style tags cannot contain non-text nodes",
+			input: `<style>{%= "value" %}</style>`,
+			expected: newParseError("<style>: invalid node contents: script and style attributes must only contain text",
+				Position{
+					Index: 0,
+					Line:  1,
+					Col:   0,
+				},
+				Position{
+					Index: 29,
+					Line:  1,
+					Col:   29,
 				}),
 		},
 	}
