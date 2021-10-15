@@ -42,8 +42,15 @@ func TestSanitizeCSS(t *testing.T) {
 			name:             "font-family standard values are allowed",
 			inputProperty:    "font-family",
 			expectedProperty: "font-family",
-			inputValue:       `sans serif`,
-			expectedValue:    `sans serif`,
+			inputValue:       `sans-serif`,
+			expectedValue:    `sans-serif`,
+		},
+		{
+			name:             "font-family values with spaces are allowed",
+			inputProperty:    "font-family",
+			expectedProperty: "font-family",
+			inputValue:       `Akzidenz Grotesk`,
+			expectedValue:    `Akzidenz Grotesk`,
 		},
 		{
 			name:             "font-family multiple standard values are allowed",
