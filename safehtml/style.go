@@ -82,7 +82,7 @@ func urlIsSafe(s string) bool {
 	return true
 }
 
-var genericFontFamilyName = regexp.MustCompile(`^[a-zA-Z][-a-zA-Z]+$`)
+var genericFontFamilyName = regexp.MustCompile(`^[a-zA-Z][- a-zA-Z]+$`)
 
 func sanitizeFontFamily(s string) string {
 	for _, f := range strings.Split(s, ",") {
