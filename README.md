@@ -7,10 +7,11 @@
 ## Getting started
 
 * Install the `templ` command-line tool: `go install github.com/a-h/templ/cmd/templ@latest`
+* Initialize a new Go project with `go mod`, e.g. `go mod init example`.
 * Create the `example.templ` and `main.go` files shown below.
 * Run `templ generate` followed by `go run *.go` to create Go code from the template and run the web server.
 
-### ./example.templ
+### example.templ
 
 ```html
 {% package main %}
@@ -71,7 +72,7 @@
 {% endtempl %}
 ```
 
-### ./main.go
+### main.go
 
 ```go
 package main
