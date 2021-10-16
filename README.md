@@ -552,11 +552,51 @@ func PersonTemplate(p Person) (t templ.Component) {
 
 # IDE Support
 
-## vim / neovim
+## vscode
+
+There's a VS Code extension, just make sure you've already installed templ and that it's on your path. 
+
+* https://marketplace.visualstudio.com/items?itemName=a-h.templ
+* https://github.com/a-h/templ-vscode
+
+## Neovim 5
 
 A vim / neovim plugin is available from https://github.com/Joe-Davidson1802/templ.vim which adds syntax highlighting.
 
-Neovim 5 supports Language Servers directly. For the moment, I'm using https://github.com/neoclide/coc.nvim to test the language server after using Joe-Davidson1802's plugin to set the language type:
+To enable the built-in Language Server support of Neovim 5.x add the following code to your `.vimrc` prior to calling `setup` on the language servers, e.g.:
+
+```lua
+-- Add templ configuration.
+local configs = require'lspconfig/configs'
+if not nvim_lsp.templ then
+  configs.templ = {
+    default_config = {
+      cmd = {"templ", "lsp"},
+      filetypes = {'templ'},
+      root_dir = nvim_lsp.util.root_pattern("go.mod", ".git"),
+      settings = {},
+    };
+  }
+end
+
+-- Use a loop to conveniently call 'setup' on multiple servers and
+-- map buffer local keybindings when the language server attaches
+local servers = { 'gopls', 'ccls', 'cmake', 'tsserver', 'templ' }
+for _, lsp in ipairs(servers) do
+  nvim_lsp[lsp].setup {
+    on_attach = on_attach,
+    flags = {
+      debounce_text_changes = 150,
+    },
+  }
+end
+```
+
+## vim / neovim 4.x
+
+A vim / neovim plugin is available from https://github.com/Joe-Davidson1802/templ.vim which adds syntax highlighting.
+
+https://github.com/neoclide/coc.nvim can be used to run the language server after using Joe-Davidson1802's plugin to set the language type:
 
 ```json
 {
@@ -585,13 +625,6 @@ To add extensive debug information, you can include additional args to the LSP, 
     }
 }
 ```
-
-## vscode
-
-There's a VS Code extension, just make sure you've already installed templ and that it's on your path. 
-
-* https://marketplace.visualstudio.com/items?itemName=a-h.templ
-* https://github.com/a-h/templ-vscode
 
 # Development
 
