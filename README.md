@@ -7,8 +7,109 @@
 ## Getting started
 
 * Install the `templ` command-line tool: `go install github.com/a-h/templ/cmd/templ@latest`
-* Create a `*.templ` file containing a template.
-* Run `templ generate` to create Go code from the template.
+* Create the `example.templ` and `main.go` files shown below.
+* Run `templ generate` followed by `go run *.go` to create Go code from the template and run the web server.
+
+### ./example.templ
+
+```html
+{% package main %}
+
+{% import "fmt" %}
+{% import "time" %}
+
+{% templ headerTemplate() %}
+	<head><title>Blog</title></head>
+{% endtempl %}
+
+{% templ footerTemplate() %}
+	<footer>
+		<div>&copy; {%= fmt.Sprintf("%d", time.Now().Year()) %}</div>
+	</footer>
+{% endtempl %}
+
+{% templ navTemplate() %}
+	<nav>
+		<ul>
+			<li><a href="/">Home</a></li>
+			<li><a href="/posts">Posts</a></li>
+		</ul>
+	</nav>
+{% endtempl %}
+
+{% templ layout(name string, content templ.Component) %}
+	<html>
+		{%! headerTemplate() %}
+		<body>
+			<h1>Home</h1>
+			{%! navTemplate() %}
+			<main>
+				{%! content %}
+			</main>
+		</body>
+		{%! footerTemplate() %}
+	</html>
+{% endtempl %}
+
+{% templ homeTemplate() %}
+	<div>Welcome to my website.</div>
+{% endtempl %}
+
+{% templ postsTemplate(posts []Post) %}
+	{% for _, p := range posts %}
+		<div>{%= p.Name %}</div>
+		<div>{%= p.Author %}</div>
+	{% endfor %}
+{% endtempl %}
+
+{% templ home() %}
+	{%! layout("Home", homeTemplate()) %}
+{% endtempl %}
+
+{% templ posts(posts []Post) %}
+	{%! layout("Posts", postsTemplate(posts)) %}
+{% endtempl %}
+```
+
+### ./main.go
+
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/a-h/templ"
+)
+
+func main() {
+	// Use a template that doesn't take parameters.
+	http.Handle("/", templ.Handler(home()))
+
+	// Use a template that accesses data or handles form posts.
+	http.Handle("/posts", PostHandler{})
+
+	// Start the server.
+	fmt.Println("listening on http://localhost:8000")
+	http.ListenAndServe("localhost:8000", nil)
+}
+
+type PostHandler struct{}
+
+func (ph PostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Get the posts from a database.
+	postsToDisplay := []Post{{Name: "templ", Author: "author"}}
+
+	// Render the template.
+	templ.Handler(posts(postsToDisplay)).ServeHTTP(w, r)
+}
+
+type Post struct {
+	Name   string
+	Author string
+}
+```
 
 ## Current state
 
@@ -24,19 +125,9 @@ The language generates Go code, some sections of the template (e.g. `package`, `
 * `templ fmt` formats template files in the current directory tree.
 * `templ lsp` provides a Language Server to support IDE integrations. The compile command generates a sourcemap which maps from the `*.templ` files to the compiled Go file. This enables the `templ` LSP to use the Go language `gopls` language server as is, providing a thin shim to do the source remapping. This is used to provide autocomplete for template variables and functions.
 
-## Design
+## Template files
 
-### Overview
-
-* Write `*.templ` files.
-* Generate Go code from the `*.templ` files with `templ generate`.
-* Format templates with `templ fmt`.
-* `templ lsp` starts a LSP (Language Server Protocol) server for IDE autocomplete.
-* Each `{% templ ComponentName(params Params) %}` section compiles into a function that creates a `templ.Component`.
-* `templ.Component` is an interface with a single function - `Render(ctx context.Context, io.Writer) (err error)`. You can make a component entirely in Go code and interact with it via `templ`.
-* `templ` aims for correctness, simplicity, developer experience and raw performance, in that order. The goal is to make writing Go web applications more practical, achievable and desirable.
-* Provides minified HTML output only.
-* Components can be composed into layouts.
+Template files end with a `.templ` extension and combine Go code with HTML-like expressions.
 
 ### Package
 

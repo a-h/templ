@@ -7,6 +7,9 @@ install-snapshot:
 build-snapshot:
 	goreleaser build --snapshot --rm-dist
 
+test:
+	templ generate && go test ./...
+
 release: 
 	if [ "${GITHUB_TOKEN}" == "" ]; then echo "No github token, run:"; echo "export GITHUB_TOKEN=`pass github.com/goreleaser_access_token`"; exit 1; fi
 	./push-tag.sh

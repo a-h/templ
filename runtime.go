@@ -16,6 +16,81 @@ import (
 	"github.com/a-h/templ/safehtml"
 )
 
+// Types exposed by all components.
+
+// Component is the interface that all templates implement.
+type Component interface {
+	// Render the template.
+	Render(ctx context.Context, w io.Writer) error
+}
+
+// ComponentFunc converts a function that matches the Component interface's
+// Render method into a Component.
+type ComponentFunc func(ctx context.Context, w io.Writer) error
+
+// Render the template.
+func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
+	return cf(ctx, w)
+}
+
+// ComponentHandler is a http.Handler that renders components.
+type ComponentHandler struct {
+	Component    Component
+	Status       int
+	ErrorHandler func(r *http.Request, err error) http.Handler
+}
+
+var componentHandlerErrorMessage = "templ: failed to render template"
+
+// ServeHTTP implements the http.Handler interface.
+func (ch *ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if ch.Status != 0 {
+		w.WriteHeader(ch.Status)
+	}
+	if err := ch.Component.Render(r.Context(), w); err != nil {
+		if ch.ErrorHandler != nil {
+			ch.ErrorHandler(r, err).ServeHTTP(w, r)
+			return
+		}
+		http.Error(w, componentHandlerErrorMessage, http.StatusInternalServerError)
+	}
+}
+
+// Handler creates a http.Handler that renders the template.
+func Handler(c Component, options ...func(*ComponentHandler)) *ComponentHandler {
+	ch := &ComponentHandler{
+		Component: c,
+	}
+	for _, o := range options {
+		o(ch)
+	}
+	return ch
+}
+
+// WithStatus sets the HTTP status code returned by the ComponentHandler.
+func WithStatus(status int) func(*ComponentHandler) {
+	return func(ch *ComponentHandler) {
+		ch.Status = status
+	}
+}
+
+// WithErrorHandler sets the error handler used if rendering fails.
+func WithErrorHandler(eh func(r *http.Request, err error) http.Handler) func(*ComponentHandler) {
+	return func(ch *ComponentHandler) {
+		ch.ErrorHandler = eh
+	}
+}
+
+// EscapeString escapes HTML text within templates.
+func EscapeString(s string) string {
+	return html.EscapeString(s)
+}
+
+// Bool attribute value.
+func Bool(value bool) bool {
+	return value
+}
+
 // Classes for CSS.
 func Classes(classes ...CSSClass) CSSClasses {
 	return CSSClasses(classes)
@@ -241,33 +316,6 @@ func URL(s string) SafeURL {
 
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
-
-// Types exposed by all components.
-
-// Component is the interface that all templates implement.
-type Component interface {
-	// Render the template.
-	Render(ctx context.Context, w io.Writer) error
-}
-
-// ComponentFunc converts a function that matches the Component interface's
-// Render method into a Component.
-type ComponentFunc func(ctx context.Context, w io.Writer) error
-
-// Render the template.
-func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
-	return cf(ctx, w)
-}
-
-// EscapeString escapes HTML text within templates.
-func EscapeString(s string) string {
-	return html.EscapeString(s)
-}
-
-// Bool attribute value.
-func Bool(value bool) bool {
-	return value
-}
 
 // Script handling.
 

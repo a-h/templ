@@ -1,13 +1,57 @@
 {% package main %}
 
+{% import "fmt" %}
+{% import "time" %}
+
+{% templ headerTemplate() %}
+	<head><title>Blog</title></head>
+{% endtempl %}
+
+{% templ footerTemplate() %}
+	<footer>
+		<div>&copy; {%= fmt.Sprintf("%d", time.Now().Year()) %}</div>
+	</footer>
+{% endtempl %}
+
+{% templ navTemplate() %}
+	<nav>
+		<ul>
+			<li><a href="/">Home</a></li>
+			<li><a href="/posts">Posts</a></li>
+		</ul>
+	</nav>
+{% endtempl %}
+
+{% templ layout(name string, content templ.Component) %}
+	<html>
+		{%! headerTemplate() %}
+		<body>
+			<h1>Home</h1>
+			{%! navTemplate() %}
+			<main>
+				{%! content %}
+			</main>
+		</body>
+		{%! footerTemplate() %}
+	</html>
+{% endtempl %}
+
+{% templ homeTemplate() %}
+	<div>Welcome to my website.</div>
+{% endtempl %}
+
 {% templ postsTemplate(posts []Post) %}
 	{% for _, p := range posts %}
-		{%! postTemplate(p) %}
+		<div>{%= p.Name %}</div>
+		<div>{%= p.Author %}</div>
 	{% endfor %}
 {% endtempl %}
 
-{% templ postTemplate(post Post) %}
-	<div>{%= post.Name %}</div>
-	<div>{%= post.Author %}</div>
+{% templ home() %}
+	{%! layout("Home", homeTemplate()) %}
+{% endtempl %}
+
+{% templ posts(posts []Post) %}
+	{%! layout("Posts", postsTemplate(posts)) %}
 {% endtempl %}
 

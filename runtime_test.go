@@ -3,6 +3,7 @@ package templ
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -227,4 +228,71 @@ func TestClassSanitization(t *testing.T) {
 		})
 	}
 
+}
+
+func TestHandler(t *testing.T) {
+	hello := ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		io.WriteString(w, "Hello")
+		return nil
+	})
+	errorComponent := ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		return errors.New("handler error")
+	})
+
+	var tests = []struct {
+		name           string
+		input          *ComponentHandler
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name:           "handlers return OK by default",
+			input:          Handler(hello),
+			expectedStatus: http.StatusOK,
+			expectedBody:   "Hello",
+		},
+		{
+			name:           "handlers can be configured to return an alternative status code",
+			input:          Handler(hello, WithStatus(http.StatusNotFound)),
+			expectedStatus: http.StatusNotFound,
+			expectedBody:   "Hello",
+		},
+		{
+			name:           "handlers that fail return a 500 error",
+			input:          Handler(errorComponent),
+			expectedStatus: http.StatusInternalServerError,
+			expectedBody:   componentHandlerErrorMessage + "\n",
+		},
+		{
+			name: "error handling can be customised",
+			input: Handler(errorComponent, WithErrorHandler(func(r *http.Request, err error) http.Handler {
+				// Because the error is received, it's possible to log the detail of the request.
+				// log.Printf("template render error for %v %v: %v", r.Method, r.URL.String(), err)
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusBadRequest)
+					io.WriteString(w, "custom body")
+				})
+			})),
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   "custom body",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest("GET", "/test", nil)
+			tt.input.ServeHTTP(w, r)
+			if got := w.Result().StatusCode; tt.expectedStatus != got {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, got)
+			}
+			body, err := io.ReadAll(w.Result().Body)
+			if err != nil {
+				t.Errorf("failed to read body: %v", err)
+			}
+			if diff := cmp.Diff(tt.expectedBody, string(body)); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
 }

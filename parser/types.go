@@ -363,6 +363,8 @@ func (e Element) containsBlockElement() bool {
 			continue
 		case StringExpression:
 			continue
+		case Text:
+			continue
 		}
 		// Any template elements should be considered block.
 		return true
