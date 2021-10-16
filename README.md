@@ -207,7 +207,7 @@ Then call it in a template. So long as the `Raw` function is in scope, you can u
 
 For larger scripts you want to embed, you should create a code component that writes the constant to the output writer using the embed feature of Go - see https://pkg.go.dev/embed for more information.
 
-```
+```go
 func EmbeddedScript(s string) Component {
 	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		_, err = io.WriteString(w, "<script>")
