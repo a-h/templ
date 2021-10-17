@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -12,21 +13,37 @@ func main() {
 	http.Handle("/", templ.Handler(home()))
 
 	// Use a template that accesses data or handles form posts.
-	http.Handle("/posts", PostHandler{})
+	http.Handle("/posts", NewPostsHandler())
 
 	// Start the server.
 	fmt.Println("listening on http://localhost:8000")
 	http.ListenAndServe("localhost:8000", nil)
 }
 
-type PostHandler struct{}
+func NewPostsHandler() PostsHandler {
+	// Replace this in-memory function with a call to a database.
+	postsGetter := func() (posts []Post, err error) {
+		return []Post{{Name: "templ", Author: "author"}}, nil
+	}
+	return PostsHandler{
+		GetPosts: postsGetter,
+		Log:      log.Default(),
+	}
+}
 
-func (ph PostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Get the posts from a database.
-	postsToDisplay := []Post{{Name: "templ", Author: "author"}}
+type PostsHandler struct {
+	Log      *log.Logger
+	GetPosts func() ([]Post, error)
+}
 
-	// Render the template.
-	templ.Handler(posts(postsToDisplay)).ServeHTTP(w, r)
+func (ph PostsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ps, err := ph.GetPosts()
+	if err != nil {
+		ph.Log.Printf("failed to get posts: %v", err)
+		http.Error(w, "failed to retrieve posts", http.StatusInternalServerError)
+		return
+	}
+	templ.Handler(posts(ps)).ServeHTTP(w, r)
 }
 
 type Post struct {

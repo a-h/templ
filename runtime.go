@@ -47,7 +47,8 @@ func (ch *ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if ch.Status != 0 {
 		w.WriteHeader(ch.Status)
 	}
-	if err := ch.Component.Render(r.Context(), w); err != nil {
+	err := ch.Component.Render(r.Context(), w)
+	if err != nil {
 		if ch.ErrorHandler != nil {
 			ch.ErrorHandler(r, err).ServeHTTP(w, r)
 			return

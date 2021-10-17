@@ -8,27 +8,39 @@ import "io"
 import "fmt"
 import "time"
 
-func headerTemplate(title string) templ.Component {
+func headerTemplate(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		_, err = io.WriteString(w, "<head>")
+		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<title>")
+		_, err = io.WriteString(w, "<header")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(title))
+		_, err = io.WriteString(w, " data-testid=\"headerTemplate\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</title>")
+		_, err = io.WriteString(w, ">")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</head>")
+		_, err = io.WriteString(w, "<h1>")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, templ.EscapeString(name))
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</h1>")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</header>")
 		if err != nil {
 			return err
 		}
@@ -191,15 +203,11 @@ func layout(name string, content templ.Component) templ.Component {
 		if err != nil {
 			return err
 		}
-		err = headerTemplate(name).Render(ctx, w)
+		_, err = io.WriteString(w, "<head>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<body>")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "<h1>")
+		_, err = io.WriteString(w, "<title>")
 		if err != nil {
 			return err
 		}
@@ -207,7 +215,19 @@ func layout(name string, content templ.Component) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</h1>")
+		_, err = io.WriteString(w, "</title>")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</head>")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "<body>")
+		if err != nil {
+			return err
+		}
+		err = headerTemplate(name).Render(ctx, w)
 		if err != nil {
 			return err
 		}
@@ -247,7 +267,19 @@ func homeTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		_, err = io.WriteString(w, "<div>")
+		err = templ.RenderScripts(ctx, w, )
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "<div")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, " data-testid=\"homeTemplate\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, ">")
 		if err != nil {
 			return err
 		}
@@ -268,6 +300,22 @@ func postsTemplate(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		err = templ.RenderScripts(ctx, w, )
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "<div")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, " data-testid=\"postsTemplate\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, ">")
+		if err != nil {
+			return err
+		}
 		for _, p := range posts {
 			err = templ.RenderScripts(ctx, w, )
 			if err != nil {
@@ -277,7 +325,7 @@ func postsTemplate(posts []Post) templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, " data-testid=\"post\"")
+			_, err = io.WriteString(w, " data-testid=\"postsTemplatePost\"")
 			if err != nil {
 				return err
 			}
@@ -285,7 +333,19 @@ func postsTemplate(posts []Post) templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, "<div>")
+			err = templ.RenderScripts(ctx, w, )
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, "<div")
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, " data-testid=\"postsTemplatePostName\"")
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, ">")
 			if err != nil {
 				return err
 			}
@@ -297,7 +357,19 @@ func postsTemplate(posts []Post) templ.Component {
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, "<div>")
+			err = templ.RenderScripts(ctx, w, )
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, "<div")
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, " data-testid=\"postsTemplatePostAuthor\"")
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, ">")
 			if err != nil {
 				return err
 			}
@@ -313,6 +385,10 @@ func postsTemplate(posts []Post) templ.Component {
 			if err != nil {
 				return err
 			}
+		}
+		_, err = io.WriteString(w, "</div>")
+		if err != nil {
+			return err
 		}
 		return err
 	})

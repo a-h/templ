@@ -3,8 +3,10 @@
 {% import "fmt" %}
 {% import "time" %}
 
-{% templ headerTemplate(title string) %}
-	<head><title>{%= title %}</title></head>
+{% templ headerTemplate(name string) %}
+	<header data-testid="headerTemplate">
+		<h1>{%= name %}</h1>
+	</header>
 {% endtempl %}
 
 {% templ footerTemplate() %}
@@ -24,9 +26,9 @@
 
 {% templ layout(name string, content templ.Component) %}
 	<html>
-		{%! headerTemplate(name) %}
+		<head><title>{%= name %}</title></head>
 		<body>
-			<h1>{%= name %}</h1>
+			{%! headerTemplate(name) %}
 			{%! navTemplate() %}
 			<main>
 				{%! content %}
@@ -37,16 +39,18 @@
 {% endtempl %}
 
 {% templ homeTemplate() %}
-	<div>Welcome to my website.</div>
+	<div data-testid="homeTemplate">Welcome to my website.</div>
 {% endtempl %}
 
 {% templ postsTemplate(posts []Post) %}
-	{% for _, p := range posts %}
-		<div data-testid="post">
-			<div>{%= p.Name %}</div>
-			<div>{%= p.Author %}</div>
-		</div>
-	{% endfor %}
+	<div data-testid="postsTemplate">
+		{% for _, p := range posts %}
+			<div data-testid="postsTemplatePost">
+				<div data-testid="postsTemplatePostName">{%= p.Name %}</div>
+				<div data-testid="postsTemplatePostAuthor">{%= p.Author %}</div>
+			</div>
+		{% endfor %}
+	</div>
 {% endtempl %}
 
 {% templ home() %}
