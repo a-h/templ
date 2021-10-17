@@ -3,6 +3,7 @@ module github.com/a-h/templ
 go 1.16
 
 require (
+	github.com/PuerkitoBio/goquery v1.7.1
 	github.com/a-h/lexical v0.0.47
 	github.com/google/go-cmp v0.5.6
 	github.com/hashicorp/errwrap v1.1.0 // indirect

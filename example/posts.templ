@@ -3,18 +3,18 @@
 {% import "fmt" %}
 {% import "time" %}
 
-{% templ headerTemplate() %}
-	<head><title>Blog</title></head>
+{% templ headerTemplate(title string) %}
+	<head><title>{%= title %}</title></head>
 {% endtempl %}
 
 {% templ footerTemplate() %}
-	<footer>
+	<footer data-testid="footerTemplate">
 		<div>&copy; {%= fmt.Sprintf("%d", time.Now().Year()) %}</div>
 	</footer>
 {% endtempl %}
 
 {% templ navTemplate() %}
-	<nav>
+	<nav data-testid="navTemplate">
 		<ul>
 			<li><a href="/">Home</a></li>
 			<li><a href="/posts">Posts</a></li>
@@ -24,9 +24,9 @@
 
 {% templ layout(name string, content templ.Component) %}
 	<html>
-		{%! headerTemplate() %}
+		{%! headerTemplate(name) %}
 		<body>
-			<h1>Home</h1>
+			<h1>{%= name %}</h1>
 			{%! navTemplate() %}
 			<main>
 				{%! content %}
@@ -42,8 +42,10 @@
 
 {% templ postsTemplate(posts []Post) %}
 	{% for _, p := range posts %}
-		<div>{%= p.Name %}</div>
-		<div>{%= p.Author %}</div>
+		<div data-testid="post">
+			<div>{%= p.Name %}</div>
+			<div>{%= p.Author %}</div>
+		</div>
 	{% endfor %}
 {% endtempl %}
 
