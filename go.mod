@@ -16,6 +16,7 @@ require (
 	go.uber.org/atomic v1.8.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.17.0
+	golang.org/x/mod v0.5.1 // indirect
 )
 
 //replace github.com/a-h/lexical => /Users/adrian/github.com/a-h/lexical

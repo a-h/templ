@@ -12,7 +12,10 @@ import (
 	"path"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
+
+	"golang.org/x/mod/sumdb/dirhash"
 
 	"github.com/a-h/pathvars"
 	"github.com/a-h/templ"
@@ -45,7 +48,7 @@ func New() *Storybook {
 		Log:       logger,
 	}
 	sh.Server = http.Server{
-		Handler: sh,
+		Handler: http.NotFoundHandler(),
 		Addr:    "localhost:60606",
 	}
 	return sh
@@ -62,7 +65,61 @@ func (sh *Storybook) AddComponent(name string, componentConstructor interface{},
 
 var storybookPreviewMatcher = pathvars.NewExtractor("/storybook_preview/{name}")
 
-func (sh *Storybook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) {
+	defer sh.Log.Sync()
+	// Download Storybook to the directory required.
+	sh.Log.Info("Installing storybook.")
+	err = sh.installStorybook()
+	if err != nil {
+		return
+	}
+	if ctx.Err() != nil {
+		return
+	}
+
+	// Copy the config to Storybook.
+	sh.Log.Info("Configuring storybook.")
+	configHasChanged, err := sh.configureStorybook()
+	if err != nil {
+		return
+	}
+	if ctx.Err() != nil {
+		return
+	}
+
+	// Execute a static build of storybook if the config has changed.
+	if configHasChanged {
+		sh.Log.Info("Config not present, or has changed, rebuilding storybook.")
+		sh.buildStorybook()
+	} else {
+		sh.Log.Info("Storybook is up-to-date, skipping build step.")
+	}
+	if ctx.Err() != nil {
+		return
+	}
+
+	// Combine static and dynamic routes and start the server.
+	staticHandler := http.FileServer(http.Dir("./storybook-server/storybook-static"))
+	sbh := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/storybook_preview/") {
+			sh.previewHandler(w, r)
+			return
+		}
+		staticHandler.ServeHTTP(w, r)
+	})
+	sh.Server.Handler = cors.Default().Handler(sbh)
+
+	go func() {
+		sh.Log.Info("Starting Go server", zap.String("address", sh.Server.Addr), zap.String("url", fmt.Sprintf("http://%s", sh.Server.Addr)), zap.String("previewUrl", sh.ServerURL))
+		err = sh.Server.ListenAndServe()
+	}()
+	<-ctx.Done()
+	// Close the Go server.
+	sh.Server.Close()
+	return err
+}
+
+func (sh *Storybook) previewHandler(w http.ResponseWriter, r *http.Request) {
 	values, ok := storybookPreviewMatcher.Extract(r.URL)
 	if !ok {
 		sh.Log.Info("URL not matched", zap.String("url", r.URL.String()))
@@ -81,53 +138,13 @@ func (sh *Storybook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	cors.Default().Handler(h).ServeHTTP(w, r)
-}
-
-func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) {
-	defer sh.Log.Sync()
-	// Download Storybook to the directory required.
-	sh.Log.Info("Installing storybook")
-	err = sh.installStorybook()
-	if err != nil {
-		return
-	}
-	if ctx.Err() != nil {
-		return
-	}
-
-	// Copy the config to Storybook.
-	sh.Log.Info("Configuring storybook")
-	err = sh.configureStorybook()
-	if err != nil {
-		return
-	}
-	if ctx.Err() != nil {
-		return
-	}
-
-	// Run storybook.
-	go func() {
-		sh.Log.Info("Starting Storybook on http://localhost:6006/")
-		sh.runStorybook(ctx)
-	}()
-
-	// Start the Go server.
-	sh.Server.Handler = sh
-	go func() {
-		sh.Log.Info("Starting Go server", zap.String("address", sh.Server.Addr), zap.String("serverUrl", sh.ServerURL))
-		err = sh.Server.ListenAndServe()
-	}()
-	<-ctx.Done()
-	// Close the Go server.
-	sh.Server.Close()
-	return err
+	h.ServeHTTP(w, r)
 }
 
 func (sh *Storybook) installStorybook() (err error) {
 	_, err = os.Stat(sh.Path)
 	if err == nil {
-		sh.Log.Info("Skipping installation - Storybook is already installed.")
+		sh.Log.Info("Storybook already installed, Skipping installation.")
 		return
 	}
 	if os.IsNotExist(err) {
@@ -148,30 +165,37 @@ func (sh *Storybook) installStorybook() (err error) {
 	return cmd.Run()
 }
 
-func (sh *Storybook) configureStorybook() error {
+func (sh *Storybook) configureStorybook() (configHasChanged bool, err error) {
 	// Delete template/existing files in the stories directory.
 	storiesDir := path.Join(sh.Path, "stories")
-	if err := os.RemoveAll(storiesDir); err != nil {
-		return err
+	before, err := dirhash.HashDir(storiesDir, "/", dirhash.DefaultHash)
+	if err != nil && !os.IsNotExist(err) {
+		return configHasChanged, err
+	}
+	if err = os.RemoveAll(storiesDir); err != nil {
+		return configHasChanged, err
 	}
 	if err := os.Mkdir(storiesDir, os.ModePerm); err != nil {
-		return err
+		return configHasChanged, err
 	}
 	// Create new *.stories.json files.
 	for _, c := range sh.Config {
 		name := path.Join(sh.Path, fmt.Sprintf("stories/%s.stories.json", c.Title))
 		f, err := os.Create(name)
 		if err != nil {
-			return fmt.Errorf("failed to create config file to %q: %w", name, err)
+			return configHasChanged, fmt.Errorf("failed to create config file to %q: %w", name, err)
 		}
 		err = json.NewEncoder(f).Encode(c)
 		if err != nil {
-			return fmt.Errorf("failed to write JSON config to %q: %w", name, err)
+			return configHasChanged, fmt.Errorf("failed to write JSON config to %q: %w", name, err)
 		}
 	}
+	after, err := dirhash.HashDir(storiesDir, "/", dirhash.DefaultHash)
+	configHasChanged = before != after
 	// Configure storybook Preview URL.
 	previewJS := fmt.Sprintf(`export const parameters = { server: { url: %s } };`, jsonEncode(sh.ServerURL))
-	return os.WriteFile(path.Join(sh.Path, ".storybook/preview.js"), []byte(previewJS), os.ModePerm)
+	err = os.WriteFile(path.Join(sh.Path, ".storybook/preview.js"), []byte(previewJS), os.ModePerm)
+	return
 }
 
 func jsonEncode(s string) string {
@@ -179,7 +203,7 @@ func jsonEncode(s string) string {
 	return string(b)
 }
 
-func (sh *Storybook) runStorybook(ctx context.Context) (err error) {
+func (sh *Storybook) hasConfigChanged() (err error) {
 	var cmd exec.Cmd
 	cmd.Dir = sh.Path
 	cmd.Stdout = os.Stdout
@@ -188,7 +212,20 @@ func (sh *Storybook) runStorybook(ctx context.Context) (err error) {
 	if err != nil {
 		return fmt.Errorf("templ-storybook: cannot run storybook, cannot find npm on the path, check that Node.js is installed: %w", err)
 	}
-	cmd.Args = []string{"npm", "run", "storybook"}
+	cmd.Args = []string{"npm", "run", "storybook-build"}
+	return cmd.Run()
+}
+
+func (sh *Storybook) buildStorybook() (err error) {
+	var cmd exec.Cmd
+	cmd.Dir = sh.Path
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Path, err = exec.LookPath("npm")
+	if err != nil {
+		return fmt.Errorf("templ-storybook: cannot run storybook, cannot find npm on the path, check that Node.js is installed: %w", err)
+	}
+	cmd.Args = []string{"npm", "run", "build-storybook"}
 	return cmd.Run()
 }
 
