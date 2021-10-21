@@ -25,15 +25,22 @@ import (
 )
 
 type Storybook struct {
-	Path      string
-	Config    map[string]*Conf
-	Handlers  map[string]http.Handler
-	Server    http.Server
-	ServerURL string
-	Log       *zap.Logger
+	Path     string
+	Config   map[string]*Conf
+	Handlers map[string]http.Handler
+	Server   http.Server
+	Log      *zap.Logger
 }
 
-func New() *Storybook {
+type StorybookConfig func(*Storybook)
+
+func WithServerAddr(addr string) StorybookConfig {
+	return func(sb *Storybook) {
+		sb.Server.Addr = addr
+	}
+}
+
+func New(conf ...StorybookConfig) *Storybook {
 	cfg := zap.NewProductionConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 	logger, err := cfg.Build()
@@ -41,15 +48,17 @@ func New() *Storybook {
 		panic("templ-storybook: zap configuration failed: " + err.Error())
 	}
 	sh := &Storybook{
-		Path:      "./storybook-server",
-		Config:    map[string]*Conf{},
-		Handlers:  map[string]http.Handler{},
-		ServerURL: "http://localhost:60606/storybook_preview",
-		Log:       logger,
+		Path:     "./storybook-server",
+		Config:   map[string]*Conf{},
+		Handlers: map[string]http.Handler{},
+		Log:      logger,
 	}
 	sh.Server = http.Server{
 		Handler: http.NotFoundHandler(),
 		Addr:    "localhost:60606",
+	}
+	for _, sc := range conf {
+		sc(sh)
 	}
 	return sh
 }
@@ -110,7 +119,7 @@ func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) 
 	sh.Server.Handler = cors.Default().Handler(sbh)
 
 	go func() {
-		sh.Log.Info("Starting Go server", zap.String("address", sh.Server.Addr), zap.String("url", fmt.Sprintf("http://%s", sh.Server.Addr)), zap.String("previewUrl", sh.ServerURL))
+		sh.Log.Info("Starting Go server", zap.String("address", sh.Server.Addr), zap.String("url", fmt.Sprintf("http://%s", sh.Server.Addr)))
 		err = sh.Server.ListenAndServe()
 	}()
 	<-ctx.Done()
@@ -193,15 +202,25 @@ func (sh *Storybook) configureStorybook() (configHasChanged bool, err error) {
 	after, err := dirhash.HashDir(storiesDir, "/", dirhash.DefaultHash)
 	configHasChanged = before != after
 	// Configure storybook Preview URL.
-	previewJS := fmt.Sprintf(`export const parameters = { server: { url: %s } };`, jsonEncode(sh.ServerURL))
 	err = os.WriteFile(path.Join(sh.Path, ".storybook/preview.js"), []byte(previewJS), os.ModePerm)
 	return
 }
 
-func jsonEncode(s string) string {
-	b, _ := json.Marshal(s)
-	return string(b)
-}
+var previewJS = `
+// Customise fetch so that it uses a relative URL.
+const fetchStoryHtml = async (url, path, params, context) => {
+  const qs = new URLSearchParams(params);
+  const response = await fetch("/storybook_preview/" + path + "?" + qs.toString());
+  return response.text();
+};
+
+export const parameters = {
+  server: {
+    url: "http://localhost/storybook_preview", // Ignored by fetchStoryHtml.
+    fetchStoryHtml,
+  },
+};
+`
 
 func (sh *Storybook) hasConfigChanged() (err error) {
 	var cmd exec.Cmd
