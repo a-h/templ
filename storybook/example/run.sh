@@ -1,1 +1,1 @@
-go run *.go
+go run ./local/main.go

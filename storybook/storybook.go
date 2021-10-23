@@ -25,11 +25,18 @@ import (
 )
 
 type Storybook struct {
-	Path     string
-	Config   map[string]*Conf
+	// Path to the storybook-server directory, defaults to ./storybook-server.
+	Path string
+	// RoutePrefix is the prefix of HTTP routes, e.g. /prod/
+	RoutePrefix string
+	// Config of the Stories.
+	Config map[string]*Conf
+	// Handlers for each of the components.
 	Handlers map[string]http.Handler
-	Server   http.Server
-	Log      *zap.Logger
+	// Handler used to serve Storybook, defaults to filesystem at ./storybook-server/storybook-static.
+	StaticHandler http.Handler
+	Server        http.Server
+	Log           *zap.Logger
 }
 
 type StorybookConfig func(*Storybook)
@@ -53,9 +60,10 @@ func New(conf ...StorybookConfig) *Storybook {
 		Handlers: map[string]http.Handler{},
 		Log:      logger,
 	}
+	sh.StaticHandler = http.FileServer(http.Dir(path.Join(sh.Path, "storybook-static")))
 	sh.Server = http.Server{
-		Handler: http.NotFoundHandler(),
-		Addr:    "localhost:60606",
+		Handler: sh,
+		Addr:    ":60606",
 	}
 	for _, sc := range conf {
 		sc(sh)
@@ -74,7 +82,7 @@ func (sh *Storybook) AddComponent(name string, componentConstructor interface{},
 
 var storybookPreviewMatcher = pathvars.NewExtractor("/storybook_preview/{name}")
 
-func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) {
+func (sh *Storybook) Build(ctx context.Context) (err error) {
 	defer sh.Log.Sync()
 	// Download Storybook to the directory required.
 	sh.Log.Info("Installing storybook.")
@@ -107,19 +115,27 @@ func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) 
 		return
 	}
 
-	// Combine static and dynamic routes and start the server.
-	staticHandler := http.FileServer(http.Dir("./storybook-server/storybook-static"))
+	return
+}
+
+func (sh *Storybook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sbh := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/storybook_preview/") {
+		if strings.HasPrefix(r.URL.Path, path.Join(sh.RoutePrefix, "/storybook_preview/")) {
 			sh.previewHandler(w, r)
 			return
 		}
-		staticHandler.ServeHTTP(w, r)
+		sh.StaticHandler.ServeHTTP(w, r)
 	})
-	sh.Server.Handler = cors.Default().Handler(sbh)
+	cors.Default().Handler(sbh).ServeHTTP(w, r)
+}
 
+func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) {
+	err = sh.Build(ctx)
+	if err != nil {
+		return
+	}
 	go func() {
-		sh.Log.Info("Starting Go server", zap.String("address", sh.Server.Addr), zap.String("url", fmt.Sprintf("http://%s", sh.Server.Addr)))
+		sh.Log.Info("Starting Go server", zap.String("address", sh.Server.Addr))
 		err = sh.Server.ListenAndServe()
 	}()
 	<-ctx.Done()

@@ -37,6 +37,7 @@ func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
 type ComponentHandler struct {
 	Component    Component
 	Status       int
+	ContentType  string
 	ErrorHandler func(r *http.Request, err error) http.Handler
 }
 
@@ -47,6 +48,7 @@ func (ch *ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if ch.Status != 0 {
 		w.WriteHeader(ch.Status)
 	}
+	w.Header().Add("Content-Type", ch.ContentType)
 	err := ch.Component.Render(r.Context(), w)
 	if err != nil {
 		if ch.ErrorHandler != nil {
@@ -60,7 +62,8 @@ func (ch *ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Handler creates a http.Handler that renders the template.
 func Handler(c Component, options ...func(*ComponentHandler)) *ComponentHandler {
 	ch := &ComponentHandler{
-		Component: c,
+		Component:   c,
+		ContentType: "text/html",
 	}
 	for _, o := range options {
 		o(ch)
@@ -72,6 +75,13 @@ func Handler(c Component, options ...func(*ComponentHandler)) *ComponentHandler 
 func WithStatus(status int) func(*ComponentHandler) {
 	return func(ch *ComponentHandler) {
 		ch.Status = status
+	}
+}
+
+// WithConentType sets the Content-Type header returned by the ComponentHandler.
+func WithContentType(contentType string) func(*ComponentHandler) {
+	return func(ch *ComponentHandler) {
+		ch.ContentType = contentType
 	}
 }
 
