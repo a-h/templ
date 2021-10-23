@@ -26,10 +26,11 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 	}
 
 	f := awslambdago.NewGoFunction(stack, jsii.String("storybookHandler"), &awslambdago.GoFunctionProps{
-		Runtime:  awslambda.Runtime_GO_1_X(),
-		Entry:    jsii.String("../lambda"),
-		Bundling: bundlingOptions,
-		Timeout:  awscdk.Duration_Millis(jsii.Number(3000)),
+		Runtime:    awslambda.Runtime_GO_1_X(),
+		Entry:      jsii.String("../lambda"),
+		Bundling:   bundlingOptions,
+		MemorySize: jsii.Number(1024),
+		Timeout:    awscdk.Duration_Millis(jsii.Number(15000)),
 	})
 	fi := awsapigatewayv2integrations.NewLambdaProxyIntegration(&awsapigatewayv2integrations.LambdaProxyIntegrationProps{
 		Handler:              f,
