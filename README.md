@@ -125,6 +125,7 @@ The language generates Go code, some sections of the template (e.g. `package`, `
 * `templ generate` generates Go code from `*.templ` files.
 * `templ fmt` formats template files in the current directory tree.
 * `templ lsp` provides a Language Server to support IDE integrations. The compile command generates a sourcemap which maps from the `*.templ` files to the compiled Go file. This enables the `templ` LSP to use the Go language `gopls` language server as is, providing a thin shim to do the source remapping. This is used to provide autocomplete for template variables and functions.
+* Storybook support, see https://adrianhesketh.com/2021/10/23/using-storybook-with-go-frontends/
 
 ## Template files
 
@@ -690,6 +691,8 @@ Please get in touch if you're interested in building a feature as I don't want p
 * https://adrianhesketh.com/2021/05/18/introducing-templ/
 * https://adrianhesketh.com/2021/05/28/templ-hot-reload-with-air/
 * https://adrianhesketh.com/2021/06/04/hotwired-go-with-templ/
+* https://adrianhesketh.com/2021/10/17/testing-templ-html-rendering-with-goquery/
+* https://adrianhesketh.com/2021/10/23/using-storybook-with-go-frontends/
 
 ## Security
 
