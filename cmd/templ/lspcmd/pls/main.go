@@ -2,6 +2,7 @@ package pls
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -30,6 +31,14 @@ func (opts Options) AsArguments() []string {
 
 // NewGopls starts gopls and opens up a jsonrpc2 connection to it.
 func NewGopls(ctx context.Context, zapLogger *zap.Logger, onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request), opts Options) (conn *jsonrpc2.Conn, err error) {
+	_, err = exec.LookPath("gopls")
+	if errors.Is(err, exec.ErrNotFound) {
+		err = errors.New("templ lsp: cannot find gopls on the path, you can install it with `go install golang.org/x/tools/gopls@latest`")
+		return
+	}
+	if err != nil {
+		return
+	}
 	cmd := exec.Command("gopls", opts.AsArguments()...)
 	rwc, err := newProcessReadWriteCloser(zapLogger, cmd)
 	if err != nil {
