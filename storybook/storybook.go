@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -192,7 +193,7 @@ func (sh *Storybook) installStorybook() (err error) {
 
 func (sh *Storybook) configureStorybook() (configHasChanged bool, err error) {
 	// Delete template/existing files in the stories directory.
-	storiesDir := path.Join(sh.Path, "stories")
+	storiesDir := filepath.Join(sh.Path, "stories")
 	before, err := dirhash.HashDir(storiesDir, "/", dirhash.DefaultHash)
 	if err != nil && !os.IsNotExist(err) {
 		return configHasChanged, err
@@ -205,7 +206,7 @@ func (sh *Storybook) configureStorybook() (configHasChanged bool, err error) {
 	}
 	// Create new *.stories.json files.
 	for _, c := range sh.Config {
-		name := path.Join(sh.Path, fmt.Sprintf("stories/%s.stories.json", c.Title))
+		name := filepath.Join(sh.Path, fmt.Sprintf("stories/%s.stories.json", c.Title))
 		f, err := os.Create(name)
 		if err != nil {
 			return configHasChanged, fmt.Errorf("failed to create config file to %q: %w", name, err)
@@ -218,7 +219,7 @@ func (sh *Storybook) configureStorybook() (configHasChanged bool, err error) {
 	after, err := dirhash.HashDir(storiesDir, "/", dirhash.DefaultHash)
 	configHasChanged = before != after
 	// Configure storybook Preview URL.
-	err = os.WriteFile(path.Join(sh.Path, ".storybook/preview.js"), []byte(previewJS), os.ModePerm)
+	err = os.WriteFile(filepath.Join(sh.Path, ".storybook/preview.js"), []byte(previewJS), os.ModePerm)
 	return
 }
 
