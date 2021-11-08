@@ -232,8 +232,14 @@ func (p *Proxy) proxyInitialize(ctx context.Context, conn *jsonrpc2.Conn, req *j
 		p.log.Error("proxyInitialize: client -> gopls: error sending request", zap.Error(err))
 	}
 	// Add the '<' and '{' trigger so that we can do snippets for tags.
+	if resp.Capabilities.CompletionProvider == nil {
+		resp.Capabilities.CompletionProvider = &lsp.CompletionOptions{}
+	}
 	resp.Capabilities.CompletionProvider.TriggerCharacters = append(resp.Capabilities.CompletionProvider.TriggerCharacters, "{", "<")
 	// Remove all the gopls commands.
+	if resp.Capabilities.ExecuteCommandProvider == nil {
+		resp.Capabilities.ExecuteCommandProvider = &lsp.ExecuteCommandOptions{}
+	}
 	resp.Capabilities.ExecuteCommandProvider.Commands = []string{}
 	// Reply to the client.
 	err = conn.Reply(ctx, req.ID, &resp)
