@@ -18,7 +18,7 @@ func Process(dir string, f func(fileName string) error, workerCount int, results
 	defer close(results)
 	templates := make(chan string)
 	go func() {
-		if err := getTemplates(".", templates); err != nil {
+		if err := getTemplates(dir, templates); err != nil {
 			results <- Result{Error: err}
 		}
 	}()
