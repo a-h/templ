@@ -241,6 +241,7 @@ func (p *Proxy) proxyInitialize(ctx context.Context, conn *jsonrpc2.Conn, req *j
 		resp.Capabilities.ExecuteCommandProvider = &lsp.ExecuteCommandOptions{}
 	}
 	resp.Capabilities.ExecuteCommandProvider.Commands = []string{}
+	resp.Capabilities.DocumentFormattingProvider = true
 	// Reply to the client.
 	err = conn.Reply(ctx, req.ID, &resp)
 	if err != nil {
