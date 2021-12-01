@@ -32,7 +32,7 @@ func Process(dir string, f func(fileName string) error, workerCount int, results
 				results <- Result{
 					FileName: sourceFileName,
 					Error:    f(sourceFileName),
-					Duration: time.Now().Sub(start),
+					Duration: time.Since(start),
 				}
 			}
 		}()

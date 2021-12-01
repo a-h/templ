@@ -24,8 +24,6 @@ type documentContents struct {
 	log           *zap.Logger
 }
 
-type documentEditor func(uri, prefix string, change lsp.TextDocumentContentChangeEvent) (requests []toClientRequest)
-
 // Set the contents of a document.
 func (fc *documentContents) Set(uri string, contents []byte) {
 	fc.m.Lock()

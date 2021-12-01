@@ -210,10 +210,13 @@ func (p *Proxy) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Req
 func (p *Proxy) proxyCall(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
 	var resp interface{}
 	err := p.gopls.Call(ctx, r.Method, &r.Params, &resp)
+	if err != nil {
+		p.log.Error("client -> gopls -> client: error", zap.String("method", r.Method), zap.Bool("notif", r.Notif), zap.Error(err))
+	}
 	p.log.Info("client -> gopls -> client: reply", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
 	err = conn.Reply(ctx, r.ID, resp)
 	if err != nil {
-		p.log.Info("client -> gopls -> client: error sending response", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
+		p.log.Info("client -> gopls -> client: error sending response", zap.String("method", r.Method), zap.Bool("notif", r.Notif), zap.Error(err))
 	}
 	p.log.Info("client -> gopls -> client: complete", zap.String("method", r.Method), zap.Bool("notif", r.Notif))
 }
@@ -427,11 +430,6 @@ func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
 	err = r.Params.UnmarshalJSON(jsonMessage)
 	// Done.
 	return err
-}
-
-type applyWorkspaceEditParams struct {
-	Label string            `json:"label"`
-	Edit  lsp.WorkspaceEdit `json:"edit"`
 }
 
 func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request) (err error) {

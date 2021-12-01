@@ -13,13 +13,6 @@ func newSwitchExpressionParser() switchExpressionParser {
 type switchExpressionParser struct {
 }
 
-func (p switchExpressionParser) asSingleExpression(parts []interface{}) (result interface{}, ok bool) {
-	if len(parts) == 0 {
-		return CaseExpression{}, true
-	}
-	return parts[0].(CaseExpression), true
-}
-
 func (p switchExpressionParser) asMany(parts []interface{}) (result interface{}, ok bool) {
 	r := []CaseExpression{}
 

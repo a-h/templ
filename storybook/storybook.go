@@ -78,7 +78,6 @@ func (sh *Storybook) AddComponent(name string, componentConstructor interface{},
 	sh.Config[name] = c
 	h := NewHandler(name, componentConstructor, args...)
 	sh.Handlers[name] = h
-	return
 }
 
 var storybookPreviewMatcher = pathvars.NewExtractor("/storybook_preview/{name}")
@@ -217,6 +216,9 @@ func (sh *Storybook) configureStorybook() (configHasChanged bool, err error) {
 		}
 	}
 	after, err := dirhash.HashDir(storiesDir, "/", dirhash.DefaultHash)
+	if err != nil {
+		return configHasChanged, fmt.Errorf("failed to hash directory %q: %w", storiesDir, err)
+	}
 	configHasChanged = before != after
 	// Configure storybook Preview URL.
 	err = os.WriteFile(filepath.Join(sh.Path, ".storybook/preview.js"), []byte(previewJS), os.ModePerm)
@@ -238,19 +240,6 @@ export const parameters = {
   },
 };
 `
-
-func (sh *Storybook) hasConfigChanged() (err error) {
-	var cmd exec.Cmd
-	cmd.Dir = sh.Path
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Path, err = exec.LookPath("npm")
-	if err != nil {
-		return fmt.Errorf("templ-storybook: cannot run storybook, cannot find npm on the path, check that Node.js is installed: %w", err)
-	}
-	cmd.Args = []string{"npm", "run", "storybook-build"}
-	return cmd.Run()
-}
 
 func (sh *Storybook) buildStorybook() (err error) {
 	var cmd exec.Cmd

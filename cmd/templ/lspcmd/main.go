@@ -92,14 +92,6 @@ func run(ctx context.Context, args Arguments) (err error) {
 	return nil
 }
 
-type rpcLogger struct {
-	log *zap.Logger
-}
-
-func (l rpcLogger) Printf(format string, v ...interface{}) {
-	l.log.Sugar().Infof(format, v...)
-}
-
 type stdrwc struct {
 	log *zap.Logger
 }

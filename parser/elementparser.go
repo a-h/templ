@@ -62,8 +62,8 @@ var elementCloseTagParser = parse.All(asElementCloseTag,
 var attributeNameFirst = "abcdefghijklmnopqrstuvwxyz"
 var attributeNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
 var attributeNameParser = parse.Then(parse.WithStringConcatCombiner,
-	parse.RuneIn(elementNameFirst),
-	parse.Many(parse.WithStringConcatCombiner, 0, 128, parse.RuneIn(elementNameSubsequent)),
+	parse.RuneIn(attributeNameFirst),
+	parse.Many(parse.WithStringConcatCombiner, 0, 128, parse.RuneIn(attributeNameSubsequent)),
 )
 
 // Constant attribute.
@@ -301,21 +301,6 @@ func newElementOpenCloseParser() elementOpenCloseParser {
 
 type elementOpenCloseParser struct {
 	SourceRangeToItemLookup SourceMap
-}
-
-func (p elementOpenCloseParser) asElement(parts []interface{}) (result interface{}, ok bool) {
-	e := Element{
-		Name:       parts[0].(elementOpenTag).Name,
-		Attributes: parts[0].(elementOpenTag).Attributes,
-	}
-	if arr, isArray := parts[1].([]Node); isArray {
-		e.Children = append(e.Children, arr...)
-	}
-	return e, true
-}
-
-func (p elementOpenCloseParser) asChildren(parts []interface{}) (result interface{}, ok bool) {
-	return parts, true
 }
 
 func (p elementOpenCloseParser) Parse(pi parse.Input) parse.Result {

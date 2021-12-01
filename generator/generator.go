@@ -109,6 +109,9 @@ func (g *generator) writePackage() error {
 	if _, err = g.w.Write("\n\n"); err != nil {
 		return err
 	}
+	if _, err = g.w.Write("//lint:file-ignore SA4006 This context is only used if a nested component is present.\n\n"); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -473,7 +476,7 @@ func (g *generator) writeCallTemplateExpression(indentLevel int, n parser.CallTe
 		return err
 	}
 	// Template expression.
-	if r, err = g.w.Write(fmt.Sprintf(`%s`, n.Expression.Value)); err != nil {
+	if r, err = g.w.Write(n.Expression.Value); err != nil {
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)

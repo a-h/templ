@@ -74,9 +74,8 @@ func TestStream(t *testing.T) {
 	if removeCount := doc.Find(`turbo-stream[action="remove"][target="removeTarget"]`).Length(); removeCount != expectedRemoves {
 		t.Errorf("expected %d remove actions, but got %d", expectedRemoves, removeCount)
 	}
-
-	if w.HeaderMap.Get("Content-Type") != "text/vnd.turbo-stream.html" {
-		t.Errorf("expected Content-Type %q, got %q", "text/vnd.turbo-stream.html", w.HeaderMap.Get("Content-Type"))
+	if w.Result().Header.Get("Content-Type") != "text/vnd.turbo-stream.html" {
+		t.Errorf("expected Content-Type %q, got %q", "text/vnd.turbo-stream.html", w.Result().Header.Get("Content-Type"))
 	}
 }
 

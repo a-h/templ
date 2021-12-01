@@ -246,7 +246,7 @@ func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // RenderCSS renders a <style> element with CSS content, if the styles have not already been rendered.
 func RenderCSS(ctx context.Context, w io.Writer, classes []CSSClass) (err error) {
-	ctx, rc := RenderedCSSClassesFromContext(ctx)
+	_, rc := RenderedCSSClassesFromContext(ctx)
 	var sb strings.Builder
 	for _, c := range classes {
 		if ccc, ok := c.(ComponentCSSClass); ok {
@@ -373,7 +373,7 @@ func RenderedScriptsFromContext(ctx context.Context) (context.Context, *StringSe
 
 // RenderScripts renders a <script> element, if the script has not already been rendered.
 func RenderScripts(ctx context.Context, w io.Writer, scripts ...ComponentScript) (err error) {
-	ctx, rs := RenderedScriptsFromContext(ctx)
+	_, rs := RenderedScriptsFromContext(ctx)
 	var sb strings.Builder
 	for _, s := range scripts {
 		if !rs.Contains(s.Name) {

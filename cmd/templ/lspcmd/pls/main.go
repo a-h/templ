@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 
 	"github.com/sourcegraph/jsonrpc2"
@@ -33,7 +34,7 @@ func (opts Options) AsArguments() []string {
 func NewGopls(ctx context.Context, zapLogger *zap.Logger, onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request), opts Options) (conn *jsonrpc2.Conn, err error) {
 	_, err = exec.LookPath("gopls")
 	if errors.Is(err, exec.ErrNotFound) {
-		err = errors.New("templ lsp: cannot find gopls on the path, you can install it with `go install golang.org/x/tools/gopls@latest`")
+		err = fmt.Errorf("templ lsp: cannot find gopls on the path (%q), you can install it with `go install golang.org/x/tools/gopls@latest`", os.Getenv("PATH"))
 		return
 	}
 	if err != nil {

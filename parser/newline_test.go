@@ -20,11 +20,6 @@ aaa`)
 	}
 }
 
-type runeAndPosition struct {
-	r rune
-	p Position
-}
-
 func TestNewLineStream(t *testing.T) {
 	input := input.NewFromString("A\nB\n\nD")
 	testPosition(t, "start", Position{Index: 0, Line: 1, Col: 0}, NewPositionFromInput(input))
