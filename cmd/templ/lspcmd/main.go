@@ -3,6 +3,7 @@ package lspcmd
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 
@@ -10,12 +11,15 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	_ "net/http/pprof"
 )
 
 type Arguments struct {
 	Log           string
 	GoplsLog      string
 	GoplsRPCTrace bool
+	PPROF         bool
 }
 
 func Run(args Arguments) error {
@@ -27,6 +31,11 @@ func Run(args Arguments) error {
 		signal.Stop(signalChan)
 		cancel()
 	}()
+	if args.PPROF {
+		go func() {
+			http.ListenAndServe("localhost:9999", nil)
+		}()
+	}
 	go func() {
 		select {
 		case <-signalChan: // First signal, cancel context.
