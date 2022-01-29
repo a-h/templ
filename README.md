@@ -628,32 +628,53 @@ To add extensive debug information, you can include additional args to the LSP, 
 }
 ```
 
-# Development
+## Tasks
 
-## Local builds
+### build
 
-To build a local version you can use the `go build` tool:
+Build a local version.
 
-```
+```sh
 cd cmd/templ
 go build
 ```
 
-## Testing
+### install-snapshot
 
-Unit tests use the `go test` tool:
+Build and install to ~/bin
 
+```sh
+rm cmd/templ/lspcmd/*.txt || true
+cd cmd/templ && go build -o ~/bin/templ
 ```
-go test ./...
+
+### build-snapshot
+
+Use goreleaser to build the command line binary using goreleaser.
+
+```sh
+goreleaser build --snapshot --rm-dist
 ```
 
-## Release testing
+### test
 
-This project uses https://github.com/goreleaser/goreleaser to build the command line binary and deploy it to Github. You will need to install this to test releases.
+Run Go tests.
 
+```sh
+templ generate && go test ./...
 ```
-make build-snapshot
+
+### release
+
+Create production build with goreleaser.
+
+```sh
+if [ "${GITHUB_TOKEN}" == "" ]; then echo "No github token, run:"; echo "export GITHUB_TOKEN=`pass github.com/goreleaser_access_token`"; exit 1; fi
+./push-tag.sh
+goreleaser --rm-dist
 ```
+
+# Code signing
 
 The binaries are created by me and signed by my GPG key. You can verify with my key https://adrianhesketh.com/a-h.gpg
 
@@ -775,4 +796,3 @@ CSS property values based on expressions are passed through `templ.SanitizeCSS` 
 	color: {%= red %};
 {% endcss %}
 ```
-
