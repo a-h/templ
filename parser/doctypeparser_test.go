@@ -76,9 +76,9 @@ func TestDocTypeParserErrors(t *testing.T) {
 					Col:   0,
 				},
 				Position{
-					Index: 17,
+					Index: 15,
 					Line:  1,
-					Col:   17,
+					Col:   14,
 				}),
 		},
 		{

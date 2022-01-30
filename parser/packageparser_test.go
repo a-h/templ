@@ -25,9 +25,9 @@ func TestPackageParserErrors(t *testing.T) {
 					Col:   11,
 				},
 				Position{
-					Index: 15,
+					Index: 12,
 					Line:  1,
-					Col:   15,
+					Col:   11,
 				},
 			),
 		},

@@ -186,13 +186,23 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 	return parse.Success("template file", tf, nil)
 }
 
+const maxBufferSize = 1024 * 1024 * 10 // 10MB
+
 func Parse(fileName string) (TemplateFile, error) {
 	f, err := os.Open(fileName)
 	if err != nil {
 		return TemplateFile{}, err
 	}
+	fi, err := f.Stat()
+	if err != nil {
+		return TemplateFile{}, err
+	}
+	bufferSize := maxBufferSize
+	if fi.Size() < int64(bufferSize) {
+		bufferSize = int(fi.Size())
+	}
 	reader := bufio.NewReader(f)
-	tfr := NewTemplateFileParser().Parse(input.New(reader))
+	tfr := NewTemplateFileParser().Parse(input.NewWithBufferSize(reader, bufferSize))
 	if tfr.Error != nil {
 		return TemplateFile{}, tfr.Error
 	}

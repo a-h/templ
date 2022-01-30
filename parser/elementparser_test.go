@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/a-h/lexical/input"
@@ -573,5 +574,21 @@ func TestElementParserErrors(t *testing.T) {
 				t.Errorf(diff)
 			}
 		})
+	}
+}
+
+func TestBigElement(t *testing.T) {
+	var sb strings.Builder
+	sb.WriteString("<div>")
+	for i := 0; i < 4096*4; i++ {
+		sb.WriteString("a")
+	}
+	sb.WriteString("</div>")
+	result := newElementParser().Parse(input.NewFromString(sb.String()))
+	if result.Error != nil {
+		t.Fatalf("unexpected error: %v", result.Error)
+	}
+	if !result.Success {
+		t.Errorf("unexpected failure to parse")
 	}
 }

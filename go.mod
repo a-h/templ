@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/PuerkitoBio/goquery v1.7.1
-	github.com/a-h/lexical v0.0.47
+	github.com/a-h/lexical v0.0.50
 	github.com/a-h/pathvars v0.0.0-20200320143331-78b263b728e2
 	github.com/google/go-cmp v0.5.6
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -16,7 +16,7 @@ require (
 	go.uber.org/atomic v1.8.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.17.0
-	golang.org/x/mod v0.5.1 // indirect
+	golang.org/x/mod v0.5.1
 )
 
 //replace github.com/a-h/lexical => /Users/adrian/github.com/a-h/lexical
