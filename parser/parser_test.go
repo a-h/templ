@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestParsers(t *testing.T) {
+func TestWhitespace(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
