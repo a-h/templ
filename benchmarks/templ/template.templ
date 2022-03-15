@@ -1,0 +1,14 @@
+{% package testhtml %}
+
+{% templ Render(p person) %}
+	<div>
+		<h1>{%= p.name %}</h1>
+		<div style="font-family: &#39;sans-serif&#39;" id="test" data-contents={%= `something with "quotes" and a <tag>` %}>
+			<div>email:<a href={%= templ.URL("mailto: " + p.email) %}>{%= p.email %}</a></div>
+		</div>
+	</div>
+	<hr noshade?={%= true %} />
+	<hr optionA optionB?={%= true %} optionC="other" optionD?={%= false %} />
+	<hr noshade/>
+{% endtempl %}
+
