@@ -1,6 +1,7 @@
 package generatecmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strings"
@@ -42,9 +43,13 @@ func compile(fileName string) (err error) {
 	if err != nil {
 		return fmt.Errorf("%s compilation error: %w", fileName, err)
 	}
-	_, err = generator.Generate(t, w)
+	b := bufio.NewWriter(w)
+	_, err = generator.Generate(t, b)
 	if err != nil {
 		return fmt.Errorf("%s generation error: %w", fileName, err)
+	}
+	if b.Flush() != nil {
+		return fmt.Errorf("%s write file error: %w", targetFileName, err)
 	}
 	return
 }
