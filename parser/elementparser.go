@@ -140,6 +140,8 @@ func newBoolExpressionAttributeParser() boolExpressionAttributeParser {
 	return boolExpressionAttributeParser{}
 }
 
+var boolExpressionStart = parse.Any(parse.String("?={%= "), parse.String("?={%="))
+
 type boolExpressionAttributeParser struct {
 }
 
@@ -160,14 +162,15 @@ func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	}
 	r.Name = pr.Item.(string)
 
-	if pr = parse.String("?={%= ")(pi); !pr.Success {
+	// Check whether this is a boolean expression attribute.
+	if pr = boolExpressionStart(pi); !pr.Success {
 		rewind(pi, start)
 		return pr
 	}
 
 	// Once we've seen a expression prefix, read until the tag end.
 	from = NewPositionFromInput(pi)
-	pr = parse.StringUntil(tagEnd)(pi)
+	pr = parse.StringUntil(expressionEnd)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return parse.Failure("boolExpressionAttributeParser", fmt.Errorf("boolExpressionAttributeParser: failed to read until tag end: %w", pr.Error))
 	}
@@ -181,7 +184,7 @@ func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	r.Expression = NewExpression(pr.Item.(string), from, to)
 
 	// Eat the tag end.
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("boolExpressionAttributeParser", newParseError("could not terminate boolean expression", from, NewPositionFromInput(pi)))
 	}
 
@@ -220,7 +223,7 @@ func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
 
 	// Once we've seen a expression prefix, read until the tag end.
 	from = NewPositionFromInput(pi)
-	pr = parse.StringUntil(tagEnd)(pi)
+	pr = parse.StringUntil(expressionEnd)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return parse.Failure("expressionAttributeParser", fmt.Errorf("expressionAttributeParser: failed to read until tag end: %w", pr.Error))
 	}
@@ -234,7 +237,7 @@ func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	r.Expression = NewExpression(pr.Item.(string), from, to)
 
 	// Eat the tag end.
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("expressionAttributeParser", newParseError("could not terminate string expression", from, NewPositionFromInput(pi)))
 	}
 

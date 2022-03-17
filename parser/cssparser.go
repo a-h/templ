@@ -17,7 +17,7 @@ func newCSSParser() cssParser {
 type cssParser struct {
 }
 
-var endCssParser = parse.String("{% endcss %}") // {% endcss %}
+var endCssParser = createEndParser("endcss") // {% endcss %}
 
 func (p cssParser) Parse(pi parse.Input) parse.Result {
 	r := CSSTemplate{
@@ -84,6 +84,8 @@ func newCSSExpressionParser() cssExpressionParser {
 type cssExpressionParser struct {
 }
 
+var cssExpressionStartParser = createStartParser("css")
+
 var cssExpressionNameParser = parse.All(parse.WithStringConcatCombiner,
 	parse.Letter,
 	parse.Many(parse.WithStringConcatCombiner, 0, 1000, parse.Any(parse.Letter, parse.ZeroToNine)),
@@ -93,7 +95,7 @@ func (p cssExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r cssExpression
 
 	// Check the prefix first.
-	prefixResult := parse.String("{% css ")(pi)
+	prefixResult := cssExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
@@ -134,8 +136,8 @@ func (p cssExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat ") %}".
 	from = NewPositionFromInput(pi)
-	if lb := parse.String(") %}")(pi); !lb.Success {
-		return parse.Failure("cssExpressionParser", newParseError("css expression: unterminated (missing ' %}')", from, NewPositionFromInput(pi)))
+	if lb := expressionFuncEnd(pi); !lb.Success {
+		return parse.Failure("cssExpressionParser", newParseError("css expression: unterminated (missing ') %}')", from, NewPositionFromInput(pi)))
 	}
 
 	// Expect a newline.

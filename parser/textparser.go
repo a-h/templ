@@ -14,14 +14,13 @@ func newTextParser() textParser {
 type textParser struct {
 }
 
+var tagOrTempl = parse.Or(parse.Rune('<'), parse.String("{%"))
+
 func (p textParser) Parse(pi parse.Input) parse.Result {
 	from := NewPositionFromInput(pi)
 
 	// Read until a tag or templ expression opens.
-	tagOpen := parse.Rune('<')
-	templOpen := parse.String("{%")
-
-	dtr := parse.StringUntil(parse.Or(tagOpen, templOpen))(pi)
+	dtr := parse.StringUntil(tagOrTempl)(pi)
 	if dtr.Error != nil {
 		if errors.Is(dtr.Error, io.EOF) {
 			return parse.Failure("textParser", newParseError("textParser: unterminated text, expected tag open or templ expression open statement", from, NewPositionFromInput(pi)))

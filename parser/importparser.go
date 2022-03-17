@@ -14,18 +14,19 @@ func newImportParser() importParser {
 type importParser struct {
 }
 
+var importExpressionStartParser = createStartParser("import")
+
 func (p importParser) Parse(pi parse.Input) parse.Result {
 	var r Import
 	// Check the prefix first.
-	importStmtPrefix := "import "
-	prefixResult := parse.String("{% " + importStmtPrefix)(pi)
+	prefixResult := importExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
 	// Once we have the prefix, we must have an expression and tag end on the same line.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.Or(tagEnd, newLine))(pi)
+	pr := parse.StringUntil(parse.Or(expressionEnd, newLine))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -36,7 +37,7 @@ func (p importParser) Parse(pi parse.Input) parse.Result {
 	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
 	// Eat the tag end.
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("importParser", newParseError("import: missing end of block (' %}')", from, NewPositionFromInput(pi)))
 	}
 

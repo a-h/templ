@@ -14,19 +14,20 @@ func newForExpressionParser() forExpressionParser {
 type forExpressionParser struct {
 }
 
+var forExpressionStartParser = createStartParser("for")
+
 func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r ForExpression
 
 	// Check the prefix first.
-	blockPrefix := "for "
-	prefixResult := parse.String("{% " + blockPrefix)(pi)
+	prefixResult := forExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
 	// Once we've had "{% for ", we're expecting a loop Go expression, followed by a tagEnd.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.Or(tagEnd, newLine))(pi)
+	pr := parse.StringUntil(parse.Or(expressionEnd, newLine))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -38,7 +39,7 @@ func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat " %}".
 	from = NewPositionFromInput(pi)
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("forExpressionParser", newParseError("for: unterminated (missing closing ' %}')", from, NewPositionFromInput(pi)))
 	}
 
@@ -73,4 +74,4 @@ func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.Success("for", r, nil)
 }
 
-var endForParser = parse.String("{% endfor %}")
+var endForParser = createEndParser("endfor") // {% endfor %}

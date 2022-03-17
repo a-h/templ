@@ -27,19 +27,20 @@ func (p switchExpressionParser) asMany(parts []interface{}) (result interface{},
 	return r, true
 }
 
+var switchExpressionStartParser = createStartParser("switch") // "{% switch "
+
 func (p switchExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r SwitchExpression
 
 	// Check the prefix first.
-	blockPrefix := "switch "
-	prefixResult := parse.String("{% " + blockPrefix)(pi)
+	prefixResult := switchExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
 	// Once we've got a prefix, we must have the switch expression, followed by a tagEnd.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.Or(tagEnd, newLine))(pi)
+	pr := parse.StringUntil(parse.Or(expressionEnd, newLine))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -51,7 +52,7 @@ func (p switchExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat " %}".
 	from = NewPositionFromInput(pi)
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("switchExpressionParser", newParseError("switch: unterminated (missing closing ' %}')", from, NewPositionFromInput(pi)))
 	}
 
@@ -82,12 +83,14 @@ func (p switchExpressionParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Read the required "endswitch" statement.
-	if ie := parse.String("{% endswitch %}")(pi); !ie.Success {
+	if ie := endSwitchParser(pi); !ie.Success {
 		return parse.Failure("switchExpressionParser", newParseError("switch: missing end (expected '{% endswitch %}')", from, NewPositionFromInput(pi)))
 	}
 
 	return parse.Success("switch", r, nil)
 }
+
+var endSwitchParser = createEndParser("endswitch") // {% endswitch %}
 
 func newDefaultCaseExpressionParser() defaultCaseExpressionParser {
 	return defaultCaseExpressionParser{}
@@ -96,11 +99,19 @@ func newDefaultCaseExpressionParser() defaultCaseExpressionParser {
 type defaultCaseExpressionParser struct {
 }
 
+var defaultCaseExpressionStartParser = parse.All(asNil, // {% default %}
+	parse.String("{%"),
+	parse.Optional(asNil, parse.Rune(' ')),
+	parse.String("default"),
+	parse.Optional(asNil, parse.Rune(' ')),
+	parse.String("%}"),
+)
+
 func (p defaultCaseExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r []Node
 
 	// Start parsing if we have the required "default" statement.
-	if ie := parse.String("{% default %}")(pi); !ie.Success {
+	if ie := defaultCaseExpressionStartParser(pi); !ie.Success {
 		return parse.Failure("defaultCaseExpressionParser", nil)
 	}
 
@@ -127,7 +138,7 @@ func (p defaultCaseExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.Success("defaultCase", r, nil)
 }
 
-var endDefaultParser = parse.String("{% enddefault %}")
+var endDefaultParser = createEndParser("enddefault")
 
 func newCaseExpressionParser() caseExpressionParser {
 	return caseExpressionParser{}
@@ -136,18 +147,19 @@ func newCaseExpressionParser() caseExpressionParser {
 type caseExpressionParser struct {
 }
 
+var caseExpressionStartParser = createStartParser("case")
+
 func (p caseExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r CaseExpression
 
 	// Check the prefix first.
-	blockPrefix := "case "
-	prefixResult := parse.String("{% " + blockPrefix)(pi)
+	prefixResult := caseExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 	// Once we've got a prefix, we must have the if expression, followed by a tagEnd.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.Or(tagEnd, newLine))(pi)
+	pr := parse.StringUntil(parse.Or(expressionEnd, newLine))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -160,7 +172,7 @@ func (p caseExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat " %}".
 	from = NewPositionFromInput(pi)
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("caseExpressionParser", newParseError("case: unterminated (missing closing ' %}')", from, NewPositionFromInput(pi)))
 	}
 
@@ -196,4 +208,4 @@ func (p caseExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.Success("case", r, nil)
 }
 
-var endCaseParser = parse.String("{% endcase %}")
+var endCaseParser = createEndParser("endcase") // {% endcase %}

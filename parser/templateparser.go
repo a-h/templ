@@ -28,12 +28,13 @@ var templateNameParser = parse.All(parse.WithStringConcatCombiner,
 type templateExpressionParser struct {
 }
 
+var templateExpressionStartParser = createStartParser("templ")
+
 func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r templateExpression
 
 	// Check the prefix first.
-	templPrefix := "templ "
-	prefixResult := parse.String("{% " + templPrefix)(pi)
+	prefixResult := templateExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
@@ -74,8 +75,8 @@ func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat ") %}".
 	from = NewPositionFromInput(pi)
-	if lb := parse.String(") %}")(pi); !lb.Success {
-		return parse.Failure("templateExpressionParser", newParseError("template expression: unterminated (missing ' %}')", from, NewPositionFromInput(pi)))
+	if lb := expressionFuncEnd(pi); !lb.Success {
+		return parse.Failure("templateExpressionParser", newParseError("template expression: unterminated (missing ') %}')", from, NewPositionFromInput(pi)))
 	}
 
 	// Expect a newline.
