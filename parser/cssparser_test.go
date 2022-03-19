@@ -119,6 +119,29 @@ func TestCSSParser(t *testing.T) {
 			},
 		},
 		{
+			name: "css: without spaces",
+			input: `{%css Name()%}
+{% endcss %}`,
+			expected: CSSTemplate{
+				Name: Expression{
+					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  1,
+							Col:   6,
+						},
+						To: Position{
+							Index: 10,
+							Line:  1,
+							Col:   10,
+						},
+					},
+				},
+				Properties: []CSSProperty{},
+			},
+		},
+		{
 			name: "css: single constant property",
 			input: `{% css Name() %}
 background-color: #ffffff;

@@ -52,6 +52,44 @@ func TestTemplateParser(t *testing.T) {
 			},
 		},
 		{
+			name: "template: no spaces",
+			input: `{%templ Name()%}
+{% endtempl %}`,
+			expected: HTMLTemplate{
+				Name: Expression{
+					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 8,
+							Line:  1,
+							Col:   8,
+						},
+						To: Position{
+							Index: 11,
+							Line:  1,
+							Col:   11,
+						},
+					},
+				},
+				Parameters: Expression{
+					Value: "",
+					Range: Range{
+						From: Position{
+							Index: 13,
+							Line:  1,
+							Col:   13,
+						},
+						To: Position{
+							Index: 13,
+							Line:  1,
+							Col:   13,
+						},
+					},
+				},
+				Children: []Node{},
+			},
+		},
+		{
 			name: "template: single parameter",
 			input: `{% templ Name(p Parameter) %}
 {% endtempl %}`,

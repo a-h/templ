@@ -170,6 +170,55 @@ func TestSwitchExpressionParser(t *testing.T) {
 			},
 		},
 		{
+			name: "switch: can be parsed without spaces",
+			input: `{%switch "stringy"%}
+{%case "stringy"%}
+	stringy
+{%endcase%}
+{%default%}
+	default
+{%enddefault%}
+{%endswitch%}`,
+			expected: SwitchExpression{
+				Expression: Expression{
+					Value: `"stringy"`,
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 18,
+							Line:  1,
+							Col:   18,
+						},
+					},
+				},
+				Cases: []CaseExpression{
+					{
+						Expression: Expression{
+							Value: `"stringy"`,
+							Range: Range{
+								From: Position{
+									Index: 28,
+									Line:  2,
+									Col:   7,
+								},
+								To: Position{
+									Index: 37,
+									Line:  2,
+									Col:   16,
+								},
+							},
+						},
+						Children: []Node{Text{Value: "stringy\n"}},
+					},
+				},
+				Default: []Node{Whitespace{Value: "\n\t"}, Text{Value: "default\n"}},
+			},
+		},
+		{
 			name: "switch: two cases",
 			input: `{% switch "stringy" %}
 {% case "stringy" %}

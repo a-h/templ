@@ -13,11 +13,13 @@ func newDocTypeParser() docTypeParser {
 type docTypeParser struct {
 }
 
+var doctypeStartParser = parse.StringInsensitive("<!doctype ")
+
 func (p docTypeParser) Parse(pi parse.Input) parse.Result {
 	var r DocType
 
 	from := NewPositionFromInput(pi)
-	dtr := parse.StringInsensitive("<!doctype ")(pi)
+	dtr := doctypeStartParser(pi)
 	if dtr.Error != nil && dtr.Error != io.EOF {
 		return dtr
 	}

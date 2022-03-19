@@ -35,6 +35,28 @@ func TestStringExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "no spaces",
+			input: `{%="this"%}`,
+			expected: StringExpression{
+				Expression: Expression{
+					Value: `"this"`,
+					Range: Range{
+						From: Position{
+							Index: 3,
+							Line:  1,
+							Col:   3,
+						},
+						To: Position{
+
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

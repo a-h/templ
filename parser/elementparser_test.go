@@ -76,6 +76,29 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
+			name:   "boolean expression attribute without spaces",
+			input:  ` noshade?={%=true%}"`,
+			parser: newBoolExpressionAttributeParser().Parse,
+			expected: BoolExpressionAttribute{
+				Name: "noshade",
+				Expression: Expression{
+					Value: "true",
+					Range: Range{
+						From: Position{
+							Index: 13,
+							Line:  1,
+							Col:   13,
+						},
+						To: Position{
+							Index: 17,
+							Line:  1,
+							Col:   17,
+						},
+					},
+				},
+			},
+		},
+		{
 			name:   "attribute parsing handles boolean expression attributes",
 			input:  ` noshade?={%= true %}`,
 			parser: attributeParser,

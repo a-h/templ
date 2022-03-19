@@ -136,6 +136,128 @@ func TestIfExpression(t *testing.T) {
 			},
 		},
 		{
+			name: "if: simple expression, without spaces",
+			input: `{%if p.Test%}
+<span>
+  {%= "span content" %}
+</span>
+{%endif%}
+`,
+			expected: IfExpression{
+				Expression: Expression{
+					Value: `p.Test`,
+					Range: Range{
+						From: Position{
+							Index: 5,
+							Line:  1,
+							Col:   5,
+						},
+						To: Position{
+							Index: 11,
+							Line:  1,
+							Col:   11,
+						},
+					},
+				},
+				Then: []Node{
+					Element{
+						Name:       "span",
+						Attributes: []Attribute{},
+						Children: []Node{
+							Whitespace{Value: "\n  "},
+							StringExpression{
+								Expression: Expression{
+									Value: `"span content"`,
+									Range: Range{
+										From: Position{
+											Index: 27,
+											Line:  3,
+											Col:   6,
+										},
+										To: Position{
+											Index: 41,
+											Line:  3,
+											Col:   20,
+										},
+									},
+								},
+							},
+							Whitespace{Value: "\n"},
+						},
+					},
+					Whitespace{Value: "\n"},
+				},
+				Else: []Node{},
+			},
+		},
+		{
+			name: "if: else, without spaces",
+			input: `{%if p.A%}
+	{%= "A" %}
+{%else%}
+	{%= "B" %}
+{%endif%}`,
+			expected: IfExpression{
+				Expression: Expression{
+					Value: `p.A`,
+					Range: Range{
+						From: Position{
+							Index: 5,
+							Line:  1,
+							Col:   5,
+						},
+						To: Position{
+							Index: 8,
+							Line:  1,
+							Col:   8,
+						},
+					},
+				},
+				Then: []Node{
+					Whitespace{Value: "\t"},
+					StringExpression{
+						Expression: Expression{
+							Value: `"A"`,
+							Range: Range{
+								From: Position{
+									Index: 16,
+									Line:  2,
+									Col:   5,
+								},
+								To: Position{
+									Index: 19,
+									Line:  2,
+									Col:   8,
+								},
+							},
+						},
+					},
+					Whitespace{Value: "\n"},
+				},
+				Else: []Node{
+					Whitespace{Value: "\n\t"},
+					StringExpression{
+						Expression: Expression{
+							Value: `"B"`,
+							Range: Range{
+								From: Position{
+									Index: 37,
+									Line:  4,
+									Col:   5,
+								},
+								To: Position{
+									Index: 40,
+									Line:  4,
+									Col:   8,
+								},
+							},
+						},
+					},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
+		{
 			name: "if: nested",
 			input: `{% if p.A %}
 					{% if p.B %}

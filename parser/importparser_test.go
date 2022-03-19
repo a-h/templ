@@ -55,6 +55,27 @@ func TestImportParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "import: no spaces",
+			input: `{%import "github.com/a-h/something"%}`,
+			expected: Import{
+				Expression: Expression{
+					Value: `"github.com/a-h/something"`,
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 35,
+							Line:  1,
+							Col:   35,
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

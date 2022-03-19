@@ -51,6 +51,43 @@ func TestScriptTemplateParser(t *testing.T) {
 			},
 		},
 		{
+			name: "script: no spaces",
+			input: `{%script Name()%}
+{% endscript %}`,
+			expected: ScriptTemplate{
+				Name: Expression{
+					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+						To: Position{
+							Index: 13,
+							Line:  1,
+							Col:   13,
+						},
+					},
+				},
+				Parameters: Expression{
+					Value: "",
+					Range: Range{
+						From: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 14,
+							Line:  1,
+							Col:   14,
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "script: containing a JS variable",
 			input: `{% script Name() %}
 var x = "x";
