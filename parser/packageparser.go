@@ -14,17 +14,18 @@ func newPackageParser() packageParser {
 type packageParser struct {
 }
 
+var packageExpressionStartParser = createStartParser("package")
+
 func (p packageParser) Parse(pi parse.Input) parse.Result {
 	// Check the prefix first.
-	packageStmtPrefix := "package "
-	prefixResult := parse.String("{% " + packageStmtPrefix)(pi)
+	prefixResult := packageExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
 	// Once we have the prefix, we must have an expression and tag end on the same line.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.Or(newLine, tagEnd))(pi)
+	pr := parse.StringUntil(parse.Or(newLine, expressionEnd))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -40,7 +41,7 @@ func (p packageParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Eat the tag end.
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("packageParser", newParseError("package literal not terminated", from, NewPositionFromInput(pi)))
 	}
 

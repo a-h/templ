@@ -65,6 +65,58 @@ func TestForExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "for: simple, without spaces",
+			input: `{%for _, item := range p.Items%}
+					<div>{%= item %}</div>
+				{% endfor %}`,
+			expected: ForExpression{
+				Expression: Expression{
+					Value: `_, item := range p.Items`,
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  1,
+							Col:   6,
+						},
+						To: Position{
+
+							Index: 30,
+							Line:  1,
+							Col:   30,
+						},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\t\t\t\t\t"},
+					Element{
+						Name:       "div",
+						Attributes: []Attribute{},
+						Children: []Node{
+							StringExpression{
+								Expression: Expression{
+									Value: `item`,
+									Range: Range{
+										From: Position{
+											Index: 47,
+											Line:  2,
+											Col:   14,
+										},
+										To: Position{
+
+											Index: 51,
+											Line:  2,
+											Col:   18,
+										},
+									},
+								},
+							},
+						},
+					},
+					Whitespace{Value: "\n\t\t\t\t"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

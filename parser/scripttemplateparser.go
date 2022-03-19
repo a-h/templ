@@ -14,7 +14,7 @@ func newScriptTemplateParser() scriptTemplateParser {
 type scriptTemplateParser struct {
 }
 
-var endScriptParser = parse.String("{% endscript %}")
+var endScriptParser = createEndParser("endscript") // {% endscript %}
 
 func (p scriptTemplateParser) Parse(pi parse.Input) parse.Result {
 	var r ScriptTemplate
@@ -62,11 +62,13 @@ var scriptExpressionNameParser = parse.All(parse.WithStringConcatCombiner,
 	parse.Many(parse.WithStringConcatCombiner, 0, 1000, parse.Any(parse.Letter, parse.ZeroToNine)),
 )
 
+var scriptExpressionStartParser = createStartParser("script")
+
 func (p scriptExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r scriptExpression
 
 	// Check the prefix first.
-	prefixResult := parse.String("{% script ")(pi)
+	prefixResult := scriptExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
@@ -105,8 +107,8 @@ func (p scriptExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat ") %}".
 	from = NewPositionFromInput(pi)
-	if lb := parse.String(") %}")(pi); !lb.Success {
-		return parse.Failure("scriptExpressionParser", newParseError("script expression: unterminated (missing ' %}')", from, NewPositionFromInput(pi)))
+	if lb := expressionFuncEnd(pi); !lb.Success {
+		return parse.Failure("scriptExpressionParser", newParseError("script expression: unterminated (missing ') %}')", from, NewPositionFromInput(pi)))
 	}
 
 	// Expect a newline.

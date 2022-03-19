@@ -15,16 +15,18 @@ func newStringExpressionParser() stringExpressionParser {
 type stringExpressionParser struct {
 }
 
+var stringExpressionStartParser = parse.Or(parse.String("{%= "), parse.String("{%="))
+
 func (p stringExpressionParser) Parse(pi parse.Input) parse.Result {
 	// Check the prefix first.
-	prefixResult := parse.String("{%= ")(pi)
+	prefixResult := stringExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
 	// Once we've seen a string expression prefix, read until the tag end.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(tagEnd)(pi)
+	pr := parse.StringUntil(expressionEnd)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return parse.Failure("stringExpressionParser", fmt.Errorf("stringExpressionParser: failed to read until tag end: %w", pr.Error))
 	}
@@ -40,7 +42,7 @@ func (p stringExpressionParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Eat the tag end.
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("stringExpressionParser", newParseError("could not terminate string expression", from, NewPositionFromInput(pi)))
 	}
 

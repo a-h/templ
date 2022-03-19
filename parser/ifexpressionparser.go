@@ -14,6 +14,8 @@ func newIfExpressionParser() ifExpressionParser {
 type ifExpressionParser struct {
 }
 
+var ifExpressionStartParser = createStartParser("if")
+
 func (p ifExpressionParser) asChildren(parts []interface{}) (result interface{}, ok bool) {
 	if len(parts) == 0 {
 		return []Node{}, true
@@ -25,15 +27,14 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r IfExpression
 
 	// Check the prefix first.
-	blockPrefix := "if "
-	prefixResult := parse.String("{% " + blockPrefix)(pi)
+	prefixResult := ifExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
 	// Once we've got a prefix, we must have the if expression, followed by a tagEnd.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.Or(tagEnd, newLine))(pi)
+	pr := parse.StringUntil(parse.Or(expressionEnd, newLine))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -45,7 +46,7 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat " %}".
 	from = NewPositionFromInput(pi)
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("ifExpressionParser", newParseError("if: unterminated (missing closing ' %}')", from, NewPositionFromInput(pi)))
 	}
 
@@ -98,9 +99,10 @@ func (p elseExpressionParser) asElseExpression(parts []interface{}) (result inte
 
 func (p elseExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.All(p.asElseExpression,
-		parse.String("{% else %}"),
+		endElseParser,
 		newTemplateNodeParser(endIfParser).Parse, // else contents
 	)(pi)
 }
 
-var endIfParser = parse.String("{% endif %}")
+var endElseParser = createEndParser("else") // {% else %}
+var endIfParser = createEndParser("endif")  // {% endif %}

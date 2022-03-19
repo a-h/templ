@@ -11,20 +11,22 @@ func newCallTemplateExpressionParser() callTemplateExpressionParser {
 	return callTemplateExpressionParser{}
 }
 
+var callTemplateExpressionStartParser = parse.Or(parse.String("{%! "), parse.String("{%!"))
+
 type callTemplateExpressionParser struct{}
 
 func (p callTemplateExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r CallTemplateExpression
 
 	// Check the prefix first.
-	prefixResult := parse.String("{%! ")(pi)
+	prefixResult := callTemplateExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
 	// Once we have a prefix, we must have an expression that returns a template, followed by a tagEnd.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.Or(tagEnd, newLine))(pi)
+	pr := parse.StringUntil(parse.Or(expressionEnd, newLine))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -36,7 +38,7 @@ func (p callTemplateExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Eat " %}".
 	from = NewPositionFromInput(pi)
-	if te := tagEnd(pi); !te.Success {
+	if te := expressionEnd(pi); !te.Success {
 		return parse.Failure("callTemplateExpressionParser", newParseError("call: unterminated (missing closing ' %}')", from, NewPositionFromInput(pi)))
 	}
 

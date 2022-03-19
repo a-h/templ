@@ -91,6 +91,27 @@ func TestPackageParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "package: no spaces",
+			input: `{%package parser%}`,
+			expected: Package{
+				Expression: Expression{
+					Value: "parser",
+					Range: Range{
+						From: Position{
+							Index: 10,
+							Line:  1,
+							Col:   10,
+						},
+						To: Position{
+							Index: 16,
+							Line:  1,
+							Col:   16,
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
