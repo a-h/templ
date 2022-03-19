@@ -95,7 +95,7 @@ func (p templateParser) Parse(pi parse.Input) parse.Result {
 	return parse.Success("templ", r, nil)
 }
 
-var endTemplateParser = parse.String("{% endtempl %}")
+var endTemplateParser = createEndParser("endtempl")
 
 // Parse error.
 func newParseError(msg string, from Position, to Position) ParseError {
