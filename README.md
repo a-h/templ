@@ -1,4 +1,4 @@
-![templ](templ.png)
+<img width="600" src="https://raw.githubusercontent.com/headblockhead/templ/main/templ.png"></img>
 
 ## A HTML templating language for Go that has great developer tooling.
 
