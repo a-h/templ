@@ -15,10 +15,29 @@ import (
 
 const workerCount = 4
 
-func Run(args []string) (err error) {
+type Arguments struct {
+	FileName string
+	Path     string
+}
+
+func Run(args Arguments) (err error) {
+	if args.FileName != "" {
+		return processSingleFile(args.FileName)
+	}
+	return processPath(args.Path)
+}
+
+func processSingleFile(fileName string) error {
+	start := time.Now()
+	err := compile(fileName)
+	fmt.Printf("Generated code for %q in %s\n", fileName, time.Since(start))
+	return err
+}
+
+func processPath(path string) (err error) {
 	start := time.Now()
 	results := make(chan processor.Result)
-	go processor.Process(".", compile, workerCount, results)
+	go processor.Process(path, compile, workerCount, results)
 	var successCount, errorCount int
 	for r := range results {
 		if r.Error != nil {
@@ -30,7 +49,7 @@ func Run(args []string) (err error) {
 		fmt.Printf("%s complete in %v\n", r.FileName, r.Duration)
 	}
 	fmt.Printf("Generated code for %d templates with %d errors in %s\n", successCount+errorCount, errorCount, time.Since(start))
-	return
+	return err
 }
 
 func compile(fileName string) (err error) {

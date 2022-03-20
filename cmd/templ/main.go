@@ -70,13 +70,18 @@ examples:
 
 func generateCmd(args []string) {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
+	fileName := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
+	path := cmd.String("path", ".", "Generates code for all files in path.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
 		cmd.PrintDefaults()
 		return
 	}
-	err = generatecmd.Run(args)
+	err = generatecmd.Run(generatecmd.Arguments{
+		FileName: *fileName,
+		Path:     *path,
+	})
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
