@@ -2,13 +2,16 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="402.10425mm"
-   height="55.347801mm"
-   viewBox="0 0 402.10424 55.347802"
+   width="600.00012"
+   height="82.587265"
+   viewBox="0 0 158.75003 21.851215"
    version="1.1"
    id="svg5"
    inkscape:version="1.1.2 (1:1.1+202202050942+0a00cf5339)"
    sodipodi:docname="drawing.svg"
+   inkscape:export-filename="/home/headb/Pictures/drawing.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -23,41 +26,51 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.19682515"
-     inkscape:cx="-284.51649"
-     inkscape:cy="292.13746"
+     inkscape:zoom="0.60229249"
+     inkscape:cx="298.85812"
+     inkscape:cy="210.03084"
      inkscape:window-width="1600"
      inkscape:window-height="846"
      inkscape:window-x="0"
      inkscape:window-y="24"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1"
-     width="209mm"
+     width="600px"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
-     fit-margin-bottom="0" />
+     fit-margin-bottom="0"
+     units="px"
+     inkscape:snap-object-midpoints="false"
+     inkscape:snap-midpoints="true"
+     inkscape:snap-smooth-nodes="false"
+     inkscape:snap-intersection-paths="false"
+     inkscape:object-paths="true"
+     inkscape:snap-others="false"
+     inkscape:snap-nodes="true"
+     inkscape:snap-global="true"
+     inkscape:object-nodes="true" />
   <defs
      id="defs2" />
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-8.1191936,-16.794897)">
+     transform="translate(-57.174085,-202.41188)">
     <text
        xml:space="preserve"
-       style="font-size:73.225px;line-height:1.25;font-family:'Permanent Marker';-inkscape-font-specification:'Permanent Marker';stroke-width:0.381379"
-       x="8.1215773"
-       y="70.641014"
+       style="font-size:28.9091px;line-height:1.25;font-family:'Permanent Marker';-inkscape-font-specification:'Permanent Marker';stroke-width:0.150548;stroke-miterlimit:4;stroke-dasharray:none"
+       x="57.175026"
+       y="223.67023"
        id="text6171"><tspan
          sodipodi:role="line"
          id="tspan6169"
-         style="font-size:73.225px;stroke-width:0.381379"
-         x="8.1215773"
-         y="70.641014"><tspan
-   style="fill:#dbbd30;fill-opacity:1;stroke-width:0.381379"
+         style="font-size:28.9091px;stroke-width:0.150548;stroke-miterlimit:4;stroke-dasharray:none"
+         x="57.175026"
+         y="223.67023"><tspan
+   style="fill:#dbbd30;fill-opacity:1;stroke-width:0.150548;stroke-miterlimit:4;stroke-dasharray:none"
    id="tspan17572">&lt;/&gt;</tspan> <tspan
-   style="fill:#66d0dd;fill-opacity:1;stroke-width:0.381379"
+   style="fill:#66d0dd;fill-opacity:1;stroke-width:0.150548;stroke-miterlimit:4;stroke-dasharray:none"
    id="tspan20372">TEMPL</tspan></tspan></text>
   </g>
 </svg>
