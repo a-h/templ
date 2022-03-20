@@ -1,6 +1,4 @@
-# templ
-
-![templ logo](templ.png)
+![templ](templ.png)
 
 * A strongly typed HTML templating language that compiles to Go code, and has great developer tooling.
 
