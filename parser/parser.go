@@ -25,15 +25,6 @@ func createStartParser(name string) parse.Function {
 	return parse.Or(parse.String("{ "+name+" "), parse.String("{"+name+" "))
 }
 
-// create a parser for `{% name %}`
-func createEndParser(name string) parse.Function {
-	return parse.All(asNil,
-		parse.String("{%"),
-		parse.Optional(asNil, parse.Rune(' ')),
-		parse.String(name),
-		expressionEnd)
-}
-
 var newLine = parse.Or(parse.String("\r\n"), parse.Rune('\n'))
 
 // Whitespace.
@@ -60,7 +51,7 @@ type templateParser struct {
 func (p templateParser) Parse(pi parse.Input) parse.Result {
 	var r HTMLTemplate
 
-	// {% templ FuncName(p Person, other Other) %}
+	// templ FuncName(p Person, other Other) {
 	tepr := newTemplateExpressionParser().Parse(pi)
 	if !tepr.Success {
 		return tepr
@@ -72,7 +63,7 @@ func (p templateParser) Parse(pi parse.Input) parse.Result {
 	// Once we're in a template, we should expect some template whitespace, if/switch/for,
 	// or node string expressions etc.
 	from := NewPositionFromInput(pi)
-	tnpr := newTemplateNodeParser(endTemplateParser).Parse(pi)
+	tnpr := newTemplateNodeParser(closeBraceWithOptionalPadding).Parse(pi)
 	if tnpr.Error != nil && tnpr.Error != io.EOF {
 		return tnpr
 	}
@@ -82,21 +73,19 @@ func (p templateParser) Parse(pi parse.Input) parse.Result {
 	}
 	r.Children = tnpr.Item.([]Node)
 
-	// We must have a final {% endtempl %}, or the close has been forgotten.
-	// {% endtempl %}
-	if et := endTemplateParser(pi); !et.Success {
-		return parse.Failure("templateParser", newParseError("templ: missing end (expected '{% endtempl %}')", from, NewPositionFromInput(pi)))
+	// Eat any whitespace.
+	pr := optionalWhitespaceParser(pi)
+	if pr.Error != nil {
+		return pr
 	}
 
-	// Eat optional whitespace.
-	if wpr := parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi); wpr.Error != nil {
-		return wpr
+	// Try for }
+	pr, ok := chompBrace(pi)
+	if !ok {
+		return pr
 	}
-
 	return parse.Success("templ", r, nil)
 }
-
-var endTemplateParser = createEndParser("endtempl")
 
 // Parse error.
 func newParseError(msg string, from Position, to Position) ParseError {

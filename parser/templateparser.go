@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"io"
 	"strings"
 
@@ -188,8 +189,10 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 				return parse.Success("templateNodeParser", op, nil)
 			}
 
+			current, _ := pi.Peek()
+
 			pos := NewPositionFromInput(pi)
-			return parse.Failure("templateNodeParser", newParseError("template: unexpected token", pos, pos))
+			return parse.Failure("templateNodeParser", newParseError(fmt.Sprintf("template: unexpected token %q, expected to parse %v", string(current), p.until), pos, pos))
 		}
 	}
 
