@@ -11,7 +11,7 @@ func newCallTemplateExpressionParser() callTemplateExpressionParser {
 	return callTemplateExpressionParser{}
 }
 
-var callTemplateExpressionStartParser = parse.Or(parse.String("{%! "), parse.String("{%!"))
+var callTemplateExpressionStartParser = parse.Or(parse.String("{! "), parse.String("{!"))
 
 type callTemplateExpressionParser struct{}
 
@@ -24,22 +24,20 @@ func (p callTemplateExpressionParser) Parse(pi parse.Input) parse.Result {
 		return prefixResult
 	}
 
-	// Once we have a prefix, we must have an expression that returns a template, followed by a tagEnd.
+	// Once we have a prefix, we must have an expression that returns a template.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.Or(expressionEnd, newLine))(pi)
+	pr := exp.Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
-	// If there's no match, there's no tagEnd or newLine, which is an error.
 	if !pr.Success {
-		return parse.Failure("callTemplateExpressionParser", newParseError("call: unterminated (missing closing ' %}')", from, NewPositionFromInput(pi)))
+		return pr
 	}
 	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
-	// Eat " %}".
-	from = NewPositionFromInput(pi)
-	if te := expressionEnd(pi); !te.Success {
-		return parse.Failure("callTemplateExpressionParser", newParseError("call: unterminated (missing closing ' %}')", from, NewPositionFromInput(pi)))
+	// Eat the final brace.
+	if pr, ok := chompBrace(pi); !ok {
+		return pr
 	}
 
 	return parse.Success("callTemplate", r, nil)

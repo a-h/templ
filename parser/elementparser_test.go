@@ -54,7 +54,7 @@ func TestAttributeParser(t *testing.T) {
 		},
 		{
 			name:   "boolean expression attribute",
-			input:  ` noshade?={%= true %}"`,
+			input:  ` noshade?={ true }"`,
 			parser: newBoolExpressionAttributeParser().Parse,
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
@@ -62,14 +62,14 @@ func TestAttributeParser(t *testing.T) {
 					Value: "true",
 					Range: Range{
 						From: Position{
-							Index: 14,
+							Index: 12,
 							Line:  1,
-							Col:   14,
+							Col:   12,
 						},
 						To: Position{
-							Index: 18,
+							Index: 16,
 							Line:  1,
-							Col:   18,
+							Col:   16,
 						},
 					},
 				},
@@ -77,7 +77,7 @@ func TestAttributeParser(t *testing.T) {
 		},
 		{
 			name:   "boolean expression attribute without spaces",
-			input:  ` noshade?={%=true%}"`,
+			input:  ` noshade?={true}"`,
 			parser: newBoolExpressionAttributeParser().Parse,
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
@@ -85,14 +85,14 @@ func TestAttributeParser(t *testing.T) {
 					Value: "true",
 					Range: Range{
 						From: Position{
-							Index: 13,
+							Index: 11,
 							Line:  1,
-							Col:   13,
+							Col:   11,
 						},
 						To: Position{
-							Index: 17,
+							Index: 15,
 							Line:  1,
-							Col:   17,
+							Col:   15,
 						},
 					},
 				},
@@ -100,7 +100,7 @@ func TestAttributeParser(t *testing.T) {
 		},
 		{
 			name:   "attribute parsing handles boolean expression attributes",
-			input:  ` noshade?={%= true %}`,
+			input:  ` noshade?={ true }`,
 			parser: attributeParser,
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
@@ -108,14 +108,14 @@ func TestAttributeParser(t *testing.T) {
 					Value: "true",
 					Range: Range{
 						From: Position{
-							Index: 14,
+							Index: 12,
 							Line:  1,
-							Col:   14,
+							Col:   12,
 						},
 						To: Position{
-							Index: 18,
+							Index: 16,
 							Line:  1,
-							Col:   18,
+							Col:   16,
 						},
 					},
 				},
@@ -197,7 +197,7 @@ func TestElementParser(t *testing.T) {
 		},
 		{
 			name:  "element: self-closing with single bool expression attribute",
-			input: `<hr noshade?={%= true %}/>`,
+			input: `<hr noshade?={ true }/>`,
 			expected: Element{
 				Name: "hr",
 				Attributes: []Attribute{
@@ -207,15 +207,15 @@ func TestElementParser(t *testing.T) {
 							Value: `true`,
 							Range: Range{
 								From: Position{
-									Index: 17,
+									Index: 15,
 									Line:  1,
-									Col:   17,
+									Col:   15,
 								},
 								To: Position{
 
-									Index: 21,
+									Index: 19,
 									Line:  1,
-									Col:   21,
+									Col:   19,
 								},
 							},
 						},
@@ -225,7 +225,7 @@ func TestElementParser(t *testing.T) {
 		},
 		{
 			name:  "element: self-closing with single expression attribute",
-			input: `<a href={%= "test" %}/>`,
+			input: `<a href={ "test" }/>`,
 			expected: Element{
 				Name: "a",
 				Attributes: []Attribute{
@@ -235,15 +235,15 @@ func TestElementParser(t *testing.T) {
 							Value: `"test"`,
 							Range: Range{
 								From: Position{
-									Index: 12,
+									Index: 10,
 									Line:  1,
-									Col:   12,
+									Col:   10,
 								},
 								To: Position{
 
-									Index: 18,
+									Index: 16,
 									Line:  1,
-									Col:   18,
+									Col:   16,
 								},
 							},
 						},
@@ -270,7 +270,7 @@ func TestElementParser(t *testing.T) {
 		},
 		{
 			name:  "element: self-closing with multiple boolean attributes",
-			input: `<hr optionA optionB?={%= true %} optionC="other"/>`,
+			input: `<hr optionA optionB?={ true } optionC="other"/>`,
 			expected: Element{
 				Name: "hr",
 				Attributes: []Attribute{
@@ -283,15 +283,15 @@ func TestElementParser(t *testing.T) {
 							Value: `true`,
 							Range: Range{
 								From: Position{
-									Index: 25,
+									Index: 23,
 									Line:  1,
-									Col:   25,
+									Col:   23,
 								},
 								To: Position{
 
-									Index: 29,
+									Index: 27,
 									Line:  1,
-									Col:   29,
+									Col:   27,
 								},
 							},
 						},
@@ -305,7 +305,7 @@ func TestElementParser(t *testing.T) {
 		},
 		{
 			name:  "element: self-closing with multiple constant and expr attributes",
-			input: `<a href="test" title={%= localisation.Get("a_title") %} style="text-underline: auto"/>`,
+			input: `<a href="test" title={ localisation.Get("a_title") } style="text-underline: auto"/>`,
 			expected: Element{
 				Name: "a",
 				Attributes: []Attribute{
@@ -319,15 +319,15 @@ func TestElementParser(t *testing.T) {
 							Value: `localisation.Get("a_title")`,
 							Range: Range{
 								From: Position{
-									Index: 25,
+									Index: 23,
 									Line:  1,
-									Col:   25,
+									Col:   23,
 								},
 								To: Position{
 
-									Index: 52,
+									Index: 50,
 									Line:  1,
-									Col:   52,
+									Col:   50,
 								},
 							},
 						},
@@ -462,7 +462,7 @@ func TestElementParser(t *testing.T) {
 		},
 		{
 			name:  "element: containing string expression",
-			input: `<div>{%= "test" %}</div>`,
+			input: `<div>{ "test" }</div>`,
 			expected: Element{
 				Name:       "div",
 				Attributes: []Attribute{},
@@ -472,14 +472,14 @@ func TestElementParser(t *testing.T) {
 							Value: `"test"`,
 							Range: Range{
 								From: Position{
-									Index: 9,
+									Index: 7,
 									Line:  1,
-									Col:   9,
+									Col:   7,
 								},
 								To: Position{
-									Index: 15,
+									Index: 13,
 									Line:  1,
-									Col:   15,
+									Col:   13,
 								},
 							},
 						},
@@ -529,22 +529,7 @@ func TestElementParserErrors(t *testing.T) {
 		},
 		{
 			name:  "element: attempted use of expression for style attribute (open/close)",
-			input: `<a style={%= value %}></a>`,
-			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
-				Position{
-					Index: 0,
-					Line:  1,
-					Col:   0,
-				},
-				Position{
-					Index: 26,
-					Line:  1,
-					Col:   26,
-				}),
-		},
-		{
-			name:  "element: attempted use of expression for style attribute (self-closing)",
-			input: `<a style={%= value %}/>`,
+			input: `<a style={ value }></a>`,
 			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
 				Position{
 					Index: 0,
@@ -558,8 +543,23 @@ func TestElementParserErrors(t *testing.T) {
 				}),
 		},
 		{
+			name:  "element: attempted use of expression for style attribute (self-closing)",
+			input: `<a style={ value }/>`,
+			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
+				Position{
+					Index: 0,
+					Line:  1,
+					Col:   0,
+				},
+				Position{
+					Index: 20,
+					Line:  1,
+					Col:   20,
+				}),
+		},
+		{
 			name:  "element: script tags cannot contain non-text nodes",
-			input: `<script>{%= "value" %}</script>`,
+			input: `<script>{ "value" }</script>`,
 			expected: newParseError("<script>: invalid node contents: script and style attributes must only contain text",
 				Position{
 					Index: 0,
@@ -567,14 +567,14 @@ func TestElementParserErrors(t *testing.T) {
 					Col:   0,
 				},
 				Position{
-					Index: 31,
+					Index: 28,
 					Line:  1,
-					Col:   31,
+					Col:   28,
 				}),
 		},
 		{
 			name:  "element: style tags cannot contain non-text nodes",
-			input: `<style>{%= "value" %}</style>`,
+			input: `<style>{ "value" }</style>`,
 			expected: newParseError("<style>: invalid node contents: script and style attributes must only contain text",
 				Position{
 					Index: 0,
@@ -582,9 +582,9 @@ func TestElementParserErrors(t *testing.T) {
 					Col:   0,
 				},
 				Position{
-					Index: 29,
+					Index: 26,
 					Line:  1,
-					Col:   29,
+					Col:   26,
 				}),
 		},
 	}

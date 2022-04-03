@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/a-h/lexical/parse"
@@ -15,35 +14,30 @@ func newStringExpressionParser() stringExpressionParser {
 type stringExpressionParser struct {
 }
 
-var stringExpressionStartParser = parse.Or(parse.String("{%= "), parse.String("{%="))
+var stringExpressionStartParser = parse.Or(parse.String("{ "), parse.String("{"))
 
 func (p stringExpressionParser) Parse(pi parse.Input) parse.Result {
+	var r StringExpression
 	// Check the prefix first.
 	prefixResult := stringExpressionStartParser(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
-	// Once we've seen a string expression prefix, read until the tag end.
+	// Once we have a prefix, we must have an expression that returns a string.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(expressionEnd)(pi)
+	pr := exp.Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
-		return parse.Failure("stringExpressionParser", fmt.Errorf("stringExpressionParser: failed to read until tag end: %w", pr.Error))
+		return pr
 	}
-	// If there's no tag end, the string expression parser wasn't terminated.
 	if !pr.Success {
-		return parse.Failure("stringExpressionParser", newParseError("string expression not terminated", from, NewPositionFromInput(pi)))
+		return pr
 	}
+	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
-	// Success! Create the expression.
-	to := NewPositionFromInput(pi)
-	r := StringExpression{
-		Expression: NewExpression(pr.Item.(string), from, to),
-	}
-
-	// Eat the tag end.
-	if te := expressionEnd(pi); !te.Success {
-		return parse.Failure("stringExpressionParser", newParseError("could not terminate string expression", from, NewPositionFromInput(pi)))
+	// }
+	if pr, ok := chompBrace(pi); !ok {
+		return pr
 	}
 
 	return parse.Success("stringExpressionParser", r, nil)

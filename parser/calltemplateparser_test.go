@@ -15,20 +15,20 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 	}{
 		{
 			name:  "call: simple",
-			input: `{%! Other(p.Test) %}`,
+			input: `{! Other(p.Test) }`,
 			expected: CallTemplateExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{
 						From: Position{
-							Index: 4,
+							Index: 3,
 							Line:  1,
-							Col:   4,
+							Col:   3,
 						},
 						To: Position{
-							Index: 17,
+							Index: 16,
 							Line:  1,
-							Col:   17,
+							Col:   16,
 						},
 					},
 				},
@@ -36,20 +36,20 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 		},
 		{
 			name:  "call: simple, missing start space",
-			input: `{%!Other(p.Test) %}`,
+			input: `{!Other(p.Test) }`,
 			expected: CallTemplateExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{
 						From: Position{
-							Index: 3,
+							Index: 2,
 							Line:  1,
-							Col:   3,
+							Col:   2,
 						},
 						To: Position{
-							Index: 16,
+							Index: 15,
 							Line:  1,
-							Col:   16,
+							Col:   15,
 						},
 					},
 				},
@@ -57,20 +57,20 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 		},
 		{
 			name:  "call: simple, missing start and end space",
-			input: `{%!Other(p.Test)%}`,
+			input: `{!Other(p.Test)}`,
 			expected: CallTemplateExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{
 						From: Position{
-							Index: 3,
+							Index: 2,
 							Line:  1,
-							Col:   3,
+							Col:   2,
 						},
 						To: Position{
-							Index: 16,
+							Index: 15,
 							Line:  1,
-							Col:   16,
+							Col:   15,
 						},
 					},
 				},

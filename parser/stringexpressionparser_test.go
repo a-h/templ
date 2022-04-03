@@ -15,21 +15,21 @@ func TestStringExpressionParser(t *testing.T) {
 	}{
 		{
 			name:  "basic expression",
-			input: `{%= "this" %}`,
+			input: `{ "this" }`,
 			expected: StringExpression{
 				Expression: Expression{
 					Value: `"this"`,
 					Range: Range{
 						From: Position{
-							Index: 4,
+							Index: 2,
 							Line:  1,
-							Col:   4,
+							Col:   2,
 						},
 						To: Position{
 
-							Index: 10,
+							Index: 8,
 							Line:  1,
-							Col:   10,
+							Col:   8,
 						},
 					},
 				},
@@ -37,21 +37,21 @@ func TestStringExpressionParser(t *testing.T) {
 		},
 		{
 			name:  "no spaces",
-			input: `{%="this"%}`,
+			input: `{"this"}`,
 			expected: StringExpression{
 				Expression: Expression{
 					Value: `"this"`,
 					Range: Range{
 						From: Position{
-							Index: 3,
+							Index: 1,
 							Line:  1,
-							Col:   3,
+							Col:   1,
 						},
 						To: Position{
 
-							Index: 9,
+							Index: 7,
 							Line:  1,
-							Col:   9,
+							Col:   7,
 						},
 					},
 				},

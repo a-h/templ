@@ -14,7 +14,7 @@ func newTextParser() textParser {
 type textParser struct {
 }
 
-var tagOrTempl = parse.Or(parse.Rune('<'), parse.String("{%"))
+var tagOrTempl = parse.Or(parse.Rune('<'), parse.String("{"))
 
 func (p textParser) Parse(pi parse.Input) parse.Result {
 	from := NewPositionFromInput(pi)

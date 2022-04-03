@@ -17,8 +17,6 @@ func newCSSParser() cssParser {
 type cssParser struct {
 }
 
-var endCssParser = createEndParser("endcss") // {% endcss %}
-
 func (p cssParser) Parse(pi parse.Input) parse.Result {
 	r := CSSTemplate{
 		Properties: []CSSProperty{},
@@ -31,13 +29,11 @@ func (p cssParser) Parse(pi parse.Input) parse.Result {
 	}
 	r.Name = pr.Item.(cssExpression).Name
 
-	var from Position
 	for {
 		var pr parse.Result
-		from = NewPositionFromInput(pi)
 
 		// Try for an expression CSS declaration.
-		// background-color: {%= constants.BackgroundColor %};
+		// background-color: { constants.BackgroundColor };
 		pr = newExpressionCSSPropertyParser().Parse(pi)
 		if pr.Error != nil {
 			return pr
@@ -63,16 +59,17 @@ func (p cssParser) Parse(pi parse.Input) parse.Result {
 		if pr.Error != nil {
 			return pr
 		}
-		// {% endcss %}
-		from = NewPositionFromInput(pi)
-		if endCssParser(pi).Success {
-			return parse.Success("css", r, nil)
+
+		// Try for }
+		pr, ok := chompBrace(pi)
+		if !ok {
+			return pr
 		}
-		return parse.Failure("css", newParseError("expected {% endcss %} not found", from, NewPositionFromInput(pi)))
+		return parse.Success("css", r, nil)
 	}
 }
 
-// {% css Func() %}
+// css Func() {
 type cssExpression struct {
 	Name Expression
 }
@@ -84,7 +81,7 @@ func newCSSExpressionParser() cssExpressionParser {
 type cssExpressionParser struct {
 }
 
-var cssExpressionStartParser = createStartParser("css")
+var cssExpressionStartParser = parse.String("css ")
 
 var cssExpressionNameParser = parse.All(parse.WithStringConcatCombiner,
 	parse.Letter,
@@ -134,10 +131,10 @@ func (p cssExpressionParser) Parse(pi parse.Input) parse.Result {
 		return parse.Failure("cssExpressionParser", newParseError("css expression: found unexpected parameters", from, NewPositionFromInput(pi)))
 	}
 
-	// Eat ") %}".
+	// Eat ") {".
 	from = NewPositionFromInput(pi)
 	if lb := expressionFuncEnd(pi); !lb.Success {
-		return parse.Failure("cssExpressionParser", newParseError("css expression: unterminated (missing ') %}')", from, NewPositionFromInput(pi)))
+		return parse.Failure("cssExpressionParser", newParseError("css expression: unterminated (missing ') {')", from, NewPositionFromInput(pi)))
 	}
 
 	// Expect a newline.
@@ -190,7 +187,7 @@ func (p expressionCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 		return pr
 	}
 
-	// {%= string %}
+	// { string }
 	pr = newStringExpressionParser().Parse(pi)
 	if !pr.Success {
 		rewind(pi, start)

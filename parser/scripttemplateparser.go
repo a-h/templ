@@ -14,8 +14,6 @@ func newScriptTemplateParser() scriptTemplateParser {
 type scriptTemplateParser struct {
 }
 
-var endScriptParser = createEndParser("endscript") // {% endscript %}
-
 func (p scriptTemplateParser) Parse(pi parse.Input) parse.Result {
 	var r ScriptTemplate
 
@@ -27,9 +25,8 @@ func (p scriptTemplateParser) Parse(pi parse.Input) parse.Result {
 	r.Name = pr.Item.(scriptExpression).Name
 	r.Parameters = pr.Item.(scriptExpression).Parameters
 
-	from := NewPositionFromInput(pi)
-	// Read until {% endscript %}
-	sr := parse.StringUntil(endScriptParser)(pi)
+	// Read code expression.
+	sr := exp.Parse(pi)
 	if sr.Error != nil {
 		return sr
 	}
@@ -37,14 +34,15 @@ func (p scriptTemplateParser) Parse(pi parse.Input) parse.Result {
 		r.Value = sr.Item.(string)
 	}
 
-	// Eat the final {% endscript %}
-	if endScriptParser(pi).Success {
-		return parse.Success("script", r, nil)
+	// Try for }
+	pr, ok := chompBrace(pi)
+	if !ok {
+		return pr
 	}
-	return parse.Failure("script", newParseError("expected {% endscript %} not found", from, NewPositionFromInput(pi)))
+	return parse.Success("script", r, nil)
 }
 
-// {% script Func() %}
+// script Func() {
 type scriptExpression struct {
 	Name       Expression
 	Parameters Expression
@@ -62,7 +60,7 @@ var scriptExpressionNameParser = parse.All(parse.WithStringConcatCombiner,
 	parse.Many(parse.WithStringConcatCombiner, 0, 1000, parse.Any(parse.Letter, parse.ZeroToNine)),
 )
 
-var scriptExpressionStartParser = createStartParser("script")
+var scriptExpressionStartParser = parse.String("script ")
 
 func (p scriptExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r scriptExpression
@@ -105,10 +103,10 @@ func (p scriptExpressionParser) Parse(pi parse.Input) parse.Result {
 	}
 	r.Parameters = NewExpression(strings.TrimSuffix(pr.Item.(string), ")"), from, NewPositionFromInput(pi))
 
-	// Eat ") %}".
+	// Eat ") {".
 	from = NewPositionFromInput(pi)
 	if lb := expressionFuncEnd(pi); !lb.Success {
-		return parse.Failure("scriptExpressionParser", newParseError("script expression: unterminated (missing ') %}')", from, NewPositionFromInput(pi)))
+		return parse.Failure("scriptExpressionParser", newParseError("script expression: unterminated (missing ') {')", from, NewPositionFromInput(pi)))
 	}
 
 	// Expect a newline.

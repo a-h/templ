@@ -140,7 +140,7 @@ func newBoolExpressionAttributeParser() boolExpressionAttributeParser {
 	return boolExpressionAttributeParser{}
 }
 
-var boolExpressionStart = parse.Any(parse.String("?={%= "), parse.String("?={%="))
+var boolExpressionStart = parse.Or(parse.String("?={ "), parse.String("?={"))
 
 type boolExpressionAttributeParser struct {
 }
@@ -168,24 +168,20 @@ func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
 		return pr
 	}
 
-	// Once we've seen a expression prefix, read until the tag end.
+	// Once we have a prefix, we must have an expression that returns a template.
 	from = NewPositionFromInput(pi)
-	pr = parse.StringUntil(expressionEnd)(pi)
+	pr = exp.Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
-		return parse.Failure("boolExpressionAttributeParser", fmt.Errorf("boolExpressionAttributeParser: failed to read until tag end: %w", pr.Error))
+		return pr
 	}
-	// If there's no tag end, the string expression parser wasn't terminated.
 	if !pr.Success {
-		return parse.Failure("boolExpressionAttributeParser", newParseError("bool expression attribute not terminated", from, NewPositionFromInput(pi)))
+		return pr
 	}
+	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
-	// Success! Create the expression.
-	to := NewPositionFromInput(pi)
-	r.Expression = NewExpression(pr.Item.(string), from, to)
-
-	// Eat the tag end.
-	if te := expressionEnd(pi); !te.Success {
-		return parse.Failure("boolExpressionAttributeParser", newParseError("could not terminate boolean expression", from, NewPositionFromInput(pi)))
+	// Eat the final brace.
+	if pr, ok := chompBrace(pi); !ok {
+		return pr
 	}
 
 	return parse.Success("boolExpressionAttributeParser", r, nil)
@@ -216,29 +212,25 @@ func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	}
 	r.Name = pr.Item.(string)
 
-	if pr = parse.String("={%= ")(pi); !pr.Success {
+	if pr = parse.Or(parse.String("={ "), parse.String("={"))(pi); !pr.Success {
 		rewind(pi, start)
 		return pr
 	}
 
 	// Once we've seen a expression prefix, read until the tag end.
 	from = NewPositionFromInput(pi)
-	pr = parse.StringUntil(expressionEnd)(pi)
+	pr = exp.Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
-		return parse.Failure("expressionAttributeParser", fmt.Errorf("expressionAttributeParser: failed to read until tag end: %w", pr.Error))
+		return pr
 	}
-	// If there's no tag end, the string expression parser wasn't terminated.
 	if !pr.Success {
-		return parse.Failure("expressionAttributeParser", newParseError("expression attribute not terminated", from, NewPositionFromInput(pi)))
+		return pr
 	}
+	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
-	// Success! Create the expression.
-	to := NewPositionFromInput(pi)
-	r.Expression = NewExpression(pr.Item.(string), from, to)
-
-	// Eat the tag end.
-	if te := expressionEnd(pi); !te.Success {
-		return parse.Failure("expressionAttributeParser", newParseError("could not terminate string expression", from, NewPositionFromInput(pi)))
+	// Eat the final brace.
+	if pr, ok := chompBrace(pi); !ok {
+		return pr
 	}
 
 	return parse.Success("expressionAttributeParser", r, nil)
@@ -344,9 +336,7 @@ func (p elementOpenCloseParser) Parse(pi parse.Input) parse.Result {
 }
 
 // Element self-closing tag.
-func newElementSelfClosingParser() elementSelfClosingParser {
-	return elementSelfClosingParser{}
-}
+var selfClosingElement = elementSelfClosingParser{}
 
 type elementSelfClosingParser struct {
 	SourceRangeToItemLookup SourceMap
@@ -382,7 +372,7 @@ func (p elementParser) Parse(pi parse.Input) parse.Result {
 
 	// Self closing.
 	from := NewPositionFromInput(pi)
-	scr := newElementSelfClosingParser().Parse(pi)
+	scr := selfClosingElement.Parse(pi)
 	if scr.Error != nil && scr.Error != io.EOF {
 		return scr
 	}

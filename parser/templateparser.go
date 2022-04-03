@@ -10,7 +10,7 @@ import (
 // TemplateExpression.
 
 // TemplateExpression.
-// {% templ Func(p Parameter) %}
+// templ Func(p Parameter) {
 type templateExpression struct {
 	Name       Expression
 	Parameters Expression
@@ -28,7 +28,7 @@ var templateNameParser = parse.All(parse.WithStringConcatCombiner,
 type templateExpressionParser struct {
 }
 
-var templateExpressionStartParser = createStartParser("templ")
+var templateExpressionStartParser = parse.String("templ ")
 
 func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r templateExpression
@@ -73,10 +73,10 @@ func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
 	}
 	r.Parameters = NewExpression(strings.TrimSuffix(pr.Item.(string), ")"), from, NewPositionFromInput(pi))
 
-	// Eat ") %}".
+	// Eat ") {".
 	from = NewPositionFromInput(pi)
 	if lb := expressionFuncEnd(pi); !lb.Success {
-		return parse.Failure("templateExpressionParser", newParseError("template expression: unterminated (missing ') %}')", from, NewPositionFromInput(pi)))
+		return parse.Failure("templateExpressionParser", newParseError("template expression: unterminated (missing ') {')", from, NewPositionFromInput(pi)))
 	}
 
 	// Expect a newline.
@@ -126,54 +126,21 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 			continue
 		}
 
-		// Try for a string expression.
-		// {%= "abc" %}
-		// {%= strings.ToUpper("abc") %}
-		pr = newStringExpressionParser().Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for an if expression.
-		// if {}
-		pr = newIfExpressionParser().Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for a switch expression.
-		// switch {}
-		pr = newSwitchExpressionParser().Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for a for expression.
-		// for {}
-		pr = newForExpressionParser().Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
 		// Try for a call template expression.
-		// {%! TemplateName(a, b, c) %}
+		// {! TemplateName(a, b, c) }
 		pr = newCallTemplateExpressionParser().Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
+		// Try for a string expression.
+		// { "abc" }
+		// { strings.ToUpper("abc") }
+		pr = newStringExpressionParser().Parse(pi)
 		if pr.Error != nil {
 			return pr
 		}

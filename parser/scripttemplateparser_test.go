@@ -15,21 +15,21 @@ func TestScriptTemplateParser(t *testing.T) {
 	}{
 		{
 			name: "script: no parameters, no content",
-			input: `{% script Name() %}
-{% endscript %}`,
+			input: `script Name() {
+}`,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
 						From: Position{
-							Index: 10,
+							Index: 7,
 							Line:  1,
-							Col:   10,
+							Col:   7,
 						},
 						To: Position{
-							Index: 14,
+							Index: 11,
 							Line:  1,
-							Col:   14,
+							Col:   11,
 						},
 					},
 				},
@@ -37,14 +37,14 @@ func TestScriptTemplateParser(t *testing.T) {
 					Value: "",
 					Range: Range{
 						From: Position{
-							Index: 15,
+							Index: 12,
 							Line:  1,
-							Col:   15,
+							Col:   12,
 						},
 						To: Position{
-							Index: 15,
+							Index: 12,
 							Line:  1,
-							Col:   15,
+							Col:   12,
 						},
 					},
 				},
@@ -52,21 +52,21 @@ func TestScriptTemplateParser(t *testing.T) {
 		},
 		{
 			name: "script: no spaces",
-			input: `{%script Name()%}
-{% endscript %}`,
+			input: `script Name(){
+}`,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
 						From: Position{
-							Index: 9,
+							Index: 7,
 							Line:  1,
-							Col:   9,
+							Col:   7,
 						},
 						To: Position{
-							Index: 13,
+							Index: 11,
 							Line:  1,
-							Col:   13,
+							Col:   11,
 						},
 					},
 				},
@@ -74,14 +74,14 @@ func TestScriptTemplateParser(t *testing.T) {
 					Value: "",
 					Range: Range{
 						From: Position{
-							Index: 14,
+							Index: 12,
 							Line:  1,
-							Col:   14,
+							Col:   12,
 						},
 						To: Position{
-							Index: 14,
+							Index: 12,
 							Line:  1,
-							Col:   14,
+							Col:   12,
 						},
 					},
 				},
@@ -89,22 +89,22 @@ func TestScriptTemplateParser(t *testing.T) {
 		},
 		{
 			name: "script: containing a JS variable",
-			input: `{% script Name() %}
+			input: `script Name() {
 var x = "x";
-{% endscript %}`,
+}`,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
 						From: Position{
-							Index: 10,
+							Index: 7,
 							Line:  1,
-							Col:   10,
+							Col:   7,
 						},
 						To: Position{
-							Index: 14,
+							Index: 11,
 							Line:  1,
-							Col:   14,
+							Col:   11,
 						},
 					},
 				},
@@ -112,14 +112,14 @@ var x = "x";
 					Value: "",
 					Range: Range{
 						From: Position{
-							Index: 15,
+							Index: 12,
 							Line:  1,
-							Col:   15,
+							Col:   12,
 						},
 						To: Position{
-							Index: 15,
+							Index: 12,
 							Line:  1,
-							Col:   15,
+							Col:   12,
 						},
 					},
 				},
@@ -128,22 +128,22 @@ var x = "x";
 		},
 		{
 			name: "script: single argument",
-			input: `{% script Name(value string) %}
+			input: `script Name(value string) {
 console.log(value);
-{% endscript %}`,
+}`,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
 						From: Position{
-							Index: 10,
+							Index: 7,
 							Line:  1,
-							Col:   10,
+							Col:   7,
 						},
 						To: Position{
-							Index: 14,
+							Index: 11,
 							Line:  1,
-							Col:   14,
+							Col:   11,
 						},
 					},
 				},
@@ -151,14 +151,14 @@ console.log(value);
 					Value: "value string",
 					Range: Range{
 						From: Position{
-							Index: 15,
+							Index: 12,
 							Line:  1,
-							Col:   15,
+							Col:   12,
 						},
 						To: Position{
-							Index: 27,
+							Index: 24,
 							Line:  1,
-							Col:   27,
+							Col:   24,
 						},
 					},
 				},

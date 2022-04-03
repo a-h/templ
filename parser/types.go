@@ -507,7 +507,7 @@ func (ca ConstantAttribute) String() string {
 	return ca.Name + `="` + html.EscapeString(ca.Value) + `"`
 }
 
-// href={%= templ.Bool(...) }
+// href={ templ.Bool(...) }
 type BoolExpressionAttribute struct {
 	Name       string
 	Expression Expression
@@ -515,10 +515,10 @@ type BoolExpressionAttribute struct {
 
 func (ea BoolExpressionAttribute) IsAttribute() bool { return true }
 func (ea BoolExpressionAttribute) String() string {
-	return ea.Name + `?={%= ` + ea.Expression.Value + ` %}`
+	return ea.Name + `?={ ` + ea.Expression.Value + ` }`
 }
 
-// href={%= ... }
+// href={ ... }
 type ExpressionAttribute struct {
 	Name       string
 	Expression Expression
@@ -526,15 +526,15 @@ type ExpressionAttribute struct {
 
 func (ea ExpressionAttribute) IsAttribute() bool { return true }
 func (ea ExpressionAttribute) String() string {
-	return ea.Name + `={%= ` + ea.Expression.Value + ` %}`
+	return ea.Name + `={ ` + ea.Expression.Value + ` }`
 }
 
 // Nodes.
 
 // CallTemplateExpression can be used to create and render a template using data.
-// {%! Other(p.First, p.Last) %}
+// {! Other(p.First, p.Last) }
 // or it can be used to render a template parameter.
-// {%! v %}
+// {! v }
 type CallTemplateExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
@@ -542,10 +542,10 @@ type CallTemplateExpression struct {
 
 func (cte CallTemplateExpression) IsNode() bool { return true }
 func (cte CallTemplateExpression) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, `{%! `+cte.Expression.Value+` %}`)
+	return writeIndent(w, indent, `{! `+cte.Expression.Value+` }`)
 }
 
-// {% if p.Type == "test" && p.thing %}
+// { if p.Type == "test" && p.thing }
 // {% endif %}
 type IfExpression struct {
 	Expression Expression

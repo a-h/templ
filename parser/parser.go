@@ -9,19 +9,20 @@ import (
 )
 
 // Constants.
-// %}
-var expressionEnd = parse.Or(parse.String(" %}"), parse.String("%}"))
+// {
+var expressionEnd = parse.Or(parse.String(" {"), parse.String("{"))
 
-// ) %}
+// ) {
 var expressionFuncEnd = parse.All(asNil, parse.Rune(')'), expressionEnd)
 
 func asNil(inputs []interface{}) (interface{}, bool) {
 	return nil, true
 }
 
-// create a parser for `{% name`
+// create a parser for `name`
+// Deprecated: just use a string "name"
 func createStartParser(name string) parse.Function {
-	return parse.Or(parse.String("{% "+name+" "), parse.String("{%"+name+" "))
+	return parse.Or(parse.String("{ "+name+" "), parse.String("{"+name+" "))
 }
 
 // create a parser for `{% name %}`
