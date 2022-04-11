@@ -81,7 +81,7 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
-			result := newCallTemplateExpressionParser().Parse(input)
+			result := callTemplateExpression.Parse(input)
 			if result.Error != nil {
 				t.Fatalf("parser error: %v", result.Error)
 			}

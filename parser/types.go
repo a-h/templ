@@ -115,7 +115,6 @@ type Expression struct {
 }
 
 type TemplateFile struct {
-	//TODO: Remove package and imports. They're just expressions now.
 	Nodes []TemplateFileNode
 }
 

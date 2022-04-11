@@ -6,10 +6,7 @@ import (
 	"github.com/a-h/lexical/parse"
 )
 
-// StringExpression.
-func newStringExpressionParser() stringExpressionParser {
-	return stringExpressionParser{}
-}
+var stringExpression stringExpressionParser
 
 type stringExpressionParser struct {
 }

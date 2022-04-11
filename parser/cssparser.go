@@ -188,7 +188,7 @@ func (p expressionCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// { string }
-	pr = newStringExpressionParser().Parse(pi)
+	pr = stringExpression.Parse(pi)
 	if !pr.Success {
 		rewind(pi, start)
 		return pr

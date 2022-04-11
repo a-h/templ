@@ -6,10 +6,7 @@ import (
 	"github.com/a-h/lexical/parse"
 )
 
-// newCallTemplateExpressionParser creates a new callTemplateExpressionParser.
-func newCallTemplateExpressionParser() callTemplateExpressionParser {
-	return callTemplateExpressionParser{}
-}
+var callTemplateExpression callTemplateExpressionParser
 
 var callTemplateExpressionStartParser = parse.Or(parse.String("{! "), parse.String("{!"))
 

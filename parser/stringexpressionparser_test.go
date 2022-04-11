@@ -62,7 +62,7 @@ func TestStringExpressionParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
-			result := newStringExpressionParser().Parse(input)
+			result := stringExpression.Parse(input)
 			if result.Error != nil {
 				t.Fatalf("parser error: %v", result.Error)
 			}

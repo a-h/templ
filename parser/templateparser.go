@@ -140,7 +140,7 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 
 		// Try for a call template expression.
 		// {! TemplateName(a, b, c) }
-		pr = newCallTemplateExpressionParser().Parse(pi)
+		pr = callTemplateExpression.Parse(pi)
 		if pr.Error != nil {
 			return pr
 		}
@@ -152,7 +152,7 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 		// Try for a string expression.
 		// { "abc" }
 		// { strings.ToUpper("abc") }
-		pr = newStringExpressionParser().Parse(pi)
+		pr = stringExpression.Parse(pi)
 		if pr.Error != nil {
 			return pr
 		}
