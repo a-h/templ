@@ -337,14 +337,14 @@ func TestTemplateParser(t *testing.T) {
 							Value: `if p.Test {`,
 							Range: Range{
 								From: Position{
-									Index: 37,
+									Index: 30,
 									Line:  2,
-									Col:   7,
+									Col:   4,
 								},
 								To: Position{
-									Index: 43,
+									Index: 37,
 									Line:  2,
-									Col:   13,
+									Col:   11,
 								},
 							},
 						},
@@ -360,14 +360,14 @@ func TestTemplateParser(t *testing.T) {
 											Value: `"span content"`,
 											Range: Range{
 												From: Position{
-													Index: 63,
+													Index: 53,
 													Line:  4,
-													Col:   7,
+													Col:   5,
 												},
 												To: Position{
-													Index: 77,
+													Index: 67,
 													Line:  4,
-													Col:   21,
+													Col:   19,
 												},
 											},
 										},
@@ -387,107 +387,108 @@ func TestTemplateParser(t *testing.T) {
 				},
 			},
 		},
-		//{
-		//name: "template: inputs",
-		//input: `{% templ Name(p Parameter) %}
-		//<input type="text" value="a" />
-		//<input type="text" value="b" />
-		//{% endtempl %}`,
-		//expected: HTMLTemplate{
-		//Name: Expression{
-		//Value: "Name",
-		//Range: Range{
-		//From: Position{
-		//Index: 9,
-		//Line:  1,
-		//Col:   9,
-		//},
-		//To: Position{
-		//Index: 12,
-		//Line:  1,
-		//Col:   12,
-		//},
-		//},
-		//},
-		//Parameters: Expression{
-		//Value: "p Parameter",
-		//Range: Range{
-		//From: Position{
-		//Index: 14,
-		//Line:  1,
-		//Col:   14,
-		//},
-		//To: Position{
-		//Index: 25,
-		//Line:  1,
-		//Col:   25,
-		//},
-		//},
-		//},
-		//Children: []Node{
-		//Element{
-		//Name: "input",
-		//Attributes: []Attribute{
-		//ConstantAttribute{Name: "type", Value: "text"},
-		//ConstantAttribute{Name: "value", Value: "a"},
-		//},
-		//},
-		//Whitespace{Value: "\n"},
-		//Element{
-		//Name: "input",
-		//Attributes: []Attribute{
-		//ConstantAttribute{Name: "type", Value: "text"},
-		//ConstantAttribute{Name: "value", Value: "b"},
-		//},
-		//},
-		//Whitespace{Value: "\n"},
-		//},
-		//},
-		//},
-		//{
-		//name: "template: doctype",
-		//input: `{% templ Name() %}
-		//<!DOCTYPE html>
-		//{% endtempl %}`,
-		//expected: HTMLTemplate{
-		//Name: Expression{
-		//Value: "Name",
-		//Range: Range{
-		//From: Position{
-		//Index: 9,
-		//Line:  1,
-		//Col:   9,
-		//},
-		//To: Position{
-		//Index: 12,
-		//Line:  1,
-		//Col:   12,
-		//},
-		//},
-		//},
-		//Parameters: Expression{
-		//Value: "",
-		//Range: Range{
-		//From: Position{
-		//Index: 14,
-		//Line:  1,
-		//Col:   14,
-		//},
-		//To: Position{
-		//Index: 14,
-		//Line:  1,
-		//Col:   14,
-		//},
-		//},
-		//},
-		//Children: []Node{
-		//DocType{
-		//Value: "html",
-		//},
-		//Whitespace{Value: "\n"},
-		//},
-		//},
-		//},
+		{
+			name: "template: inputs",
+			input: `templ Name(p Parameter) {
+	<input type="text" value="a" />
+	<input type="text" value="b" />
+}`,
+			expected: HTMLTemplate{
+				Name: Expression{
+					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  1,
+							Col:   6,
+						},
+						To: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+					},
+				},
+				Parameters: Expression{
+					Value: "p Parameter",
+					Range: Range{
+						From: Position{
+							Index: 11,
+							Line:  1,
+							Col:   11,
+						},
+						To: Position{
+							Index: 22,
+							Line:  1,
+							Col:   22,
+						},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\t"},
+					Element{
+						Name: "input",
+						Attributes: []Attribute{
+							ConstantAttribute{Name: "type", Value: "text"},
+							ConstantAttribute{Name: "value", Value: "a"},
+						},
+					},
+					Whitespace{Value: "\n\t"},
+					Element{
+						Name: "input",
+						Attributes: []Attribute{
+							ConstantAttribute{Name: "type", Value: "text"},
+							ConstantAttribute{Name: "value", Value: "b"},
+						},
+					},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
+		{
+			name: "template: doctype",
+			input: `templ Name() {
+<!DOCTYPE html>
+}`,
+			expected: HTMLTemplate{
+				Name: Expression{
+					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  1,
+							Col:   6,
+						},
+						To: Position{
+							Index: 9,
+							Line:  1,
+							Col:   9,
+						},
+					},
+				},
+				Parameters: Expression{
+					Value: "",
+					Range: Range{
+						From: Position{
+							Index: 11,
+							Line:  1,
+							Col:   11,
+						},
+						To: Position{
+							Index: 11,
+							Line:  1,
+							Col:   11,
+						},
+					},
+				},
+				Children: []Node{
+					DocType{
+						Value: "html",
+					},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

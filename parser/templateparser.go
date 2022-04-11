@@ -127,6 +127,17 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 			continue
 		}
 
+		// Try for an if expression.
+		// if {}
+		pr = ifExpression.Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
 		// Try for a call template expression.
 		// {! TemplateName(a, b, c) }
 		pr = newCallTemplateExpressionParser().Parse(pi)
