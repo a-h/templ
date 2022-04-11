@@ -649,15 +649,15 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 }
 
 func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err error) {
-	if _, err = g.w.WriteIndent(indentLevel, "// Element CSS\n"); err != nil {
-		return err
-	}
 	var r parser.Range
 	for i := 0; i < len(n.Attributes); i++ {
 		if attr, ok := n.Attributes[i].(parser.ExpressionAttribute); ok {
 			name := html.EscapeString(attr.Name)
 			if name != "class" {
 				continue
+			}
+			if _, err = g.w.WriteIndent(indentLevel, "// Element CSS\n"); err != nil {
+				return err
 			}
 			// Create a class name for the style.
 			// var templCSSClassess templ.CSSClasses =
@@ -692,9 +692,6 @@ func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err erro
 }
 
 func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err error) {
-	if _, err = g.w.WriteIndent(indentLevel, "// Element Script\n"); err != nil {
-		return err
-	}
 	var scriptExpressions []string
 	for i := 0; i < len(n.Attributes); i++ {
 		if attr, ok := n.Attributes[i].(parser.ExpressionAttribute); ok {
@@ -703,6 +700,12 @@ func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err e
 				scriptExpressions = append(scriptExpressions, attr.Expression.Value)
 			}
 		}
+	}
+	if len(scriptExpressions) == 0 {
+		return
+	}
+	if _, err = g.w.WriteIndent(indentLevel, "// Element Script\n"); err != nil {
+		return err
 	}
 	// Render the scripts before the element if required.
 	// err = templ.RenderScripts(ctx, w, a, b, c)

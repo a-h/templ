@@ -41,11 +41,6 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
-		// Element Script
-		err = templ.RenderScripts(ctx, w, )
-		if err != nil {
-			return err
-		}
 		_, err = io.WriteString(w, "<button")
 		if err != nil {
 			return err
@@ -106,11 +101,6 @@ func ThreeButtons() templ.Component {
 		// Element CSS
 		var var_2 templ.CSSClasses = templ.Classes(green())
 		err = templ.RenderCSS(ctx, w, var_2)
-		if err != nil {
-			return err
-		}
-		// Element Script
-		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
 		}

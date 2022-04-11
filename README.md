@@ -76,7 +76,6 @@ templ home() {
 templ posts(posts []Post) {
 	{! layout("Posts", postsTemplate(posts)) }
 }
-
 ```
 
 ### main.go

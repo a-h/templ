@@ -29,7 +29,6 @@ func Button(text string) templ.Component {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		// Element (standard)
-		// Element CSS
 		// Element Script
 		err = templ.RenderScripts(ctx, w, withParameters("test", text, 123), withoutParameters())
 		if err != nil {
@@ -110,12 +109,6 @@ func ThreeButtons() templ.Component {
 			return err
 		}
 		// Element (standard)
-		// Element CSS
-		// Element Script
-		err = templ.RenderScripts(ctx, w, )
-		if err != nil {
-			return err
-		}
 		_, err = io.WriteString(w, "<button")
 		if err != nil {
 			return err

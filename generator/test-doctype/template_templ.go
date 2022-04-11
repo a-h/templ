@@ -18,12 +18,6 @@ func Layout(title, content string) templ.Component {
 			return err
 		}
 		// Element (standard)
-		// Element CSS
-		// Element Script
-		err = templ.RenderScripts(ctx, w, )
-		if err != nil {
-			return err
-		}
 		_, err = io.WriteString(w, "<html")
 		if err != nil {
 			return err

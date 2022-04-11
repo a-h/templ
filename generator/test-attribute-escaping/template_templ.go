@@ -18,12 +18,6 @@ func BasicTemplate(url string) templ.Component {
 			return err
 		}
 		// Element (standard)
-		// Element CSS
-		// Element Script
-		err = templ.RenderScripts(ctx, w, )
-		if err != nil {
-			return err
-		}
 		_, err = io.WriteString(w, "<a")
 		if err != nil {
 			return err

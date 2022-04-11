@@ -13,12 +13,6 @@ func actionTemplate(action string, target string, template templ.Component) temp
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		// Element (standard)
-		// Element CSS
-		// Element Script
-		err = templ.RenderScripts(ctx, w, )
-		if err != nil {
-			return err
-		}
 		_, err = io.WriteString(w, "<turbo-stream")
 		if err != nil {
 			return err
@@ -87,12 +81,6 @@ func removeTemplate(action string, target string) templ.Component {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		// Element (standard)
-		// Element CSS
-		// Element Script
-		err = templ.RenderScripts(ctx, w, )
-		if err != nil {
-			return err
-		}
 		_, err = io.WriteString(w, "<turbo-stream")
 		if err != nil {
 			return err
