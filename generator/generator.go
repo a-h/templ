@@ -411,12 +411,18 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 		return err
 	}
 	var r parser.Range
-	// if x == y {
-	if r, err = g.w.WriteIndent(indentLevel, n.Expression.Value); err != nil {
+	// if
+	if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
+		return err
+	}
+	// x == y {
+	if r, err = g.w.Write(n.Expression.Value); err != nil {
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	if _, err = g.w.Write("\n"); err != nil {
+	g.sourceMap.Add(n.Expression, r)
+	// {
+	if _, err = g.w.Write(` {` + "\n"); err != nil {
 		return err
 	}
 	indentLevel++

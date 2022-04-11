@@ -31,7 +31,7 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Once we've got a prefix, read until {\n.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.All(parse.WithStringConcatCombiner, openBrace, newLine))(pi)
+	pr := parse.StringUntil(parse.All(parse.WithStringConcatCombiner, openBraceWithOptionalPadding, newLine))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -39,7 +39,7 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 	if !pr.Success {
 		return parse.Failure("ifExpressionParser", newParseError("if: unterminated (missing closing '{\n')", from, NewPositionFromInput(pi)))
 	}
-	r.Expression = NewExpression("if "+pr.Item.(string)+"{", from, NewPositionFromInput(pi))
+	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
 	// Eat " {".
 	from = NewPositionFromInput(pi)

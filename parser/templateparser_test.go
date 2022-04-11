@@ -334,7 +334,7 @@ func TestTemplateParser(t *testing.T) {
 					Whitespace{Value: "\t"},
 					IfExpression{
 						Expression: Expression{
-							Value: `if p.Test {`,
+							Value: `p.Test`,
 							Range: Range{
 								From: Position{
 									Index: 30,
@@ -342,9 +342,9 @@ func TestTemplateParser(t *testing.T) {
 									Col:   4,
 								},
 								To: Position{
-									Index: 37,
+									Index: 36,
 									Line:  2,
-									Col:   11,
+									Col:   10,
 								},
 							},
 						},
