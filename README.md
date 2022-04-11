@@ -14,62 +14,69 @@
 ### example.templ
 
 ```html
-{% package main %}
+package main
 
-{% import "fmt" %}
-{% import "time" %}
+import "fmt"
+import "time"
 
-{% templ headerTemplate() %}
-	<head><title>Blog</title></head>
-{% endtempl %}
+templ headerTemplate(name string) {
+	<header data-testid="headerTemplate">
+		<h1>{ name }</h1>
+	</header>
+}
 
-{% templ footerTemplate() %}
-	<footer>
-		<div>&copy; {%= fmt.Sprintf("%d", time.Now().Year()) %}</div>
+templ footerTemplate() {
+	<footer data-testid="footerTemplate">
+		<div>&copy; { fmt.Sprintf("%d", time.Now().Year()) }</div>
 	</footer>
-{% endtempl %}
+}
 
-{% templ navTemplate() %}
-	<nav>
+templ navTemplate() {
+	<nav data-testid="navTemplate">
 		<ul>
 			<li><a href="/">Home</a></li>
 			<li><a href="/posts">Posts</a></li>
 		</ul>
 	</nav>
-{% endtempl %}
+}
 
-{% templ layout(name string, content templ.Component) %}
+templ layout(name string, content templ.Component) {
 	<html>
-		{%! headerTemplate() %}
+		<head><title>{ name }</title></head>
 		<body>
-			<h1>Home</h1>
-			{%! navTemplate() %}
+			{! headerTemplate(name) }
+			{! navTemplate() }
 			<main>
-				{%! content %}
+				{! content }
 			</main>
 		</body>
-		{%! footerTemplate() %}
+		{! footerTemplate() }
 	</html>
-{% endtempl %}
+}
 
-{% templ homeTemplate() %}
-	<div>Welcome to my website.</div>
-{% endtempl %}
+templ homeTemplate() {
+	<div data-testid="homeTemplate">Welcome to my website.</div>
+}
 
-{% templ postsTemplate(posts []Post) %}
-	{% for _, p := range posts %}
-		<div>{%= p.Name %}</div>
-		<div>{%= p.Author %}</div>
-	{% endfor %}
-{% endtempl %}
+templ postsTemplate(posts []Post) {
+	<div data-testid="postsTemplate">
+		for _, p := range posts {
+			<div data-testid="postsTemplatePost">
+				<div data-testid="postsTemplatePostName">{ p.Name }</div>
+				<div data-testid="postsTemplatePostAuthor">{ p.Author }</div>
+			</div>
+		}
+	</div>
+}
 
-{% templ home() %}
-	{%! layout("Home", homeTemplate()) %}
-{% endtempl %}
+templ home() {
+	{! layout("Home", homeTemplate()) }
+}
 
-{% templ posts(posts []Post) %}
-	{%! layout("Posts", postsTemplate(posts)) %}
-{% endtempl %}
+templ posts(posts []Post) {
+	{! layout("Posts", postsTemplate(posts)) }
+}
+
 ```
 
 ### main.go
