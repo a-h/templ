@@ -49,7 +49,7 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Once we've had the start of an if block, we must conclude the block.
 
-	// Eat optional newline.
+	// Eat required newline.
 	if lb := newLine(pi); lb.Error != nil {
 		return lb
 	}

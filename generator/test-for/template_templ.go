@@ -12,18 +12,22 @@ func render(items []string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		// Text
-		var_1 := `for _, item := range items `
-		_, err = io.WriteString(w, var_1)
-		if err != nil {
-			return err
-		}
-		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(
-		<div>{ item }</div>
-	))
-		if err != nil {
-			return err
+		// For
+		for _, item := range items {
+			// Element (standard)
+			_, err = io.WriteString(w, "<div>")
+			if err != nil {
+				return err
+			}
+			// StringExpression
+			_, err = io.WriteString(w, templ.EscapeString(item))
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, "</div>")
+			if err != nil {
+				return err
+			}
 		}
 		return err
 	})

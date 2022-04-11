@@ -150,8 +150,19 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 		if pr.Success {
 			op = append(op, pr.Item.(Node))
 			continue
-
 		}
+
+		// Try for a for expression.
+		// for {}
+		pr = forExpression.Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
 		// Try for a switch expression.
 		// switch {}
 		pr = switchExpression.Parse(pi)
