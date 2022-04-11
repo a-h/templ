@@ -19,12 +19,6 @@ func asNil(inputs []interface{}) (interface{}, bool) {
 	return nil, true
 }
 
-// create a parser for `name`
-// Deprecated: just use a string "name"
-func createStartParser(name string) parse.Function {
-	return parse.Or(parse.String("{ "+name+" "), parse.String("{"+name+" "))
-}
-
 var newLine = parse.Or(parse.String("\r\n"), parse.Rune('\n'))
 
 // Whitespace.
@@ -38,6 +32,7 @@ func asWhitespace(parts []interface{}) (result interface{}, ok bool) {
 
 var whitespaceParser = parse.AtLeast(asWhitespace, 1, parse.RuneInRanges(unicode.White_Space))
 var optionalWhitespaceParser = parse.AtLeast(asWhitespace, 0, parse.RuneInRanges(unicode.White_Space))
+var optionalWhitespaceAsString = parse.AtLeast(parse.WithStringConcatCombiner, 0, parse.RuneInRanges(unicode.White_Space))
 
 // Template
 

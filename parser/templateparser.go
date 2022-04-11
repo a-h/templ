@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"io"
 	"strings"
 
@@ -105,6 +104,21 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 	for {
 		var pr parse.Result
 
+		// Check if we've reached the end.
+		if p.until != nil {
+			start := pi.Index()
+			pr = p.until(pi)
+			if pr.Error != nil {
+				return pr
+			}
+			if pr.Success {
+				if err := rewind(pi, start); err != nil {
+					return parse.Failure("templateNodeParser", err)
+				}
+				return parse.Success("templateNodeParser", op, nil)
+			}
+		}
+
 		// Try for a doctype.
 		// <!DOCTYPE html>
 		pr = newDocTypeParser().Parse(pi)
@@ -130,6 +144,17 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 		// Try for an if expression.
 		// if {}
 		pr = ifExpression.Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+
+		}
+		// Try for a switch expression.
+		// switch {}
+		pr = switchExpression.Parse(pi)
 		if pr.Error != nil {
 			return pr
 		}
@@ -182,28 +207,10 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 			continue
 		}
 
-		// Check if we've reached the end.
 		if p.until == nil {
 			// In this case, we're just reading as many nodes as we can.
 			// The element parser checks the final node returned to make sure it's the expected close tag.
 			break
-		} else {
-			start := pi.Index()
-			pr = p.until(pi)
-			if pr.Error != nil {
-				return pr
-			}
-			if pr.Success {
-				if err := rewind(pi, start); err != nil {
-					return parse.Failure("templateNodeParser", err)
-				}
-				return parse.Success("templateNodeParser", op, nil)
-			}
-
-			current, _ := pi.Peek()
-
-			pos := NewPositionFromInput(pi)
-			return parse.Failure("templateNodeParser", newParseError(fmt.Sprintf("template: unexpected token %q, expected to parse %v", string(current), p.until), pos, pos))
 		}
 	}
 

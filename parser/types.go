@@ -569,7 +569,6 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 type SwitchExpression struct {
 	Expression Expression
 	Cases      []CaseExpression
-	Default    []Node
 }
 
 func (se SwitchExpression) IsNode() bool { return true }
@@ -587,17 +586,6 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 			return err
 		}
 		if err := writeIndent(w, indent, "{% endcase %}\n"); err != nil {
-			return err
-		}
-	}
-	if len(se.Default) > 0 {
-		if err := writeIndent(w, indent, "{% default %}\n"); err != nil {
-			return err
-		}
-		if err := writeNodesBlock(w, indent+1, se.Default); err != nil {
-			return err
-		}
-		if err := writeIndent(w, indent, "{% enddefault %}\n"); err != nil {
 			return err
 		}
 	}

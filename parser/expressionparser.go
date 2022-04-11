@@ -37,7 +37,10 @@ func parseUntil(combiner parse.MultipleResultCombiner, p parse.Function, delimit
 	}
 }
 
-var openBrace = parse.Rune('{')
+var openBrace = parse.String("{")
+var openBraceWithPadding = parse.String(" {")
+var openBraceWithOptionalPadding = parse.Or(openBraceWithPadding, openBrace)
+
 var closeBrace = parse.String("}")
 var closeBraceWithPadding = parse.String(" }")
 var closeBraceWithOptionalPadding = parse.Or(closeBraceWithPadding, closeBrace)
@@ -97,7 +100,7 @@ loop:
 		}
 		if result.Success {
 			braceCount++
-			sb.WriteRune(result.Item.(rune))
+			sb.WriteString(result.Item.(string))
 			continue
 		}
 		// Try closer.

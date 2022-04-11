@@ -459,31 +459,16 @@ func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpres
 
 	if len(n.Cases) > 0 {
 		for _, c := range n.Cases {
-			// case
-			if _, err = g.w.WriteIndent(indentLevel, `case `); err != nil {
-				return err
-			}
-			// val
-			if r, err = g.w.Write(c.Expression.Value); err != nil {
+			// case x:
+			// default:
+			if r, err = g.w.WriteIndent(indentLevel, c.Expression.Value); err != nil {
 				return err
 			}
 			g.sourceMap.Add(c.Expression, r)
-			if _, err = g.w.Write(`:` + "\n"); err != nil {
-				return err
-			}
 			indentLevel++
 			g.writeNodes(indentLevel, c.Children)
 			indentLevel--
 		}
-	}
-
-	if len(n.Default) > 0 {
-		if _, err = g.w.WriteIndent(indentLevel, `default:`); err != nil {
-			return err
-		}
-		indentLevel++
-		g.writeNodes(indentLevel, n.Default)
-		indentLevel--
 	}
 	// }
 	if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {

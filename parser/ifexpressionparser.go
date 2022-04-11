@@ -6,7 +6,6 @@ import (
 	"github.com/a-h/lexical/parse"
 )
 
-// IfExpression.
 var ifExpression ifExpressionParser
 
 type ifExpressionParser struct {

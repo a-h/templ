@@ -12,21 +12,20 @@ func render(input string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		// Text
-		var_1 := `switch input `
-		_, err = io.WriteString(w, var_1)
-		if err != nil {
-			return err
-		}
-		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(
+		// Switch
+		switch input {
 		case "a":
-			{ "it was 'a'" }
+			// StringExpression
+			_, err = io.WriteString(w, templ.EscapeString("it was 'a'"))
+			if err != nil {
+				return err
+			}
 		default:
-			{ "it was something else" }
-	))
-		if err != nil {
-			return err
+			// StringExpression
+			_, err = io.WriteString(w, templ.EscapeString("it was something else"))
+			if err != nil {
+				return err
+			}
 		}
 		return err
 	})
