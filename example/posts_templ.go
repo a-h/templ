@@ -7,6 +7,7 @@ package main
 import "github.com/a-h/templ"
 import "context"
 import "io"
+
 import "fmt"
 import "time"
 
@@ -318,75 +319,19 @@ func postsTemplate(posts []Post) templ.Component {
 		if err != nil {
 			return err
 		}
-		for _, p := range posts {
-			err = templ.RenderScripts(ctx, w, )
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, "<div")
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, " data-testid=\"postsTemplatePost\"")
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, ">")
-			if err != nil {
-				return err
-			}
-			err = templ.RenderScripts(ctx, w, )
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, "<div")
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, " data-testid=\"postsTemplatePostName\"")
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, ">")
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, templ.EscapeString(p.Name))
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, "</div>")
-			if err != nil {
-				return err
-			}
-			err = templ.RenderScripts(ctx, w, )
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, "<div")
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, " data-testid=\"postsTemplatePostAuthor\"")
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, ">")
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, templ.EscapeString(p.Author))
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, "</div>")
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, "</div>")
-			if err != nil {
-				return err
-			}
+		var_5 := `for _, p := range posts `
+		_, err = io.WriteString(w, var_5)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, templ.EscapeString(
+			<div data-testid="postsTemplatePost">
+				<div data-testid="postsTemplatePostName">{ p.Name }</div>
+				<div data-testid="postsTemplatePostAuthor">{ p.Author }</div>
+			</div>
+		))
+		if err != nil {
+			return err
 		}
 		_, err = io.WriteString(w, "</div>")
 		if err != nil {

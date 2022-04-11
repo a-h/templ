@@ -53,7 +53,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_2 templ.SafeURL = templ.URL("javascript:alert('should be sanitized')")
+		var var_2 templ.SafeURL = templ.URL("javascript:alert('should be sanitized')") %
 		_, err = io.WriteString(w, templ.EscapeString(string(var_2)))
 		if err != nil {
 			return err
@@ -91,7 +91,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_4 templ.SafeURL = templ.SafeURL("javascript:alert('should not be sanitized')")
+		var var_4 templ.SafeURL = templ.SafeURL("javascript:alert('should not be sanitized')") %
 		_, err = io.WriteString(w, templ.EscapeString(string(var_4)))
 		if err != nil {
 			return err

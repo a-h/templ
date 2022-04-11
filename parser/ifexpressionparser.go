@@ -100,9 +100,9 @@ func (p elseExpressionParser) Parse(pi parse.Input) parse.Result {
 }
 
 var endElseParser = parse.All(parse.WithStringConcatCombiner,
-	parse.Rune('{'),
+	parse.Rune('}'),
 	optionalWhitespaceParser,
 	parse.String("else"),
 	optionalWhitespaceParser,
-	parse.Rune('}'),
+	parse.Rune('{'),
 	optionalWhitespaceParser)

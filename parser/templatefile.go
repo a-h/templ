@@ -80,6 +80,23 @@ type TemplateFileParser struct {
 func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 	var tf TemplateFile
 
+	// Required package.
+	// package name
+	pr := pkg.Parse(pi)
+	if pr.Error != nil {
+		return pr
+	}
+	pkg, ok := pr.Item.(Package)
+	if !ok {
+		pkg = Package{
+			Expression: NewExpression(p.DefaultPackage, NewPosition(), NewPosition()),
+		}
+	}
+	tf.Package = pkg
+
+	// Optional whitespace.
+	parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+
 	// Optional templates, CSS, and script templates.
 	// templ Name(p Parameter) {
 	// css Name() {

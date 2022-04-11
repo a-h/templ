@@ -115,12 +115,20 @@ type Expression struct {
 }
 
 type TemplateFile struct {
-	Nodes []TemplateFileNode
+	Package Package
+	Nodes   []TemplateFileNode
 }
 
 func (tf TemplateFile) Write(w io.Writer) error {
+	var indent int
+	if err := tf.Package.Write(w, indent); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte("\n\n")); err != nil {
+		return err
+	}
 	for i := 0; i < len(tf.Nodes); i++ {
-		if err := tf.Nodes[i].Write(w, 0); err != nil {
+		if err := tf.Nodes[i].Write(w, indent); err != nil {
 			return err
 		}
 		if _, err := w.Write([]byte("\n\n")); err != nil {
@@ -152,6 +160,14 @@ func writeIndent(w io.Writer, level int, s string) (err error) {
 	}
 	_, err = w.Write([]byte(s))
 	return
+}
+
+type Package struct {
+	Expression Expression
+}
+
+func (p Package) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, p.Expression.Value)
 }
 
 // Whitespace.

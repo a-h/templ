@@ -16,7 +16,7 @@ Hello
 		}
 	})
 	t.Run("but can accept a package expression, if one is provided", func(t *testing.T) {
-		input := `package main
+		input := `package goof
 
 templ Hello() {
 	Hello
@@ -25,8 +25,11 @@ templ Hello() {
 		if err != nil {
 			t.Fatalf("failed to parse template, with error: %v", err)
 		}
-		if len(tf.Nodes) != 2 {
+		if len(tf.Nodes) != 1 {
 			t.Errorf("expected 2 nodes, got %+v", tf.Nodes)
+		}
+		if tf.Package.Expression.Value != "goof" {
+			t.Errorf("expected \"goof\", got %q", tf.Package.Expression.Value)
 		}
 	})
 }

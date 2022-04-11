@@ -12,16 +12,19 @@ func template(input string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		switch input {
+		var_1 := `switch input `
+		_, err = io.WriteString(w, var_1)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, templ.EscapeString(
 		case "a":
-			_, err = io.WriteString(w, templ.EscapeString("it was 'a'"))
-			if err != nil {
-				return err
-			}
-		default:			_, err = io.WriteString(w, templ.EscapeString("it was something else"))
-			if err != nil {
-				return err
-			}
+			{ "it was 'a'" }
+		default:
+			{ "it was something else" }
+	))
+		if err != nil {
+			return err
 		}
 		return err
 	})

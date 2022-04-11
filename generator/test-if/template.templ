@@ -1,10 +1,10 @@
-{% package testif %}
+package testif{
 
-{% templ render(d data) %}
-	{% if d.IsTrue() %}
-		{%= "True" %}
-	{% else %}
-		{%= "False" %}
-	{% endif %}
-{% endtempl %}
+templ render(d data){
+	if d.IsTrue() {
+		{ "True" }
+	} else {
+		{ "False" }
+	}
+}
 

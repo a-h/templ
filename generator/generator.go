@@ -152,7 +152,6 @@ func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
 }
 
 func (g *generator) writeImports() error {
-	var r parser.Range
 	var err error
 	// Always import templ because it's the interface type of all templates.
 	if _, err = g.w.Write("import \"github.com/a-h/templ\"\n"); err != nil {
@@ -175,19 +174,6 @@ func (g *generator) writeImports() error {
 			return err
 		}
 	}
-	for _, im := range g.tf.Imports {
-		// import
-		if _, err = g.w.Write("import "); err != nil {
-			return err
-		}
-		if r, err = g.w.Write(im.Expression.Value); err != nil {
-			return err
-		}
-		g.sourceMap.Add(im.Expression, r)
-		if _, err = g.w.Write("\n"); err != nil {
-			return err
-		}
-	}
 	if _, err = g.w.Write("\n"); err != nil {
 		return err
 	}
@@ -197,6 +183,12 @@ func (g *generator) writeImports() error {
 func (g *generator) writeTemplateNodes() error {
 	for i := 0; i < len(g.tf.Nodes); i++ {
 		switch n := g.tf.Nodes[i].(type) {
+		case parser.GoExpression:
+			r, err := g.w.Write(n.Expression.Value)
+			if err != nil {
+				return err
+			}
+			g.sourceMap.Add(n.Expression, r)
 		case parser.HTMLTemplate:
 			if err := g.writeTemplate(n); err != nil {
 				return err
@@ -405,18 +397,12 @@ func (g *generator) writeDocType(indentLevel int, n parser.DocType) error {
 func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) error {
 	var r parser.Range
 	var err error
-	// if
-	if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
-		return err
-	}
-	// x == y
-	if r, err = g.w.Write(n.Expression.Value); err != nil {
+	// if x == y {
+	if r, err = g.w.WriteIndent(indentLevel, n.Expression.Value); err != nil {
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	// Then.
-	// {
-	if _, err = g.w.Write(` {` + "\n"); err != nil {
+	if _, err = g.w.Write("\n"); err != nil {
 		return err
 	}
 	indentLevel++
