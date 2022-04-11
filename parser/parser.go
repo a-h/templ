@@ -41,9 +41,7 @@ var optionalWhitespaceParser = parse.AtLeast(asWhitespace, 0, parse.RuneInRanges
 
 // Template
 
-func newTemplateParser() templateParser {
-	return templateParser{}
-}
+var template templateParser
 
 type templateParser struct {
 }

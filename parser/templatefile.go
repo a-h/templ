@@ -81,15 +81,26 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 	var tf TemplateFile
 
 	// Optional templates, CSS, and script templates.
-	// {% templ Name(p Parameter) %}
-	// {% css Name() %}
-	// {% script Name() %}
-	tp := newTemplateParser()
+	// templ Name(p Parameter) {
+	// css Name() {
+	// script Name() {
+	// Anything else is assumed to be Go code.
 	cssp := newCSSParser()
 	stp := newScriptTemplateParser()
+	templateContent := parse.Any(template.Parse, cssp.Parse, stp.Parse)
 	for {
+		from := NewPositionFromInput(pi)
+		gor := parse.StringUntil(templateContent)(pi)
+		if gor.Error != nil && gor.Error != io.EOF {
+			return gor
+		}
+		if gor.Success && len(gor.Item.(string)) > 0 {
+			expr := NewExpression(gor.Item.(string), from, NewPositionFromInput(pi))
+			tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
+		}
+
 		// Try for a template.
-		tpr := tp.Parse(pi)
+		tpr := template.Parse(pi)
 		if tpr.Error != nil && tpr.Error != io.EOF {
 			return tpr
 		}

@@ -115,34 +115,13 @@ type Expression struct {
 }
 
 type TemplateFile struct {
-	Package Package
-	Imports []Import
-	Nodes   []TemplateFileNode
+	//TODO: Remove package and imports. They're just expressions now.
+	Nodes []TemplateFileNode
 }
 
 func (tf TemplateFile) Write(w io.Writer) error {
-	var indent int
-	if err := tf.Package.Write(w, indent); err != nil {
-		return err
-	}
-	if _, err := w.Write([]byte("\n\n")); err != nil {
-		return err
-	}
-	if len(tf.Imports) > 0 {
-		for i := 0; i < len(tf.Imports); i++ {
-			if err := tf.Imports[i].Write(w, indent); err != nil {
-				return err
-			}
-			if _, err := w.Write([]byte("\n")); err != nil {
-				return err
-			}
-		}
-		if _, err := w.Write([]byte("\n")); err != nil {
-			return err
-		}
-	}
 	for i := 0; i < len(tf.Nodes); i++ {
-		if err := tf.Nodes[i].Write(w, indent); err != nil {
+		if err := tf.Nodes[i].Write(w, 0); err != nil {
 			return err
 		}
 		if _, err := w.Write([]byte("\n\n")); err != nil {
@@ -152,19 +131,20 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	return nil
 }
 
-// TemplateFileNode can be a Template or a CSS.
+// TemplateFileNode can be a Template, CSS, Script or Go.
 type TemplateFileNode interface {
 	IsTemplateFileNode() bool
 	Write(w io.Writer, indent int) error
 }
 
-// {% package parser %}
-type Package struct {
+// GoExpression within a TemplateFile
+type GoExpression struct {
 	Expression Expression
 }
 
-func (p Package) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, "{% package "+p.Expression.Value+" %}")
+func (exp GoExpression) IsTemplateFileNode() bool { return true }
+func (exp GoExpression) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, exp.Expression.Value)
 }
 
 func writeIndent(w io.Writer, level int, s string) (err error) {
@@ -184,16 +164,6 @@ func (ws Whitespace) IsNode() bool { return true }
 func (ws Whitespace) Write(w io.Writer, indent int) error {
 	// Explicit whitespace nodes are removed from templates because they're auto-formatted.
 	return nil
-}
-
-// {% import "strings" %}
-// {% import strs "strings" %}
-type Import struct {
-	Expression Expression
-}
-
-func (imp Import) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, "{% import "+imp.Expression.Value+" %}")
 }
 
 // CSS definition.

@@ -4,32 +4,29 @@ import "testing"
 
 func TestTemplateFileParser(t *testing.T) {
 	t.Run("does not require a package expression", func(t *testing.T) {
-		input := `{% templ Hello() %}
+		input := `templ Hello() {
 Hello
-{% endtempl %}`
+}`
 		tf, err := ParseString(input)
 		if err != nil {
 			t.Fatalf("failed to parse template, with error: %v", err)
 		}
 		if len(tf.Nodes) != 1 {
 			t.Errorf("expected 1 node, got %+v", tf.Nodes)
-		}
-		if tf.Package.Expression.Value != "main" {
-			t.Errorf("expected the package to be 'main', because no context was provided, but got %v", tf.Package.Expression)
 		}
 	})
 	t.Run("but can accept a package expression, if one is provided", func(t *testing.T) {
-		input := `{% package main %}
+		input := `package main
 
-{% templ Hello() %}
-Hello
-{% endtempl %}`
+templ Hello() {
+	Hello
+}`
 		tf, err := ParseString(input)
 		if err != nil {
 			t.Fatalf("failed to parse template, with error: %v", err)
 		}
-		if len(tf.Nodes) != 1 {
-			t.Errorf("expected 1 node, got %+v", tf.Nodes)
+		if len(tf.Nodes) != 2 {
+			t.Errorf("expected 2 nodes, got %+v", tf.Nodes)
 		}
 	})
 }
