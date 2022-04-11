@@ -12,6 +12,9 @@ func render() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -20,6 +23,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " href=\"javascript:alert(&#39;unaffected&#39;);\"")
 		if err != nil {
 			return err
@@ -28,6 +32,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Text
 		var_1 := `Ignored`
 		_, err = io.WriteString(w, var_1)
 		if err != nil {
@@ -37,6 +42,9 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -45,6 +53,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " href=")
 		if err != nil {
 			return err
@@ -53,7 +62,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_2 templ.SafeURL = templ.URL("javascript:alert('should be sanitized')") %
+		var var_2 templ.SafeURL = templ.URL("javascript:alert('should be sanitized')")
 		_, err = io.WriteString(w, templ.EscapeString(string(var_2)))
 		if err != nil {
 			return err
@@ -66,6 +75,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Text
 		var_3 := `Sanitized`
 		_, err = io.WriteString(w, var_3)
 		if err != nil {
@@ -75,6 +85,9 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -83,6 +96,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " href=")
 		if err != nil {
 			return err
@@ -91,7 +105,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_4 templ.SafeURL = templ.SafeURL("javascript:alert('should not be sanitized')") %
+		var var_4 templ.SafeURL = templ.SafeURL("javascript:alert('should not be sanitized')")
 		_, err = io.WriteString(w, templ.EscapeString(string(var_4)))
 		if err != nil {
 			return err
@@ -104,6 +118,7 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Text
 		var_5 := `Unsanitized`
 		_, err = io.WriteString(w, var_5)
 		if err != nil {

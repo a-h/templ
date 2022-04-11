@@ -12,14 +12,17 @@ func personTemplate(p person) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<h1>")
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(p.name))
 		if err != nil {
 			return err
@@ -28,6 +31,9 @@ func personTemplate(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -36,6 +42,7 @@ func personTemplate(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " style=\"font-family: &#39;sans-serif&#39;\"")
 		if err != nil {
 			return err
@@ -64,6 +71,7 @@ func personTemplate(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// CallTemplate
 		err = email(p.email).Render(ctx, w)
 		if err != nil {
 			return err
@@ -84,15 +92,20 @@ func email(s string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err
 		}
+		// Text
 		var_1 := `email:`
 		_, err = io.WriteString(w, var_1)
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -101,6 +114,7 @@ func email(s string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " href=")
 		if err != nil {
 			return err
@@ -122,6 +136,7 @@ func email(s string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(s))
 		if err != nil {
 			return err

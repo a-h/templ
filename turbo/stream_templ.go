@@ -12,6 +12,9 @@ func actionTemplate(action string, target string, template templ.Component) temp
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -20,6 +23,7 @@ func actionTemplate(action string, target string, template templ.Component) temp
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " action=")
 		if err != nil {
 			return err
@@ -56,10 +60,12 @@ func actionTemplate(action string, target string, template templ.Component) temp
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<template>")
 		if err != nil {
 			return err
 		}
+		// CallTemplate
 		err = template.Render(ctx, w)
 		if err != nil {
 			return err
@@ -80,6 +86,9 @@ func removeTemplate(action string, target string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -88,6 +97,7 @@ func removeTemplate(action string, target string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " action=")
 		if err != nil {
 			return err

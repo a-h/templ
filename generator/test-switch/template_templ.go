@@ -12,11 +12,13 @@ func render(input string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Text
 		var_1 := `switch input `
 		_, err = io.WriteString(w, var_1)
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(
 		case "a":
 			{ "it was 'a'" }

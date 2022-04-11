@@ -34,11 +34,14 @@ func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
 		var var_1 templ.CSSClasses = templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe"))
 		err = templ.RenderCSS(ctx, w, var_1)
 		if err != nil {
 			return err
 		}
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -47,6 +50,7 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " class=")
 		if err != nil {
 			return err
@@ -71,6 +75,7 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(text))
 		if err != nil {
 			return err
@@ -87,19 +92,24 @@ func ThreeButtons() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// CallTemplate
 		err = Button("A").Render(ctx, w)
 		if err != nil {
 			return err
 		}
+		// CallTemplate
 		err = Button("B").Render(ctx, w)
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
 		var var_2 templ.CSSClasses = templ.Classes(green())
 		err = templ.RenderCSS(ctx, w, var_2)
 		if err != nil {
 			return err
 		}
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -108,6 +118,7 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " class=")
 		if err != nil {
 			return err
@@ -132,6 +143,7 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString("Green"))
 		if err != nil {
 			return err

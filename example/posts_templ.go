@@ -8,6 +8,7 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
+// GoExpression
 import "fmt"
 import "time"
 
@@ -15,6 +16,9 @@ func headerTemplate(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -23,6 +27,7 @@ func headerTemplate(name string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " data-testid=\"headerTemplate\"")
 		if err != nil {
 			return err
@@ -31,10 +36,12 @@ func headerTemplate(name string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<h1>")
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(name))
 		if err != nil {
 			return err
@@ -55,6 +62,9 @@ func footerTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -63,6 +73,7 @@ func footerTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " data-testid=\"footerTemplate\"")
 		if err != nil {
 			return err
@@ -71,15 +82,18 @@ func footerTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err
 		}
+		// Text
 		var_1 := `&copy; `
 		_, err = io.WriteString(w, var_1)
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(fmt.Sprintf("%d", time.Now().Year())))
 		if err != nil {
 			return err
@@ -100,6 +114,9 @@ func navTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -108,6 +125,7 @@ func navTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " data-testid=\"navTemplate\"")
 		if err != nil {
 			return err
@@ -116,14 +134,19 @@ func navTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<ul>")
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<li>")
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -132,6 +155,7 @@ func navTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " href=\"/\"")
 		if err != nil {
 			return err
@@ -140,6 +164,7 @@ func navTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Text
 		var_2 := `Home`
 		_, err = io.WriteString(w, var_2)
 		if err != nil {
@@ -153,10 +178,14 @@ func navTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<li>")
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -165,6 +194,7 @@ func navTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " href=\"/posts\"")
 		if err != nil {
 			return err
@@ -173,6 +203,7 @@ func navTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Text
 		var_3 := `Posts`
 		_, err = io.WriteString(w, var_3)
 		if err != nil {
@@ -202,18 +233,22 @@ func layout(name string, content templ.Component) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
 		_, err = io.WriteString(w, "<html>")
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<head>")
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<title>")
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(name))
 		if err != nil {
 			return err
@@ -226,22 +261,27 @@ func layout(name string, content templ.Component) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<body>")
 		if err != nil {
 			return err
 		}
+		// CallTemplate
 		err = headerTemplate(name).Render(ctx, w)
 		if err != nil {
 			return err
 		}
+		// CallTemplate
 		err = navTemplate().Render(ctx, w)
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<main>")
 		if err != nil {
 			return err
 		}
+		// CallTemplate
 		err = content.Render(ctx, w)
 		if err != nil {
 			return err
@@ -254,6 +294,7 @@ func layout(name string, content templ.Component) templ.Component {
 		if err != nil {
 			return err
 		}
+		// CallTemplate
 		err = footerTemplate().Render(ctx, w)
 		if err != nil {
 			return err
@@ -270,6 +311,9 @@ func homeTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -278,6 +322,7 @@ func homeTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " data-testid=\"homeTemplate\"")
 		if err != nil {
 			return err
@@ -286,6 +331,7 @@ func homeTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Text
 		var_4 := `Welcome to my website.`
 		_, err = io.WriteString(w, var_4)
 		if err != nil {
@@ -303,6 +349,9 @@ func postsTemplate(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -311,6 +360,7 @@ func postsTemplate(posts []Post) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " data-testid=\"postsTemplate\"")
 		if err != nil {
 			return err
@@ -319,11 +369,13 @@ func postsTemplate(posts []Post) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Text
 		var_5 := `for _, p := range posts `
 		_, err = io.WriteString(w, var_5)
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(
 			<div data-testid="postsTemplatePost">
 				<div data-testid="postsTemplatePostName">{ p.Name }</div>
@@ -345,6 +397,7 @@ func home() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// CallTemplate
 		err = layout("Home", homeTemplate()).Render(ctx, w)
 		if err != nil {
 			return err
@@ -357,6 +410,7 @@ func posts(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// CallTemplate
 		err = layout("Posts", postsTemplate(posts)).Render(ctx, w)
 		if err != nil {
 			return err

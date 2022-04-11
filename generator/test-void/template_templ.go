@@ -12,14 +12,17 @@ func render() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (void)
 		_, err = io.WriteString(w, "<br>")
 		if err != nil {
 			return err
 		}
+		// Element (void)
 		_, err = io.WriteString(w, "<img")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " src=\"https://example.com/image.png\"")
 		if err != nil {
 			return err
@@ -28,10 +31,12 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (void)
 		_, err = io.WriteString(w, "<br>")
 		if err != nil {
 			return err
 		}
+		// Element (void)
 		_, err = io.WriteString(w, "<br>")
 		if err != nil {
 			return err

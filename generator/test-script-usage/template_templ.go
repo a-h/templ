@@ -28,6 +28,9 @@ func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, withParameters("test", text, 123), withoutParameters())
 		if err != nil {
 			return err
@@ -36,6 +39,7 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " onClick=")
 		if err != nil {
 			return err
@@ -78,6 +82,7 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(text))
 		if err != nil {
 			return err
@@ -94,14 +99,19 @@ func ThreeButtons() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// CallTemplate
 		err = Button("A").Render(ctx, w)
 		if err != nil {
 			return err
 		}
+		// CallTemplate
 		err = Button("B").Render(ctx, w)
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -110,6 +120,7 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " onMouseover=\"console.log(&#39;mouseover&#39;)\"")
 		if err != nil {
 			return err
@@ -122,6 +133,7 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Text
 		var_3 := `Button C`
 		_, err = io.WriteString(w, var_3)
 		if err != nil {

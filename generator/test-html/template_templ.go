@@ -12,14 +12,17 @@ func render(p person) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// Element (standard)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<h1>")
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(p.name))
 		if err != nil {
 			return err
@@ -28,6 +31,9 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -36,6 +42,7 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " style=\"font-family: &#39;sans-serif&#39;\"")
 		if err != nil {
 			return err
@@ -64,15 +71,20 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err
 		}
+		// Text
 		var_1 := `email:`
 		_, err = io.WriteString(w, var_1)
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		// Element CSS
+		// Element Script
 		err = templ.RenderScripts(ctx, w, )
 		if err != nil {
 			return err
@@ -81,6 +93,7 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " href=")
 		if err != nil {
 			return err
@@ -102,6 +115,7 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(p.email))
 		if err != nil {
 			return err
@@ -122,10 +136,12 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (void)
 		_, err = io.WriteString(w, "<hr")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		if true {
 			_, err = io.WriteString(w, " noshade")
 			if err != nil {
@@ -136,10 +152,12 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (void)
 		_, err = io.WriteString(w, "<hr")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " optionA")
 		if err != nil {
 			return err
@@ -164,10 +182,12 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (void)
 		_, err = io.WriteString(w, "<hr")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " noshade")
 		if err != nil {
 			return err
