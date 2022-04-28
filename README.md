@@ -123,7 +123,7 @@ If you're keen to see Go be practical for Web projects, see "Help needed" for wh
 The language generates Go code, some sections of the template (e.g. `package`, `import`, `if`, `for` and `switch` statements) are output directly as Go expressions in the generated output, while HTML elements are converted to Go code that renders their output.
 
 * `templ generate` generates Go code from `*.templ` files.
-* `templ fmt` formats template files in the current directory tree.
+* `templ fmt` formats template files (`templ fmt .` for everything in the current directory and subdirectories, `templ fmt` to format stdin and output to stdout.)
 * `templ lsp` provides a Language Server to support IDE integrations. The compile command generates a sourcemap which maps from the `*.templ` files to the compiled Go file. This enables the `templ` LSP to use the Go language `gopls` language server as is, providing a thin shim to do the source remapping. This is used to provide autocomplete for template variables and functions.
 * Storybook support, see https://adrianhesketh.com/2021/10/23/using-storybook-with-go-frontends/
 

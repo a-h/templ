@@ -23,7 +23,11 @@ func Run(args []string) (err error) {
 }
 
 func formatStdin() (err error) {
-	bytes, _ := ioutil.ReadAll(os.Stdin)
+	var bytes []byte
+	bytes, err = ioutil.ReadAll(os.Stdin)
+	if err != nil {
+		return
+	}
 	t, err := parser.ParseString(string(bytes))
 	if err != nil {
 		return fmt.Errorf("parsing error: %w", err)
