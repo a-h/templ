@@ -3,6 +3,8 @@ package fmtcmd
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/processor"
@@ -14,6 +16,26 @@ import (
 const workerCount = 4
 
 func Run(args []string) (err error) {
+	if len(args) > 0 {
+		return formatDir(args[0])
+	}
+	return formatStdin()
+}
+
+func formatStdin() (err error) {
+	bytes, _ := ioutil.ReadAll(os.Stdin)
+	t, err := parser.ParseString(string(bytes))
+	if err != nil {
+		return fmt.Errorf("parsing error: %w", err)
+	}
+	err = t.Write(os.Stdout)
+	if err != nil {
+		return fmt.Errorf("formatting error: %w", err)
+	}
+	return nil
+}
+
+func formatDir(dir string) (err error) {
 	start := time.Now()
 	results := make(chan processor.Result)
 	go processor.Process(".", format, workerCount, results)
