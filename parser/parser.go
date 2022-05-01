@@ -50,8 +50,7 @@ func (p templateParser) Parse(pi parse.Input) parse.Result {
 		return tepr
 	}
 	te := tepr.Item.(templateExpression)
-	r.Name = te.Name
-	r.Parameters = te.Parameters
+	r.Expression = te.Expression
 
 	// Once we're in a template, we should expect some template whitespace, if/switch/for,
 	// or node string expressions etc.

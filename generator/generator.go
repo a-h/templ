@@ -304,21 +304,13 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 	if _, err = g.w.Write("func "); err != nil {
 		return err
 	}
-	if r, err = g.w.Write(t.Name.Value); err != nil {
+	// (r *Receiver) Name(params []string)
+	if r, err = g.w.Write(t.Expression.Value); err != nil {
 		return err
 	}
-	g.sourceMap.Add(t.Name, r)
-	// (
-	if _, err = g.w.Write("("); err != nil {
-		return err
-	}
-	// Write parameters.
-	if r, err = g.w.Write(t.Parameters.Value); err != nil {
-		return err
-	}
-	g.sourceMap.Add(t.Parameters, r)
-	// ) templ.Component {
-	if _, err = g.w.Write(") templ.Component {\n"); err != nil {
+	g.sourceMap.Add(t.Expression, r)
+	// templ.Component {
+	if _, err = g.w.Write(" templ.Component {\n"); err != nil {
 		return err
 	}
 	indentLevel++

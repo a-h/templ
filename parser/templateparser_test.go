@@ -18,8 +18,8 @@ func TestTemplateParser(t *testing.T) {
 			input: `templ Name() {
 }`,
 			expected: HTMLTemplate{
-				Name: Expression{
-					Value: "Name",
+				Expression: Expression{
+					Value: "Name()",
 					Range: Range{
 						From: Position{
 							Index: 6,
@@ -27,24 +27,32 @@ func TestTemplateParser(t *testing.T) {
 							Col:   6,
 						},
 						To: Position{
-							Index: 9,
+							Index: 12,
 							Line:  1,
-							Col:   9,
+							Col:   12,
 						},
 					},
 				},
-				Parameters: Expression{
-					Value: "",
+				Children: []Node{},
+			},
+		},
+		{
+			name: "template: with receiver",
+			input: `templ (data Data) Name() {
+}`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "(data Data) Name()",
 					Range: Range{
 						From: Position{
-							Index: 11,
+							Index: 6,
 							Line:  1,
-							Col:   11,
+							Col:   6,
 						},
 						To: Position{
-							Index: 11,
+							Index: 24,
 							Line:  1,
-							Col:   11,
+							Col:   24,
 						},
 					},
 				},
@@ -56,8 +64,8 @@ func TestTemplateParser(t *testing.T) {
 			input: `templ Name(){
 }`,
 			expected: HTMLTemplate{
-				Name: Expression{
-					Value: "Name",
+				Expression: Expression{
+					Value: "Name()",
 					Range: Range{
 						From: Position{
 							Index: 6,
@@ -65,24 +73,9 @@ func TestTemplateParser(t *testing.T) {
 							Col:   6,
 						},
 						To: Position{
-							Index: 9,
+							Index: 12,
 							Line:  1,
-							Col:   9,
-						},
-					},
-				},
-				Parameters: Expression{
-					Value: "",
-					Range: Range{
-						From: Position{
-							Index: 11,
-							Line:  1,
-							Col:   11,
-						},
-						To: Position{
-							Index: 11,
-							Line:  1,
-							Col:   11,
+							Col:   12,
 						},
 					},
 				},
@@ -94,8 +87,8 @@ func TestTemplateParser(t *testing.T) {
 			input: `templ Name(p Parameter) {
 }`,
 			expected: HTMLTemplate{
-				Name: Expression{
-					Value: "Name",
+				Expression: Expression{
+					Value: "Name(p Parameter)",
 					Range: Range{
 						From: Position{
 							Index: 6,
@@ -103,24 +96,9 @@ func TestTemplateParser(t *testing.T) {
 							Col:   6,
 						},
 						To: Position{
-							Index: 9,
+							Index: 23,
 							Line:  1,
-							Col:   9,
-						},
-					},
-				},
-				Parameters: Expression{
-					Value: "p Parameter",
-					Range: Range{
-						From: Position{
-							Index: 11,
-							Line:  1,
-							Col:   11,
-						},
-						To: Position{
-							Index: 22,
-							Line:  1,
-							Col:   22,
+							Col:   23,
 						},
 					},
 				},
@@ -133,8 +111,8 @@ func TestTemplateParser(t *testing.T) {
 <span>{ "span content" }</span>
 }`,
 			expected: HTMLTemplate{
-				Name: Expression{
-					Value: "Name",
+				Expression: Expression{
+					Value: "Name(p Parameter)",
 					Range: Range{
 						From: Position{
 							Index: 6,
@@ -142,24 +120,9 @@ func TestTemplateParser(t *testing.T) {
 							Col:   6,
 						},
 						To: Position{
-							Index: 9,
+							Index: 23,
 							Line:  1,
-							Col:   9,
-						},
-					},
-				},
-				Parameters: Expression{
-					Value: "p Parameter",
-					Range: Range{
-						From: Position{
-							Index: 11,
-							Line:  1,
-							Col:   11,
-						},
-						To: Position{
-							Index: 22,
-							Line:  1,
-							Col:   22,
+							Col:   23,
 						},
 					},
 				},
@@ -204,8 +167,8 @@ func TestTemplateParser(t *testing.T) {
 </div>
 }`,
 			expected: HTMLTemplate{
-				Name: Expression{
-					Value: "Name",
+				Expression: Expression{
+					Value: "Name(p Parameter)",
 					Range: Range{
 						From: Position{
 							Index: 6,
@@ -213,24 +176,9 @@ func TestTemplateParser(t *testing.T) {
 							Col:   6,
 						},
 						To: Position{
-							Index: 9,
+							Index: 23,
 							Line:  1,
-							Col:   9,
-						},
-					},
-				},
-				Parameters: Expression{
-					Value: "p Parameter",
-					Range: Range{
-						From: Position{
-							Index: 11,
-							Line:  1,
-							Col:   11,
-						},
-						To: Position{
-							Index: 22,
-							Line:  1,
-							Col:   22,
+							Col:   23,
 						},
 					},
 				},
@@ -300,8 +248,8 @@ func TestTemplateParser(t *testing.T) {
 	}
 }`,
 			expected: HTMLTemplate{
-				Name: Expression{
-					Value: "Name",
+				Expression: Expression{
+					Value: "Name(p Parameter)",
 					Range: Range{
 						From: Position{
 							Index: 6,
@@ -309,24 +257,9 @@ func TestTemplateParser(t *testing.T) {
 							Col:   6,
 						},
 						To: Position{
-							Index: 9,
+							Index: 23,
 							Line:  1,
-							Col:   9,
-						},
-					},
-				},
-				Parameters: Expression{
-					Value: "p Parameter",
-					Range: Range{
-						From: Position{
-							Index: 11,
-							Line:  1,
-							Col:   11,
-						},
-						To: Position{
-							Index: 22,
-							Line:  1,
-							Col:   22,
+							Col:   23,
 						},
 					},
 				},
@@ -394,8 +327,8 @@ func TestTemplateParser(t *testing.T) {
 	<input type="text" value="b" />
 }`,
 			expected: HTMLTemplate{
-				Name: Expression{
-					Value: "Name",
+				Expression: Expression{
+					Value: "Name(p Parameter)",
 					Range: Range{
 						From: Position{
 							Index: 6,
@@ -403,24 +336,9 @@ func TestTemplateParser(t *testing.T) {
 							Col:   6,
 						},
 						To: Position{
-							Index: 9,
+							Index: 23,
 							Line:  1,
-							Col:   9,
-						},
-					},
-				},
-				Parameters: Expression{
-					Value: "p Parameter",
-					Range: Range{
-						From: Position{
-							Index: 11,
-							Line:  1,
-							Col:   11,
-						},
-						To: Position{
-							Index: 22,
-							Line:  1,
-							Col:   22,
+							Col:   23,
 						},
 					},
 				},
@@ -451,8 +369,8 @@ func TestTemplateParser(t *testing.T) {
 <!DOCTYPE html>
 }`,
 			expected: HTMLTemplate{
-				Name: Expression{
-					Value: "Name",
+				Expression: Expression{
+					Value: "Name()",
 					Range: Range{
 						From: Position{
 							Index: 6,
@@ -460,24 +378,9 @@ func TestTemplateParser(t *testing.T) {
 							Col:   6,
 						},
 						To: Position{
-							Index: 9,
+							Index: 12,
 							Line:  1,
-							Col:   9,
-						},
-					},
-				},
-				Parameters: Expression{
-					Value: "",
-					Range: Range{
-						From: Position{
-							Index: 11,
-							Line:  1,
-							Col:   11,
-						},
-						To: Position{
-							Index: 11,
-							Line:  1,
-							Col:   11,
+							Col:   12,
 						},
 					},
 				},

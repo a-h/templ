@@ -265,15 +265,14 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 //   }
 // }
 type HTMLTemplate struct {
-	Name       Expression
-	Parameters Expression
+	Expression Expression
 	Children   []Node
 }
 
 func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
 
 func (t HTMLTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "templ "+t.Name.Value+"("+t.Parameters.Value+") {\n"); err != nil {
+	if err := writeIndent(w, indent, "templ "+t.Expression.Value+" {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesBlock(w, indent+1, t.Children); err != nil {

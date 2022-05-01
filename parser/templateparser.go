@@ -2,7 +2,6 @@ package parser
 
 import (
 	"io"
-	"strings"
 
 	"github.com/a-h/lexical/parse"
 )
@@ -11,19 +10,15 @@ import (
 
 // TemplateExpression.
 // templ Func(p Parameter) {
+// templ (data Data) Func(p Parameter) {
+// templ (data []string) Func(p Parameter) {
 type templateExpression struct {
-	Name       Expression
-	Parameters Expression
+	Expression Expression
 }
 
 func newTemplateExpressionParser() templateExpressionParser {
 	return templateExpressionParser{}
 }
-
-var templateNameParser = parse.All(parse.WithStringConcatCombiner,
-	parse.Letter,
-	parse.Many(parse.WithStringConcatCombiner, 0, 1000, parse.Any(parse.Letter, parse.ZeroToNine)),
-)
 
 type templateExpressionParser struct {
 }
@@ -39,50 +34,33 @@ func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
 		return prefixResult
 	}
 
-	// Once we have the prefix, we must have a name and parameters.
-	// Read the name of the function.
+	// Once we have the prefix, everything to the brace at the end of the line is Go.
+	// e.g.
+	// templ (x []string) Test() {
+	// becomes:
+	// func (x []string) Test() templ.Component {
+
+	// Once we've got a prefix, read until {\n.
 	from := NewPositionFromInput(pi)
-	pr := templateNameParser(pi)
+	pr := parse.StringUntil(parse.All(parse.WithStringConcatCombiner, openBraceWithOptionalPadding, newLine))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
-	// If there's no match, the name wasn't correctly terminated.
+	// If there's no match, there's no {\n, which is an error.
 	if !pr.Success {
-		return parse.Failure("templateExpressionParser", newParseError("template expression: invalid name", from, NewPositionFromInput(pi)))
+		return parse.Failure("templateExpressionParser", newParseError("templ: unterminated (missing closing '{\n')", from, NewPositionFromInput(pi)))
 	}
-	// Remove the final "(" from the position.
-	to := NewPositionFromInput(pi)
-	to.Col--
-	to.Index--
-	r.Name = NewExpression(strings.TrimSuffix(pr.Item.(string), "("), from, to)
+	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
-	// Eat the left bracket.
-	if lb := parse.Rune('(')(pi); !lb.Success {
-		return parse.Failure("templateExpressionParser", newParseError("template expression: parameters missing open bracket", from, NewPositionFromInput(pi)))
-	}
-
-	// Read the parameters.
+	// Eat " {".
 	from = NewPositionFromInput(pi)
-	pr = parse.StringUntil(parse.Rune(')'))(pi) // p Person, other Other, t thing.Thing)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
-	}
-	// If there's no match, the name wasn't correctly terminated.
-	if !pr.Success {
-		return parse.Failure("templateExpressionParser", newParseError("template expression: parameters missing close bracket", from, NewPositionFromInput(pi)))
-	}
-	r.Parameters = NewExpression(strings.TrimSuffix(pr.Item.(string), ")"), from, NewPositionFromInput(pi))
-
-	// Eat ") {".
-	from = NewPositionFromInput(pi)
-	if lb := expressionFuncEnd(pi); !lb.Success {
-		return parse.Failure("templateExpressionParser", newParseError("template expression: unterminated (missing ') {')", from, NewPositionFromInput(pi)))
+	if te := expressionEnd(pi); !te.Success {
+		return parse.Failure("templateExpressionParser", newParseError("templ: unterminated (missing closing '{')", from, NewPositionFromInput(pi)))
 	}
 
-	// Expect a newline.
-	from = NewPositionFromInput(pi)
-	if lb := newLine(pi); !lb.Success {
-		return parse.Failure("templateExpressionParser", newParseError("template expression: missing terminating newline", from, NewPositionFromInput(pi)))
+	// Eat required newline.
+	if lb := newLine(pi); lb.Error != nil {
+		return lb
 	}
 
 	return parse.Success("templateExpressionParser", r, nil)
