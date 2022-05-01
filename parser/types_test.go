@@ -13,231 +13,187 @@ func TestFormatting(t *testing.T) {
 		input    string
 		expected string
 	}{
-		//TODO: Sort these out.
-		//{
-		//name: "there are two line breaks after the package statement",
-		//input: ` // first line removed to make indentation clear in Go code
-		//package test
-		//import "strings"`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//package test
+		{
+			name: "void elements are converted to self-closing elements",
+			input: ` // first line removed to make indentation clear in Go code
+package test
 
-		//import "strings"
+templ input(value, validation string) {
+	<area></area>
+	<base></base>
+	<br></br>
+	<col></col>
+	<command></command>
+	<embed></embed>
+	<hr></hr>
+	<img></img>
+	<input></input>
+	<keygen></keygen>
+	<link></link>
+	<meta></meta>
+	<param></param>
+	<source></source>
+	<track></track>
+	<wbr></wbr>
+}
 
-		//`,
-		//},
-		//{
-		//name: "import statements are all placed next to each other, and there are two lines after",
-		//input: ` // first line removed to make indentation clear in Go code
-		//{% package test %}
-		//{% import "strings" %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
 
-		//{% import "net/url" %}
+templ input(value, validation string) {
+	<area/>
+	<base/>
+	<br/>
+	<col/>
+	<command/>
+	<embed/>
+	<hr/>
+	<img/>
+	<input/>
+	<keygen/>
+	<link/>
+	<meta/>
+	<param/>
+	<source/>
+	<track/>
+	<wbr/>
+}
 
-		//{% import "rand" %}
-		//`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//{% package test %}
+`,
+		},
+		{
+			name: "empty elements stay on the same line",
+			input: ` // first line removed to make indentation clear in Go code
+package test
 
-		//{% import "strings" %}
-		//{% import "net/url" %}
-		//{% import "rand" %}
+templ input(value, validation string) {
+	<div>
+		<p>
+		</p>
+	</div>
+}
 
-		//`,
-		//},
-		//{
-		//name: "import statements don't have whitespace before or after them",
-		//input: ` // first line removed to make indentation clear in Go code
-		//{% package test %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
 
-		//{% import "net/url" %}
-		//`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//{% package test %}
+templ input(value, validation string) {
+	<div>
+		<p></p>
+	</div>
+}
 
-		//{% import "net/url" %}
+`,
+		},
+		{
+			name: "if the element only contains inline elements, they end up on the same line",
+			input: ` // first line removed to make indentation clear in Go code
+package test
 
-		//`,
-		//},
-		//{
-		//name: "void elements are converted to self-closing elements",
-		//input: ` // first line removed to make indentation clear in Go code
-		//{% package test %}
+templ input(value, validation string) {
+	<div><p>{ "the" }<a href="http://example.com">{ "data" }</a></p></div>
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
 
-		//{% templ input(value, validation string) %}
-		//<area></area>
-		//<base></base>
-		//<br></br>
-		//<col></col>
-		//<command></command>
-		//<embed></embed>
-		//<hr></hr>
-		//<img></img>
-		//<input></input>
-		//<keygen></keygen>
-		//<link></link>
-		//<meta></meta>
-		//<param></param>
-		//<source></source>
-		//<track></track>
-		//<wbr></wbr>
+templ input(value, validation string) {
+	<div>
+		<p>{ "the" }<a href="http://example.com">{ "data" }</a></p>
+	</div>
+}
 
-		//{% endtempl %}
-		//`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//{% package test %}
+`,
+		},
+		{
+			name: "if an element contains any block elements, all of the child elements are split onto new lines",
+			input: ` // first line removed to make indentation clear in Go code
+package test
 
-		//{% templ input(value, validation string) %}
-		//<area/>
-		//<base/>
-		//<br/>
-		//<col/>
-		//<command/>
-		//<embed/>
-		//<hr/>
-		//<img/>
-		//<input/>
-		//<keygen/>
-		//<link/>
-		//<meta/>
-		//<param/>
-		//<source/>
-		//<track/>
-		//<wbr/>
-		//{% endtempl %}
+templ nested() {
+	<div>{ "the" }<div>{ "other" }</div></div>
+}
 
-		//`,
-		//},
-		//{
-		//name: "empty elements stay on the same line",
-		//input: ` // first line removed to make indentation clear in Go code
-		//{% package test %}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
 
-		//{% templ input(value, validation string) %}
-		//<div>
-		//<p>
-		//</p>
-		//</div>
-		//{% endtempl %}
-		//`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//{% package test %}
+templ nested() {
+	<div>
+		{ "the" }
+		<div>{ "other" }</div>
+	</div>
+}
 
-		//{% templ input(value, validation string) %}
-		//<div>
-		//<p></p>
-		//</div>
-		//{% endtempl %}
+`,
+		},
+		{
+			name: "for loops are placed on a new line",
+			input: ` // first line removed to make indentation clear in Go code
+package test
 
-		//`,
-		//},
-		//{
-		//name: "if the element only contains inline elements, they end up on the same line",
-		//input: ` // first line removed to make indentation clear in Go code
-		//{% package test %}
+templ input(items []string) {
+<div>{ "the" }<div>{ "other" }</div>for _, item := range items {
+<div>{ item }</div>
+}</div>
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
 
-		//{% templ input(value, validation string) %}
-		//<div><p>{%= "the" %}<a href="http://example.com">{%= "data" %}</a></p></div>
-		//{% endtempl %}
-		//`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//{% package test %}
+templ input(items []string) {
+	<div>
+		{ "the" }
+		<div>{ "other" }</div>
+		for _, item := range items {
+			<div>{ item }</div>
+		}
+	</div>
+}
 
-		//{% templ input(value, validation string) %}
-		//<div>
-		//<p>{%= "the" %}<a href="http://example.com">{%= "data" %}</a></p>
-		//</div>
-		//{% endtempl %}
+`,
+		},
+		{
+			name: "css is indented by one level",
+			input: ` // first line removed to make indentation clear in Go code
+package test
 
-		//`,
-		//},
-		//{
-		//name: "if an element contains any block elements, all of the child elements are split onto new lines",
-		//input: ` // first line removed to make indentation clear in Go code
-		//{% package test %}
+css ClassName() {
+background-color: #ffffff;
+color: { constants.White };
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
 
-		//{% templ nested() %}
-		//<div>{%= "the" %}<div>{%= "other" %}</div></div>
-		//{% endtempl %}
-		//`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//{% package test %}
+css ClassName() {
+	background-color: #ffffff;
+	color: { constants.White };
+}
 
-		//{% templ nested() %}
-		//<div>
-		//{%= "the" %}
-		//<div>{%= "other" %}</div>
-		//</div>
-		//{% endtempl %}
+`,
+		},
+		{
+			name: "css whitespace is tidied",
+			input: ` // first line removed to make indentation clear in Go code
+package test
 
-		//`,
-		//},
-		//{
-		//name: "for loops are placed on a new line",
-		//input: ` // first line removed to make indentation clear in Go code
-		//{% package test %}
+css ClassName() {
+background-color    :   #ffffff	;
+  color	:  { constants.White };
+  }
+		`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
 
-		//{% templ input(items []string) %}
-		//<div>{%= "the" %}<div>{%= "other" %}</div>{% for _, item := range items %}
-		//<div>{%= item %}</div>
-		//{% endfor %}</div>
-		//{% endtempl %}
-		//`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//{% package test %}
+css ClassName() {
+	background-color: #ffffff;
+	color: { constants.White };
+}
 
-		//{% templ input(items []string) %}
-		//<div>
-		//{%= "the" %}
-		//<div>{%= "other" %}</div>
-		//{% for _, item := range items %}
-		//<div>{%= item %}</div>
-		//{% endfor %}
-		//</div>
-		//{% endtempl %}
-
-		//`,
-		//},
-		//{
-		//name: "css is indented by one level",
-		//input: ` // first line removed to make indentation clear in Go code
-		//{% package test %}
-
-		//{% css ClassName() %}
-		//background-color: #ffffff;
-		//color: {%= constants.White %};
-		//{% endcss %}
-		//`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//{% package test %}
-
-		//{% css ClassName() %}
-		//background-color: #ffffff;
-		//color: {%= constants.White %};
-		//{% endcss %}
-
-		//`,
-		//},
-		//{
-		//name: "css whitespace is tidied",
-		//input: ` // first line removed to make indentation clear in Go code
-		//{% package test %}
-
-		//{% css ClassName() %}
-		//background-color    :   #ffffff	;
-		//color	:  {%= constants.White %};
-		//{% endcss %}
-		//`,
-		//expected: `// first line removed to make indentation clear in Go code
-		//{% package test %}
-
-		//{% css ClassName() %}
-		//background-color: #ffffff;
-		//color: {%= constants.White %};
-		//{% endcss %}
-
-		//`,
-		//},
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

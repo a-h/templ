@@ -9,39 +9,39 @@ import (
 	"github.com/a-h/lexical/parse"
 )
 
-// {% package parser %}
+// package parser
 //
-// {% import "strings" %}
-// {% import strs "strings" %}
+// import "strings"
+// import strs "strings"
 //
-// {% css AddressLineStyle() %}
+// css AddressLineStyle() {
 //   background-color: #ff0000;
 //   color: #ffffff;
-// {% endcss %}
+// }
 //
-// {% templ RenderAddress(addr Address) %}
-// 	<div style={%= AddressLineStyle() %}>{%= addr.Address1 %}</div>
-// 	<div>{%= addr.Address2 %}</div>
-// 	<div>{%= addr.Address3 %}</div>
-// 	<div>{%= addr.Address4 %}</div>
-// {% endtempl %}
+// templ RenderAddress(addr Address) {
+// 	<div style={ AddressLineStyle() }>{ addr.Address1 }</div>
+// 	<div>{ addr.Address2 }</div>
+// 	<div>{ addr.Address3 }</div>
+// 	<div>{ addr.Address4 }</div>
+// }
 //
-// {% templ Render(p Person) %}
+// templ Render(p Person) {
 //    <div>
-//      <div>{%= p.Name() %}</div>
-//      <a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
+//      <div>{ p.Name() }</div>
+//      <a href={ p.URL }>{ strings.ToUpper(p.Name()) }</a>
 //      <div>
-//          {% if p.Type == "test" %}
-//             <span>{%= "Test user" %}</span>
-//          {% else %}
-// 	    <span>{%= "Not test user" %}</span>
-//          {% endif %}
-//          {% for _, v := range p.Addresses %}
-//             {% call RenderAddress(v) %}
-//          {% endfor %}
+//          if p.Type == "test" {
+//             <span>{ "Test user" }</span>
+//          } else {
+// 	    	<span>{ "Not test user" }</span>
+//          }
+//          for _, v := range p.Addresses {
+//             {! call RenderAddress(v) }
+//          }
 //      </div>
 //    </div>
-// {% endtempl %}
+// }
 
 // Source mapping to map from the source code of the template to the
 // in-memory representation.
@@ -167,7 +167,7 @@ type Package struct {
 }
 
 func (p Package) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, p.Expression.Value)
+	return writeIndent(w, indent, "package "+p.Expression.Value)
 }
 
 // Whitespace.
@@ -182,11 +182,11 @@ func (ws Whitespace) Write(w io.Writer, indent int) error {
 }
 
 // CSS definition.
-// {% css Name() %}
+// css Name() {
 //   color: #ffffff;
-//   background-color: {%= constants.BackgroundColor %};
+//   background-color: { constants.BackgroundColor };
 //   background-image: url('./somewhere.png');
-// {% endcss %}
+// }
 type CSSTemplate struct {
 	Name       Expression
 	Properties []CSSProperty
@@ -194,7 +194,7 @@ type CSSTemplate struct {
 
 func (css CSSTemplate) IsTemplateFileNode() bool { return true }
 func (css CSSTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "{% css "+css.Name.Value+"() %}\n"); err != nil {
+	if err := writeIndent(w, indent, "css "+css.Name.Value+"() {\n"); err != nil {
 		return err
 	}
 	for _, p := range css.Properties {
@@ -202,7 +202,7 @@ func (css CSSTemplate) Write(w io.Writer, indent int) error {
 			return err
 		}
 	}
-	if err := writeIndent(w, indent, "{% endcss %}"); err != nil {
+	if err := writeIndent(w, indent, "}"); err != nil {
 		return err
 	}
 	return nil
@@ -259,10 +259,11 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 }
 
 // HTMLTemplate definition.
-// {% templ Name(p Parameter) %}
-//   {% if ... %}
-//   <Element></Element>
-// {% endtempl %}
+// templ Name(p Parameter) {
+//   if ... {
+//       <Element></Element>
+//   }
+// }
 type HTMLTemplate struct {
 	Name       Expression
 	Parameters Expression
@@ -272,13 +273,13 @@ type HTMLTemplate struct {
 func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
 
 func (t HTMLTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "{% templ "+t.Name.Value+"("+t.Parameters.Value+") %}\n"); err != nil {
+	if err := writeIndent(w, indent, "templ "+t.Name.Value+"("+t.Parameters.Value+") {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesBlock(w, indent+1, t.Children); err != nil {
 		return err
 	}
-	if err := writeIndent(w, indent, "{% endtempl %}"); err != nil {
+	if err := writeIndent(w, indent, "}"); err != nil {
 		return err
 	}
 	return nil
@@ -604,9 +605,9 @@ type CaseExpression struct {
 	Children   []Node
 }
 
-// {% for i, v := range p.Addresses %}
-//   {% call Address(v) %}
-// {% endfor %}
+// for i, v := range p.Addresses {
+//   {! Address(v) }
+// }
 type ForExpression struct {
 	Expression Expression
 	Children   []Node
@@ -614,20 +615,20 @@ type ForExpression struct {
 
 func (fe ForExpression) IsNode() bool { return true }
 func (fe ForExpression) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "{% for "+fe.Expression.Value+" %}\n"); err != nil {
+	if err := writeIndent(w, indent, "for "+fe.Expression.Value+" {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesBlock(w, indent+1, fe.Children); err != nil {
 		return err
 	}
-	if err := writeIndent(w, indent, "{% endfor %}"); err != nil {
+	if err := writeIndent(w, indent, "}"); err != nil {
 		return err
 	}
 	return nil
 }
 
 // StringExpression is used within HTML elements, and for style values.
-// {%= ... %}
+// { ... }
 type StringExpression struct {
 	Expression Expression
 }
@@ -635,7 +636,7 @@ type StringExpression struct {
 func (se StringExpression) IsNode() bool                  { return true }
 func (se StringExpression) IsStyleDeclarationValue() bool { return true }
 func (se StringExpression) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, `{%= `+se.Expression.Value+` %}`)
+	return writeIndent(w, indent, `{ `+se.Expression.Value+` }`)
 }
 
 // ScriptTemplate is a script block.
