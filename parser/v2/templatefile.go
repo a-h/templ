@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -73,6 +74,8 @@ func NewTemplateFileParser(pkg string) TemplateFileParser {
 	}
 }
 
+var ErrLegacyFileFormat = errors.New("Legacy file format - run templ migrate")
+
 type TemplateFileParser struct {
 	DefaultPackage string
 }
@@ -80,9 +83,15 @@ type TemplateFileParser struct {
 func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 	var tf TemplateFile
 
+	// If we're parsing a legacy file, complain that migration needs to happen.
+	pr := parse.String("{% package")(pi)
+	if pr.Success {
+		return parse.Failure("Legacy file format", ErrLegacyFileFormat)
+	}
+
 	// Required package.
 	// package name
-	pr := pkg.Parse(pi)
+	pr = pkg.Parse(pi)
 	if pr.Error != nil {
 		return pr
 	}

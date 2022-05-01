@@ -3,6 +3,17 @@ package parser
 import "testing"
 
 func TestTemplateFileParser(t *testing.T) {
+	t.Run("requests migration of legacy formats", func(t *testing.T) {
+		input := `{% package templates %}
+`
+		_, err := ParseString(input)
+		if err == nil {
+			t.Error("expected ErrLegacyFileFormat, got nil")
+		}
+		if err != ErrLegacyFileFormat {
+			t.Errorf("expected ErrLegacyFileFormat, got %v", err)
+		}
+	})
 	t.Run("does not require a package expression", func(t *testing.T) {
 		input := `templ Hello() {
 Hello
