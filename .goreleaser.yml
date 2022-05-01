@@ -3,6 +3,8 @@ builds:
 - env:
   - CGO_ENABLED=0
   dir: cmd/templ
+  ldflags:
+    - -s -w -X github.com/a-h/templ.Version={{.Version}}
   goos:
   - linux
   - windows
