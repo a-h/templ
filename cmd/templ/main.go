@@ -6,13 +6,12 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/a-h/templ"
+	"github.com/a-h/templ/cmd/templ/exportcmd"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
 )
-
-// Binary builds set this version string. goreleaser sets the value using Go build ldflags.
-var version string
 
 // Source builds use this value. When installed using `go install github.com/a-h/templ/cmd/templ@latest` the `version` variable is empty, but
 // the debug.ReadBuildInfo return value provides the package version number installed by `go install`
@@ -25,8 +24,8 @@ func goInstallVersion() string {
 }
 
 func getVersion() string {
-	if version != "" {
-		return version
+	if templ.Version != "" {
+		return templ.Version
 	}
 	return goInstallVersion()
 }
@@ -46,6 +45,9 @@ func main() {
 	case "lsp":
 		lspCmd(os.Args[2:])
 		return
+	case "export":
+		exportCmd(os.Args[2:])
+		return
 	case "version":
 		fmt.Println(getVersion())
 		return
@@ -62,6 +64,7 @@ To see help text, you can run:
   templ generate --help
   templ fmt --help
   templ lsp --help
+  templ export --help
   templ version
 examples:
   templ compile`)
@@ -97,6 +100,21 @@ func fmtCmd(args []string) {
 		return
 	}
 	err = fmtcmd.Run(args)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func exportCmd(args []string) {
+	cmd := flag.NewFlagSet("export", flag.ExitOnError)
+	helpFlag := cmd.Bool("help", false, "Print help and exit.")
+	err := cmd.Parse(args)
+	if err != nil || *helpFlag {
+		cmd.PrintDefaults()
+		return
+	}
+	err = exportcmd.Run(args)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
