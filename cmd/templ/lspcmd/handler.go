@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/a-h/templ/generator"
-	"github.com/a-h/templ/parser"
+	"github.com/a-h/templ/parser/v2"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	"go.uber.org/zap"

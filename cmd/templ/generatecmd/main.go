@@ -9,7 +9,7 @@ import (
 
 	"github.com/a-h/templ/cmd/templ/processor"
 	"github.com/a-h/templ/generator"
-	"github.com/a-h/templ/parser"
+	"github.com/a-h/templ/parser/v2"
 	"github.com/hashicorp/go-multierror"
 )
 

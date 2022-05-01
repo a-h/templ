@@ -7,7 +7,6 @@ import (
 	"runtime/debug"
 
 	"github.com/a-h/templ"
-	"github.com/a-h/templ/cmd/templ/exportcmd"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
@@ -44,9 +43,6 @@ func main() {
 		return
 	case "lsp":
 		lspCmd(os.Args[2:])
-		return
-	case "export":
-		exportCmd(os.Args[2:])
 		return
 	case "version":
 		fmt.Println(getVersion())
@@ -100,21 +96,6 @@ func fmtCmd(args []string) {
 		return
 	}
 	err = fmtcmd.Run(args)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
-
-func exportCmd(args []string) {
-	cmd := flag.NewFlagSet("export", flag.ExitOnError)
-	helpFlag := cmd.Bool("help", false, "Print help and exit.")
-	err := cmd.Parse(args)
-	if err != nil || *helpFlag {
-		cmd.PrintDefaults()
-		return
-	}
-	err = exportcmd.Run(args)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)

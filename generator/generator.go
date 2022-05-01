@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/a-h/templ"
-	"github.com/a-h/templ/parser"
+	"github.com/a-h/templ/parser/v2"
 )
 
 func NewRangeWriter(w io.Writer) *RangeWriter {
