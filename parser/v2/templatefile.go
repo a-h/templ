@@ -98,7 +98,7 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 	pkg, ok := pr.Item.(Package)
 	if !ok {
 		pkg = Package{
-			Expression: NewExpression(p.DefaultPackage, NewPosition(), NewPosition()),
+			Expression: NewExpression("package "+p.DefaultPackage, NewPosition(), NewPosition()),
 		}
 	}
 	tf.Package = pkg

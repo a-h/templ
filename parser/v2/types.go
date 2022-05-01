@@ -167,7 +167,7 @@ type Package struct {
 }
 
 func (p Package) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, "package "+p.Expression.Value)
+	return writeIndent(w, indent, p.Expression.Value)
 }
 
 // Whitespace.

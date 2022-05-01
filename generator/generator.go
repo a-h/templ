@@ -119,10 +119,7 @@ func (g *generator) writeCodeGeneratedComment() error {
 func (g *generator) writePackage() error {
 	var r parser.Range
 	var err error
-	// package
-	if _, err = g.w.Write("package "); err != nil {
-		return err
-	}
+	// package ...
 	if r, err = g.w.Write(g.tf.Package.Expression.Value); err != nil {
 		return err
 	}

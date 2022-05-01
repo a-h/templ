@@ -22,7 +22,7 @@ func (p packageParser) Parse(pi parse.Input) parse.Result {
 		return prefixResult
 	}
 
-	// Once we have the prefix, we must have an expression and tag end on the same line.
+	// Once we have the prefix, it's an expression until the end of the line.
 	pr := parse.StringUntil(newLine)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
@@ -35,7 +35,7 @@ func (p packageParser) Parse(pi parse.Input) parse.Result {
 	// Success!
 	to := NewPositionFromInput(pi)
 	r := Package{
-		Expression: NewExpression(pr.Item.(string), from, to),
+		Expression: NewExpression("package "+pr.Item.(string), from, to),
 	}
 
 	return parse.Success("packageParser", r, nil)

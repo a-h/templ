@@ -10,6 +10,7 @@ import (
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
+	"github.com/a-h/templ/cmd/templ/migratecmd"
 )
 
 // Source builds use this value. When installed using `go install github.com/a-h/templ/cmd/templ@latest` the `version` variable is empty, but
@@ -38,6 +39,9 @@ func main() {
 	case "generate":
 		generateCmd(os.Args[2:])
 		return
+	case "migrate":
+		migrateCmd(os.Args[2:])
+		return
 	case "fmt":
 		fmtCmd(os.Args[2:])
 		return
@@ -60,7 +64,7 @@ To see help text, you can run:
   templ generate --help
   templ fmt --help
   templ lsp --help
-  templ export --help
+  templ migrate --help
   templ version
 examples:
   templ compile`)
@@ -78,6 +82,26 @@ func generateCmd(args []string) {
 		return
 	}
 	err = generatecmd.Run(generatecmd.Arguments{
+		FileName: *fileName,
+		Path:     *path,
+	})
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func migrateCmd(args []string) {
+	cmd := flag.NewFlagSet("migrate", flag.ExitOnError)
+	fileName := cmd.String("f", "", "Optionally migrate a single file, e.g. -f header.templ")
+	path := cmd.String("path", ".", "Migrates code for all files in path.")
+	helpFlag := cmd.Bool("help", false, "Print help and exit.")
+	err := cmd.Parse(args)
+	if err != nil || *helpFlag {
+		cmd.PrintDefaults()
+		return
+	}
+	err = migratecmd.Run(migratecmd.Arguments{
 		FileName: *fileName,
 		Path:     *path,
 	})
