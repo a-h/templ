@@ -74,10 +74,13 @@ func migrate(fileName string) (err error) {
 	var sb strings.Builder
 	sb.WriteString("package " + v1Template.Package.Expression.Value)
 	sb.WriteString("\n")
-	for _, imp := range v1Template.Imports {
-		sb.WriteString("import ")
-		sb.WriteString(imp.Expression.Value)
+	if len(v1Template.Imports) > 0 {
 		sb.WriteString("\n")
+		for _, imp := range v1Template.Imports {
+			sb.WriteString("import ")
+			sb.WriteString(imp.Expression.Value)
+			sb.WriteString("\n")
+		}
 	}
 	sb.WriteString("\n")
 	v2Template.Package.Expression.Value = sb.String()
@@ -107,6 +110,7 @@ func migrateV1TemplateFileNodesToV2TemplateFileNodes(in []v1.TemplateFileNode) (
 	}
 	out = make([]v2.TemplateFileNode, len(in))
 	for i, tfn := range in {
+		tfn := tfn
 		out[i], err = migrateV1TemplateFileNodeToV2TemplateFileNode(tfn)
 		if err != nil {
 			return
@@ -145,8 +149,9 @@ func migrateV1TemplateFileNodeToV2TemplateFileNode(in v1.TemplateFileNode) (out 
 		if err != nil {
 			return
 		}
+		return t, nil
 	}
-	return nil, fmt.Errorf("migrate: unknown template file node type: %s", reflect.TypeOf(in).Name())
+	return nil, fmt.Errorf("migrate: unknown template file node type: %s.%s", reflect.TypeOf(in).PkgPath(), reflect.TypeOf(in).Name())
 }
 
 func migrateV1CSSPropertyToV2CSSProperty(in v1.CSSProperty) (out v2.CSSProperty, err error) {
