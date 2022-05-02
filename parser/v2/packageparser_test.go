@@ -75,7 +75,7 @@ func TestPackageParser(t *testing.T) {
 			input: "package parser\n",
 			expected: Package{
 				Expression: Expression{
-					Value: "parser",
+					Value: "package parser",
 					Range: Range{
 						From: Position{
 							Index: 0,

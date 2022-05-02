@@ -228,7 +228,7 @@ func (c ConstantCSSProperty) Write(w io.Writer, indent int) error {
 	return nil
 }
 
-// background-color: {%= constants.BackgroundColor %};
+// background-color: { constants.BackgroundColor };
 type ExpressionCSSProperty struct {
 	Name  string
 	Value StringExpression
@@ -530,8 +530,8 @@ func (cte CallTemplateExpression) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, `{! `+cte.Expression.Value+` }`)
 }
 
-// { if p.Type == "test" && p.thing }
-// {% endif %}
+// if p.Type == "test" && p.thing {
+// }
 type IfExpression struct {
 	Expression Expression
 	Then       []Node
@@ -540,7 +540,7 @@ type IfExpression struct {
 
 func (n IfExpression) IsNode() bool { return true }
 func (n IfExpression) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "{% if "+n.Expression.Value+" %}\n"); err != nil {
+	if err := writeIndent(w, indent, "if "+n.Expression.Value+" {\n"); err != nil {
 		return err
 	}
 	indent++
@@ -549,23 +549,22 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 	}
 	indent--
 	if len(n.Else) > 0 {
-		if err := writeIndent(w, indent, "{% else %}\n"); err != nil {
+		if err := writeIndent(w, indent, "} else {\n"); err != nil {
 			return err
 		}
 		if err := writeNodesBlock(w, indent+1, n.Else); err != nil {
 			return err
 		}
 	}
-	if err := writeIndent(w, indent, "{% endif %}"); err != nil {
+	if err := writeIndent(w, indent, "}"); err != nil {
 		return err
 	}
 	return nil
 }
 
-// {% switch p.Type %}
-//  {% case "Something" %}
-//  {% endcase %}
-// {% endswitch %}
+// switch p.Type {
+//  case "Something":
+// }
 type SwitchExpression struct {
 	Expression Expression
 	Cases      []CaseExpression
@@ -573,32 +572,27 @@ type SwitchExpression struct {
 
 func (se SwitchExpression) IsNode() bool { return true }
 func (se SwitchExpression) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "{% switch "+se.Expression.Value+" %}\n"); err != nil {
+	if err := writeIndent(w, indent, "switch "+se.Expression.Value+" {\n"); err != nil {
 		return err
 	}
 	indent++
 	for i := 0; i < len(se.Cases); i++ {
 		c := se.Cases[i]
-		if err := writeIndent(w, indent, "{% case "+c.Expression.Value+" %}\n"); err != nil {
+		if err := writeIndent(w, indent, "case "+c.Expression.Value+": \n"); err != nil {
 			return err
 		}
 		if err := writeNodesBlock(w, indent+1, c.Children); err != nil {
 			return err
 		}
-		if err := writeIndent(w, indent, "{% endcase %}\n"); err != nil {
-			return err
-		}
 	}
 	indent--
-	if err := writeIndent(w, indent, "{% endswitch %}"); err != nil {
+	if err := writeIndent(w, indent, "}"); err != nil {
 		return err
 	}
 	return nil
 }
 
-// {% case "Something" %}
-// ...
-// {% endcase %}
+// case "Something":
 type CaseExpression struct {
 	Expression Expression
 	Children   []Node
@@ -647,13 +641,13 @@ type ScriptTemplate struct {
 
 func (s ScriptTemplate) IsTemplateFileNode() bool { return true }
 func (s ScriptTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "{% script "+s.Name.Value+"("+s.Parameters.Value+") %}\n"); err != nil {
+	if err := writeIndent(w, indent, "script "+s.Name.Value+"("+s.Parameters.Value+") {\n"); err != nil {
 		return err
 	}
 	if _, err := io.WriteString(w, s.Value); err != nil {
 		return err
 	}
-	if err := writeIndent(w, indent, "{% endscript %}"); err != nil {
+	if err := writeIndent(w, indent, "}"); err != nil {
 		return err
 	}
 	return nil

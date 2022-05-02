@@ -39,7 +39,7 @@ templ Hello() {
 		if len(tf.Nodes) != 1 {
 			t.Errorf("expected 2 nodes, got %+v", tf.Nodes)
 		}
-		if tf.Package.Expression.Value != "goof" {
+		if tf.Package.Expression.Value != "package goof" {
 			t.Errorf("expected \"goof\", got %q", tf.Package.Expression.Value)
 		}
 	})
