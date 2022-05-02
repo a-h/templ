@@ -120,13 +120,10 @@ func (g *generator) writePackage() error {
 	var r parser.Range
 	var err error
 	// package ...
-	if r, err = g.w.Write(g.tf.Package.Expression.Value); err != nil {
+	if r, err = g.w.Write(g.tf.Package.Expression.Value + "\n\n"); err != nil {
 		return err
 	}
 	g.sourceMap.Add(g.tf.Package.Expression, r)
-	if _, err = g.w.Write("\n\n"); err != nil {
-		return err
-	}
 	if _, err = g.w.Write("//lint:file-ignore SA4006 This context is only used if a nested component is present.\n\n"); err != nil {
 		return err
 	}
