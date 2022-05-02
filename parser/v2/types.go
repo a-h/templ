@@ -578,7 +578,7 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 	indent++
 	for i := 0; i < len(se.Cases); i++ {
 		c := se.Cases[i]
-		if err := writeIndent(w, indent, c.Expression.Value+": \n"); err != nil {
+		if err := writeIndent(w, indent, c.Expression.Value); err != nil {
 			return err
 		}
 		if err := writeNodesBlock(w, indent+1, c.Children); err != nil {
