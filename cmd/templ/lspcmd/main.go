@@ -92,11 +92,11 @@ func run(ctx context.Context, args Arguments) (err error) {
 	select {
 	case <-ctx.Done():
 		logger.Info("Signal received")
-		client.Close()
-		gopls.Close()
 	case <-client.DisconnectNotify():
 		logger.Info("Client disconnected")
 	}
+	client.Close()
+	gopls.Close()
 	logger.Info("Stopped...")
 	return nil
 }
