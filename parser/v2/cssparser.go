@@ -202,7 +202,7 @@ func (p expressionCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 	}
 	// \n
 	from = NewPositionFromInput(pi)
-	if pr = parse.String("\n")(pi); !pr.Success {
+	if pr = newLine(pi); !pr.Success {
 		return parse.Failure("expression css declaration", newParseError("missing expected linebreak", from, NewPositionFromInput(pi)))
 	}
 
@@ -246,7 +246,8 @@ func (p constantCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 	from := NewPositionFromInput(pi)
 	untilEnd := parse.All(parse.WithStringConcatCombiner,
 		optionalWhitespaceParser,
-		parse.String(";\n"),
+		parse.Rune(';'),
+		newLine,
 	)
 	pr = parse.StringUntil(untilEnd)(pi)
 	if !pr.Success {

@@ -37,6 +37,30 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "css: single constant property with windows newlines",
+			input: "background-color:\r\n{ constants.BackgroundColor };\r\n",
+			expected: ExpressionCSSProperty{
+				Name: "background-color",
+				Value: StringExpression{
+					Expression: Expression{
+						Value: "constants.BackgroundColor",
+						Range: Range{
+							From: Position{
+								Index: 21,
+								Line:  3,
+								Col:   2,
+							},
+							To: Position{
+								Index: 46,
+								Line:  3,
+								Col:   27,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
