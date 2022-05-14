@@ -75,6 +75,7 @@ func generateCmd(args []string) {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
 	fileName := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
 	path := cmd.String("path", ".", "Generates code for all files in path.")
+	workerCount := cmd.Int("w", 4, "Number of workers to run in parallel.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
@@ -82,8 +83,9 @@ func generateCmd(args []string) {
 		return
 	}
 	err = generatecmd.Run(generatecmd.Arguments{
-		FileName: *fileName,
-		Path:     *path,
+		FileName:    *fileName,
+		Path:        *path,
+		WorkerCount: *workerCount,
 	})
 	if err != nil {
 		fmt.Println(err.Error())

@@ -13,18 +13,22 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-const workerCount = 4
-
 type Arguments struct {
-	FileName string
-	Path     string
+	FileName    string
+	Path        string
+	WorkerCount int
 }
+
+const defaultWorkerCount = 4
 
 func Run(args Arguments) (err error) {
 	if args.FileName != "" {
 		return processSingleFile(args.FileName)
 	}
-	return processPath(args.Path)
+	if args.WorkerCount == 0 {
+		args.WorkerCount = defaultWorkerCount
+	}
+	return processPath(args.Path, args.WorkerCount)
 }
 
 func processSingleFile(fileName string) error {
@@ -34,7 +38,7 @@ func processSingleFile(fileName string) error {
 	return err
 }
 
-func processPath(path string) (err error) {
+func processPath(path string, workerCount int) (err error) {
 	start := time.Now()
 	results := make(chan processor.Result)
 	go processor.Process(path, compile, workerCount, results)
