@@ -72,7 +72,7 @@ const y = "456"
 		if !isGoExpression {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
-		if expr.Expression.Value != `const x = "123"`+"\n\n" {
+		if expr.Expression.Value != `const x = "123"` {
 			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
 		}
 		expr, isGoExpression = tf.Nodes[2].(GoExpression)
@@ -108,7 +108,7 @@ const y = ` + "`456`"
 		if !isGoExpression {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
-		if expr.Expression.Value != `const x = "123"`+"\n\n" {
+		if expr.Expression.Value != `const x = "123"` {
 			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
 		}
 		expr, isGoExpression = tf.Nodes[2].(GoExpression)

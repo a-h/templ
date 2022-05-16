@@ -194,6 +194,42 @@ css ClassName() {
 
 `,
 		},
+		{
+			name: "tables are formatted well",
+			input: ` // first line removed to make indentation clear
+package test
+
+templ table(accountNumber string, registration string) {
+	<table>
+	       <tr>
+		       <th width="20%">Your account number</th>
+		       <td width="80%">{ accountNumber }</td>
+	       </tr>
+	       <tr>
+		       <td>Registration</td>
+		       <td>{ strings.ToUpper(registration) }</td>
+	       </tr>
+	</table>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package test
+
+templ table(accountNumber string, registration string) {
+	<table>
+		<tr>
+			<th width="20%">Your account number</th>
+			<td width="80%">{ accountNumber }</td>
+		</tr>
+		<tr>
+			<td>Registration</td>
+			<td>{ strings.ToUpper(registration) }</td>
+		</tr>
+	</table>
+}
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
