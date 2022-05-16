@@ -77,6 +77,8 @@ type templateNodeParser struct {
 	until parse.Function
 }
 
+var rawElements = parse.Any(styleElement.Parse, scriptElement.Parse)
+
 func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 	op := make([]Node, 0)
 	for {
@@ -108,9 +110,19 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 			continue
 		}
 
+		// Try for a raw <text>, <>, or <style> element (special behaviour - contents are not parsed).
+		pr = rawElements(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
 		// Try for an element.
 		// <a>, <br/> etc.
-		pr = newElementParser().Parse(pi)
+		pr = element.Parse(pi)
 		if pr.Error != nil {
 			return pr
 		}

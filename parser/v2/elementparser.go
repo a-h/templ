@@ -24,7 +24,7 @@ func newElementOpenTagParser() elementOpenTagParser {
 type elementOpenTagParser struct {
 }
 
-func (p elementOpenTagParser) asElementOpenTag(parts []interface{}) (result interface{}, ok bool) {
+func asElementOpenTag(parts []interface{}) (result interface{}, ok bool) {
 	return elementOpenTag{
 		Name:       parts[1].(string),
 		Attributes: parts[2].([]Attribute),
@@ -32,7 +32,7 @@ func (p elementOpenTagParser) asElementOpenTag(parts []interface{}) (result inte
 }
 
 func (p elementOpenTagParser) Parse(pi parse.Input) parse.Result {
-	return parse.All(p.asElementOpenTag,
+	return parse.All(asElementOpenTag,
 		parse.Rune('<'),
 		elementNameParser,
 		newAttributesParser().Parse,
@@ -360,9 +360,7 @@ func (p elementSelfClosingParser) Parse(pi parse.Input) parse.Result {
 }
 
 // Element
-func newElementParser() elementParser {
-	return elementParser{}
-}
+var element elementParser
 
 type elementParser struct {
 }

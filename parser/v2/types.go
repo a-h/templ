@@ -466,6 +466,41 @@ func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
 	return nil
 }
 
+type RawElement struct {
+	Name       string
+	Attributes []Attribute
+	Contents   string
+}
+
+func (e RawElement) IsNode() bool { return true }
+func (e RawElement) Write(w io.Writer, indent int) error {
+	// Start.
+	if err := writeIndent(w, indent, "<"+e.Name); err != nil {
+		return err
+	}
+	for i := 0; i < len(e.Attributes); i++ {
+		if _, err := w.Write([]byte(" ")); err != nil {
+			return err
+		}
+		a := e.Attributes[i]
+		if _, err := w.Write([]byte(a.String())); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte("/>")); err != nil {
+		return err
+	}
+	// Contents.
+	if _, err := w.Write([]byte(e.Contents)); err != nil {
+		return err
+	}
+	// Close.
+	if _, err := w.Write([]byte("</" + e.Name + ">")); err != nil {
+		return err
+	}
+	return nil
+}
+
 type Attribute interface {
 	IsAttribute() bool
 	String() string

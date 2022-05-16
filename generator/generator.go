@@ -430,6 +430,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node) error {
 		g.writeDocType(indentLevel, n)
 	case parser.Element:
 		g.writeElement(indentLevel, n)
+	case parser.RawElement:
+		g.writeRawElement(indentLevel, n)
 	case parser.ForExpression:
 		g.writeForExpression(indentLevel, n)
 	case parser.CallTemplateExpression:
@@ -640,7 +642,7 @@ func (g *generator) writeVoidElement(indentLevel int, n parser.Element) (err err
 		if err = g.writeErrorHandler(indentLevel); err != nil {
 			return err
 		}
-		if err = g.writeElementAttributes(indentLevel, n); err != nil {
+		if err = g.writeElementAttributes(indentLevel, n.Name, n.Attributes); err != nil {
 			return err
 		}
 		// >
@@ -682,7 +684,7 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 		if err = g.writeErrorHandler(indentLevel); err != nil {
 			return err
 		}
-		if err = g.writeElementAttributes(indentLevel, n); err != nil {
+		if err = g.writeElementAttributes(indentLevel, n.Name, n.Attributes); err != nil {
 			return err
 		}
 		// >
@@ -775,13 +777,13 @@ func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err e
 	return err
 }
 
-func (g *generator) writeElementAttributes(indentLevel int, n parser.Element) (err error) {
+func (g *generator) writeElementAttributes(indentLevel int, name string, attrs []parser.Attribute) (err error) {
 	if _, err = g.w.WriteIndent(indentLevel, "// Element Attributes\n"); err != nil {
 		return err
 	}
 	var r parser.Range
-	for i := 0; i < len(n.Attributes); i++ {
-		switch attr := n.Attributes[i].(type) {
+	for i := 0; i < len(attrs); i++ {
+		switch attr := attrs[i].(type) {
 		case parser.BoolConstantAttribute:
 			name := html.EscapeString(attr.Name)
 			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s")`+"\n", name)); err != nil {
@@ -829,9 +831,9 @@ func (g *generator) writeElementAttributes(indentLevel int, n parser.Element) (e
 				return err
 			}
 		case parser.ExpressionAttribute:
-			name := html.EscapeString(attr.Name)
+			attrName := html.EscapeString(attr.Name)
 			// Name
-			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=")`+"\n", name)); err != nil {
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=")`+"\n", attrName)); err != nil {
 				return err
 			}
 			if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -845,7 +847,7 @@ func (g *generator) writeElementAttributes(indentLevel int, n parser.Element) (e
 			if err = g.writeErrorHandler(indentLevel); err != nil {
 				return err
 			}
-			if n.Name == "a" && attr.Name == "href" {
+			if name == "a" && attr.Name == "href" {
 				vn := g.createVariableName()
 				// var vn templ.SafeURL =
 				if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.SafeURL = "); err != nil {
@@ -914,8 +916,53 @@ func (g *generator) writeElementAttributes(indentLevel int, n parser.Element) (e
 				return err
 			}
 		default:
-			return fmt.Errorf("unknown attribute type %s", reflect.TypeOf(n.Attributes[i]))
+			return fmt.Errorf("unknown attribute type %s", reflect.TypeOf(attrs[i]))
 		}
+	}
+	return err
+}
+
+func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err error) {
+	if _, err = g.w.WriteIndent(0, "// RawElement\n"); err != nil {
+		return err
+	}
+	if len(n.Attributes) == 0 {
+		// <div>
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+	} else {
+		// <div
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+		if err = g.writeElementAttributes(indentLevel, n.Name, n.Attributes); err != nil {
+			return err
+		}
+		// >
+		if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, ">")`+"\n"); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+	}
+	// Contents.
+	g.writeText(0, parser.Text{
+		Value: n.Contents,
+	})
+	// </div>
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
 	}
 	return err
 }

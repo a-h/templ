@@ -492,7 +492,7 @@ func TestElementParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
-			result := newElementParser().Parse(input)
+			result := element.Parse(input)
 			if result.Error != nil {
 				t.Fatalf("parser error: %v", result.Error)
 			}
@@ -592,7 +592,7 @@ func TestElementParserErrors(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
-			result := newElementParser().Parse(input)
+			result := element.Parse(input)
 			if diff := cmp.Diff(tt.expected, result.Error); diff != "" {
 				t.Errorf(diff)
 			}
@@ -607,7 +607,7 @@ func TestBigElement(t *testing.T) {
 		sb.WriteString("a")
 	}
 	sb.WriteString("</div>")
-	result := newElementParser().Parse(input.NewFromString(sb.String()))
+	result := element.Parse(input.NewFromString(sb.String()))
 	if result.Error != nil {
 		t.Fatalf("unexpected error: %v", result.Error)
 	}
