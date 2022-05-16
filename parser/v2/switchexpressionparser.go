@@ -63,7 +63,7 @@ func (p switchExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Read the optional 'case' nodes.
 	from = NewPositionFromInput(pi)
-	pr = parse.Many(p.asMany, 0, -1, newCaseExpressionParser().Parse)(pi)
+	pr = parse.Many(p.asMany, 0, -1, caseExpression.Parse)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -79,9 +79,7 @@ func (p switchExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.Success("switch", r, nil)
 }
 
-func newCaseExpressionParser() caseExpressionParser {
-	return caseExpressionParser{}
-}
+var caseExpression = caseExpressionParser{}
 
 type caseExpressionParser struct {
 }
@@ -89,8 +87,8 @@ type caseExpressionParser struct {
 var caseExpressionStartParser = parse.All(parse.WithStringConcatCombiner,
 	optionalWhitespaceAsString,
 	parse.Or(parse.String("case "), parse.String("default")),
-	parse.StringUntil(parse.String(":\n")),
-	parse.String(":\n"),
+	parse.StringUntil(parse.String("\n")),
+	parse.String("\n"),
 )
 
 func (p caseExpressionParser) Parse(pi parse.Input) parse.Result {
