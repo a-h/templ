@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"unicode"
 
 	"github.com/a-h/lexical/input"
@@ -115,14 +116,37 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 	stp := newScriptTemplateParser()
 	templateContent := parse.Any(template.Parse, cssp.Parse, stp.Parse)
 	for {
+		// Anything that isn't a template is Go code.
 		from := NewPositionFromInput(pi)
 		gor := parse.StringUntil(templateContent)(pi)
-		if gor.Error != nil && gor.Error != io.EOF {
+		if gor.Error == io.EOF {
+			rewind(pi, from.Index)
+			// Assume the rest of the file is Go code.
+			from := NewPositionFromInput(pi)
+			sb := new(strings.Builder)
+			for {
+				r, err := pi.Advance()
+				if err != nil && err != io.EOF {
+					return parse.Failure("template file: failed to collect end of file", err)
+				}
+				if err != nil && err == io.EOF {
+					break
+				}
+				sb.WriteRune(r)
+			}
+			if sb.Len() > 0 {
+				expr := NewExpression(sb.String(), from, NewPositionFromInput(pi))
+				tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
+			}
+			break
+		}
+		if gor.Error != nil {
 			return gor
 		}
 		if gor.Success && len(gor.Item.(string)) > 0 {
 			expr := NewExpression(gor.Item.(string), from, NewPositionFromInput(pi))
 			tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
+			continue
 		}
 
 		// Try for a template.

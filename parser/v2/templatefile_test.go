@@ -1,6 +1,9 @@
 package parser
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestTemplateFileParser(t *testing.T) {
 	t.Run("requests migration of legacy formats", func(t *testing.T) {
@@ -41,6 +44,79 @@ templ Hello() {
 		}
 		if tf.Package.Expression.Value != "package goof" {
 			t.Errorf("expected \"goof\", got %q", tf.Package.Expression.Value)
+		}
+	})
+	t.Run("template files can end with Go too", func(t *testing.T) {
+		input := `package goof
+
+const x = "123"
+
+templ Hello() {
+	Hello
+}
+
+const y = "456"
+`
+		tf, err := ParseString(input)
+		if err != nil {
+			t.Fatalf("failed to parse template, with error: %v", err)
+		}
+		if len(tf.Nodes) != 3 {
+			var nodeTypes []string
+			for _, n := range tf.Nodes {
+				nodeTypes = append(nodeTypes, reflect.TypeOf(n).Name())
+			}
+			t.Fatalf("expected 3 nodes, got %d nodes, %v", len(tf.Nodes), nodeTypes)
+		}
+		expr, isGoExpression := tf.Nodes[0].(GoExpression)
+		if !isGoExpression {
+			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
+		}
+		if expr.Expression.Value != `const x = "123"`+"\n\n" {
+			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
+		}
+		expr, isGoExpression = tf.Nodes[2].(GoExpression)
+		if !isGoExpression {
+			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
+		}
+		if expr.Expression.Value != `const y = "456"`+"\n" {
+			t.Errorf("2: unexpected expression: %q", expr.Expression.Value)
+		}
+	})
+	t.Run("template files can end with string literals", func(t *testing.T) {
+		input := `package goof
+
+const x = "123"
+
+templ Hello() {
+	Hello
+}
+
+const y = ` + "`456`"
+		tf, err := ParseString(input)
+		if err != nil {
+			t.Fatalf("failed to parse template, with error: %v", err)
+		}
+		if len(tf.Nodes) != 3 {
+			var nodeTypes []string
+			for _, n := range tf.Nodes {
+				nodeTypes = append(nodeTypes, reflect.TypeOf(n).Name())
+			}
+			t.Fatalf("expected 3 nodes, got %d nodes, %v", len(tf.Nodes), nodeTypes)
+		}
+		expr, isGoExpression := tf.Nodes[0].(GoExpression)
+		if !isGoExpression {
+			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
+		}
+		if expr.Expression.Value != `const x = "123"`+"\n\n" {
+			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
+		}
+		expr, isGoExpression = tf.Nodes[2].(GoExpression)
+		if !isGoExpression {
+			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
+		}
+		if expr.Expression.Value != "const y = `456`" {
+			t.Errorf("2: unexpected expression: %q", expr.Expression.Value)
 		}
 	})
 }

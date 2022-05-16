@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/PuerkitoBio/goquery v1.7.1
-	github.com/a-h/lexical v0.0.50
+	github.com/a-h/lexical v0.0.53
 	github.com/a-h/pathvars v0.0.0-20200320143331-78b263b728e2
 	github.com/google/go-cmp v0.5.6
 	github.com/hashicorp/errwrap v1.1.0 // indirect
