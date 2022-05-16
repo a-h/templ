@@ -323,7 +323,7 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 			return err
 		}
 		// Nodes.
-		if err = g.writeNodes(indentLevel, t.Children); err != nil {
+		if err = g.writeNodes(indentLevel, nil, stripWhitespace(t.Children)); err != nil {
 			return err
 		}
 		// return nil
@@ -344,17 +344,88 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 	return nil
 }
 
-func (g *generator) writeNodes(indentLevel int, nodes []parser.Node) error {
+func stripNonCriticalElementWhitespace(input []parser.Node) (output []parser.Node) {
+	// Remove element, whitespace, element
+	// Remove element, whitespace, if etc.
+	// Retain text, whitespace, element
+	// Retain element, whitespace, text
+	for i := range input {
+		var prev, curr, next parser.Node
+		if i > 0 {
+			prev = input[i-1]
+		}
+		curr = input[i]
+		if i < len(input)-1 {
+			next = input[i+1]
+		}
+		_, isWhiteSpace := curr.(parser.Whitespace)
+		if !isWhiteSpace {
+			output = append(output, curr)
+			continue
+		}
+		if prev == nil {
+			// Trim start whitespace.
+			continue
+		}
+		if next == nil {
+			// Trim end whitespace.
+			continue
+		}
+		_, prevIsText := prev.(parser.Text)
+		_, nextIsText := next.(parser.Text)
+		if prevIsText || nextIsText {
+			// Allow whitespace that includes text.
+			output = append(output, curr)
+			continue
+		}
+	}
+	return
+}
+
+func stripWhitespace(input []parser.Node) (output []parser.Node) {
+	for i, n := range input {
+		if _, isWhiteSpace := n.(parser.Whitespace); !isWhiteSpace {
+			output = append(output, input[i])
+		}
+	}
+	return output
+}
+
+func stripLeadingWhitespace(nodes []parser.Node) []parser.Node {
 	for i := 0; i < len(nodes); i++ {
-		if err := g.writeNode(indentLevel, nodes[i]); err != nil {
+		n := nodes[i]
+		if _, isWhiteSpace := n.(parser.Whitespace); !isWhiteSpace {
+			return nodes[i:]
+		}
+	}
+	return []parser.Node{}
+}
+
+func stripTrailingWhitespace(nodes []parser.Node) []parser.Node {
+	for i := len(nodes) - 1; i >= 0; i-- {
+		n := nodes[i]
+		if _, isWhiteSpace := n.(parser.Whitespace); !isWhiteSpace {
+			return nodes[0 : i+1]
+		}
+	}
+	return []parser.Node{}
+}
+
+func stripLeadingAndTrailingWhitespace(nodes []parser.Node) []parser.Node {
+	return stripTrailingWhitespace(stripLeadingWhitespace(nodes))
+}
+
+func (g *generator) writeNodes(indentLevel int, parent parser.Node, nodes []parser.Node) error {
+	for _, n := range nodes {
+		if err := g.writeNode(indentLevel, n); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (g *generator) writeNode(indentLevel int, node parser.Node) error {
-	switch n := node.(type) {
+func (g *generator) writeNode(indentLevel int, current parser.Node) error {
+	switch n := current.(type) {
 	case parser.DocType:
 		g.writeDocType(indentLevel, n)
 	case parser.Element:
@@ -370,7 +441,7 @@ func (g *generator) writeNode(indentLevel int, node parser.Node) error {
 	case parser.StringExpression:
 		g.writeStringExpression(indentLevel, n.Expression)
 	case parser.Whitespace:
-		// Whitespace is not included in template output to minify HTML.
+		g.writeWhitespace(indentLevel, n)
 	case parser.Text:
 		g.writeText(indentLevel, n)
 	default:
@@ -412,7 +483,7 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 		return err
 	}
 	indentLevel++
-	g.writeNodes(indentLevel, n.Then)
+	g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Then))
 	indentLevel--
 	if len(n.Else) > 0 {
 		// } else {
@@ -420,7 +491,7 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 			return err
 		}
 		indentLevel++
-		g.writeNodes(indentLevel, n.Else)
+		g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Else))
 		indentLevel--
 	}
 	// }
@@ -458,7 +529,7 @@ func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpres
 			}
 			g.sourceMap.Add(c.Expression, r)
 			indentLevel++
-			g.writeNodes(indentLevel, c.Children)
+			g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(c.Children))
 			indentLevel--
 		}
 	}
@@ -512,7 +583,7 @@ func (g *generator) writeForExpression(indentLevel int, n parser.ForExpression) 
 	}
 	// Children.
 	indentLevel++
-	g.writeNodes(indentLevel, n.Children)
+	g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Children))
 	indentLevel--
 	// }
 	if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
@@ -623,7 +694,7 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 		}
 	}
 	// Children.
-	g.writeNodes(indentLevel, n.Children)
+	g.writeNodes(indentLevel, n, stripNonCriticalElementWhitespace(n.Children))
 	// </div>
 	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 		return err
@@ -878,13 +949,30 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	return nil
 }
 
-func (g *generator) writeText(indentLevel int, e parser.Text) (err error) {
+func (g *generator) writeWhitespace(indentLevel int, n parser.Whitespace) (err error) {
+	if len(n.Value) == 0 {
+		return
+	}
+	if _, err = g.w.WriteIndent(indentLevel, "// Whitespace (normalised)\n"); err != nil {
+		return err
+	}
+	// _, err = io.WriteString(w, ` `)
+	if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, ` `)\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) writeText(indentLevel int, n parser.Text) (err error) {
 	if _, err = g.w.WriteIndent(indentLevel, "// Text\n"); err != nil {
 		return err
 	}
 	vn := g.createVariableName()
 	// vn := sExpr
-	if _, err = g.w.WriteIndent(indentLevel, vn+" := "+createGoString(e.Value)+"\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, vn+" := "+createGoString(n.Value)+"\n"); err != nil {
 		return err
 	}
 	// _, err = io.WriteString(w, vn)
