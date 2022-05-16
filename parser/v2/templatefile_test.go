@@ -26,7 +26,7 @@ Hello
 			t.Fatalf("failed to parse template, with error: %v", err)
 		}
 		if len(tf.Nodes) != 1 {
-			t.Errorf("expected 1 node, got %+v", tf.Nodes)
+			t.Errorf("expected 1 node, got %d nodes with content %+v", len(tf.Nodes), tf.Nodes)
 		}
 	})
 	t.Run("but can accept a package expression, if one is provided", func(t *testing.T) {

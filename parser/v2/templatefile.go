@@ -3,9 +3,11 @@ package parser
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"unicode"
 
@@ -115,76 +117,77 @@ func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
 	cssp := newCSSParser()
 	stp := newScriptTemplateParser()
 	templateContent := parse.Any(template.Parse, cssp.Parse, stp.Parse)
+outer:
 	for {
-		// Anything that isn't a template is Go code.
-		from := NewPositionFromInput(pi)
-		gor := parse.StringUntil(templateContent)(pi)
-		if gor.Error == io.EOF {
-			rewind(pi, from.Index)
-			// Assume the rest of the file is Go code.
-			from := NewPositionFromInput(pi)
-			sb := new(strings.Builder)
-			for {
-				r, err := pi.Advance()
-				if err != nil && err != io.EOF {
-					return parse.Failure("template file: failed to collect end of file", err)
-				}
-				if err != nil && err == io.EOF {
-					break
-				}
-				sb.WriteRune(r)
+		pr := templateContent(pi)
+		if pr.Error != nil && pr.Error != io.EOF {
+			return pr
+		}
+		if pr.Success {
+			switch pr.Item.(type) {
+			case HTMLTemplate:
+				tf.Nodes = append(tf.Nodes, pr.Item.(HTMLTemplate))
+			case CSSTemplate:
+				tf.Nodes = append(tf.Nodes, pr.Item.(CSSTemplate))
+			case ScriptTemplate:
+				tf.Nodes = append(tf.Nodes, pr.Item.(ScriptTemplate))
+			default:
+				return parse.Failure("unknown node type", fmt.Errorf("unknown node type %s", reflect.TypeOf(pr.Item).Name()))
 			}
-			if sb.Len() > 0 {
-				expr := NewExpression(sb.String(), from, NewPositionFromInput(pi))
-				tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
-			}
+			// Eat optional whitespace.
+			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+			continue
+		}
+		if pr.Error == io.EOF {
 			break
 		}
-		if gor.Error != nil {
-			return gor
-		}
-		if gor.Success && len(gor.Item.(string)) > 0 {
-			expr := NewExpression(gor.Item.(string), from, NewPositionFromInput(pi))
-			tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
-			continue
-		}
 
-		// Try for a template.
-		tpr := template.Parse(pi)
-		if tpr.Error != nil && tpr.Error != io.EOF {
-			return tpr
+		// Anything that isn't template content is Go code.
+		var code strings.Builder
+		from := NewPositionFromInput(pi)
+		for {
+			// Check to see if this line isn't Go code.
+			last := NewPositionFromInput(pi)
+			l, err := readLine(pi)
+			if err != nil && err != io.EOF {
+				return parse.Failure("unknown error", err)
+			}
+			hasTemplatePrefix := strings.HasPrefix(l, "templ ") || strings.HasPrefix(l, "css ") || strings.HasPrefix(l, "script ")
+			if hasTemplatePrefix && strings.HasSuffix(l, "{\n") {
+				// Unread the line.
+				rewind(pi, last.Index)
+				// Take the code so far.
+				if code.Len() > 0 {
+					expr := NewExpression(code.String(), from, NewPositionFromInput(pi))
+					tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
+				}
+				// Carry on parsing.
+				break
+			}
+			code.WriteString(l)
+			if err == io.EOF {
+				if code.Len() > 0 {
+					expr := NewExpression(code.String(), from, NewPositionFromInput(pi))
+					tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
+				}
+				// Stop parsing.
+				break outer
+			}
 		}
-		if tpr.Success {
-			tf.Nodes = append(tf.Nodes, tpr.Item.(HTMLTemplate))
-			// Eat optional whitespace.
-			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
-			continue
-		}
-		// Try for css.
-		cssr := cssp.Parse(pi)
-		if cssr.Error != nil && cssr.Error != io.EOF {
-			return cssr
-		}
-		if cssr.Success {
-			tf.Nodes = append(tf.Nodes, cssr.Item.(CSSTemplate))
-			// Eat optional whitespace.
-			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
-			continue
-		}
-		// Try for script.
-		stpr := stp.Parse(pi)
-		if stpr.Error != nil && stpr.Error != io.EOF {
-			return stpr
-		}
-		if stpr.Success {
-			tf.Nodes = append(tf.Nodes, stpr.Item.(ScriptTemplate))
-			// Eat optional whitespace.
-			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
-			continue
-		}
-		break
 	}
-
-	// Success.
 	return parse.Success("template file", tf, nil)
+}
+
+func readLine(pi parse.Input) (string, error) {
+	var sb strings.Builder
+	for {
+		r, err := pi.Advance()
+		if err != nil {
+			return sb.String(), err
+		}
+		sb.WriteRune(r)
+		if r == '\n' {
+			return sb.String(), err
+		}
+	}
 }
