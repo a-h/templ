@@ -281,7 +281,7 @@ func (g *generator) writeGoExpression(n parser.GoExpression) (err error) {
 	if _, err = g.w.WriteIndent(0, "// GoExpression\n"); err != nil {
 		return err
 	}
-	r, err := g.w.Write(n.Expression.Value)
+	r, err := g.w.Write(n.Expression.Value + "\n\n")
 	if err != nil {
 		return err
 	}

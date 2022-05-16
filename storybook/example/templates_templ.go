@@ -12,8 +12,6 @@ import "io"
 import "fmt"
 import "time"
 
-
-
 func headerTemplate(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)

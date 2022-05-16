@@ -79,7 +79,7 @@ const y = "456"
 		if !isGoExpression {
 			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
 		}
-		if expr.Expression.Value != `const y = "456"`+"\n" {
+		if expr.Expression.Value != `const y = "456"` {
 			t.Errorf("2: unexpected expression: %q", expr.Expression.Value)
 		}
 	})

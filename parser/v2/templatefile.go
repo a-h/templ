@@ -158,7 +158,7 @@ outer:
 				rewind(pi, last.Index)
 				// Take the code so far.
 				if code.Len() > 0 {
-					expr := NewExpression(code.String(), from, NewPositionFromInput(pi))
+					expr := NewExpression(strings.TrimSpace(code.String()), from, NewPositionFromInput(pi))
 					tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
 				}
 				// Carry on parsing.
@@ -167,7 +167,7 @@ outer:
 			code.WriteString(l)
 			if err == io.EOF {
 				if code.Len() > 0 {
-					expr := NewExpression(code.String(), from, NewPositionFromInput(pi))
+					expr := NewExpression(strings.TrimSpace(code.String()), from, NewPositionFromInput(pi))
 					tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
 				}
 				// Stop parsing.
