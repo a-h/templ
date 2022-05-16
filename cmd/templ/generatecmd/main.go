@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -19,7 +20,7 @@ type Arguments struct {
 	WorkerCount int
 }
 
-const defaultWorkerCount = 4
+var defaultWorkerCount = runtime.NumCPU()
 
 func Run(args Arguments) (err error) {
 	if args.FileName != "" {
