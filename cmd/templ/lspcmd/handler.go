@@ -299,7 +299,7 @@ func (p *Proxy) rewriteCodeLensRequest(params *lsp.CodeLensParams) (err error) {
 }
 
 func (p *Proxy) rewriteCodeLensResponse(resp []lsp.CodeLens) (err error) {
-	//TODO: Rewrite the request.
+	// No rewrite is possible.
 	return nil
 }
 
