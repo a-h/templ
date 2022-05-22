@@ -194,6 +194,10 @@ func (p *Proxy) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Req
 		switch r.Method {
 		case "initialize":
 			p.proxyInitialize(ctx, conn, r)
+			return
+		case "textDocument/codeLens":
+			p.proxyCodeLens(ctx, conn, r)
+			return
 		case "textDocument/completion":
 			p.proxyCompletion(ctx, conn, r)
 			return
@@ -251,6 +255,52 @@ func (p *Proxy) proxyInitialize(ctx context.Context, conn *jsonrpc2.Conn, req *j
 		p.log.Error("proxyInitialize: error sending response", zap.Error(err))
 	}
 	p.log.Info("proxyInitialize: client -> gopls -> client: complete", zap.Any("resp", resp))
+}
+
+func (p *Proxy) proxyCodeLens(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+	// Unmarshal the params.
+	var params lsp.CodeLensParams
+	err := json.Unmarshal(*req.Params, &params)
+	if err != nil {
+		p.log.Error("proxyCodeLens: failed to unmarshal request params", zap.Error(err))
+	}
+	// Rewrite the request.
+	err = p.rewriteCodeLensRequest(&params)
+	if err != nil {
+		p.log.Error("proxyCodeLens: error rewriting request", zap.Error(err))
+	}
+	// Call gopls and get the response.
+	var resp []lsp.CodeLens
+	err = p.gopls.Call(ctx, req.Method, &params, &resp)
+	if err != nil {
+		p.log.Error("proxyCodeLens: client -> gopls: error sending request", zap.Error(err))
+	}
+	// Rewrite the response.
+	p.log.Info("proxyCodeLens: received responses", zap.Int("responses", len(resp)))
+	err = p.rewriteCodeLensResponse(resp)
+	if err != nil {
+		p.log.Error("proxyCodeLens: error rewriting response", zap.Error(err))
+	}
+	// Reply to the client.
+	err = conn.Reply(ctx, req.ID, &resp)
+	if err != nil {
+		p.log.Error("proxyCodeLens: error sending response", zap.Error(err))
+	}
+	p.log.Info("proxyCodeLens: client -> gopls -> client: complete", zap.Any("resp", resp))
+}
+
+func (p *Proxy) rewriteCodeLensRequest(params *lsp.CodeLensParams) (err error) {
+	isTemplFile, goURI := p.convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return
+	}
+	params.TextDocument.URI = goURI
+	return nil
+}
+
+func (p *Proxy) rewriteCodeLensResponse(resp []lsp.CodeLens) (err error) {
+	//TODO: Rewrite the request.
+	return nil
 }
 
 func (p *Proxy) proxyCompletion(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
@@ -320,9 +370,17 @@ func (p *Proxy) rewriteCompletionResponse(uri string, resp *lsp.CompletionList) 
 	return nil
 }
 
-func (p *Proxy) rewriteCompletionRequest(params *lsp.CompletionParams) (err error) {
-	base, fileName := path.Split(string(params.TextDocument.URI))
+func (p *Proxy) convertTemplToGoURI(templURI lsp.DocumentURI) (isTemplFile bool, goURI lsp.DocumentURI) {
+	base, fileName := path.Split(string(templURI))
 	if !strings.HasSuffix(fileName, ".templ") {
+		return
+	}
+	return true, lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
+}
+
+func (p *Proxy) rewriteCompletionRequest(params *lsp.CompletionParams) (err error) {
+	isTemplFile, goURI := p.convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
 		return
 	}
 	// Get the sourcemap from the cache.
@@ -340,7 +398,7 @@ func (p *Proxy) rewriteCompletionRequest(params *lsp.CompletionParams) (err erro
 		params.TextDocumentPositionParams.Position.Character = params.Position.Character
 	}
 	// Update the URI to make gopls look at the Go code instead.
-	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
+	params.TextDocument.URI = goURI
 	// Done.
 	return err
 }
@@ -397,8 +455,8 @@ func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
 	if err = json.Unmarshal(*r.Params, &params); err != nil {
 		return err
 	}
-	base, fileName := path.Split(string(params.TextDocument.URI))
-	if !strings.HasSuffix(fileName, ".templ") {
+	isTemplFile, goURI := p.convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
 		return
 	}
 	// Cache the template doc.
@@ -421,7 +479,7 @@ func (p *Proxy) rewriteDidOpenRequest(r *jsonrpc2.Request) (err error) {
 	// Set the Go contents.
 	params.TextDocument.Text = w.String()
 	// Change the path.
-	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
+	params.TextDocument.URI = goURI
 	// Marshal the params back.
 	jsonMessage, err := json.Marshal(params)
 	if err != nil {
@@ -438,8 +496,8 @@ func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request
 	if err = json.Unmarshal(*r.Params, &params); err != nil {
 		return
 	}
-	base, fileName := path.Split(string(params.TextDocument.URI))
-	if !strings.HasSuffix(fileName, ".templ") {
+	isTemplFile, goURI := p.convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
 		return
 	}
 	// Apply content changes to the cached template.
@@ -468,7 +526,7 @@ func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request
 		Text:        w.String(),
 	}}
 	// Change the path.
-	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
+	params.TextDocument.URI = goURI
 	// Marshal the params back.
 	jsonMessage, err := json.Marshal(params)
 	if err != nil {
@@ -526,12 +584,12 @@ func (p *Proxy) rewriteDidSaveRequest(r *jsonrpc2.Request) (err error) {
 	if err = json.Unmarshal(*r.Params, &params); err != nil {
 		return err
 	}
-	base, fileName := path.Split(string(params.TextDocument.URI))
-	if !strings.HasSuffix(fileName, ".templ") {
+	isTemplFile, goURI := p.convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
 		return
 	}
 	// Update the path.
-	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
+	params.TextDocument.URI = goURI
 	// Marshal the params back.
 	jsonMessage, err := json.Marshal(params)
 	if err != nil {
@@ -548,15 +606,15 @@ func (p *Proxy) rewriteDidCloseRequest(r *jsonrpc2.Request) (err error) {
 	if err = json.Unmarshal(*r.Params, &params); err != nil {
 		return err
 	}
-	base, fileName := path.Split(string(params.TextDocument.URI))
-	if !strings.HasSuffix(fileName, ".templ") {
+	isTemplFile, goURI := p.convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
 		return
 	}
 	// Delete the template and sourcemaps from caches.
 	p.documentContents.Delete(string(params.TextDocument.URI))
 	p.sourceMapCache.Delete(string(params.TextDocument.URI))
 	// Get gopls to delete the Go file from its cache.
-	params.TextDocument.URI = lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
+	params.TextDocument.URI = goURI
 	// Marshal the params back.
 	jsonMessage, err := json.Marshal(params)
 	if err != nil {
