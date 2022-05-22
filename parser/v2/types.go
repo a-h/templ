@@ -47,8 +47,8 @@ import (
 // in-memory representation.
 type Position struct {
 	Index int64
-	Line  int
-	Col   int
+	Line  uint32
+	Col   uint32
 }
 
 func (p Position) String() string {
@@ -65,7 +65,7 @@ func NewPosition() Position {
 }
 
 // NewPositionFromValues initialises a position.
-func NewPositionFromValues(index int64, line, col int) Position {
+func NewPositionFromValues(index int64, line, col uint32) Position {
 	return Position{
 		Index: index,
 		Line:  line,
@@ -78,8 +78,8 @@ func NewPositionFromInput(pi parse.Input) Position {
 	l, c := pi.Position()
 	return Position{
 		Index: pi.Index(),
-		Line:  l,
-		Col:   c,
+		Line:  uint32(l),
+		Col:   uint32(c),
 	}
 }
 

@@ -10,8 +10,8 @@ import (
 
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
-	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	lsp "go.lsp.dev/protocol"
 	"go.uber.org/zap"
 )
 
@@ -195,11 +195,16 @@ func (p *Proxy) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Req
 		case "initialize":
 			p.proxyInitialize(ctx, conn, r)
 			return
+		case "textDocument/codeAction":
+			p.proxyCodeAction(ctx, conn, r)
 		case "textDocument/codeLens":
 			p.proxyCodeLens(ctx, conn, r)
 			return
 		case "textDocument/completion":
 			p.proxyCompletion(ctx, conn, r)
+			return
+		case "textDocument/definition":
+			p.proxyDefinition(ctx, conn, r)
 			return
 		case "textDocument/formatting":
 			p.handleFormatting(ctx, conn, r)
@@ -257,6 +262,41 @@ func (p *Proxy) proxyInitialize(ctx context.Context, conn *jsonrpc2.Conn, req *j
 	p.log.Info("proxyInitialize: client -> gopls -> client: complete", zap.Any("resp", resp))
 }
 
+func (p *Proxy) proxyCodeAction(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+	// Unmarshal the params.
+	var params lsp.CodeActionParams
+	err := json.Unmarshal(*req.Params, &params)
+	if err != nil {
+		p.log.Error("proxyCodeAction: failed to unmarshal request params", zap.Error(err))
+	}
+	// Rewrite the request.
+	err = p.rewriteCodeActionRequest(&params)
+	if err != nil {
+		p.log.Error("proxyCodeAction: error rewriting request", zap.Error(err))
+	}
+	// Call gopls and get the response.
+	var resp map[string]interface{}
+	err = p.gopls.Call(ctx, req.Method, &params, &resp)
+	if err != nil {
+		p.log.Error("proxyCodeAction: client -> gopls: error sending request", zap.Error(err))
+	}
+	// Reply to the client.
+	err = conn.Reply(ctx, req.ID, &resp)
+	if err != nil {
+		p.log.Error("proxyCodeAction: error sending response", zap.Error(err))
+	}
+	p.log.Info("proxyCodeAction: client -> gopls -> client: complete", zap.Any("resp", resp))
+}
+
+func (p *Proxy) rewriteCodeActionRequest(params *lsp.CodeActionParams) (err error) {
+	isTemplFile, goURI := p.convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return
+	}
+	params.TextDocument.URI = goURI
+	return nil
+}
+
 func (p *Proxy) proxyCodeLens(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	// Unmarshal the params.
 	var params lsp.CodeLensParams
@@ -270,16 +310,10 @@ func (p *Proxy) proxyCodeLens(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		p.log.Error("proxyCodeLens: error rewriting request", zap.Error(err))
 	}
 	// Call gopls and get the response.
-	var resp []lsp.CodeLens
+	var resp map[string]interface{}
 	err = p.gopls.Call(ctx, req.Method, &params, &resp)
 	if err != nil {
 		p.log.Error("proxyCodeLens: client -> gopls: error sending request", zap.Error(err))
-	}
-	// Rewrite the response.
-	p.log.Info("proxyCodeLens: received responses", zap.Int("responses", len(resp)))
-	err = p.rewriteCodeLensResponse(resp)
-	if err != nil {
-		p.log.Error("proxyCodeLens: error rewriting response", zap.Error(err))
 	}
 	// Reply to the client.
 	err = conn.Reply(ctx, req.ID, &resp)
@@ -295,11 +329,6 @@ func (p *Proxy) rewriteCodeLensRequest(params *lsp.CodeLensParams) (err error) {
 		return
 	}
 	params.TextDocument.URI = goURI
-	return nil
-}
-
-func (p *Proxy) rewriteCodeLensResponse(resp []lsp.CodeLens) (err error) {
-	// No rewrite is possible.
 	return nil
 }
 
@@ -391,7 +420,7 @@ func (p *Proxy) rewriteCompletionRequest(params *lsp.CompletionParams) (err erro
 	// Map from the source position to target Go position.
 	to, mapping, ok := sourceMap.TargetPositionFromSource(params.Position.Line+1, params.Position.Character)
 	if ok {
-		p.log.Info("rewriteCompletionRequest: found position", zap.Int("fromLine", params.Position.Line+1), zap.Int("fromCol", params.Position.Character), zap.Any("to", to), zap.Any("mapping", mapping))
+		p.log.Info("rewriteCompletionRequest: found position", zap.Uint32("fromLine", params.Position.Line+1), zap.Uint32("fromCol", params.Position.Character), zap.Any("to", to), zap.Any("mapping", mapping))
 		params.Position.Line = to.Line - 1
 		params.Position.Character = to.Col - 1
 		params.TextDocumentPositionParams.Position.Line = params.Position.Line
@@ -401,6 +430,52 @@ func (p *Proxy) rewriteCompletionRequest(params *lsp.CompletionParams) (err erro
 	params.TextDocument.URI = goURI
 	// Done.
 	return err
+}
+
+func (p *Proxy) proxyDefinition(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+	// Unmarshal the params.
+	var params lsp.DefinitionParams
+	err := json.Unmarshal(*req.Params, &params)
+	if err != nil {
+		p.log.Error("proxyDefinition: failed to unmarshal request params", zap.Error(err))
+	}
+	// Rewrite the request.
+	err = p.rewriteDefinitionRequest(&params)
+	if err != nil {
+		p.log.Error("proxyDefinition: error rewriting request", zap.Error(err))
+	}
+	// Call gopls and get the response.
+	var resp []lsp.CodeLens
+	err = p.gopls.Call(ctx, req.Method, &params, &resp)
+	if err != nil {
+		p.log.Error("proxyDefinition: client -> gopls: error sending request", zap.Error(err))
+	}
+	// Rewrite the response.
+	p.log.Info("proxyDefinition: received responses", zap.Int("responses", len(resp)))
+	err = p.rewriteDefinitionResponse(resp)
+	if err != nil {
+		p.log.Error("proxyCodeLens: error rewriting response", zap.Error(err))
+	}
+	// Reply to the client.
+	err = conn.Reply(ctx, req.ID, &resp)
+	if err != nil {
+		p.log.Error("proxyDefinition: error sending response", zap.Error(err))
+	}
+	p.log.Info("proxyDefinition: client -> gopls -> client: complete", zap.Any("resp", resp))
+}
+
+func (p *Proxy) rewriteDefinitionRequest(params *lsp.DefinitionParams) (err error) {
+	isTemplFile, goURI := p.convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return
+	}
+	params.TextDocument.URI = goURI
+	return nil
+}
+
+func (p *Proxy) rewriteDefinitionResponse(resp []lsp.CodeLens) (err error) {
+	// No rewrite is possible.
+	return nil
 }
 
 func (p *Proxy) handleFormatting(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
@@ -421,7 +496,7 @@ func (p *Proxy) handleFormatting(ctx context.Context, conn *jsonrpc2.Conn, req *
 	}()
 	// Format the current document.
 	contents, _ := p.documentContents.Get(string(params.TextDocument.URI))
-	var lines int
+	var lines uint32
 	for _, c := range contents {
 		if c == '\n' {
 			lines++
@@ -521,7 +596,7 @@ func (p *Proxy) rewriteDidChangeRequest(ctx context.Context, r *jsonrpc2.Request
 	p.sourceMapCache.Set(string(params.TextDocument.URI), sm)
 	// Overwrite all the Go contents.
 	params.ContentChanges = []lsp.TextDocumentContentChangeEvent{{
-		Range:       nil,
+		Range:       lsp.Range{},
 		RangeLength: 0,
 		Text:        w.String(),
 	}}
@@ -564,7 +639,7 @@ func (p *Proxy) sendParseErrorDiagnosticNotifications(uri lsp.DocumentURI, err e
 						Start: templatePositionToLSPPosition(pe.From),
 						End:   templatePositionToLSPPosition(pe.To),
 					},
-					Severity: lsp.Error,
+					Severity: lsp.DiagnosticSeverityError,
 					Code:     "",
 					Source:   "templ",
 					Message:  pe.Message,

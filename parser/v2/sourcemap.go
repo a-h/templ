@@ -28,7 +28,7 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 }
 
 // TargetPositionFromSource looks up the target position using the source position.
-func (sm *SourceMap) TargetPositionFromSource(line, col int) (tgt Position, mapping SourceExpressionTo, ok bool) {
+func (sm *SourceMap) TargetPositionFromSource(line, col uint32) (tgt Position, mapping SourceExpressionTo, ok bool) {
 	mapping, offset, ok := sm.lookupTargetBySourceLineCol(line, col)
 	if ok {
 		tgt = mapping.Target.From
@@ -37,7 +37,7 @@ func (sm *SourceMap) TargetPositionFromSource(line, col int) (tgt Position, mapp
 	return
 }
 
-func (sm *SourceMap) lookupTargetBySourceLineCol(line, col int) (ir SourceExpressionTo, offset int, ok bool) {
+func (sm *SourceMap) lookupTargetBySourceLineCol(line, col uint32) (ir SourceExpressionTo, offset uint32, ok bool) {
 	for _, cc := range sm.Items {
 		if cc.Source.Range.From.Line == cc.Source.Range.To.Line && cc.Source.Range.To.Line == line && ((col >= cc.Source.Range.From.Col && col <= cc.Source.Range.To.Col) ||
 			(col <= cc.Source.Range.From.Col && col >= cc.Source.Range.To.Col)) {
@@ -53,7 +53,7 @@ func (sm *SourceMap) lookupTargetBySourceLineCol(line, col int) (ir SourceExpres
 }
 
 // SourcePositionFromTarget looks the source position using the target position.
-func (sm *SourceMap) SourcePositionFromTarget(line, col int) (src Position, mapping SourceExpressionTo, ok bool) {
+func (sm *SourceMap) SourcePositionFromTarget(line, col uint32) (src Position, mapping SourceExpressionTo, ok bool) {
 	mapping, offset, ok := sm.lookupSourceByTargetLineCol(line, col)
 	if ok {
 		src = mapping.Source.Range.From
@@ -62,7 +62,7 @@ func (sm *SourceMap) SourcePositionFromTarget(line, col int) (src Position, mapp
 	return
 }
 
-func (sm *SourceMap) lookupSourceByTargetLineCol(line, col int) (ir SourceExpressionTo, offset int, ok bool) {
+func (sm *SourceMap) lookupSourceByTargetLineCol(line, col uint32) (ir SourceExpressionTo, offset uint32, ok bool) {
 	for _, cc := range sm.Items {
 		if cc.Target.From.Line == cc.Target.To.Line && cc.Target.To.Line == line && ((col >= cc.Target.From.Col && col <= cc.Target.To.Col) ||
 			(col <= cc.Target.From.Col && col >= cc.Target.To.Col)) {

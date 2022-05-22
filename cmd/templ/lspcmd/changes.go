@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/go-lsp"
+	lsp "go.lsp.dev/protocol"
 	"go.uber.org/zap"
 )
 
@@ -69,7 +69,7 @@ func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentC
 // applyContentChanges updates `contents` based on `changes`
 func (fc *documentContents) applyContentChanges(uri lsp.DocumentURI, contents []byte, changes []lsp.TextDocumentContentChangeEvent) (c []byte, err error) {
 	for _, change := range changes {
-		if change.Range == nil && change.RangeLength == 0 {
+		if change.RangeLength == 0 {
 			contents = []byte(change.Text) // new full content
 			continue
 		}
@@ -103,8 +103,7 @@ func (fc *documentContents) applyContentChanges(uri lsp.DocumentURI, contents []
 }
 
 func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool, whyInvalid string) {
-	line := 0
-	col := 0
+	var line, col uint32
 	// TODO(sqs): count chars, not bytes, per LSP. does that mean we
 	// need to maintain 2 separate counters since we still need to
 	// return the offset as bytes?
