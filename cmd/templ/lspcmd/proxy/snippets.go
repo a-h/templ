@@ -1,4 +1,4 @@
-package lspcmd
+package proxy
 
 import lsp "go.lsp.dev/protocol"
 

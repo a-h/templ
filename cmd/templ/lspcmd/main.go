@@ -2,13 +2,14 @@ package lspcmd
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 
 	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
-	"github.com/sourcegraph/jsonrpc2"
+	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
+	"go.lsp.dev/jsonrpc2"
+	"go.lsp.dev/protocol"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -49,79 +50,63 @@ func Run(args Arguments) error {
 }
 
 func run(ctx context.Context, args Arguments) (err error) {
-	logger := zap.NewNop()
+	log := zap.NewNop()
 	if args.Log != "" {
 		cfg := zap.NewProductionConfig()
 		cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
 		cfg.OutputPaths = []string{
 			args.Log,
 		}
-		logger, err = cfg.Build()
+		log, err = cfg.Build()
 		if err != nil {
-			log.Printf("failed to create logger: %v\n", err)
+			log.Error("failed to create logger: %v\n", zap.Error(err))
 			os.Exit(1)
 		}
 	}
-	defer logger.Sync()
-	logger.Info("Starting up...")
+	defer log.Sync()
+	log.Info("lsp: starting up...")
 
-	// Create the proxy.
-	proxy := NewProxy(logger)
-
-	// Create the lsp server for the text editor client.
-	clientStream := jsonrpc2.NewBufferedStream(stdrwc{log: logger}, jsonrpc2.VSCodeObjectCodec{})
-	// If detailed logging is required, it can be enabled with:
-	//rpcLogger := jsonrpc2.LogMessages(rpcLogger{log: logger})
-	//client := jsonrpc2.NewConn(ctx, clientStream, proxy, rpcLogger)
-	client := jsonrpc2.NewConn(ctx, clientStream, proxy)
-
-	// Start gopls and make a client connection to it.
-	gopls, err := pls.NewGopls(ctx, logger, proxy.proxyFromGoplsToClient, pls.Options{
+	log.Info("lsp: starting gopls...")
+	rwc, err := pls.NewGopls(ctx, log, pls.Options{
 		Log:      args.GoplsLog,
 		RPCTrace: args.GoplsRPCTrace,
 	})
 	if err != nil {
-		log.Printf("failed to create gopls handler: %v\n", err)
+		log.Error("failed to start gopls", zap.Error(err))
 		os.Exit(1)
 	}
 
-	// Initialize the proxy.
-	proxy.Init(ctx, client, gopls)
+	cache := proxy.NewSourceMapCache()
 
-	// Close the server and gopls client when we're complete.
+	log.Info("creating client")
+	clientProxy, clientInit := proxy.NewClient(log, cache)
+	_, goplsConn, goplsServer := protocol.NewClient(context.Background(), clientProxy, jsonrpc2.NewStream(rwc), log)
+	defer goplsConn.Close()
+
+	log.Info("creating proxy")
+	// Create the proxy to sit between.
+	serverProxy, serverInit := proxy.NewServer(log, goplsServer, cache)
+
+	// Create templ server.
+	log.Info("creating templ server")
+	templStream := jsonrpc2.NewStream(stdrwc{log: log})
+	_, templConn, templClient := protocol.NewServer(context.Background(), serverProxy, templStream, log)
+	defer templConn.Close()
+
+	// Allow both the server and the client to initiate outbound requests.
+	clientInit(templClient)
+	serverInit(templClient)
+
+	log.Info("listening")
+
 	select {
 	case <-ctx.Done():
-		logger.Info("Signal received")
-	case <-client.DisconnectNotify():
-		logger.Info("Client disconnected")
+		log.Info("context closed")
+	case <-templConn.Done():
+		log.Info("templConn closed")
+	case <-goplsConn.Done():
+		log.Info("goplsCon closed")
 	}
-	client.Close()
-	gopls.Close()
-	logger.Info("Stopped...")
-	return nil
-}
-
-type stdrwc struct {
-	log *zap.Logger
-}
-
-func (s stdrwc) Read(p []byte) (int, error) {
-	return os.Stdin.Read(p)
-}
-
-func (s stdrwc) Write(p []byte) (int, error) {
-	return os.Stdout.Write(p)
-}
-
-func (s stdrwc) Close() error {
-	s.log.Info("closing connection from LSP to editor")
-	if err := os.Stdin.Close(); err != nil {
-		s.log.Error("error closing stdin", zap.Error(err))
-		return err
-	}
-	if err := os.Stdout.Close(); err != nil {
-		s.log.Error("error closing stdout", zap.Error(err))
-		return err
-	}
-	return nil
+	log.Info("shutdown complete")
+	return
 }

@@ -1,8 +1,9 @@
-package lspcmd
+package proxy
 
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"sync"
 
 	lsp "go.lsp.dev/protocol"
@@ -10,11 +11,11 @@ import (
 )
 
 // newDocumentContents creates a document content processing tool.
-func newDocumentContents(logger *zap.Logger) *documentContents {
+func newDocumentContents(log *zap.Logger) *documentContents {
 	return &documentContents{
 		m:             new(sync.Mutex),
 		uriToContents: make(map[string][]byte),
-		log:           logger,
+		log:           log,
 	}
 }
 
@@ -132,3 +133,16 @@ func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool,
 }
 
 // end of content from SourceGraph.
+
+// getLine from a  a specific line of a document.
+func getLineAndCharacter(s string, lineIndex, charIndex int) (line, char string) {
+	lines := strings.Split(string(s), "\n")
+	if lineIndex < len(lines) {
+		line = lines[lineIndex]
+		if charIndex < len(line) {
+			char = string(line[charIndex])
+		}
+		return
+	}
+	return
+}
