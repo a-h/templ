@@ -94,8 +94,8 @@ func visualisation(templFileName string, left, right templ.Component) templ.Comp
 		}
 // Text
 var_2 := `
-				.mapped { background-color: "green" }
-				.highlighted { background-color: "yellow" }
+				.mapped { background-color: green }
+				.highlighted { background-color: yellow }
 			`
 _, err = io.WriteString(w, var_2)
 if err != nil {
@@ -162,7 +162,7 @@ if err != nil {
 		}
 		// Element (standard)
 		// Element CSS
-		var var_4 templ.CSSClasses = templ.Classes(column())
+		var var_4 templ.CSSClasses = templ.Classes(column(), code())
 		err = templ.RenderCSS(ctx, w, var_4)
 		if err != nil {
 			return err
@@ -203,7 +203,7 @@ if err != nil {
 		}
 		// Element (standard)
 		// Element CSS
-		var var_5 templ.CSSClasses = templ.Classes(column())
+		var var_5 templ.CSSClasses = templ.Classes(column(), code())
 		err = templ.RenderCSS(ctx, w, var_5)
 		if err != nil {
 			return err
@@ -258,21 +258,33 @@ if err != nil {
 	})
 }
 
-func highlight(sourceID, targetID string) templ.ComponentScript {
+func highlight(sourceId, targetId string) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_highlight_44cb`,
-		Function: `function __templ_highlight_44cb(sourceID, targetID){document.getElementsByClassName(sourceID).forEach(e => e.classList.add("highlighted"));  
-	document.getElementsByClassName(targetID).forEach(e => e.classList.add("highlighted"));}`,
-		Call: templ.SafeScript(`__templ_highlight_44cb`, sourceID, targetID),
+		Name: `__templ_highlight_ae80`,
+		Function: `function __templ_highlight_ae80(sourceId, targetId){let items = document.getElementsByClassName(sourceId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.add("highlighted");
+	}
+        items = document.getElementsByClassName(targetId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.add("highlighted");
+	}}`,
+		Call: templ.SafeScript(`__templ_highlight_ae80`, sourceId, targetId),
 	}
 }
 
-func removeHighlight(sourceID, targetID string) templ.ComponentScript {
+func removeHighlight(sourceId, targetId string) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_removeHighlight_d5c6`,
-		Function: `function __templ_removeHighlight_d5c6(sourceID, targetID){document.getElementsByClassName(sourceID).forEach(e => e.classList.remove("highlighted"));  
-	document.getElementsByClassName(targetID).forEach(e => e.classList.remove("highlighted"));}`,
-		Call: templ.SafeScript(`__templ_removeHighlight_d5c6`, sourceID, targetID),
+		Name: `__templ_removeHighlight_58f2`,
+		Function: `function __templ_removeHighlight_58f2(sourceId, targetId){let items = document.getElementsByClassName(sourceId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.remove("highlighted");
+	}
+        items = document.getElementsByClassName(targetId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.remove("highlighted");
+	}}`,
+		Call: templ.SafeScript(`__templ_removeHighlight_58f2`, sourceId, targetId),
 	}
 }
 

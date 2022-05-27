@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"html"
 	"io"
 	"os"
 	"runtime"
@@ -139,17 +140,21 @@ func (tl templLines) Render(ctx context.Context, w io.Writer) error {
 	for lineIndex, line := range templLines {
 		for colIndex, c := range line {
 			if _, m, ok := tl.sourceMap.TargetPositionFromSource(uint32(lineIndex), uint32(colIndex)); ok {
-				sourceID := fmt.Sprintf("src_%d", m.Source.Range.From.Index)
-				targetID := fmt.Sprintf("tgt_%d", m.Target.From.Index)
+				sourceID := fmt.Sprintf("src_%d_%d_%d", m.Source.Range.From.Index, m.Source.Range.From.Line, m.Source.Range.From.Col)
+				targetID := fmt.Sprintf("tgt_%d_%d_%d", m.Target.From.Index, m.Target.From.Index, m.Target.From.Col)
 				if err := mappedCharacter(string(c), sourceID, targetID).Render(ctx, w); err != nil {
 					return err
 				}
 			} else {
-				if _, err := w.Write([]byte(string(c))); err != nil {
+				s := html.EscapeString(string(c))
+				s = strings.ReplaceAll(s, "\t", "&nbsp;")
+				s = strings.ReplaceAll(s, " ", "&nbsp;")
+				if _, err := w.Write([]byte(s)); err != nil {
 					return err
 				}
 			}
 		}
+		w.Write([]byte("\n<br/>\n"))
 	}
 	return nil
 }
@@ -164,17 +169,21 @@ func (gl goLines) Render(ctx context.Context, w io.Writer) error {
 	for lineIndex, line := range templLines {
 		for colIndex, c := range line {
 			if _, m, ok := gl.sourceMap.SourcePositionFromTarget(uint32(lineIndex), uint32(colIndex)); ok {
-				sourceID := fmt.Sprintf("src_%d", m.Source.Range.From.Index)
-				targetID := fmt.Sprintf("tgt_%d", m.Target.From.Index)
+				sourceID := fmt.Sprintf("src_%d_%d_%d", m.Source.Range.From.Index, m.Source.Range.From.Line, m.Source.Range.From.Col)
+				targetID := fmt.Sprintf("tgt_%d_%d_%d", m.Target.From.Index, m.Target.From.Index, m.Target.From.Col)
 				if err := mappedCharacter(string(c), sourceID, targetID).Render(ctx, w); err != nil {
 					return err
 				}
 			} else {
-				if _, err := w.Write([]byte(string(c))); err != nil {
+				s := html.EscapeString(string(c))
+				s = strings.ReplaceAll(s, "\t", "&nbsp;")
+				s = strings.ReplaceAll(s, " ", "&nbsp;")
+				if _, err := w.Write([]byte(s)); err != nil {
 					return err
 				}
 			}
 		}
+		w.Write([]byte("\n<br/>\n"))
 	}
 	return nil
 }

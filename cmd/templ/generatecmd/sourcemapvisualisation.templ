@@ -17,18 +17,18 @@ templ visualisation(templFileName string, left, right templ.Component) {
 		<head>
 			<title>{ templFileName } - Source Map Visualisation</title>
 			<style type="text/css">
-				.mapped { background-color: "green" }
-				.highlighted { background-color: "yellow" }
+				.mapped { background-color: green }
+				.highlighted { background-color: yellow }
 			</style>
 		</head>
 		<body>
 			<h1>{ templFileName }</h1>
 
 			<div class={ templ.Classes(row()) }>
-				<div class={ templ.Classes(column()) }>
+				<div class={ templ.Classes(column(), code()) }>
 					{! left }
 				</div>
-				<div class={ templ.Classes(column()) }>
+				<div class={ templ.Classes(column(), code()) }>
 					{! right }
 				</div>
 			</div>
@@ -36,14 +36,26 @@ templ visualisation(templFileName string, left, right templ.Component) {
 	</html>
 }
 
-script highlight(sourceID, targetID string) {
-	document.getElementsByClassName(sourceID).forEach(e => e.classList.add("highlighted"));  
-	document.getElementsByClassName(targetID).forEach(e => e.classList.add("highlighted"));  
+script highlight(sourceId, targetId string) {
+        let items = document.getElementsByClassName(sourceId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.add("highlighted");
+	}
+        items = document.getElementsByClassName(targetId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.add("highlighted");
+	}
 }
 
-script removeHighlight(sourceID, targetID string) {
-	document.getElementsByClassName(sourceID).forEach(e => e.classList.remove("highlighted"));  
-	document.getElementsByClassName(targetID).forEach(e => e.classList.remove("highlighted"));  
+script removeHighlight(sourceId, targetId string) {
+        let items = document.getElementsByClassName(sourceId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.remove("highlighted");
+	}
+        items = document.getElementsByClassName(targetId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.remove("highlighted");
+	}
 }
 
 templ mappedCharacter(s string, sourceID, targetID string) {
