@@ -48,7 +48,7 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 	p.Log.Info("client <- server: PublishDiagnostics")
 	// Get the sourcemap from the cache.
 	uri := strings.TrimSuffix(string(params.URI), "_templ.go") + ".templ"
-	sourceMap, _, ok := p.SourceMapCache.Get(uri)
+	sourceMap, ok := p.SourceMapCache.Get(uri)
 	if !ok {
 		return fmt.Errorf("unable to complete because the sourcemap for %q doesn't exist in the cache, has the didOpen notification been sent yet?", uri)
 	}
@@ -56,14 +56,15 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 	// Rewrite the positions.
 	for i := 0; i < len(params.Diagnostics); i++ {
 		item := params.Diagnostics[i]
-		start, _, ok := sourceMap.SourcePositionFromTarget(item.Range.Start.Line+uint32(1), item.Range.Start.Character)
+		start, _, ok := sourceMap.SourcePositionFromTarget(item.Range.Start.Line, item.Range.Start.Character)
 		if ok {
-			item.Range.Start.Line = start.Line - 1
-			item.Range.Start.Character = start.Col + 1
+			item.Range.Start.Line = start.Line
+			item.Range.Start.Character = start.Col
 		}
-		end, _, ok := sourceMap.SourcePositionFromTarget(item.Range.End.Line+1, item.Range.End.Character)
+		end, _, ok := sourceMap.SourcePositionFromTarget(item.Range.End.Line, item.Range.End.Character)
 		if ok {
-			item.Range.End = templatePositionToLSPPosition(end)
+			item.Range.End.Line = end.Line
+			item.Range.End.Line = end.Col
 		}
 		params.Diagnostics[i] = item
 	}

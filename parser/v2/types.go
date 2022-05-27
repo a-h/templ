@@ -59,7 +59,7 @@ func (p Position) String() string {
 func NewPosition() Position {
 	return Position{
 		Index: 0,
-		Line:  1,
+		Line:  0,
 		Col:   0,
 	}
 }

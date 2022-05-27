@@ -10,7 +10,6 @@ import (
 func NewSourceMapCache() *SourceMapCache {
 	return &SourceMapCache{
 		m:              new(sync.Mutex),
-		uriToSource:    make(map[string]string),
 		uriToSourceMap: make(map[string]*parser.SourceMap),
 	}
 }
@@ -18,21 +17,18 @@ func NewSourceMapCache() *SourceMapCache {
 // SourceMapCache is a cache of .templ file URIs to the source map.
 type SourceMapCache struct {
 	m              *sync.Mutex
-	uriToSource    map[string]string
 	uriToSourceMap map[string]*parser.SourceMap
 }
 
-func (fc *SourceMapCache) Set(uri string, m *parser.SourceMap, source string) {
+func (fc *SourceMapCache) Set(uri string, m *parser.SourceMap) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
-	fc.uriToSource[uri] = source
 	fc.uriToSourceMap[uri] = m
 }
 
-func (fc *SourceMapCache) Get(uri string) (m *parser.SourceMap, source string, ok bool) {
+func (fc *SourceMapCache) Get(uri string) (m *parser.SourceMap, ok bool) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
-	source, _ = fc.uriToSource[uri]
 	m, ok = fc.uriToSourceMap[uri]
 	return
 }
@@ -40,6 +36,5 @@ func (fc *SourceMapCache) Get(uri string) (m *parser.SourceMap, source string, o
 func (fc *SourceMapCache) Delete(uri string) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
-	delete(fc.uriToSource, uri)
 	delete(fc.uriToSourceMap, uri)
 }

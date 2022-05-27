@@ -54,33 +54,21 @@ func (p *Server) updateTextDocumentPositionParams(params lsp.TextDocumentPositio
 		log.Warn("updateTextDocumentPositionParams: not a templ file")
 		return params
 	}
-	sourceMap, goCode, ok := p.SourceMapCache.Get(string(params.TextDocument.URI))
+	sourceMap, ok := p.SourceMapCache.Get(string(params.TextDocument.URI))
 	if !ok {
 		// Log that didOpen might not have been called.
 		log.Warn("completion: sourcemap not found in cache")
 		return params
 	}
 	// Map from the source position to target Go position.
-	to, _, ok := sourceMap.TargetPositionFromSource(params.Position.Line+1, params.Position.Character)
+	to, _, ok := sourceMap.TargetPositionFromSource(params.Position.Line, params.Position.Character)
 	if ok {
-		log = log.With(zap.String("from", fmt.Sprintf("%d:%d", params.Position.Line+1, params.Position.Character)),
-			zap.String("to", fmt.Sprintf("%d:%d", to.Line, to.Col)))
-
-		//TODO: Put this lookup behind a debug logging flag, because it's computationally expensive.
-		templCode, ok := p.documentContents.Get(string(params.TextDocument.URI))
-		if !ok {
-			log.Warn("completion: templCode not found in document contents")
-		}
-		fromTemplLine, fromTemplChar := getLineAndCharacter(string(templCode), int(params.Position.Line), int(params.Position.Character))
-		toGoCodeLine, toGoCodeChar := getLineAndCharacter(string(goCode), int(to.Line)-1, int(to.Col))
-		log = log.With(zap.String("fromTemplLine", fromTemplLine), zap.String("fromTemplChar", fromTemplChar))
-		log = log.With(zap.String("toGoCodeLine", toGoCodeLine), zap.String("toGoCodeChar", toGoCodeChar))
-
-		log.Info("updateTextDocumentPositionParams: found position")
-		params.Position.Line = to.Line - 1
-		params.Position.Character = to.Col - 1
+		log.Info("updateTextDocumentPositionParams: found position", zap.String("fromTempl", fmt.Sprintf("%d:%d", params.Position.Line, params.Position.Character)),
+			zap.String("toGo", fmt.Sprintf("%d:%d", to.Line, to.Col)))
+		params.Position.Line = to.Line
+		params.Position.Character = to.Col
 	} else {
-		p.Log.Info("updateTextDocumentPositionParams: position not found", zap.String("from", fmt.Sprintf("%d:%d", params.Position.Line+1, params.Position.Character)))
+		p.Log.Info("updateTextDocumentPositionParams: position not found", zap.String("from", fmt.Sprintf("%d:%d", params.Position.Line, params.Position.Character)))
 	}
 	// Update the URI to make gopls look at the Go code instead.
 	params.TextDocument.URI = goURI
@@ -97,8 +85,14 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 			Diagnostics: []lsp.Diagnostic{
 				{
 					Range: lsp.Range{
-						Start: templatePositionToLSPPosition(pe.From),
-						End:   templatePositionToLSPPosition(pe.To),
+						Start: lsp.Position{
+							Line:      pe.From.Line,
+							Character: pe.From.Col,
+						},
+						End: lsp.Position{
+							Line:      pe.To.Line,
+							Character: pe.To.Col,
+						},
 					},
 					Severity: lsp.DiagnosticSeverityError,
 					Code:     "",
@@ -233,29 +227,31 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	// Call the target.
 	result, err = p.Target.Completion(ctx, params)
 	if err != nil {
+		p.Log.Warn("completion: got gopls error", zap.Error(err))
 		return
 	}
 	// Rewrite the result positions.
-	sourceMap, _, ok := p.SourceMapCache.Get(originalURI)
+	sourceMap, ok := p.SourceMapCache.Get(originalURI)
 	if !ok {
 		// Log that didOpen might not have been called.
 		p.Log.Warn("completion: sourcemap not found in cache, during result rewrite", zap.String("uri", string(originalURI)))
 		return
 	}
+	p.Log.Info("completion: received items", zap.Int("count", len(result.Items)))
 	for i := 0; i < len(result.Items); i++ {
 		item := result.Items[i]
 		if item.TextEdit != nil {
-			start, _, ok := sourceMap.SourcePositionFromTarget(item.TextEdit.Range.Start.Line+1, item.TextEdit.Range.Start.Character)
+			start, _, ok := sourceMap.SourcePositionFromTarget(item.TextEdit.Range.Start.Line, item.TextEdit.Range.Start.Character)
 			if ok {
 				p.Log.Info("rewriteCompletionResponse: found new start position", zap.Any("from", item.TextEdit.Range.Start), zap.Any("start", start))
-				item.TextEdit.Range.Start.Line = start.Line - 1
-				item.TextEdit.Range.Start.Character = start.Col + 1
+				item.TextEdit.Range.Start.Line = start.Line
+				item.TextEdit.Range.Start.Character = start.Col
 			}
-			end, _, ok := sourceMap.SourcePositionFromTarget(item.TextEdit.Range.End.Line+1, item.TextEdit.Range.End.Character)
+			end, _, ok := sourceMap.SourcePositionFromTarget(item.TextEdit.Range.End.Line, item.TextEdit.Range.End.Character)
 			if ok {
 				p.Log.Info("rewriteCompletionResponse: found new end position", zap.Any("from", item.TextEdit.Range.End), zap.Any("end", end))
-				item.TextEdit.Range.End.Line = end.Line - 1
-				item.TextEdit.Range.End.Character = end.Col + 1
+				item.TextEdit.Range.End.Line = end.Line
+				item.TextEdit.Range.End.Character = end.Col
 			}
 		}
 		result.Items[i] = item
@@ -311,7 +307,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		return
 	}
 	// Cache the sourcemap.
-	p.SourceMapCache.Set(string(params.TextDocument.URI), sm, w.String())
+	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
 	// Overwrite all the Go contents.
 	params.ContentChanges = []lsp.TextDocumentContentChangeEvent{{
 		Range:       lsp.Range{},
@@ -384,7 +380,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 		return
 	}
 	p.Log.Info("setting source map cache contents", zap.String("uri", string(params.TextDocument.URI)))
-	p.SourceMapCache.Set(string(params.TextDocument.URI), sm, w.String())
+	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
 	// Set the Go contents.
 	params.TextDocument.Text = w.String()
 	// Change the path.
@@ -473,7 +469,7 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 	result = append(result, lsp.TextEdit{
 		Range: lsp.Range{
 			Start: lsp.Position{},
-			End:   lsp.Position{Line: lines + 1, Character: 0},
+			End:   lsp.Position{Line: lines, Character: 0},
 		},
 		NewText: w.String(),
 	})

@@ -129,7 +129,7 @@ func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool,
 	if line == 0 {
 		return 0, false, fmt.Sprintf("character %d (zero-based) is beyond first line boundary", p.Character)
 	}
-	return 0, false, fmt.Sprintf("file only has %d lines", line+1)
+	return 0, false, fmt.Sprintf("file only has %d lines", line)
 }
 
 // end of content from SourceGraph.
