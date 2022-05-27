@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -138,6 +139,7 @@ type templLines struct {
 func (tl templLines) Render(ctx context.Context, w io.Writer) error {
 	templLines := strings.Split(tl.contents, "\n")
 	for lineIndex, line := range templLines {
+		w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n"))
 		for colIndex, c := range line {
 			if _, m, ok := tl.sourceMap.TargetPositionFromSource(uint32(lineIndex), uint32(colIndex)); ok {
 				sourceID := fmt.Sprintf("src_%d_%d_%d", m.Source.Range.From.Index, m.Source.Range.From.Line, m.Source.Range.From.Col)
@@ -167,6 +169,7 @@ type goLines struct {
 func (gl goLines) Render(ctx context.Context, w io.Writer) error {
 	templLines := strings.Split(gl.contents, "\n")
 	for lineIndex, line := range templLines {
+		w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n"))
 		for colIndex, c := range line {
 			if _, m, ok := gl.sourceMap.SourcePositionFromTarget(uint32(lineIndex), uint32(colIndex)); ok {
 				sourceID := fmt.Sprintf("src_%d_%d_%d", m.Source.Range.From.Index, m.Source.Range.From.Line, m.Source.Range.From.Col)

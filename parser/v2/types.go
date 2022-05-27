@@ -78,7 +78,7 @@ func NewPositionFromInput(pi parse.Input) Position {
 	l, c := pi.Position()
 	return Position{
 		Index: pi.Index(),
-		Line:  uint32(l),
+		Line:  uint32(l) - 1,
 		Col:   uint32(c),
 	}
 }
