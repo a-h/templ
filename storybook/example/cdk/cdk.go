@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/aws/aws-cdk-go/awscdk"
-	"github.com/aws/aws-cdk-go/awscdk/awsapigatewayv2"
-	"github.com/aws/aws-cdk-go/awscdk/awsapigatewayv2integrations"
-	"github.com/aws/aws-cdk-go/awscdk/awslambda"
-	"github.com/aws/aws-cdk-go/awscdk/awslambdago"
-	"github.com/aws/constructs-go/constructs/v3"
+	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	"github.com/aws/aws-cdk-go/awscdkapigatewayv2alpha/v2"
+	awsapigatewayv2 "github.com/aws/aws-cdk-go/awscdkapigatewayv2alpha/v2"
+	awsapigatewayv2integrations "github.com/aws/aws-cdk-go/awscdkapigatewayv2integrationsalpha/v2"
+	awslambdago "github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2"
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
 
@@ -32,9 +33,8 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 		MemorySize: jsii.Number(1024),
 		Timeout:    awscdk.Duration_Millis(jsii.Number(15000)),
 	})
-	fi := awsapigatewayv2integrations.NewLambdaProxyIntegration(&awsapigatewayv2integrations.LambdaProxyIntegrationProps{
-		Handler:              f,
-		PayloadFormatVersion: awsapigatewayv2.PayloadFormatVersion_VERSION_2_0(),
+	fi := awsapigatewayv2integrations.NewHttpLambdaIntegration(jsii.String("handlerIntegration"), f, &awsapigatewayv2integrations.HttpLambdaIntegrationProps{
+		PayloadFormatVersion: awscdkapigatewayv2alpha.PayloadFormatVersion_VERSION_2_0(),
 	})
 	endpoint := awsapigatewayv2.NewHttpApi(stack, jsii.String("storybookHttpApi"), &awsapigatewayv2.HttpApiProps{
 		DefaultIntegration: fi,
