@@ -75,6 +75,26 @@ func (p *Server) updateTextDocumentPositionParams(params lsp.TextDocumentPositio
 	return params
 }
 
+func (p *Server) convertGoRangeToTemplRange(uri lsp.DocumentURI, input lsp.Range) (output lsp.Range) {
+	output = input
+	sourceMap, ok := p.SourceMapCache.Get(string(uri))
+	if !ok {
+		return
+	}
+	// Map from the source position to target Go position.
+	start, _, ok := sourceMap.SourcePositionFromTarget(input.Start.Line, input.Start.Character)
+	if ok {
+		output.Start.Line = start.Line
+		output.Start.Character = start.Col
+	}
+	end, _, ok := sourceMap.SourcePositionFromTarget(input.End.Line, input.End.Character)
+	if ok {
+		output.End.Line = end.Line
+		output.End.Character = end.Col
+	}
+	return
+}
+
 // parseTemplate parses the templ file content, and notifies the end user via the LSP about how it went.
 func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText string) (template parser.TemplateFile, ok bool, err error) {
 	template, err = parser.ParseString(templateText)
@@ -183,7 +203,27 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 	if !isTemplFile {
 		return p.Target.CodeAction(ctx, params)
 	}
+	templURI := params.TextDocument.URI
 	params.TextDocument.URI = goURI
+	result, err = p.Target.CodeAction(ctx, params)
+	if err != nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		r := result[i]
+		// Rewrite the Diagnostics range field.
+		for di := 0; di < len(r.Diagnostics); di++ {
+			r.Diagnostics[i].Range = p.convertGoRangeToTemplRange(templURI, r.Diagnostics[i].Range)
+		}
+		// Rewrite the DocumentChanges.
+		for dci := 0; dci < len(r.Edit.DocumentChanges); dci++ {
+			dc := r.Edit.DocumentChanges[0]
+			for ei := 0; ei < len(dc.Edits); ei++ {
+				dc.Edits[ei].Range = p.convertGoRangeToTemplRange(templURI, dc.Edits[ei].Range)
+			}
+			dc.TextDocument.URI = templURI
+		}
+	}
 	return p.Target.CodeAction(ctx, params)
 }
 
@@ -480,8 +520,18 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 	p.Log.Info("client -> server: Hover")
 	defer p.Log.Info("client -> server: Hover end")
 	// Rewrite the request.
+	templURI := params.TextDocument.URI
 	params.TextDocumentPositionParams = p.updateTextDocumentPositionParams(params.TextDocumentPositionParams)
-	return p.Target.Hover(ctx, params)
+	result, err = p.Target.Hover(ctx, params)
+	if err != nil {
+		return
+	}
+	// Rewrite the response.
+	if result.Range != nil {
+		r := p.convertGoRangeToTemplRange(templURI, *result.Range)
+		result.Range = &r
+	}
+	return
 }
 
 func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationParams) (result []lsp.Location, err error) {
