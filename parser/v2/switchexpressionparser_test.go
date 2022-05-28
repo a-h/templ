@@ -23,12 +23,12 @@ func TestSwitchExpressionParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 7,
-							Line:  1,
+							Line:  0,
 							Col:   7,
 						},
 						To: Position{
 							Index: 16,
-							Line:  1,
+							Line:  0,
 							Col:   16,
 						},
 					},
@@ -50,12 +50,12 @@ default:
 					Range: Range{
 						From: Position{
 							Index: 7,
-							Line:  1,
+							Line:  0,
 							Col:   7,
 						},
 						To: Position{
 							Index: 16,
-							Line:  1,
+							Line:  0,
 							Col:   16,
 						},
 					},
@@ -67,12 +67,12 @@ default:
 							Range: Range{
 								From: Position{
 									Index: 19,
-									Line:  2,
+									Line:  1,
 									Col:   0,
 								},
 								To: Position{
 									Index: 28,
-									Line:  3,
+									Line:  2,
 									Col:   0,
 								},
 							},
@@ -90,12 +90,12 @@ default:
 											Range: Range{
 												From: Position{
 													Index: 41,
-													Line:  4,
+													Line:  3,
 													Col:   5,
 												},
 												To: Position{
 													Index: 55,
-													Line:  4,
+													Line:  3,
 													Col:   19,
 												},
 											},
@@ -124,12 +124,12 @@ default:
 					Range: Range{
 						From: Position{
 							Index: 7,
-							Line:  1,
+							Line:  0,
 							Col:   7,
 						},
 						To: Position{
 							Index: 16,
-							Line:  1,
+							Line:  0,
 							Col:   16,
 						},
 					},
@@ -141,12 +141,12 @@ default:
 							Range: Range{
 								From: Position{
 									Index: 20,
-									Line:  2,
+									Line:  1,
 									Col:   1,
 								},
 								To: Position{
 									Index: 36,
-									Line:  3,
+									Line:  2,
 									Col:   0,
 								},
 							},
@@ -163,12 +163,12 @@ default:
 											Range: Range{
 												From: Position{
 													Index: 47,
-													Line:  4,
+													Line:  3,
 													Col:   4,
 												},
 												To: Position{
 													Index: 61,
-													Line:  4,
+													Line:  3,
 													Col:   18,
 												},
 											},
@@ -197,12 +197,12 @@ default:
 					Range: Range{
 						From: Position{
 							Index: 7,
-							Line:  1,
+							Line:  0,
 							Col:   7,
 						},
 						To: Position{
 							Index: 16,
-							Line:  1,
+							Line:  0,
 							Col:   16,
 						},
 					},
@@ -214,12 +214,12 @@ default:
 							Range: Range{
 								From: Position{
 									Index: 20,
-									Line:  2,
+									Line:  1,
 									Col:   1,
 								},
 								To: Position{
 									Index: 30,
-									Line:  3,
+									Line:  2,
 									Col:   0,
 								},
 							},
@@ -234,12 +234,12 @@ default:
 									Range: Range{
 										From: Position{
 											Index: 34,
-											Line:  3,
+											Line:  2,
 											Col:   4,
 										},
 										To: Position{
 											Index: 37,
-											Line:  3,
+											Line:  2,
 											Col:   7,
 										},
 									},
@@ -253,12 +253,12 @@ default:
 							Range: Range{
 								From: Position{
 									Index: 41,
-									Line:  4,
+									Line:  3,
 									Col:   1,
 								},
 								To: Position{
 									Index: 51,
-									Line:  5,
+									Line:  4,
 									Col:   0,
 								},
 							},
@@ -273,12 +273,12 @@ default:
 									Range: Range{
 										From: Position{
 											Index: 55,
-											Line:  5,
+											Line:  4,
 											Col:   4,
 										},
 										To: Position{
 											Index: 58,
-											Line:  5,
+											Line:  4,
 											Col:   7,
 										},
 									},

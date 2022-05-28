@@ -22,13 +22,13 @@ func TestStringExpressionParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 2,
-							Line:  1,
+							Line:  0,
 							Col:   2,
 						},
 						To: Position{
 
 							Index: 8,
-							Line:  1,
+							Line:  0,
 							Col:   8,
 						},
 					},
@@ -44,13 +44,13 @@ func TestStringExpressionParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 1,
-							Line:  1,
+							Line:  0,
 							Col:   1,
 						},
 						To: Position{
 
 							Index: 7,
-							Line:  1,
+							Line:  0,
 							Col:   7,
 						},
 					},

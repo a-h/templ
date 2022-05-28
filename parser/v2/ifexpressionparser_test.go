@@ -27,12 +27,12 @@ func TestIfExpression(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 3,
-							Line:  1,
+							Line:  0,
 							Col:   3,
 						},
 						To: Position{
 							Index: 9,
-							Line:  1,
+							Line:  0,
 							Col:   9,
 						},
 					},
@@ -49,12 +49,12 @@ func TestIfExpression(t *testing.T) {
 									Range: Range{
 										From: Position{
 											Index: 23,
-											Line:  3,
+											Line:  2,
 											Col:   4,
 										},
 										To: Position{
 											Index: 37,
-											Line:  3,
+											Line:  2,
 											Col:   18,
 										},
 									},
@@ -81,12 +81,12 @@ func TestIfExpression(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 3,
-							Line:  1,
+							Line:  0,
 							Col:   3,
 						},
 						To: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 					},
@@ -99,12 +99,12 @@ func TestIfExpression(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 12,
-									Line:  2,
+									Line:  1,
 									Col:   3,
 								},
 								To: Position{
 									Index: 15,
-									Line:  2,
+									Line:  1,
 									Col:   6,
 								},
 							},
@@ -119,12 +119,12 @@ func TestIfExpression(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 30,
-									Line:  4,
+									Line:  3,
 									Col:   3,
 								},
 								To: Position{
 									Index: 33,
-									Line:  4,
+									Line:  3,
 									Col:   6,
 								},
 							},
@@ -148,12 +148,12 @@ func TestIfExpression(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 3,
-							Line:  1,
+							Line:  0,
 							Col:   3,
 						},
 						To: Position{
 							Index: 9,
-							Line:  1,
+							Line:  0,
 							Col:   9,
 						},
 					},
@@ -170,12 +170,12 @@ func TestIfExpression(t *testing.T) {
 									Range: Range{
 										From: Position{
 											Index: 23,
-											Line:  3,
+											Line:  2,
 											Col:   4,
 										},
 										To: Position{
 											Index: 37,
-											Line:  3,
+											Line:  2,
 											Col:   18,
 										},
 									},
@@ -202,12 +202,12 @@ func TestIfExpression(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 3,
-							Line:  1,
+							Line:  0,
 							Col:   3,
 						},
 						To: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 					},
@@ -220,12 +220,12 @@ func TestIfExpression(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 11,
-									Line:  2,
+									Line:  1,
 									Col:   3,
 								},
 								To: Position{
 									Index: 14,
-									Line:  2,
+									Line:  1,
 									Col:   6,
 								},
 							},
@@ -240,12 +240,12 @@ func TestIfExpression(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 29,
-									Line:  4,
+									Line:  3,
 									Col:   3,
 								},
 								To: Position{
 									Index: 32,
-									Line:  4,
+									Line:  3,
 									Col:   6,
 								},
 							},
@@ -268,12 +268,12 @@ func TestIfExpression(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 3,
-							Line:  1,
+							Line:  0,
 							Col:   3,
 						},
 						To: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 					},
@@ -286,12 +286,12 @@ func TestIfExpression(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 17,
-									Line:  2,
+									Line:  1,
 									Col:   8,
 								},
 								To: Position{
 									Index: 20,
-									Line:  2,
+									Line:  1,
 									Col:   11,
 								},
 							},
@@ -308,12 +308,12 @@ func TestIfExpression(t *testing.T) {
 											Range: Range{
 												From: Position{
 													Index: 36,
-													Line:  3,
+													Line:  2,
 													Col:   13,
 												},
 												To: Position{
 													Index: 39,
-													Line:  3,
+													Line:  2,
 													Col:   16,
 												},
 											},
@@ -348,5 +348,3 @@ func TestIfExpression(t *testing.T) {
 		})
 	}
 }
-
-

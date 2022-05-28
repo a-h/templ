@@ -24,12 +24,12 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 						Range: Range{
 							From: Position{
 								Index: 20,
-								Line:  1,
+								Line:  0,
 								Col:   20,
 							},
 							To: Position{
 								Index: 45,
-								Line:  1,
+								Line:  0,
 								Col:   45,
 							},
 						},
@@ -48,12 +48,12 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 						Range: Range{
 							From: Position{
 								Index: 21,
-								Line:  3,
+								Line:  2,
 								Col:   2,
 							},
 							To: Position{
 								Index: 46,
-								Line:  3,
+								Line:  2,
 								Col:   27,
 							},
 						},
@@ -129,12 +129,12 @@ func TestCSSParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 4,
-							Line:  1,
+							Line:  0,
 							Col:   4,
 						},
 						To: Position{
 							Index: 8,
-							Line:  1,
+							Line:  0,
 							Col:   8,
 						},
 					},
@@ -152,12 +152,12 @@ func TestCSSParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 4,
-							Line:  1,
+							Line:  0,
 							Col:   4,
 						},
 						To: Position{
 							Index: 8,
-							Line:  1,
+							Line:  0,
 							Col:   8,
 						},
 					},
@@ -176,12 +176,12 @@ background-color: #ffffff;
 					Range: Range{
 						From: Position{
 							Index: 4,
-							Line:  1,
+							Line:  0,
 							Col:   4,
 						},
 						To: Position{
 							Index: 8,
-							Line:  1,
+							Line:  0,
 							Col:   8,
 						},
 					},
@@ -205,12 +205,12 @@ background-color: { constants.BackgroundColor };
 					Range: Range{
 						From: Position{
 							Index: 4,
-							Line:  1,
+							Line:  0,
 							Col:   4,
 						},
 						To: Position{
 							Index: 8,
-							Line:  1,
+							Line:  0,
 							Col:   8,
 						},
 					},
@@ -224,12 +224,12 @@ background-color: { constants.BackgroundColor };
 								Range: Range{
 									From: Position{
 										Index: 33,
-										Line:  2,
+										Line:  1,
 										Col:   20,
 									},
 									To: Position{
 										Index: 58,
-										Line:  2,
+										Line:  1,
 										Col:   45,
 									},
 								},

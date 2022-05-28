@@ -23,12 +23,12 @@ func TestTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 						To: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 					},
@@ -46,12 +46,12 @@ func TestTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 						To: Position{
 							Index: 24,
-							Line:  1,
+							Line:  0,
 							Col:   24,
 						},
 					},
@@ -69,12 +69,12 @@ func TestTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 						To: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 					},
@@ -92,12 +92,12 @@ func TestTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 						To: Position{
 							Index: 23,
-							Line:  1,
+							Line:  0,
 							Col:   23,
 						},
 					},
@@ -116,12 +116,12 @@ func TestTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 						To: Position{
 							Index: 23,
-							Line:  1,
+							Line:  0,
 							Col:   23,
 						},
 					},
@@ -137,12 +137,12 @@ func TestTemplateParser(t *testing.T) {
 									Range: Range{
 										From: Position{
 											Index: 34,
-											Line:  2,
+											Line:  1,
 											Col:   8,
 										},
 										To: Position{
 											Index: 48,
-											Line:  2,
+											Line:  1,
 											Col:   22,
 										},
 									},
@@ -172,12 +172,12 @@ func TestTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 						To: Position{
 							Index: 23,
-							Line:  1,
+							Line:  0,
 							Col:   23,
 						},
 					},
@@ -194,12 +194,12 @@ func TestTemplateParser(t *testing.T) {
 									Range: Range{
 										From: Position{
 											Index: 36,
-											Line:  3,
+											Line:  2,
 											Col:   4,
 										},
 										To: Position{
 											Index: 49,
-											Line:  3,
+											Line:  2,
 											Col:   17,
 										},
 									},
@@ -217,12 +217,12 @@ func TestTemplateParser(t *testing.T) {
 											Range: Range{
 												From: Position{
 													Index: 64,
-													Line:  5,
+													Line:  4,
 													Col:   3,
 												},
 												To: Position{
 													Index: 78,
-													Line:  5,
+													Line:  4,
 													Col:   17,
 												},
 											},
@@ -253,12 +253,12 @@ func TestTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 						To: Position{
 							Index: 23,
-							Line:  1,
+							Line:  0,
 							Col:   23,
 						},
 					},
@@ -271,12 +271,12 @@ func TestTemplateParser(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 30,
-									Line:  2,
+									Line:  1,
 									Col:   4,
 								},
 								To: Position{
 									Index: 36,
-									Line:  2,
+									Line:  1,
 									Col:   10,
 								},
 							},
@@ -294,12 +294,12 @@ func TestTemplateParser(t *testing.T) {
 											Range: Range{
 												From: Position{
 													Index: 53,
-													Line:  4,
+													Line:  3,
 													Col:   5,
 												},
 												To: Position{
 													Index: 67,
-													Line:  4,
+													Line:  3,
 													Col:   19,
 												},
 											},
@@ -332,12 +332,12 @@ func TestTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 						To: Position{
 							Index: 23,
-							Line:  1,
+							Line:  0,
 							Col:   23,
 						},
 					},
@@ -374,12 +374,12 @@ func TestTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 6,
-							Line:  1,
+							Line:  0,
 							Col:   6,
 						},
 						To: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 					},

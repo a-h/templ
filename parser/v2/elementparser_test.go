@@ -63,12 +63,12 @@ func TestAttributeParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 						To: Position{
 							Index: 16,
-							Line:  1,
+							Line:  0,
 							Col:   16,
 						},
 					},
@@ -86,12 +86,12 @@ func TestAttributeParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 11,
-							Line:  1,
+							Line:  0,
 							Col:   11,
 						},
 						To: Position{
 							Index: 15,
-							Line:  1,
+							Line:  0,
 							Col:   15,
 						},
 					},
@@ -109,12 +109,12 @@ func TestAttributeParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 						To: Position{
 							Index: 16,
-							Line:  1,
+							Line:  0,
 							Col:   16,
 						},
 					},
@@ -208,13 +208,13 @@ func TestElementParser(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 15,
-									Line:  1,
+									Line:  0,
 									Col:   15,
 								},
 								To: Position{
 
 									Index: 19,
-									Line:  1,
+									Line:  0,
 									Col:   19,
 								},
 							},
@@ -236,13 +236,13 @@ func TestElementParser(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 10,
-									Line:  1,
+									Line:  0,
 									Col:   10,
 								},
 								To: Position{
 
 									Index: 16,
-									Line:  1,
+									Line:  0,
 									Col:   16,
 								},
 							},
@@ -284,13 +284,13 @@ func TestElementParser(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 23,
-									Line:  1,
+									Line:  0,
 									Col:   23,
 								},
 								To: Position{
 
 									Index: 27,
-									Line:  1,
+									Line:  0,
 									Col:   27,
 								},
 							},
@@ -320,13 +320,13 @@ func TestElementParser(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 23,
-									Line:  1,
+									Line:  0,
 									Col:   23,
 								},
 								To: Position{
 
 									Index: 50,
-									Line:  1,
+									Line:  0,
 									Col:   50,
 								},
 							},
@@ -473,12 +473,12 @@ func TestElementParser(t *testing.T) {
 							Range: Range{
 								From: Position{
 									Index: 7,
-									Line:  1,
+									Line:  0,
 									Col:   7,
 								},
 								To: Position{
 									Index: 13,
-									Line:  1,
+									Line:  0,
 									Col:   13,
 								},
 							},
@@ -518,12 +518,12 @@ func TestElementParserErrors(t *testing.T) {
 			expected: newParseError("<a>: mismatched end tag, expected '</a>', got '</b>'",
 				Position{
 					Index: 3,
-					Line:  1,
+					Line:  0,
 					Col:   3,
 				},
 				Position{
 					Index: 7,
-					Line:  1,
+					Line:  0,
 					Col:   7,
 				}),
 		},
@@ -533,12 +533,12 @@ func TestElementParserErrors(t *testing.T) {
 			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
 				Position{
 					Index: 0,
-					Line:  1,
+					Line:  0,
 					Col:   0,
 				},
 				Position{
 					Index: 23,
-					Line:  1,
+					Line:  0,
 					Col:   23,
 				}),
 		},
@@ -548,12 +548,12 @@ func TestElementParserErrors(t *testing.T) {
 			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
 				Position{
 					Index: 0,
-					Line:  1,
+					Line:  0,
 					Col:   0,
 				},
 				Position{
 					Index: 20,
-					Line:  1,
+					Line:  0,
 					Col:   20,
 				}),
 		},
@@ -563,12 +563,12 @@ func TestElementParserErrors(t *testing.T) {
 			expected: newParseError("<script>: invalid node contents: script and style attributes must only contain text",
 				Position{
 					Index: 0,
-					Line:  1,
+					Line:  0,
 					Col:   0,
 				},
 				Position{
 					Index: 28,
-					Line:  1,
+					Line:  0,
 					Col:   28,
 				}),
 		},
@@ -578,12 +578,12 @@ func TestElementParserErrors(t *testing.T) {
 			expected: newParseError("<style>: invalid node contents: script and style attributes must only contain text",
 				Position{
 					Index: 0,
-					Line:  1,
+					Line:  0,
 					Col:   0,
 				},
 				Position{
 					Index: 26,
-					Line:  1,
+					Line:  0,
 					Col:   26,
 				}),
 		},

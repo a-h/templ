@@ -23,12 +23,12 @@ func TestScriptTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 7,
-							Line:  1,
+							Line:  0,
 							Col:   7,
 						},
 						To: Position{
 							Index: 11,
-							Line:  1,
+							Line:  0,
 							Col:   11,
 						},
 					},
@@ -38,12 +38,12 @@ func TestScriptTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 						To: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 					},
@@ -60,12 +60,12 @@ func TestScriptTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 7,
-							Line:  1,
+							Line:  0,
 							Col:   7,
 						},
 						To: Position{
 							Index: 11,
-							Line:  1,
+							Line:  0,
 							Col:   11,
 						},
 					},
@@ -75,12 +75,12 @@ func TestScriptTemplateParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 						To: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 					},
@@ -98,12 +98,12 @@ var x = "x";
 					Range: Range{
 						From: Position{
 							Index: 7,
-							Line:  1,
+							Line:  0,
 							Col:   7,
 						},
 						To: Position{
 							Index: 11,
-							Line:  1,
+							Line:  0,
 							Col:   11,
 						},
 					},
@@ -113,12 +113,12 @@ var x = "x";
 					Range: Range{
 						From: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 						To: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 					},
@@ -137,12 +137,12 @@ console.log(value);
 					Range: Range{
 						From: Position{
 							Index: 7,
-							Line:  1,
+							Line:  0,
 							Col:   7,
 						},
 						To: Position{
 							Index: 11,
-							Line:  1,
+							Line:  0,
 							Col:   11,
 						},
 					},
@@ -152,12 +152,12 @@ console.log(value);
 					Range: Range{
 						From: Position{
 							Index: 12,
-							Line:  1,
+							Line:  0,
 							Col:   12,
 						},
 						To: Position{
 							Index: 24,
-							Line:  1,
+							Line:  0,
 							Col:   24,
 						},
 					},

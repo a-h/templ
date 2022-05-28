@@ -24,13 +24,13 @@ func TestForExpressionParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 4,
-							Line:  1,
+							Line:  0,
 							Col:   4,
 						},
 						To: Position{
 
 							Index: 28,
-							Line:  1,
+							Line:  0,
 							Col:   28,
 						},
 					},
@@ -47,13 +47,13 @@ func TestForExpressionParser(t *testing.T) {
 									Range: Range{
 										From: Position{
 											Index: 43,
-											Line:  2,
+											Line:  1,
 											Col:   12,
 										},
 										To: Position{
 
 											Index: 47,
-											Line:  2,
+											Line:  1,
 											Col:   16,
 										},
 									},
@@ -76,13 +76,13 @@ func TestForExpressionParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 4,
-							Line:  1,
+							Line:  0,
 							Col:   4,
 						},
 						To: Position{
 
 							Index: 28,
-							Line:  1,
+							Line:  0,
 							Col:   28,
 						},
 					},
@@ -99,13 +99,13 @@ func TestForExpressionParser(t *testing.T) {
 									Range: Range{
 										From: Position{
 											Index: 42,
-											Line:  2,
+											Line:  1,
 											Col:   12,
 										},
 										To: Position{
 
 											Index: 46,
-											Line:  2,
+											Line:  1,
 											Col:   16,
 										},
 									},
@@ -135,5 +135,3 @@ func TestForExpressionParser(t *testing.T) {
 		})
 	}
 }
-
-

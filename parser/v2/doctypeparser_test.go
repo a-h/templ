@@ -72,12 +72,12 @@ func TestDocTypeParserErrors(t *testing.T) {
 			expected: newParseError("unclosed DOCTYPE",
 				Position{
 					Index: 0,
-					Line:  1,
+					Line:  0,
 					Col:   0,
 				},
 				Position{
 					Index: 15,
-					Line:  1,
+					Line:  0,
 					Col:   14,
 				}),
 		},
@@ -88,12 +88,12 @@ func TestDocTypeParserErrors(t *testing.T) {
 			expected: newParseError("unclosed DOCTYPE",
 				Position{
 					Index: 17,
-					Line:  2,
+					Line:  1,
 					Col:   2,
 				},
 				Position{
 					Index: 17,
-					Line:  2,
+					Line:  1,
 					Col:   2,
 				}),
 		},

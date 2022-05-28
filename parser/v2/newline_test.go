@@ -22,16 +22,16 @@ aaa`)
 
 func TestNewLineStream(t *testing.T) {
 	input := input.NewFromString("A\nB\n\nD")
-	testPosition(t, "start", Position{Index: 0, Line: 1, Col: 0}, NewPositionFromInput(input))
+	testPosition(t, "start", Position{Index: 0, Line: 0, Col: 0}, NewPositionFromInput(input))
 	r, err := input.Advance()
 	testRune(t, "advance 1", 'A', r, nil, err)
-	testPosition(t, "advance 1", Position{Index: 1, Line: 1, Col: 1}, NewPositionFromInput(input))
+	testPosition(t, "advance 1", Position{Index: 1, Line: 0, Col: 1}, NewPositionFromInput(input))
 	r, err = input.Advance()
 	testRune(t, "advance to newline", '\n', r, nil, err)
-	testPosition(t, "advance to newline", Position{Index: 2, Line: 2, Col: 0}, NewPositionFromInput(input))
+	testPosition(t, "advance to newline", Position{Index: 2, Line: 1, Col: 0}, NewPositionFromInput(input))
 	r, err = input.Retreat()
 	testRune(t, "retreat from newline", 'A', r, nil, err)
-	testPosition(t, "retreat from newline", Position{Index: 1, Line: 1, Col: 1}, NewPositionFromInput(input))
+	testPosition(t, "retreat from newline", Position{Index: 1, Line: 0, Col: 1}, NewPositionFromInput(input))
 }
 
 func testPosition(t *testing.T, name string, expected, got Position) {

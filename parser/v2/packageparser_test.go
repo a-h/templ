@@ -21,12 +21,12 @@ func TestPackageParserErrors(t *testing.T) {
 				"package literal not terminated",
 				Position{
 					Index: 0,
-					Line:  1,
+					Line:  0,
 					Col:   0,
 				},
 				Position{
 					Index: 9,
-					Line:  1,
+					Line:  0,
 					Col:   8,
 				},
 			),
@@ -38,12 +38,12 @@ func TestPackageParserErrors(t *testing.T) {
 				"package literal not terminated",
 				Position{
 					Index: 0,
-					Line:  1,
+					Line:  0,
 					Col:   0,
 				},
 				Position{
 					Index: 8,
-					Line:  1,
+					Line:  0,
 					Col:   8,
 				},
 			),
@@ -79,12 +79,12 @@ func TestPackageParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 0,
-							Line:  1,
+							Line:  0,
 							Col:   0,
 						},
 						To: Position{
 							Index: 14,
-							Line:  1,
+							Line:  0,
 							Col:   14,
 						},
 					},

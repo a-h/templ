@@ -22,12 +22,12 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 3,
-							Line:  1,
+							Line:  0,
 							Col:   3,
 						},
 						To: Position{
 							Index: 16,
-							Line:  1,
+							Line:  0,
 							Col:   16,
 						},
 					},
@@ -43,12 +43,12 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 2,
-							Line:  1,
+							Line:  0,
 							Col:   2,
 						},
 						To: Position{
 							Index: 15,
-							Line:  1,
+							Line:  0,
 							Col:   15,
 						},
 					},
@@ -64,12 +64,12 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 					Range: Range{
 						From: Position{
 							Index: 2,
-							Line:  1,
+							Line:  0,
 							Col:   2,
 						},
 						To: Position{
 							Index: 15,
-							Line:  1,
+							Line:  0,
 							Col:   15,
 						},
 					},
