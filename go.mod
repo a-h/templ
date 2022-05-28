@@ -3,7 +3,7 @@ module github.com/a-h/templ
 go 1.16
 
 require (
-	github.com/PuerkitoBio/goquery v1.7.1
+	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/a-h/lexical v0.0.53
 	github.com/a-h/pathvars v0.0.0-20200320143331-78b263b728e2
 	github.com/google/go-cmp v0.5.6
@@ -16,6 +16,7 @@ require (
 	go.lsp.dev/uri v0.3.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/mod v0.5.1
+	golang.org/x/net v0.0.0-20220526153639-5463443f8c37 // indirect
 )
 
 //replace github.com/a-h/lexical => /Users/adrian/github.com/a-h/lexical
