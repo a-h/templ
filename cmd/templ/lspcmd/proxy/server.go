@@ -262,7 +262,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		return
 	}
 	// Get the sourcemap from the cache.
-	originalURI := string(params.TextDocument.URI)
+	templURI := params.TextDocument.URI
 	params.TextDocumentPositionParams = p.updateTextDocumentPositionParams(params.TextDocumentPositionParams)
 	// Call the target.
 	result, err = p.Target.Completion(ctx, params)
@@ -270,29 +270,15 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		p.Log.Warn("completion: got gopls error", zap.Error(err))
 		return
 	}
-	// Rewrite the result positions.
-	sourceMap, ok := p.SourceMapCache.Get(originalURI)
-	if !ok {
-		// Log that didOpen might not have been called.
-		p.Log.Warn("completion: sourcemap not found in cache, during result rewrite", zap.String("uri", string(originalURI)))
+	if result == nil {
 		return
 	}
+	// Rewrite the result positions.
 	p.Log.Info("completion: received items", zap.Int("count", len(result.Items)))
 	for i := 0; i < len(result.Items); i++ {
 		item := result.Items[i]
 		if item.TextEdit != nil {
-			start, _, ok := sourceMap.SourcePositionFromTarget(item.TextEdit.Range.Start.Line, item.TextEdit.Range.Start.Character)
-			if ok {
-				p.Log.Info("rewriteCompletionResponse: found new start position", zap.Any("from", item.TextEdit.Range.Start), zap.Any("start", start))
-				item.TextEdit.Range.Start.Line = start.Line
-				item.TextEdit.Range.Start.Character = start.Col
-			}
-			end, _, ok := sourceMap.SourcePositionFromTarget(item.TextEdit.Range.End.Line, item.TextEdit.Range.End.Character)
-			if ok {
-				p.Log.Info("rewriteCompletionResponse: found new end position", zap.Any("from", item.TextEdit.Range.End), zap.Any("end", end))
-				item.TextEdit.Range.End.Line = end.Line
-				item.TextEdit.Range.End.Character = end.Col
-			}
+			item.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.Range)
 		}
 		result.Items[i] = item
 	}
@@ -527,8 +513,10 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 		return
 	}
 	// Rewrite the response.
-	if result.Range != nil {
+	if result != nil && result.Range != nil {
+		p.Log.Info("hover: result returned")
 		r := p.convertGoRangeToTemplRange(templURI, *result.Range)
+		p.Log.Info("hover: setting range", zap.Any("range", r))
 		result.Range = &r
 	}
 	return

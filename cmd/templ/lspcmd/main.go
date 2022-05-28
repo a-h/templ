@@ -65,6 +65,11 @@ func run(ctx context.Context, args Arguments) (err error) {
 	}
 	defer log.Sync()
 	log.Info("lsp: starting up...")
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatal("handled panic", zap.Any("recovered", r))
+		}
+	}()
 
 	log.Info("lsp: starting gopls...")
 	rwc, err := pls.NewGopls(ctx, log, pls.Options{
