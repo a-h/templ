@@ -75,9 +75,29 @@ func (p *Server) updateTextDocumentPositionParams(params lsp.TextDocumentPositio
 	return params
 }
 
-func (p *Server) convertGoRangeToTemplRange(uri lsp.DocumentURI, input lsp.Range) (output lsp.Range) {
+func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range) {
 	output = input
-	sourceMap, ok := p.SourceMapCache.Get(string(uri))
+	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
+	if !ok {
+		return
+	}
+	// Map from the source position to target Go position.
+	start, _, ok := sourceMap.TargetPositionFromSource(input.Start.Line, input.Start.Character)
+	if ok {
+		output.Start.Line = start.Line
+		output.Start.Character = start.Col
+	}
+	end, _, ok := sourceMap.TargetPositionFromSource(input.End.Line, input.End.Character)
+	if ok {
+		output.End.Line = end.Line
+		output.End.Character = end.Col
+	}
+	return
+}
+
+func (p *Server) convertGoRangeToTemplRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range) {
+	output = input
+	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
 	if !ok {
 		return
 	}
@@ -99,28 +119,30 @@ func (p *Server) convertGoRangeToTemplRange(uri lsp.DocumentURI, input lsp.Range
 func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText string) (template parser.TemplateFile, ok bool, err error) {
 	template, err = parser.ParseString(templateText)
 	if err != nil {
-		pe := err.(parser.ParseError)
-		err = p.Client.PublishDiagnostics(ctx, &lsp.PublishDiagnosticsParams{
+		msg := &lsp.PublishDiagnosticsParams{
 			URI: uri,
 			Diagnostics: []lsp.Diagnostic{
 				{
-					Range: lsp.Range{
-						Start: lsp.Position{
-							Line:      pe.From.Line,
-							Character: pe.From.Col,
-						},
-						End: lsp.Position{
-							Line:      pe.To.Line,
-							Character: pe.To.Col,
-						},
-					},
 					Severity: lsp.DiagnosticSeverityError,
 					Code:     "",
 					Source:   "templ",
-					Message:  pe.Message,
+					Message:  err.Error(),
 				},
 			},
-		})
+		}
+		if pe, isParserError := err.(parser.ParseError); isParserError {
+			msg.Diagnostics[0].Range = lsp.Range{
+				Start: lsp.Position{
+					Line:      pe.From.Line,
+					Character: pe.From.Col,
+				},
+				End: lsp.Position{
+					Line:      pe.To.Line,
+					Character: pe.To.Col,
+				},
+			}
+		}
+		err = p.Client.PublishDiagnostics(ctx, msg)
 		if err != nil {
 			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
 		}
@@ -234,8 +256,20 @@ func (p *Server) CodeLens(ctx context.Context, params *lsp.CodeLensParams) (resu
 	if !isTemplFile {
 		return p.Target.CodeLens(ctx, params)
 	}
+	templURI := params.TextDocument.URI
 	params.TextDocument.URI = goURI
-	return p.Target.CodeLens(ctx, params)
+	result, err = p.Target.CodeLens(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		cl := result[i]
+		cl.Range = p.convertGoRangeToTemplRange(templURI, cl.Range)
+	}
+	return
 }
 
 func (p *Server) CodeLensResolve(ctx context.Context, params *lsp.CodeLens) (result *lsp.CodeLens, err error) {
@@ -247,7 +281,26 @@ func (p *Server) CodeLensResolve(ctx context.Context, params *lsp.CodeLens) (res
 func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresentationParams) (result []lsp.ColorPresentation, err error) {
 	p.Log.Info("client -> server: ColorPresentation ColorPresentation")
 	defer p.Log.Info("client -> server: ColorPresentation end")
-	return p.Target.ColorPresentation(ctx, params)
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return p.Target.ColorPresentation(ctx, params)
+	}
+	templURI := params.TextDocument.URI
+	params.TextDocument.URI = goURI
+	result, err = p.Target.ColorPresentation(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		r := result[i]
+		if r.TextEdit != nil {
+			r.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, r.TextEdit.Range)
+		}
+	}
+	return
 }
 
 func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (result *lsp.CompletionList, err error) {
@@ -525,9 +578,28 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationParams) (result []lsp.Location, err error) {
 	p.Log.Info("client -> server: Implementation")
 	defer p.Log.Info("client -> server: Implementation end")
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return p.Target.Implementation(ctx, params)
+	}
+	templURI := params.TextDocument.URI
+	params.TextDocument.URI = goURI
 	// Rewrite the request.
 	params.TextDocumentPositionParams = p.updateTextDocumentPositionParams(params.TextDocumentPositionParams)
-	return p.Target.Implementation(ctx, params)
+	result, err = p.Target.Implementation(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	// Rewrite the response.
+	for i := 0; i < len(result); i++ {
+		r := result[i]
+		r.URI = templURI
+		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+	}
+	return
 }
 
 func (p *Server) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTypeFormattingParams) (result []lsp.TextEdit, err error) {
