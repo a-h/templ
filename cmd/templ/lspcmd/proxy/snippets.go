@@ -26,34 +26,3 @@ var htmlSnippets = []lsp.CompletionItem{
 		InsertTextFormat: lsp.InsertTextFormatSnippet,
 	},
 }
-
-var templateSnippets = []lsp.CompletionItem{
-	{
-		Label:            "{ string }",
-		InsertText:       `{ ${1:string} }`,
-		Kind:             lsp.CompletionItemKind(lsp.CompletionItemKindSnippet),
-		InsertTextFormat: lsp.InsertTextFormatSnippet,
-	},
-	{
-		Label:            "{! template",
-		InsertText:       `{! ${1:template} }`,
-		Kind:             lsp.CompletionItemKind(lsp.CompletionItemKindSnippet),
-		InsertTextFormat: lsp.InsertTextFormatSnippet,
-	},
-	{
-		Label: "templ",
-		InsertText: `templ ${1:name}(${2}) {
-	$0
-}`,
-		Kind:             lsp.CompletionItemKind(lsp.CompletionItemKindSnippet),
-		InsertTextFormat: lsp.InsertTextFormatSnippet,
-	},
-	{
-		Label: "css",
-		InsertText: `css ${1:name}(${2}) {
-	$0
-}`,
-		Kind:             lsp.CompletionItemKind(lsp.CompletionItemKindSnippet),
-		InsertTextFormat: lsp.InsertTextFormatSnippet,
-	},
-}

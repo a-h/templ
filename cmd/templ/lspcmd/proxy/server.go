@@ -305,12 +305,10 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (result *lsp.CompletionList, err error) {
 	p.Log.Info("client -> server: Completion")
 	defer p.Log.Info("client -> server: Completion end")
-	if params.Context.TriggerCharacter == "<" {
-		result.Items = htmlSnippets
-		return
-	}
-	if params.Context.TriggerCharacter == "{" {
-		result.Items = templateSnippets
+	if params.Context != nil && params.Context.TriggerCharacter == "<" {
+		result = &lsp.CompletionList{
+			Items: htmlSnippets,
+		}
 		return
 	}
 	// Get the sourcemap from the cache.
@@ -554,23 +552,6 @@ func (p *Server) DocumentHighlight(ctx context.Context, params *lsp.DocumentHigh
 func (p *Server) DocumentLink(ctx context.Context, params *lsp.DocumentLinkParams) (result []lsp.DocumentLink, err error) {
 	p.Log.Info("client -> server: DocumentLink", zap.String("uri", string(params.TextDocument.URI)))
 	defer p.Log.Info("client -> server: DocumentLink end")
-	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
-	if !isTemplFile {
-		return p.Target.DocumentLink(ctx, params)
-	}
-	templURI := params.TextDocument.URI
-	params.TextDocument.URI = goURI
-	result, err = p.Target.DocumentLink(ctx, params)
-	if err != nil {
-		return
-	}
-	if result == nil {
-		return
-	}
-	for i := 0; i < len(result); i++ {
-		result[i].Target = goURI
-		result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
-	}
 	return
 }
 
