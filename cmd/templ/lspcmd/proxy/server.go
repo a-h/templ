@@ -346,17 +346,47 @@ func (p *Server) CompletionResolve(ctx context.Context, params *lsp.CompletionIt
 func (p *Server) Declaration(ctx context.Context, params *lsp.DeclarationParams) (result []lsp.Location /* Declaration | DeclarationLink[] | null */, err error) {
 	p.Log.Info("client -> server: Declaration")
 	defer p.Log.Info("client -> server: Declaration end")
-	return p.Target.Declaration(ctx, params)
+	// Rewrite the request.
+	templURI := params.TextDocument.URI
+	params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	// Call gopls and get the result.
+	result, err = p.Target.Declaration(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		if isTemplGoFile, templURI := convertTemplGoToTemplURI(result[i].URI); isTemplGoFile {
+			result[i].URI = templURI
+			result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
+		}
+	}
+	return
 }
 
 func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (result []lsp.Location /* Definition | DefinitionLink[] | null */, err error) {
 	p.Log.Info("client -> server: Definition")
 	defer p.Log.Info("client -> server: Definition end")
 	// Rewrite the request.
-	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	templURI := params.TextDocument.URI
+	params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
 	// Call gopls and get the result.
-	//TODO: Rewrite the results.
-	return p.Target.Definition(ctx, params)
+	result, err = p.Target.Definition(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		if isTemplGoFile, templURI := convertTemplGoToTemplURI(result[i].URI); isTemplGoFile {
+			result[i].URI = templURI
+			result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
+		}
+	}
+	return
 }
 
 func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumentParams) (err error) {
