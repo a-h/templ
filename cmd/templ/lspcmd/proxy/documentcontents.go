@@ -14,29 +14,29 @@ import (
 func newDocumentContents(log *zap.Logger) *documentContents {
 	return &documentContents{
 		m:             new(sync.Mutex),
-		uriToContents: make(map[string][]byte),
+		uriToContents: make(map[string]*Document),
 		log:           log,
 	}
 }
 
 type documentContents struct {
 	m             *sync.Mutex
-	uriToContents map[string][]byte
+	uriToContents map[string]*Document
 	log           *zap.Logger
 }
 
 // Set the contents of a document.
-func (fc *documentContents) Set(uri string, contents []byte) {
+func (fc *documentContents) Set(uri string, d *Document) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
-	fc.uriToContents[uri] = contents
+	fc.uriToContents[uri] = d
 }
 
 // Get the contents of a document.
-func (fc *documentContents) Get(uri string) (contents []byte, ok bool) {
+func (fc *documentContents) Get(uri string) (d *Document, ok bool) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
-	contents, ok = fc.uriToContents[uri]
+	d, ok = fc.uriToContents[uri]
 	return
 }
 
@@ -51,22 +51,20 @@ func (fc *documentContents) Delete(uri string) {
 func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (updated []byte, err error) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
-	contents, ok := fc.uriToContents[uri]
+	d, ok := fc.uriToContents[uri]
 	if !ok {
 		err = fmt.Errorf("document not found")
 		return
 	}
-	// Content changes look like this.
-	// [{"range":{"start":{"line":4,"character":9},"end":{"line":4,"character":9}}      ,"text":"."}]}}
-	d := NewDocument(string(contents))
 	for _, change := range changes {
-		d.Overwrite(change.Range, change.Text)
+		err = d.Overwrite(change.Range, change.Text)
+		if err != nil {
+			return
+		}
 	}
-	fc.uriToContents[uri] = []byte(d.String())
 	return
 }
 
-//TODO: Store the string array in the documentContents type.
 func NewDocument(s string) *Document {
 	return &Document{
 		Lines: strings.Split(s, "\n"),

@@ -472,7 +472,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 		return p.Target.DidOpen(ctx, params)
 	}
 	// Cache the template doc.
-	p.documentContents.Set(string(params.TextDocument.URI), []byte(params.TextDocument.Text))
+	p.documentContents.Set(string(params.TextDocument.URI), NewDocument(params.TextDocument.Text))
 	// Parse the template.
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, params.TextDocument.Text)
 	if err != nil {
@@ -623,14 +623,8 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 	p.Log.Info("client -> server: Formatting")
 	defer p.Log.Info("client -> server: Formatting end")
 	// Format the current document.
-	contents, _ := p.documentContents.Get(string(params.TextDocument.URI))
-	var lines uint32
-	for _, c := range contents {
-		if c == '\n' {
-			lines++
-		}
-	}
-	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, string(contents))
+	d, _ := p.documentContents.Get(string(params.TextDocument.URI))
+	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, d.String())
 	if err != nil {
 		p.Log.Error("parseTemplate failure", zap.Error(err))
 	}
@@ -647,7 +641,7 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 	result = append(result, lsp.TextEdit{
 		Range: lsp.Range{
 			Start: lsp.Position{},
-			End:   lsp.Position{Line: lines, Character: 0},
+			End:   lsp.Position{Line: uint32(len(d.Lines)), Character: 0},
 		},
 		NewText: w.String(),
 	})
