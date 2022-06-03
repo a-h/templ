@@ -509,13 +509,45 @@ func (p *Server) DidSave(ctx context.Context, params *lsp.DidSaveTextDocumentPar
 func (p *Server) DocumentColor(ctx context.Context, params *lsp.DocumentColorParams) (result []lsp.ColorInformation, err error) {
 	p.Log.Info("client -> server: DocumentColor")
 	defer p.Log.Info("client -> server: DocumentColor end")
-	return p.Target.DocumentColor(ctx, params)
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return p.Target.DocumentColor(ctx, params)
+	}
+	templURI := params.TextDocument.URI
+	params.TextDocument.URI = goURI
+	result, err = p.Target.DocumentColor(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
+	}
+	return
 }
 
 func (p *Server) DocumentHighlight(ctx context.Context, params *lsp.DocumentHighlightParams) (result []lsp.DocumentHighlight, err error) {
 	p.Log.Info("client -> server: DocumentHighlight")
 	defer p.Log.Info("client -> server: DocumentHighlight end")
-	return p.Target.DocumentHighlight(ctx, params)
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return p.Target.DocumentHighlight(ctx, params)
+	}
+	templURI := params.TextDocument.URI
+	params.TextDocument.URI = goURI
+	result, err = p.Target.DocumentHighlight(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
+	}
+	return
 }
 
 func (p *Server) DocumentLink(ctx context.Context, params *lsp.DocumentLinkParams) (result []lsp.DocumentLink, err error) {
@@ -535,9 +567,8 @@ func (p *Server) DocumentLink(ctx context.Context, params *lsp.DocumentLinkParam
 		return
 	}
 	for i := 0; i < len(result); i++ {
-		r := &result[i]
-		r.Target = goURI
-		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+		result[i].Target = goURI
+		result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
 	}
 	return
 }
@@ -545,13 +576,32 @@ func (p *Server) DocumentLink(ctx context.Context, params *lsp.DocumentLinkParam
 func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLink) (result *lsp.DocumentLink, err error) {
 	p.Log.Info("client -> server: DocumentLinkResolve")
 	defer p.Log.Info("client -> server: DocumentLinkResolve end")
-	return p.Target.DocumentLinkResolve(ctx, params)
+	isTemplFile, goURI := convertTemplToGoURI(params.Target)
+	if !isTemplFile {
+		return p.Target.DocumentLinkResolve(ctx, params)
+	}
+	templURI := params.Target
+	params.Target = goURI
+	params.Range = p.convertTemplRangeToGoRange(templURI, params.Range)
+	// Rewrite the result.
+	result, err = p.Target.DocumentLinkResolve(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	result.Target = templURI
+	result.Range = p.convertGoRangeToTemplRange(templURI, result.Range)
+	return
 }
 
 func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolParams) (result []interface{} /* []SymbolInformation | []DocumentSymbol */, err error) {
 	p.Log.Info("client -> server: DocumentSymbol")
 	defer p.Log.Info("client -> server: DocumentSymbol end")
-	return p.Target.DocumentSymbol(ctx, params)
+	//TODO: Rewrite the request and response, but for now, ignore it.
+	//return p.Target.DocumentSymbol(ctx params)
+	return
 }
 
 func (p *Server) ExecuteCommand(ctx context.Context, params *lsp.ExecuteCommandParams) (result interface{}, err error) {
