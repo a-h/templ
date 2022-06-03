@@ -46,33 +46,32 @@ func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache) (s *Se
 	}
 }
 
-// updateTextDocumentPositionParams maps positions and filenames from source templ files into the target *.go files.
-func (p *Server) updateTextDocumentPositionParams(params lsp.TextDocumentPositionParams) lsp.TextDocumentPositionParams {
-	log := p.Log.With(zap.String("uri", string(params.TextDocument.URI)))
-	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+// updatePosition maps positions and filenames from source templ files into the target *.go files.
+func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) (goURI lsp.DocumentURI, updated lsp.Position) {
+	goURI = templURI
+	updated = current
+	log := p.Log.With(zap.String("uri", string(templURI)))
+	var isTemplFile bool
+	isTemplFile, goURI = convertTemplToGoURI(templURI)
 	if !isTemplFile {
-		log.Warn("updateTextDocumentPositionParams: not a templ file")
-		return params
+		return
 	}
-	sourceMap, ok := p.SourceMapCache.Get(string(params.TextDocument.URI))
+	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
 	if !ok {
-		// Log that didOpen might not have been called.
-		log.Warn("completion: sourcemap not found in cache")
-		return params
+		log.Warn("completion: sourcemap not found in cache, it could be that didOpen was not called")
+		return
 	}
 	// Map from the source position to target Go position.
-	to, _, ok := sourceMap.TargetPositionFromSource(params.Position.Line, params.Position.Character)
+	to, _, ok := sourceMap.TargetPositionFromSource(current.Line, current.Character)
 	if ok {
-		log.Info("updateTextDocumentPositionParams: found position", zap.String("fromTempl", fmt.Sprintf("%d:%d", params.Position.Line, params.Position.Character)),
+		log.Info("updatePosition: found", zap.String("fromTempl", fmt.Sprintf("%d:%d", current.Line, current.Character)),
 			zap.String("toGo", fmt.Sprintf("%d:%d", to.Line, to.Col)))
-		params.Position.Line = to.Line
-		params.Position.Character = to.Col
+		updated.Line = to.Line
+		updated.Character = to.Col
 	} else {
-		p.Log.Info("updateTextDocumentPositionParams: position not found", zap.String("from", fmt.Sprintf("%d:%d", params.Position.Line, params.Position.Character)))
+		log.Info("updatePosition: not found", zap.String("from", fmt.Sprintf("%d:%d", current.Line, current.Character)), zap.Any("sourceMap", sourceMap.Items))
 	}
-	// Update the URI to make gopls look at the Go code instead.
-	params.TextDocument.URI = goURI
-	return params
+	return
 }
 
 func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range) {
@@ -207,7 +206,7 @@ func (p *Server) WorkDoneProgressCancel(ctx context.Context, params *lsp.WorkDon
 }
 
 func (p *Server) LogTrace(ctx context.Context, params *lsp.LogTraceParams) (err error) {
-	p.Log.Info("client -> server: LogTrace")
+	p.Log.Info("client -> server: LogTrace", zap.String("message", params.Message))
 	defer p.Log.Info("client -> server: LogTrace end")
 	return p.Target.LogTrace(ctx, params)
 }
@@ -246,7 +245,7 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 			dc.TextDocument.URI = templURI
 		}
 	}
-	return p.Target.CodeAction(ctx, params)
+	return
 }
 
 func (p *Server) CodeLens(ctx context.Context, params *lsp.CodeLensParams) (result []lsp.CodeLens, err error) {
@@ -316,7 +315,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	}
 	// Get the sourcemap from the cache.
 	templURI := params.TextDocument.URI
-	params.TextDocumentPositionParams = p.updateTextDocumentPositionParams(params.TextDocumentPositionParams)
+	params.TextDocument.URI, params.TextDocumentPositionParams.Position = p.updatePosition(templURI, params.TextDocumentPositionParams.Position)
 	// Call the target.
 	result, err = p.Target.Completion(ctx, params)
 	if err != nil {
@@ -354,7 +353,7 @@ func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (
 	p.Log.Info("client -> server: Definition")
 	defer p.Log.Info("client -> server: Definition end")
 	// Rewrite the request.
-	params.TextDocumentPositionParams = p.updateTextDocumentPositionParams(params.TextDocumentPositionParams)
+	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
 	// Call gopls and get the result.
 	//TODO: Rewrite the results.
 	return p.Target.Definition(ctx, params)
@@ -386,6 +385,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		return
 	}
 	// Cache the sourcemap.
+	p.Log.Info("setting cache", zap.String("uri", string(params.TextDocument.URI)), zap.Any("sourceMap", sm), zap.String("contents", w.String()))
 	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
 	// Overwrite all the Go contents.
 	params.ContentChanges = []lsp.TextDocumentContentChangeEvent{{
@@ -489,9 +489,27 @@ func (p *Server) DocumentHighlight(ctx context.Context, params *lsp.DocumentHigh
 }
 
 func (p *Server) DocumentLink(ctx context.Context, params *lsp.DocumentLinkParams) (result []lsp.DocumentLink, err error) {
-	p.Log.Info("client -> server: DocumentLink")
+	p.Log.Info("client -> server: DocumentLink", zap.String("uri", string(params.TextDocument.URI)))
 	defer p.Log.Info("client -> server: DocumentLink end")
-	return p.Target.DocumentLink(ctx, params)
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return p.Target.DocumentLink(ctx, params)
+	}
+	templURI := params.TextDocument.URI
+	params.TextDocument.URI = goURI
+	result, err = p.Target.DocumentLink(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	for i := 0; i < len(result); i++ {
+		r := &result[i]
+		r.Target = goURI
+		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+	}
+	return
 }
 
 func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLink) (result *lsp.DocumentLink, err error) {
@@ -560,7 +578,7 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 	defer p.Log.Info("client -> server: Hover end")
 	// Rewrite the request.
 	templURI := params.TextDocument.URI
-	params.TextDocumentPositionParams = p.updateTextDocumentPositionParams(params.TextDocumentPositionParams)
+	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
 	result, err = p.Target.Hover(ctx, params)
 	if err != nil {
 		return
@@ -578,14 +596,9 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationParams) (result []lsp.Location, err error) {
 	p.Log.Info("client -> server: Implementation")
 	defer p.Log.Info("client -> server: Implementation end")
-	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
-	if !isTemplFile {
-		return p.Target.Implementation(ctx, params)
-	}
 	templURI := params.TextDocument.URI
-	params.TextDocument.URI = goURI
 	// Rewrite the request.
-	params.TextDocumentPositionParams = p.updateTextDocumentPositionParams(params.TextDocumentPositionParams)
+	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
 	result, err = p.Target.Implementation(ctx, params)
 	if err != nil {
 		return
@@ -605,6 +618,8 @@ func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationP
 func (p *Server) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTypeFormattingParams) (result []lsp.TextEdit, err error) {
 	p.Log.Info("client -> server: OnTypeFormatting")
 	defer p.Log.Info("client -> server: OnTypeFormatting end")
+	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	//TODO: Rewrite the response.
 	return p.Target.OnTypeFormatting(ctx, params)
 }
 
