@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -56,93 +56,93 @@ func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentC
 		err = fmt.Errorf("document not found")
 		return
 	}
-	updated, err = fc.applyContentChanges(lsp.DocumentURI(uri), contents, changes)
-	if err != nil {
-		return
-	}
-	fc.uriToContents[uri] = updated
-	return
-}
-
-// Contents below adapted from https://github.com/sourcegraph/go-langserver/blob/4b49d01c8a692968252730d45980091dcec7752e/langserver/fs.go#L141
-// It implements the ability to react to changes on document edits.
-// MIT licensed.
-// applyContentChanges updates `contents` based on `changes`
-func (fc *documentContents) applyContentChanges(uri lsp.DocumentURI, contents []byte, changes []lsp.TextDocumentContentChangeEvent) (c []byte, err error) {
+	// Content changes look like this.
+	// [{"range":{"start":{"line":4,"character":9},"end":{"line":4,"character":9}}      ,"text":"."}]}}
+	d := NewDocument(string(contents))
 	for _, change := range changes {
-		if change.RangeLength == 0 {
-			contents = []byte(change.Text) // new full content
-			continue
-		}
-		start, ok, why := offsetForPosition(contents, change.Range.Start)
-		if !ok {
-			return nil, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
-		}
-		var end int
-		if change.RangeLength != 0 {
-			end = start + int(change.RangeLength)
-		} else {
-			// RangeLength not specified, work it out from Range.End
-			end, ok, why = offsetForPosition(contents, change.Range.End)
-			if !ok {
-				return nil, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
-			}
-		}
-		if start < 0 || end > len(contents) || end < start {
-			return nil, fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, uri)
-		}
-		// End of custom code.
-		// Try avoid doing too many allocations, so use bytes.Buffer
-		b := &bytes.Buffer{}
-		b.Grow(start + len(change.Text) + len(contents) - end)
-		b.Write(contents[:start])
-		b.WriteString(change.Text)
-		b.Write(contents[end:])
-		contents = b.Bytes()
+		d.Overwrite(change.Range, change.Text)
 	}
-	return contents, nil
-}
-
-func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool, whyInvalid string) {
-	var line, col uint32
-	// TODO(sqs): count chars, not bytes, per LSP. does that mean we
-	// need to maintain 2 separate counters since we still need to
-	// return the offset as bytes?
-	for _, b := range contents {
-		if line == p.Line && col == p.Character {
-			return offset, true, ""
-		}
-		if (line == p.Line && col > p.Character) || line > p.Line {
-			return 0, false, fmt.Sprintf("character %d (zero-based) is beyond line %d boundary (zero-based)", p.Character, p.Line)
-		}
-		offset++
-		if b == '\n' {
-			line++
-			col = 0
-		} else {
-			col++
-		}
-	}
-	if line == p.Line && col == p.Character {
-		return offset, true, ""
-	}
-	if line == 0 {
-		return 0, false, fmt.Sprintf("character %d (zero-based) is beyond first line boundary", p.Character)
-	}
-	return 0, false, fmt.Sprintf("file only has %d lines", line)
-}
-
-// end of content from SourceGraph.
-
-// getLine from a  a specific line of a document.
-func getLineAndCharacter(s string, lineIndex, charIndex int) (line, char string) {
-	lines := strings.Split(string(s), "\n")
-	if lineIndex < len(lines) {
-		line = lines[lineIndex]
-		if charIndex < len(line) {
-			char = string(line[charIndex])
-		}
-		return
-	}
+	fc.uriToContents[uri] = []byte(d.String())
 	return
+}
+
+//TODO: Store the string array in the documentContents type.
+func NewDocument(s string) *Document {
+	return &Document{
+		Lines: strings.Split(s, "\n"),
+	}
+}
+
+type Document struct {
+	Lines []string
+}
+
+func (d *Document) isEmptyRange(r lsp.Range) bool {
+	return r.Start.Line == 0 && r.Start.Character == 0 &&
+		r.End.Line == 0 && r.End.Character == 0
+}
+
+func (d *Document) isRangeOfDocument(r lsp.Range) bool {
+	startLine, startChar := int(r.Start.Line), int(r.Start.Character)
+	endLine, endChar := int(r.End.Line), int(r.End.Character)
+	return startLine == 0 && startChar == 0 && endLine == len(d.Lines)-1 && endChar == len(d.Lines[len(d.Lines)-1])-1
+}
+
+func (d *Document) isOutsideDocumentRange(r lsp.Range) bool {
+	startLine, startChar := int(r.Start.Line), int(r.Start.Character)
+	endLine, endChar := int(r.End.Line), int(r.End.Character)
+	if startLine < 0 || startChar < 0 || endChar < 0 {
+		return true
+	}
+	if endLine > len(d.Lines)-1 || endChar > len(d.Lines[len(d.Lines)-1])-1 {
+		return true
+	}
+	return false
+}
+
+func (d *Document) isWholeLineRange(r lsp.Range) bool {
+	return r.Start.Character == 0 && r.End.Character == 0
+}
+
+func (d *Document) remove(i, j int) {
+	d.Lines = append(d.Lines[:i], d.Lines[j:]...)
+}
+
+func (d *Document) insert(i int, withLines []string) {
+	d.Lines = append(d.Lines[:i], append(withLines, d.Lines[i:]...)...)
+}
+
+var ErrOutsideDocumentRange = errors.New("range is outside of document bounds")
+
+func (d *Document) Overwrite(r lsp.Range, with string) error {
+	if d.isOutsideDocumentRange(r) {
+		return ErrOutsideDocumentRange
+	}
+	if d.isEmptyRange(r) || d.isRangeOfDocument(r) {
+		d.Lines = strings.Split(with, "\n")
+		return nil
+	}
+	if d.isWholeLineRange(r) {
+		d.remove(int(r.Start.Line), int(r.End.Line))
+		if with != "" {
+			d.insert(int(r.Start.Line), strings.Split(with, "\n"))
+		}
+		return nil
+	}
+	withLines := strings.Split(with, "\n")
+	if r.Start.Character > 0 {
+		prefix := d.Lines[r.Start.Line][:r.Start.Character]
+		withLines[0] = prefix + withLines[0]
+	}
+	if r.End.Character > 0 {
+		suffix := d.Lines[r.End.Line][r.End.Character:]
+		withLines[len(withLines)-1] = withLines[len(withLines)-1] + suffix
+	}
+	d.remove(int(r.Start.Line), int(r.End.Line+1))
+	d.insert(int(r.Start.Line), withLines)
+	return nil
+}
+
+func (d *Document) String() string {
+	return strings.Join(d.Lines, "\n")
 }

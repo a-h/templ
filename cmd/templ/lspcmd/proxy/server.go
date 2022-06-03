@@ -390,7 +390,7 @@ func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (
 }
 
 func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumentParams) (err error) {
-	p.Log.Info("client -> server: DidChange")
+	p.Log.Info("client -> server: DidChange", zap.Any("params", params))
 	defer p.Log.Info("client -> server: DidChange end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
@@ -402,6 +402,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		return
 	}
 	// Update the Go code.
+	p.Log.Info("parsing template", zap.String("template", string(templateText)))
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, string(templateText))
 	if err != nil {
 		p.Log.Error("parseTemplate failure", zap.Error(err))
