@@ -48,10 +48,11 @@ func (fc *documentContents) Delete(uri string) {
 }
 
 // Apply changes to the document from the client, and return a list of change requests to send back to the client.
-func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (updated []byte, err error) {
+func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (d *Document, err error) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
-	d, ok := fc.uriToContents[uri]
+	var ok bool
+	d, ok = fc.uriToContents[uri]
 	if !ok {
 		err = fmt.Errorf("document not found")
 		return
@@ -92,7 +93,15 @@ func (d *Document) isOutsideDocumentRange(r lsp.Range) bool {
 	if startLine < 0 || startChar < 0 || endChar < 0 {
 		return true
 	}
-	if endLine > len(d.Lines)-1 || endChar > len(d.Lines[len(d.Lines)-1])-1 {
+	startLineMaxCharIndex := len(d.Lines[startLine])
+	if r.Start.Character > uint32(startLineMaxCharIndex) {
+		return true
+	}
+	if endLine > len(d.Lines)-1 {
+		return true
+	}
+	endLineMaxCharIndex := len(d.Lines[endLine])
+	if r.End.Character > uint32(endLineMaxCharIndex) {
 		return true
 	}
 	return false

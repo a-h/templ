@@ -119,6 +119,42 @@ func TestDocument(t *testing.T) {
 			},
 			expected: "Line one test\nNew Line 2\nNew line three",
 		},
+		{
+			name: "Add new line with indent",
+			// Based on log entry.
+			// {"level":"info","ts":"2022-06-04T20:55:15+01:00","caller":"proxy/server.go:391","msg":"client -> server: DidChange","params":{"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/generator/test-call/template.templ","version":2},"contentChanges":[{"range":{"start":{"line":4,"character":21},"end":{"line":4,"character":21}},"text":"\n\t\t"}]}}
+			start: `package testcall
+
+templ personTemplate(p person) {
+	<div>
+		<h1>{ p.name }</h1>
+	</div>
+}
+`,
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Overwrite(lsp.Range{
+						Start: lsp.Position{
+							Line:      4,
+							Character: 21,
+						},
+						End: lsp.Position{
+							Line:      4,
+							Character: 21,
+						},
+					}, "\n\t\t")
+				},
+			},
+			expected: `package testcall
+
+templ personTemplate(p person) {
+	<div>
+		<h1>{ p.name }</h1>
+		
+	</div>
+}
+`,
+		},
 	}
 
 	for _, tt := range tests {

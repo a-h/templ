@@ -392,16 +392,18 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	defer p.Log.Info("client -> server: DidChange end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
+		p.Log.Error("not a templ file")
 		return
 	}
 	// Apply content changes to the cached template.
-	templateText, err := p.documentContents.Apply(string(params.TextDocument.URI), params.ContentChanges)
+	d, err := p.documentContents.Apply(string(params.TextDocument.URI), params.ContentChanges)
 	if err != nil {
+		p.Log.Error("error applying changes", zap.Error(err))
 		return
 	}
 	// Update the Go code.
-	p.Log.Info("parsing template", zap.String("template", string(templateText)))
-	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, string(templateText))
+	p.Log.Info("parsing template")
+	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, d.String())
 	if err != nil {
 		p.Log.Error("parseTemplate failure", zap.Error(err))
 	}
