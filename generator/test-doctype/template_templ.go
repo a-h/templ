@@ -12,18 +12,17 @@ func Layout(title, content string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		// DocType
 		_, err = io.WriteString(w, `<!doctype html>`)
 		if err != nil {
 			return err
 		}
-		err = templ.RenderScripts(ctx, w, )
-		if err != nil {
-			return err
-		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<html")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " lang=\"en\"")
 		if err != nil {
 			return err
@@ -32,14 +31,17 @@ func Layout(title, content string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<head>")
 		if err != nil {
 			return err
 		}
+		// Element (void)
 		_, err = io.WriteString(w, "<meta")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " charset=\"UTF-8\"")
 		if err != nil {
 			return err
@@ -48,10 +50,12 @@ func Layout(title, content string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (void)
 		_, err = io.WriteString(w, "<meta")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " http-equiv=\"X-UA-Compatible\"")
 		if err != nil {
 			return err
@@ -64,10 +68,12 @@ func Layout(title, content string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (void)
 		_, err = io.WriteString(w, "<meta")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " name=\"viewport\"")
 		if err != nil {
 			return err
@@ -80,10 +86,12 @@ func Layout(title, content string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<title>")
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(title))
 		if err != nil {
 			return err
@@ -96,10 +104,12 @@ func Layout(title, content string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<body>")
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(content))
 		if err != nil {
 			return err

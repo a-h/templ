@@ -1,0 +1,24 @@
+package testrawelements
+
+templ StyleElement() {
+  <style><!-- Some stuff --></style>
+}
+
+const StyleElementExpected = `<style><!-- Some stuff --></style>`
+
+templ ScriptElement() {
+  <script type="text/javascript">
+    $("div").marquee();
+    function test() {
+          window.open("https://example.com")
+    }
+  </script>
+}
+
+const ScriptElementExpected = `<script type="text/javascript">
+    $("div").marquee();
+    function test() {
+          window.open("https://example.com")
+    }
+  </script>`
+

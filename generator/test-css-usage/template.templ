@@ -1,21 +1,21 @@
-{% package testcssusage %}
+package testcssusage
 
-{% css green() %}
+css green() {
 	color: #00ff00;
-{% endcss %}
+}
 
-{% css className() %}
+css className() {
 	background-color: #ffffff;
-	color: {%= red %};
-{% endcss %}
+	color: { red };
+}
 
-{% templ Button(text string) %}
-	<button class={%= templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe")) %} type="button">{%= text %}</button>
-{% endtempl %}
+templ Button(text string) {
+	<button class={ templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe")) } type="button">{ text }</button>
+}
 
-{% templ ThreeButtons() %}
-	{%! Button("A") %}
-	{%! Button("B") %}
-	<button class={%= templ.Classes(green()) %} type="button">{%= "Green" %}</button>
-{% endtempl %}
+templ ThreeButtons() {
+	{! Button("A") }
+	{! Button("B") }
+	<button class={ templ.Classes(green()) } type="button">{ "Green" }</button>
+}
 

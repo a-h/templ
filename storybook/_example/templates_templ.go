@@ -7,6 +7,8 @@ package example
 import "github.com/a-h/templ"
 import "context"
 import "io"
+
+// GoExpression
 import "fmt"
 import "time"
 
@@ -14,14 +16,12 @@ func headerTemplate(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		err = templ.RenderScripts(ctx, w, )
-		if err != nil {
-			return err
-		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<header")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " data-testid=\"headerTemplate\"")
 		if err != nil {
 			return err
@@ -30,10 +30,12 @@ func headerTemplate(name string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<h1>")
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(name))
 		if err != nil {
 			return err
@@ -54,14 +56,12 @@ func footerTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		err = templ.RenderScripts(ctx, w, )
-		if err != nil {
-			return err
-		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<footer")
 		if err != nil {
 			return err
 		}
+		// Element Attributes
 		_, err = io.WriteString(w, " data-testid=\"footerTemplate\"")
 		if err != nil {
 			return err
@@ -70,15 +70,18 @@ func footerTemplate() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err
 		}
+		// Text
 		var_1 := `&copy; `
 		_, err = io.WriteString(w, var_1)
 		if err != nil {
 			return err
 		}
+		// StringExpression
 		_, err = io.WriteString(w, templ.EscapeString(fmt.Sprintf("%d", time.Now().Year())))
 		if err != nil {
 			return err

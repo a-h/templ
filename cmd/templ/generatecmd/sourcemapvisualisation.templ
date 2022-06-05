@@ -1,0 +1,63 @@
+package generatecmd
+
+css row() {
+	display: flex;
+}
+
+css column() {
+	flex: 50%;
+}
+
+css code() {
+	font-family: monospace;
+}
+
+templ visualisation(templFileName string, left, right templ.Component) {
+	<html>
+		<head>
+			<title>{ templFileName } - Source Map Visualisation</title>
+			<style type="text/css">
+				.mapped { background-color: green }
+				.highlighted { background-color: yellow }
+			</style>
+		</head>
+		<body>
+			<h1>{ templFileName }</h1>
+
+			<div class={ templ.Classes(row()) }>
+				<div class={ templ.Classes(column(), code()) }>
+					{! left }
+				</div>
+				<div class={ templ.Classes(column(), code()) }>
+					{! right }
+				</div>
+			</div>
+		</body>
+	</html>
+}
+
+script highlight(sourceId, targetId string) {
+        let items = document.getElementsByClassName(sourceId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.add("highlighted");
+	}
+        items = document.getElementsByClassName(targetId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.add("highlighted");
+	}
+}
+
+script removeHighlight(sourceId, targetId string) {
+        let items = document.getElementsByClassName(sourceId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.remove("highlighted");
+	}
+        items = document.getElementsByClassName(targetId);
+	for(let i = 0; i < items.length; i ++) {
+		items[i].classList.remove("highlighted");
+	}
+}
+
+templ mappedCharacter(s string, sourceID, targetID string) {
+	<span class={ templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID)) } onMouseOver={ highlight(sourceID, targetID) } onMouseOut={ removeHighlight(sourceID, targetID) }>{ s }</span>
+}

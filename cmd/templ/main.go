@@ -7,10 +7,10 @@ import (
 	"runtime/debug"
 
 	"github.com/a-h/templ"
-	"github.com/a-h/templ/cmd/templ/exportcmd"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
+	"github.com/a-h/templ/cmd/templ/migratecmd"
 )
 
 // Source builds use this value. When installed using `go install github.com/a-h/templ/cmd/templ@latest` the `version` variable is empty, but
@@ -39,14 +39,14 @@ func main() {
 	case "generate":
 		generateCmd(os.Args[2:])
 		return
+	case "migrate":
+		migrateCmd(os.Args[2:])
+		return
 	case "fmt":
 		fmtCmd(os.Args[2:])
 		return
 	case "lsp":
 		lspCmd(os.Args[2:])
-		return
-	case "export":
-		exportCmd(os.Args[2:])
 		return
 	case "version":
 		fmt.Println(getVersion())
@@ -64,7 +64,7 @@ To see help text, you can run:
   templ generate --help
   templ fmt --help
   templ lsp --help
-  templ export --help
+  templ migrate --help
   templ version
 examples:
   templ compile`)
@@ -75,6 +75,8 @@ func generateCmd(args []string) {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
 	fileName := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
 	path := cmd.String("path", ".", "Generates code for all files in path.")
+	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "Set to trye to generate HTML files to visualise the templ code and its corresponding Go code.")
+	workerCount := cmd.Int("w", 4, "Number of workers to run in parallel.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
@@ -82,6 +84,28 @@ func generateCmd(args []string) {
 		return
 	}
 	err = generatecmd.Run(generatecmd.Arguments{
+		FileName:                        *fileName,
+		Path:                            *path,
+		WorkerCount:                     *workerCount,
+		GenerateSourceMapVisualisations: *sourceMapVisualisations,
+	})
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func migrateCmd(args []string) {
+	cmd := flag.NewFlagSet("migrate", flag.ExitOnError)
+	fileName := cmd.String("f", "", "Optionally migrate a single file, e.g. -f header.templ")
+	path := cmd.String("path", ".", "Migrates code for all files in path.")
+	helpFlag := cmd.Bool("help", false, "Print help and exit.")
+	err := cmd.Parse(args)
+	if err != nil || *helpFlag {
+		cmd.PrintDefaults()
+		return
+	}
+	err = migratecmd.Run(migratecmd.Arguments{
 		FileName: *fileName,
 		Path:     *path,
 	})
@@ -100,21 +124,6 @@ func fmtCmd(args []string) {
 		return
 	}
 	err = fmtcmd.Run(args)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
-
-func exportCmd(args []string) {
-	cmd := flag.NewFlagSet("export", flag.ExitOnError)
-	helpFlag := cmd.Bool("help", false, "Print help and exit.")
-	err := cmd.Parse(args)
-	if err != nil || *helpFlag {
-		cmd.PrintDefaults()
-		return
-	}
-	err = exportcmd.Run(args)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)

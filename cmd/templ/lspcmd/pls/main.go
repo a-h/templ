@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/sourcegraph/jsonrpc2"
 	"go.uber.org/zap"
 )
 
@@ -31,33 +30,17 @@ func (opts Options) AsArguments() []string {
 }
 
 // NewGopls starts gopls and opens up a jsonrpc2 connection to it.
-func NewGopls(ctx context.Context, zapLogger *zap.Logger, onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request), opts Options) (conn *jsonrpc2.Conn, err error) {
+func NewGopls(ctx context.Context, log *zap.Logger, opts Options) (rwc io.ReadWriteCloser, err error) {
 	_, err = exec.LookPath("gopls")
 	if errors.Is(err, exec.ErrNotFound) {
-		err = fmt.Errorf("templ lsp: cannot find gopls on the path (%q), you can install it with `go install golang.org/x/tools/gopls@latest`", os.Getenv("PATH"))
+		err = fmt.Errorf("cannot find gopls on the path (%q), you can install it with `go install golang.org/x/tools/gopls@latest`", os.Getenv("PATH"))
 		return
 	}
 	if err != nil {
 		return
 	}
 	cmd := exec.Command("gopls", opts.AsArguments()...)
-	rwc, err := newProcessReadWriteCloser(zapLogger, cmd)
-	if err != nil {
-		return
-	}
-	stream := jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{})
-	handler := fromGoplsToClientHandler{onGoplsRequest: onGoplsRequest}
-	conn = jsonrpc2.NewConn(ctx, stream, handler)
-	return
-}
-
-// fromGoplsToClientHandler is a jsonrpc2 message handler that proxies the request to a function.
-type fromGoplsToClientHandler struct {
-	onGoplsRequest func(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request)
-}
-
-func (h fromGoplsToClientHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, r *jsonrpc2.Request) {
-	h.onGoplsRequest(ctx, conn, r)
+	return newProcessReadWriteCloser(log, cmd)
 }
 
 // newProcessReadWriteCloser creates a processReadWriteCloser to allow stdin/stdout to be used as

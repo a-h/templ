@@ -1,0 +1,19 @@
+package example
+
+import "fmt"
+import "time"
+
+
+
+templ headerTemplate(name string) {
+	<header data-testid="headerTemplate">
+		<h1>{ name }</h1>
+	</header>
+}
+
+templ footerTemplate() {
+	<footer data-testid="footerTemplate">
+		<div>&copy; { fmt.Sprintf("%d", time.Now().Year()) }</div>
+	</footer>
+}
+

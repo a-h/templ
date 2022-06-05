@@ -1,8 +1,8 @@
-{% package testhtml %}
+package testhtml
 
-{% templ BasicTemplate(url string) %}
+templ BasicTemplate(url string) {
   <div>
-	  <a href={%= templ.URL(url) %}>text</a>
+    <a href={ templ.URL(url) }>text</a>
   </div>
-{% endtempl %}
+}
 

@@ -2,7 +2,7 @@
 
 ## A HTML templating language for Go that has great developer tooling.
 
-![vscode-autocomplete](https://user-images.githubusercontent.com/1029947/120372693-66b51000-c30f-11eb-8924-41a65616f620.gif)
+![templ](https://user-images.githubusercontent.com/1029947/171962961-38aec64d-eac3-4166-8cb6-e7337c907bae.gif)
 
 ## Getting started
 
@@ -14,62 +14,68 @@
 ### example.templ
 
 ```html
-{% package main %}
+package main
 
-{% import "fmt" %}
-{% import "time" %}
+import "fmt"
+import "time"
 
-{% templ headerTemplate() %}
-	<head><title>Blog</title></head>
-{% endtempl %}
+templ headerTemplate(name string) {
+	<header data-testid="headerTemplate">
+		<h1>{ name }</h1>
+	</header>
+}
 
-{% templ footerTemplate() %}
-	<footer>
-		<div>&copy; {%= fmt.Sprintf("%d", time.Now().Year()) %}</div>
+templ footerTemplate() {
+	<footer data-testid="footerTemplate">
+		<div>&copy; { fmt.Sprintf("%d", time.Now().Year()) }</div>
 	</footer>
-{% endtempl %}
+}
 
-{% templ navTemplate() %}
-	<nav>
+templ navTemplate() {
+	<nav data-testid="navTemplate">
 		<ul>
 			<li><a href="/">Home</a></li>
 			<li><a href="/posts">Posts</a></li>
 		</ul>
 	</nav>
-{% endtempl %}
+}
 
-{% templ layout(name string, content templ.Component) %}
+templ layout(name string, content templ.Component) {
 	<html>
-		{%! headerTemplate() %}
+		<head><title>{ name }</title></head>
 		<body>
-			<h1>Home</h1>
-			{%! navTemplate() %}
+			{! headerTemplate(name) }
+			{! navTemplate() }
 			<main>
-				{%! content %}
+				{! content }
 			</main>
 		</body>
-		{%! footerTemplate() %}
+		{! footerTemplate() }
 	</html>
-{% endtempl %}
+}
 
-{% templ homeTemplate() %}
-	<div>Welcome to my website.</div>
-{% endtempl %}
+templ homeTemplate() {
+	<div data-testid="homeTemplate">Welcome to my website.</div>
+}
 
-{% templ postsTemplate(posts []Post) %}
-	{% for _, p := range posts %}
-		<div>{%= p.Name %}</div>
-		<div>{%= p.Author %}</div>
-	{% endfor %}
-{% endtempl %}
+templ postsTemplate(posts []Post) {
+	<div data-testid="postsTemplate">
+		for _, p := range posts {
+			<div data-testid="postsTemplatePost">
+				<div data-testid="postsTemplatePostName">{ p.Name }</div>
+				<div data-testid="postsTemplatePostAuthor">{ p.Author }</div>
+			</div>
+		}
+	</div>
+}
 
-{% templ home() %}
-	{%! layout("Home", homeTemplate()) %}
-{% endtempl %}
+templ home() {
+	{! layout("Home", homeTemplate()) }
+}
 
-{% templ posts(posts []Post) %}
-	{%! layout("Posts", postsTemplate(posts)) %}
-{% endtempl %}
+templ posts(posts []Post) {
+	{! layout("Posts", postsTemplate(posts)) }
+}
 ```
 
 ### main.go
@@ -136,28 +142,32 @@ Template files end with a `.templ` extension and combine Go code with HTML-like 
 Since `templ` files are as close to Go as possible, they start with a package expression.
 
 ```
-{% package templ %}
+package templ
 ```
 
 ### Importing packages
 
-After the package expression, they might import other Go packages, just like Go files. There's no multi-line import statement, just a single import per line.
+After the package expression, you can import other Go packages, just like Go files.
 
 ```
-{% import "strings" %}
+import "strings"
 ```
+
+### Adding functions
+
+Outside of the `templ` statement, you can use any Go code you like.
 
 ### Components
 
-Once the package and import statements are done, we can define components using the `{% templ Name(params Params) %}` expression. The `templ` expressions are converted into Go functions when the `templ generate` command is executed.
+Once the package and import statements are done, we can start a component using the `templ Name(params Params) {` expression. The `templ` expressions are converted into Go functions when the `templ generate` command is executed.
 
 ```
-{% templ AddressView(addr Address) %}
-	<div>{%= addr.Address1 %}</div>
-	<div>{%= addr.Address2 %}</div>
-	<div>{%= addr.Address3 %}</div>
-	<div>{%= addr.Address4 %}</div>
-{% endtempl %}
+templ AddressView(addr Address) {
+	<div>{ addr.Address1 }</div>
+	<div>{ addr.Address2 }</div>
+	<div>{ addr.Address3 }</div>
+	<div>{ addr.Address4 }</div>
+}
 ```
 
 Each `templ.Component` can contain HTML elements, strings, for loops, switch statements and references to other templates.
@@ -167,13 +177,13 @@ Each `templ.Component` can contain HTML elements, strings, for loops, switch sta
 Components can be referenced in the body of the template, and can pass data between then, for example, using the `AddressTemplate` from the `PersonTemplate`.
 
 ```
-{% templ PersonTemplate(p Person) %}
+templ PersonTemplate(p Person) {
 	<div>
-	    {% for _, v := range p.Addresses %}
-		    {%! AddressTemplate(v) %}
-	    {% endfor %}
+	    for _, v := range p.Addresses {
+		    {! AddressTemplate(v) }
+	    }
 	</div>
-{% endtempl %}
+}
 ```
 
 It's also possible to create "higher order components" that compose other instances of `templ.Component` without passing data, or even knowing what the concrete type of the component will be ahead of time. So long as is implements `templ.Component`, it can be used.
@@ -181,11 +191,11 @@ It's also possible to create "higher order components" that compose other instan
 For example, this template accepts 3 templates (header, footer, body) and renders all 3 of them in the expected order.
 
 ```
-{% templ Layout(header, footer, body templ.Component) %}
-	{%! header %}
-	{%! body %}
-	{%! footer %}
-{% endtempl %}
+templ Layout(header, footer, body templ.Component) {
+	{! header }
+	{! body }
+	{! footer }
+}
 ```
 
 #### Code-only components
@@ -204,7 +214,7 @@ func Raw(s string) templ.Component {
 Then call it in a template. So long as the `Raw` function is in scope, you can use it.
 
 ```
-{%! Raw("<script>alert('xss vector');</script>") %}
+{! Raw("<script>alert('xss vector');</script>") }
 ```
 
 For larger scripts you want to embed, you should create a code component that writes the constant to the output writer using the embed feature of Go - see https://pkg.go.dev/embed for more information.
@@ -235,13 +245,13 @@ HTML elements look like HTML and you can write static attributes into them, just
 All elements must be balanced (have a start and and end tag, or be self-closing).
 
 ```
-<div id="address1">{%= addr.Address1 %}</div>
+<div id="address1">{ addr.Address1 }</div>
 ```
 
 You can also have dynamic attributes that use template parameters, other Go variables that happen to be in scope, or call Go functions that return a string. Don't worry about HTML encoding element text and attribute values, that will be taken care of automatically.
 
 ```
-<a title={%= p.TitleText %}>{%= strings.ToUpper(p.Name()) %}</a>
+<a title={ p.TitleText }>{ strings.ToUpper(p.Name()) }</a>
 ```
 
 Boolean attributes (see https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#boolean-attributes) where the presence of an attribute name without a value means `true`, and the attribute name not being present means false are supported:
@@ -255,7 +265,7 @@ With constant values:
 To set boolean attributes using variables or template parameters, a question mark after the attribute name is used to denote that the attribute is boolean. In this example, the `noshade` attribute would be omitted from the output altogether:
 
 ```
-<hr noshade?={%= false %} />
+<hr noshade?={ false } />
 ```
 
 The `a` element's `href` attribute is treated differently. Templ expects you to provide a `templ.SafeURL`. A `templ.SafeURL` is a URL that is definitely safe to use (i.e. has come from a configuration system controlled by the developer), or has been through a sanitization process to filter out potential XSS attacks.
@@ -263,7 +273,7 @@ The `a` element's `href` attribute is treated differently. Templ expects you to 
 Templ provides a `templ.URL` function that sanitizes input URLs and checks that the protocol is http/https/mailto rather than `javascript` or another unexpected protocol.
 
 ```
-<a href={%= templ.URL(p.URL) %}>{%= strings.ToUpper(p.Name()) %}</a>
+<a href={ templ.URL(p.URL) }>{ strings.ToUpper(p.Name()) }</a>
 ```
 
 ### Text
@@ -279,25 +289,36 @@ Plain HTML:
 Constant Go expressions:
 
 ```
-<div>{%= "this is a string" %}</div>
+<div>{ "this is a string" }</div>
 ```
 
-The backtick constant expression (single-line only):
+The backtick constant expression:
 
 ```
-<div>{%= `this is also a string` %}</div>
+<div>{ `this is also a string` }</div>
 ```
 
 Functions that return a string:
 
 ```
-<div>{%= time.Now().String() %}</div>
+<div>{ time.Now().String() }</div>
 ```
 
 A string parameter, or variable that's in scope:
 
 ```
-<div>{%= v.s %}</div>
+<div>{ v.s }</div>
+```
+
+templ will look for Go code. If, for some reason, you need start a sentence with `for`, `switch` or another Go statement, you can use `<>` and `</>` to encapsulate raw HTML.
+
+```
+<div>
+	<>
+	for x := 0; x < 100; x ++ {
+	}
+	</>
+</div>
 ```
 
 ### onClick etc. handlers
@@ -305,19 +326,19 @@ A string parameter, or variable that's in scope:
 `onClick` and other `on*` handlers have special behaviour, they expect a reference to a `script` template.
 
 ```
-{% package testscriptusage %}
+package testscriptusage
 
-{% script withParameters(a string, b string, c int) %}
+script withParameters(a string, b string, c int) {
 	console.log(a, b, c);
-{% endscript %}
+}
 
-{% script withoutParameters() %}
+script withoutParameters() {
 	alert("hello");
-{% endscript %}
+}
 
-{% templ Button(text string) %}
-	<button onClick={%= withParameters("test", text, 123) %} onMouseover={%= withoutParameters() %} type="button">{%= text %}</button>
-{% endtempl %}
+templ Button(text string) {
+	<button onClick={ withParameters("test", text, 123) } onMouseover={ withoutParameters() } type="button">{ text }</button>
+}
 ```
 
 Rendering the button with `A` as the text input, would render the following HTML. Note that the function names are modified to reduce the likelihood of namespace collisions.
@@ -329,23 +350,23 @@ Rendering the button with `A` as the text input, would render the following HTML
 
 ### CSS
 
-Templ components can have CSS associated with them. CSS classes are created with the `css` template expression. CSS properties can be set to string variables or functions (e.g. `{%= red %}`). However, functions should be idempotent - i.e. return the same value every time.
+Templ components can have CSS associated with them. CSS classes are created with the `css` template expression. CSS properties can be set to string variables or functions (e.g. `{ red }`). However, functions should be idempotent - i.e. return the same value every time.
 
 All variable CSS values are passed through a value sanitizer to provide some protection against malicious data being added to CSS.
 
 ```
-{% css className() %}
+css className() {
 	background-color: #ffffff;
-	color: {%= red %};
-{% endcss %}
+	color: { red };
+}
 ```
 
 CSS class components can be used within templates.
 
 ```
-{% templ Button(text string) %}
-	<button class={%= templ.Classes(className(), templ.Class("other")) %} type="button">{%= text %}</button>
-{% endtempl %}
+templ Button(text string) {
+	<button class={ templ.Classes(className(), templ.Class("other")) } type="button">{ text }</button>
+}
 ```
 
 The first time that the component is rendered in a HTTP request, it will render the CSS class to the output. The next time the same component is rendered, templ will skip rendering the CSS to the output because it is no longer required.
@@ -353,10 +374,10 @@ The first time that the component is rendered in a HTTP request, it will render 
 For example, if this template is rendered in a request:
 
 ```
-{% templ TwoButtons() %}
-	{%! Button("A") %}
-	{%! Button("B") %}
-{% endtempl %}
+templ TwoButtons() {
+	{! Button("A") }
+	{! Button("B") }
+}
 ```
 
 The output would contain one class. Note that the name contains a unique value is addition to the class name to reduce the likelihood of clashes. Don't rely on this name being consistent.
@@ -386,11 +407,11 @@ http.ListenAndServe(":8000:, handler)
 Templates can contain if/else statements that follow the same pattern as Go.
 
 ```
-{% if p.Type == "test" %}
-	<span>{%= "Test user" %}</span>
-{% else %}
-	<span>{%= "Not test user" %}</span>
-{% endif %}
+if p.Type == "test" {
+	<span>{ "Test user" }</span>
+} else {
+	<span>{ "Not test user" }</span>
+}
 ```
 
 ### For
@@ -398,9 +419,9 @@ Templates can contain if/else statements that follow the same pattern as Go.
 Templates have the same loop behaviour as Go.
 
 ```
-{% for _, v := range p.Addresses %}
-	<li>{%= v.City %}</li>
-{% endfor %}
+for _, v := range p.Addresses {
+	<li>{ v.City }</li>
+}
 ```
 
 ### Switch/Case
@@ -408,66 +429,60 @@ Templates have the same loop behaviour as Go.
 Switch statements work in the same way as they do in Go. 
 
 ```
-{% switch p.Type %}
-	{% case "test" %}
-		<span>{%= "Test user" %}</span>
-	{% endcase %}
-	{% case "admin" %}
-		<span>{%= "Admin user" %}</span>
-	{% endcase %}
-	{% default %}
-		<span>{%= "Unknown user" %}</span>
-	{% enddefault %}
-{% endswitch %}
+switch p.Type {
+	case "test":
+		<span>{ "Test user" }</span>
+	case "admin"
+		<span>{ "Admin user" }</span>
+	default:
+		<span>{ "Unknown user" }</span>
+}
 ```
 
 ## Full example
 
 ```templ
-{% package templ %}
+package templ
 
-{% import "strings" %}
+import "strings"
 
-{% templ Layout(header, footer, body templ.Component) %}
-	{%! header %}
-	{%! body %}
-	{%! footer %}
-{% endtempl %}
+templ Layout(header, footer, body templ.Component) {
+	{! header }
+	{! body }
+	{! footer }
+}
 
-{% templ AddressTemplate(addr Address) %}
-	<div>{%= addr.Address1 %}</div>
-	<div>{%= addr.Address2 %}</div>
-	<div>{%= addr.Address3 %}</div>
-	<div>{%= addr.Address4 %}</div>
-{% endtempl %}
+templ AddressTemplate(addr Address) {
+	<div>{ addr.Address1 }</div>
+	<div>{ addr.Address2 }</div>
+	<div>{ addr.Address3 }</div>
+	<div>{ addr.Address4 }</div>
+}
 
-{% templ PersonTemplate(p Person) %}
+templ PersonTemplate(p Person) {
 	<div>
-		<div>{%= p.Name() %}</div>
-		<a href={%= p.URL %}>{%= strings.ToUpper(p.Name()) %}</a>
+		<div>{ p.Name() }</div>
+		<a href={ p.URL }>{ strings.ToUpper(p.Name()) }</a>
 		<div>
-			{% if p.Type == "test" %}
-				<span>{%= "Test user" %}</span>
-			{% else %}
-				<span>{%= "Not test user" %}</span>
-			{% endif %}
-			{% for _, v := range p.Addresses %}
-				{%! AddressTemplate(v) %}
-			{% endfor %}
-			{% switch p.Type %}
-				{% case "test" %}
-					<span>{%= "Test user" %}</span>
-				{% endcase %}
-				{% case "admin" %}
-					<span>{%= "Admin user" %}</span>
-				{% endcase %}
-				{% default %}
-					<span>{%= "Unknown user" %}</span>
-				{% enddefault %}
-			{% endswitch %}
+			if p.Type == "test" {
+				<span>{ "Test user" }</span>
+			} else {
+				<span>{ "Not test user" }</span>
+			}
+			for _, v := range p.Addresses {
+				{! AddressTemplate(v) }
+			}
+			switch p.Type {
+				case "test":
+					<span>{ "Test user" }</span>
+				case "admin":
+					<span>{ "Admin user" }</span>
+				default:
+					<span>{ "Unknown user" }</span>
+			}
 		</div>
 	</div>
-{% endtempl %}
+}
 ```
 
 Will compile to Go code similar to the following (error handling removed for brevity):
@@ -722,7 +737,7 @@ templ is designed to prevent user provided data from being used to inject vulner
 `<script>` and `<style>` tags could allow user data to inject vulnerabilities, so variables are not permitted in these sections.
 
 ```
-{% templ Example() %}
+templ Example() {
   <script type="text/javascript">
     function showAlert() {
       alert("hello");
@@ -731,68 +746,68 @@ templ is designed to prevent user provided data from being used to inject vulner
   <style type="text/css">
     /* Only CSS is allowed */
   </style>
-{% endtempl %}
+}
 ```
 
 `onClick` attributes, and other `on*` attributes are used to execute JavaScript. To prevent user data from being unescapted, `on*` attributes accept a `templ.ComponentScript`.
 
 ```
-{% script onClickHandler(msg stringg) %}
+script onClickHandler(msg stringg) {
   alert(msg);
-{% endscript %}
+}
 
-{% templ Example(msg string) %}
-  <div onClick={%= onClickHandler(msg) %}>
-    {%= "will be HTML encoded using templ.Escape" %}
+templ Example(msg string) {
+  <div onClick={ onClickHandler(msg) }>
+    { "will be HTML encoded using templ.Escape" }
   </div>
-{% endtempl %}
+}
 ```
 
-Style attributes cannot be expressions, only constants, to avoid escaping vulnerabilities. templ style templates (`{% css className() %}`) should be used instead.
+Style attributes cannot be expressions, only constants, to avoid escaping vulnerabilities. templ style templates (`css className()`) should be used instead.
 
 ```
-{% templ Example() %}
-  <div style={%= "will throw an error" %}</div>
-{% endtempl %}
+templ Example() {
+  <div style={ "will throw an error" }</div>
+}
 ```
 
 Class names are escaped unless bypassed.
 
 ```
-{% templ Example() %}
-  <div class={%= templ.CSSClasses(templ.Class("unsafe</style&gt;-will-sanitized"), templ.SafeClass("sanitization bypassed")) %}</div>
-{% endtempl %}
+templ Example() {
+  <div class={ templ.CSSClasses(templ.Class("unsafe</style&gt;-will-sanitized"), templ.SafeClass("sanitization bypassed")) }</div>
+}
 ```
 
 ```
-{% templ Example() %}
+templ Example() {
   <div>Node text is not modified at all.</div>
-  <div>{%= "will be escaped using templ.Escape" %}</div>
-{% endtempl %}
+  <div>{ "will be escaped using templ.Escape" }</div>
+}
 ```
 
 `href` attributes must be a `templ.SafeURL` and are sanitized to remove JavaScript URLs unless bypassed.
 
 ```
-{% templ Example() %}
+templ Example() {
   <a href="http://constants.example.com/are/not/sanitized">Text</a>
-  <a href={%= templ.URL("will be sanitized by templ.URL to remove potential attacks") %}</a>
-  <a href={%= templ.SafeURL("will not be sanitized by templ.URL") %}</a>
-{% endtempl %}
+  <a href={ templ.URL("will be sanitized by templ.URL to remove potential attacks") }</a>
+  <a href={ templ.SafeURL("will not be sanitized by templ.URL") }</a>
+}
 ```
 
 Within css blocks, property names, and constant CSS property values are not sanitized or escaped.
 
 ```
-{% css className() %}
+css className() {
 	background-color: #ffffff;
-{% endcss %}
+}
 ```
 
 CSS property values based on expressions are passed through `templ.SanitizeCSS` to replace potentially unsafe values with placeholders.
 
 ```
-{% css className() %}
-	color: {%= red %};
-{% endcss %}
+css className() {
+	color: { red };
+}
 ```

@@ -1,13 +1,11 @@
-{% package testswitchdefault %}
+package testswitchdefault
 
-{% templ template(input string) %}
-	{% switch input %}
-		{% case "a" %}
-			{%= "it was 'a'" %}
-		{% endcase %}
-		{% default %}
-			{%= "it was something else" %}
-		{% enddefault %}
-	{% endswitch %}
-{% endtempl %}
+templ template(input string) {
+	switch input {
+		case "a":
+			{ "it was 'a'" }
+		default:
+			{ "it was something else" }
+	}
+}
 
