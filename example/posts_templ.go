@@ -277,38 +277,6 @@ func layout(name string, content templ.Component) templ.Component {
 	})
 }
 
-func homeTemplate() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		// Element (standard)
-		_, err = io.WriteString(w, "<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = io.WriteString(w, " data-testid=\"homeTemplate\"")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, ">")
-		if err != nil {
-			return err
-		}
-		// Text
-		var_4 := `Welcome to my website.`
-		_, err = io.WriteString(w, var_4)
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "</div>")
-		if err != nil {
-			return err
-		}
-		return err
-	})
-}
-
 func postsTemplate(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
@@ -406,8 +374,35 @@ func home() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		// CallTemplate
-		err = layout("Home", homeTemplate()).Render(ctx, w)
+		// TemplElement
+		var_4 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			// Element (standard)
+			_, err = io.WriteString(w, "<div")
+			if err != nil {
+				return err
+			}
+			// Element Attributes
+			_, err = io.WriteString(w, " data-testid=\"homeTemplate\"")
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, ">")
+			if err != nil {
+				return err
+			}
+			// Text
+			var_5 := `Welcome to my website.`
+			_, err = io.WriteString(w, var_5)
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, "</div>")
+			if err != nil {
+				return err
+			}
+			return err
+		})
+		err = layout("Home", var_4).Render(ctx, w)
 		if err != nil {
 			return err
 		}

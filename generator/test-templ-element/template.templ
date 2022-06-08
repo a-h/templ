@@ -1,0 +1,12 @@
+package testtemplelement
+
+templ layout(children templ.Component) {
+	<p>header</p>
+		<!children/>
+	<p>footer</p>
+}
+templ template() {
+	<!layout()>
+		some text
+	</>
+}

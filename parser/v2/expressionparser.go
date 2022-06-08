@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 
@@ -143,6 +144,7 @@ loop:
 		sb.WriteRune(r)
 	}
 	if braceCount != 0 {
+		fmt.Println(sb.String())
 		return parse.Failure("expression: unexpected brace count", nil)
 	}
 	return parse.Success("expression", sb.String(), nil)

@@ -38,10 +38,6 @@ templ layout(name string, content templ.Component) {
 	</html>
 }
 
-templ homeTemplate() {
-	<div data-testid="homeTemplate">Welcome to my website.</div>
-}
-
 templ postsTemplate(posts []Post) {
 	<div data-testid="postsTemplate">
 		for _, p := range posts {
@@ -54,7 +50,9 @@ templ postsTemplate(posts []Post) {
 }
 
 templ home() {
-	{! layout("Home", homeTemplate()) }
+	<!layout("Home")>
+		<div data-testid="homeTemplate">Welcome to my website.</div>
+	</>
 }
 
 templ posts(posts []Post) {
