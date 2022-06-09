@@ -10,7 +10,7 @@ import (
 
 var input = []string{"a", "b", "c"}
 
-const expected = `<p>header</p>some text<p>footer</p>`
+const expected = `<p>header</p>some text <p>some component</p><p>footer</p>`
 
 func TestFor(t *testing.T) {
 	w := new(strings.Builder)

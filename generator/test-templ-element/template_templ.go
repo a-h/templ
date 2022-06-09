@@ -8,18 +8,20 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func layout(children templ.Component) templ.Component {
+func layout() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		_, err = io.WriteString(w, "<p>")
 		if err != nil {
 			return err
 		}
 		// Text
-		var_1 := `header`
-		_, err = io.WriteString(w, var_1)
+		var_2 := `header`
+		_, err = io.WriteString(w, var_2)
 		if err != nil {
 			return err
 		}
@@ -27,8 +29,8 @@ func layout(children templ.Component) templ.Component {
 		if err != nil {
 			return err
 		}
-		// TemplElement
-		err = children.Render(ctx, w)
+		// Children
+		err = templ.GetChildren(var_1).Render(ctx, w)
 		if err != nil {
 			return err
 		}
@@ -38,8 +40,33 @@ func layout(children templ.Component) templ.Component {
 			return err
 		}
 		// Text
-		var_2 := `footer`
-		_, err = io.WriteString(w, var_2)
+		var_3 := `footer`
+		_, err = io.WriteString(w, var_3)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</p>")
+		if err != nil {
+			return err
+		}
+		return err
+	})
+}
+
+func component() templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
+		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_4 := ctx
+		ctx = templ.ClearChildren(var_4)
+		// Element (standard)
+		_, err = io.WriteString(w, "<p>")
+		if err != nil {
+			return err
+		}
+		// Text
+		var_5 := `some component`
+		_, err = io.WriteString(w, var_5)
 		if err != nil {
 			return err
 		}
@@ -55,17 +82,29 @@ func template() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_6 := ctx
+		ctx = templ.ClearChildren(var_6)
 		// TemplElement
-		var_3 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		var_7 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			// Text
-			var_4 := `some text`
-			_, err = io.WriteString(w, var_4)
+			var_8 := `some text`
+			_, err = io.WriteString(w, var_8)
+			if err != nil {
+				return err
+			}
+			// Whitespace (normalised)
+			_, err = io.WriteString(w, ` `)
+			if err != nil {
+				return err
+			}
+			// TemplElement
+			err = component().Render(ctx, w)
 			if err != nil {
 				return err
 			}
 			return err
 		})
-		err = layout(var_3).Render(ctx, w)
+		err = layout().Render(templ.WithChildren(ctx, var_7), w)
 		if err != nil {
 			return err
 		}

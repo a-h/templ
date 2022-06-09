@@ -33,6 +33,24 @@ func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
 	return cf(ctx, w)
 }
 
+type childrenContextKey string
+
+var contextKeyChildren = childrenContextKey("children")
+
+func WithChildren(ctx context.Context, children Component) context.Context {
+	return context.WithValue(ctx, contextKeyChildren, &children)
+}
+func ClearChildren(ctx context.Context) context.Context {
+	return context.WithValue(ctx, contextKeyChildren, nil)
+}
+
+func GetChildren(ctx context.Context) Component {
+	if component, ok := ctx.Value(contextKeyChildren).(*Component); ok && component != nil {
+		return *component
+	}
+	return ComponentFunc(func(ctx context.Context, w io.Writer) error { return nil })
+}
+
 // ComponentHandler is a http.Handler that renders components.
 type ComponentHandler struct {
 	Component    Component

@@ -12,14 +12,16 @@ func BasicTemplate(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
 			return err
 		}
 		// Text
-		var_1 := `Name: `
-		_, err = io.WriteString(w, var_1)
+		var_2 := `Name: `
+		_, err = io.WriteString(w, var_2)
 		if err != nil {
 			return err
 		}
@@ -38,22 +40,7 @@ func BasicTemplate(name string) templ.Component {
 			return err
 		}
 		// Text
-		var_2 := `Text ` + "`" + `with backticks` + "`" + ``
-		_, err = io.WriteString(w, var_2)
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "</div>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = io.WriteString(w, "<div>")
-		if err != nil {
-			return err
-		}
-		// Text
-		var_3 := `Text ` + "`" + `with backtick`
+		var_3 := `Text ` + "`" + `with backticks` + "`" + ``
 		_, err = io.WriteString(w, var_3)
 		if err != nil {
 			return err
@@ -68,8 +55,23 @@ func BasicTemplate(name string) templ.Component {
 			return err
 		}
 		// Text
-		var_4 := `Text ` + "`" + `with backtick alongside variable: `
+		var_4 := `Text ` + "`" + `with backtick`
 		_, err = io.WriteString(w, var_4)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</div>")
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		_, err = io.WriteString(w, "<div>")
+		if err != nil {
+			return err
+		}
+		// Text
+		var_5 := `Text ` + "`" + `with backtick alongside variable: `
+		_, err = io.WriteString(w, var_5)
 		if err != nil {
 			return err
 		}

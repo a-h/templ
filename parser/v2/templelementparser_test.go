@@ -15,62 +15,20 @@ func TestTemplElementExpressionParser(t *testing.T) {
 	}{
 		{
 			name:  "tempelement: simple",
-			input: `<! Other(p.Test) />`,
+			input: `@Other(p.Test)` + "\n",
 			expected: TemplElementExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{
 						From: Position{
-							Index: 3,
+							Index: 1,
 							Line:  0,
-							Col:   3,
+							Col:   1,
 						},
 						To: Position{
 							Index: 16,
 							Line:  0,
-							Col:   16,
-						},
-					},
-				},
-			},
-		},
-		{
-			name:  "tempelement: simple, missing start space",
-			input: `<!Other(p.Test) />`,
-			expected: TemplElementExpression{
-				Expression: Expression{
-					Value: "Other(p.Test)",
-					Range: Range{
-						From: Position{
-							Index: 2,
-							Line:  0,
-							Col:   2,
-						},
-						To: Position{
-							Index: 15,
-							Line:  0,
-							Col:   15,
-						},
-					},
-				},
-			},
-		},
-		{
-			name:  "tempelement: simple, missing start and end space",
-			input: `<!Other(p.Test)/>`,
-			expected: TemplElementExpression{
-				Expression: Expression{
-					Value: "Other(p.Test)",
-					Range: Range{
-						From: Position{
-							Index: 2,
-							Line:  0,
-							Col:   2,
-						},
-						To: Position{
-							Index: 15,
-							Line:  0,
-							Col:   15,
+							Col:   14,
 						},
 					},
 				},
@@ -78,95 +36,94 @@ func TestTemplElementExpressionParser(t *testing.T) {
 		},
 		{
 			name: "tempelement: simple, block with text",
-			input: `<!Other(p.Test)>
-			some words
-			</>`,
+			input: `@Other(p.Test) {
+	some words
+}`,
 			expected: TemplElementExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{
 						From: Position{
-							Index: 2,
+							Index: 1,
 							Line:  0,
-							Col:   2,
+							Col:   1,
 						},
 						To: Position{
-							Index: 15,
+							Index: 14,
 							Line:  0,
-							Col:   15,
+							Col:   14,
 						},
 					},
 				},
 				Children: []Node{
-					Whitespace{Value: "\n\t\t\t"},
+					Whitespace{Value: "\t"},
 					Text{Value: "some words"},
-					Whitespace{Value: "\n\t\t\t"},
+					Whitespace{Value: "\n"},
 				},
 			},
 		},
 		{
 			name: "tempelement: simple, block with anchor",
-			input: `<!Other(p.Test)>
+			input: `@Other(p.Test){
 			<a href="someurl" />
-			</>`,
+		}`,
 			expected: TemplElementExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{
 						From: Position{
-							Index: 2,
+							Index: 1,
 							Line:  0,
-							Col:   2,
+							Col:   1,
 						},
 						To: Position{
-							Index: 15,
+							Index: 14,
 							Line:  0,
-							Col:   15,
+							Col:   14,
 						},
 					},
 				},
 				Children: []Node{
-					Whitespace{Value: "\n\t\t\t"},
+					Whitespace{Value: "\t\t\t"},
 					Element{Name: "a", Attributes: []Attribute{
 						ConstantAttribute{"href", "someurl"},
 					}},
-					Whitespace{Value: "\n\t\t\t"},
+					Whitespace{Value: "\n\t\t"},
 				},
 			},
 		},
 		{
 			name: "tempelement: simple, block with templelement as child",
-			input: `<!Other(p.Test)>
-				<!other2 />
-			</>`,
+			input: `@Other(p.Test) {
+				@other2
+			}`,
 			expected: TemplElementExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{
 						From: Position{
-							Index: 2,
+							Index: 1,
 							Line:  0,
-							Col:   2,
+							Col:   1,
 						},
 						To: Position{
-							Index: 15,
+							Index: 14,
 							Line:  0,
-							Col:   15,
+							Col:   14,
 						},
 					},
 				},
 				Children: []Node{
-					Whitespace{Value: "\n\t\t\t\t"},
+					Whitespace{Value: "\t\t\t\t"},
 					TemplElementExpression{
 						Expression: Expression{
 							Value: "other2",
 							Range: Range{
-								From: Position{23, 1, 6},
-								To:   Position{29, 1, 12},
+								From: Position{22, 1, 5},
+								To:   Position{32, 2, 3},
 							},
 						},
 					},
-					Whitespace{Value: "\n\t\t\t"},
 				},
 			},
 		},

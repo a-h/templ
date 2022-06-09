@@ -8,10 +8,12 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func actionTemplate(action string, target string, template templ.Component) templ.Component {
+func actionTemplate(action string, target string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		_, err = io.WriteString(w, "<turbo-stream")
 		if err != nil {
@@ -59,8 +61,8 @@ func actionTemplate(action string, target string, template templ.Component) temp
 		if err != nil {
 			return err
 		}
-		// CallTemplate
-		err = template.Render(ctx, w)
+		// Children
+		err = templ.GetChildren(var_1).Render(ctx, w)
 		if err != nil {
 			return err
 		}
@@ -80,6 +82,8 @@ func removeTemplate(action string, target string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_2 := ctx
+		ctx = templ.ClearChildren(var_2)
 		// Element (standard)
 		_, err = io.WriteString(w, "<turbo-stream")
 		if err != nil {

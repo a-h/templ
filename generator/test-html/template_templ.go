@@ -12,6 +12,8 @@ func render(p person) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
@@ -71,8 +73,8 @@ func render(p person) templ.Component {
 			return err
 		}
 		// Text
-		var_1 := `email:`
-		_, err = io.WriteString(w, var_1)
+		var_2 := `email:`
+		_, err = io.WriteString(w, var_2)
 		if err != nil {
 			return err
 		}
@@ -90,8 +92,8 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_2 templ.SafeURL = templ.URL("mailto: " + p.email)
-		_, err = io.WriteString(w, templ.EscapeString(string(var_2)))
+		var var_3 templ.SafeURL = templ.URL("mailto: " + p.email)
+		_, err = io.WriteString(w, templ.EscapeString(string(var_3)))
 		if err != nil {
 			return err
 		}

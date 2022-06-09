@@ -28,6 +28,8 @@ func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		// Element Script
 		err = templ.RenderScripts(ctx, w, withParameters("test", text, 123), withoutParameters())
@@ -47,8 +49,8 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_1 templ.ComponentScript = withParameters("test", text, 123)
-		_, err = io.WriteString(w, var_1.Call)
+		var var_2 templ.ComponentScript = withParameters("test", text, 123)
+		_, err = io.WriteString(w, var_2.Call)
 		if err != nil {
 			return err
 		}
@@ -64,8 +66,8 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_2 templ.ComponentScript = withoutParameters()
-		_, err = io.WriteString(w, var_2.Call)
+		var var_3 templ.ComponentScript = withoutParameters()
+		_, err = io.WriteString(w, var_3.Call)
 		if err != nil {
 			return err
 		}
@@ -98,6 +100,8 @@ func ThreeButtons() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_4 := ctx
+		ctx = templ.ClearChildren(var_4)
 		// CallTemplate
 		err = Button("A").Render(ctx, w)
 		if err != nil {
@@ -127,8 +131,8 @@ func ThreeButtons() templ.Component {
 			return err
 		}
 		// Text
-		var_3 := `Button C`
-		_, err = io.WriteString(w, var_3)
+		var_5 := `Button C`
+		_, err = io.WriteString(w, var_5)
 		if err != nil {
 			return err
 		}

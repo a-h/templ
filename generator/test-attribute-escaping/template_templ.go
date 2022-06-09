@@ -12,6 +12,8 @@ func BasicTemplate(url string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		_, err = io.WriteString(w, "<div>")
 		if err != nil {
@@ -31,8 +33,8 @@ func BasicTemplate(url string) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_1 templ.SafeURL = templ.URL(url)
-		_, err = io.WriteString(w, templ.EscapeString(string(var_1)))
+		var var_2 templ.SafeURL = templ.URL(url)
+		_, err = io.WriteString(w, templ.EscapeString(string(var_2)))
 		if err != nil {
 			return err
 		}
@@ -45,8 +47,8 @@ func BasicTemplate(url string) templ.Component {
 			return err
 		}
 		// Text
-		var_2 := `text`
-		_, err = io.WriteString(w, var_2)
+		var_3 := `text`
+		_, err = io.WriteString(w, var_3)
 		if err != nil {
 			return err
 		}

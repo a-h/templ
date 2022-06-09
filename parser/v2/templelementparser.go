@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/a-h/lexical/parse"
 )
@@ -19,44 +20,50 @@ func (p templBlockElementExpressionParser) Parse(pi parse.Input) parse.Result {
 	var r TemplElementExpression
 
 	// Check the prefix first.
-	prefixResult := templElementExpressionStartParser(pi)
+	prefixResult := parse.Rune('@')(pi)
 	if !prefixResult.Success {
 		return prefixResult
 	}
 
 	// Once we have a prefix, we must have an expression that returns a template.
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.All(parse.WithStringConcatCombiner, optionalWhitespaceParser, templElementExpressionEndParser))(pi)
+	pr := parse.StringUntil(parse.All(parse.WithStringConcatCombiner, openBraceWithOptionalPadding))(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
 	if !pr.Success {
-		return pr
+		return parse.Failure("templElementParser", newParseError("templ element: unterminated (missing closing '{\n')", from, NewPositionFromInput(pi)))
 	}
 	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
-	// Eat closer.
-	endResult := templElementExpressionEndParser(pi)
-	if !endResult.Success {
-		return endResult
-	}
-	// Once we've got an open tag, the rest must be present.
 	from = NewPositionFromInput(pi)
-	tnpr := newTemplateNodeParser(nil).Parse(pi)
-	if !tnpr.Success {
-		if _, isParseError := tnpr.Error.(ParseError); isParseError {
-			return tnpr
-		}
-		return parse.Failure("templElementParser", newParseError(fmt.Sprintf("<%s>: %v", r.Expression.Value, tnpr.Error), from, NewPositionFromInput(pi)))
-	}
-	if arr, isArray := tnpr.Item.([]Node); isArray {
-		r.Children = append(r.Children, arr...)
+	if te := expressionEnd(pi); !te.Success {
+		return parse.Failure("templElementParser", newParseError("templ element: unterminated (missing closing '{')", from, NewPositionFromInput(pi)))
 	}
 
-	// Close tag.
-	ectpr := parse.String("</>")(pi)
-	if !ectpr.Success {
-		return parse.Failure("templElementParser", newParseError(fmt.Sprintf("<%s>: expected end tag not present or invalid tag contents", r.Expression.Value), from, NewPositionFromInput(pi)))
+	// Once we've had the start of a for block, we must conclude the block.
+
+	// Eat newline.
+	if lb := newLine(pi); lb.Error != nil {
+		return lb
+	}
+
+	// Node contents.
+	from = NewPositionFromInput(pi)
+	pr = newTemplateNodeParser(parse.Or(elseExpression.Parse, closeBraceWithOptionalPadding)).Parse(pi)
+	if pr.Error != nil && pr.Error != io.EOF {
+		return pr
+	}
+	// If there's no match, there's a problem in the template nodes.
+	if !pr.Success {
+		return parse.Failure("templElementParser", newParseError(fmt.Sprintf("@%s: expected nodes, but none were found", r.Expression.Value), from, NewPositionFromInput(pi)))
+	}
+
+	r.Children = pr.Item.([]Node)
+
+	// Read the required closing brace.
+	if ie := closeBraceWithOptionalPadding(pi); !ie.Success {
+		return parse.Failure("templElementParser", newParseError(fmt.Sprintf("@%s: missing end (expected '}')", r.Expression.Value), from, NewPositionFromInput(pi)))
 	}
 	return parse.Success("templElementParser", r, nil)
 }
@@ -71,25 +78,28 @@ func (p templSelfClosingElementExpressionParser) asTemplElement(parts []interfac
 	}, true
 }
 func (p templSelfClosingElementExpressionParser) parseExpression(pi parse.Input) parse.Result {
+	start := pi.Index()
 	var e Expression
 	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.All(parse.WithStringConcatCombiner, optionalWhitespaceParser, parse.Or(parse.String(">"), parse.String("/>"))))(pi)
+	pr := parse.StringUntil(newLine)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+		return parse.Failure("templElementParser", nil)
 	}
-	// If there's no match, there's no {\n, which is an error.
+	if strings.HasSuffix(strings.TrimSpace(pr.Item.(string)), "{") {
+		rewind(pi, start)
+		return parse.Failure("templElementParser", nil)
+	}
+	// If there's no match, there's no \n, which is an error.
 	if !pr.Success {
-		return parse.Failure("templElementParser", newParseError("templ element: unterminated (missing closing '/>')", from, NewPositionFromInput(pi)))
+		return parse.Failure("templElementParser", newParseError("templ element: unterminated (missing closing newline)", from, NewPositionFromInput(pi)))
 	}
 	e = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 	return parse.Success("templElementParser", e, nil)
 }
 func (p templSelfClosingElementExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.All(p.asTemplElement,
-		templElementExpressionStartParser,
+		parse.Rune('@'),
 		p.parseExpression,
-		optionalWhitespaceParser,
-		templElementExpressionCloseTagParser,
 	)(pi)
 }
 

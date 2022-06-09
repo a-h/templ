@@ -16,7 +16,7 @@ func Append(w http.ResponseWriter, target string, template templ.Component) erro
 // AppendWithContext adds an append action to the output stream.
 func AppendWithContext(ctx context.Context, w http.ResponseWriter, target string, template templ.Component) error {
 	w.Header().Set("Content-Type", "text/vnd.turbo-stream.html")
-	return actionTemplate("append", target, template).Render(ctx, w)
+	return actionTemplate("append", target).Render(templ.WithChildren(ctx, template), w)
 }
 
 // Prepend adds a prepend action to the output stream.
@@ -27,7 +27,7 @@ func Prepend(w http.ResponseWriter, target string, template templ.Component) err
 // PrependWithContext adds a prepend action to the output stream.
 func PrependWithContext(ctx context.Context, w http.ResponseWriter, target string, template templ.Component) error {
 	w.Header().Set("Content-Type", "text/vnd.turbo-stream.html")
-	return actionTemplate("prepend", target, template).Render(ctx, w)
+	return actionTemplate("prepend", target).Render(templ.WithChildren(ctx, template), w)
 }
 
 // Replace adds a replace action to the output stream.
@@ -38,7 +38,7 @@ func Replace(w http.ResponseWriter, target string, template templ.Component) err
 // ReplaceWithContext adds a replace action to the output stream.
 func ReplaceWithContext(ctx context.Context, w http.ResponseWriter, target string, template templ.Component) error {
 	w.Header().Set("Content-Type", "text/vnd.turbo-stream.html")
-	return actionTemplate("replace", target, template).Render(ctx, w)
+	return actionTemplate("replace", target).Render(templ.WithChildren(ctx, template), w)
 }
 
 // Update adds an update action to the output stream.
@@ -49,7 +49,7 @@ func Update(w http.ResponseWriter, target string, template templ.Component) erro
 // UpdateWithContext adds an update action to the output stream.
 func UpdateWithContext(ctx context.Context, w http.ResponseWriter, target string, template templ.Component) error {
 	w.Header().Set("Content-Type", "text/vnd.turbo-stream.html")
-	return actionTemplate("update", target, template).Render(ctx, w)
+	return actionTemplate("update", target).Render(templ.WithChildren(ctx, template), w)
 }
 
 // Remove adds a remove action to the output stream.

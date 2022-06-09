@@ -1,12 +1,19 @@
 package testtemplelement
 
-templ layout(children templ.Component) {
+templ layout() {
 	<p>header</p>
-		<!children/>
+	{ children... }
 	<p>footer</p>
 }
-templ template() {
-	<!layout()>
-		some text
-	</>
+
+templ component() {
+	<p>some component</p>
 }
+
+templ template() {
+	@layout() {
+		some text
+		@component()
+	}
+}
+
