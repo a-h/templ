@@ -50,9 +50,9 @@ templ postsTemplate(posts []Post) {
 }
 
 templ home() {
-	<!layout("Home")>
+	@layout("Home") {
 		<div data-testid="homeTemplate">Welcome to my website.</div>
-	</>
+	}
 }
 
 templ posts(posts []Post) {
