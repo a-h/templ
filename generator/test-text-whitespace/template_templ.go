@@ -82,6 +82,11 @@ func InlineElementsAreNotPadded() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Whitespace (normalised)
+		_, err = io.WriteString(w, ` `)
+		if err != nil {
+			return err
+		}
 		// Text
 		var_7 := `without adding extra spaces.`
 		_, err = io.WriteString(w, var_7)
@@ -111,8 +116,30 @@ func WhiteSpaceInHTMLIsNormalised() templ.Component {
 			return err
 		}
 		// Text
-		var_9 := `newlines and other whitespace are strippedbut it is normalisedlike HTML.`
+		var_9 := `newlines and other whitespace are stripped`
 		_, err = io.WriteString(w, var_9)
+		if err != nil {
+			return err
+		}
+		// Whitespace (normalised)
+		_, err = io.WriteString(w, ` `)
+		if err != nil {
+			return err
+		}
+		// Text
+		var_10 := `but it is normalised`
+		_, err = io.WriteString(w, var_10)
+		if err != nil {
+			return err
+		}
+		// Whitespace (normalised)
+		_, err = io.WriteString(w, ` `)
+		if err != nil {
+			return err
+		}
+		// Text
+		var_11 := `like HTML.`
+		_, err = io.WriteString(w, var_11)
 		if err != nil {
 			return err
 		}
@@ -131,16 +158,16 @@ func WhiteSpaceAroundValues() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		var_10 := ctx
-		ctx = templ.ClearChildren(var_10)
+		var_12 := ctx
+		ctx = templ.ClearChildren(var_12)
 		// Element (standard)
 		_, err = io.WriteString(w, "<p>")
 		if err != nil {
 			return err
 		}
 		// Text
-		var_11 := `templ allows `
-		_, err = io.WriteString(w, var_11)
+		var_13 := `templ allows `
+		_, err = io.WriteString(w, var_13)
 		if err != nil {
 			return err
 		}
@@ -149,9 +176,14 @@ func WhiteSpaceAroundValues() templ.Component {
 		if err != nil {
 			return err
 		}
+		// Whitespace (normalised)
+		_, err = io.WriteString(w, ` `)
+		if err != nil {
+			return err
+		}
 		// Text
-		var_12 := `to be included in sentences.`
-		_, err = io.WriteString(w, var_12)
+		var_14 := `to be included in sentences.`
+		_, err = io.WriteString(w, var_14)
 		if err != nil {
 			return err
 		}

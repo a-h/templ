@@ -1,19 +1,23 @@
 package testtemplelement
 
-templ layout() {
-	<p>header</p>
-	{ children... }
-	<p>footer</p>
-}
+import "fmt"
 
-templ component() {
-	<p>some component</p>
+templ wrapper(index int) {
+	<div id={ fmt.Sprint(index) }>
+		{ children... }
+	</div>
 }
 
 templ template() {
-	@layout() {
-		some text
-		@component()
+	@wrapper(1) {
+		children1
+		@wrapper(2) {
+			children2
+			@wrapper(3) {
+				children3
+				@wrapper(4)
+			}
+		}
 	}
 }
 

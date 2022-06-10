@@ -8,9 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var input = []string{"a", "b", "c"}
-
-const expected = `<p>header</p>some text <p>some component</p><p>footer</p>`
+const expected = `<div id="1">children1 <div id="2">children2 <div id="3">children3 <div id="4"></div></div></div></div>`
 
 func TestFor(t *testing.T) {
 	w := new(strings.Builder)

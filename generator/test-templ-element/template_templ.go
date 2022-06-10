@@ -8,24 +8,38 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 
-func layout() templ.Component {
+// GoExpression
+import "fmt"
+
+func wrapper(index int) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
-		_, err = io.WriteString(w, "<p>")
+		_, err = io.WriteString(w, "<div")
 		if err != nil {
 			return err
 		}
-		// Text
-		var_2 := `header`
-		_, err = io.WriteString(w, var_2)
+		// Element Attributes
+		_, err = io.WriteString(w, " id=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</p>")
+		_, err = io.WriteString(w, "\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, templ.EscapeString(fmt.Sprint(index)))
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, ">")
 		if err != nil {
 			return err
 		}
@@ -34,43 +48,7 @@ func layout() templ.Component {
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = io.WriteString(w, "<p>")
-		if err != nil {
-			return err
-		}
-		// Text
-		var_3 := `footer`
-		_, err = io.WriteString(w, var_3)
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "</p>")
-		if err != nil {
-			return err
-		}
-		return err
-	})
-}
-
-func component() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		var_4 := ctx
-		ctx = templ.ClearChildren(var_4)
-		// Element (standard)
-		_, err = io.WriteString(w, "<p>")
-		if err != nil {
-			return err
-		}
-		// Text
-		var_5 := `some component`
-		_, err = io.WriteString(w, var_5)
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "</p>")
+		_, err = io.WriteString(w, "</div>")
 		if err != nil {
 			return err
 		}
@@ -82,13 +60,13 @@ func template() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		var_6 := ctx
-		ctx = templ.ClearChildren(var_6)
+		var_2 := ctx
+		ctx = templ.ClearChildren(var_2)
 		// TemplElement
-		var_7 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		var_3 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			// Text
-			var_8 := `some text`
-			_, err = io.WriteString(w, var_8)
+			var_4 := `children1`
+			_, err = io.WriteString(w, var_4)
 			if err != nil {
 				return err
 			}
@@ -98,13 +76,51 @@ func template() templ.Component {
 				return err
 			}
 			// TemplElement
-			err = component().Render(ctx, w)
+			var_5 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+				// Text
+				var_6 := `children2`
+				_, err = io.WriteString(w, var_6)
+				if err != nil {
+					return err
+				}
+				// Whitespace (normalised)
+				_, err = io.WriteString(w, ` `)
+				if err != nil {
+					return err
+				}
+				// TemplElement
+				var_7 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+					// Text
+					var_8 := `children3`
+					_, err = io.WriteString(w, var_8)
+					if err != nil {
+						return err
+					}
+					// Whitespace (normalised)
+					_, err = io.WriteString(w, ` `)
+					if err != nil {
+						return err
+					}
+					// TemplElement
+					err = wrapper(4).Render(ctx, w)
+					if err != nil {
+						return err
+					}
+					return err
+				})
+				err = wrapper(3).Render(templ.WithChildren(ctx, var_7), w)
+				if err != nil {
+					return err
+				}
+				return err
+			})
+			err = wrapper(2).Render(templ.WithChildren(ctx, var_5), w)
 			if err != nil {
 				return err
 			}
 			return err
 		})
-		err = layout().Render(templ.WithChildren(ctx, var_7), w)
+		err = wrapper(1).Render(templ.WithChildren(ctx, var_3), w)
 		if err != nil {
 			return err
 		}

@@ -26,7 +26,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							Col:   1,
 						},
 						To: Position{
-							Index: 16,
+							Index: 14,
 							Line:  0,
 							Col:   14,
 						},
@@ -120,10 +120,11 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							Value: "other2",
 							Range: Range{
 								From: Position{22, 1, 5},
-								To:   Position{32, 2, 3},
+								To:   Position{28, 1, 11},
 							},
 						},
 					},
+					Whitespace{Value: "\n\t\t\t"},
 				},
 			},
 		},
