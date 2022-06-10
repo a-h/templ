@@ -35,7 +35,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 			},
 		},
 		{
-			name: "tempelement: simple, block with text",
+			name: "templelement: simple, block with text",
 			input: `@Other(p.Test) {
 	some words
 }`,
