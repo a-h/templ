@@ -93,7 +93,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 			},
 		},
 		{
-			name: "tempelement: simple, block with templelement as child",
+			name: "templelement: simple, block with templelement as child",
 			input: `@Other(p.Test) {
 				@other2
 			}`,
