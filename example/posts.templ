@@ -24,17 +24,17 @@ templ navTemplate() {
 	</nav>
 }
 
-templ layout(name string, content templ.Component) {
+templ layout(name string) {
 	<html>
 		<head><title>{ name }</title></head>
 		<body>
-			{! headerTemplate(name) }
-			{! navTemplate() }
+			@headerTemplate(name) 
+			@navTemplate() 
 			<main>
-				{! content }
+				{ children... }
 			</main>
 		</body>
-		{! footerTemplate() }
+		@footerTemplate()
 	</html>
 }
 
@@ -56,6 +56,8 @@ templ home() {
 }
 
 templ posts(posts []Post) {
-	{! layout("Posts", postsTemplate(posts)) }
+	@layout("Posts") {
+		@postsTemplate(posts)
+	}
 }
 

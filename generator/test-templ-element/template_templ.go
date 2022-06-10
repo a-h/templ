@@ -65,7 +65,7 @@ func template() templ.Component {
 		// TemplElement
 		var_3 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			// Text
-			var_4 := `children1`
+			var_4 := `child1`
 			_, err = io.WriteString(w, var_4)
 			if err != nil {
 				return err
@@ -78,7 +78,7 @@ func template() templ.Component {
 			// TemplElement
 			var_5 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 				// Text
-				var_6 := `children2`
+				var_6 := `child2`
 				_, err = io.WriteString(w, var_6)
 				if err != nil {
 					return err
@@ -91,7 +91,7 @@ func template() templ.Component {
 				// TemplElement
 				var_7 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 					// Text
-					var_8 := `children3`
+					var_8 := `child3`
 					_, err = io.WriteString(w, var_8)
 					if err != nil {
 						return err
