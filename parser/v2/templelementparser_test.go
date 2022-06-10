@@ -14,7 +14,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 		expected TemplElementExpression
 	}{
 		{
-			name:  "tempelement: simple",
+			name:  "templelement: simple",
 			input: `@Other(p.Test)` + "\n",
 			expected: TemplElementExpression{
 				Expression: Expression{
