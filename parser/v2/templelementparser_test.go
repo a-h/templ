@@ -63,7 +63,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 			},
 		},
 		{
-			name: "tempelement: simple, block with anchor",
+			name: "templelement: simple, block with anchor",
 			input: `@Other(p.Test){
 			<a href="someurl" />
 		}`,
