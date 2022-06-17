@@ -141,7 +141,7 @@ Template files end with a `.templ` extension and combine Go code with HTML-like 
 
 Since `templ` files are as close to Go as possible, they start with a package expression.
 
-```
+```go
 package templ
 ```
 
@@ -149,7 +149,7 @@ package templ
 
 After the package expression, you can import other Go packages, just like Go files.
 
-```
+```go
 import "strings"
 ```
 
@@ -161,7 +161,7 @@ Outside of the `templ` statement, you can use any Go code you like.
 
 Once the package and import statements are done, we can start a component using the `templ Name(params Params) {` expression. The `templ` expressions are converted into Go functions when the `templ generate` command is executed.
 
-```
+```html
 templ AddressView(addr Address) {
 	<div>{ addr.Address1 }</div>
 	<div>{ addr.Address2 }</div>
@@ -176,7 +176,7 @@ Each `templ.Component` can contain HTML elements, strings, for loops, switch sta
 
 Components can be referenced in the body of the template, and can pass data between then, for example, using the `AddressTemplate` from the `PersonTemplate`.
 
-```
+```html
 templ PersonTemplate(p Person) {
 	<div>
 	    for _, v := range p.Addresses {
@@ -190,7 +190,7 @@ It's also possible to create "higher order components" that compose other instan
 
 For example, this template accepts 3 templates (header, footer, body) and renders all 3 of them in the expected order.
 
-```
+```html
 templ Layout(header, footer, body templ.Component) {
 	{! header }
 	{! body }
@@ -213,7 +213,7 @@ func Raw(s string) templ.Component {
 
 Then call it in a template. So long as the `Raw` function is in scope, you can use it.
 
-```
+```html
 {! Raw("<script>alert('xss vector');</script>") }
 ```
 
@@ -244,13 +244,13 @@ HTML elements look like HTML and you can write static attributes into them, just
 
 All elements must be balanced (have a start and and end tag, or be self-closing).
 
-```
+```html
 <div id="address1">{ addr.Address1 }</div>
 ```
 
 You can also have dynamic attributes that use template parameters, other Go variables that happen to be in scope, or call Go functions that return a string. Don't worry about HTML encoding element text and attribute values, that will be taken care of automatically.
 
-```
+```html
 <a title={ p.TitleText }>{ strings.ToUpper(p.Name()) }</a>
 ```
 
@@ -258,13 +258,13 @@ Boolean attributes (see https://html.spec.whatwg.org/multipage/common-microsynta
 
 With constant values:
 
-```
+```html
 <hr noshade/>
 ```
 
 To set boolean attributes using variables or template parameters, a question mark after the attribute name is used to denote that the attribute is boolean. In this example, the `noshade` attribute would be omitted from the output altogether:
 
-```
+```html
 <hr noshade?={ false } />
 ```
 
@@ -272,7 +272,7 @@ The `a` element's `href` attribute is treated differently. Templ expects you to 
 
 Templ provides a `templ.URL` function that sanitizes input URLs and checks that the protocol is http/https/mailto rather than `javascript` or another unexpected protocol.
 
-```
+```html
 <a href={ templ.URL(p.URL) }>{ strings.ToUpper(p.Name()) }</a>
 ```
 
@@ -288,31 +288,31 @@ Plain HTML:
 
 Constant Go expressions:
 
-```
+```html
 <div>{ "this is a string" }</div>
 ```
 
 The backtick constant expression:
 
-```
+```html
 <div>{ `this is also a string` }</div>
 ```
 
 Functions that return a string:
 
-```
+```html
 <div>{ time.Now().String() }</div>
 ```
 
 A string parameter, or variable that's in scope:
 
-```
+```html
 <div>{ v.s }</div>
 ```
 
 templ will look for Go code. If, for some reason, you need start a sentence with `for`, `switch` or another Go statement, you can use `<>` and `</>` to encapsulate raw HTML.
 
-```
+```html
 <div>
 	<>
 	for x := 0; x < 100; x ++ {
@@ -325,7 +325,7 @@ templ will look for Go code. If, for some reason, you need start a sentence with
 
 `onClick` and other `on*` handlers have special behaviour, they expect a reference to a `script` template.
 
-```
+```go
 package testscriptusage
 
 script withParameters(a string, b string, c int) {
@@ -354,7 +354,7 @@ Templ components can have CSS associated with them. CSS classes are created with
 
 All variable CSS values are passed through a value sanitizer to provide some protection against malicious data being added to CSS.
 
-```
+```css
 css className() {
 	background-color: #ffffff;
 	color: { red };
@@ -363,7 +363,7 @@ css className() {
 
 CSS class components can be used within templates.
 
-```
+```html
 templ Button(text string) {
 	<button class={ templ.Classes(className(), templ.Class("other")) } type="button">{ text }</button>
 }
@@ -373,7 +373,7 @@ The first time that the component is rendered in a HTTP request, it will render 
 
 For example, if this template is rendered in a request:
 
-```
+```html
 templ TwoButtons() {
 	{! Button("A") }
 	{! Button("B") }
@@ -406,7 +406,7 @@ http.ListenAndServe(":8000:, handler)
 
 Templates can contain if/else statements that follow the same pattern as Go.
 
-```
+```html
 if p.Type == "test" {
 	<span>{ "Test user" }</span>
 } else {
@@ -418,7 +418,7 @@ if p.Type == "test" {
 
 Templates have the same loop behaviour as Go.
 
-```
+```html
 for _, v := range p.Addresses {
 	<li>{ v.City }</li>
 }
@@ -428,7 +428,7 @@ for _, v := range p.Addresses {
 
 Switch statements work in the same way as they do in Go. 
 
-```
+```html
 switch p.Type {
 	case "test":
 		<span>{ "Test user" }</span>
@@ -441,7 +441,7 @@ switch p.Type {
 
 ## Full example
 
-```templ
+```html
 package templ
 
 import "strings"
@@ -693,34 +693,11 @@ goreleaser --rm-dist
 
 The binaries are created by me and signed by my GPG key. You can verify with my key https://adrianhesketh.com/a-h.gpg
 
-# Inspiration
-
-Doesn't this look like a lot like https://github.com/valyala/quicktemplate ?
-
-Yes, yes it does. I looked at the landscape of Go templating languages before I started writing code and my initial plan was to improve the IDE support of quicktemplate, see https://github.com/valyala/quicktemplate/issues/80
-
-The package author didn't respond (hey, we're all busy), and looking through the code, I realised that it would be hard to modify what's there to have the concept of source mapping, mostly because there's no internal object model of the language, it reads and emits code in one go.
-
-It's also a really feature rich project, with all sorts of formatters, and support for various languages (JSON etc.), so I borrowed some syntax ideas, but left the code. If `valyala` is up for it, I'd be happy to help integrate the ideas from here. I just want Go to have a templating language with great IDE support.
-
 ## Hot reload
 
 For hot reload, you can use https://github.com/cosmtrek/air
 
 For documentation on how to use it with templ see https://adrianhesketh.com/2021/05/28/templ-hot-reload-with-air/
-
-### Help needed
-
-The project is looking for help with:
-
-* Adding features to the Language Server implementation, it just does autocomplete and error reporting the moment. It needs to be able to do definition and add imports automatically.
-* Examples and testing of the tools.
-* Writing a blog post that demonstrates using the tool to build a form-based Web application.
-* Testing (including fuzzing), benchmarking and optimisation.
-* An example of a web-based UI component library would be very useful, a more advanced version of the integration test suite, thatwould be a Go web server that runs the compiled `templ` file along with example JSON payloads that match the expected data structure types and renders the content - a UI playground. If it could do hot-reload, amazing.
-* Low priority, but I'm thinking of developing a CSS-in-Go implementation to work in parallel. This might take the form of a pre-processor which would collect all "style" attributes of elements and automatically calculate a minimum set of CSS classes that could be created and applied to the elements - but a first pass could just be a way to define CSS classes in Go to allow the use of CSS variables.
-
-Please get in touch if you're interested in building a feature as I don't want people to spend time on something that's already being worked on, or ends up being a waste of their time because it can't be integrated.
 
 # Writing and examples
 
@@ -736,7 +713,7 @@ templ is designed to prevent user provided data from being used to inject vulner
 
 `<script>` and `<style>` tags could allow user data to inject vulnerabilities, so variables are not permitted in these sections.
 
-```
+```html
 templ Example() {
   <script type="text/javascript">
     function showAlert() {
@@ -751,8 +728,8 @@ templ Example() {
 
 `onClick` attributes, and other `on*` attributes are used to execute JavaScript. To prevent user data from being unescapted, `on*` attributes accept a `templ.ComponentScript`.
 
-```
-script onClickHandler(msg stringg) {
+```html
+script onClickHandler(msg string) {
   alert(msg);
 }
 
@@ -765,7 +742,7 @@ templ Example(msg string) {
 
 Style attributes cannot be expressions, only constants, to avoid escaping vulnerabilities. templ style templates (`css className()`) should be used instead.
 
-```
+```html
 templ Example() {
   <div style={ "will throw an error" }</div>
 }
@@ -773,13 +750,13 @@ templ Example() {
 
 Class names are escaped unless bypassed.
 
-```
+```html
 templ Example() {
   <div class={ templ.CSSClasses(templ.Class("unsafe</style&gt;-will-sanitized"), templ.SafeClass("sanitization bypassed")) }</div>
 }
 ```
 
-```
+```html
 templ Example() {
   <div>Node text is not modified at all.</div>
   <div>{ "will be escaped using templ.Escape" }</div>
@@ -788,7 +765,7 @@ templ Example() {
 
 `href` attributes must be a `templ.SafeURL` and are sanitized to remove JavaScript URLs unless bypassed.
 
-```
+```html
 templ Example() {
   <a href="http://constants.example.com/are/not/sanitized">Text</a>
   <a href={ templ.URL("will be sanitized by templ.URL to remove potential attacks") }</a>
@@ -798,7 +775,7 @@ templ Example() {
 
 Within css blocks, property names, and constant CSS property values are not sanitized or escaped.
 
-```
+```css
 css className() {
 	background-color: #ffffff;
 }
@@ -806,7 +783,7 @@ css className() {
 
 CSS property values based on expressions are passed through `templ.SanitizeCSS` to replace potentially unsafe values with placeholders.
 
-```
+```css
 css className() {
 	color: { red };
 }
