@@ -36,6 +36,7 @@ type Storybook struct {
 	Handlers map[string]http.Handler
 	// Handler used to serve Storybook, defaults to filesystem at ./storybook-server/storybook-static.
 	StaticHandler http.Handler
+	Header        string
 	Server        http.Server
 	Log           *zap.Logger
 }
@@ -45,6 +46,12 @@ type StorybookConfig func(*Storybook)
 func WithServerAddr(addr string) StorybookConfig {
 	return func(sb *Storybook) {
 		sb.Server.Addr = addr
+	}
+}
+
+func WithHeader(header string) StorybookConfig {
+	return func(s *Storybook) {
+		s.Header = header
 	}
 }
 
@@ -222,6 +229,11 @@ func (sh *Storybook) configureStorybook() (configHasChanged bool, err error) {
 	configHasChanged = before != after
 	// Configure storybook Preview URL.
 	err = os.WriteFile(filepath.Join(sh.Path, ".storybook/preview.js"), []byte(previewJS), os.ModePerm)
+	if err != nil {
+		return
+	}
+	// Configure preview-head.html
+	err = os.WriteFile(filepath.Join(sh.Path, ".storybook/preview-head.html"), []byte(sh.Header), os.ModePerm)
 	return
 }
 
