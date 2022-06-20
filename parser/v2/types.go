@@ -487,7 +487,7 @@ func (e RawElement) Write(w io.Writer, indent int) error {
 			return err
 		}
 	}
-	if _, err := w.Write([]byte("/>")); err != nil {
+	if _, err := w.Write([]byte(">")); err != nil {
 		return err
 	}
 	// Contents.

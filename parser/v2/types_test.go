@@ -63,6 +63,25 @@ templ input(value, validation string) {
 `,
 		},
 		{
+			name: "script tags are not converted to self-closing elements",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<script src="https://example.com/myscript.js"></script>
+}
+
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<script src="https://example.com/myscript.js"></script>
+}
+
+`,
+		},
+		{
 			name: "empty elements stay on the same line",
 			input: ` // first line removed to make indentation clear in Go code
 package test
