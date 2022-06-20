@@ -77,6 +77,7 @@ func (p templSelfClosingElementExpressionParser) asTemplElement(parts []interfac
 		Expression: parts[1].(Expression),
 	}, true
 }
+
 func (p templSelfClosingElementExpressionParser) parseExpression(pi parse.Input) parse.Result {
 	start := pi.Index()
 	var e Expression
