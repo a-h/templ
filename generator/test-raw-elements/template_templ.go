@@ -12,14 +12,16 @@ func StyleElement() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 // RawElement
 		_, err = io.WriteString(w, "<style>")
 		if err != nil {
 			return err
 		}
 // Text
-var_1 := `<!-- Some stuff -->`
-_, err = io.WriteString(w, var_1)
+var_2 := `<!-- Some stuff -->`
+_, err = io.WriteString(w, var_2)
 if err != nil {
 	return err
 }
@@ -38,6 +40,8 @@ func ScriptElement() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_3 := ctx
+		ctx = templ.ClearChildren(var_3)
 // RawElement
 		_, err = io.WriteString(w, "<script")
 		if err != nil {
@@ -53,13 +57,13 @@ func ScriptElement() templ.Component {
 			return err
 		}
 // Text
-var_2 := `
+var_4 := `
     $("div").marquee();
     function test() {
           window.open("https://example.com")
     }
   `
-_, err = io.WriteString(w, var_2)
+_, err = io.WriteString(w, var_4)
 if err != nil {
 	return err
 }

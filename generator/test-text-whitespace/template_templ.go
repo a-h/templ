@@ -12,14 +12,16 @@ func WhitespaceIsAddedWithinTemplStatements() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		_, err = io.WriteString(w, "<p>")
 		if err != nil {
 			return err
 		}
 		// Text
-		var_1 := `This is some text.`
-		_, err = io.WriteString(w, var_1)
+		var_2 := `This is some text.`
+		_, err = io.WriteString(w, var_2)
 		if err != nil {
 			return err
 		}
@@ -31,8 +33,8 @@ func WhitespaceIsAddedWithinTemplStatements() templ.Component {
 		// If
 		if true {
 			// Text
-			var_2 := `So is this.`
-			_, err = io.WriteString(w, var_2)
+			var_3 := `So is this.`
+			_, err = io.WriteString(w, var_3)
 			if err != nil {
 				return err
 			}
@@ -52,14 +54,16 @@ func InlineElementsAreNotPadded() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_4 := ctx
+		ctx = templ.ClearChildren(var_4)
 		// Element (standard)
 		_, err = io.WriteString(w, "<p>")
 		if err != nil {
 			return err
 		}
 		// Text
-		var_3 := `Inline text `
-		_, err = io.WriteString(w, var_3)
+		var_5 := `Inline text `
+		_, err = io.WriteString(w, var_5)
 		if err != nil {
 			return err
 		}
@@ -69,8 +73,8 @@ func InlineElementsAreNotPadded() templ.Component {
 			return err
 		}
 		// Text
-		var_4 := `is spaced properly`
-		_, err = io.WriteString(w, var_4)
+		var_6 := `is spaced properly`
+		_, err = io.WriteString(w, var_6)
 		if err != nil {
 			return err
 		}
@@ -84,8 +88,8 @@ func InlineElementsAreNotPadded() templ.Component {
 			return err
 		}
 		// Text
-		var_5 := `without adding extra spaces.`
-		_, err = io.WriteString(w, var_5)
+		var_7 := `without adding extra spaces.`
+		_, err = io.WriteString(w, var_7)
 		if err != nil {
 			return err
 		}
@@ -104,14 +108,16 @@ func WhiteSpaceInHTMLIsNormalised() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_8 := ctx
+		ctx = templ.ClearChildren(var_8)
 		// Element (standard)
 		_, err = io.WriteString(w, "<p>")
 		if err != nil {
 			return err
 		}
 		// Text
-		var_6 := `newlines and other whitespace are stripped`
-		_, err = io.WriteString(w, var_6)
+		var_9 := `newlines and other whitespace are stripped`
+		_, err = io.WriteString(w, var_9)
 		if err != nil {
 			return err
 		}
@@ -121,8 +127,8 @@ func WhiteSpaceInHTMLIsNormalised() templ.Component {
 			return err
 		}
 		// Text
-		var_7 := `but it is normalised`
-		_, err = io.WriteString(w, var_7)
+		var_10 := `but it is normalised`
+		_, err = io.WriteString(w, var_10)
 		if err != nil {
 			return err
 		}
@@ -132,8 +138,8 @@ func WhiteSpaceInHTMLIsNormalised() templ.Component {
 			return err
 		}
 		// Text
-		var_8 := `like HTML.`
-		_, err = io.WriteString(w, var_8)
+		var_11 := `like HTML.`
+		_, err = io.WriteString(w, var_11)
 		if err != nil {
 			return err
 		}
@@ -152,14 +158,16 @@ func WhiteSpaceAroundValues() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_12 := ctx
+		ctx = templ.ClearChildren(var_12)
 		// Element (standard)
 		_, err = io.WriteString(w, "<p>")
 		if err != nil {
 			return err
 		}
 		// Text
-		var_9 := `templ allows `
-		_, err = io.WriteString(w, var_9)
+		var_13 := `templ allows `
+		_, err = io.WriteString(w, var_13)
 		if err != nil {
 			return err
 		}
@@ -174,8 +182,8 @@ func WhiteSpaceAroundValues() templ.Component {
 			return err
 		}
 		// Text
-		var_10 := `to be included in sentences.`
-		_, err = io.WriteString(w, var_10)
+		var_14 := `to be included in sentences.`
+		_, err = io.WriteString(w, var_14)
 		if err != nil {
 			return err
 		}

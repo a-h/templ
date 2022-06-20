@@ -43,6 +43,8 @@ func visualisation(templFileName string, left, right templ.Component) templ.Comp
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		_, err = io.WriteString(w, "<html>")
 		if err != nil {
@@ -69,8 +71,8 @@ func visualisation(templFileName string, left, right templ.Component) templ.Comp
 			return err
 		}
 		// Text
-		var_1 := `- Source Map Visualisation`
-		_, err = io.WriteString(w, var_1)
+		var_2 := `- Source Map Visualisation`
+		_, err = io.WriteString(w, var_2)
 		if err != nil {
 			return err
 		}
@@ -93,11 +95,11 @@ func visualisation(templFileName string, left, right templ.Component) templ.Comp
 			return err
 		}
 // Text
-var_2 := `
+var_3 := `
 				.mapped { background-color: green }
 				.highlighted { background-color: yellow }
 			`
-_, err = io.WriteString(w, var_2)
+_, err = io.WriteString(w, var_3)
 if err != nil {
 	return err
 }
@@ -130,39 +132,7 @@ if err != nil {
 		}
 		// Element (standard)
 		// Element CSS
-		var var_3 templ.CSSClasses = templ.Classes(row())
-		err = templ.RenderCSS(ctx, w, var_3)
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = io.WriteString(w, " class=")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "\"")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, templ.EscapeString(var_3.String()))
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "\"")
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, ">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		// Element CSS
-		var var_4 templ.CSSClasses = templ.Classes(column(), code())
+		var var_4 templ.CSSClasses = templ.Classes(row())
 		err = templ.RenderCSS(ctx, w, var_4)
 		if err != nil {
 			return err
@@ -192,15 +162,6 @@ if err != nil {
 		if err != nil {
 			return err
 		}
-		// CallTemplate
-		err = left.Render(ctx, w)
-		if err != nil {
-			return err
-		}
-		_, err = io.WriteString(w, "</div>")
-		if err != nil {
-			return err
-		}
 		// Element (standard)
 		// Element CSS
 		var var_5 templ.CSSClasses = templ.Classes(column(), code())
@@ -222,6 +183,47 @@ if err != nil {
 			return err
 		}
 		_, err = io.WriteString(w, templ.EscapeString(var_5.String()))
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, ">")
+		if err != nil {
+			return err
+		}
+		// CallTemplate
+		err = left.Render(ctx, w)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "</div>")
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		// Element CSS
+		var var_6 templ.CSSClasses = templ.Classes(column(), code())
+		err = templ.RenderCSS(ctx, w, var_6)
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "<div")
+		if err != nil {
+			return err
+		}
+		// Element Attributes
+		_, err = io.WriteString(w, " class=")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, "\"")
+		if err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, templ.EscapeString(var_6.String()))
 		if err != nil {
 			return err
 		}
@@ -292,10 +294,12 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_7 := ctx
+		ctx = templ.ClearChildren(var_7)
 		// Element (standard)
 		// Element CSS
-		var var_6 templ.CSSClasses = templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))
-		err = templ.RenderCSS(ctx, w, var_6)
+		var var_8 templ.CSSClasses = templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))
+		err = templ.RenderCSS(ctx, w, var_8)
 		if err != nil {
 			return err
 		}
@@ -317,7 +321,7 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(var_6.String()))
+		_, err = io.WriteString(w, templ.EscapeString(var_8.String()))
 		if err != nil {
 			return err
 		}
@@ -333,8 +337,8 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_7 templ.ComponentScript = highlight(sourceID, targetID)
-		_, err = io.WriteString(w, var_7.Call)
+		var var_9 templ.ComponentScript = highlight(sourceID, targetID)
+		_, err = io.WriteString(w, var_9.Call)
 		if err != nil {
 			return err
 		}
@@ -350,8 +354,8 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_8 templ.ComponentScript = removeHighlight(sourceID, targetID)
-		_, err = io.WriteString(w, var_8.Call)
+		var var_10 templ.ComponentScript = removeHighlight(sourceID, targetID)
+		_, err = io.WriteString(w, var_10.Call)
 		if err != nil {
 			return err
 		}

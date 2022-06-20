@@ -12,6 +12,8 @@ func render() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (void)
 		_, err = io.WriteString(w, "<br>")
 		if err != nil {

@@ -33,6 +33,28 @@ func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
 	return cf(ctx, w)
 }
 
+type childrenContextKey string
+
+var contextKeyChildren = childrenContextKey("children")
+
+func WithChildren(ctx context.Context, children Component) context.Context {
+	return context.WithValue(ctx, contextKeyChildren, &children)
+}
+func ClearChildren(ctx context.Context) context.Context {
+	return context.WithValue(ctx, contextKeyChildren, nil)
+}
+// NopComponent is a component that doesn't render anything.
+var NopComponent = ComponentFunc(func(ctx context.Context, w io.Writer) error { return nil })
+
+// GetChildren from the context.
+func GetChildren(ctx context.Context) Component {
+	component, ok := ctx.Value(contextKeyChildren).(*Component)
+	if !ok || component == nil {
+		return NopComponent
+	}
+	return *component
+}
+
 // ComponentHandler is a http.Handler that renders components.
 type ComponentHandler struct {
 	Component    Component

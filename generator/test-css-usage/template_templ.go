@@ -34,10 +34,12 @@ func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		// Element CSS
-		var var_1 templ.CSSClasses = templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe"))
-		err = templ.RenderCSS(ctx, w, var_1)
+		var var_2 templ.CSSClasses = templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe"))
+		err = templ.RenderCSS(ctx, w, var_2)
 		if err != nil {
 			return err
 		}
@@ -54,7 +56,7 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(var_1.String()))
+		_, err = io.WriteString(w, templ.EscapeString(var_2.String()))
 		if err != nil {
 			return err
 		}
@@ -87,6 +89,8 @@ func ThreeButtons() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_3 := ctx
+		ctx = templ.ClearChildren(var_3)
 		// CallTemplate
 		err = Button("A").Render(ctx, w)
 		if err != nil {
@@ -99,8 +103,8 @@ func ThreeButtons() templ.Component {
 		}
 		// Element (standard)
 		// Element CSS
-		var var_2 templ.CSSClasses = templ.Classes(green())
-		err = templ.RenderCSS(ctx, w, var_2)
+		var var_4 templ.CSSClasses = templ.Classes(green())
+		err = templ.RenderCSS(ctx, w, var_4)
 		if err != nil {
 			return err
 		}
@@ -117,7 +121,7 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(var_2.String()))
+		_, err = io.WriteString(w, templ.EscapeString(var_4.String()))
 		if err != nil {
 			return err
 		}

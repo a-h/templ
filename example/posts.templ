@@ -24,22 +24,18 @@ templ navTemplate() {
 	</nav>
 }
 
-templ layout(name string, content templ.Component) {
+templ layout(name string) {
 	<html>
 		<head><title>{ name }</title></head>
 		<body>
-			{! headerTemplate(name) }
-			{! navTemplate() }
+			@headerTemplate(name) 
+			@navTemplate() 
 			<main>
-				{! content }
+				{ children... }
 			</main>
 		</body>
-		{! footerTemplate() }
+		@footerTemplate()
 	</html>
-}
-
-templ homeTemplate() {
-	<div data-testid="homeTemplate">Welcome to my website.</div>
 }
 
 templ postsTemplate(posts []Post) {
@@ -54,10 +50,14 @@ templ postsTemplate(posts []Post) {
 }
 
 templ home() {
-	{! layout("Home", homeTemplate()) }
+	@layout("Home") {
+		<div data-testid="homeTemplate">Welcome to my website.</div>
+	}
 }
 
 templ posts(posts []Post) {
-	{! layout("Posts", postsTemplate(posts)) }
+	@layout("Posts") {
+		@postsTemplate(posts)
+	}
 }
 

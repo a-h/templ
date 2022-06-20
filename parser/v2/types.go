@@ -565,6 +565,46 @@ func (cte CallTemplateExpression) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, `{! `+cte.Expression.Value+` }`)
 }
 
+// TemplElementExpression can be used to create and render a template using data.
+// @Other(p.First, p.Last)
+// or it can be used to render a template parameter.
+// @v
+type TemplElementExpression struct {
+	// Expression returns a template to execute.
+	Expression Expression
+	// Children returns the elements in a block element.
+	Children []Node
+}
+
+func (tee TemplElementExpression) IsNode() bool { return true }
+func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
+	if len(tee.Children) == 0 {
+		return writeIndent(w, indent, fmt.Sprintf("@%s", tee.Expression.Value))
+	}
+	if err := writeIndent(w, indent, fmt.Sprintf("@%s {\n", tee.Expression.Value)); err != nil {
+		return err
+	}
+	if err := writeNodesBlock(w, indent+1, tee.Children); err != nil {
+		return err
+	}
+	if err := writeIndent(w, indent, "}"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ChildrenExpression can be used to rended the children of a templ element.
+// { children ... }
+type ChildrenExpression struct{}
+
+func (ChildrenExpression) IsNode() bool { return true }
+func (ChildrenExpression) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "{ children... }"); err != nil {
+		return err
+	}
+	return nil
+}
+
 // if p.Type == "test" && p.thing {
 // }
 type IfExpression struct {

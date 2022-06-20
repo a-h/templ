@@ -175,6 +175,28 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 			continue
 		}
 
+		// Try for a templ element expression.
+		// <!TemplateName(a, b, c) />
+		pr = templElementExpression.Parse(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
+		// Try for a children element expression.
+		// { children... }
+		pr = childrenExpression(pi)
+		if pr.Error != nil {
+			return pr
+		}
+		if pr.Success {
+			op = append(op, pr.Item.(Node))
+			continue
+		}
+
 		// Try for a string expression.
 		// { "abc" }
 		// { strings.ToUpper("abc") }

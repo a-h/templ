@@ -16,6 +16,8 @@ func headerTemplate(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_1 := ctx
+		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		_, err = io.WriteString(w, "<header")
 		if err != nil {
@@ -56,6 +58,8 @@ func footerTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		var_2 := ctx
+		ctx = templ.ClearChildren(var_2)
 		// Element (standard)
 		_, err = io.WriteString(w, "<footer")
 		if err != nil {
@@ -76,8 +80,8 @@ func footerTemplate() templ.Component {
 			return err
 		}
 		// Text
-		var_1 := `&copy; `
-		_, err = io.WriteString(w, var_1)
+		var_3 := `&copy; `
+		_, err = io.WriteString(w, var_3)
 		if err != nil {
 			return err
 		}

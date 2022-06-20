@@ -1,14 +1,14 @@
 package turbo
 
-templ actionTemplate(action string, target string, template templ.Component) {
+templ actionTemplate(action string, target string) {
 	<turbo-stream action={ action } target={ target }>
 		<template>
-			{! template }
+			{ children... }
 		</template>
 	</turbo-stream>
 }
 
 templ removeTemplate(action string, target string) {
-	<turbo-stream action={ action } target={ target }>
-	</turbo-stream>
+	<turbo-stream action={ action } target={ target }></turbo-stream>
 }
+

@@ -26,10 +26,11 @@ func Generate(template parser.TemplateFile, w io.Writer) (sm *parser.SourceMap, 
 }
 
 type generator struct {
-	tf         parser.TemplateFile
-	w          *RangeWriter
-	sourceMap  *parser.SourceMap
-	variableID int
+	tf          parser.TemplateFile
+	w           *RangeWriter
+	sourceMap   *parser.SourceMap
+	variableID  int
+	childrenVar string
 }
 
 func (g *generator) generate() (err error) {
@@ -282,6 +283,15 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "ctx, _ = templ.RenderedScriptsFromContext(ctx)\n"); err != nil {
 			return err
 		}
+		g.childrenVar = g.createVariableName()
+		// children := ctx
+		// ctx = templ.ClearChildren(children)
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s := ctx\n", g.childrenVar)); err != nil {
+			return err
+		}
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("ctx = templ.ClearChildren(%s)\n", g.childrenVar)); err != nil {
+			return err
+		}
 		// Nodes.
 		if err = g.writeNodes(indentLevel, nil, stripWhitespace(t.Children)); err != nil {
 			return err
@@ -390,12 +400,16 @@ func (g *generator) writeNode(indentLevel int, current parser.Node) error {
 		g.writeDocType(indentLevel, n)
 	case parser.Element:
 		g.writeElement(indentLevel, n)
+	case parser.ChildrenExpression:
+		g.writeChildrenExpression(indentLevel)
 	case parser.RawElement:
 		g.writeRawElement(indentLevel, n)
 	case parser.ForExpression:
 		g.writeForExpression(indentLevel, n)
 	case parser.CallTemplateExpression:
 		g.writeCallTemplateExpression(indentLevel, n)
+	case parser.TemplElementExpression:
+		g.writeTemplElementExpression(indentLevel, n)
 	case parser.IfExpression:
 		g.writeIfExpression(indentLevel, n)
 	case parser.SwitchExpression:
@@ -496,6 +510,82 @@ func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpres
 	}
 	// }
 	if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) writeChildrenExpression(indentLevel int) (err error) {
+	if _, err = g.w.WriteIndent(indentLevel, "// Children\n"); err != nil {
+		return err
+	}
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("err = templ.GetChildren(%s).Render(ctx, w)\n", g.childrenVar)); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) writeTemplElementExpression(indentLevel int, n parser.TemplElementExpression) (err error) {
+	if _, err = g.w.WriteIndent(indentLevel, "// TemplElement\n"); err != nil {
+		return err
+	}
+	if len(n.Children) == 0 {
+		return g.writeSelfClosingTemplElementExpression(indentLevel, n)
+	}
+	return g.writeBlockTemplElementExpression(indentLevel, n)
+}
+
+func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.TemplElementExpression) (err error) {
+	var r parser.Range
+	childrenName := g.createVariableName()
+	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {\n"); err != nil {
+		return err
+	}
+	indentLevel++
+	g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Children))
+	// return nil
+	if _, err = g.w.WriteIndent(indentLevel, "return err\n"); err != nil {
+		return err
+	}
+	indentLevel--
+	if _, err = g.w.WriteIndent(indentLevel, "})\n"); err != nil {
+		return err
+	}
+	if _, err = g.w.WriteIndent(indentLevel, `err = `); err != nil {
+		return err
+	}
+	if r, err = g.w.Write(n.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(n.Expression, r)
+	// .Render(templ.WithChildren(ctx, children), w)
+	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), w)\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n parser.TemplElementExpression) (err error) {
+	var r parser.Range
+	if r, err = g.w.WriteIndent(indentLevel, `err = `); err != nil {
+		return err
+	}
+	// Template expression.
+	if r, err = g.w.Write(n.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(n.Expression, r)
+	// .Render(ctx w)
+	if _, err = g.w.Write(".Render(ctx, w)\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
 		return err
 	}
 	return nil
