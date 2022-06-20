@@ -8,10 +8,6 @@ import (
 	"github.com/a-h/lexical/parse"
 )
 
-var templElementExpressionStartParser = parse.Or(parse.String("<! "), parse.String("<!"))
-var templElementExpressionEndParser = parse.Or(parse.String(" >"), parse.String(">"))
-var templElementExpressionCloseTagParser = parse.Or(parse.String(" />"), parse.String("/>"))
-
 var templBlockElementExpression templBlockElementExpressionParser
 
 type templBlockElementExpressionParser struct{}
