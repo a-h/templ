@@ -35,7 +35,7 @@ func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
 
 type childrenContextKey string
 
-var contextKeyChildren = childrenContextKey("children")
+const contextKeyChildren = childrenContextKey("children")
 
 func WithChildren(ctx context.Context, children Component) context.Context {
 	return context.WithValue(ctx, contextKeyChildren, &children)
@@ -43,6 +43,7 @@ func WithChildren(ctx context.Context, children Component) context.Context {
 func ClearChildren(ctx context.Context) context.Context {
 	return context.WithValue(ctx, contextKeyChildren, nil)
 }
+
 // NopComponent is a component that doesn't render anything.
 var NopComponent = ComponentFunc(func(ctx context.Context, w io.Writer) error { return nil })
 
@@ -63,7 +64,7 @@ type ComponentHandler struct {
 	ErrorHandler func(r *http.Request, err error) http.Handler
 }
 
-var componentHandlerErrorMessage = "templ: failed to render template"
+const componentHandlerErrorMessage = "templ: failed to render template"
 
 // ServeHTTP implements the http.Handler interface.
 func (ch *ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -146,7 +147,8 @@ func (classes CSSClasses) String() string {
 }
 
 var safeClassName = regexp.MustCompile(`^-?[_a-zA-Z]+[_-a-zA-Z0-9]*$`)
-var fallbackClassName = ConstantCSSClass("--templ-css-class-safe-name")
+
+const fallbackClassName = ConstantCSSClass("--templ-css-class-safe-name")
 
 // Class returns a sanitized CSS class name.
 func Class(name string) CSSClass {
@@ -197,7 +199,7 @@ func CSSID(name string, css string) string {
 
 type cssContextKey string
 
-var contextKeyRenderedClasses = cssContextKey("renderedClasses")
+const contextKeyRenderedClasses = cssContextKey("renderedClasses")
 
 // RenderedCSSClassesFromContext returns a set of the CSS classes that have already been
 // rendered to the response.
@@ -380,7 +382,7 @@ type ComponentScript struct {
 
 type scriptContextKey string
 
-var contextKeyRenderedScripts = scriptContextKey("scripts")
+const contextKeyRenderedScripts = scriptContextKey("scripts")
 
 // RenderedScriptsFromContext returns a set of the scripts that have already been
 // rendered to the response.
