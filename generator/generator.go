@@ -119,6 +119,10 @@ func (g *generator) writeImports() error {
 		if _, err = g.w.Write("import \"io\"\n"); err != nil {
 			return err
 		}
+		// Buffer namespace.
+		if _, err = g.w.Write("import \"bytes\"\n"); err != nil {
+			return err
+		}
 	}
 	if hasCSS {
 		// strings.Builder is used to create CSS.
@@ -275,6 +279,24 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 	}
 	{
 		indentLevel++
+		// templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if _, err = g.w.WriteIndent(indentLevel, "templBuffer, templIsBuffer := w.(*bytes.Buffer)\n"); err != nil {
+			return err
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "if !templIsBuffer {\n"); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			// templBuffer := new(bytes.Buffer)
+			if _, err = g.w.WriteIndent(indentLevel, "templBuffer = new(bytes.Buffer)\n"); err != nil {
+				return err
+			}
+			indentLevel--
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+			return err
+		}
 		// ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		if _, err = g.w.WriteIndent(indentLevel, "ctx, _ = templ.RenderedCSSClassesFromContext(ctx)\n"); err != nil {
 			return err
@@ -294,6 +316,21 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 		}
 		// Nodes.
 		if err = g.writeNodes(indentLevel, nil, stripWhitespace(t.Children)); err != nil {
+			return err
+		}
+		// Return the buffer.
+		if _, err = g.w.WriteIndent(indentLevel, "if !templIsBuffer {\n"); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			// _, err = io.Copy(w, buf)
+			if _, err = g.w.WriteIndent(indentLevel, "_, err = io.Copy(w, templBuffer)\n"); err != nil {
+				return err
+			}
+			indentLevel--
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
 			return err
 		}
 		// return nil
@@ -430,7 +467,7 @@ func (g *generator) writeDocType(indentLevel int, n parser.DocType) (err error) 
 	if _, err = g.w.WriteIndent(indentLevel, "// DocType\n"); err != nil {
 		return err
 	}
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("_, err = io.WriteString(w, `<!doctype %s>`)\n", n.Value)); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("_, err = templBuffer.WriteString(`<!doctype %s>`)\n", n.Value)); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -519,7 +556,7 @@ func (g *generator) writeChildrenExpression(indentLevel int) (err error) {
 	if _, err = g.w.WriteIndent(indentLevel, "// Children\n"); err != nil {
 		return err
 	}
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("err = templ.GetChildren(%s).Render(ctx, w)\n", g.childrenVar)); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("err = templ.GetChildren(%s).Render(ctx, templBuffer)\n", g.childrenVar)); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -561,8 +598,8 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	// .Render(templ.WithChildren(ctx, children), w)
-	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), w)\n"); err != nil {
+	// .Render(templ.WithChildren(ctx, children), templBuffer)
+	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), templBuffer)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -581,8 +618,8 @@ func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n pa
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	// .Render(ctx w)
-	if _, err = g.w.Write(".Render(ctx, w)\n"); err != nil {
+	// .Render(ctx, templBuffer)
+	if _, err = g.w.Write(".Render(ctx, templBuffer)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -604,8 +641,8 @@ func (g *generator) writeCallTemplateExpression(indentLevel int, n parser.CallTe
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	// .Render(ctx w)
-	if _, err = g.w.Write(".Render(ctx, w)\n"); err != nil {
+	// .Render(ctx, templBuffer)
+	if _, err = g.w.Write(".Render(ctx, templBuffer)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -677,7 +714,7 @@ func (g *generator) writeVoidElement(indentLevel int, n parser.Element) (err err
 	}
 	if len(n.Attributes) == 0 {
 		// <br>
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -685,7 +722,7 @@ func (g *generator) writeVoidElement(indentLevel int, n parser.Element) (err err
 		}
 	} else {
 		// <hr
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -695,7 +732,7 @@ func (g *generator) writeVoidElement(indentLevel int, n parser.Element) (err err
 			return err
 		}
 		// >
-		if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, ">")`+"\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, `_, err = templBuffer.WriteString(">")`+"\n"); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -711,7 +748,7 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 	}
 	if len(n.Attributes) == 0 {
 		// <div>
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -727,7 +764,7 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 			return err
 		}
 		// <div
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -737,7 +774,7 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 			return err
 		}
 		// >
-		if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, ">")`+"\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, `_, err = templBuffer.WriteString(">")`+"\n"); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -747,7 +784,7 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 	// Children.
 	g.writeNodes(indentLevel, n, stripNonCriticalElementWhitespace(n.Children))
 	// </div>
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -782,8 +819,8 @@ func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err erro
 				return err
 			}
 			// Render the CSS before the element if required.
-			// err = templ.RenderCSS(ctx, w, templCSSClassess)
-			if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderCSS(ctx, w, "+classesName+")\n"); err != nil {
+			// err = templ.RenderCSS(ctx, templBuffer, templCSSClassess)
+			if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderCSS(ctx, templBuffer, "+classesName+")\n"); err != nil {
 				return err
 			}
 			if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -816,8 +853,8 @@ func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err e
 		return err
 	}
 	// Render the scripts before the element if required.
-	// err = templ.RenderScripts(ctx, w, a, b, c)
-	if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderScripts(ctx, w, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
+	// err = templ.RenderScripts(ctx, templBuffer, a, b, c)
+	if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderScripts(ctx, templBuffer, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -835,7 +872,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 		switch attr := attrs[i].(type) {
 		case parser.BoolConstantAttribute:
 			name := html.EscapeString(attr.Name)
-			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s")`+"\n", name)); err != nil {
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString(" %s")`+"\n", name)); err != nil {
 				return err
 			}
 			if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -844,7 +881,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 		case parser.ConstantAttribute:
 			name := html.EscapeString(attr.Name)
 			value := html.EscapeString(attr.Value)
-			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=\"%s\"")`+"\n", name, value)); err != nil {
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString(" %s=\"%s\"")`+"\n", name, value)); err != nil {
 				return err
 			}
 			if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -867,7 +904,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 			}
 			{
 				indentLevel++
-				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s")`+"\n", name)); err != nil {
+				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString(" %s")`+"\n", name)); err != nil {
 					return err
 				}
 				if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -882,7 +919,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 		case parser.ExpressionAttribute:
 			attrName := html.EscapeString(attr.Name)
 			// Name
-			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, " %s=")`+"\n", attrName)); err != nil {
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString(" %s=")`+"\n", attrName)); err != nil {
 				return err
 			}
 			if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -890,7 +927,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 			}
 			// Value.
 			// Open quote.
-			if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, "\"")`+"\n"); err != nil {
+			if _, err = g.w.WriteIndent(indentLevel, `_, err = templBuffer.WriteString("\"")`+"\n"); err != nil {
 				return err
 			}
 			if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -910,7 +947,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 				if _, err = g.w.Write("\n"); err != nil {
 					return err
 				}
-				if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString(string("+vn+")))\n"); err != nil {
+				if _, err = g.w.WriteIndent(indentLevel, "_, err = templBuffer.WriteString(templ.EscapeString(string("+vn+")))\n"); err != nil {
 					return err
 				}
 				if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -932,15 +969,15 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 					if _, err = g.w.Write("\n"); err != nil {
 						return err
 					}
-					if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, "+vn+".Call)\n"); err != nil {
+					if _, err = g.w.WriteIndent(indentLevel, "_, err = templBuffer.WriteString("+vn+".Call)\n"); err != nil {
 						return err
 					}
 					if err = g.writeErrorHandler(indentLevel); err != nil {
 						return err
 					}
 				} else {
-					// io.WriteString(w, templ.EscapeString(
-					if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
+					// templBuffer.WriteString(templ.EscapeString(
+					if _, err = g.w.WriteIndent(indentLevel, "_, err = templBuffer.WriteString(templ.EscapeString("); err != nil {
 						return err
 					}
 					// p.Name()
@@ -958,7 +995,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 				}
 			}
 			// Close quote.
-			if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, "\"")`+"\n"); err != nil {
+			if _, err = g.w.WriteIndent(indentLevel, `_, err = templBuffer.WriteString("\"")`+"\n"); err != nil {
 				return err
 			}
 			if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -977,7 +1014,7 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 	}
 	if len(n.Attributes) == 0 {
 		// <div>
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("<%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -985,7 +1022,7 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		}
 	} else {
 		// <div
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("<%s")`+"\n", html.EscapeString(n.Name))); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -995,7 +1032,7 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 			return err
 		}
 		// >
-		if _, err = g.w.WriteIndent(indentLevel, `_, err = io.WriteString(w, ">")`+"\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, `_, err = templBuffer.WriteString(">")`+"\n"); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -1007,7 +1044,7 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		Value: n.Contents,
 	})
 	// </div>
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = io.WriteString(w, "</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -1026,8 +1063,8 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 		return err
 	}
 	var r parser.Range
-	// io.WriteString(w, templ.EscapeString(
-	if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, templ.EscapeString("); err != nil {
+	// templBuffer.WriteString(templ.EscapeString(
+	if _, err = g.w.WriteIndent(indentLevel, "_, err = templBuffer.WriteString(templ.EscapeString("); err != nil {
 		return err
 	}
 	// p.Name()
@@ -1052,8 +1089,8 @@ func (g *generator) writeWhitespace(indentLevel int, n parser.Whitespace) (err e
 	if _, err = g.w.WriteIndent(indentLevel, "// Whitespace (normalised)\n"); err != nil {
 		return err
 	}
-	// _, err = io.WriteString(w, ` `)
-	if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, ` `)\n"); err != nil {
+	// _, err = templBuffer.WriteString(` `)
+	if _, err = g.w.WriteIndent(indentLevel, "_, err = templBuffer.WriteString(` `)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -1071,8 +1108,8 @@ func (g *generator) writeText(indentLevel int, n parser.Text) (err error) {
 	if _, err = g.w.WriteIndent(indentLevel, vn+" := "+createGoString(n.Value)+"\n"); err != nil {
 		return err
 	}
-	// _, err = io.WriteString(w, vn)
-	if _, err = g.w.WriteIndent(indentLevel, "_, err = io.WriteString(w, "+vn+")\n"); err != nil {
+	// _, err = templBuffer.WriteString(vn)
+	if _, err = g.w.WriteIndent(indentLevel, "_, err = templBuffer.WriteString("+vn+")\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
