@@ -67,7 +67,7 @@ type ComponentHandler struct {
 const componentHandlerErrorMessage = "templ: failed to render template"
 
 // ServeHTTP implements the http.Handler interface.
-func (ch *ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (ch ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if ch.Status != 0 {
 		w.WriteHeader(ch.Status)
 	}
@@ -135,7 +135,10 @@ type CSSClasses []CSSClass
 
 // String returns the names of all CSS classes.
 func (classes CSSClasses) String() string {
-	var sb strings.Builder
+	if len(classes) == 0 {
+		return ""
+	}
+	sb := new(strings.Builder)
 	for i := 0; i < len(classes); i++ {
 		c := classes[i]
 		sb.WriteString(c.ClassName())
@@ -191,9 +194,8 @@ func (css ComponentCSSClass) ClassName() string {
 
 // CSSID calculates an ID.
 func CSSID(name string, css string) string {
-	h := sha256.New()
-	h.Write([]byte(css))
-	hp := hex.EncodeToString(h.Sum(nil))[0:4]
+	sum := sha256.Sum256([]byte(css))
+	hp := hex.EncodeToString(sum[:])[0:4]
 	return fmt.Sprintf("%s_%s", name, hp)
 }
 
@@ -270,8 +272,11 @@ func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // RenderCSS renders a <style> element with CSS content, if the styles have not already been rendered.
 func RenderCSS(ctx context.Context, w io.Writer, classes []CSSClass) (err error) {
+	if len(classes) == 0 {
+		return nil
+	}
 	_, rc := RenderedCSSClassesFromContext(ctx)
-	var sb strings.Builder
+	sb := new(strings.Builder)
 	for _, c := range classes {
 		if ccc, ok := c.(ComponentCSSClass); ok {
 			if !rc.Contains(ccc.ClassName()) {
@@ -403,8 +408,11 @@ func RenderedScriptsFromContext(ctx context.Context) (context.Context, *StringSe
 
 // RenderScripts renders a <script> element, if the script has not already been rendered.
 func RenderScripts(ctx context.Context, w io.Writer, scripts ...ComponentScript) (err error) {
+	if len(scripts) == 0 {
+		return nil
+	}
 	_, rs := RenderedScriptsFromContext(ctx)
-	var sb strings.Builder
+	sb := new(strings.Builder)
 	for _, s := range scripts {
 		if !rs.Contains(s.Name) {
 			sb.WriteString(s.Function)
