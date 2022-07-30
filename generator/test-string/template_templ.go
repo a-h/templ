@@ -7,17 +7,25 @@ package teststring
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 
 func render(s string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(s))
+		_, err = templBuffer.WriteString(templ.EscapeString(s))
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

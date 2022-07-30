@@ -7,72 +7,80 @@ package turbo
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 
 func actionTemplate(action string, target string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
-		_, err = io.WriteString(w, "<turbo-stream")
+		_, err = templBuffer.WriteString("<turbo-stream")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " action=")
+		_, err = templBuffer.WriteString(" action=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(action))
+		_, err = templBuffer.WriteString(templ.EscapeString(action))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " target=")
+		_, err = templBuffer.WriteString(" target=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(target))
+		_, err = templBuffer.WriteString(templ.EscapeString(target))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<template>")
+		_, err = templBuffer.WriteString("<template>")
 		if err != nil {
 			return err
 		}
 		// Children
-		err = templ.GetChildren(var_1).Render(ctx, w)
+		err = templ.GetChildren(var_1).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</template>")
+		_, err = templBuffer.WriteString("</template>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</turbo-stream>")
+		_, err = templBuffer.WriteString("</turbo-stream>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -80,55 +88,62 @@ func actionTemplate(action string, target string) templ.Component {
 
 func removeTemplate(action string, target string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_2 := ctx
 		ctx = templ.ClearChildren(var_2)
 		// Element (standard)
-		_, err = io.WriteString(w, "<turbo-stream")
+		_, err = templBuffer.WriteString("<turbo-stream")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " action=")
+		_, err = templBuffer.WriteString(" action=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(action))
+		_, err = templBuffer.WriteString(templ.EscapeString(action))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " target=")
+		_, err = templBuffer.WriteString(" target=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(target))
+		_, err = templBuffer.WriteString(templ.EscapeString(target))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</turbo-stream>")
+		_, err = templBuffer.WriteString("</turbo-stream>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

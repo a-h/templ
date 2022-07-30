@@ -7,6 +7,7 @@ package testcssusage
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 import "strings"
 
 func green() templ.CSSClass {
@@ -32,6 +33,10 @@ func className() templ.CSSClass {
 
 func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
@@ -39,47 +44,50 @@ func Button(text string) templ.Component {
 		// Element (standard)
 		// Element CSS
 		var var_2 templ.CSSClasses = templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe"))
-		err = templ.RenderCSS(ctx, w, var_2)
+		err = templ.RenderCSS(ctx, templBuffer, var_2)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<button")
+		_, err = templBuffer.WriteString("<button")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " class=")
+		_, err = templBuffer.WriteString(" class=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(var_2.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(var_2.String()))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " type=\"button\"")
+		_, err = templBuffer.WriteString(" type=\"button\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(text))
+		_, err = templBuffer.WriteString(templ.EscapeString(text))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</button>")
+		_, err = templBuffer.WriteString("</button>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -87,64 +95,71 @@ func Button(text string) templ.Component {
 
 func ThreeButtons() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_3 := ctx
 		ctx = templ.ClearChildren(var_3)
 		// CallTemplate
-		err = Button("A").Render(ctx, w)
+		err = Button("A").Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
 		// CallTemplate
-		err = Button("B").Render(ctx, w)
+		err = Button("B").Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
 		// Element (standard)
 		// Element CSS
 		var var_4 templ.CSSClasses = templ.Classes(green())
-		err = templ.RenderCSS(ctx, w, var_4)
+		err = templ.RenderCSS(ctx, templBuffer, var_4)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<button")
+		_, err = templBuffer.WriteString("<button")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " class=")
+		_, err = templBuffer.WriteString(" class=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(var_4.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(var_4.String()))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " type=\"button\"")
+		_, err = templBuffer.WriteString(" type=\"button\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString("Green"))
+		_, err = templBuffer.WriteString(templ.EscapeString("Green"))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</button>")
+		_, err = templBuffer.WriteString("</button>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

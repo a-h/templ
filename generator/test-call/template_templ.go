@@ -7,78 +7,86 @@ package testcall
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 
 func personTemplate(p person) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
-		_, err = io.WriteString(w, "<div>")
+		_, err = templBuffer.WriteString("<div>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<h1>")
+		_, err = templBuffer.WriteString("<h1>")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(p.name))
+		_, err = templBuffer.WriteString(templ.EscapeString(p.name))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</h1>")
+		_, err = templBuffer.WriteString("</h1>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<div")
+		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " style=\"font-family: &#39;sans-serif&#39;\"")
+		_, err = templBuffer.WriteString(" style=\"font-family: &#39;sans-serif&#39;\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " id=\"test\"")
+		_, err = templBuffer.WriteString(" id=\"test\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " data-contents=")
+		_, err = templBuffer.WriteString(" data-contents=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(`something with "quotes" and a <tag>`))
+		_, err = templBuffer.WriteString(templ.EscapeString(`something with "quotes" and a <tag>`))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// CallTemplate
-		err = email(p.email).Render(ctx, w)
+		err = email(p.email).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -86,60 +94,67 @@ func personTemplate(p person) templ.Component {
 
 func email(s string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_2 := ctx
 		ctx = templ.ClearChildren(var_2)
 		// Element (standard)
-		_, err = io.WriteString(w, "<div>")
+		_, err = templBuffer.WriteString("<div>")
 		if err != nil {
 			return err
 		}
 		// Text
 		var_3 := `email:`
-		_, err = io.WriteString(w, var_3)
+		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<a")
+		_, err = templBuffer.WriteString("<a")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " href=")
+		_, err = templBuffer.WriteString(" href=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
 		var var_4 templ.SafeURL = templ.URL("mailto: " + s)
-		_, err = io.WriteString(w, templ.EscapeString(string(var_4)))
+		_, err = templBuffer.WriteString(templ.EscapeString(string(var_4)))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(s))
+		_, err = templBuffer.WriteString(templ.EscapeString(s))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</a>")
+		_, err = templBuffer.WriteString("</a>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

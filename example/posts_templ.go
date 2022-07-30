@@ -7,6 +7,7 @@ package main
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 
 // GoExpression
 import "fmt"
@@ -14,41 +15,48 @@ import "time"
 
 func headerTemplate(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
-		_, err = io.WriteString(w, "<header")
+		_, err = templBuffer.WriteString("<header")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " data-testid=\"headerTemplate\"")
+		_, err = templBuffer.WriteString(" data-testid=\"headerTemplate\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<h1>")
+		_, err = templBuffer.WriteString("<h1>")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(name))
+		_, err = templBuffer.WriteString(templ.EscapeString(name))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</h1>")
+		_, err = templBuffer.WriteString("</h1>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</header>")
+		_, err = templBuffer.WriteString("</header>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -56,47 +64,54 @@ func headerTemplate(name string) templ.Component {
 
 func footerTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_2 := ctx
 		ctx = templ.ClearChildren(var_2)
 		// Element (standard)
-		_, err = io.WriteString(w, "<footer")
+		_, err = templBuffer.WriteString("<footer")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " data-testid=\"footerTemplate\"")
+		_, err = templBuffer.WriteString(" data-testid=\"footerTemplate\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<div>")
+		_, err = templBuffer.WriteString("<div>")
 		if err != nil {
 			return err
 		}
 		// Text
 		var_3 := `&copy; `
-		_, err = io.WriteString(w, var_3)
+		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(fmt.Sprintf("%d", time.Now().Year())))
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprintf("%d", time.Now().Year())))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</footer>")
+		_, err = templBuffer.WriteString("</footer>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -104,102 +119,109 @@ func footerTemplate() templ.Component {
 
 func navTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_4 := ctx
 		ctx = templ.ClearChildren(var_4)
 		// Element (standard)
-		_, err = io.WriteString(w, "<nav")
+		_, err = templBuffer.WriteString("<nav")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " data-testid=\"navTemplate\"")
+		_, err = templBuffer.WriteString(" data-testid=\"navTemplate\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = io.WriteString(w, "<ul>")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<li>")
+		_, err = templBuffer.WriteString("<ul>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<a")
+		_, err = templBuffer.WriteString("<li>")
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		_, err = templBuffer.WriteString("<a")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " href=\"/\"")
+		_, err = templBuffer.WriteString(" href=\"/\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Text
 		var_5 := `Home`
-		_, err = io.WriteString(w, var_5)
+		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</a>")
+		_, err = templBuffer.WriteString("</a>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</li>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = io.WriteString(w, "<li>")
+		_, err = templBuffer.WriteString("</li>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<a")
+		_, err = templBuffer.WriteString("<li>")
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		_, err = templBuffer.WriteString("<a")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " href=\"/posts\"")
+		_, err = templBuffer.WriteString(" href=\"/posts\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Text
 		var_6 := `Posts`
-		_, err = io.WriteString(w, var_6)
+		_, err = templBuffer.WriteString(var_6)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</a>")
+		_, err = templBuffer.WriteString("</a>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</li>")
+		_, err = templBuffer.WriteString("</li>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</ul>")
+		_, err = templBuffer.WriteString("</ul>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</nav>")
+		_, err = templBuffer.WriteString("</nav>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -207,79 +229,86 @@ func navTemplate() templ.Component {
 
 func layout(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_7 := ctx
 		ctx = templ.ClearChildren(var_7)
 		// Element (standard)
-		_, err = io.WriteString(w, "<html>")
+		_, err = templBuffer.WriteString("<html>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<head>")
+		_, err = templBuffer.WriteString("<head>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<title>")
+		_, err = templBuffer.WriteString("<title>")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(name))
+		_, err = templBuffer.WriteString(templ.EscapeString(name))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</title>")
+		_, err = templBuffer.WriteString("</title>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</head>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = io.WriteString(w, "<body>")
-		if err != nil {
-			return err
-		}
-		// TemplElement
-		err = headerTemplate(name) .Render(ctx, w)
-		if err != nil {
-			return err
-		}
-		// TemplElement
-		err = navTemplate() .Render(ctx, w)
+		_, err = templBuffer.WriteString("</head>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<main>")
+		_, err = templBuffer.WriteString("<body>")
+		if err != nil {
+			return err
+		}
+		// TemplElement
+		err = headerTemplate(name) .Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		// TemplElement
+		err = navTemplate() .Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		_, err = templBuffer.WriteString("<main>")
 		if err != nil {
 			return err
 		}
 		// Children
-		err = templ.GetChildren(var_7).Render(ctx, w)
+		err = templ.GetChildren(var_7).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</main>")
+		_, err = templBuffer.WriteString("</main>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</body>")
+		_, err = templBuffer.WriteString("</body>")
 		if err != nil {
 			return err
 		}
 		// TemplElement
-		err = footerTemplate().Render(ctx, w)
+		err = footerTemplate().Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</html>")
+		_, err = templBuffer.WriteString("</html>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -287,94 +316,101 @@ func layout(name string) templ.Component {
 
 func postsTemplate(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_8 := ctx
 		ctx = templ.ClearChildren(var_8)
 		// Element (standard)
-		_, err = io.WriteString(w, "<div")
+		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " data-testid=\"postsTemplate\"")
+		_, err = templBuffer.WriteString(" data-testid=\"postsTemplate\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// For
 		for _, p := range posts {
 			// Element (standard)
-			_, err = io.WriteString(w, "<div")
+			_, err = templBuffer.WriteString("<div")
 			if err != nil {
 				return err
 			}
 			// Element Attributes
-			_, err = io.WriteString(w, " data-testid=\"postsTemplatePost\"")
+			_, err = templBuffer.WriteString(" data-testid=\"postsTemplatePost\"")
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, ">")
+			_, err = templBuffer.WriteString(">")
 			if err != nil {
 				return err
 			}
 			// Element (standard)
-			_, err = io.WriteString(w, "<div")
+			_, err = templBuffer.WriteString("<div")
 			if err != nil {
 				return err
 			}
 			// Element Attributes
-			_, err = io.WriteString(w, " data-testid=\"postsTemplatePostName\"")
+			_, err = templBuffer.WriteString(" data-testid=\"postsTemplatePostName\"")
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, ">")
+			_, err = templBuffer.WriteString(">")
 			if err != nil {
 				return err
 			}
 			// StringExpression
-			_, err = io.WriteString(w, templ.EscapeString(p.Name))
+			_, err = templBuffer.WriteString(templ.EscapeString(p.Name))
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, "</div>")
+			_, err = templBuffer.WriteString("</div>")
 			if err != nil {
 				return err
 			}
 			// Element (standard)
-			_, err = io.WriteString(w, "<div")
+			_, err = templBuffer.WriteString("<div")
 			if err != nil {
 				return err
 			}
 			// Element Attributes
-			_, err = io.WriteString(w, " data-testid=\"postsTemplatePostAuthor\"")
+			_, err = templBuffer.WriteString(" data-testid=\"postsTemplatePostAuthor\"")
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, ">")
+			_, err = templBuffer.WriteString(">")
 			if err != nil {
 				return err
 			}
 			// StringExpression
-			_, err = io.WriteString(w, templ.EscapeString(p.Author))
+			_, err = templBuffer.WriteString(templ.EscapeString(p.Author))
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, "</div>")
+			_, err = templBuffer.WriteString("</div>")
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, "</div>")
+			_, err = templBuffer.WriteString("</div>")
 			if err != nil {
 				return err
 			}
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -382,6 +418,10 @@ func postsTemplate(posts []Post) templ.Component {
 
 func home() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_9 := ctx
@@ -389,34 +429,37 @@ func home() templ.Component {
 		// TemplElement
 		var_10 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			// Element (standard)
-			_, err = io.WriteString(w, "<div")
+			_, err = templBuffer.WriteString("<div")
 			if err != nil {
 				return err
 			}
 			// Element Attributes
-			_, err = io.WriteString(w, " data-testid=\"homeTemplate\"")
+			_, err = templBuffer.WriteString(" data-testid=\"homeTemplate\"")
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, ">")
+			_, err = templBuffer.WriteString(">")
 			if err != nil {
 				return err
 			}
 			// Text
 			var_11 := `Welcome to my website.`
-			_, err = io.WriteString(w, var_11)
+			_, err = templBuffer.WriteString(var_11)
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, "</div>")
+			_, err = templBuffer.WriteString("</div>")
 			if err != nil {
 				return err
 			}
 			return err
 		})
-		err = layout("Home").Render(templ.WithChildren(ctx, var_10), w)
+		err = layout("Home").Render(templ.WithChildren(ctx, var_10), templBuffer)
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -424,6 +467,10 @@ func home() templ.Component {
 
 func posts(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_12 := ctx
@@ -431,15 +478,18 @@ func posts(posts []Post) templ.Component {
 		// TemplElement
 		var_13 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			// TemplElement
-			err = postsTemplate(posts).Render(ctx, w)
+			err = postsTemplate(posts).Render(ctx, templBuffer)
 			if err != nil {
 				return err
 			}
 			return err
 		})
-		err = layout("Posts").Render(templ.WithChildren(ctx, var_13), w)
+		err = layout("Posts").Render(templ.WithChildren(ctx, var_13), templBuffer)
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

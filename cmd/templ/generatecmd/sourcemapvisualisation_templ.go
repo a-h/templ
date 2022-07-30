@@ -7,6 +7,7 @@ package generatecmd
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 import "strings"
 
 func row() templ.CSSClass {
@@ -41,56 +42,60 @@ func code() templ.CSSClass {
 
 func visualisation(templFileName string, left, right templ.Component) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
-		_, err = io.WriteString(w, "<html>")
+		_, err = templBuffer.WriteString("<html>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<head>")
+		_, err = templBuffer.WriteString("<head>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<title>")
+		_, err = templBuffer.WriteString("<title>")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(templFileName))
+		_, err = templBuffer.WriteString(templ.EscapeString(templFileName))
 		if err != nil {
 			return err
 		}
 		// Whitespace (normalised)
-		_, err = io.WriteString(w, ` `)
+		_, err = templBuffer.WriteString(` `)
 		if err != nil {
 			return err
 		}
 		// Text
 		var_2 := `- Source Map Visualisation`
-		_, err = io.WriteString(w, var_2)
+		_, err = templBuffer.WriteString(var_2)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</title>")
+		_, err = templBuffer.WriteString("</title>")
 		if err != nil {
 			return err
 		}
 // RawElement
-		_, err = io.WriteString(w, "<style")
+		_, err = templBuffer.WriteString("<style")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " type=\"text/css\"")
+		_, err = templBuffer.WriteString(" type=\"text/css\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
@@ -99,162 +104,165 @@ var_3 := `
 				.mapped { background-color: green }
 				.highlighted { background-color: yellow }
 			`
-_, err = io.WriteString(w, var_3)
+_, err = templBuffer.WriteString(var_3)
 if err != nil {
 	return err
 }
-		_, err = io.WriteString(w, "</style>")
+		_, err = templBuffer.WriteString("</style>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</head>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = io.WriteString(w, "<body>")
+		_, err = templBuffer.WriteString("</head>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<h1>")
+		_, err = templBuffer.WriteString("<body>")
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		_, err = templBuffer.WriteString("<h1>")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(templFileName))
+		_, err = templBuffer.WriteString(templ.EscapeString(templFileName))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</h1>")
+		_, err = templBuffer.WriteString("</h1>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
 		// Element CSS
 		var var_4 templ.CSSClasses = templ.Classes(row())
-		err = templ.RenderCSS(ctx, w, var_4)
+		err = templ.RenderCSS(ctx, templBuffer, var_4)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<div")
+		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " class=")
+		_, err = templBuffer.WriteString(" class=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(var_4.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(var_4.String()))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
 		// Element CSS
 		var var_5 templ.CSSClasses = templ.Classes(column(), code())
-		err = templ.RenderCSS(ctx, w, var_5)
+		err = templ.RenderCSS(ctx, templBuffer, var_5)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<div")
+		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " class=")
+		_, err = templBuffer.WriteString(" class=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(var_5.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(var_5.String()))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// CallTemplate
-		err = left.Render(ctx, w)
+		err = left.Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
 		// Element CSS
 		var var_6 templ.CSSClasses = templ.Classes(column(), code())
-		err = templ.RenderCSS(ctx, w, var_6)
+		err = templ.RenderCSS(ctx, templBuffer, var_6)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<div")
+		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " class=")
+		_, err = templBuffer.WriteString(" class=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(var_6.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(var_6.String()))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// CallTemplate
-		err = right.Render(ctx, w)
+		err = right.Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</body>")
+		_, err = templBuffer.WriteString("</body>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</html>")
+		_, err = templBuffer.WriteString("</html>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -292,6 +300,10 @@ func removeHighlight(sourceId, targetId string) templ.ComponentScript {
 
 func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_7 := ctx
@@ -299,82 +311,85 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		// Element (standard)
 		// Element CSS
 		var var_8 templ.CSSClasses = templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))
-		err = templ.RenderCSS(ctx, w, var_8)
+		err = templ.RenderCSS(ctx, templBuffer, var_8)
 		if err != nil {
 			return err
 		}
 		// Element Script
-		err = templ.RenderScripts(ctx, w, highlight(sourceID, targetID), removeHighlight(sourceID, targetID))
+		err = templ.RenderScripts(ctx, templBuffer, highlight(sourceID, targetID), removeHighlight(sourceID, targetID))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<span")
+		_, err = templBuffer.WriteString("<span")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " class=")
+		_, err = templBuffer.WriteString(" class=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(var_8.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(var_8.String()))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " onMouseOver=")
+		_, err = templBuffer.WriteString(" onMouseOver=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
 		var var_9 templ.ComponentScript = highlight(sourceID, targetID)
-		_, err = io.WriteString(w, var_9.Call)
+		_, err = templBuffer.WriteString(var_9.Call)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " onMouseOut=")
+		_, err = templBuffer.WriteString(" onMouseOut=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
 		var var_10 templ.ComponentScript = removeHighlight(sourceID, targetID)
-		_, err = io.WriteString(w, var_10.Call)
+		_, err = templBuffer.WriteString(var_10.Call)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(s))
+		_, err = templBuffer.WriteString(templ.EscapeString(s))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</span>")
+		_, err = templBuffer.WriteString("</span>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

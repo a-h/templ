@@ -7,9 +7,14 @@ package testfor
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 
 func render(items []string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
@@ -17,19 +22,22 @@ func render(items []string) templ.Component {
 		// For
 		for _, item := range items {
 			// Element (standard)
-			_, err = io.WriteString(w, "<div>")
+			_, err = templBuffer.WriteString("<div>")
 			if err != nil {
 				return err
 			}
 			// StringExpression
-			_, err = io.WriteString(w, templ.EscapeString(item))
+			_, err = templBuffer.WriteString(templ.EscapeString(item))
 			if err != nil {
 				return err
 			}
-			_, err = io.WriteString(w, "</div>")
+			_, err = templBuffer.WriteString("</div>")
 			if err != nil {
 				return err
 			}
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

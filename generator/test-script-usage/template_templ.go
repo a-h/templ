@@ -7,6 +7,7 @@ package testscriptusage
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 
 func withParameters(a string, b string, c int) templ.ComponentScript {
 	return templ.ComponentScript{
@@ -26,71 +27,78 @@ func withoutParameters() templ.ComponentScript {
 
 func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		// Element Script
-		err = templ.RenderScripts(ctx, w, withParameters("test", text, 123), withoutParameters())
+		err = templ.RenderScripts(ctx, templBuffer, withParameters("test", text, 123), withoutParameters())
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "<button")
+		_, err = templBuffer.WriteString("<button")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " onClick=")
+		_, err = templBuffer.WriteString(" onClick=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
 		var var_2 templ.ComponentScript = withParameters("test", text, 123)
-		_, err = io.WriteString(w, var_2.Call)
+		_, err = templBuffer.WriteString(var_2.Call)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " onMouseover=")
+		_, err = templBuffer.WriteString(" onMouseover=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
 		var var_3 templ.ComponentScript = withoutParameters()
-		_, err = io.WriteString(w, var_3.Call)
+		_, err = templBuffer.WriteString(var_3.Call)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " type=\"button\"")
+		_, err = templBuffer.WriteString(" type=\"button\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// StringExpression
-		_, err = io.WriteString(w, templ.EscapeString(text))
+		_, err = templBuffer.WriteString(templ.EscapeString(text))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</button>")
+		_, err = templBuffer.WriteString("</button>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -98,47 +106,54 @@ func Button(text string) templ.Component {
 
 func ThreeButtons() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_4 := ctx
 		ctx = templ.ClearChildren(var_4)
 		// CallTemplate
-		err = Button("A").Render(ctx, w)
+		err = Button("A").Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
 		// CallTemplate
-		err = Button("B").Render(ctx, w)
+		err = Button("B").Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<button")
+		_, err = templBuffer.WriteString("<button")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " onMouseover=\"console.log(&#39;mouseover&#39;)\"")
+		_, err = templBuffer.WriteString(" onMouseover=\"console.log(&#39;mouseover&#39;)\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, " type=\"button\"")
+		_, err = templBuffer.WriteString(" type=\"button\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Text
 		var_5 := `Button C`
-		_, err = io.WriteString(w, var_5)
+		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</button>")
+		_, err = templBuffer.WriteString("</button>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

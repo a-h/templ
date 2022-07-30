@@ -7,58 +7,66 @@ package testhtml
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 
 func BasicTemplate(url string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
-		_, err = io.WriteString(w, "<div>")
+		_, err = templBuffer.WriteString("<div>")
 		if err != nil {
 			return err
 		}
 		// Element (standard)
-		_, err = io.WriteString(w, "<a")
+		_, err = templBuffer.WriteString("<a")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " href=")
+		_, err = templBuffer.WriteString(" href=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
 		var var_2 templ.SafeURL = templ.URL(url)
-		_, err = io.WriteString(w, templ.EscapeString(string(var_2)))
+		_, err = templBuffer.WriteString(templ.EscapeString(string(var_2)))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Text
 		var_3 := `text`
-		_, err = io.WriteString(w, var_3)
+		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</a>")
+		_, err = templBuffer.WriteString("</a>")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

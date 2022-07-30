@@ -7,50 +7,58 @@ package testtemplelement
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 
 // GoExpression
 import "fmt"
 
 func wrapper(index int) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
-		_, err = io.WriteString(w, "<div")
+		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
 		}
 		// Element Attributes
-		_, err = io.WriteString(w, " id=")
+		_, err = templBuffer.WriteString(" id=")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, templ.EscapeString(fmt.Sprint(index)))
+		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprint(index)))
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "\"")
+		_, err = templBuffer.WriteString("\"")
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, ">")
+		_, err = templBuffer.WriteString(">")
 		if err != nil {
 			return err
 		}
 		// Children
-		err = templ.GetChildren(var_1).Render(ctx, w)
+		err = templ.GetChildren(var_1).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = io.WriteString(w, "</div>")
+		_, err = templBuffer.WriteString("</div>")
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
@@ -58,6 +66,10 @@ func wrapper(index int) templ.Component {
 
 func template() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_2 := ctx
@@ -66,12 +78,12 @@ func template() templ.Component {
 		var_3 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			// Text
 			var_4 := `child1`
-			_, err = io.WriteString(w, var_4)
+			_, err = templBuffer.WriteString(var_4)
 			if err != nil {
 				return err
 			}
 			// Whitespace (normalised)
-			_, err = io.WriteString(w, ` `)
+			_, err = templBuffer.WriteString(` `)
 			if err != nil {
 				return err
 			}
@@ -79,12 +91,12 @@ func template() templ.Component {
 			var_5 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 				// Text
 				var_6 := `child2`
-				_, err = io.WriteString(w, var_6)
+				_, err = templBuffer.WriteString(var_6)
 				if err != nil {
 					return err
 				}
 				// Whitespace (normalised)
-				_, err = io.WriteString(w, ` `)
+				_, err = templBuffer.WriteString(` `)
 				if err != nil {
 					return err
 				}
@@ -92,37 +104,40 @@ func template() templ.Component {
 				var_7 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 					// Text
 					var_8 := `child3`
-					_, err = io.WriteString(w, var_8)
+					_, err = templBuffer.WriteString(var_8)
 					if err != nil {
 						return err
 					}
 					// Whitespace (normalised)
-					_, err = io.WriteString(w, ` `)
+					_, err = templBuffer.WriteString(` `)
 					if err != nil {
 						return err
 					}
 					// TemplElement
-					err = wrapper(4).Render(ctx, w)
+					err = wrapper(4).Render(ctx, templBuffer)
 					if err != nil {
 						return err
 					}
 					return err
 				})
-				err = wrapper(3).Render(templ.WithChildren(ctx, var_7), w)
+				err = wrapper(3).Render(templ.WithChildren(ctx, var_7), templBuffer)
 				if err != nil {
 					return err
 				}
 				return err
 			})
-			err = wrapper(2).Render(templ.WithChildren(ctx, var_5), w)
+			err = wrapper(2).Render(templ.WithChildren(ctx, var_5), templBuffer)
 			if err != nil {
 				return err
 			}
 			return err
 		})
-		err = wrapper(1).Render(templ.WithChildren(ctx, var_3), w)
+		err = wrapper(1).Render(templ.WithChildren(ctx, var_3), templBuffer)
 		if err != nil {
 			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})

@@ -7,9 +7,14 @@ package testswitch
 import "github.com/a-h/templ"
 import "context"
 import "io"
+import "bytes"
 
 func render(input string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = new(bytes.Buffer)
+		}
 		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
 		ctx, _ = templ.RenderedScriptsFromContext(ctx)
 		var_1 := ctx
@@ -18,16 +23,19 @@ func render(input string) templ.Component {
 		switch input {
 		case "a":
 			// StringExpression
-			_, err = io.WriteString(w, templ.EscapeString("it was 'a'"))
+			_, err = templBuffer.WriteString(templ.EscapeString("it was 'a'"))
 			if err != nil {
 				return err
 			}
 		default:
 			// StringExpression
-			_, err = io.WriteString(w, templ.EscapeString("it was something else"))
+			_, err = templBuffer.WriteString(templ.EscapeString("it was something else"))
 			if err != nil {
 				return err
 			}
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
 		}
 		return err
 	})
