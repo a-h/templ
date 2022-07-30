@@ -207,7 +207,7 @@ func RenderedCSSClassesFromContext(ctx context.Context) (context.Context, *Strin
 	if classes, ok := ctx.Value(contextKeyRenderedClasses).(*StringSet); ok {
 		return ctx, classes
 	}
-	rc := &StringSet{ss: make(map[string]struct{})}
+	rc := &StringSet{}
 	ctx = context.WithValue(ctx, contextKeyRenderedClasses, rc)
 	return ctx, rc
 }
@@ -312,11 +312,17 @@ type StringSet struct {
 
 // Add string s to the set.
 func (rc *StringSet) Add(s string) {
+	if rc.ss == nil {
+		rc.ss = map[string]struct{}{}
+	}
 	rc.ss[s] = struct{}{}
 }
 
 // Contains returns true if s is within the set.
 func (rc *StringSet) Contains(s string) bool {
+	if rc.ss == nil {
+		return false
+	}
 	_, ok := rc.ss[s]
 	return ok
 }
@@ -390,7 +396,7 @@ func RenderedScriptsFromContext(ctx context.Context) (context.Context, *StringSe
 	if classes, ok := ctx.Value(contextKeyRenderedScripts).(*StringSet); ok {
 		return ctx, classes
 	}
-	rs := &StringSet{ss: make(map[string]struct{})}
+	rs := &StringSet{}
 	ctx = context.WithValue(ctx, contextKeyRenderedScripts, rs)
 	return ctx, rs
 }
