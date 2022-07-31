@@ -15,8 +15,7 @@ func StyleElement() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 // RawElement
@@ -50,8 +49,7 @@ func ScriptElement() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_3 := ctx
 		ctx = templ.ClearChildren(var_3)
 // RawElement

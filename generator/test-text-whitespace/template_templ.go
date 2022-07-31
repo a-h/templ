@@ -15,8 +15,7 @@ func WhitespaceIsAddedWithinTemplStatements() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
@@ -64,8 +63,7 @@ func InlineElementsAreNotPadded() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_4 := ctx
 		ctx = templ.ClearChildren(var_4)
 		// Element (standard)
@@ -125,8 +123,7 @@ func WhiteSpaceInHTMLIsNormalised() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_8 := ctx
 		ctx = templ.ClearChildren(var_8)
 		// Element (standard)
@@ -182,8 +179,7 @@ func WhiteSpaceAroundValues() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_12 := ctx
 		ctx = templ.ClearChildren(var_12)
 		// Element (standard)

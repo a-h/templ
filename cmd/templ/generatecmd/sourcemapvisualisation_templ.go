@@ -46,8 +46,7 @@ func visualisation(templFileName string, left, right templ.Component) templ.Comp
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
@@ -138,7 +137,7 @@ if err != nil {
 		// Element (standard)
 		// Element CSS
 		var var_4 templ.CSSClasses = templ.Classes(row())
-		err = templ.RenderCSS(ctx, templBuffer, var_4)
+		err = templ.RenderCSSItems(ctx, templBuffer, var_4...)
 		if err != nil {
 			return err
 		}
@@ -170,7 +169,7 @@ if err != nil {
 		// Element (standard)
 		// Element CSS
 		var var_5 templ.CSSClasses = templ.Classes(column(), code())
-		err = templ.RenderCSS(ctx, templBuffer, var_5)
+		err = templ.RenderCSSItems(ctx, templBuffer, var_5...)
 		if err != nil {
 			return err
 		}
@@ -211,7 +210,7 @@ if err != nil {
 		// Element (standard)
 		// Element CSS
 		var var_6 templ.CSSClasses = templ.Classes(column(), code())
-		err = templ.RenderCSS(ctx, templBuffer, var_6)
+		err = templ.RenderCSSItems(ctx, templBuffer, var_6...)
 		if err != nil {
 			return err
 		}
@@ -304,19 +303,18 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_7 := ctx
 		ctx = templ.ClearChildren(var_7)
 		// Element (standard)
 		// Element CSS
 		var var_8 templ.CSSClasses = templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))
-		err = templ.RenderCSS(ctx, templBuffer, var_8)
+		err = templ.RenderCSSItems(ctx, templBuffer, var_8...)
 		if err != nil {
 			return err
 		}
 		// Element Script
-		err = templ.RenderScripts(ctx, templBuffer, highlight(sourceID, targetID), removeHighlight(sourceID, targetID))
+		err = templ.RenderScriptItems(ctx, templBuffer, highlight(sourceID, targetID), removeHighlight(sourceID, targetID))
 		if err != nil {
 			return err
 		}

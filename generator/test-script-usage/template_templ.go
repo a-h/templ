@@ -31,13 +31,12 @@ func Button(text string) templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		// Element Script
-		err = templ.RenderScripts(ctx, templBuffer, withParameters("test", text, 123), withoutParameters())
+		err = templ.RenderScriptItems(ctx, templBuffer, withParameters("test", text, 123), withoutParameters())
 		if err != nil {
 			return err
 		}
@@ -110,8 +109,7 @@ func ThreeButtons() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_4 := ctx
 		ctx = templ.ClearChildren(var_4)
 		// CallTemplate

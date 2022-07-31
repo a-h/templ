@@ -19,8 +19,7 @@ func headerTemplate(name string) templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
@@ -68,8 +67,7 @@ func footerTemplate() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_2 := ctx
 		ctx = templ.ClearChildren(var_2)
 		// Element (standard)

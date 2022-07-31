@@ -37,14 +37,13 @@ func Button(text string) templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_1 := ctx
 		ctx = templ.ClearChildren(var_1)
 		// Element (standard)
 		// Element CSS
 		var var_2 templ.CSSClasses = templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe"))
-		err = templ.RenderCSS(ctx, templBuffer, var_2)
+		err = templ.RenderCSSItems(ctx, templBuffer, var_2...)
 		if err != nil {
 			return err
 		}
@@ -99,8 +98,7 @@ func ThreeButtons() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		ctx, _ = templ.RenderedScriptsFromContext(ctx)
+		ctx = templ.InitializeRenderedItemsContext(ctx)
 		var_3 := ctx
 		ctx = templ.ClearChildren(var_3)
 		// CallTemplate
@@ -116,7 +114,7 @@ func ThreeButtons() templ.Component {
 		// Element (standard)
 		// Element CSS
 		var var_4 templ.CSSClasses = templ.Classes(green())
-		err = templ.RenderCSS(ctx, templBuffer, var_4)
+		err = templ.RenderCSSItems(ctx, templBuffer, var_4...)
 		if err != nil {
 			return err
 		}
