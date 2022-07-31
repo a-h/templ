@@ -40,6 +40,7 @@ const contextKeyChildren = childrenContextKey("children")
 func WithChildren(ctx context.Context, children Component) context.Context {
 	return context.WithValue(ctx, contextKeyChildren, &children)
 }
+
 func ClearChildren(ctx context.Context) context.Context {
 	return context.WithValue(ctx, contextKeyChildren, nil)
 }
@@ -205,6 +206,7 @@ const contextKeyRenderedClasses = cssContextKey("renderedClasses")
 
 // RenderedCSSClassesFromContext returns a set of the CSS classes that have already been
 // rendered to the response.
+// Deprecated: Use the combined InitializeRenderedItemsContext function which shares a single StringSet for CSS and Scripts.
 func RenderedCSSClassesFromContext(ctx context.Context) (context.Context, *StringSet) {
 	if classes, ok := ctx.Value(contextKeyRenderedClasses).(*StringSet); ok {
 		return ctx, classes
@@ -271,6 +273,7 @@ func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // RenderCSS renders a <style> element with CSS content, if the styles have not already been rendered.
+// Deprecated: Upgrade generation and runtime to use the RenderCSSItems function.
 func RenderCSS(ctx context.Context, w io.Writer, classes []CSSClass) (err error) {
 	if len(classes) == 0 {
 		return nil
@@ -282,6 +285,38 @@ func RenderCSS(ctx context.Context, w io.Writer, classes []CSSClass) (err error)
 			if !rc.Contains(ccc.ClassName()) {
 				sb.WriteString(string(ccc.Class))
 				rc.Add(ccc.ClassName())
+			}
+		}
+	}
+	if sb.Len() > 0 {
+		if _, err = io.WriteString(w, `<style type="text/css">`); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, sb.String()); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, `</style>`); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RenderCSSItems renders the CSS to the writer, if the items haven't already been rendered.
+func RenderCSSItems(ctx context.Context, w io.Writer, classes ...CSSClass) (err error) {
+	if len(classes) == 0 {
+		return nil
+	}
+	rc, ok := ctx.Value(contextKeyRenderedItems).(*StringSet)
+	if !ok {
+		rc = &StringSet{}
+	}
+	sb := new(strings.Builder)
+	for _, c := range classes {
+		if ccc, ok := c.(ComponentCSSClass); ok {
+			if !rc.ContainsClass(ccc.ClassName()) {
+				sb.WriteString(string(ccc.Class))
+				rc.AddClass(ccc.ClassName())
 			}
 		}
 	}
@@ -332,6 +367,26 @@ func (rc *StringSet) Contains(s string) bool {
 	return ok
 }
 
+// AddScript with name s to the set.
+func (rc *StringSet) AddScript(s string) {
+	rc.Add("script_" + s)
+}
+
+// ContainsScript returns true if the script with name s is within the set.
+func (rc *StringSet) ContainsScript(s string) bool {
+	return rc.Contains("script_" + s)
+}
+
+// AddClass with name s to the set.
+func (rc *StringSet) AddClass(s string) {
+	rc.Add("class_" + s)
+}
+
+// ContainsClass returns true if the script with name s is within the set.
+func (rc *StringSet) ContainsClass(s string) bool {
+	return rc.Contains("class_" + s)
+}
+
 // All returns a slice of all items in the set.
 func (rc *StringSet) All() (values []string) {
 	values = make([]string, len(rc.ss))
@@ -380,6 +435,20 @@ func SafeScript(functionName string, params ...interface{}) string {
 	return sb.String()
 }
 
+type renderedItemsContextKey int
+
+const contextKeyRenderedItems = renderedItemsContextKey(0)
+
+// InitializeRenderedItemsContext initializes context used to store internal state used during rendering.
+func InitializeRenderedItemsContext(ctx context.Context) context.Context {
+	if _, ok := ctx.Value(contextKeyRenderedItems).(*StringSet); ok {
+		return ctx
+	}
+	rs := &StringSet{}
+	ctx = context.WithValue(ctx, contextKeyRenderedItems, rs)
+	return ctx
+}
+
 // ComponentScript is a templ Script template.
 type ComponentScript struct {
 	// Name of the script, e.g. print.
@@ -397,6 +466,7 @@ const contextKeyRenderedScripts = scriptContextKey("scripts")
 
 // RenderedScriptsFromContext returns a set of the scripts that have already been
 // rendered to the response.
+// Deprecated: Use InitializeRenderedItemsContext function which shares a single StringSet for CSS and Scripts.
 func RenderedScriptsFromContext(ctx context.Context) (context.Context, *StringSet) {
 	if classes, ok := ctx.Value(contextKeyRenderedScripts).(*StringSet); ok {
 		return ctx, classes
@@ -407,6 +477,7 @@ func RenderedScriptsFromContext(ctx context.Context) (context.Context, *StringSe
 }
 
 // RenderScripts renders a <script> element, if the script has not already been rendered.
+// Deprecated: Upgrade generation and runtime to use the RenderScriptItems function.
 func RenderScripts(ctx context.Context, w io.Writer, scripts ...ComponentScript) (err error) {
 	if len(scripts) == 0 {
 		return nil
@@ -417,6 +488,36 @@ func RenderScripts(ctx context.Context, w io.Writer, scripts ...ComponentScript)
 		if !rs.Contains(s.Name) {
 			sb.WriteString(s.Function)
 			rs.Add(s.Name)
+		}
+	}
+	if sb.Len() > 0 {
+		if _, err = io.WriteString(w, `<script type="text/javascript">`); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, sb.String()); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, `</script>`); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RenderScriptItems renders a <script> element, if the script has not already been rendered.
+func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScript) (err error) {
+	if len(scripts) == 0 {
+		return nil
+	}
+	rs, ok := ctx.Value(contextKeyRenderedItems).(*StringSet)
+	if !ok {
+		rs = &StringSet{}
+	}
+	sb := new(strings.Builder)
+	for _, s := range scripts {
+		if !rs.ContainsScript(s.Name) {
+			sb.WriteString(s.Function)
+			rs.AddScript(s.Name)
 		}
 	}
 	if sb.Len() > 0 {

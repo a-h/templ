@@ -297,12 +297,8 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
 			return err
 		}
-		// ctx, _ = templ.RenderedCSSClassesFromContext(ctx)
-		if _, err = g.w.WriteIndent(indentLevel, "ctx, _ = templ.RenderedCSSClassesFromContext(ctx)\n"); err != nil {
-			return err
-		}
-		// ctx, _ = templ.RenderedScriptsFromContext(ctx)
-		if _, err = g.w.WriteIndent(indentLevel, "ctx, _ = templ.RenderedScriptsFromContext(ctx)\n"); err != nil {
+		// ctx = templ.InitializeRenderedItemsContext(ctx)
+		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeRenderedItemsContext(ctx)\n"); err != nil {
 			return err
 		}
 		g.childrenVar = g.createVariableName()
@@ -819,8 +815,8 @@ func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err erro
 				return err
 			}
 			// Render the CSS before the element if required.
-			// err = templ.RenderCSS(ctx, templBuffer, templCSSClassess)
-			if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderCSS(ctx, templBuffer, "+classesName+")\n"); err != nil {
+			// err = templ.RenderCSSItems(ctx, templBuffer, templCSSClassess...)
+			if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderCSSItems(ctx, templBuffer, "+classesName+"...)\n"); err != nil {
 				return err
 			}
 			if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -853,8 +849,8 @@ func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err e
 		return err
 	}
 	// Render the scripts before the element if required.
-	// err = templ.RenderScripts(ctx, templBuffer, a, b, c)
-	if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderScripts(ctx, templBuffer, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
+	// err = templ.RenderScriptItems(ctx, templBuffer, a, b, c)
+	if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderScriptItems(ctx, templBuffer, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
