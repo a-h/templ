@@ -15,9 +15,12 @@ func Layout(title, content string) templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx = templ.InitializeRenderedItemsContext(ctx)
-		var_1 := ctx
-		ctx = templ.ClearChildren(var_1)
+		ctx = templ.InitializeContext(ctx)
+		var_1 := templ.GetChildren(ctx)
+		if var_1 == nil {
+			var_1 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		// DocType
 		_, err = templBuffer.WriteString(`<!doctype html>`)
 		if err != nil {

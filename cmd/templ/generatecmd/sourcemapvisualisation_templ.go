@@ -46,9 +46,12 @@ func visualisation(templFileName string, left, right templ.Component) templ.Comp
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx = templ.InitializeRenderedItemsContext(ctx)
-		var_1 := ctx
-		ctx = templ.ClearChildren(var_1)
+		ctx = templ.InitializeContext(ctx)
+		var_1 := templ.GetChildren(ctx)
+		if var_1 == nil {
+			var_1 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
 		_, err = templBuffer.WriteString("<html>")
 		if err != nil {
@@ -303,9 +306,12 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx = templ.InitializeRenderedItemsContext(ctx)
-		var_7 := ctx
-		ctx = templ.ClearChildren(var_7)
+		ctx = templ.InitializeContext(ctx)
+		var_7 := templ.GetChildren(ctx)
+		if var_7 == nil {
+			var_7 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
 		// Element CSS
 		var var_8 templ.CSSClasses = templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))

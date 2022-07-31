@@ -18,9 +18,12 @@ func wrapper(index int) templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx = templ.InitializeRenderedItemsContext(ctx)
-		var_1 := ctx
-		ctx = templ.ClearChildren(var_1)
+		ctx = templ.InitializeContext(ctx)
+		var_1 := templ.GetChildren(ctx)
+		if var_1 == nil {
+			var_1 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
 		_, err = templBuffer.WriteString("<div")
 		if err != nil {
@@ -48,7 +51,7 @@ func wrapper(index int) templ.Component {
 			return err
 		}
 		// Children
-		err = templ.GetChildren(var_1).Render(ctx, templBuffer)
+		err = var_1.Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
@@ -69,9 +72,12 @@ func template() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx = templ.InitializeRenderedItemsContext(ctx)
-		var_2 := ctx
-		ctx = templ.ClearChildren(var_2)
+		ctx = templ.InitializeContext(ctx)
+		var_2 := templ.GetChildren(ctx)
+		if var_2 == nil {
+			var_2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		// TemplElement
 		var_3 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			// Text

@@ -19,9 +19,12 @@ func headerTemplate(name string) templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx = templ.InitializeRenderedItemsContext(ctx)
-		var_1 := ctx
-		ctx = templ.ClearChildren(var_1)
+		ctx = templ.InitializeContext(ctx)
+		var_1 := templ.GetChildren(ctx)
+		if var_1 == nil {
+			var_1 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
 		_, err = templBuffer.WriteString("<header")
 		if err != nil {
@@ -67,9 +70,12 @@ func footerTemplate() templ.Component {
 		if !templIsBuffer {
 			templBuffer = new(bytes.Buffer)
 		}
-		ctx = templ.InitializeRenderedItemsContext(ctx)
-		var_2 := ctx
-		ctx = templ.ClearChildren(var_2)
+		ctx = templ.InitializeContext(ctx)
+		var_2 := templ.GetChildren(ctx)
+		if var_2 == nil {
+			var_2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
 		_, err = templBuffer.WriteString("<footer")
 		if err != nil {
