@@ -297,17 +297,33 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
 			return err
 		}
-		// ctx = templ.InitializeRenderedItemsContext(ctx)
-		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeRenderedItemsContext(ctx)\n"); err != nil {
+		// ctx = templ.InitializeContext(ctx)
+		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeContext(ctx)\n"); err != nil {
 			return err
 		}
 		g.childrenVar = g.createVariableName()
-		// children := ctx
-		// ctx = templ.ClearChildren(children)
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s := ctx\n", g.childrenVar)); err != nil {
+		// var_1 := templ.GetChildren(ctx)
+		//  if var_1 == nil {
+		//  	var_1 = templ.NopComponent
+		// }
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s := templ.GetChildren(ctx)\n", g.childrenVar)); err != nil {
 			return err
 		}
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("ctx = templ.ClearChildren(%s)\n", g.childrenVar)); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("if %s == nil {\n", g.childrenVar)); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s = templ.NopComponent\n", g.childrenVar)); err != nil {
+				return err
+			}
+			indentLevel--
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+			return err
+		}
+		// ctx = templ.ClearChildren(children)
+		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.ClearChildren(ctx)\n"); err != nil {
 			return err
 		}
 		// Nodes.
@@ -552,7 +568,7 @@ func (g *generator) writeChildrenExpression(indentLevel int) (err error) {
 	if _, err = g.w.WriteIndent(indentLevel, "// Children\n"); err != nil {
 		return err
 	}
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("err = templ.GetChildren(%s).Render(ctx, templBuffer)\n", g.childrenVar)); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("err = %s.Render(ctx, templBuffer)\n", g.childrenVar)); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
