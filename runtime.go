@@ -33,7 +33,7 @@ func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
 }
 
 func WithChildren(ctx context.Context, children Component) context.Context {
-	_, v := getContext(ctx)
+	ctx, v := getContext(ctx)
 	v.children = &children
 	return ctx
 }

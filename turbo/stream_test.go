@@ -1,6 +1,7 @@
 package turbo
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net/http/httptest"
@@ -14,6 +15,32 @@ var contentTemplate = templ.ComponentFunc(func(ctx context.Context, w io.Writer)
 	_, err := io.WriteString(w, "content")
 	return err
 })
+
+func TestStreamReplace(t *testing.T) {
+	// Arrange.
+	w := httptest.NewRecorder()
+
+	if err := Replace(w, "replaceTarget", contentTemplate); err != nil {
+		t.Fatalf("replace failed: %v", err)
+	}
+
+	// Act.
+	bdy := w.Body.Bytes()
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(bdy))
+	if err != nil {
+		t.Fatalf("failed to read response: %v", err)
+	}
+
+	// Assert.
+	selection := doc.Find(`turbo-stream[action="replace"][target="replaceTarget"]`)
+	if selection.Length() != 1 {
+		t.Error("expected to find a replace action, but didn't")
+	}
+	text := selection.First().Text()
+	if text != "content" {
+		t.Errorf("expected 'content' to be the text, but got %q\n%s", text, bdy)
+	}
+}
 
 func TestStream(t *testing.T) {
 	w := httptest.NewRecorder()
