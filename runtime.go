@@ -149,7 +149,7 @@ func (classes CSSClasses) String() string {
 	return sb.String()
 }
 
-var safeClassName = regexp.MustCompile(`^-?[_a-zA-Z]+[_-a-zA-Z0-9]*$`)
+var safeClassName = regexp.MustCompile(`^-?[_a-zA-Z]+[-_a-zA-Z0-9]*$`)
 
 const fallbackClassName = ConstantCSSClass("--templ-css-class-safe-name")
 
