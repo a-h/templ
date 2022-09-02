@@ -200,6 +200,14 @@ func TestClassSanitization(t *testing.T) {
 			expected: `safe`,
 		},
 		{
+			input:    `safe-name`,
+			expected: "safe-name",
+		},
+		{
+			input:    `safe_name`,
+			expected: "safe_name",
+		},
+		{
 			input:    `!unsafe`,
 			expected: "--templ-css-class-safe-name",
 		},
