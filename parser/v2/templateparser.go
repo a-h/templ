@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/a-h/lexical/parse"
@@ -235,6 +236,7 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 			// The element parser checks the final node returned to make sure it's the expected close tag.
 			break
 		}
+		return parse.Failure("templateNodeParser", fmt.Errorf("no valid nodes"))
 	}
 
 	return parse.Success("templateNodeParser", op, nil)

@@ -9,9 +9,10 @@ import (
 
 func TestTemplateParser(t *testing.T) {
 	var tests = []struct {
-		name     string
-		input    string
-		expected HTMLTemplate
+		name        string
+		input       string
+		expected    HTMLTemplate
+		expectError bool
 	}{
 		{
 			name: "template: no parameters",
@@ -392,19 +393,31 @@ func TestTemplateParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "template: incomplete open tag",
+			input: `templ Name() {
+				        <div
+						{"some string"}
+					</div>
+}`,
+			expected:    HTMLTemplate{},
+			expectError: true,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := input.NewFromString(tt.input)
 			result := template.Parse(input)
-			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
-			}
-			if !result.Success {
-				t.Fatalf("failed to parse at %d", input.Index())
-			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
+			diff := cmp.Diff(tt.expected, result.Item)
+			switch {
+			case tt.expectError && result.Error == nil:
+				t.Error("expected an error got nil")
+			case !tt.expectError && result.Error != nil:
+				t.Errorf("parser error: %v", result.Error)
+			case tt.expectError == result.Success:
+				t.Errorf("Success=%v want=%v", result.Success, !tt.expectError)
+			case !tt.expectError && diff != "":
 				t.Errorf(diff)
 			}
 		})
