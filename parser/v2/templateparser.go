@@ -100,108 +100,39 @@ func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
 			}
 		}
 
-		// Try for a doctype.
-		// <!DOCTYPE html>
-		pr = newDocTypeParser().Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for a raw <text>, <>, or <style> element (special behaviour - contents are not parsed).
-		pr = rawElements(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for an element.
-		// <a>, <br/> etc.
-		pr = element.Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for an if expression.
-		// if {}
-		pr = ifExpression.Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for a for expression.
-		// for {}
-		pr = forExpression.Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for a switch expression.
-		// switch {}
-		pr = switchExpression.Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for a call template expression.
-		// {! TemplateName(a, b, c) }
-		pr = callTemplateExpression.Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for a templ element expression.
-		// <!TemplateName(a, b, c) />
-		pr = templElementExpression.Parse(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for a children element expression.
-		// { children... }
-		pr = childrenExpression(pi)
-		if pr.Error != nil {
-			return pr
-		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
-			continue
-		}
-
-		// Try for a string expression.
-		// { "abc" }
-		// { strings.ToUpper("abc") }
-		pr = stringExpression.Parse(pi)
+		// Try for valid nodes.
+		pr = parse.Any(
+			// Try for a doctype.
+			// <!DOCTYPE html>
+			newDocTypeParser().Parse,
+			// Try for a raw <text>, <>, or <style> element (special behaviour - contents are not parsed).
+			rawElements,
+			// Try for an element.
+			// <a>, <br/> etc.
+			element.Parse,
+			// Try for an if expression.
+			// if {}
+			ifExpression.Parse,
+			// Try for a for expression.
+			// for {}
+			forExpression.Parse,
+			// Try for a switch expression.
+			// switch {}
+			switchExpression.Parse,
+			// Try for a call template expression.
+			// {! TemplateName(a, b, c) }
+			callTemplateExpression.Parse,
+			// Try for a templ element expression.
+			// <!TemplateName(a, b, c) />
+			templElementExpression.Parse,
+			// Try for a children element expression.
+			// { children... }
+			childrenExpression,
+			// Try for a string expression.
+			// { "abc" }
+			// { strings.ToUpper("abc") }
+			stringExpression.Parse,
+		)(pi)
 		if pr.Error != nil {
 			return pr
 		}
