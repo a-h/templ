@@ -423,3 +423,32 @@ func TestTemplateParser(t *testing.T) {
 		})
 	}
 }
+
+func TestTemplateParserErrors(t *testing.T) {
+	var tests = []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name: "template: containing element",
+			input: `templ Name(p Parameter) {
+<span
+}`,
+			expected: "closing brace not found",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			input := input.NewFromString(tt.input)
+			result := template.Parse(input)
+			if result.Error == nil {
+				t.Fatalf("expected error %q, got nil", tt.expected)
+			}
+			if diff := cmp.Diff(tt.expected, result.Error.Error()); diff != "" {
+				t.Errorf(diff)
+			}
+		})
+	}
+}

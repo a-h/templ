@@ -49,7 +49,7 @@ func (p forExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Node contents.
 	from = NewPositionFromInput(pi)
-	pr = newTemplateNodeParser(parse.Or(elseExpression.Parse, closeBraceWithOptionalPadding)).Parse(pi)
+	pr = newTemplateNodeParser(parse.Or(elseExpression.Parse, closeBraceWithOptionalPadding), "else expression or closing brace").Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}

@@ -46,7 +46,7 @@ func (p templBlockElementExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Node contents.
 	from = NewPositionFromInput(pi)
-	pr = newTemplateNodeParser(closeBraceWithOptionalPadding).Parse(pi)
+	pr = newTemplateNodeParser(closeBraceWithOptionalPadding, "closing brace").Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}

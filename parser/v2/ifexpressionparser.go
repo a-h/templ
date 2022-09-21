@@ -56,7 +56,7 @@ func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Read the 'Then' nodes.
 	from = NewPositionFromInput(pi)
-	pr = newTemplateNodeParser(parse.Or(elseExpression.Parse, closeBraceWithOptionalPadding)).Parse(pi)
+	pr = newTemplateNodeParser(parse.Or(elseExpression.Parse, closeBraceWithOptionalPadding), "else expression or closing brace").Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
@@ -94,7 +94,7 @@ func (p elseExpressionParser) asElseExpression(parts []interface{}) (result inte
 func (p elseExpressionParser) Parse(pi parse.Input) parse.Result {
 	return parse.All(p.asElseExpression,
 		endElseParser,
-		newTemplateNodeParser(closeBraceWithOptionalPadding).Parse, // else contents
+		newTemplateNodeParser(closeBraceWithOptionalPadding, "closing brace").Parse, // else contents
 	)(pi)
 }
 

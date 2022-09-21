@@ -312,7 +312,7 @@ func (p elementOpenCloseParser) Parse(pi parse.Input) parse.Result {
 
 	// Once we've got an open tag, the rest must be present.
 	from := NewPositionFromInput(pi)
-	tnpr := newTemplateNodeParser(nil).Parse(pi)
+	tnpr := newTemplateNodeParser(nil, "").Parse(pi)
 	if !tnpr.Success {
 		if _, isParseError := tnpr.Error.(ParseError); isParseError {
 			return tnpr

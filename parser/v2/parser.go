@@ -55,7 +55,7 @@ func (p templateParser) Parse(pi parse.Input) parse.Result {
 	// Once we're in a template, we should expect some template whitespace, if/switch/for,
 	// or node string expressions etc.
 	from := NewPositionFromInput(pi)
-	tnpr := newTemplateNodeParser(closeBraceWithOptionalPadding).Parse(pi)
+	tnpr := newTemplateNodeParser(closeBraceWithOptionalPadding, "closing brace").Parse(pi)
 	if tnpr.Error != nil && tnpr.Error != io.EOF {
 		return tnpr
 	}

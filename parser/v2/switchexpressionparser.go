@@ -104,7 +104,7 @@ func (p caseExpressionParser) Parse(pi parse.Input) parse.Result {
 
 	// Read until the next case statement, default, or end of the block.
 	from = NewPositionFromInput(pi)
-	pr := newTemplateNodeParser(parse.Or(closeBraceWithOptionalPadding, caseExpressionStartParser)).Parse(pi)
+	pr := newTemplateNodeParser(parse.Or(closeBraceWithOptionalPadding, caseExpressionStartParser), "closing brace or case expression").Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
 	}
