@@ -17,7 +17,8 @@ func headerTemplate(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_1 := templ.GetChildren(ctx)
@@ -68,7 +69,8 @@ func footerTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_2 := templ.GetChildren(ctx)
@@ -125,7 +127,8 @@ func navTemplate() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_4 := templ.GetChildren(ctx)
@@ -237,7 +240,8 @@ func layout(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_7 := templ.GetChildren(ctx)
@@ -326,7 +330,8 @@ func postsTemplate(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_8 := templ.GetChildren(ctx)
@@ -430,7 +435,8 @@ func home() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_9 := templ.GetChildren(ctx)
@@ -481,7 +487,8 @@ func posts(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_12 := templ.GetChildren(ctx)

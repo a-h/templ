@@ -1,6 +1,6 @@
 module github.com/a-h/templ
 
-go 1.16
+go 1.19
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
@@ -15,6 +15,18 @@ require (
 	go.lsp.dev/uri v0.3.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/mod v0.5.1
+)
+
+require (
+	github.com/andybalholm/cascadia v1.3.1 // indirect
+	github.com/hashicorp/errwrap v1.0.0 // indirect
+	github.com/segmentio/asm v1.1.3 // indirect
+	github.com/segmentio/encoding v0.3.4 // indirect
+	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
+	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/multierr v1.8.0 // indirect
+	golang.org/x/net v0.0.0-20210916014120-12bc252f5db8 // indirect
+	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
 )
 
 //replace github.com/a-h/lexical => /Users/adrian/github.com/a-h/lexical

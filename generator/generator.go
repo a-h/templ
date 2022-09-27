@@ -288,8 +288,12 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 		}
 		{
 			indentLevel++
-			// templBuffer := new(bytes.Buffer)
-			if _, err = g.w.WriteIndent(indentLevel, "templBuffer = new(bytes.Buffer)\n"); err != nil {
+			// templBuffer = templ.GetBuffer()
+			if _, err = g.w.WriteIndent(indentLevel, "templBuffer = templ.GetBuffer()\n"); err != nil {
+				return err
+			}
+			// defer templ.ReleaseBuffer(templBuffer)
+			if _, err = g.w.WriteIndent(indentLevel, "defer templ.ReleaseBuffer(templBuffer)\n"); err != nil {
 				return err
 			}
 			indentLevel--
@@ -336,7 +340,7 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 		}
 		{
 			indentLevel++
-			// _, err = io.Copy(w, buf)
+			// _, err = io.Copy(w, templBuffer)
 			if _, err = g.w.WriteIndent(indentLevel, "_, err = io.Copy(w, templBuffer)\n"); err != nil {
 				return err
 			}
