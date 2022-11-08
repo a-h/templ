@@ -174,6 +174,69 @@ templ input(items []string) {
 `,
 		},
 		{
+			name: "if statements are placed on a new line",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ input(items []string) {
+<div>{ "the" }<div>{ "other" }</div>if items != nil {
+<div>{ items[0] }</div>
+		} else {
+			<div>{ items[1] }</div>
+		}
+</div>
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ input(items []string) {
+	<div>
+		{ "the" }
+		<div>{ "other" }</div>
+		if items != nil {
+			<div>{ items[0] }</div>
+		} else {
+			<div>{ items[1] }</div>
+		}
+	</div>
+}
+
+`,
+		},
+		{
+			name: "switch statements are placed on a new line",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ input(items []string) {
+<div>{ "the" }<div>{ "other" }</div>switch items[0] {
+	case "a":
+<div>{ items[0] }</div>
+	case "b":
+<div>{ items[1] }</div>
+}</div>
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ input(items []string) {
+	<div>
+		{ "the" }
+		<div>{ "other" }</div>
+		switch items[0] {
+			case "a":
+				<div>{ items[0] }</div>
+			case "b":
+				<div>{ items[1] }</div>
+		}
+	</div>
+}
+
+`,
+		},
+		{
 			name: "css is indented by one level",
 			input: ` // first line removed to make indentation clear in Go code
 package test

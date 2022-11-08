@@ -32,6 +32,13 @@ func TestSanitizeCSS(t *testing.T) {
 			expectedValue:    `1 1 1 1`,
 		},
 		{
+			name:             "properties are case corrected",
+			inputProperty:    "Border",
+			expectedProperty: "border",
+			inputValue:       `1 1 1 1`,
+			expectedValue:    `1 1 1 1`,
+		},
+		{
 			name:             "expressions are not allowed",
 			inputProperty:    "width",
 			expectedProperty: "width",
@@ -78,6 +85,13 @@ func TestSanitizeCSS(t *testing.T) {
 			inputProperty:    "font-family",
 			expectedProperty: "font-family",
 			inputValue:       `"quotes`,
+			expectedValue:    InnocuousPropertyValue,
+		},
+		{
+			name:             "font-family non standard names are not allowed",
+			inputProperty:    "font-family",
+			expectedProperty: "font-family",
+			inputValue:       `foo@bar`,
 			expectedValue:    InnocuousPropertyValue,
 		},
 		{
@@ -130,6 +144,34 @@ func TestSanitizeCSS(t *testing.T) {
 			expectedValue:    InnocuousPropertyValue,
 		},
 		{
+			name:             "background-image absolute FTP URL",
+			inputProperty:    "background-image",
+			expectedProperty: "background-image",
+			inputValue:       `url("ftp://safe.example.com/img.png")`,
+			expectedValue:    InnocuousPropertyValue,
+		},
+		{
+			name:             "background-image invalid URL",
+			inputProperty:    "background-image",
+			expectedProperty: "background-image",
+			inputValue:       `url("` + string([]byte{0x7f}) + `")`,
+			expectedValue:    InnocuousPropertyValue,
+		},
+		{
+			name:             "background-image invalid prefix",
+			inputProperty:    "background-image",
+			expectedProperty: "background-image",
+			inputValue:       `/img.png")`,
+			expectedValue:    InnocuousPropertyValue,
+		},
+		{
+			name:             "background-image invalid sufix",
+			inputProperty:    "background-image",
+			expectedProperty: "background-image",
+			inputValue:       `url("/img.png`,
+			expectedValue:    InnocuousPropertyValue,
+		},
+		{
 			name:             "background-image safe URL",
 			inputProperty:    "background-image",
 			expectedProperty: "background-image",
@@ -142,6 +184,13 @@ func TestSanitizeCSS(t *testing.T) {
 			expectedProperty: "background-image",
 			inputValue:       `url("http://safe.example.com/img.png")`,
 			expectedValue:    `url("http://safe.example.com/img.png")`,
+		},
+		{
+			name:             "background-image safe mailto URL",
+			inputProperty:    "background-image",
+			expectedProperty: "background-image",
+			inputValue:       `url("mailto:foo@bar.foo")`,
+			expectedValue:    `url("mailto:foo@bar.foo")`,
 		},
 		{
 			name:             "background-image multiple URLs",
