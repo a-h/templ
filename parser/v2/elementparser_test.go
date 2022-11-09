@@ -528,6 +528,36 @@ func TestElementParserErrors(t *testing.T) {
 				}),
 		},
 		{
+			name:  "element: style must only contain text",
+			input: `<style><button /></style>`,
+			expected: newParseError("<style>: invalid node contents: script and style attributes must only contain text",
+				Position{
+					Index: 0,
+					Line:  0,
+					Col:   0,
+				},
+				Position{
+					Index: 25,
+					Line:  0,
+					Col:   25,
+				}),
+		},
+		{
+			name:  "element: script must only contain text",
+			input: `<script><button /></script>`,
+			expected: newParseError("<script>: invalid node contents: script and style attributes must only contain text",
+				Position{
+					Index: 0,
+					Line:  0,
+					Col:   0,
+				},
+				Position{
+					Index: 27,
+					Line:  0,
+					Col:   27,
+				}),
+		},
+		{
 			name:  "element: attempted use of expression for style attribute (open/close)",
 			input: `<a style={ value }></a>`,
 			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
