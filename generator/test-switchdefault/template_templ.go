@@ -13,7 +13,8 @@ func template(input string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_1 := templ.GetChildren(ctx)

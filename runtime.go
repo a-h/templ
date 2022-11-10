@@ -1,6 +1,7 @@
 package templ
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/a-h/templ/safehtml"
 )
@@ -423,4 +425,19 @@ func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScr
 		}
 	}
 	return nil
+}
+
+var bufferPool = sync.Pool{
+	New: func() any {
+		return new(bytes.Buffer)
+	},
+}
+
+func GetBuffer() *bytes.Buffer {
+	return bufferPool.Get().(*bytes.Buffer)
+}
+
+func ReleaseBuffer(b *bytes.Buffer) {
+	b.Reset()
+	bufferPool.Put(b)
 }

@@ -13,7 +13,8 @@ func WhitespaceIsAddedWithinTemplStatements() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_1 := templ.GetChildren(ctx)
@@ -64,7 +65,8 @@ func InlineElementsAreNotPadded() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_4 := templ.GetChildren(ctx)
@@ -127,7 +129,8 @@ func WhiteSpaceInHTMLIsNormalised() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_8 := templ.GetChildren(ctx)
@@ -186,7 +189,8 @@ func WhiteSpaceAroundValues() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
-			templBuffer = new(bytes.Buffer)
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
 		var_12 := templ.GetChildren(ctx)
