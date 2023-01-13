@@ -135,6 +135,36 @@ func TestIfExpression(t *testing.T) {
 			},
 		},
 		{
+			name: "if: expressions can have a space after the opening brace",
+			input: `if p.Test { 
+  text
+}
+`,
+			expected: IfExpression{
+				Expression: Expression{
+					Value: `p.Test`,
+					Range: Range{
+						From: Position{
+							Index: 3,
+							Line:  0,
+							Col:   3,
+						},
+						To: Position{
+							Index: 9,
+							Line:  0,
+							Col:   9,
+						},
+					},
+				},
+				Then: []Node{
+					Whitespace{Value: " \n  "},
+					Text{Value: "text"},
+					Whitespace{Value: "\n"},
+				},
+				Else: []Node{},
+			},
+		},
+		{
 			name: "if: simple expression, without spaces",
 			input: `if p.Test {
 <span>

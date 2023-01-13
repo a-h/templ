@@ -38,7 +38,12 @@ func parseUntil(combiner parse.MultipleResultCombiner, p parse.Function, delimit
 }
 
 var openBrace = parse.String("{")
-var openBraceWithPadding = parse.String(" {")
+var optionalSpaces = parse.Optional(parse.WithStringConcatCombiner,
+	parse.AtLeast(parse.WithStringConcatCombiner, 1, parse.Rune(' ')))
+var openBraceWithPadding = parse.All(parse.WithStringConcatCombiner,
+	optionalSpaces,
+	openBrace,
+	optionalSpaces)
 var openBraceWithOptionalPadding = parse.Or(openBraceWithPadding, openBrace)
 
 var closeBrace = parse.String("}")
@@ -165,36 +170,36 @@ var rune_lit = parse.All(parse.WithStringConcatCombiner,
 )
 var unicode_value_rune = parse.Any(little_u_value, big_u_value, escaped_char, parse.RuneNotIn("'"))
 
-//byte_value       = octal_byte_value | hex_byte_value .
+// byte_value       = octal_byte_value | hex_byte_value .
 var byte_value = parse.Any(octal_byte_value, hex_byte_value)
 
-//octal_byte_value = `\` octal_digit octal_digit octal_digit .
+// octal_byte_value = `\` octal_digit octal_digit octal_digit .
 var octal_byte_value = parse.All(parse.WithStringConcatCombiner,
 	parse.String(`\`),
 	octal_digit, octal_digit, octal_digit,
 )
 
-//hex_byte_value   = `\` "x" hex_digit hex_digit .
+// hex_byte_value   = `\` "x" hex_digit hex_digit .
 var hex_byte_value = parse.All(parse.WithStringConcatCombiner,
 	parse.String(`\x`),
 	hex_digit, hex_digit,
 )
 
-//little_u_value   = `\` "u" hex_digit hex_digit hex_digit hex_digit .
+// little_u_value   = `\` "u" hex_digit hex_digit hex_digit hex_digit .
 var little_u_value = parse.All(parse.WithStringConcatCombiner,
 	parse.String(`\u`),
 	hex_digit, hex_digit,
 	hex_digit, hex_digit,
 )
 
-//big_u_value      = `\` "U" hex_digit hex_digit hex_digit hex_digit
+// big_u_value      = `\` "U" hex_digit hex_digit hex_digit hex_digit
 var big_u_value = parse.All(parse.WithStringConcatCombiner,
 	parse.String(`\U`),
 	hex_digit, hex_digit, hex_digit, hex_digit,
 	hex_digit, hex_digit, hex_digit, hex_digit,
 )
 
-//escaped_char     = `\` ( "a" | "b" | "f" | "n" | "r" | "t" | "v" | `\` | "'" | `"` ) .
+// escaped_char     = `\` ( "a" | "b" | "f" | "n" | "r" | "t" | "v" | `\` | "'" | `"` ) .
 var escaped_char = parse.All(parse.WithStringConcatCombiner,
 	parse.Rune('\\'),
 	parse.Any(
