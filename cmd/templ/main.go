@@ -67,7 +67,7 @@ To see help text, you can run:
   templ migrate --help
   templ version
 examples:
-  templ compile`)
+  templ generate`)
 	os.Exit(1)
 }
 
@@ -75,7 +75,7 @@ func generateCmd(args []string) {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
 	fileName := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
 	path := cmd.String("path", ".", "Generates code for all files in path.")
-	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "Set to trye to generate HTML files to visualise the templ code and its corresponding Go code.")
+	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "Set to true to generate HTML files to visualise the templ code and its corresponding Go code.")
 	workerCount := cmd.Int("w", 4, "Number of workers to run in parallel.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
