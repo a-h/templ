@@ -4,16 +4,14 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"html"
-	"io"
 	"os"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/processor"
+	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 	"github.com/hashicorp/go-multierror"
@@ -115,9 +113,6 @@ func generateSourceMapVisualisation(templFileName, goFileName string, sourceMap 
 	if goErr != nil {
 		return templErr
 	}
-	tl := templLines{contents: string(templContents), sourceMap: sourceMap}
-	gl := goLines{contents: string(goContents), sourceMap: sourceMap}
-	visualisationComponent := visualisation(templFileName, tl, gl)
 
 	targetFileName := strings.TrimSuffix(templFileName, ".templ") + "_templ_sourcemap.html"
 	w, err := os.Create(targetFileName)
@@ -128,65 +123,5 @@ func generateSourceMapVisualisation(templFileName, goFileName string, sourceMap 
 	b := bufio.NewWriter(w)
 	defer b.Flush()
 
-	return visualisationComponent.Render(context.Background(), b)
-}
-
-type templLines struct {
-	contents  string
-	sourceMap *parser.SourceMap
-}
-
-func (tl templLines) Render(ctx context.Context, w io.Writer) error {
-	templLines := strings.Split(tl.contents, "\n")
-	for lineIndex, line := range templLines {
-		w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n"))
-		for colIndex, c := range line {
-			if _, m, ok := tl.sourceMap.TargetPositionFromSource(uint32(lineIndex), uint32(colIndex)); ok {
-				sourceID := fmt.Sprintf("src_%d_%d_%d", m.Source.Range.From.Index, m.Source.Range.From.Line, m.Source.Range.From.Col)
-				targetID := fmt.Sprintf("tgt_%d_%d_%d", m.Target.From.Index, m.Target.From.Index, m.Target.From.Col)
-				if err := mappedCharacter(string(c), sourceID, targetID).Render(ctx, w); err != nil {
-					return err
-				}
-			} else {
-				s := html.EscapeString(string(c))
-				s = strings.ReplaceAll(s, "\t", "&nbsp;")
-				s = strings.ReplaceAll(s, " ", "&nbsp;")
-				if _, err := w.Write([]byte(s)); err != nil {
-					return err
-				}
-			}
-		}
-		w.Write([]byte("\n<br/>\n"))
-	}
-	return nil
-}
-
-type goLines struct {
-	contents  string
-	sourceMap *parser.SourceMap
-}
-
-func (gl goLines) Render(ctx context.Context, w io.Writer) error {
-	templLines := strings.Split(gl.contents, "\n")
-	for lineIndex, line := range templLines {
-		w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n"))
-		for colIndex, c := range line {
-			if _, m, ok := gl.sourceMap.SourcePositionFromTarget(uint32(lineIndex), uint32(colIndex)); ok {
-				sourceID := fmt.Sprintf("src_%d_%d_%d", m.Source.Range.From.Index, m.Source.Range.From.Line, m.Source.Range.From.Col)
-				targetID := fmt.Sprintf("tgt_%d_%d_%d", m.Target.From.Index, m.Target.From.Index, m.Target.From.Col)
-				if err := mappedCharacter(string(c), sourceID, targetID).Render(ctx, w); err != nil {
-					return err
-				}
-			} else {
-				s := html.EscapeString(string(c))
-				s = strings.ReplaceAll(s, "\t", "&nbsp;")
-				s = strings.ReplaceAll(s, " ", "&nbsp;")
-				if _, err := w.Write([]byte(s)); err != nil {
-					return err
-				}
-			}
-		}
-		w.Write([]byte("\n<br/>\n"))
-	}
-	return nil
+	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).Render(context.Background(), b)
 }

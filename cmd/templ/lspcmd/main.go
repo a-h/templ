@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/a-h/templ/cmd/templ/lspcmd/httpdebug"
 	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
 	"go.lsp.dev/jsonrpc2"
@@ -20,7 +21,10 @@ type Arguments struct {
 	Log           string
 	GoplsLog      string
 	GoplsRPCTrace bool
-	PPROF         bool
+	// PPROF sets whether to start a profiling server on localhost:9999
+	PPROF bool
+	// HTTPDebug sets the HTTP endpoint to listen on. Leave empty for no web debug.
+	HTTPDebug string
 }
 
 func Run(args Arguments) error {
@@ -102,6 +106,17 @@ func run(ctx context.Context, args Arguments) (err error) {
 	clientInit(templClient)
 	serverInit(templClient)
 
+	// Start the web server if required.
+	if args.HTTPDebug != "" {
+		log.Info("starting debug http server", zap.String("addr", args.HTTPDebug))
+		h := httpdebug.NewHandler(serverProxy)
+		go func() {
+			if err := http.ListenAndServe(args.HTTPDebug, h); err != nil {
+				log.Error("web server failed", zap.Error(err))
+			}
+		}()
+	}
+
 	log.Info("listening")
 
 	select {
@@ -110,7 +125,7 @@ func run(ctx context.Context, args Arguments) (err error) {
 	case <-templConn.Done():
 		log.Info("templConn closed")
 	case <-goplsConn.Done():
-		log.Info("goplsCon closed")
+		log.Info("goplsConn closed")
 	}
 	log.Info("shutdown complete")
 	return

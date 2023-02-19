@@ -38,3 +38,15 @@ func (fc *SourceMapCache) Delete(uri string) {
 	defer fc.m.Unlock()
 	delete(fc.uriToSourceMap, uri)
 }
+
+func (fc *SourceMapCache) URIs() (uris []string) {
+	fc.m.Lock()
+	defer fc.m.Unlock()
+	uris = make([]string, len(fc.uriToSourceMap))
+	var i int
+	for k := range fc.uriToSourceMap {
+		uris[i] = k
+		i++
+	}
+	return uris
+}

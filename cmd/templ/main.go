@@ -137,6 +137,7 @@ func lspCmd(args []string) {
 	goplsRPCTrace := cmd.Bool("goplsRPCTrace", false, "Set gopls to log input and output messages.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	pprofFlag := cmd.Bool("pprof", false, "Enable pprof web server (default address is localhost:9999)")
+	httpDebugFlag := cmd.String("http", "", "Enable http debug server by setting a listen address (e.g. localhost:7474)")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
 		cmd.PrintDefaults()
@@ -147,6 +148,7 @@ func lspCmd(args []string) {
 		GoplsLog:      *goplsLog,
 		GoplsRPCTrace: *goplsRPCTrace,
 		PPROF:         *pprofFlag,
+		HTTPDebug:     *httpDebugFlag,
 	})
 	if err != nil {
 		fmt.Println(err.Error())

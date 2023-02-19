@@ -11,48 +11,60 @@ import (
 )
 
 // newDocumentContents creates a document content processing tool.
-func newDocumentContents(log *zap.Logger) *documentContents {
-	return &documentContents{
+func newDocumentContents(log *zap.Logger) *DocumentContents {
+	return &DocumentContents{
 		m:             new(sync.Mutex),
 		uriToContents: make(map[string]*Document),
 		log:           log,
 	}
 }
 
-type documentContents struct {
+type DocumentContents struct {
 	m             *sync.Mutex
 	uriToContents map[string]*Document
 	log           *zap.Logger
 }
 
 // Set the contents of a document.
-func (fc *documentContents) Set(uri string, d *Document) {
-	fc.m.Lock()
-	defer fc.m.Unlock()
-	fc.uriToContents[uri] = d
+func (dc *DocumentContents) Set(uri string, d *Document) {
+	dc.m.Lock()
+	defer dc.m.Unlock()
+	dc.uriToContents[uri] = d
 }
 
 // Get the contents of a document.
-func (fc *documentContents) Get(uri string) (d *Document, ok bool) {
-	fc.m.Lock()
-	defer fc.m.Unlock()
-	d, ok = fc.uriToContents[uri]
+func (dc *DocumentContents) Get(uri string) (d *Document, ok bool) {
+	dc.m.Lock()
+	defer dc.m.Unlock()
+	d, ok = dc.uriToContents[uri]
 	return
 }
 
 // Delete a document from memory.
-func (fc *documentContents) Delete(uri string) {
-	fc.m.Lock()
-	defer fc.m.Unlock()
-	delete(fc.uriToContents, uri)
+func (dc *DocumentContents) Delete(uri string) {
+	dc.m.Lock()
+	defer dc.m.Unlock()
+	delete(dc.uriToContents, uri)
+}
+
+func (dc *DocumentContents) URIs() (uris []string) {
+	dc.m.Lock()
+	defer dc.m.Unlock()
+	uris = make([]string, len(dc.uriToContents))
+	var i int
+	for k := range dc.uriToContents {
+		uris[i] = k
+		i++
+	}
+	return uris
 }
 
 // Apply changes to the document from the client, and return a list of change requests to send back to the client.
-func (fc *documentContents) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (d *Document, err error) {
-	fc.m.Lock()
-	defer fc.m.Unlock()
+func (dc *DocumentContents) Apply(uri string, changes []lsp.TextDocumentContentChangeEvent) (d *Document, err error) {
+	dc.m.Lock()
+	defer dc.m.Unlock()
 	var ok bool
-	d, ok = fc.uriToContents[uri]
+	d, ok = dc.uriToContents[uri]
 	if !ok {
 		err = fmt.Errorf("document not found")
 		return

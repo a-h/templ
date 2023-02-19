@@ -27,19 +27,21 @@ import (
 // inverse operation - to put the file names back, and readjust any
 // character positions.
 type Server struct {
-	Log              *zap.Logger
-	Client           lsp.Client
-	Target           lsp.Server
-	SourceMapCache   *SourceMapCache
-	documentContents *documentContents
+	Log            *zap.Logger
+	Client         lsp.Client
+	Target         lsp.Server
+	SourceMapCache *SourceMapCache
+	TemplSource    *DocumentContents
+	GoSource       map[string]string
 }
 
 func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache) (s *Server, init func(lsp.Client)) {
 	s = &Server{
-		Log:              log,
-		Target:           target,
-		SourceMapCache:   cache,
-		documentContents: newDocumentContents(log),
+		Log:            log,
+		Target:         target,
+		SourceMapCache: cache,
+		TemplSource:    newDocumentContents(log),
+		GoSource:       make(map[string]string),
 	}
 	return s, func(client lsp.Client) {
 		s.Client = client
@@ -396,7 +398,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		return
 	}
 	// Apply content changes to the cached template.
-	d, err := p.documentContents.Apply(string(params.TextDocument.URI), params.ContentChanges)
+	d, err := p.TemplSource.Apply(string(params.TextDocument.URI), params.ContentChanges)
 	if err != nil {
 		p.Log.Error("error applying changes", zap.Error(err))
 		return
@@ -424,6 +426,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		RangeLength: 0,
 		Text:        w.String(),
 	}}
+	p.GoSource[string(params.TextDocument.URI)] = w.String()
 	// Change the path.
 	params.TextDocument.URI = goURI
 	return p.Target.DidChange(ctx, params)
@@ -457,7 +460,7 @@ func (p *Server) DidClose(ctx context.Context, params *lsp.DidCloseTextDocumentP
 		return p.Target.DidClose(ctx, params)
 	}
 	// Delete the template and sourcemaps from caches.
-	p.documentContents.Delete(string(params.TextDocument.URI))
+	p.TemplSource.Delete(string(params.TextDocument.URI))
 	p.SourceMapCache.Delete(string(params.TextDocument.URI))
 	// Get gopls to delete the Go file from its cache.
 	params.TextDocument.URI = goURI
@@ -472,7 +475,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 		return p.Target.DidOpen(ctx, params)
 	}
 	// Cache the template doc.
-	p.documentContents.Set(string(params.TextDocument.URI), NewDocument(params.TextDocument.Text))
+	p.TemplSource.Set(string(params.TextDocument.URI), NewDocument(params.TextDocument.Text))
 	// Parse the template.
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, params.TextDocument.Text)
 	if err != nil {
@@ -493,6 +496,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
 	// Set the Go contents.
 	params.TextDocument.Text = w.String()
+	p.GoSource[string(params.TextDocument.URI)] = w.String()
 	// Change the path.
 	params.TextDocument.URI = goURI
 	return p.Target.DidOpen(ctx, params)
@@ -606,7 +610,7 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 	p.Log.Info("client -> server: Formatting")
 	defer p.Log.Info("client -> server: Formatting end")
 	// Format the current document.
-	d, _ := p.documentContents.Get(string(params.TextDocument.URI))
+	d, _ := p.TemplSource.Get(string(params.TextDocument.URI))
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, d.String())
 	if err != nil {
 		p.Log.Error("parseTemplate failure", zap.Error(err))
