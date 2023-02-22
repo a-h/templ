@@ -134,7 +134,7 @@ func (d *Document) insert(i int, withLines []string) {
 var ErrOutsideDocumentRange = errors.New("range is outside of document bounds")
 
 func (d *Document) Overwrite(r *lsp.Range, with string) error {
-	if d == nil || d.isEmptyRange(*r) || d.isRangeOfDocument(*r) {
+	if r == nil || d.isEmptyRange(*r) || d.isRangeOfDocument(*r) {
 		d.Lines = strings.Split(with, "\n")
 		return nil
 	}
