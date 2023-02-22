@@ -101,7 +101,7 @@ func (p Client) UnregisterCapability(ctx context.Context, params *lsp.Unregistra
 	return p.Target.UnregisterCapability(ctx, params)
 }
 
-func (p Client) ApplyEdit(ctx context.Context, params *lsp.ApplyWorkspaceEditParams) (result bool, err error) {
+func (p Client) ApplyEdit(ctx context.Context, params *lsp.ApplyWorkspaceEditParams) (result *lsp.ApplyWorkspaceEditResponse, err error) {
 	p.Log.Info("client <- server: ApplyEdit")
 	return p.Target.ApplyEdit(ctx, params)
 }
