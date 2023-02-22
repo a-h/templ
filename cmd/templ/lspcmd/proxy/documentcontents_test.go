@@ -19,7 +19,17 @@ func TestDocument(t *testing.T) {
 			start: "0\n1\n2",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(lsp.Range{}, "replaced")
+					d.Overwrite(&lsp.Range{}, "replaced")
+				},
+			},
+			expected: "replaced",
+		},
+		{
+			name:  "Replace all content if the range is nil",
+			start: "0\n1\n2",
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Overwrite(nil, "replaced")
 				},
 			},
 			expected: "replaced",
@@ -29,7 +39,7 @@ func TestDocument(t *testing.T) {
 			start: "0\n1\n2",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(lsp.Range{
+					d.Overwrite(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 0,
@@ -48,7 +58,7 @@ func TestDocument(t *testing.T) {
 			start: "0\n1\n2",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(lsp.Range{
+					d.Overwrite(&lsp.Range{
 						Start: lsp.Position{
 							Line:      1,
 							Character: 0,
@@ -67,7 +77,7 @@ func TestDocument(t *testing.T) {
 			start: "012345",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(lsp.Range{
+					d.Overwrite(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 0,
@@ -86,7 +96,7 @@ func TestDocument(t *testing.T) {
 			start: "012345",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(lsp.Range{
+					d.Overwrite(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 0,
@@ -105,7 +115,7 @@ func TestDocument(t *testing.T) {
 			start: "Line one\nLine two\nLine three",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(lsp.Range{
+					d.Overwrite(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 4,
@@ -133,7 +143,7 @@ templ personTemplate(p person) {
 `,
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(lsp.Range{
+					d.Overwrite(&lsp.Range{
 						Start: lsp.Position{
 							Line:      4,
 							Character: 21,
