@@ -71,7 +71,7 @@ func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) 
 		updated.Line = to.Line
 		updated.Character = to.Col
 	} else {
-		log.Info("updatePosition: not found", zap.String("from", fmt.Sprintf("%d:%d", current.Line, current.Character)), zap.Any("sourceMap", sourceMap.Items))
+		log.Info("updatePosition: not found", zap.String("from", fmt.Sprintf("%d:%d", current.Line, current.Character)))
 	}
 	return
 }
@@ -236,7 +236,7 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 		r := result[i]
 		// Rewrite the Diagnostics range field.
 		for di := 0; di < len(r.Diagnostics); di++ {
-			r.Diagnostics[i].Range = p.convertGoRangeToTemplRange(templURI, r.Diagnostics[i].Range)
+			r.Diagnostics[di].Range = p.convertGoRangeToTemplRange(templURI, r.Diagnostics[di].Range)
 		}
 		// Rewrite the DocumentChanges.
 		for dci := 0; dci < len(r.Edit.DocumentChanges); dci++ {
@@ -246,6 +246,7 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 			}
 			dc.TextDocument.URI = templURI
 		}
+		result[i] = r
 	}
 	return
 }
@@ -269,6 +270,7 @@ func (p *Server) CodeLens(ctx context.Context, params *lsp.CodeLensParams) (resu
 	for i := 0; i < len(result); i++ {
 		cl := result[i]
 		cl.Range = p.convertGoRangeToTemplRange(templURI, cl.Range)
+		result[i] = cl
 	}
 	return
 }
@@ -300,6 +302,7 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 		if r.TextEdit != nil {
 			r.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, r.TextEdit.Range)
 		}
+		result[i] = r
 	}
 	return
 }
@@ -415,20 +418,20 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	w := new(strings.Builder)
 	sm, err := generator.Generate(template, w)
 	if err != nil {
+		p.Log.Error("generate failure", zap.Error(err))
 		return
 	}
 	// Cache the sourcemap.
-	p.Log.Info("setting cache", zap.String("uri", string(params.TextDocument.URI)), zap.Any("sourceMap", sm), zap.String("contents", w.String()))
+	p.Log.Info("setting cache", zap.String("uri", string(params.TextDocument.URI)))
 	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
-	// Overwrite all the Go contents.
-	params.ContentChanges = []lsp.TextDocumentContentChangeEvent{{
-		Range:       lsp.Range{},
-		RangeLength: 0,
-		Text:        w.String(),
-	}}
 	p.GoSource[string(params.TextDocument.URI)] = w.String()
 	// Change the path.
 	params.TextDocument.URI = goURI
+	params.TextDocument.TextDocumentIdentifier.URI = goURI
+	// Overwrite all the Go contents.
+	params.ContentChanges = []lsp.TextDocumentContentChangeEvent{{
+		Text: w.String(),
+	}}
 	return p.Target.DidChange(ctx, params)
 }
 
@@ -453,8 +456,6 @@ func (p *Server) DidChangeWorkspaceFolders(ctx context.Context, params *lsp.DidC
 func (p *Server) DidClose(ctx context.Context, params *lsp.DidCloseTextDocumentParams) (err error) {
 	p.Log.Info("client -> server: DidClose")
 	defer p.Log.Info("client -> server: DidClose end")
-	p.Log.Info("client -> server: DidSave")
-	defer p.Log.Info("client -> server: DidSave end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.DidClose(ctx, params)
@@ -496,7 +497,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
 	// Set the Go contents.
 	params.TextDocument.Text = w.String()
-	p.GoSource[string(params.TextDocument.URI)] = w.String()
+	p.GoSource[string(params.TextDocument.URI)] = params.TextDocument.Text
 	// Change the path.
 	params.TextDocument.URI = goURI
 	return p.Target.DidOpen(ctx, params)
@@ -673,6 +674,7 @@ func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationP
 		r := result[i]
 		r.URI = templURI
 		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+		result[i] = r
 	}
 	return
 }
@@ -680,27 +682,94 @@ func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationP
 func (p *Server) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTypeFormattingParams) (result []lsp.TextEdit, err error) {
 	p.Log.Info("client -> server: OnTypeFormatting")
 	defer p.Log.Info("client -> server: OnTypeFormatting end")
+	templURI := params.TextDocument.URI
+	// Rewrite the request.
 	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
-	//TODO: Rewrite the response.
-	return p.Target.OnTypeFormatting(ctx, params)
+	// Get the response.
+	result, err = p.Target.OnTypeFormatting(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	// Rewrite the response.
+	for i := 0; i < len(result); i++ {
+		r := result[i]
+		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+		result[i] = r
+	}
+	return
 }
 
 func (p *Server) PrepareRename(ctx context.Context, params *lsp.PrepareRenameParams) (result *lsp.Range, err error) {
 	p.Log.Info("client -> server: PrepareRename")
 	defer p.Log.Info("client -> server: PrepareRename end")
-	return p.Target.PrepareRename(ctx, params)
+	templURI := params.TextDocument.URI
+	// Rewrite the request.
+	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	// Get the response.
+	result, err = p.Target.PrepareRename(ctx, params)
+	if err != nil {
+		return
+	}
+	if result == nil {
+		return
+	}
+	// Rewrite the response.
+	output := p.convertGoRangeToTemplRange(templURI, *result)
+	return &output, nil
 }
 
 func (p *Server) RangeFormatting(ctx context.Context, params *lsp.DocumentRangeFormattingParams) (result []lsp.TextEdit, err error) {
 	p.Log.Info("client -> server: RangeFormatting")
 	defer p.Log.Info("client -> server: RangeFormatting end")
-	return p.Target.RangeFormatting(ctx, params)
+	templURI := params.TextDocument.URI
+	// Rewrite the request.
+	var isTemplURI bool
+	isTemplURI, params.TextDocument.URI = convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplURI {
+		err = fmt.Errorf("not a templ file")
+		return
+	}
+	// Call gopls.
+	result, err = p.Target.RangeFormatting(ctx, params)
+	if err != nil {
+		return
+	}
+	// Rewrite the response.
+	for i := 0; i < len(result); i++ {
+		r := result[i]
+		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+		result[i] = r
+	}
+	return result, err
 }
 
 func (p *Server) References(ctx context.Context, params *lsp.ReferenceParams) (result []lsp.Location, err error) {
 	p.Log.Info("client -> server: References")
 	defer p.Log.Info("client -> server: References end")
-	return p.Target.References(ctx, params)
+	templURI := params.TextDocument.URI
+	// Rewrite the request.
+	var isTemplURI bool
+	isTemplURI, params.TextDocument.URI = convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplURI {
+		err = fmt.Errorf("not a templ file")
+		return
+	}
+	// Call gopls.
+	result, err = p.Target.References(ctx, params)
+	if err != nil {
+		return
+	}
+	// Rewrite the response.
+	for i := 0; i < len(result); i++ {
+		r := result[i]
+		r.URI = templURI
+		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+		result[i] = r
+	}
+	return result, err
 }
 
 func (p *Server) Rename(ctx context.Context, params *lsp.RenameParams) (result *lsp.WorkspaceEdit, err error) {
@@ -712,6 +781,7 @@ func (p *Server) Rename(ctx context.Context, params *lsp.RenameParams) (result *
 func (p *Server) SignatureHelp(ctx context.Context, params *lsp.SignatureHelpParams) (result *lsp.SignatureHelp, err error) {
 	p.Log.Info("client -> server: SignatureHelp")
 	defer p.Log.Info("client -> server: SignatureHelp end")
+	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
 	return p.Target.SignatureHelp(ctx, params)
 }
 
@@ -724,12 +794,19 @@ func (p *Server) Symbols(ctx context.Context, params *lsp.WorkspaceSymbolParams)
 func (p *Server) TypeDefinition(ctx context.Context, params *lsp.TypeDefinitionParams) (result []lsp.Location, err error) {
 	p.Log.Info("client -> server: TypeDefinition")
 	defer p.Log.Info("client -> server: TypeDefinition end")
+	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
 	return p.Target.TypeDefinition(ctx, params)
 }
 
 func (p *Server) WillSave(ctx context.Context, params *lsp.WillSaveTextDocumentParams) (err error) {
 	p.Log.Info("client -> server: WillSave")
 	defer p.Log.Info("client -> server: WillSave end")
+	var ok bool
+	ok, params.TextDocument.URI = convertTemplToGoURI(params.TextDocument.URI)
+	if !ok {
+		p.Log.Error("not a templ file")
+		return nil
+	}
 	return p.Target.WillSave(ctx, params)
 }
 
@@ -838,6 +915,8 @@ func (p *Server) LinkedEditingRange(ctx context.Context, params *lsp.LinkedEditi
 func (p *Server) Moniker(ctx context.Context, params *lsp.MonikerParams) (result []lsp.Moniker, err error) {
 	p.Log.Info("client -> server: Moniker")
 	defer p.Log.Info("client -> server: Moniker end")
+	templURI := params.TextDocument.URI
+	params.TextDocument.URI, params.TextDocumentPositionParams.Position = p.updatePosition(templURI, params.TextDocumentPositionParams.Position)
 	return p.Target.Moniker(ctx, params)
 }
 

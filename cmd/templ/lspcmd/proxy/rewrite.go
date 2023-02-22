@@ -15,7 +15,7 @@ func convertTemplToGoURI(templURI lsp.DocumentURI) (isTemplFile bool, goURI lsp.
 	return true, lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
 }
 
-func convertTemplGoToTemplURI(goURI lsp.DocumentURI) (isTemplGoFile bool, tempURI lsp.DocumentURI) {
+func convertTemplGoToTemplURI(goURI lsp.DocumentURI) (isTemplGoFile bool, templURI lsp.DocumentURI) {
 	base, fileName := path.Split(string(goURI))
 	if !strings.HasSuffix(fileName, "_templ.go") {
 		return
