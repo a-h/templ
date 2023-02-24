@@ -1,5 +1,5 @@
 cmd/example/*.go
-dist
+dist/
 cmd/templ/templ
 cmd/templ/lspcmd/*log.txt
 .DS_Store
