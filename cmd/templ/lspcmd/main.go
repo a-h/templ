@@ -10,7 +10,7 @@ import (
 	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
 	"go.lsp.dev/jsonrpc2"
-	"go.lsp.dev/protocol"
+	"github.com/a-h/protocol"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 

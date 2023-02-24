@@ -7,7 +7,7 @@ import (
 
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
-	lsp "go.lsp.dev/protocol"
+	lsp "github.com/a-h/protocol"
 	"go.lsp.dev/uri"
 	"go.uber.org/zap"
 )

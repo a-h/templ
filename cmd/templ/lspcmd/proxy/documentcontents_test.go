@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	lsp "go.lsp.dev/protocol"
+	lsp "github.com/a-h/protocol"
 )
 
 func TestDocument(t *testing.T) {

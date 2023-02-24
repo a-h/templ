@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	lsp "go.lsp.dev/protocol"
+	lsp "github.com/a-h/protocol"
 	"go.uber.org/zap"
 )
 
