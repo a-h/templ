@@ -3,6 +3,7 @@ package generatecmd
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
@@ -14,7 +15,6 @@ import (
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
-	"github.com/hashicorp/go-multierror"
 )
 
 type Arguments struct {
@@ -56,7 +56,7 @@ func processPath(path string, generateSourceMapVisualisations bool, workerCount 
 	var successCount, errorCount int
 	for r := range results {
 		if r.Error != nil {
-			err = multierror.Append(err, fmt.Errorf("%s: %w", r.FileName, r.Error))
+			err = errors.Join(err, fmt.Errorf("%s: %w", r.FileName, r.Error))
 			errorCount++
 			continue
 		}

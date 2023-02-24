@@ -2,6 +2,7 @@ package migratecmd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"github.com/a-h/templ/cmd/templ/processor"
 	v1 "github.com/a-h/templ/parser/v1"
 	v2 "github.com/a-h/templ/parser/v2"
-	"github.com/hashicorp/go-multierror"
 	"github.com/natefinch/atomic"
 )
 
@@ -42,7 +42,7 @@ func processPath(path string) (err error) {
 	var successCount, errorCount int
 	for r := range results {
 		if r.Error != nil {
-			err = multierror.Append(err, fmt.Errorf("%s: %w", r.FileName, r.Error))
+			err = errors.Join(err, fmt.Errorf("%s: %w", r.FileName, r.Error))
 			errorCount++
 			continue
 		}
