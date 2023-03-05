@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"time"
 
@@ -24,7 +24,7 @@ func Run(args []string) (err error) {
 
 func formatStdin() (err error) {
 	var bytes []byte
-	bytes, err = ioutil.ReadAll(os.Stdin)
+	bytes, err = io.ReadAll(os.Stdin)
 	if err != nil {
 		return
 	}
