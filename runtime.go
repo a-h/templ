@@ -247,13 +247,17 @@ func NewCSSHandler(classes ...ComponentCSSClass) CSSHandler {
 
 // CSSHandler is a HTTP handler that serves CSS.
 type CSSHandler struct {
+	Logger  func(err error)
 	Classes []ComponentCSSClass
 }
 
 func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/css")
 	for _, c := range cssh.Classes {
-		w.Write([]byte(c.Class))
+		_, err := w.Write([]byte(c.Class))
+		if err != nil && cssh.Logger != nil {
+			cssh.Logger(err)
+		}
 	}
 }
 

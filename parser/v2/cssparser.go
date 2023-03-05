@@ -173,7 +173,10 @@ func (p expressionCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 	}
 	// Property name.
 	if pr = cssPropertyNameParser(pi); !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 	r.Name = pr.Item.(string)
@@ -183,14 +186,20 @@ func (p expressionCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 		parse.Rune(':'),
 		optionalWhitespaceParser)(pi)
 	if !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 
 	// { string }
 	pr = stringExpression.Parse(pi)
 	if !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 	r.Value = pr.Item.(StringExpression)
