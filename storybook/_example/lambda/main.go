@@ -4,8 +4,8 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -26,6 +26,7 @@ func build() {
 
 // Embed the build output into the Lambda.
 // The build output is only 4MB, so there's plenty of space.
+//
 //go:embed storybook-server/storybook-static
 var storybookStatic embed.FS
 
@@ -50,7 +51,7 @@ func handler(ctx context.Context, e events.APIGatewayV2HTTPRequest) (resp events
 	// Convert it to an API Gateway response.
 	result := w.Result()
 	resp.StatusCode = result.StatusCode
-	bdy, err := ioutil.ReadAll(w.Result().Body)
+	bdy, err := io.ReadAll(w.Result().Body)
 	if err != nil {
 		return
 	}
