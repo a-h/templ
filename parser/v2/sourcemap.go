@@ -1,78 +1,76 @@
 package parser
 
-// SourceExpressionTo is a record of an expression, along with its start and end positions.
-type SourceExpressionTo struct {
-	Source Expression
-	Target Range
-}
+import (
+	"strings"
+)
 
 // NewSourceMap creates a new lookup to map templ source code to items in the
 // parsed template.
 func NewSourceMap() *SourceMap {
 	return &SourceMap{
-		Items: make([]SourceExpressionTo, 0),
+		SourceLinesToTarget: make(map[uint32]map[uint32]Position),
+		TargetLinesToSource: make(map[uint32]map[uint32]Position),
 	}
 }
 
 type SourceMap struct {
-	Items []SourceExpressionTo
+	SourceLinesToTarget map[uint32]map[uint32]Position
+	TargetLinesToSource map[uint32]map[uint32]Position
 }
 
 // Add an item to the lookup.
 func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
-	sm.Items = append(sm.Items, SourceExpressionTo{
-		Source: src,
-		Target: tgt,
-	})
+	srcIndex := src.Range.From.Index
+	tgtIndex := tgt.From.Index
+
+	for lineIndex, line := range strings.Split(src.Value, "\n") {
+		srcLine := src.Range.From.Line + uint32(lineIndex)
+		tgtLine := tgt.From.Line + uint32(lineIndex)
+
+		for colIndex := 0; colIndex < len(line); colIndex++ {
+			var srcCol, tgtCol uint32 = uint32(colIndex), uint32(colIndex)
+			if lineIndex == 0 {
+				// First line can have an offset.
+				srcCol += src.Range.From.Col
+				tgtCol += tgt.From.Col
+			}
+
+			if _, ok := sm.SourceLinesToTarget[srcLine]; !ok {
+				sm.SourceLinesToTarget[srcLine] = make(map[uint32]Position)
+			}
+			sm.SourceLinesToTarget[srcLine][srcCol] = NewPositionFromValues(tgtIndex, tgtLine, tgtCol)
+
+			if _, ok := sm.TargetLinesToSource[tgtLine]; !ok {
+				sm.TargetLinesToSource[tgtLine] = make(map[uint32]Position)
+			}
+			sm.TargetLinesToSource[tgtLine][tgtCol] = NewPositionFromValues(srcIndex, srcLine, srcCol)
+
+			srcIndex++
+			tgtIndex++
+		}
+		// Increment the index for the newline char.
+		srcIndex++
+		tgtIndex++
+	}
 	return src.Range.From
 }
 
 // TargetPositionFromSource looks up the target position using the source position.
-func (sm *SourceMap) TargetPositionFromSource(line, col uint32) (tgt Position, mapping SourceExpressionTo, ok bool) {
-	mapping, offset, ok := sm.lookupTargetBySourceLineCol(line, col)
-	if ok {
-		tgt = mapping.Target.From
-		tgt.Col += offset
+func (sm *SourceMap) TargetPositionFromSource(line, col uint32) (tgt Position, ok bool) {
+	lm, ok := sm.SourceLinesToTarget[line]
+	if !ok {
+		return
 	}
-	return
-}
-
-func (sm *SourceMap) lookupTargetBySourceLineCol(line, col uint32) (ir SourceExpressionTo, offset uint32, ok bool) {
-	for _, cc := range sm.Items {
-		if cc.Source.Range.From.Line == cc.Source.Range.To.Line && cc.Source.Range.To.Line == line && ((col >= cc.Source.Range.From.Col && col <= cc.Source.Range.To.Col) ||
-			(col <= cc.Source.Range.From.Col && col >= cc.Source.Range.To.Col)) {
-			ccOffset := col - cc.Source.Range.From.Col
-			if isBestMatch := ccOffset < offset || !ok; isBestMatch {
-				ok = true
-				offset = ccOffset
-				ir = cc
-			}
-		}
-	}
+	tgt, ok = lm[col]
 	return
 }
 
 // SourcePositionFromTarget looks the source position using the target position.
-func (sm *SourceMap) SourcePositionFromTarget(line, col uint32) (src Position, mapping SourceExpressionTo, ok bool) {
-	mapping, offset, ok := sm.lookupSourceByTargetLineCol(line, col)
-	if ok {
-		src = mapping.Source.Range.From
-		src.Col += offset
+func (sm *SourceMap) SourcePositionFromTarget(line, col uint32) (src Position, ok bool) {
+	lm, ok := sm.TargetLinesToSource[line]
+	if !ok {
+		return
 	}
-	return
-}
-
-func (sm *SourceMap) lookupSourceByTargetLineCol(line, col uint32) (ir SourceExpressionTo, offset uint32, ok bool) {
-	for _, cc := range sm.Items {
-		if cc.Target.From.Line == cc.Target.To.Line && cc.Target.To.Line == line && ((col >= cc.Target.From.Col && col <= cc.Target.To.Col) ||
-			(col <= cc.Target.From.Col && col >= cc.Target.To.Col)) {
-			ccOffset := col - cc.Target.From.Col
-			if isBestMatch := ccOffset < offset || !ok; isBestMatch {
-				ok = true
-				offset = ccOffset
-				ir = cc
-			}
-		}
-	}
+	src, ok = lm[col]
 	return
 }

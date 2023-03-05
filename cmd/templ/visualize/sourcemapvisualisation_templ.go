@@ -23,6 +23,8 @@ func row() templ.CSSClass {
 func column() templ.CSSClass {
 	var templCSSBuilder strings.Builder
 	templCSSBuilder.WriteString(`flex:50%;`)
+	templCSSBuilder.WriteString(`overflow-y:scroll;`)
+	templCSSBuilder.WriteString(`max-height:100vh;`)
 	templCSSID := templ.CSSID(`column`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
 		ID: templCSSID,

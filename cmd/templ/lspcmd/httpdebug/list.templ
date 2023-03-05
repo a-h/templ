@@ -7,11 +7,13 @@ templ list(uris []string) {
 			<th></th>
 			<th></th>
 			<th></th>
+			<th></th>
 		</tr>
 		for _, uri := range uris {
 			<tr>
 				<td>{ uri }</td>
 				<td><a href={ getMapURL(uri) }>Mapping</a></td>
+				<td><a href={ getSourceMapURL(uri) }>Source Map</a></td>
 				<td><a href={ getTemplURL(uri) }>Templ</a></td>
 				<td><a href={ getGoURL(uri) }>Go</a></td>
 			</tr>

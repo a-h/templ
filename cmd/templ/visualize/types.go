@@ -28,9 +28,9 @@ func (tl templLines) Render(ctx context.Context, w io.Writer) error {
 	for lineIndex, line := range templLines {
 		w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n"))
 		for colIndex, c := range line {
-			if _, m, ok := tl.sourceMap.TargetPositionFromSource(uint32(lineIndex), uint32(colIndex)); ok {
-				sourceID := fmt.Sprintf("src_%d_%d_%d", m.Source.Range.From.Index, m.Source.Range.From.Line, m.Source.Range.From.Col)
-				targetID := fmt.Sprintf("tgt_%d_%d_%d", m.Target.From.Index, m.Target.From.Index, m.Target.From.Col)
+			if tgt, ok := tl.sourceMap.TargetPositionFromSource(uint32(lineIndex), uint32(colIndex)); ok {
+				sourceID := fmt.Sprintf("src_%d_%d", lineIndex, colIndex)
+				targetID := fmt.Sprintf("tgt_%d_%d", tgt.Line, tgt.Col)
 				if err := mappedCharacter(string(c), sourceID, targetID).Render(ctx, w); err != nil {
 					return err
 				}
@@ -58,9 +58,9 @@ func (gl goLines) Render(ctx context.Context, w io.Writer) error {
 	for lineIndex, line := range templLines {
 		w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n"))
 		for colIndex, c := range line {
-			if _, m, ok := gl.sourceMap.SourcePositionFromTarget(uint32(lineIndex), uint32(colIndex)); ok {
-				sourceID := fmt.Sprintf("src_%d_%d_%d", m.Source.Range.From.Index, m.Source.Range.From.Line, m.Source.Range.From.Col)
-				targetID := fmt.Sprintf("tgt_%d_%d_%d", m.Target.From.Index, m.Target.From.Index, m.Target.From.Col)
+			if src, ok := gl.sourceMap.SourcePositionFromTarget(uint32(lineIndex), uint32(colIndex)); ok {
+				sourceID := fmt.Sprintf("src_%d_%d", src.Line, src.Col)
+				targetID := fmt.Sprintf("tgt_%d_%d", lineIndex, colIndex)
 				if err := mappedCharacter(string(c), sourceID, targetID).Render(ctx, w); err != nil {
 					return err
 				}

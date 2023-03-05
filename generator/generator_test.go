@@ -23,17 +23,15 @@ func TestGeneratorSourceMap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to write Go expression: %v", err)
 	}
-	if len(g.sourceMap.Items) != 1 {
-		t.Fatalf("expected that writing an expression adds to the source map, ubut got %d items", len(g.sourceMap.Items))
+	// The from value is (16, 1, 0) because the generator prefixes the
+	// expression with a "// GoExpression" comment.
+	expected := parser.NewPositionFromValues(16, 1, 0)
+
+	actual, ok := g.sourceMap.TargetPositionFromSource(0, 0)
+	if !ok {
+		t.Errorf("failed to get matching target")
 	}
-	expectedTarget := parser.NewRange(
-		// The from value is (16, 1, 0) because the generator prefixes the
-		// expression with a "// GoExpression" comment.
-		parser.NewPositionFromValues(16, 1, 0),
-		parser.NewPositionFromValues(int64(16+len(exp.Expression.Value)), 2, 5),
-	)
-	actual := g.sourceMap.Items[0].Target
-	if diff := cmp.Diff(expectedTarget, actual); diff != "" {
+	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected target:\n%v", diff)
 	}
 }

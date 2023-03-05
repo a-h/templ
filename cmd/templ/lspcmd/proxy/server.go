@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	lsp "github.com/a-h/protocol"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
-	lsp "github.com/a-h/protocol"
 	"go.lsp.dev/uri"
 	"go.uber.org/zap"
 )
@@ -64,7 +64,7 @@ func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) 
 		return
 	}
 	// Map from the source position to target Go position.
-	to, _, ok := sourceMap.TargetPositionFromSource(current.Line, current.Character)
+	to, ok := sourceMap.TargetPositionFromSource(current.Line, current.Character)
 	if ok {
 		log.Info("updatePosition: found", zap.String("fromTempl", fmt.Sprintf("%d:%d", current.Line, current.Character)),
 			zap.String("toGo", fmt.Sprintf("%d:%d", to.Line, to.Col)))
@@ -83,12 +83,12 @@ func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.
 		return
 	}
 	// Map from the source position to target Go position.
-	start, _, ok := sourceMap.TargetPositionFromSource(input.Start.Line, input.Start.Character)
+	start, ok := sourceMap.TargetPositionFromSource(input.Start.Line, input.Start.Character)
 	if ok {
 		output.Start.Line = start.Line
 		output.Start.Character = start.Col
 	}
-	end, _, ok := sourceMap.TargetPositionFromSource(input.End.Line, input.End.Character)
+	end, ok := sourceMap.TargetPositionFromSource(input.End.Line, input.End.Character)
 	if ok {
 		output.End.Line = end.Line
 		output.End.Character = end.Col
@@ -103,12 +103,12 @@ func (p *Server) convertGoRangeToTemplRange(templURI lsp.DocumentURI, input lsp.
 		return
 	}
 	// Map from the source position to target Go position.
-	start, _, ok := sourceMap.SourcePositionFromTarget(input.Start.Line, input.Start.Character)
+	start, ok := sourceMap.SourcePositionFromTarget(input.Start.Line, input.Start.Character)
 	if ok {
 		output.Start.Line = start.Line
 		output.Start.Character = start.Col
 	}
-	end, _, ok := sourceMap.SourcePositionFromTarget(input.End.Line, input.End.Character)
+	end, ok := sourceMap.SourcePositionFromTarget(input.End.Line, input.End.Character)
 	if ok {
 		output.End.Line = end.Line
 		output.End.Character = end.Col

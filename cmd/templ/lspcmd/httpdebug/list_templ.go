@@ -74,6 +74,15 @@ func list(uris []string) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (standard)
+		_, err = templBuffer.WriteString("<th>")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</th>")
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</tr>")
 		if err != nil {
 			return err
@@ -164,7 +173,7 @@ func list(uris []string) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_5 templ.SafeURL = getTemplURL(uri)
+			var var_5 templ.SafeURL = getSourceMapURL(uri)
 			_, err = templBuffer.WriteString(templ.EscapeString(string(var_5)))
 			if err != nil {
 				return err
@@ -178,7 +187,7 @@ func list(uris []string) templ.Component {
 				return err
 			}
 			// Text
-			var_6 := `Templ`
+			var_6 := `Source Map`
 			_, err = templBuffer.WriteString(var_6)
 			if err != nil {
 				return err
@@ -210,7 +219,7 @@ func list(uris []string) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_7 templ.SafeURL = getGoURL(uri)
+			var var_7 templ.SafeURL = getTemplURL(uri)
 			_, err = templBuffer.WriteString(templ.EscapeString(string(var_7)))
 			if err != nil {
 				return err
@@ -224,8 +233,54 @@ func list(uris []string) templ.Component {
 				return err
 			}
 			// Text
-			var_8 := `Go`
+			var_8 := `Templ`
 			_, err = templBuffer.WriteString(var_8)
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</a>")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("</td>")
+			if err != nil {
+				return err
+			}
+			// Element (standard)
+			_, err = templBuffer.WriteString("<td>")
+			if err != nil {
+				return err
+			}
+			// Element (standard)
+			_, err = templBuffer.WriteString("<a")
+			if err != nil {
+				return err
+			}
+			// Element Attributes
+			_, err = templBuffer.WriteString(" href=")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
+			if err != nil {
+				return err
+			}
+			var var_9 templ.SafeURL = getGoURL(uri)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_9)))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(">")
+			if err != nil {
+				return err
+			}
+			// Text
+			var_10 := `Go`
+			_, err = templBuffer.WriteString(var_10)
 			if err != nil {
 				return err
 			}

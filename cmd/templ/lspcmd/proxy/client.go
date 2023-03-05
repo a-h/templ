@@ -58,12 +58,12 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 	// Rewrite the positions.
 	for i := 0; i < len(params.Diagnostics); i++ {
 		item := params.Diagnostics[i]
-		start, _, ok := sourceMap.SourcePositionFromTarget(item.Range.Start.Line, item.Range.Start.Character)
+		start, ok := sourceMap.SourcePositionFromTarget(item.Range.Start.Line, item.Range.Start.Character)
 		if ok {
 			item.Range.Start.Line = start.Line
 			item.Range.Start.Character = start.Col
 		}
-		end, _, ok := sourceMap.SourcePositionFromTarget(item.Range.End.Line, item.Range.End.Character)
+		end, ok := sourceMap.SourcePositionFromTarget(item.Range.End.Line, item.Range.End.Character)
 		if ok {
 			item.Range.End.Line = end.Line
 			item.Range.End.Line = end.Col

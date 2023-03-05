@@ -1,6 +1,7 @@
 package httpdebug
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -20,6 +21,17 @@ func NewHandler(s *proxy.Server) http.Handler {
 			return
 		}
 		io.WriteString(w, c.String())
+	})
+	m.HandleFunc("/sourcemap", func(w http.ResponseWriter, r *http.Request) {
+		uri := r.URL.Query().Get("uri")
+		sm, ok := s.SourceMapCache.Get(uri)
+		if !ok {
+			Error(w, "uri not found", http.StatusNotFound)
+			return
+		}
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		enc.Encode(sm.SourceLinesToTarget)
 	})
 	m.HandleFunc("/go", func(w http.ResponseWriter, r *http.Request) {
 		uri := r.URL.Query().Get("uri")
@@ -64,6 +76,10 @@ func NewHandler(s *proxy.Server) http.Handler {
 
 func getMapURL(uri string) templ.SafeURL {
 	return withQuery("/", uri)
+}
+
+func getSourceMapURL(uri string) templ.SafeURL {
+	return withQuery("/sourcemap", uri)
 }
 
 func getTemplURL(uri string) templ.SafeURL {
