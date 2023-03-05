@@ -34,7 +34,6 @@ func (p cssParser) Parse(pi parse.Input) parse.Result {
 	var from Position
 	for {
 		var pr parse.Result
-		from = NewPositionFromInput(pi)
 
 		// Try for an expression CSS declaration.
 		// background-color: {%= constants.BackgroundColor %};
@@ -176,7 +175,10 @@ func (p expressionCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 	}
 	// Property name.
 	if pr = cssPropertyNameParser(pi); !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 	r.Name = pr.Item.(string)
@@ -186,14 +188,20 @@ func (p expressionCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 		parse.Rune(':'),
 		optionalWhitespaceParser)(pi)
 	if !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 
 	// {%= string %}
 	pr = newStringExpressionParser().Parse(pi)
 	if !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 	r.Value = pr.Item.(StringExpression)
@@ -231,7 +239,10 @@ func (p constantCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 	}
 	// Property name.
 	if pr = cssPropertyNameParser(pi); !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 	r.Name = pr.Item.(string)
@@ -241,7 +252,10 @@ func (p constantCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 		parse.Rune(':'),
 		optionalWhitespaceParser)(pi)
 	if !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 

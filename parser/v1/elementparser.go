@@ -149,7 +149,6 @@ func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	var r BoolExpressionAttribute
 
 	start := pi.Index()
-	from := NewPositionFromInput(pi)
 	pr := whitespaceParser(pi)
 	if !pr.Success {
 		return pr
@@ -169,7 +168,7 @@ func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Once we've seen a expression prefix, read until the tag end.
-	from = NewPositionFromInput(pi)
+	from := NewPositionFromInput(pi)
 	pr = parse.StringUntil(expressionEnd)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return parse.Failure("boolExpressionAttributeParser", fmt.Errorf("boolExpressionAttributeParser: failed to read until tag end: %w", pr.Error))
@@ -203,7 +202,6 @@ func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	var r ExpressionAttribute
 
 	start := pi.Index()
-	from := NewPositionFromInput(pi)
 	pr := whitespaceParser(pi)
 	if !pr.Success {
 		return pr
@@ -222,7 +220,7 @@ func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Once we've seen a expression prefix, read until the tag end.
-	from = NewPositionFromInput(pi)
+	from := NewPositionFromInput(pi)
 	pr = parse.StringUntil(expressionEnd)(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return parse.Failure("expressionAttributeParser", fmt.Errorf("expressionAttributeParser: failed to read until tag end: %w", pr.Error))

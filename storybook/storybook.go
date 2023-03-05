@@ -90,7 +90,9 @@ func (sh *Storybook) AddComponent(name string, componentConstructor interface{},
 var storybookPreviewMatcher = pathvars.NewExtractor("/storybook_preview/{name}")
 
 func (sh *Storybook) Build(ctx context.Context) (err error) {
-	defer sh.Log.Sync()
+	defer func() {
+		_ = sh.Log.Sync()
+	}()
 	// Download Storybook to the directory required.
 	sh.Log.Info("Installing storybook.")
 	err = sh.installStorybook()
@@ -114,7 +116,10 @@ func (sh *Storybook) Build(ctx context.Context) (err error) {
 	// Execute a static build of storybook if the config has changed.
 	if configHasChanged {
 		sh.Log.Info("Config not present, or has changed, rebuilding storybook.")
-		sh.buildStorybook()
+		err = sh.buildStorybook()
+		if err != nil {
+			return
+		}
 	} else {
 		sh.Log.Info("Storybook is up-to-date, skipping build step.")
 	}
@@ -354,7 +359,10 @@ func ObjectArg(name string, value interface{}, valuePtr interface{}) Arg {
 		Value:   value,
 		Control: "object",
 		Get: func(q url.Values) interface{} {
-			json.Unmarshal([]byte(q.Get(name)), valuePtr)
+			err := json.Unmarshal([]byte(q.Get(name)), valuePtr)
+			if err != nil {
+				return err
+			}
 			return reflect.Indirect(reflect.ValueOf(valuePtr)).Interface()
 		},
 	}
@@ -459,18 +467,30 @@ func (sm *SortedMap) Add(key string, value interface{}) {
 	sm.internal[key] = value
 }
 
-func (sm *SortedMap) MarshalJSON() ([]byte, error) {
+func (sm *SortedMap) MarshalJSON() (output []byte, err error) {
 	sm.m.Lock()
 	defer sm.m.Unlock()
 	b := new(bytes.Buffer)
 	b.WriteRune('{')
 	enc := json.NewEncoder(b)
 	for i, k := range sm.keys {
-		enc.Encode(k)
-		b.WriteRune(':')
-		enc.Encode(sm.internal[k])
+		err = enc.Encode(k)
+		if err != nil {
+			return
+		}
+		_, err = b.WriteRune(':')
+		if err != nil {
+			return
+		}
+		err = enc.Encode(sm.internal[k])
+		if err != nil {
+			return
+		}
 		if i < len(sm.keys)-1 {
-			b.WriteRune(',')
+			_, err = b.WriteRune(',')
+			if err != nil {
+				return
+			}
 		}
 	}
 	b.WriteRune('}')
