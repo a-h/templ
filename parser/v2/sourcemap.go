@@ -23,18 +23,38 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 	srcIndex := src.Range.From.Index
 	tgtIndex := tgt.From.Index
 
-	for lineIndex, line := range strings.Split(src.Value, "\n") {
+	lines := strings.Split(src.Value, "\n")
+	for lineIndex, line := range lines {
 		srcLine := src.Range.From.Line + uint32(lineIndex)
 		tgtLine := tgt.From.Line + uint32(lineIndex)
 
-		for colIndex := 0; colIndex < len(line); colIndex++ {
-			var srcCol, tgtCol uint32 = uint32(colIndex), uint32(colIndex)
-			if lineIndex == 0 {
-				// First line can have an offset.
-				srcCol += src.Range.From.Col
-				tgtCol += tgt.From.Col
-			}
+		var srcCol, tgtCol uint32
+		if lineIndex == 0 {
+			// First line can have an offset.
+			srcCol += src.Range.From.Col
+			tgtCol += tgt.From.Col
+		}
 
+		// Process the cols.
+		for colIndex := 0; colIndex < len(line); colIndex++ {
+			if _, ok := sm.SourceLinesToTarget[srcLine]; !ok {
+				sm.SourceLinesToTarget[srcLine] = make(map[uint32]Position)
+			}
+			sm.SourceLinesToTarget[srcLine][srcCol] = NewPositionFromValues(tgtIndex, tgtLine, tgtCol)
+
+			if _, ok := sm.TargetLinesToSource[tgtLine]; !ok {
+				sm.TargetLinesToSource[tgtLine] = make(map[uint32]Position)
+			}
+			sm.TargetLinesToSource[tgtLine][tgtCol] = NewPositionFromValues(srcIndex, srcLine, srcCol)
+
+			srcCol++
+			tgtCol++
+			srcIndex++
+			tgtIndex++
+		}
+
+		// LSPs include the newline char as a col.
+		if len(lines) > 1 {
 			if _, ok := sm.SourceLinesToTarget[srcLine]; !ok {
 				sm.SourceLinesToTarget[srcLine] = make(map[uint32]Position)
 			}
@@ -48,9 +68,6 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 			srcIndex++
 			tgtIndex++
 		}
-		// Increment the index for the newline char.
-		srcIndex++
-		tgtIndex++
 	}
 	return src.Range.From
 }

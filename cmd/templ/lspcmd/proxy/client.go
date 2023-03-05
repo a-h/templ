@@ -66,7 +66,7 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 		end, ok := sourceMap.SourcePositionFromTarget(item.Range.End.Line, item.Range.End.Character)
 		if ok {
 			item.Range.End.Line = end.Line
-			item.Range.End.Line = end.Col
+			item.Range.End.Character = end.Col
 		}
 		params.Diagnostics[i] = item
 	}
