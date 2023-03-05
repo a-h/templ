@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/a-h/lexical/input"
 	"github.com/a-h/lexical/parse"
 )
 
@@ -113,7 +114,10 @@ func (p boolConstantAttributeParser) Parse(pi parse.Input) parse.Result {
 
 	pr = attributeNameParser(pi)
 	if !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 	r.Name = pr.Item.(string)
@@ -125,7 +129,10 @@ func (p boolConstantAttributeParser) Parse(pi parse.Input) parse.Result {
 	}
 	if next == '=' || next == '?' {
 		// It's one of the other attribute types.
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil && err != input.ErrStartOfFile {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return parse.Failure("boolConstantAttributeParser", nil)
 	}
 	if !(next == ' ' || next == '\n' || next == '/') {
@@ -157,14 +164,20 @@ func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
 
 	pr = attributeNameParser(pi)
 	if !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 	r.Name = pr.Item.(string)
 
 	// Check whether this is a boolean expression attribute.
 	if pr = boolExpressionStart(pi); !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 
@@ -207,13 +220,19 @@ func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
 
 	pr = attributeNameParser(pi)
 	if !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 	r.Name = pr.Item.(string)
 
 	if pr = parse.Or(parse.String("={ "), parse.String("={"))(pi); !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 

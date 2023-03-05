@@ -17,7 +17,10 @@ func parseUntil(combiner parse.MultipleResultCombiner, p parse.Function, delimit
 			current := pi.Index()
 			ds := delimiter(pi)
 			if ds.Success {
-				rewind(pi, current)
+				err := rewind(pi, current)
+				if err != nil {
+					return parse.Failure("failed to rewind reader", err)
+				}
 				break
 			}
 			pr := p(pi)
@@ -120,7 +123,10 @@ loop:
 				return parse.Failure("expression: too many closing braces", nil)
 			}
 			if braceCount == 0 {
-				rewind(pi, startOfCloseBrace.Index)
+				err := rewind(pi, startOfCloseBrace.Index)
+				if err != nil {
+					return parse.Failure("failed to rewind reader", err)
+				}
 				break loop
 			}
 			switch r := result.Item.(type) {

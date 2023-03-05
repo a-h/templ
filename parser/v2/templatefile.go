@@ -155,7 +155,10 @@ outer:
 			hasTemplatePrefix := strings.HasPrefix(l, "templ ") || strings.HasPrefix(l, "css ") || strings.HasPrefix(l, "script ")
 			if hasTemplatePrefix && strings.HasSuffix(l, "{\n") {
 				// Unread the line.
-				rewind(pi, last.Index)
+				err := rewind(pi, last.Index)
+				if err != nil {
+					return parse.Failure("failed to rewind reader", err)
+				}
 				// Take the code so far.
 				if code.Len() > 0 {
 					expr := NewExpression(strings.TrimSpace(code.String()), from, NewPositionFromInput(pi))

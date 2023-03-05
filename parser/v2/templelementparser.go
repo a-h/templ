@@ -83,7 +83,10 @@ func (p templSelfClosingElementExpressionParser) parseExpression(pi parse.Input)
 		return parse.Failure("templElementParser", nil)
 	}
 	if strings.HasSuffix(strings.TrimSpace(pr.Item.(string)), "{") {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return parse.Failure("templElementParser", nil)
 	}
 	// If there's no match, there's no \n, which is an error.

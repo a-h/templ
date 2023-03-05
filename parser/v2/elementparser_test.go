@@ -164,10 +164,10 @@ func TestAttributeParser(t *testing.T) {
 			input := input.NewFromString(tt.input)
 			result := tt.parser(input)
 			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
+				t.Errorf("parser error: %v", result.String())
 			}
 			if !result.Success {
-				t.Fatalf("failed to parse at %d", input.Index())
+				t.Errorf("failed to parse at %d", input.Index())
 			}
 			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
 				t.Errorf(diff)

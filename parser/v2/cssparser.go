@@ -237,7 +237,10 @@ func (p constantCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 	}
 	// Property name.
 	if pr = cssPropertyNameParser(pi); !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 	r.Name = pr.Item.(string)
@@ -247,7 +250,10 @@ func (p constantCSSPropertyParser) Parse(pi parse.Input) parse.Result {
 		parse.Rune(':'),
 		optionalWhitespaceParser)(pi)
 	if !pr.Success {
-		rewind(pi, start)
+		err := rewind(pi, start)
+		if err != nil {
+			return parse.Failure("failed to rewind reader", err)
+		}
 		return pr
 	}
 
