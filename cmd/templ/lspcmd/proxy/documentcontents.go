@@ -74,13 +74,15 @@ func (dc *DocumentContents) Apply(uri string, changes []lsp.TextDocumentContentC
 	return
 }
 
-func NewDocument(s string) *Document {
+func NewDocument(log *zap.Logger, s string) *Document {
 	return &Document{
+		Log:   log,
 		Lines: strings.Split(s, "\n"),
 	}
 }
 
 type Document struct {
+	Log   *zap.Logger
 	Lines []string
 }
 
@@ -90,15 +92,12 @@ func (d *Document) isEmptyRange(r lsp.Range) bool {
 }
 
 func (d *Document) isRangeOfDocument(r lsp.Range) bool {
-	startLine, startChar := int(r.Start.Line), int(r.Start.Character)
-	endLine, endChar := int(r.End.Line), int(r.End.Character)
-	return startLine == 0 && startChar == 0 && endLine == len(d.Lines)-1 && endChar == len(d.Lines[len(d.Lines)-1])-1
-}
-
-// As per https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#range
-// If you want to specify a range that contains a line including the line ending character(s) then use an end position denoting the start of the next line.
-func (d *Document) isWholeLineRange(r lsp.Range) bool {
-	return r.Start.Character == 0 && r.End.Character == 0 && r.End.Line != r.Start.Line
+	rangeStartsAtBeginningOfFile := r.Start.Line == 0 && r.Start.Character == 0
+	rel, rec := int(r.End.Line), int(r.End.Character)
+	del, dec := int(len(d.Lines)-1), len(d.Lines[len(d.Lines)-1])-1
+	rangeEndsPastTheEndOfFile := rel > del || rel == del && rec > dec
+	rangeEndsAtEndOfFile := rel == del && rec == dec
+	return rangeStartsAtBeginningOfFile && (rangeEndsPastTheEndOfFile || rangeEndsAtEndOfFile)
 }
 
 func (d *Document) remove(i, j int) {
@@ -129,23 +128,16 @@ func (d *Document) normaliseRange(r *lsp.Range) {
 }
 
 func (d *Document) Overwrite(r *lsp.Range, with string) {
+	withLines := strings.Split(with, "\n")
 	if r == nil || d.isEmptyRange(*r) || len(d.Lines) == 0 {
-		d.Lines = strings.Split(with, "\n")
+		d.Lines = withLines
 		return
 	}
 	d.normaliseRange(r)
 	if d.isRangeOfDocument(*r) {
-		d.Lines = strings.Split(with, "\n")
+		d.Lines = withLines
 		return
 	}
-	if d.isWholeLineRange(*r) {
-		d.remove(int(r.Start.Line), int(r.End.Line))
-		if with != "" {
-			d.insert(int(r.Start.Line), strings.Split(with, "\n"))
-		}
-		return
-	}
-	withLines := strings.Split(with, "\n")
 	if r.Start.Character > 0 {
 		prefix := d.Lines[r.Start.Line][:r.Start.Character]
 		withLines[0] = prefix + withLines[0]

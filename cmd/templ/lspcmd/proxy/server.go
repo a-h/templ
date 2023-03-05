@@ -476,7 +476,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 		return p.Target.DidOpen(ctx, params)
 	}
 	// Cache the template doc.
-	p.TemplSource.Set(string(params.TextDocument.URI), NewDocument(params.TextDocument.Text))
+	p.TemplSource.Set(string(params.TextDocument.URI), NewDocument(p.Log, params.TextDocument.Text))
 	// Parse the template.
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, params.TextDocument.Text)
 	if err != nil {

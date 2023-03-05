@@ -5,6 +5,7 @@ import (
 
 	lsp "github.com/a-h/protocol"
 	"github.com/google/go-cmp/cmp"
+	"go.uber.org/zap"
 )
 
 func TestDocument(t *testing.T) {
@@ -314,7 +315,8 @@ templ personTemplate(p person) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := NewDocument(tt.start)
+			log := zap.NewExample()
+			d := NewDocument(log, tt.start)
 			for _, f := range tt.operations {
 				f(d)
 			}
