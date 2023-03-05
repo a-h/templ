@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -70,10 +69,7 @@ func (dc *DocumentContents) Apply(uri string, changes []lsp.TextDocumentContentC
 		return
 	}
 	for _, change := range changes {
-		err = d.Overwrite(change.Range, change.Text)
-		if err != nil {
-			return
-		}
+		d.Overwrite(change.Range, change.Text)
 	}
 	return
 }
@@ -99,28 +95,10 @@ func (d *Document) isRangeOfDocument(r lsp.Range) bool {
 	return startLine == 0 && startChar == 0 && endLine == len(d.Lines)-1 && endChar == len(d.Lines[len(d.Lines)-1])-1
 }
 
-func (d *Document) isOutsideDocumentRange(r lsp.Range) bool {
-	startLine, startChar := int(r.Start.Line), int(r.Start.Character)
-	endLine, endChar := int(r.End.Line), int(r.End.Character)
-	if startLine < 0 || startChar < 0 || endChar < 0 {
-		return true
-	}
-	startLineMaxCharIndex := len(d.Lines[startLine])
-	if r.Start.Character > uint32(startLineMaxCharIndex) {
-		return true
-	}
-	if endLine > len(d.Lines)-1 {
-		return true
-	}
-	endLineMaxCharIndex := len(d.Lines[endLine])
-	if r.End.Character > uint32(endLineMaxCharIndex) {
-		return true
-	}
-	return false
-}
-
+// As per https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#range
+// If you want to specify a range that contains a line including the line ending character(s) then use an end position denoting the start of the next line.
 func (d *Document) isWholeLineRange(r lsp.Range) bool {
-	return r.Start.Character == 0 && r.End.Character == 0
+	return r.Start.Character == 0 && r.End.Character == 0 && r.End.Line != r.Start.Line
 }
 
 func (d *Document) remove(i, j int) {
@@ -131,22 +109,41 @@ func (d *Document) insert(i int, withLines []string) {
 	d.Lines = append(d.Lines[:i], append(withLines, d.Lines[i:]...)...)
 }
 
-var ErrOutsideDocumentRange = errors.New("range is outside of document bounds")
-
-func (d *Document) Overwrite(r *lsp.Range, with string) error {
-	if r == nil || d.isEmptyRange(*r) || d.isRangeOfDocument(*r) {
-		d.Lines = strings.Split(with, "\n")
-		return nil
+func (d *Document) normaliseRange(r *lsp.Range) {
+	if r.Start.Line > uint32(len(d.Lines))-1 {
+		r.Start.Line = uint32(len(d.Lines)) - 1
 	}
-	if d.isOutsideDocumentRange(*r) {
-		return ErrOutsideDocumentRange
+	if r.End.Line > uint32(len(d.Lines))-1 {
+		r.End.Line = uint32(len(d.Lines)) - 1
+	}
+	startLine := d.Lines[r.Start.Line]
+	startLineMaxCharIndex := len(startLine)
+	if r.Start.Character > uint32(startLineMaxCharIndex) {
+		r.Start.Character = uint32(startLineMaxCharIndex)
+	}
+	endLine := d.Lines[r.End.Line]
+	endLineMaxCharIndex := len(endLine)
+	if r.End.Character > uint32(endLineMaxCharIndex) {
+		r.End.Character = uint32(endLineMaxCharIndex)
+	}
+}
+
+func (d *Document) Overwrite(r *lsp.Range, with string) {
+	if r == nil || d.isEmptyRange(*r) || len(d.Lines) == 0 {
+		d.Lines = strings.Split(with, "\n")
+		return
+	}
+	d.normaliseRange(r)
+	if d.isRangeOfDocument(*r) {
+		d.Lines = strings.Split(with, "\n")
+		return
 	}
 	if d.isWholeLineRange(*r) {
 		d.remove(int(r.Start.Line), int(r.End.Line))
 		if with != "" {
 			d.insert(int(r.Start.Line), strings.Split(with, "\n"))
 		}
-		return nil
+		return
 	}
 	withLines := strings.Split(with, "\n")
 	if r.Start.Character > 0 {
@@ -157,9 +154,17 @@ func (d *Document) Overwrite(r *lsp.Range, with string) error {
 		suffix := d.Lines[r.End.Line][r.End.Character:]
 		withLines[len(withLines)-1] = withLines[len(withLines)-1] + suffix
 	}
-	d.remove(int(r.Start.Line), int(r.End.Line+1))
+	if r.End.Line > r.Start.Line && r.End.Character == 0 {
+		// Neovim unexpectedly adds a newline when re-inserting content (dd, followed by u for undo).
+		if last := withLines[len(withLines)-1]; last == "" {
+			withLines = withLines[0 : len(withLines)-1]
+		}
+		d.remove(int(r.Start.Line), int(r.End.Line))
+	} else {
+		d.remove(int(r.Start.Line), int(r.End.Line+1))
+	}
 	d.insert(int(r.Start.Line), withLines)
-	return nil
+	return
 }
 
 func (d *Document) String() string {
