@@ -447,36 +447,36 @@ func (g *generator) writeNodes(indentLevel int, parent parser.Node, nodes []pars
 	return nil
 }
 
-func (g *generator) writeNode(indentLevel int, current parser.Node) error {
+func (g *generator) writeNode(indentLevel int, current parser.Node) (err error) {
 	switch n := current.(type) {
 	case parser.DocType:
-		g.writeDocType(indentLevel, n)
+		err = g.writeDocType(indentLevel, n)
 	case parser.Element:
-		g.writeElement(indentLevel, n)
+		err = g.writeElement(indentLevel, n)
 	case parser.ChildrenExpression:
-		g.writeChildrenExpression(indentLevel)
+		err = g.writeChildrenExpression(indentLevel)
 	case parser.RawElement:
-		g.writeRawElement(indentLevel, n)
+		err = g.writeRawElement(indentLevel, n)
 	case parser.ForExpression:
-		g.writeForExpression(indentLevel, n)
+		err = g.writeForExpression(indentLevel, n)
 	case parser.CallTemplateExpression:
-		g.writeCallTemplateExpression(indentLevel, n)
+		err = g.writeCallTemplateExpression(indentLevel, n)
 	case parser.TemplElementExpression:
-		g.writeTemplElementExpression(indentLevel, n)
+		err = g.writeTemplElementExpression(indentLevel, n)
 	case parser.IfExpression:
-		g.writeIfExpression(indentLevel, n)
+		err = g.writeIfExpression(indentLevel, n)
 	case parser.SwitchExpression:
-		g.writeSwitchExpression(indentLevel, n)
+		err = g.writeSwitchExpression(indentLevel, n)
 	case parser.StringExpression:
-		g.writeStringExpression(indentLevel, n.Expression)
+		err = g.writeStringExpression(indentLevel, n.Expression)
 	case parser.Whitespace:
-		g.writeWhitespace(indentLevel, n)
+		err = g.writeWhitespace(indentLevel, n)
 	case parser.Text:
-		g.writeText(indentLevel, n)
+		err = g.writeText(indentLevel, n)
 	default:
-		g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
+		_, err = g.w.Write(fmt.Sprintf("Unhandled type: %v\n", reflect.TypeOf(n)))
 	}
-	return nil
+	return
 }
 
 func (g *generator) writeDocType(indentLevel int, n parser.DocType) (err error) {
