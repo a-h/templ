@@ -23,10 +23,12 @@ type templLines struct {
 	sourceMap *parser.SourceMap
 }
 
-func (tl templLines) Render(ctx context.Context, w io.Writer) error {
+func (tl templLines) Render(ctx context.Context, w io.Writer) (err error) {
 	templLines := strings.Split(tl.contents, "\n")
 	for lineIndex, line := range templLines {
-		w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n"))
+		if _, err = w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n")); err != nil {
+			return
+		}
 		for colIndex, c := range line {
 			if tgt, ok := tl.sourceMap.TargetPositionFromSource(uint32(lineIndex), uint32(colIndex)); ok {
 				sourceID := fmt.Sprintf("src_%d_%d", lineIndex, colIndex)
@@ -43,7 +45,9 @@ func (tl templLines) Render(ctx context.Context, w io.Writer) error {
 				}
 			}
 		}
-		w.Write([]byte("\n<br/>\n"))
+		if _, err = w.Write([]byte("\n<br/>\n")); err != nil {
+			return
+		}
 	}
 	return nil
 }
@@ -53,10 +57,12 @@ type goLines struct {
 	sourceMap *parser.SourceMap
 }
 
-func (gl goLines) Render(ctx context.Context, w io.Writer) error {
+func (gl goLines) Render(ctx context.Context, w io.Writer) (err error) {
 	templLines := strings.Split(gl.contents, "\n")
 	for lineIndex, line := range templLines {
-		w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n"))
+		if _, err = w.Write([]byte("<span>" + strconv.Itoa(lineIndex) + "&nbsp;</span>\n")); err != nil {
+			return
+		}
 		for colIndex, c := range line {
 			if src, ok := gl.sourceMap.SourcePositionFromTarget(uint32(lineIndex), uint32(colIndex)); ok {
 				sourceID := fmt.Sprintf("src_%d_%d", src.Line, src.Col)
@@ -73,7 +79,9 @@ func (gl goLines) Render(ctx context.Context, w io.Writer) error {
 				}
 			}
 		}
-		w.Write([]byte("\n<br/>\n"))
+		if _, err = w.Write([]byte("\n<br/>\n")); err != nil {
+			return
+		}
 	}
 	return nil
 }
