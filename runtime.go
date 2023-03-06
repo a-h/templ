@@ -51,7 +51,7 @@ var NopComponent = ComponentFunc(func(ctx context.Context, w io.Writer) error { 
 
 // GetChildren from the context.
 func GetChildren(ctx context.Context) Component {
-	ctx, v := getContext(ctx)
+	_, v := getContext(ctx)
 	if v.children == nil {
 		return NopComponent
 	}
@@ -266,7 +266,7 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...CSSClass) (err 
 	if len(classes) == 0 {
 		return nil
 	}
-	ctx, v := getContext(ctx)
+	_, v := getContext(ctx)
 	sb := new(strings.Builder)
 	for _, c := range classes {
 		if ccc, ok := c.(ComponentCSSClass); ok {
@@ -409,7 +409,7 @@ func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScr
 	if len(scripts) == 0 {
 		return nil
 	}
-	ctx, v := getContext(ctx)
+	_, v := getContext(ctx)
 	sb := new(strings.Builder)
 	for _, s := range scripts {
 		if !v.hasScriptBeenRendered(s.Name) {
