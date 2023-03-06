@@ -511,7 +511,9 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 		return err
 	}
 	indentLevel++
-	g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Then))
+	if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Then)); err != nil {
+		return err
+	}
 	indentLevel--
 	if len(n.Else) > 0 {
 		// } else {
@@ -519,7 +521,9 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 			return err
 		}
 		indentLevel++
-		g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Else))
+		if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Else)); err != nil {
+			return err
+		}
 		indentLevel--
 	}
 	// }
@@ -557,7 +561,9 @@ func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpres
 			}
 			g.sourceMap.Add(c.Expression, r)
 			indentLevel++
-			g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(c.Children))
+			if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(c.Children)); err != nil {
+				return err
+			}
 			indentLevel--
 		}
 	}
@@ -598,7 +604,9 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 		return err
 	}
 	indentLevel++
-	g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Children))
+	if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Children)); err != nil {
+		return err
+	}
 	// return nil
 	if _, err = g.w.WriteIndent(indentLevel, "return err\n"); err != nil {
 		return err
@@ -687,7 +695,9 @@ func (g *generator) writeForExpression(indentLevel int, n parser.ForExpression) 
 	}
 	// Children.
 	indentLevel++
-	g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Children))
+	if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Children)); err != nil {
+		return err
+	}
 	indentLevel--
 	// }
 	if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
@@ -798,7 +808,9 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 		}
 	}
 	// Children.
-	g.writeNodes(indentLevel, n, stripNonCriticalElementWhitespace(n.Children))
+	if err = g.writeNodes(indentLevel, n, stripNonCriticalElementWhitespace(n.Children)); err != nil {
+		return err
+	}
 	// </div>
 	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 		return err
@@ -1056,9 +1068,9 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		}
 	}
 	// Contents.
-	g.writeText(0, parser.Text{
-		Value: n.Contents,
-	})
+	if err = g.writeText(0, parser.Text{Value: n.Contents}); err != nil {
+		return err
+	}
 	// </div>
 	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`_, err = templBuffer.WriteString("</%s>")`+"\n", html.EscapeString(n.Name))); err != nil {
 		return err

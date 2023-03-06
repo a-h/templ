@@ -17,25 +17,33 @@ func TestRangeWriter(t *testing.T) {
 		}
 	})
 	t.Run("writing characters increases the col position", func(t *testing.T) {
-		rw.Write("abc")
+		if _, err := rw.Write("abc"); err != nil {
+			t.Fatalf("failed to write: %v", err)
+		}
 		if diff := cmp.Diff(parser.NewPositionFromValues(3, 0, 3), rw.Current); diff != "" {
 			t.Error(diff)
 		}
 	})
 	t.Run("newline characters implement carriage return", func(t *testing.T) {
-		rw.Write("\n1")
+		if _, err := rw.Write("\n1"); err != nil {
+			t.Fatalf("failed to write: %v", err)
+		}
 		if diff := cmp.Diff(parser.NewPositionFromValues(5, 1, 1), rw.Current); diff != "" {
 			t.Error(diff)
 		}
 	})
 	t.Run("multi-byte characters count as a single column position", func(t *testing.T) {
-		rw.Write("\n你")
+		if _, err := rw.Write("\n你"); err != nil {
+			t.Fatalf("failed to write: %v", err)
+		}
 		if diff := cmp.Diff(parser.NewPositionFromValues(9, 2, 1), rw.Current); diff != "" {
 			t.Error(diff)
 		}
 	})
 	t.Run("a range is returned from each write", func(t *testing.T) {
-		rw.Write("\n")
+		if _, err := rw.Write("\n"); err != nil {
+			t.Fatalf("failed to write: %v", err)
+		}
 		r, err := rw.Write("test")
 		if err != nil {
 			t.Fatalf("expected successful write, got error: %v", err)
