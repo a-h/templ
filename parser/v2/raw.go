@@ -14,8 +14,6 @@ var scriptElement = rawElementParser{
 	name: "script",
 }
 
-var rawElement rawElementParser
-
 type rawElementParser struct {
 	name string
 }
