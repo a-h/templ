@@ -60,7 +60,9 @@ func TestCSSHandler(t *testing.T) {
 
 func TestCSSMiddleware(t *testing.T) {
 	pageHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "Hello, World!")
+		if _, err := io.WriteString(w, "Hello, World!"); err != nil {
+			t.Fatalf("failed to write string: %v", err)
+		}
 	})
 	c1 := templ.ComponentCSSClass{
 		ID:    "c1",
@@ -230,7 +232,9 @@ func TestClassSanitization(t *testing.T) {
 
 func TestHandler(t *testing.T) {
 	hello := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-		io.WriteString(w, "Hello")
+		if _, err := io.WriteString(w, "Hello"); err != nil {
+			t.Fatalf("failed to write string: %v", err)
+		}
 		return nil
 	})
 	errorComponent := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
@@ -268,7 +272,9 @@ func TestHandler(t *testing.T) {
 				// log.Printf("template render error for %v %v: %v", r.Method, r.URL.String(), err)
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusBadRequest)
-					io.WriteString(w, "custom body")
+					if _, err := io.WriteString(w, "custom body"); err != nil {
+						t.Fatalf("failed to write string: %v", err)
+					}
 				})
 			})),
 			expectedStatus: http.StatusBadRequest,
