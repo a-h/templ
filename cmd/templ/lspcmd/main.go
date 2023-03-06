@@ -6,11 +6,11 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/a-h/protocol"
 	"github.com/a-h/templ/cmd/templ/lspcmd/httpdebug"
 	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
 	"go.lsp.dev/jsonrpc2"
-	"github.com/a-h/protocol"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -109,7 +109,7 @@ func run(ctx context.Context, args Arguments) (err error) {
 	// Start the web server if required.
 	if args.HTTPDebug != "" {
 		log.Info("starting debug http server", zap.String("addr", args.HTTPDebug))
-		h := httpdebug.NewHandler(serverProxy)
+		h := httpdebug.NewHandler(log, serverProxy)
 		go func() {
 			if err := http.ListenAndServe(args.HTTPDebug, h); err != nil {
 				log.Error("web server failed", zap.Error(err))

@@ -9,10 +9,14 @@ import (
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
 	"github.com/a-h/templ/cmd/templ/visualize"
+	"go.uber.org/zap"
 )
 
-func NewHandler(s *proxy.Server) http.Handler {
+var log *zap.Logger
+
+func NewHandler(l *zap.Logger, s *proxy.Server) http.Handler {
 	m := http.NewServeMux()
+	log = l
 	m.HandleFunc("/templ", func(w http.ResponseWriter, r *http.Request) {
 		uri := r.URL.Query().Get("uri")
 		c, ok := s.TemplSource.Get(uri)
@@ -20,7 +24,7 @@ func NewHandler(s *proxy.Server) http.Handler {
 			Error(w, "uri not found", http.StatusNotFound)
 			return
 		}
-		io.WriteString(w, c.String())
+		String(w, c.String())
 	})
 	m.HandleFunc("/sourcemap", func(w http.ResponseWriter, r *http.Request) {
 		uri := r.URL.Query().Get("uri")
@@ -29,9 +33,7 @@ func NewHandler(s *proxy.Server) http.Handler {
 			Error(w, "uri not found", http.StatusNotFound)
 			return
 		}
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		enc.Encode(sm.SourceLinesToTarget)
+		JSON(w, sm.SourceLinesToTarget)
 	})
 	m.HandleFunc("/go", func(w http.ResponseWriter, r *http.Request) {
 		uri := r.URL.Query().Get("uri")
@@ -40,13 +42,15 @@ func NewHandler(s *proxy.Server) http.Handler {
 			Error(w, "uri not found", http.StatusNotFound)
 			return
 		}
-		io.WriteString(w, c)
+		String(w, c)
 	})
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		uri := r.URL.Query().Get("uri")
 		if uri == "" {
 			// List all URIs.
-			list(s.TemplSource.URIs()).Render(r.Context(), w)
+			if err := list(s.TemplSource.URIs()).Render(r.Context(), w); err != nil {
+				Error(w, "failed to list URIs", http.StatusInternalServerError)
+			}
 			return
 		}
 		// Assume we've got a URI.
@@ -69,7 +73,9 @@ func NewHandler(s *proxy.Server) http.Handler {
 			Error(w, "uri not found", http.StatusNotFound)
 			return
 		}
-		visualize.HTML(uri, templSource.String(), goSource, sm).Render(r.Context(), w)
+		if err := visualize.HTML(uri, templSource.String(), goSource, sm).Render(r.Context(), w); err != nil {
+			Error(w, "failed to visualize HTML", http.StatusInternalServerError)
+		}
 	})
 	return m
 }
@@ -101,7 +107,24 @@ func withQuery(path, uri string) templ.SafeURL {
 	return templ.SafeURL(u.String())
 }
 
+func JSON(w http.ResponseWriter, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(v); err != nil {
+		log.Error("failed to write JSON response", zap.Error(err))
+	}
+}
+
+func String(w http.ResponseWriter, s string) {
+	if _, err := io.WriteString(w, s); err != nil {
+		log.Error("failed to write string response", zap.Error(err))
+	}
+}
+
 func Error(w http.ResponseWriter, msg string, status int) {
 	w.WriteHeader(status)
-	io.WriteString(w, msg)
+	if _, err := io.WriteString(w, msg); err != nil {
+		log.Error("failed to write error response", zap.Error(err))
+	}
 }
