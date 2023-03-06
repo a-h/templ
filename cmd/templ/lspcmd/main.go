@@ -38,7 +38,7 @@ func Run(args Arguments) error {
 	}()
 	if args.PPROF {
 		go func() {
-			http.ListenAndServe("localhost:9999", nil)
+			_ = http.ListenAndServe("localhost:9999", nil)
 		}()
 	}
 	go func() {
@@ -67,7 +67,9 @@ func run(ctx context.Context, args Arguments) (err error) {
 			os.Exit(1)
 		}
 	}
-	defer log.Sync()
+	defer func() {
+		_ = log.Sync()
+	}()
 	log.Info("lsp: starting up...")
 	defer func() {
 		if r := recover(); r != nil {

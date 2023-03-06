@@ -18,8 +18,8 @@ func TestHeader(t *testing.T) {
 	// Pipe the rendered template into goquery.
 	r, w := io.Pipe()
 	go func() {
-		headerTemplate("Posts").Render(context.Background(), w)
-		w.Close()
+		_ = headerTemplate("Posts").Render(context.Background(), w)
+		_ = w.Close()
 	}()
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
@@ -40,8 +40,8 @@ func TestFooter(t *testing.T) {
 	// Pipe the rendered template into goquery.
 	r, w := io.Pipe()
 	go func() {
-		footerTemplate().Render(context.Background(), w)
-		w.Close()
+		_ = footerTemplate().Render(context.Background(), w)
+		_ = w.Close()
 	}()
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
@@ -61,8 +61,8 @@ func TestFooter(t *testing.T) {
 func TestNav(t *testing.T) {
 	r, w := io.Pipe()
 	go func() {
-		navTemplate().Render(context.Background(), w)
-		w.Close()
+		_ = navTemplate().Render(context.Background(), w)
+		_ = w.Close()
 	}()
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
@@ -77,8 +77,8 @@ func TestNav(t *testing.T) {
 func TestHome(t *testing.T) {
 	r, w := io.Pipe()
 	go func() {
-		home().Render(context.Background(), w)
-		w.Close()
+		_ = home().Render(context.Background(), w)
+		_ = w.Close()
 	}()
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
@@ -110,8 +110,8 @@ func TestPosts(t *testing.T) {
 	}
 	r, w := io.Pipe()
 	go func() {
-		posts(testPosts).Render(context.Background(), w)
-		w.Close()
+		_ = posts(testPosts).Render(context.Background(), w)
+		_ = w.Close()
 	}()
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {

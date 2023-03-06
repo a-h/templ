@@ -156,7 +156,6 @@ func (d *Document) Overwrite(r *lsp.Range, with string) {
 		d.remove(int(r.Start.Line), int(r.End.Line+1))
 	}
 	d.insert(int(r.Start.Line), withLines)
-	return
 }
 
 func (d *Document) String() string {

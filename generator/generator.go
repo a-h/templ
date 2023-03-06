@@ -633,11 +633,11 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 }
 
 func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n parser.TemplElementExpression) (err error) {
-	var r parser.Range
-	if r, err = g.w.WriteIndent(indentLevel, `err = `); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, `err = `); err != nil {
 		return err
 	}
 	// Template expression.
+	var r parser.Range
 	if r, err = g.w.Write(n.Expression.Value); err != nil {
 		return err
 	}
@@ -656,11 +656,11 @@ func (g *generator) writeCallTemplateExpression(indentLevel int, n parser.CallTe
 	if _, err = g.w.WriteIndent(indentLevel, "// CallTemplate\n"); err != nil {
 		return err
 	}
-	var r parser.Range
-	if r, err = g.w.WriteIndent(indentLevel, `err = `); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, `err = `); err != nil {
 		return err
 	}
 	// Template expression.
+	var r parser.Range
 	if r, err = g.w.Write(n.Expression.Value); err != nil {
 		return err
 	}

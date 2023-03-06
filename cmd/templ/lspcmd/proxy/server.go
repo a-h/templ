@@ -50,13 +50,10 @@ func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache) (s *Se
 
 // updatePosition maps positions and filenames from source templ files into the target *.go files.
 func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) (goURI lsp.DocumentURI, updated lsp.Position) {
-	goURI = templURI
-	updated = current
 	log := p.Log.With(zap.String("uri", string(templURI)))
 	var isTemplFile bool
-	isTemplFile, goURI = convertTemplToGoURI(templURI)
-	if !isTemplFile {
-		return
+	if isTemplFile, goURI = convertTemplToGoURI(templURI); !isTemplFile {
+		return templURI, current
 	}
 	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
 	if !ok {
@@ -65,15 +62,15 @@ func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) 
 	}
 	// Map from the source position to target Go position.
 	to, ok := sourceMap.TargetPositionFromSource(current.Line, current.Character)
-	if ok {
-		log.Info("updatePosition: found", zap.String("fromTempl", fmt.Sprintf("%d:%d", current.Line, current.Character)),
-			zap.String("toGo", fmt.Sprintf("%d:%d", to.Line, to.Col)))
-		updated.Line = to.Line
-		updated.Character = to.Col
-	} else {
+	if !ok {
 		log.Info("updatePosition: not found", zap.String("from", fmt.Sprintf("%d:%d", current.Line, current.Character)))
+		return templURI, current
 	}
-	return
+	log.Info("updatePosition: found", zap.String("fromTempl", fmt.Sprintf("%d:%d", current.Line, current.Character)),
+		zap.String("toGo", fmt.Sprintf("%d:%d", to.Line, to.Col)))
+	updated.Line = to.Line
+	updated.Character = to.Col
+	return goURI, updated
 }
 
 func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range) {

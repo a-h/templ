@@ -156,7 +156,6 @@ func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	var r BoolExpressionAttribute
 
 	start := pi.Index()
-	from := NewPositionFromInput(pi)
 	pr := whitespaceParser(pi)
 	if !pr.Success {
 		return pr
@@ -182,7 +181,7 @@ func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Once we have a prefix, we must have an expression that returns a template.
-	from = NewPositionFromInput(pi)
+	from := NewPositionFromInput(pi)
 	pr = exp.Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
@@ -212,7 +211,6 @@ func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	var r ExpressionAttribute
 
 	start := pi.Index()
-	from := NewPositionFromInput(pi)
 	pr := whitespaceParser(pi)
 	if !pr.Success {
 		return pr
@@ -237,7 +235,7 @@ func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
 	}
 
 	// Once we've seen a expression prefix, read until the tag end.
-	from = NewPositionFromInput(pi)
+	from := NewPositionFromInput(pi)
 	pr = exp.Parse(pi)
 	if pr.Error != nil && pr.Error != io.EOF {
 		return pr
