@@ -17,7 +17,9 @@ func main() {
 
 	// Start the server.
 	fmt.Println("listening on http://localhost:8000")
-	http.ListenAndServe("localhost:8000", nil)
+	if err := http.ListenAndServe("localhost:8000", nil); err != nil {
+		log.Printf("error listening: %v", err)
+	}
 }
 
 func NewPostsHandler() PostsHandler {
