@@ -686,7 +686,7 @@ Create production build with goreleaser.
 ```sh
 if [ "${GITHUB_TOKEN}" == "" ]; then echo "No github token, run:"; echo "export GITHUB_TOKEN=`pass github.com/goreleaser_access_token`"; exit 1; fi
 ./push-tag.sh
-goreleaser --rm-dist
+goreleaser --clean
 ```
 
 # Code signing
