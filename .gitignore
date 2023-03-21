@@ -4,3 +4,4 @@ cmd/templ/templ
 cmd/templ/lspcmd/*log.txt
 .DS_Store
 coverage.out
+coverage
