@@ -100,7 +100,8 @@ func list(uris []string) templ.Component {
 				return err
 			}
 			// StringExpression
-			_, err = templBuffer.WriteString(templ.EscapeString(uri))
+			var var_3 string = uri
+			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 			if err != nil {
 				return err
 			}
@@ -127,8 +128,8 @@ func list(uris []string) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_3 templ.SafeURL = getMapURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_3)))
+			var var_4 templ.SafeURL = getMapURL(uri)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_4)))
 			if err != nil {
 				return err
 			}
@@ -141,8 +142,8 @@ func list(uris []string) templ.Component {
 				return err
 			}
 			// Text
-			var_4 := `Mapping`
-			_, err = templBuffer.WriteString(var_4)
+			var_5 := `Mapping`
+			_, err = templBuffer.WriteString(var_5)
 			if err != nil {
 				return err
 			}
@@ -173,8 +174,8 @@ func list(uris []string) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_5 templ.SafeURL = getSourceMapURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_5)))
+			var var_6 templ.SafeURL = getSourceMapURL(uri)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_6)))
 			if err != nil {
 				return err
 			}
@@ -187,8 +188,8 @@ func list(uris []string) templ.Component {
 				return err
 			}
 			// Text
-			var_6 := `Source Map`
-			_, err = templBuffer.WriteString(var_6)
+			var_7 := `Source Map`
+			_, err = templBuffer.WriteString(var_7)
 			if err != nil {
 				return err
 			}
@@ -219,8 +220,8 @@ func list(uris []string) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_7 templ.SafeURL = getTemplURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_7)))
+			var var_8 templ.SafeURL = getTemplURL(uri)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_8)))
 			if err != nil {
 				return err
 			}
@@ -233,8 +234,8 @@ func list(uris []string) templ.Component {
 				return err
 			}
 			// Text
-			var_8 := `Templ`
-			_, err = templBuffer.WriteString(var_8)
+			var_9 := `Templ`
+			_, err = templBuffer.WriteString(var_9)
 			if err != nil {
 				return err
 			}
@@ -265,8 +266,8 @@ func list(uris []string) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_9 templ.SafeURL = getGoURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_9)))
+			var var_10 templ.SafeURL = getGoURL(uri)
+			_, err = templBuffer.WriteString(templ.EscapeString(string(var_10)))
 			if err != nil {
 				return err
 			}
@@ -279,8 +280,8 @@ func list(uris []string) templ.Component {
 				return err
 			}
 			// Text
-			var_10 := `Go`
-			_, err = templBuffer.WriteString(var_10)
+			var_11 := `Go`
+			_, err = templBuffer.WriteString(var_11)
 			if err != nil {
 				return err
 			}

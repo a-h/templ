@@ -26,13 +26,15 @@ func template(input string) templ.Component {
 		switch input {
 		case "a":
 			// StringExpression
-			_, err = templBuffer.WriteString(templ.EscapeString("it was 'a'"))
+			var var_2 string = "it was 'a'"
+			_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 			if err != nil {
 				return err
 			}
 		default:
 			// StringExpression
-			_, err = templBuffer.WriteString(templ.EscapeString("it was something else"))
+			var var_3 string = "it was something else"
+			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 			if err != nil {
 				return err
 			}

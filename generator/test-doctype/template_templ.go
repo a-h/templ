@@ -102,7 +102,8 @@ func Layout(title, content string) templ.Component {
 			return err
 		}
 		// StringExpression
-		_, err = templBuffer.WriteString(templ.EscapeString(title))
+		var var_2 string = title
+		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
@@ -120,7 +121,8 @@ func Layout(title, content string) templ.Component {
 			return err
 		}
 		// StringExpression
-		_, err = templBuffer.WriteString(templ.EscapeString(content))
+		var var_3 string = content
+		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 		if err != nil {
 			return err
 		}

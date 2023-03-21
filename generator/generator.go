@@ -1091,17 +1091,18 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 		return err
 	}
 	var r parser.Range
-	// templBuffer.WriteString(templ.EscapeString(
-	if _, err = g.w.WriteIndent(indentLevel, "_, err = templBuffer.WriteString(templ.EscapeString("); err != nil {
+	vn := g.createVariableName()
+	// var vn string = sExpr
+	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string = "); err != nil {
 		return err
 	}
 	// p.Name()
-	if r, err = g.w.Write(e.Value); err != nil {
+	if r, err = g.w.Write(e.Value + "\n"); err != nil {
 		return err
 	}
 	g.sourceMap.Add(e, r)
-	// ))
-	if _, err = g.w.Write("))\n"); err != nil {
+	// _, err = templBuffer.WriteString(vn)
+	if _, err = g.w.WriteIndent(indentLevel, "_, err = templBuffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {

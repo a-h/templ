@@ -23,7 +23,8 @@ func render(s string) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		// StringExpression
-		_, err = templBuffer.WriteString(templ.EscapeString(s))
+		var var_2 string = s
+		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}

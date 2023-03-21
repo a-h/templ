@@ -33,7 +33,8 @@ func render(p person) templ.Component {
 			return err
 		}
 		// StringExpression
-		_, err = templBuffer.WriteString(templ.EscapeString(p.name))
+		var var_2 string = p.name
+		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
@@ -81,8 +82,8 @@ func render(p person) templ.Component {
 			return err
 		}
 		// Text
-		var_2 := `email:`
-		_, err = templBuffer.WriteString(var_2)
+		var_3 := `email:`
+		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
 			return err
 		}
@@ -100,8 +101,8 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_3 templ.SafeURL = templ.URL("mailto: " + p.email)
-		_, err = templBuffer.WriteString(templ.EscapeString(string(var_3)))
+		var var_4 templ.SafeURL = templ.URL("mailto: " + p.email)
+		_, err = templBuffer.WriteString(templ.EscapeString(string(var_4)))
 		if err != nil {
 			return err
 		}
@@ -114,7 +115,8 @@ func render(p person) templ.Component {
 			return err
 		}
 		// StringExpression
-		_, err = templBuffer.WriteString(templ.EscapeString(p.email))
+		var var_5 string = p.email
+		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
 		if err != nil {
 			return err
 		}

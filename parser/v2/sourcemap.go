@@ -54,20 +54,18 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 		}
 
 		// LSPs include the newline char as a col.
-		if len(lines) > 1 {
-			if _, ok := sm.SourceLinesToTarget[srcLine]; !ok {
-				sm.SourceLinesToTarget[srcLine] = make(map[uint32]Position)
-			}
-			sm.SourceLinesToTarget[srcLine][srcCol] = NewPositionFromValues(tgtIndex, tgtLine, tgtCol)
-
-			if _, ok := sm.TargetLinesToSource[tgtLine]; !ok {
-				sm.TargetLinesToSource[tgtLine] = make(map[uint32]Position)
-			}
-			sm.TargetLinesToSource[tgtLine][tgtCol] = NewPositionFromValues(srcIndex, srcLine, srcCol)
-
-			srcIndex++
-			tgtIndex++
+		if _, ok := sm.SourceLinesToTarget[srcLine]; !ok {
+			sm.SourceLinesToTarget[srcLine] = make(map[uint32]Position)
 		}
+		sm.SourceLinesToTarget[srcLine][srcCol] = NewPositionFromValues(tgtIndex, tgtLine, tgtCol)
+
+		if _, ok := sm.TargetLinesToSource[tgtLine]; !ok {
+			sm.TargetLinesToSource[tgtLine] = make(map[uint32]Position)
+		}
+		sm.TargetLinesToSource[tgtLine][tgtCol] = NewPositionFromValues(srcIndex, srcLine, srcCol)
+
+		srcIndex++
+		tgtIndex++
 	}
 	return src.Range.From
 }

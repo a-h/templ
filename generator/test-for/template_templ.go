@@ -30,7 +30,8 @@ func render(items []string) templ.Component {
 				return err
 			}
 			// StringExpression
-			_, err = templBuffer.WriteString(templ.EscapeString(item))
+			var var_2 string = item
+			_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 			if err != nil {
 				return err
 			}

@@ -210,7 +210,8 @@ func WhiteSpaceAroundValues() templ.Component {
 			return err
 		}
 		// StringExpression
-		_, err = templBuffer.WriteString(templ.EscapeString("strings"))
+		var var_14 string = "strings"
+		_, err = templBuffer.WriteString(templ.EscapeString(var_14))
 		if err != nil {
 			return err
 		}
@@ -220,8 +221,8 @@ func WhiteSpaceAroundValues() templ.Component {
 			return err
 		}
 		// Text
-		var_14 := `to be included in sentences.`
-		_, err = templBuffer.WriteString(var_14)
+		var_15 := `to be included in sentences.`
+		_, err = templBuffer.WriteString(var_15)
 		if err != nil {
 			return err
 		}

@@ -25,13 +25,15 @@ func render(d data) templ.Component {
 		// If
 		if d.IsTrue() {
 			// StringExpression
-			_, err = templBuffer.WriteString(templ.EscapeString("True"))
+			var var_2 string = "True"
+			_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 			if err != nil {
 				return err
 			}
 		} else {
 			// StringExpression
-			_, err = templBuffer.WriteString(templ.EscapeString("False"))
+			var var_3 string = "False"
+			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 			if err != nil {
 				return err
 			}

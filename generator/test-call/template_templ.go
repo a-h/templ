@@ -33,7 +33,8 @@ func personTemplate(p person) templ.Component {
 			return err
 		}
 		// StringExpression
-		_, err = templBuffer.WriteString(templ.EscapeString(p.name))
+		var var_2 string = p.name
+		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
@@ -103,9 +104,9 @@ func email(s string) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_2 := templ.GetChildren(ctx)
-		if var_2 == nil {
-			var_2 = templ.NopComponent
+		var_3 := templ.GetChildren(ctx)
+		if var_3 == nil {
+			var_3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
@@ -114,8 +115,8 @@ func email(s string) templ.Component {
 			return err
 		}
 		// Text
-		var_3 := `email:`
-		_, err = templBuffer.WriteString(var_3)
+		var_4 := `email:`
+		_, err = templBuffer.WriteString(var_4)
 		if err != nil {
 			return err
 		}
@@ -133,8 +134,8 @@ func email(s string) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_4 templ.SafeURL = templ.URL("mailto: " + s)
-		_, err = templBuffer.WriteString(templ.EscapeString(string(var_4)))
+		var var_5 templ.SafeURL = templ.URL("mailto: " + s)
+		_, err = templBuffer.WriteString(templ.EscapeString(string(var_5)))
 		if err != nil {
 			return err
 		}
@@ -147,7 +148,8 @@ func email(s string) templ.Component {
 			return err
 		}
 		// StringExpression
-		_, err = templBuffer.WriteString(templ.EscapeString(s))
+		var var_6 string = s
+		_, err = templBuffer.WriteString(templ.EscapeString(var_6))
 		if err != nil {
 			return err
 		}

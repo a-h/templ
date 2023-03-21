@@ -92,7 +92,8 @@ func Button(text string) templ.Component {
 			return err
 		}
 		// StringExpression
-		_, err = templBuffer.WriteString(templ.EscapeString(text))
+		var var_4 string = text
+		_, err = templBuffer.WriteString(templ.EscapeString(var_4))
 		if err != nil {
 			return err
 		}
@@ -115,9 +116,9 @@ func ThreeButtons() templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_4 := templ.GetChildren(ctx)
-		if var_4 == nil {
-			var_4 = templ.NopComponent
+		var_5 := templ.GetChildren(ctx)
+		if var_5 == nil {
+			var_5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		// CallTemplate
@@ -149,8 +150,8 @@ func ThreeButtons() templ.Component {
 			return err
 		}
 		// Text
-		var_5 := `Button C`
-		_, err = templBuffer.WriteString(var_5)
+		var_6 := `Button C`
+		_, err = templBuffer.WriteString(var_6)
 		if err != nil {
 			return err
 		}

@@ -48,6 +48,9 @@ func (p Client) LogMessage(ctx context.Context, params *lsp.LogMessageParams) (e
 
 func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagnosticsParams) (err error) {
 	p.Log.Info("client <- server: PublishDiagnostics")
+	for i, diagnostic := range params.Diagnostics {
+		p.Log.Info(fmt.Sprintf("client <- server: PublishDiagnostics: [%d]", i), zap.Any("diagnostic", diagnostic))
+	}
 	// Get the sourcemap from the cache.
 	uri := strings.TrimSuffix(string(params.URI), "_templ.go") + ".templ"
 	sourceMap, ok := p.SourceMapCache.Get(uri)
@@ -59,16 +62,29 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 	for i := 0; i < len(params.Diagnostics); i++ {
 		item := params.Diagnostics[i]
 		start, ok := sourceMap.SourcePositionFromTarget(item.Range.Start.Line, item.Range.Start.Character)
-		if ok {
+		if !ok {
+			continue
+		}
+		if item.Range.Start.Line == item.Range.End.Line {
+			length := item.Range.End.Character - item.Range.Start.Character
 			item.Range.Start.Line = start.Line
 			item.Range.Start.Character = start.Col
+			item.Range.End.Line = start.Line
+			item.Range.End.Character = start.Col + length
+			params.Diagnostics[i] = item
+			p.Log.Info(fmt.Sprintf("diagnostic [%d] rewritten", i), zap.Any("diagnostic", item))
+			continue
 		}
 		end, ok := sourceMap.SourcePositionFromTarget(item.Range.End.Line, item.Range.End.Character)
-		if ok {
-			item.Range.End.Line = end.Line
-			item.Range.End.Character = end.Col
+		if !ok {
+			continue
 		}
+		item.Range.Start.Line = start.Line
+		item.Range.Start.Character = start.Col
+		item.Range.End.Line = end.Line
+		item.Range.End.Character = end.Col
 		params.Diagnostics[i] = item
+		p.Log.Info(fmt.Sprintf("diagnostic [%d] rewritten", i), zap.Any("diagnostic", item))
 	}
 	return p.Target.PublishDiagnostics(ctx, params)
 }
