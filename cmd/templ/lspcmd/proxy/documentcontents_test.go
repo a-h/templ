@@ -16,21 +16,11 @@ func TestDocument(t *testing.T) {
 		expected   string
 	}{
 		{
-			name:  "Replace all content if the range is empty",
-			start: "0\n1\n2",
-			operations: []func(d *Document){
-				func(d *Document) {
-					d.Overwrite(&lsp.Range{}, "replaced")
-				},
-			},
-			expected: "replaced",
-		},
-		{
 			name:  "Replace all content if the range is nil",
 			start: "0\n1\n2",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(nil, "replaced")
+					d.Apply(nil, "replaced")
 				},
 			},
 			expected: "replaced",
@@ -40,14 +30,14 @@ func TestDocument(t *testing.T) {
 			start: "0\n1\n2",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 0,
 						},
 						End: lsp.Position{
 							Line:      2,
-							Character: 0,
+							Character: 1,
 						},
 					}, "replaced")
 				},
@@ -59,7 +49,7 @@ func TestDocument(t *testing.T) {
 			start: "0\n1\n2",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      1,
 							Character: 0,
@@ -78,7 +68,7 @@ func TestDocument(t *testing.T) {
 			start: "012345",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 0,
@@ -97,7 +87,7 @@ func TestDocument(t *testing.T) {
 			start: "012345",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 0,
@@ -112,11 +102,11 @@ func TestDocument(t *testing.T) {
 			expected: "ABCDEFG345",
 		},
 		{
-			name:  "Overwrite line",
+			name:  "Apply line",
 			start: "Line one\nLine two\nLine three",
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 4,
@@ -131,11 +121,11 @@ func TestDocument(t *testing.T) {
 			expected: "Line one test\nNew Line 2\nNew line three",
 		},
 		{
-			name:  "Add new line to end of single line",
+			name:  "Overwrite new line at end of single line",
 			start: `a`,
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 1,
@@ -150,11 +140,30 @@ func TestDocument(t *testing.T) {
 			expected: "a\nb",
 		},
 		{
+			name:  "Insert new line at end of single line",
+			start: `a`,
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 1,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 1,
+						},
+					}, "\nb")
+				},
+			},
+			expected: "a\nb",
+		},
+		{
 			name:  "Exceeding the col and line count rounds down to the end of the file",
 			start: `a`,
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      200,
 							Character: 600,
@@ -169,12 +178,12 @@ func TestDocument(t *testing.T) {
 			expected: "a\nb",
 		},
 		{
-			name:  "Can remove a line and add it back from the end of the previous line",
+			name:  "Can remove a line and add it back from the end of the previous line (insert)",
 			start: "a\nb\nc",
 			operations: []func(d *Document){
 				func(d *Document) {
 					// Delete.
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      1,
 							Character: 0,
@@ -185,7 +194,38 @@ func TestDocument(t *testing.T) {
 						},
 					}, "")
 					// Put it back.
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 1,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 1,
+						},
+					}, "\nb")
+				},
+			},
+			expected: "a\nb\nc",
+		},
+		{
+			name:  "Can remove a line and add it back from the end of the previous line (overwrite)",
+			start: "a\nb\nc",
+			operations: []func(d *Document){
+				func(d *Document) {
+					// Delete.
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      1,
+							Character: 0,
+						},
+						End: lsp.Position{
+							Line:      2,
+							Character: 0,
+						},
+					}, "")
+					// Put it back.
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 1,
@@ -194,7 +234,7 @@ func TestDocument(t *testing.T) {
 							Line:      1,
 							Character: 0,
 						},
-					}, "\nb")
+					}, "\nb\n")
 				},
 			},
 			expected: "a\nb\nc",
@@ -213,7 +253,7 @@ templ personTemplate(p person) {
 `,
 			operations: []func(d *Document){
 				func(d *Document) {
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      4,
 							Character: 21,
@@ -243,7 +283,7 @@ templ personTemplate(p person) {
 			operations: []func(d *Document){
 				func(d *Document) {
 					// Remove \t\tline2
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      1,
 							Character: 0,
@@ -254,7 +294,7 @@ templ personTemplate(p person) {
 						},
 					}, "")
 					// Put it back.
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 5,
@@ -281,7 +321,7 @@ templ personTemplate(p person) {
 			operations: []func(d *Document){
 				func(d *Document) {
 					// Remove <div>&copy; { fmt.Sprintf("%d", time.Now().Year()) }</div>
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      1,
 							Character: 0,
@@ -292,7 +332,7 @@ templ personTemplate(p person) {
 						},
 					}, "")
 					// Put it back.
-					d.Overwrite(&lsp.Range{
+					d.Apply(&lsp.Range{
 						Start: lsp.Position{
 							Line:      0,
 							Character: 38,
@@ -310,6 +350,51 @@ templ personTemplate(p person) {
 	</footer>
 }
 `,
+		},
+		{
+			name: "Insert at start of line",
+			// Based on log entry.
+			// {"level":"info","ts":"2023-03-25T17:17:38Z","caller":"proxy/server.go:393","msg":"client -> server: DidChange","params":{"textDocument":{"uri":"file:///Users/adrian/github.com/a-h/templ/generator/test-call/template.templ","version":5},"contentChanges":[{"range":{"start":{"line":6,"character":0},"end":{"line":6,"character":0}},"text":"a"}]}}
+			start: `b`,
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 0,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 0,
+						},
+					}, "a")
+				},
+			},
+			expected: `ab`,
+		},
+		{
+			name: "Insert full new line",
+			start: `a
+c
+d`,
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      1,
+							Character: 0,
+						},
+						End: lsp.Position{
+							Line:      1,
+							Character: 0,
+						},
+					}, "b\n")
+				},
+			},
+			expected: `a
+b
+c
+d`,
 		},
 	}
 

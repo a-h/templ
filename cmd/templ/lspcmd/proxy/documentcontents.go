@@ -69,7 +69,7 @@ func (dc *DocumentContents) Apply(uri string, changes []lsp.TextDocumentContentC
 		return
 	}
 	for _, change := range changes {
-		d.Overwrite(change.Range, change.Text)
+		d.Apply(change.Range, change.Text)
 	}
 	return
 }
@@ -86,78 +86,144 @@ type Document struct {
 	Lines []string
 }
 
-func (d *Document) isEmptyRange(r lsp.Range) bool {
-	return r.Start.Line == 0 && r.Start.Character == 0 &&
-		r.End.Line == 0 && r.End.Character == 0
+func (d *Document) LineLengths() (lens []int) {
+	lens = make([]int, len(d.Lines))
+	for i, l := range d.Lines {
+		lens[i] = len(l)
+	}
+	return
 }
 
-func (d *Document) isRangeOfDocument(r lsp.Range) bool {
-	rangeStartsAtBeginningOfFile := r.Start.Line == 0 && r.Start.Character == 0
-	rel, rec := int(r.End.Line), int(r.End.Character)
-	del, dec := int(len(d.Lines)-1), len(d.Lines[len(d.Lines)-1])-1
-	rangeEndsPastTheEndOfFile := rel > del || rel == del && rec > dec
-	rangeEndsAtEndOfFile := rel == del && rec == dec
-	return rangeStartsAtBeginningOfFile && (rangeEndsPastTheEndOfFile || rangeEndsAtEndOfFile)
+func (d *Document) Len() (line, col int) {
+	line = len(d.Lines)
+	col = len(d.Lines[len(d.Lines)-1])
+	return
 }
 
-func (d *Document) remove(i, j int) {
-	d.Lines = append(d.Lines[:i], d.Lines[j:]...)
+func (d *Document) Overwrite(fromLine, fromCol, toLine, toCol int, lines []string) {
+	suffix := d.Lines[toLine][toCol:]
+	toLen := d.LineLengths()[toLine]
+	d.Delete(fromLine, fromCol, toLine, toLen)
+	lines[len(lines)-1] = lines[len(lines)-1] + suffix
+	d.Insert(fromLine, fromCol, lines)
 }
 
-func (d *Document) insert(i int, withLines []string) {
+func (d *Document) Insert(line, col int, lines []string) {
+	prefix := d.Lines[line][:col]
+	suffix := d.Lines[line][col:]
+	lines[0] = prefix + lines[0]
+	d.Lines[line] = lines[0]
+
+	if len(lines) > 1 {
+		d.InsertLines(line+1, lines[1:])
+	}
+
+	d.Lines[line+len(lines)-1] = lines[len(lines)-1] + suffix
+}
+
+func (d *Document) InsertLines(i int, withLines []string) {
 	d.Lines = append(d.Lines[:i], append(withLines, d.Lines[i:]...)...)
 }
 
-func (d *Document) normaliseRange(r *lsp.Range) {
-	if r.Start.Line > uint32(len(d.Lines))-1 {
-		r.Start.Line = uint32(len(d.Lines)) - 1
+func (d *Document) Delete(fromLine, fromCol, toLine, toCol int) {
+	prefix := d.Lines[fromLine][:fromCol]
+	suffix := d.Lines[toLine][toCol:]
+
+	lens := d.LineLengths()
+	isWithinLine := fromLine == toLine
+	toLineLen := lens[toLine]
+	fromIsWholeLine := (fromCol == 0 && !isWithinLine) || (fromCol == 0 && isWithinLine && toCol == toLineLen)
+	toIsWholeLine := !isWithinLine && toCol == toLineLen
+
+	if isWithinLine {
+		d.Lines[fromLine] = prefix + suffix
+	} else {
+		d.Lines[fromLine] = prefix
+		d.Lines[toLine] = suffix
 	}
-	if r.End.Line > uint32(len(d.Lines))-1 {
-		r.End.Line = uint32(len(d.Lines)) - 1
+
+	if !isWithinLine {
+		deleteFromLineIndex := fromLine
+		deleteToLineIndex := toLine + 1
+		if !fromIsWholeLine {
+			deleteFromLineIndex++
+		}
+		if !toIsWholeLine {
+			deleteToLineIndex--
+		}
+		d.DeleteLines(deleteFromLineIndex, deleteToLineIndex)
 	}
-	startLine := d.Lines[r.Start.Line]
-	startLineMaxCharIndex := len(startLine)
-	if r.Start.Character > uint32(startLineMaxCharIndex) {
-		r.Start.Character = uint32(startLineMaxCharIndex)
-	}
-	endLine := d.Lines[r.End.Line]
-	endLineMaxCharIndex := len(endLine)
-	if r.End.Character > uint32(endLineMaxCharIndex) {
-		r.End.Character = uint32(endLineMaxCharIndex)
-	}
+
 }
 
-func (d *Document) Overwrite(r *lsp.Range, with string) {
-	withLines := strings.Split(with, "\n")
-	if r == nil || d.isEmptyRange(*r) || len(d.Lines) == 0 {
-		d.Lines = withLines
-		return
-	}
-	d.normaliseRange(r)
-	if d.isRangeOfDocument(*r) {
-		d.Lines = withLines
-		return
-	}
-	if r.Start.Character > 0 {
-		prefix := d.Lines[r.Start.Line][:r.Start.Character]
-		withLines[0] = prefix + withLines[0]
-	}
-	if r.End.Character > 0 {
-		suffix := d.Lines[r.End.Line][r.End.Character:]
-		withLines[len(withLines)-1] = withLines[len(withLines)-1] + suffix
-	}
-	if r.End.Line > r.Start.Line && r.End.Character == 0 {
-		// Neovim unexpectedly adds a newline when re-inserting content (dd, followed by u for undo).
-		if last := withLines[len(withLines)-1]; last == "" {
-			withLines = withLines[0 : len(withLines)-1]
-		}
-		d.remove(int(r.Start.Line), int(r.End.Line))
-	} else {
-		d.remove(int(r.Start.Line), int(r.End.Line+1))
-	}
-	d.insert(int(r.Start.Line), withLines)
+func (d *Document) DeleteLines(i, j int) {
+	d.Lines = append(d.Lines[:i], d.Lines[j:]...)
 }
 
 func (d *Document) String() string {
 	return strings.Join(d.Lines, "\n")
+}
+
+func (d *Document) Apply(r *lsp.Range, with string) {
+	withLines := strings.Split(with, "\n")
+	d.normalize(r)
+	if d.isWholeDocument(r) {
+		d.Lines = withLines
+		return
+	}
+	if d.isInsert(r, with) {
+		d.Insert(int(r.Start.Line), int(r.Start.Character), withLines)
+		return
+	}
+	if d.isDelete(r, with) {
+		d.Delete(int(r.Start.Line), int(r.Start.Character), int(r.End.Line), int(r.End.Character))
+		return
+	}
+	if d.isOverwrite(r, with) {
+		d.Overwrite(int(r.Start.Line), int(r.Start.Character), int(r.End.Line), int(r.End.Character), withLines)
+	}
+}
+
+func (d *Document) normalize(r *lsp.Range) {
+	if r == nil {
+		return
+	}
+	lens := d.LineLengths()
+	if r.Start.Line >= uint32(len(lens)) {
+		r.Start.Line = uint32(len(lens) - 1)
+		r.Start.Character = uint32(lens[r.Start.Line])
+	}
+	if r.Start.Character > uint32(lens[r.Start.Line]) {
+		r.Start.Character = uint32(lens[r.Start.Line])
+	}
+	if r.End.Line >= uint32(len(lens)) {
+		r.End.Line = uint32(len(lens) - 1)
+		r.End.Character = uint32(lens[r.End.Line])
+	}
+	if r.End.Character > uint32(lens[r.End.Line]) {
+		r.End.Character = uint32(lens[r.End.Line])
+	}
+}
+
+func (d *Document) isOverwrite(r *lsp.Range, with string) bool {
+	return (r.End.Line != r.Start.Line || r.Start.Character != r.End.Character) && with != ""
+}
+
+func (d *Document) isInsert(r *lsp.Range, with string) bool {
+	return r.End.Line == r.Start.Line && r.Start.Character == r.End.Character && with != ""
+}
+
+func (d *Document) isDelete(r *lsp.Range, with string) bool {
+	return (r.End.Line != r.Start.Line || r.Start.Character != r.End.Character) && with == ""
+}
+
+func (d *Document) isWholeDocument(r *lsp.Range) bool {
+	if r == nil {
+		return true
+	}
+	if r.Start.Line != 0 || r.Start.Character != 0 {
+		return false
+	}
+	l, c := d.Len()
+	return r.End.Line == uint32(l) || r.End.Character == uint32(c)
 }
