@@ -26,7 +26,7 @@ func TestDocument(t *testing.T) {
 			expected: "replaced",
 		},
 		{
-			name:  "Replace all content if the range matches",
+			name:  "If the range matches the length of the file, all of it is replaced",
 			start: "0\n1\n2",
 			operations: []func(d *Document){
 				func(d *Document) {
@@ -45,7 +45,87 @@ func TestDocument(t *testing.T) {
 			expected: "replaced",
 		},
 		{
-			name:  "Remove whole line",
+			name:  "Can insert new text",
+			start: ``,
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 0,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 0,
+						},
+					}, "abc")
+				},
+			},
+			expected: "abc",
+		},
+		{
+			name:  "Can insert new text that ends with a newline",
+			start: ``,
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 0,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 0,
+						},
+					}, "abc\n")
+				},
+			},
+			expected: `abc
+`,
+		},
+		{
+			name: "Can insert a new line at the end of existing text",
+			start: `abc
+`,
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 3,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 3,
+						},
+					}, "\n")
+				},
+			},
+			expected: `abc
+
+`,
+		},
+		{
+			name:  "Can insert a word at the start of existing text",
+			start: `bc`,
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 0,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 0,
+						},
+					}, "a")
+				},
+			},
+			expected: `abc`,
+		},
+		{
+			name:  "Can remove whole line",
 			start: "0\n1\n2",
 			operations: []func(d *Document){
 				func(d *Document) {
@@ -64,7 +144,26 @@ func TestDocument(t *testing.T) {
 			expected: "0\n2",
 		},
 		{
-			name:  "Strip prefix",
+			name:  "Can remove across lines",
+			start: "0\n1\n22",
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      1,
+							Character: 0,
+						},
+						End: lsp.Position{
+							Line:      2,
+							Character: 1,
+						},
+					}, "")
+				},
+			},
+			expected: "0\n2",
+		},
+		{
+			name:  "Can remove prefix from text",
 			start: "012345",
 			operations: []func(d *Document){
 				func(d *Document) {
@@ -83,7 +182,7 @@ func TestDocument(t *testing.T) {
 			expected: "345",
 		},
 		{
-			name:  "Replace line prefix",
+			name:  "Can replace line prefix",
 			start: "012345",
 			operations: []func(d *Document){
 				func(d *Document) {
@@ -102,7 +201,7 @@ func TestDocument(t *testing.T) {
 			expected: "ABCDEFG345",
 		},
 		{
-			name:  "Apply line",
+			name:  "Can replace text across line boundaries",
 			start: "Line one\nLine two\nLine three",
 			operations: []func(d *Document){
 				func(d *Document) {
@@ -121,26 +220,7 @@ func TestDocument(t *testing.T) {
 			expected: "Line one test\nNew Line 2\nNew line three",
 		},
 		{
-			name:  "Overwrite new line at end of single line",
-			start: `a`,
-			operations: []func(d *Document){
-				func(d *Document) {
-					d.Apply(&lsp.Range{
-						Start: lsp.Position{
-							Line:      0,
-							Character: 1,
-						},
-						End: lsp.Position{
-							Line:      1,
-							Character: 0,
-						},
-					}, "\nb")
-				},
-			},
-			expected: "a\nb",
-		},
-		{
-			name:  "Insert new line at end of single line",
+			name:  "Can add new line to end of single line",
 			start: `a`,
 			operations: []func(d *Document){
 				func(d *Document) {
@@ -411,5 +491,4 @@ d`,
 			}
 		})
 	}
-
 }
