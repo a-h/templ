@@ -129,31 +129,13 @@ func (d *Document) Delete(fromLine, fromCol, toLine, toCol int) {
 	prefix := d.Lines[fromLine][:fromCol]
 	suffix := d.Lines[toLine][toCol:]
 
-	lens := d.LineLengths()
-	isWithinLine := fromLine == toLine
-	toLineLen := lens[toLine]
-	fromIsWholeLine := (fromCol == 0 && !isWithinLine) || (fromCol == 0 && isWithinLine && toCol == toLineLen)
-	toIsWholeLine := !isWithinLine && toCol == toLineLen
+	// Delete intermediate lines.
+	deleteFrom := fromLine
+	deleteTo := fromLine + (toLine - fromLine)
+	d.DeleteLines(deleteFrom, deleteTo)
 
-	if isWithinLine {
-		d.Lines[fromLine] = prefix + suffix
-	} else {
-		d.Lines[fromLine] = prefix
-		d.Lines[toLine] = suffix
-	}
-
-	if !isWithinLine {
-		deleteFromLineIndex := fromLine
-		deleteToLineIndex := toLine + 1
-		if !fromIsWholeLine {
-			deleteFromLineIndex++
-		}
-		if !toIsWholeLine {
-			deleteToLineIndex--
-		}
-		d.DeleteLines(deleteFromLineIndex, deleteToLineIndex)
-	}
-
+	// Merge the contents of the final line.
+	d.Lines[fromLine] = prefix + suffix
 }
 
 func (d *Document) DeleteLines(i, j int) {

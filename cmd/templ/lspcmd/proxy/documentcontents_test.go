@@ -144,6 +144,63 @@ func TestDocument(t *testing.T) {
 			expected: "0\n2",
 		},
 		{
+			name:  "Can remove line prefix",
+			start: "abcdef",
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 0,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 3,
+						},
+					}, "")
+				},
+			},
+			expected: "def",
+		},
+		{
+			name:  "Can remove line substring",
+			start: "abcdef",
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 2,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 3,
+						},
+					}, "")
+				},
+			},
+			expected: "abdef",
+		},
+		{
+			name:  "Can remove line suffix",
+			start: "abcdef",
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 4,
+						},
+						End: lsp.Position{
+							Line:      0,
+							Character: 6,
+						},
+					}, "")
+				},
+			},
+			expected: "abcd",
+		},
+		{
 			name:  "Can remove across lines",
 			start: "0\n1\n22",
 			operations: []func(d *Document){
@@ -163,8 +220,27 @@ func TestDocument(t *testing.T) {
 			expected: "0\n2",
 		},
 		{
-			name:  "Can remove prefix from text",
-			start: "012345",
+			name:  "Can remove part of two lines",
+			start: "Line one\nLine two\nLine three",
+			operations: []func(d *Document){
+				func(d *Document) {
+					d.Apply(&lsp.Range{
+						Start: lsp.Position{
+							Line:      0,
+							Character: 4,
+						},
+						End: lsp.Position{
+							Line:      2,
+							Character: 4,
+						},
+					}, "")
+				},
+			},
+			expected: "Line three",
+		},
+		{
+			name:  "Can remove all lines",
+			start: "0\n1\n2",
 			operations: []func(d *Document){
 				func(d *Document) {
 					d.Apply(&lsp.Range{
@@ -173,13 +249,13 @@ func TestDocument(t *testing.T) {
 							Character: 0,
 						},
 						End: lsp.Position{
-							Line:      0,
-							Character: 3,
+							Line:      2,
+							Character: 1,
 						},
 					}, "")
 				},
 			},
-			expected: "345",
+			expected: "",
 		},
 		{
 			name:  "Can replace line prefix",
