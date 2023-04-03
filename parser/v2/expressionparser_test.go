@@ -1,10 +1,10 @@
 package parser
 
 import (
-	"io"
 	"testing"
 
-	"github.com/a-h/lexical/input"
+	"github.com/a-h/parse"
+	"github.com/google/go-cmp/cmp"
 )
 
 // # List of situations where a templ file could contain braces.
@@ -57,19 +57,15 @@ func TestRuneLiterals(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pr := rune_lit(input.NewFromString(tt.input))
-			if pr.Error != nil && pr.Error != io.EOF {
-				t.Fatalf("unexpected error: %v", pr.Error)
+			actual, ok, err := rune_lit.Parse(parse.NewInput(tt.input))
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
 			}
-			if !pr.Success {
-				t.Fatalf("unexpected failure for input %q: %v", tt.input, pr)
-			}
-			actual, ok := pr.Item.(string)
 			if !ok {
-				t.Fatalf("unexpectedly not a string, got %t (%v) instead", pr.Item, pr.Item)
+				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
-			if string(actual) != tt.expected {
-				t.Errorf("expected vs got:\n%q\n%q", tt.expected, actual)
+			if diff := cmp.Diff(tt.expected, actual); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}
@@ -94,19 +90,15 @@ func TestStringLiterals(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pr := string_lit(input.NewFromString(tt.input))
-			if pr.Error != nil && pr.Error != io.EOF {
-				t.Fatalf("unexpected error: %v", pr.Error)
+			actual, ok, err := string_lit.Parse(parse.NewInput(tt.input))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
-			if !pr.Success {
-				t.Fatalf("unexpected failure for input %q: %v", tt.input, pr)
-			}
-			actual, ok := pr.Item.(string)
 			if !ok {
-				t.Fatalf("unexpectedly not a string, got %t (%v) instead", pr.Item, pr.Item)
+				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
-			if string(actual) != tt.expected {
-				t.Errorf("expected vs got:\n%q\n%q", tt.expected, actual)
+			if diff := cmp.Diff(tt.expected, actual); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}
@@ -228,19 +220,22 @@ func TestExpressions(t *testing.T) {
 				startBraceCount: tt.startBraceCount,
 			}
 			expr := tt.input[len(tt.prefix):]
-			pr := ep.Parse(input.NewFromString(expr))
-			if pr.Error != nil && pr.Error != io.EOF {
-				t.Fatalf("unexpected error: %v", pr.Error)
+			actual, ok, err := ep.Parse(parse.NewInput(expr))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
-			if !pr.Success {
-				t.Fatalf("unexpected failure for input %q: %v", expr, pr)
-			}
-			actual, ok := pr.Item.(string)
 			if !ok {
-				t.Fatalf("unexpectedly not an expression, got %t (%v) instead", pr.Item, pr.Item)
+				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
-			if string(actual) != tt.expected {
-				t.Errorf("expected vs got:\n%q\n%q", tt.expected, actual)
+			expected := Expression{
+				Value: tt.expected,
+				Range: Range{
+					From: Position{0, 0, 0},
+					To:   Position{int64(len(tt.expected)), 0, uint32(len(tt.expected))},
+				},
+			}
+			if diff := cmp.Diff(expected, actual); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}

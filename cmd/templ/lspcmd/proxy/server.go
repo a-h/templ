@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/a-h/parse"
 	lsp "github.com/a-h/protocol"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
@@ -128,15 +129,15 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 				},
 			},
 		}
-		if pe, isParserError := err.(parser.ParseError); isParserError {
+		if pe, isParserError := err.(parse.ParseError); isParserError {
 			msg.Diagnostics[0].Range = lsp.Range{
 				Start: lsp.Position{
-					Line:      pe.From.Line,
-					Character: pe.From.Col,
+					Line:      uint32(pe.Pos.Line),
+					Character: uint32(pe.Pos.Col),
 				},
 				End: lsp.Position{
-					Line:      pe.To.Line,
-					Character: pe.To.Col,
+					Line:      uint32(pe.Pos.Line),
+					Character: uint32(pe.Pos.Col),
 				},
 			}
 		}

@@ -1,42 +1,31 @@
 package parser
 
 import (
-	"io"
-
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
 // Package.
-var pkg packageParser
+var pkg = parse.Func(func(pi *parse.Input) (pkg Package, ok bool, err error) {
+	start := pi.Position()
 
-type packageParser struct {
-}
-
-var packageExpressionStartParser = parse.String("package ")
-
-func (p packageParser) Parse(pi parse.Input) parse.Result {
-	// Check the prefix first.
-	from := NewPositionFromInput(pi)
-	prefixResult := packageExpressionStartParser(pi)
-	if !prefixResult.Success {
-		return prefixResult
+	// Package prefix.
+	if _, ok, err = parse.String("package ").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once we have the prefix, it's an expression until the end of the line.
-	pr := parse.StringUntil(newLine)(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	var exp string
+	if exp, ok, err = Must(parse.StringUntil(parse.NewLine), "package literal not terminated").Parse(pi); err != nil || !ok {
+		return
 	}
-	// If there's no newline, the package literal wasn't terminated.
-	if !pr.Success || len(pr.Item.(string)) == 0 {
-		return parse.Failure("packageParser", newParseError("package literal not terminated", from, NewPositionFromInput(pi)))
+	if len(exp) == 0 {
+		ok = false
+		err = parse.Error("package literal not terminated", start)
+		return
 	}
 
 	// Success!
-	to := NewPositionFromInput(pi)
-	r := Package{
-		Expression: NewExpression("package "+pr.Item.(string), from, to),
-	}
+	pkg.Expression = NewExpression("package "+exp, start, pi.Position())
 
-	return parse.Success("packageParser", r, nil)
-}
+	return pkg, true, nil
+})

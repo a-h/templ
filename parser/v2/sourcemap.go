@@ -40,12 +40,12 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 			if _, ok := sm.SourceLinesToTarget[srcLine]; !ok {
 				sm.SourceLinesToTarget[srcLine] = make(map[uint32]Position)
 			}
-			sm.SourceLinesToTarget[srcLine][srcCol] = NewPositionFromValues(tgtIndex, tgtLine, tgtCol)
+			sm.SourceLinesToTarget[srcLine][srcCol] = NewPosition(tgtIndex, tgtLine, tgtCol)
 
 			if _, ok := sm.TargetLinesToSource[tgtLine]; !ok {
 				sm.TargetLinesToSource[tgtLine] = make(map[uint32]Position)
 			}
-			sm.TargetLinesToSource[tgtLine][tgtCol] = NewPositionFromValues(srcIndex, srcLine, srcCol)
+			sm.TargetLinesToSource[tgtLine][tgtCol] = NewPosition(srcIndex, srcLine, srcCol)
 
 			srcCol++
 			tgtCol++
@@ -57,12 +57,12 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 		if _, ok := sm.SourceLinesToTarget[srcLine]; !ok {
 			sm.SourceLinesToTarget[srcLine] = make(map[uint32]Position)
 		}
-		sm.SourceLinesToTarget[srcLine][srcCol] = NewPositionFromValues(tgtIndex, tgtLine, tgtCol)
+		sm.SourceLinesToTarget[srcLine][srcCol] = NewPosition(tgtIndex, tgtLine, tgtCol)
 
 		if _, ok := sm.TargetLinesToSource[tgtLine]; !ok {
 			sm.TargetLinesToSource[tgtLine] = make(map[uint32]Position)
 		}
-		sm.TargetLinesToSource[tgtLine][tgtCol] = NewPositionFromValues(srcIndex, srcLine, srcCol)
+		sm.TargetLinesToSource[tgtLine][tgtCol] = NewPosition(srcIndex, srcLine, srcCol)
 
 		srcIndex++
 		tgtIndex++

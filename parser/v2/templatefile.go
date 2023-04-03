@@ -1,41 +1,21 @@
 package parser
 
 import (
-	"bufio"
 	"errors"
-	"fmt"
-	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"unicode"
 
-	"github.com/a-h/lexical/input"
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
-const maxBufferSize = 1024 * 1024 * 10 // 10MB
-
 func Parse(fileName string) (TemplateFile, error) {
-	f, err := os.Open(fileName)
+	fc, err := os.ReadFile(fileName)
 	if err != nil {
 		return TemplateFile{}, err
 	}
-	fi, err := f.Stat()
-	if err != nil {
-		return TemplateFile{}, err
-	}
-	bufferSize := maxBufferSize
-	if fi.Size() < int64(bufferSize) {
-		bufferSize = int(fi.Size())
-	}
-	reader := bufio.NewReader(f)
-	tfr := NewTemplateFileParser(getDefaultPackageName(fileName)).Parse(input.NewWithBufferSize(reader, bufferSize))
-	if tfr.Error != nil {
-		return TemplateFile{}, tfr.Error
-	}
-	return tfr.Item.(TemplateFile), nil
+	return ParseString(string(fc))
 }
 
 func getDefaultPackageName(fileName string) (pkg string) {
@@ -63,11 +43,14 @@ func isGoIdentifier(s string) bool {
 }
 
 func ParseString(template string) (TemplateFile, error) {
-	tfr := NewTemplateFileParser("main").Parse(input.NewFromString(template))
-	if tfr.Error != nil {
-		return TemplateFile{}, tfr.Error
+	tf, ok, err := NewTemplateFileParser("main").Parse(parse.NewInput(template))
+	if err != nil {
+		return tf, err
 	}
-	return tfr.Item.(TemplateFile), nil
+	if !ok {
+		err = ErrTemplateNotFound
+	}
+	return tf, err
 }
 
 // NewTemplateFileParser creates a new TemplateFileParser.
@@ -78,99 +61,111 @@ func NewTemplateFileParser(pkg string) TemplateFileParser {
 }
 
 var ErrLegacyFileFormat = errors.New("Legacy file format - run templ migrate")
+var ErrTemplateNotFound = errors.New("Template not found")
 
 type TemplateFileParser struct {
 	DefaultPackage string
 }
 
-func (p TemplateFileParser) Parse(pi parse.Input) parse.Result {
-	var tf TemplateFile
-
+func (p TemplateFileParser) Parse(pi *parse.Input) (tf TemplateFile, ok bool, err error) {
 	// If we're parsing a legacy file, complain that migration needs to happen.
-	pr := parse.String("{% package")(pi)
-	if pr.Success {
-		return parse.Failure("Legacy file format", ErrLegacyFileFormat)
+	_, ok, err = parse.String("{% package").Parse(pi)
+	if err != nil {
+		return
+	}
+	if ok {
+		return tf, false, ErrLegacyFileFormat
 	}
 
 	// Required package.
 	// package name
-	pr = pkg.Parse(pi)
-	if pr.Error != nil {
-		return pr
+	from := pi.Position()
+	tf.Package, ok, err = pkg.Parse(pi)
+	if err != nil {
+		return
 	}
-	pkg, ok := pr.Item.(Package)
 	if !ok {
-		pkg = Package{
-			Expression: NewExpression("package "+p.DefaultPackage, NewPosition(), NewPosition()),
+		tf.Package = Package{
+			Expression: NewExpression("package "+p.DefaultPackage, from, pi.Position()),
 		}
 	}
-	tf.Package = pkg
 
 	// Optional whitespace.
-	parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+	parse.OptionalWhitespace.Parse(pi)
 
-	// Optional templates, CSS, and script templates.
-	// templ Name(p Parameter) {
-	// css Name() {
-	// script Name() {
-	// Anything else is assumed to be Go code.
-	cssp := newCSSParser()
-	stp := newScriptTemplateParser()
-	templateContent := parse.Any(template.Parse, cssp.Parse, stp.Parse)
 outer:
 	for {
-		pr := templateContent(pi)
-		if pr.Error != nil && pr.Error != io.EOF {
-			return pr
+		// Optional templates, CSS, and script templates.
+		// templ Name(p Parameter)
+		var tn HTMLTemplate
+		tn, ok, err = template.Parse(pi)
+		if err != nil {
+			return tf, false, err
 		}
-		if pr.Success {
-			switch pr.Item.(type) {
-			case HTMLTemplate:
-				tf.Nodes = append(tf.Nodes, pr.Item.(HTMLTemplate))
-			case CSSTemplate:
-				tf.Nodes = append(tf.Nodes, pr.Item.(CSSTemplate))
-			case ScriptTemplate:
-				tf.Nodes = append(tf.Nodes, pr.Item.(ScriptTemplate))
-			default:
-				return parse.Failure("unknown node type", fmt.Errorf("unknown node type %s", reflect.TypeOf(pr.Item).Name()))
-			}
-			// Eat optional whitespace.
-			parse.Optional(parse.WithStringConcatCombiner, whitespaceParser)(pi)
+		if ok {
+			tf.Nodes = append(tf.Nodes, tn)
+			parse.OptionalWhitespace.Parse(pi)
 			continue
 		}
-		if pr.Error == io.EOF {
-			break
+
+		// css Name()
+		var cn CSSTemplate
+		cn, ok, err = cssParser.Parse(pi)
+		if err != nil {
+			return tf, false, err
+		}
+		if ok {
+			tf.Nodes = append(tf.Nodes, cn)
+			parse.OptionalWhitespace.Parse(pi)
+			continue
+		}
+
+		// script Name()
+		var sn ScriptTemplate
+		sn, ok, err = scriptTemplateParser.Parse(pi)
+		if err != nil {
+			return tf, false, err
+		}
+		if ok {
+			tf.Nodes = append(tf.Nodes, sn)
+			parse.OptionalWhitespace.Parse(pi)
+			continue
 		}
 
 		// Anything that isn't template content is Go code.
 		var code strings.Builder
-		from := NewPositionFromInput(pi)
+		from := pi.Position()
+	inner:
 		for {
 			// Check to see if this line isn't Go code.
-			last := NewPositionFromInput(pi)
-			l, err := readLine(pi)
-			if err != nil && err != io.EOF {
-				return parse.Failure("unknown error", err)
+			last := pi.Index()
+			var l string
+			if l, ok, err = parse.StringUntil(parse.Or(parse.NewLine, parse.EOF[string]())).Parse(pi); err != nil {
+				return
 			}
 			hasTemplatePrefix := strings.HasPrefix(l, "templ ") || strings.HasPrefix(l, "css ") || strings.HasPrefix(l, "script ")
-			if hasTemplatePrefix && strings.HasSuffix(l, "{\n") {
+			if hasTemplatePrefix && strings.HasSuffix(l, "{") {
 				// Unread the line.
-				err := rewind(pi, last.Index)
-				if err != nil {
-					return parse.Failure("failed to rewind reader", err)
-				}
+				pi.Seek(last)
 				// Take the code so far.
 				if code.Len() > 0 {
-					expr := NewExpression(strings.TrimSpace(code.String()), from, NewPositionFromInput(pi))
+					expr := NewExpression(strings.TrimSpace(code.String()), from, pi.Position())
 					tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
 				}
 				// Carry on parsing.
-				break
+				break inner
 			}
 			code.WriteString(l)
-			if err == io.EOF {
+
+			// Eat the newline or EOF that we read until.
+			var newLine string
+			if newLine, ok, err = parse.NewLine.Parse(pi); err != nil {
+				return
+			}
+			code.WriteString(newLine)
+			if _, isEOF, _ := parse.EOF[string]().Parse(pi); isEOF {
 				if code.Len() > 0 {
-					expr := NewExpression(strings.TrimSpace(code.String()), from, NewPositionFromInput(pi))
+					expr := NewExpression(strings.TrimSpace(code.String()), from, pi.Position())
 					tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
 				}
 				// Stop parsing.
@@ -178,19 +173,6 @@ outer:
 			}
 		}
 	}
-	return parse.Success("template file", tf, nil)
-}
 
-func readLine(pi parse.Input) (string, error) {
-	var sb strings.Builder
-	for {
-		r, err := pi.Advance()
-		if err != nil {
-			return sb.String(), err
-		}
-		sb.WriteRune(r)
-		if r == '\n' {
-			return sb.String(), err
-		}
-	}
+	return tf, true, nil
 }

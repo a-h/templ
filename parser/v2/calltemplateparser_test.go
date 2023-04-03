@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/a-h/lexical/input"
+	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -80,15 +80,15 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := callTemplateExpression.Parse(input)
-			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
+			input := parse.NewInput(tt.input)
+			result, ok, err := callTemplateExpression.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
 			}
-			if !result.Success {
+			if !ok {
 				t.Errorf("failed to parse at %d", input.Index())
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
+			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
 		})

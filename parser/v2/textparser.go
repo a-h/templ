@@ -1,35 +1,22 @@
 package parser
 
 import (
-	"errors"
-	"io"
-
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
-
-func newTextParser() textParser {
-	return textParser{}
-}
-
-type textParser struct {
-}
 
 var tagTemplOrNewLine = parse.Any(parse.Rune('<'), parse.Rune('{'), parse.Rune('}'), parse.Rune('\n'))
 
-func (p textParser) Parse(pi parse.Input) parse.Result {
-	from := NewPositionFromInput(pi)
+var textParser = parse.Func(func(pi *parse.Input) (t Text, ok bool, err error) {
+	from := pi.Position()
 
 	// Read until a tag or templ expression opens.
-	dtr := parse.StringUntil(tagTemplOrNewLine)(pi)
-	if dtr.Error != nil {
-		if errors.Is(dtr.Error, io.EOF) {
-			return parse.Failure("textParser", newParseError("textParser: unterminated text, expected tag open, templ expression open, or newline", from, NewPositionFromInput(pi)))
-		}
-		return dtr
+	if t.Value, ok, err = parse.StringUntil(tagTemplOrNewLine).Parse(pi); err != nil || !ok {
+		return
 	}
-	s, ok := dtr.Item.(string)
-	if !ok || len(s) == 0 {
-		return parse.Failure("textParser", nil)
+	if _, ok = pi.Peek(1); !ok {
+		err = parse.Error("textParser: unterminated text, expected tag open, templ expression open, or newline", from)
+		return
 	}
-	return parse.Success("textParser", Text{Value: s}, nil)
-}
+
+	return t, true, nil
+})

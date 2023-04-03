@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/a-h/lexical/input"
+	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -64,16 +64,16 @@ func TestRawElementParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := rawElements(input)
-			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
+			input := parse.NewInput(tt.input)
+			actual, ok, err := rawElements.Parse(input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
-			if !result.Success {
-				t.Fatalf("failed to parse at %d", input.Index())
+			if !ok {
+				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
-				t.Errorf(diff)
+			if diff := cmp.Diff(tt.expected, actual); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}

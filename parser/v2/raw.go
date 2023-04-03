@@ -3,7 +3,7 @@ package parser
 import (
 	"fmt"
 
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
 var styleElement = rawElementParser{
@@ -18,34 +18,45 @@ type rawElementParser struct {
 	name string
 }
 
-func (p rawElementParser) Parse(pi parse.Input) parse.Result {
-	var r RawElement
+func (p rawElementParser) Parse(pi *parse.Input) (e RawElement, ok bool, err error) {
+	start := pi.Index()
 
-	// Check the named open tag.
-	otr := parse.All(asElementOpenTag,
-		parse.Rune('<'),
-		parse.String(p.name),
-		newAttributesParser().Parse,
-		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser),
-		parse.Rune('>'),
-	)(pi)
-	if otr.Error != nil || !otr.Success {
-		return otr
+	// <
+	if _, ok, err = lt.Parse(pi); err != nil || !ok {
+		return
 	}
-	ot := otr.Item.(elementOpenTag)
-	r.Name = ot.Name
-	r.Attributes = ot.Attributes
+
+	// Element name.
+	if e.Name, ok, err = parse.String(p.name).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	if e.Attributes, ok, err = attributesParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	// Optional whitespace.
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		pi.Seek(start)
+		return
+	}
+
+	// >
+	if _, ok, err = gt.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
 
 	// Once we've got an open tag, parse anything until the end tag as the tag contents.
 	// It's going to be rendered out raw.
-	from := NewPositionFromInput(pi)
-	end := parse.String("</" + p.name + ">")
-	ectpr := parse.StringUntil(end)(pi)
-	if !ectpr.Success {
-		return parse.Failure(p.name, newParseError(fmt.Sprintf("<%s>: expected end tag not present", r.Name), from, NewPositionFromInput(pi)))
+	end := parse.All(parse.String("</"), parse.String(p.name), parse.String(">"))
+	if e.Contents, ok, err = Must(parse.StringUntil(end), fmt.Sprintf("<%s>: expected end tag not present", e.Name)).Parse(pi); err != nil || !ok {
+		return
 	}
-	r.Contents = ectpr.Item.(string)
-	end(pi)
+	// Cut the end element.
+	end.Parse(pi)
 
-	return parse.Success(p.name, r, nil)
+	return e, true, nil
 }

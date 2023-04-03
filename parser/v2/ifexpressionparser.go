@@ -1,107 +1,78 @@
 package parser
 
 import (
-	"io"
-
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
 var ifExpression ifExpressionParser
 
-type ifExpressionParser struct {
-}
+type ifExpressionParser struct{}
 
-var ifExpressionStartParser = parse.String("if ")
-
-func (p ifExpressionParser) asChildren(parts []interface{}) (result interface{}, ok bool) {
-	if len(parts) == 0 {
-		return []Node{}, true
-	}
-	return parts[0].([]Node), true
-}
-
-func (p ifExpressionParser) Parse(pi parse.Input) parse.Result {
-	var r IfExpression
-
+func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err error) {
 	// Check the prefix first.
-	prefixResult := ifExpressionStartParser(pi)
-	if !prefixResult.Success {
-		return prefixResult
+	if _, ok, err = parse.String("if ").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once we've got a prefix, read until {\n.
-	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.All(parse.WithStringConcatCombiner, openBraceWithOptionalPadding, newLine))(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
-	}
 	// If there's no match, there's no {\n, which is an error.
-	if !pr.Success {
-		return parse.Failure("ifExpressionParser", newParseError("if: unterminated (missing closing '{\n')", from, NewPositionFromInput(pi)))
+	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine))), "if: unterminated (missing closing '{\n')").Parse(pi); err != nil || !ok {
+		return
 	}
-	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
-	// Eat " {".
-	from = NewPositionFromInput(pi)
-	if te := expressionEnd(pi); !te.Success {
-		return parse.Failure("ifExpressionParser", newParseError("if: unterminated (missing closing '{')", from, NewPositionFromInput(pi)))
+	// Eat " {\n".
+	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "if: unterminated (missing closing '{')").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once we've had the start of an if block, we must conclude the block.
 
-	// Eat required newline.
-	if lb := newLine(pi); lb.Error != nil {
-		return lb
-	}
-
 	// Read the 'Then' nodes.
-	from = NewPositionFromInput(pi)
-	pr = newTemplateNodeParser(parse.Or(elseExpression.Parse, closeBraceWithOptionalPadding), "else expression or closing brace").Parse(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
-	}
 	// If there's no match, there's a problem in the template nodes.
-	if !pr.Success {
-		return parse.Failure("ifExpressionParser", newParseError("if: expected nodes, but none were found", from, NewPositionFromInput(pi)))
+	np := newTemplateNodeParser(parse.Any(StripType(elseExpression), StripType(closeBraceWithOptionalPadding)), "else expression or closing brace")
+	if r.Then, ok, err = Must[[]Node](np, "if: expected nodes, but none were found").Parse(pi); err != nil || !ok {
+		return
 	}
-	r.Then = pr.Item.([]Node)
 
 	// Read the optional 'Else' Nodes.
-	from = NewPositionFromInput(pi)
-	pr = parse.Optional(p.asChildren, elseExpression.Parse)(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	if r.Else, _, err = elseExpression.Parse(pi); err != nil {
+		return
 	}
-	r.Else = pr.Item.([]Node)
 
 	// Read the required closing brace.
-	if ie := closeBraceWithOptionalPadding(pi); !ie.Success {
-		return parse.Failure("ifExpressionParser", newParseError("if: missing end (expected '}')", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(closeBraceWithOptionalPadding, "if: missing end (expected '}')").Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Success("if", r, nil)
+	return r, true, nil
 }
 
-var elseExpression elseExpressionParser
-
-type elseExpressionParser struct {
-}
-
-func (p elseExpressionParser) asElseExpression(parts []interface{}) (result interface{}, ok bool) {
-	return parts[1].([]Node), true // the array of nodes from templateNodeParser
-}
-
-func (p elseExpressionParser) Parse(pi parse.Input) parse.Result {
-	return parse.All(p.asElseExpression,
-		endElseParser,
-		newTemplateNodeParser(closeBraceWithOptionalPadding, "closing brace").Parse, // else contents
-	)(pi)
-}
-
-var endElseParser = parse.All(parse.WithStringConcatCombiner,
+var endElseParser = parse.All(
 	parse.Rune('}'),
-	optionalWhitespaceParser,
+	parse.OptionalWhitespace,
 	parse.String("else"),
-	optionalWhitespaceParser,
+	parse.OptionalWhitespace,
 	parse.Rune('{'),
-	optionalWhitespaceParser)
+	parse.OptionalWhitespace)
+
+var elseExpression parse.Parser[[]Node] = elseExpressionParser{}
+
+type elseExpressionParser struct{}
+
+func (elseExpressionParser) Parse(in *parse.Input) (r []Node, ok bool, err error) {
+	start := in.Index()
+
+	// } else {
+	if _, ok, err = endElseParser.Parse(in); err != nil || !ok {
+		in.Seek(start)
+		return
+	}
+
+	// Else contents
+	if r, ok, err = newTemplateNodeParser(closeBraceWithOptionalPadding, "else expression closing brace").Parse(in); err != nil || !ok {
+		in.Seek(start)
+		return
+	}
+
+	return r, true, nil
+}

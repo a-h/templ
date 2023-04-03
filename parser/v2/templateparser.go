@@ -2,9 +2,8 @@ package parser
 
 import (
 	"fmt"
-	"io"
 
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
 // TemplateExpression.
@@ -17,22 +16,12 @@ type templateExpression struct {
 	Expression Expression
 }
 
-func newTemplateExpressionParser() templateExpressionParser {
-	return templateExpressionParser{}
-}
-
-type templateExpressionParser struct {
-}
-
 var templateExpressionStartParser = parse.String("templ ")
 
-func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
-	var r templateExpression
-
+var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpression, ok bool, err error) {
 	// Check the prefix first.
-	prefixResult := templateExpressionStartParser(pi)
-	if !prefixResult.Success {
-		return prefixResult
+	if _, ok, err = templateExpressionStartParser.Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once we have the prefix, everything to the brace at the end of the line is Go.
@@ -42,137 +31,202 @@ func (p templateExpressionParser) Parse(pi parse.Input) parse.Result {
 	// func (x []string) Test() templ.Component {
 
 	// Once we've got a prefix, read until {\n.
-	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.All(parse.WithStringConcatCombiner, openBraceWithOptionalPadding, newLine))(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
-	}
-	// If there's no match, there's no {\n, which is an error.
-	if !pr.Success {
-		return parse.Failure("templateExpressionParser", newParseError("templ: unterminated (missing closing '{\n')", from, NewPositionFromInput(pi)))
-	}
-	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
-
-	// Eat " {".
-	from = NewPositionFromInput(pi)
-	if te := expressionEnd(pi); !te.Success {
-		return parse.Failure("templateExpressionParser", newParseError("templ: unterminated (missing closing '{')", from, NewPositionFromInput(pi)))
+	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
+	msg := "templ: malformed templ expression, expected `templ functionName() {`"
+	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(until)), msg).Parse(pi); err != nil || !ok {
+		return
 	}
 
-	// Eat required newline.
-	if lb := newLine(pi); lb.Error != nil {
-		return lb
+	// Eat " {\n".
+	if _, ok, err = Must(until, msg).Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Success("templateExpressionParser", r, nil)
-}
+	return r, true, nil
+})
 
 // Template node (element, call, if, switch, for, whitespace etc.)
-func newTemplateNodeParser(until parse.Function, untilName string) templateNodeParser {
-	return templateNodeParser{
-		until: until,
+func newTemplateNodeParser[TUntil any](until parse.Parser[TUntil], untilName string) templateNodeParser[TUntil] {
+	return templateNodeParser[TUntil]{
+		until:     until,
 		untilName: untilName,
 	}
 }
 
-type templateNodeParser struct {
-	until parse.Function
+type templateNodeParser[TUntil any] struct {
+	until     parse.Parser[TUntil]
 	untilName string
 }
 
-var rawElements = parse.Any(styleElement.Parse, scriptElement.Parse)
+var rawElements = parse.Any[RawElement](styleElement, scriptElement)
 
-func (p templateNodeParser) Parse(pi parse.Input) parse.Result {
-	op := make([]Node, 0)
+func (p templateNodeParser[T]) Parse(pi *parse.Input) (op []Node, ok bool, err error) {
 	for {
-		var pr parse.Result
-
 		// Check if we've reached the end.
 		if p.until != nil {
 			start := pi.Index()
-			pr = p.until(pi)
-			if pr.Error != nil {
-				return pr
+			_, ok, err = p.until.Parse(pi)
+			if err != nil {
+				return
 			}
-			if pr.Success {
-				if err := rewind(pi, start); err != nil {
-					return parse.Failure("templateNodeParser", err)
-				}
-				return parse.Success("templateNodeParser", op, nil)
+			if ok {
+				pi.Seek(start)
+				return op, true, nil
 			}
 		}
 
 		// Try for valid nodes.
-		pr = parse.Any(
-			// Try for a doctype.
-			// <!DOCTYPE html>
-			newDocTypeParser().Parse,
-			// Try for a raw <text>, <>, or <style> element (special behaviour - contents are not parsed).
-			rawElements,
-			// Try for an element.
-			// <a>, <br/> etc.
-			element.Parse,
-			// Try for an if expression.
-			// if {}
-			ifExpression.Parse,
-			// Try for a for expression.
-			// for {}
-			forExpression.Parse,
-			// Try for a switch expression.
-			// switch {}
-			switchExpression.Parse,
-			// Try for a call template expression.
-			// {! TemplateName(a, b, c) }
-			callTemplateExpression.Parse,
-			// Try for a templ element expression.
-			// <!TemplateName(a, b, c) />
-			templElementExpression.Parse,
-			// Try for a children element expression.
-			// { children... }
-			childrenExpression,
-			// Try for a string expression.
-			// { "abc" }
-			// { strings.ToUpper("abc") }
-			stringExpression.Parse,
-		)(pi)
-		if pr.Error != nil {
-			return pr
+		// Try for a doctype.
+		// <!DOCTYPE html>
+		var docTypeNode DocType
+		docTypeNode, ok, err = docTypeParser.Parse(pi)
+		if err != nil {
+			return
 		}
-		if pr.Success {
-			op = append(op, pr.Item.(Node))
+		if ok {
+			op = append(op, docTypeNode)
+			continue
+		}
+
+		// Try for a raw <text>, <>, or <style> element (special behaviour - contents are not parsed).
+		var rawElementNode RawElement
+		rawElementNode, ok, err = rawElements.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, rawElementNode)
+			continue
+		}
+
+		// Try for an element.
+		// <a>, <br/> etc.
+		var elementNode Element
+		elementNode, ok, err = element.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, elementNode)
+			continue
+		}
+
+		// Try for an if expression.
+		// if {}
+		var ifNode IfExpression
+		ifNode, ok, err = ifExpression.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, ifNode)
+			continue
+		}
+
+		// Try for a for expression.
+		// for {}
+		var forNode ForExpression
+		forNode, ok, err = forExpression.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, forNode)
+			continue
+		}
+
+		// Try for a switch expression.
+		// switch {}
+		var switchNode SwitchExpression
+		switchNode, ok, err = switchExpression.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, switchNode)
+			continue
+		}
+
+		// Try for a call template expression.
+		// {! TemplateName(a, b, c) }
+		var cteNode CallTemplateExpression
+		cteNode, ok, err = callTemplateExpression.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, cteNode)
+			continue
+		}
+
+		// Try for a templ element expression.
+		// <!TemplateName(a, b, c) />
+		var templElementNode TemplElementExpression
+		templElementNode, ok, err = templElementExpression.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, templElementNode)
+			continue
+		}
+
+		// Try for a children element expression.
+		// { children... }
+		var childrenExpressionNode ChildrenExpression
+		childrenExpressionNode, ok, err = childrenExpression.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, childrenExpressionNode)
+			continue
+		}
+
+		// Try for a string expression.
+		// { "abc" }
+		// { strings.ToUpper("abc") }
+		var stringExpressionNode StringExpression
+		stringExpressionNode, ok, err = stringExpression.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, stringExpressionNode)
 			continue
 		}
 
 		// Eat any whitespace.
-		pr = optionalWhitespaceParser(pi)
-		if pr.Error != nil {
-			return pr
+		var ws string
+		if ws, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+			return
 		}
-		if pr.Success && len(pr.Item.(Whitespace).Value) > 0 {
-			op = append(op, pr.Item.(Whitespace))
+		if ok && len(ws) > 0 {
+			op = append(op, Whitespace{Value: ws})
 			continue
 		}
 
 		// Try for text.
 		// anything &amp; everything accepted...
-		pr = newTextParser().Parse(pi)
-		if pr.Error != nil {
-			return pr
+		var text Text
+		if text, ok, err = textParser.Parse(pi); err != nil {
+			return
 		}
-		if pr.Success && len(pr.Item.(Text).Value) > 0 {
-			op = append(op, pr.Item.(Text))
+		if ok && len(text.Value) > 0 {
+			op = append(op, text)
 			continue
 		}
 
 		if p.until == nil {
-			// In this case, we're just reading as many nodes as we can.
+			// In this case, we're just reading as many nodes as we can until we can't read any more.
+			// If we've reached here, we couldn't find a node.
 			// The element parser checks the final node returned to make sure it's the expected close tag.
 			break
 		}
-		if p.until != nil {
-			return parse.Failure("templateNodeParser", fmt.Errorf("%v not found", p.untilName))
-		}
+
+		err = fmt.Errorf("%v not found", p.untilName)
+		return
 	}
 
-	return parse.Success("templateNodeParser", op, nil)
+	return op, true, nil
 }

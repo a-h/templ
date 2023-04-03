@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/a-h/lexical/input"
+	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -48,12 +48,12 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 						Range: Range{
 							From: Position{
 								Index: 21,
-								Line:  2,
+								Line:  1,
 								Col:   2,
 							},
 							To: Position{
 								Index: 46,
-								Line:  2,
+								Line:  1,
 								Col:   27,
 							},
 						},
@@ -65,15 +65,15 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input + "\n")
-			result := newExpressionCSSPropertyParser().Parse(input)
-			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
+			input := parse.NewInput(tt.input + "\n")
+			result, ok, err := expressionCSSPropertyParser.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
 			}
-			if !result.Success {
+			if !ok {
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
+			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
 		})
@@ -98,15 +98,15 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input + "\n")
-			result := newConstantCSSPropertyParser().Parse(input)
-			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
+			input := parse.NewInput(tt.input + "\n")
+			result, ok, err := constantCSSPropertyParser.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
 			}
-			if !result.Success {
+			if !ok {
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
+			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
 		})
@@ -243,15 +243,15 @@ background-color: { constants.BackgroundColor };
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := newCSSParser().Parse(input)
-			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
+			input := parse.NewInput(tt.input)
+			result, ok, err := cssParser.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
 			}
-			if !result.Success {
+			if !ok {
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
+			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
 		})

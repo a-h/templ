@@ -1,46 +1,37 @@
 package parser
 
 import (
-	"io"
-	"strings"
-
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
-func newScriptTemplateParser() scriptTemplateParser {
-	return scriptTemplateParser{}
-}
-
-type scriptTemplateParser struct {
-}
-
-func (p scriptTemplateParser) Parse(pi parse.Input) parse.Result {
-	var r ScriptTemplate
+var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, ok bool, err error) {
+	start := pi.Index()
 
 	// Parse the name.
-	pr := newScriptExpressionParser().Parse(pi)
-	if !pr.Success {
-		return pr
+	var se scriptExpression
+	if se, ok, err = scriptExpressionParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	r.Name = pr.Item.(scriptExpression).Name
-	r.Parameters = pr.Item.(scriptExpression).Parameters
+	r.Name = se.Name
+	r.Parameters = se.Parameters
 
 	// Read code expression.
-	sr := exp.Parse(pi)
-	if sr.Error != nil {
-		return sr
+	var e Expression
+	if e, ok, err = exp.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	if sr.Success {
-		r.Value = sr.Item.(string)
-	}
+	r.Value = e.Value
 
 	// Try for }
-	pr, ok := chompBrace(pi)
-	if !ok {
-		return pr
+	if _, ok, err = Must(closeBraceWithOptionalPadding, "script template: missing closing brace").Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	return parse.Success("script", r, nil)
-}
+
+	return r, true, nil
+})
 
 // script Func() {
 type scriptExpression struct {
@@ -48,72 +39,43 @@ type scriptExpression struct {
 	Parameters Expression
 }
 
-func newScriptExpressionParser() scriptExpressionParser {
-	return scriptExpressionParser{}
-}
-
-type scriptExpressionParser struct {
-}
-
-var scriptExpressionNameParser = parse.All(parse.WithStringConcatCombiner,
+var scriptExpressionNameParser = ExpressionOf(parse.StringFrom(
 	parse.Letter,
-	parse.Many(parse.WithStringConcatCombiner, 0, 1000, parse.Any(parse.Letter, parse.ZeroToNine)),
-)
+	parse.StringFrom(parse.AtMost(1000, parse.Any(parse.Letter, parse.ZeroToNine))),
+))
 
-var scriptExpressionStartParser = parse.String("script ")
-
-func (p scriptExpressionParser) Parse(pi parse.Input) parse.Result {
-	var r scriptExpression
-
+var scriptExpressionParser = parse.Func(func(pi *parse.Input) (r scriptExpression, ok bool, err error) {
 	// Check the prefix first.
-	prefixResult := scriptExpressionStartParser(pi)
-	if !prefixResult.Success {
-		return prefixResult
+	if _, ok, err = parse.String("script ").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once we have the prefix, we must have a name and parameters.
 	// Read the name of the function.
-	from := NewPositionFromInput(pi)
-	pr := scriptExpressionNameParser(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	if r.Name, ok, err = Must(scriptExpressionNameParser, "script expression: invalid name").Parse(pi); err != nil || !ok {
+		return
 	}
-	// If there's no match, the name wasn't correctly terminated.
-	if !pr.Success {
-		return parse.Failure("scriptExpressionParser", newParseError("script expression: invalid name", from, NewPositionFromInput(pi)))
-	}
-	to := NewPositionFromInput(pi)
-	r.Name = NewExpression(pr.Item.(string), from, to)
-	from = to
 
 	// Eat the open bracket.
-	if lb := parse.Rune('(')(pi); !lb.Success {
-		return parse.Failure("scriptExpressionParser", newParseError("script expression: parameters missing open bracket", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(parse.Rune('('), "script expression: parameters missing open bracket").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Read the parameters.
-	from = NewPositionFromInput(pi)
-	pr = parse.StringUntil(parse.Rune(')'))(pi) // p Person, other Other, t thing.Thing)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	// p Person, other Other, t thing.Thing)
+	if r.Parameters, ok, err = Must(ExpressionOf(parse.StringUntil(parse.Rune(')'))), "script expression: parameters missing close bracket").Parse(pi); err != nil || !ok {
+		return
 	}
-	// If there's no match, the name wasn't correctly terminated.
-	if !pr.Success {
-		return parse.Failure("scriptExpressionParser", newParseError("script expression: parameters missing close bracket", from, NewPositionFromInput(pi)))
-	}
-	r.Parameters = NewExpression(strings.TrimSuffix(pr.Item.(string), ")"), from, NewPositionFromInput(pi))
 
 	// Eat ") {".
-	from = NewPositionFromInput(pi)
-	if lb := expressionFuncEnd(pi); !lb.Success {
-		return parse.Failure("scriptExpressionParser", newParseError("script expression: unterminated (missing ') {')", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(expressionFuncEnd, "script expression: unterminated (missing ') {')").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Expect a newline.
-	from = NewPositionFromInput(pi)
-	if lb := newLine(pi); !lb.Success {
-		return parse.Failure("scriptExpressionParser", newParseError("script expression: missing terminating newline", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(parse.NewLine, "script expression: missing terminating newline").Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Success("scriptExpressionParser", r, nil)
-}
+	return r, true, nil
+})

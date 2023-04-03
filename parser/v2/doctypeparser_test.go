@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/a-h/lexical/input"
+	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -45,15 +45,15 @@ func TestDocTypeParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := newDocTypeParser().Parse(input)
-			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
+			input := parse.NewInput(tt.input)
+			result, ok, err := docTypeParser.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
 			}
-			if !result.Success {
+			if !ok {
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
+			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
 		})
@@ -69,14 +69,9 @@ func TestDocTypeParserErrors(t *testing.T) {
 		{
 			name:  "doctype unclosed",
 			input: `<!DOCTYPE html`,
-			expected: newParseError("unclosed DOCTYPE",
-				Position{
-					Index: 0,
-					Line:  0,
-					Col:   0,
-				},
-				Position{
-					Index: 15,
+			expected: parse.Error("unclosed DOCTYPE",
+				parse.Position{
+					Index: 14,
 					Line:  0,
 					Col:   14,
 				}),
@@ -85,13 +80,8 @@ func TestDocTypeParserErrors(t *testing.T) {
 			name: "doctype new tag started",
 			input: `<!DOCTYPE html
 		<div>`,
-			expected: newParseError("unclosed DOCTYPE",
-				Position{
-					Index: 17,
-					Line:  1,
-					Col:   2,
-				},
-				Position{
+			expected: parse.Error("unclosed DOCTYPE",
+				parse.Position{
 					Index: 17,
 					Line:  1,
 					Col:   2,
@@ -101,10 +91,10 @@ func TestDocTypeParserErrors(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := newDocTypeParser().Parse(input)
-			if diff := cmp.Diff(tt.expected, result.Error); diff != "" {
-				t.Errorf(diff)
+			input := parse.NewInput(tt.input)
+			_, _, err := docTypeParser.Parse(input)
+			if diff := cmp.Diff(tt.expected, err); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}

@@ -4,40 +4,39 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/a-h/lexical/input"
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
+type attributeTest[T any] struct {
+	name     string
+	input    string
+	parser   parse.Parser[T]
+	expected T
+}
+
 func TestAttributeParser(t *testing.T) {
-	var tests = []struct {
-		name     string
-		input    string
-		parser   parse.Function
-		expected interface{}
-	}{
+	var tests = []attributeTest[any]{
 		{
 			name:   "element: open",
 			input:  `<a>`,
-			parser: newElementOpenTagParser().Parse,
+			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
-				Name:       "a",
-				Attributes: []Attribute{},
+				Name: "a",
 			},
 		},
 		{
 			name:   "element: hyphen in name",
 			input:  `<turbo-frame>`,
-			parser: newElementOpenTagParser().Parse,
+			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
-				Name:       "turbo-frame",
-				Attributes: []Attribute{},
+				Name: "turbo-frame",
 			},
 		},
 		{
 			name:   "element: open with attributes",
 			input:  `<div id="123" style="padding: 10px">`,
-			parser: newElementOpenTagParser().Parse,
+			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
 				Name: "div",
 				Attributes: []Attribute{
@@ -55,7 +54,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "boolean expression attribute",
 			input:  ` noshade?={ true }"`,
-			parser: newBoolExpressionAttributeParser().Parse,
+			parser: StripType(boolExpressionAttributeParser),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
 				Expression: Expression{
@@ -78,7 +77,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "boolean expression attribute without spaces",
 			input:  ` noshade?={true}"`,
-			parser: newBoolExpressionAttributeParser().Parse,
+			parser: StripType(boolExpressionAttributeParser),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
 				Expression: Expression{
@@ -101,7 +100,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "attribute parsing handles boolean expression attributes",
 			input:  ` noshade?={ true }`,
-			parser: attributeParser,
+			parser: StripType(attributeParser),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
 				Expression: Expression{
@@ -124,7 +123,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "constant attribute",
 			input:  ` href="test"`,
-			parser: newConstantAttributeParser().Parse,
+			parser: StripType(constantAttributeParser),
 			expected: ConstantAttribute{
 				Name:  "href",
 				Value: "test",
@@ -133,7 +132,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "attribute name with hyphens",
 			input:  ` data-turbo-permanent="value"`,
-			parser: newConstantAttributeParser().Parse,
+			parser: StripType(constantAttributeParser),
 			expected: ConstantAttribute{
 				Name:  "data-turbo-permanent",
 				Value: "value",
@@ -142,7 +141,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "empty attribute",
 			input:  ` data=""`,
-			parser: newConstantAttributeParser().Parse,
+			parser: StripType(constantAttributeParser),
 			expected: ConstantAttribute{
 				Name:  "data",
 				Value: "",
@@ -151,7 +150,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "attribute containing escaped text",
 			input:  ` href="&lt;&quot;&gt;"`,
-			parser: newConstantAttributeParser().Parse,
+			parser: StripType(constantAttributeParser),
 			expected: ConstantAttribute{
 				Name:  "href",
 				Value: `<">`,
@@ -161,15 +160,15 @@ func TestAttributeParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := tt.parser(input)
-			if result.Error != nil {
-				t.Errorf("parser error: %v", result.String())
+			input := parse.NewInput(tt.input)
+			result, ok, err := tt.parser.Parse(input)
+			if err != nil {
+				t.Error(err)
 			}
-			if !result.Success {
+			if !ok {
 				t.Errorf("failed to parse at %d", input.Index())
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
+			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
 		})
@@ -343,8 +342,7 @@ func TestElementParser(t *testing.T) {
 			name:  "element: self closing with no attributes",
 			input: `<hr/>`,
 			expected: Element{
-				Name:       "hr",
-				Attributes: []Attribute{},
+				Name: "hr",
 			},
 		},
 		{
@@ -364,16 +362,14 @@ func TestElementParser(t *testing.T) {
 			name:  "element: open and close",
 			input: `<a></a>`,
 			expected: Element{
-				Name:       "a",
-				Attributes: []Attribute{},
+				Name: "a",
 			},
 		},
 		{
 			name:  "element: open and close with text",
 			input: `<a>The text</a>`,
 			expected: Element{
-				Name:       "a",
-				Attributes: []Attribute{},
+				Name: "a",
 				Children: []Node{
 					Text{
 						Value: "The text",
@@ -385,12 +381,10 @@ func TestElementParser(t *testing.T) {
 			name:  "element: with self-closing child element",
 			input: `<a><b/></a>`,
 			expected: Element{
-				Name:       "a",
-				Attributes: []Attribute{},
+				Name: "a",
 				Children: []Node{
 					Element{
-						Name:       "b",
-						Attributes: []Attribute{},
+						Name: "b",
 					},
 				},
 			},
@@ -399,12 +393,10 @@ func TestElementParser(t *testing.T) {
 			name:  "element: with non-self-closing child element",
 			input: `<a><b></b></a>`,
 			expected: Element{
-				Name:       "a",
-				Attributes: []Attribute{},
+				Name: "a",
 				Children: []Node{
 					Element{
-						Name:       "b",
-						Attributes: []Attribute{},
+						Name: "b",
 					},
 				},
 			},
@@ -413,13 +405,11 @@ func TestElementParser(t *testing.T) {
 			name:  "element: containing space",
 			input: `<a> <b> </b> </a>`,
 			expected: Element{
-				Name:       "a",
-				Attributes: []Attribute{},
+				Name: "a",
 				Children: []Node{
 					Whitespace{Value: " "},
 					Element{
-						Name:       "b",
-						Attributes: []Attribute{},
+						Name: "b",
 						Children: []Node{
 							Whitespace{Value: " "},
 						},
@@ -432,20 +422,16 @@ func TestElementParser(t *testing.T) {
 			name:  "element: with multiple child elements",
 			input: `<a><b></b><c><d/></c></a>`,
 			expected: Element{
-				Name:       "a",
-				Attributes: []Attribute{},
+				Name: "a",
 				Children: []Node{
 					Element{
-						Name:       "b",
-						Attributes: []Attribute{},
+						Name: "b",
 					},
 					Element{
-						Name:       "c",
-						Attributes: []Attribute{},
+						Name: "c",
 						Children: []Node{
 							Element{
-								Name:       "d",
-								Attributes: []Attribute{},
+								Name: "d",
 							},
 						},
 					},
@@ -456,16 +442,14 @@ func TestElementParser(t *testing.T) {
 			name:  "element: empty",
 			input: `<div></div>`,
 			expected: Element{
-				Name:       "div",
-				Attributes: []Attribute{},
+				Name: "div",
 			},
 		},
 		{
 			name:  "element: containing string expression",
 			input: `<div>{ "test" }</div>`,
 			expected: Element{
-				Name:       "div",
-				Attributes: []Attribute{},
+				Name: "div",
 				Children: []Node{
 					StringExpression{
 						Expression: Expression{
@@ -491,15 +475,15 @@ func TestElementParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := element.Parse(input)
-			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
+			input := parse.NewInput(tt.input)
+			result, ok, err := element.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
 			}
-			if !result.Success {
+			if !ok {
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
+			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
 		})
@@ -515,116 +499,81 @@ func TestElementParserErrors(t *testing.T) {
 		{
 			name:  "element: mismatched end tag",
 			input: `<a></b>`,
-			expected: newParseError("<a>: mismatched end tag, expected '</a>', got '</b>'",
-				Position{
+			expected: parse.Error("<a>: mismatched end tag, expected '</a>', got '</b>'",
+				parse.Position{
 					Index: 3,
 					Line:  0,
 					Col:   3,
-				},
-				Position{
-					Index: 7,
-					Line:  0,
-					Col:   7,
 				}),
 		},
 		{
 			name:  "element: style must only contain text",
 			input: `<style><button /></style>`,
-			expected: newParseError("<style>: invalid node contents: script and style attributes must only contain text",
-				Position{
+			expected: parse.Error("<style>: invalid node contents: script and style attributes must only contain text",
+				parse.Position{
 					Index: 0,
 					Line:  0,
 					Col:   0,
-				},
-				Position{
-					Index: 25,
-					Line:  0,
-					Col:   25,
 				}),
 		},
 		{
 			name:  "element: script must only contain text",
 			input: `<script><button /></script>`,
-			expected: newParseError("<script>: invalid node contents: script and style attributes must only contain text",
-				Position{
+			expected: parse.Error("<script>: invalid node contents: script and style attributes must only contain text",
+				parse.Position{
 					Index: 0,
 					Line:  0,
 					Col:   0,
-				},
-				Position{
-					Index: 27,
-					Line:  0,
-					Col:   27,
 				}),
 		},
 		{
 			name:  "element: attempted use of expression for style attribute (open/close)",
 			input: `<a style={ value }></a>`,
-			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
-				Position{
+			expected: parse.Error(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
+				parse.Position{
 					Index: 0,
 					Line:  0,
 					Col:   0,
-				},
-				Position{
-					Index: 23,
-					Line:  0,
-					Col:   23,
 				}),
 		},
 		{
 			name:  "element: attempted use of expression for style attribute (self-closing)",
 			input: `<a style={ value }/>`,
-			expected: newParseError(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
-				Position{
+			expected: parse.Error(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
+				parse.Position{
 					Index: 0,
 					Line:  0,
 					Col:   0,
-				},
-				Position{
-					Index: 20,
-					Line:  0,
-					Col:   20,
 				}),
 		},
 		{
 			name:  "element: script tags cannot contain non-text nodes",
 			input: `<script>{ "value" }</script>`,
-			expected: newParseError("<script>: invalid node contents: script and style attributes must only contain text",
-				Position{
+			expected: parse.Error("<script>: invalid node contents: script and style attributes must only contain text",
+				parse.Position{
 					Index: 0,
 					Line:  0,
 					Col:   0,
-				},
-				Position{
-					Index: 28,
-					Line:  0,
-					Col:   28,
 				}),
 		},
 		{
 			name:  "element: style tags cannot contain non-text nodes",
 			input: `<style>{ "value" }</style>`,
-			expected: newParseError("<style>: invalid node contents: script and style attributes must only contain text",
-				Position{
+			expected: parse.Error("<style>: invalid node contents: script and style attributes must only contain text",
+				parse.Position{
 					Index: 0,
 					Line:  0,
 					Col:   0,
-				},
-				Position{
-					Index: 26,
-					Line:  0,
-					Col:   26,
 				}),
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := element.Parse(input)
-			if diff := cmp.Diff(tt.expected, result.Error); diff != "" {
-				t.Errorf(diff)
+			input := parse.NewInput(tt.input)
+			_, _, err := element.Parse(input)
+			if diff := cmp.Diff(tt.expected, err); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}
@@ -637,11 +586,11 @@ func TestBigElement(t *testing.T) {
 		sb.WriteString("a")
 	}
 	sb.WriteString("</div>")
-	result := element.Parse(input.NewFromString(sb.String()))
-	if result.Error != nil {
-		t.Fatalf("unexpected error: %v", result.Error)
+	_, ok, err := element.Parse(parse.NewInput(sb.String()))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if !result.Success {
+	if !ok {
 		t.Errorf("unexpected failure to parse")
 	}
 }

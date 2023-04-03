@@ -1,41 +1,30 @@
 package parser
 
 import (
-	"io"
-
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
 var callTemplateExpression callTemplateExpressionParser
 
-var callTemplateExpressionStartParser = parse.Or(parse.String("{! "), parse.String("{!"))
+var callTemplateExpressionStart = parse.Or(parse.String("{! "), parse.String("{!"))
 
 type callTemplateExpressionParser struct{}
 
-func (p callTemplateExpressionParser) Parse(pi parse.Input) parse.Result {
-	var r CallTemplateExpression
-
+func (p callTemplateExpressionParser) Parse(pi *parse.Input) (r CallTemplateExpression, ok bool, err error) {
 	// Check the prefix first.
-	prefixResult := callTemplateExpressionStartParser(pi)
-	if !prefixResult.Success {
-		return prefixResult
+	if _, ok, err = callTemplateExpressionStart.Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once we have a prefix, we must have an expression that returns a template.
-	from := NewPositionFromInput(pi)
-	pr := exp.Parse(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	if r.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
+		return
 	}
-	if !pr.Success {
-		return pr
-	}
-	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
 	// Eat the final brace.
-	if pr, ok := chompBrace(pi); !ok {
-		return pr
+	if _, ok, err = Must(closeBraceWithOptionalPadding, "call template expression: missing closing brace").Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Success("callTemplate", r, nil)
+	return r, true, nil
 }

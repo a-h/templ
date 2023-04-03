@@ -9,8 +9,7 @@ import (
 
 func NewRangeWriter(w io.Writer) *RangeWriter {
 	return &RangeWriter{
-		Current: parser.NewPosition(),
-		w:       w,
+		w: w,
 	}
 }
 

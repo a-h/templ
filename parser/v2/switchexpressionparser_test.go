@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/a-h/lexical/input"
+	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -33,7 +33,6 @@ func TestSwitchExpressionParser(t *testing.T) {
 						},
 					},
 				},
-				Cases: []CaseExpression{},
 			},
 		},
 		{
@@ -63,7 +62,7 @@ default:
 				Cases: []CaseExpression{
 					{
 						Expression: Expression{
-							Value: "default:\n",
+							Value: "default:",
 							Range: Range{
 								From: Position{
 									Index: 19,
@@ -71,17 +70,16 @@ default:
 									Col:   0,
 								},
 								To: Position{
-									Index: 28,
-									Line:  2,
-									Col:   0,
+									Index: 27,
+									Line:  1,
+									Col:   8,
 								},
 							},
 						},
 						Children: []Node{
 							Whitespace{Value: "\t"},
 							Element{
-								Name:       "span",
-								Attributes: []Attribute{},
+								Name: "span",
 								Children: []Node{
 									Whitespace{Value: "\n\t  "},
 									StringExpression{
@@ -137,7 +135,7 @@ default:
 				Cases: []CaseExpression{
 					{
 						Expression: Expression{
-							Value: "case \"stringy\":\n",
+							Value: "case \"stringy\":",
 							Range: Range{
 								From: Position{
 									Index: 20,
@@ -145,16 +143,15 @@ default:
 									Col:   1,
 								},
 								To: Position{
-									Index: 36,
-									Line:  2,
-									Col:   0,
+									Index: 35,
+									Line:  1,
+									Col:   16,
 								},
 							},
 						},
 						Children: []Node{
 							Element{
-								Name:       "span",
-								Attributes: []Attribute{},
+								Name: "span",
 								Children: []Node{
 									Whitespace{Value: "\n  "},
 									StringExpression{
@@ -210,7 +207,7 @@ default:
 				Cases: []CaseExpression{
 					{
 						Expression: Expression{
-							Value: "case \"a\":\n",
+							Value: "case \"a\":",
 							Range: Range{
 								From: Position{
 									Index: 20,
@@ -218,9 +215,9 @@ default:
 									Col:   1,
 								},
 								To: Position{
-									Index: 30,
-									Line:  2,
-									Col:   0,
+									Index: 29,
+									Line:  1,
+									Col:   10,
 								},
 							},
 						},
@@ -249,7 +246,7 @@ default:
 					},
 					{
 						Expression: Expression{
-							Value: "case \"b\":\n",
+							Value: "case \"b\":",
 							Range: Range{
 								From: Position{
 									Index: 41,
@@ -257,9 +254,9 @@ default:
 									Col:   1,
 								},
 								To: Position{
-									Index: 51,
-									Line:  4,
-									Col:   0,
+									Index: 50,
+									Line:  3,
+									Col:   10,
 								},
 							},
 						},
@@ -297,16 +294,16 @@ default:
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := switchExpression.Parse(input)
-			if result.Error != nil {
-				t.Fatalf("parser error: %v", result.Error)
+			input := parse.NewInput(tt.input)
+			actual, ok, err := switchExpression.Parse(input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
-			if !result.Success {
-				t.Fatalf("failed to parse at %d", input.Index())
+			if !ok {
+				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
-				t.Errorf(diff)
+			if diff := cmp.Diff(tt.expected, actual); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}

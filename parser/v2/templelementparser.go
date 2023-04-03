@@ -2,133 +2,65 @@ package parser
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
-var templBlockElementExpression templBlockElementExpressionParser
-
-type templBlockElementExpressionParser struct{}
-
-func (p templBlockElementExpressionParser) Parse(pi parse.Input) parse.Result {
-	var r TemplElementExpression
-
+var templBlockElementExpression = parse.Func(func(pi *parse.Input) (r TemplElementExpression, ok bool, err error) {
 	// Check the prefix first.
-	prefixResult := parse.Rune('@')(pi)
-	if !prefixResult.Success {
-		return prefixResult
+	if _, ok, err = parse.Rune('@').Parse(pi); err != nil || !ok {
+		return
 	}
 
-	// Once we have a prefix, we must have an expression that returns a template.
-	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(parse.All(parse.WithStringConcatCombiner, openBraceWithOptionalPadding))(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	// Once we've got a prefix, read until {\n.
+	endOfStatementExpression := ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine)))
+	if r.Expression, ok, err = endOfStatementExpression.Parse(pi); err != nil || !ok {
+		return
 	}
-	if !pr.Success {
-		return parse.Failure("templElementParser", newParseError("templ element: unterminated (missing closing '{\n')", from, NewPositionFromInput(pi)))
-	}
-	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
-	from = NewPositionFromInput(pi)
-	if te := expressionEnd(pi); !te.Success {
-		return parse.Failure("templElementParser", newParseError("templ element: unterminated (missing closing '{')", from, NewPositionFromInput(pi)))
+	// Eat " {\n".
+	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "templ element: unterminated (missing closing '{\n')").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once we've had the start of a for block, we must conclude the block.
 
-	// Eat newline.
-	if lb := newLine(pi); lb.Error != nil {
-		return lb
-	}
-
 	// Node contents.
-	from = NewPositionFromInput(pi)
-	pr = newTemplateNodeParser(closeBraceWithOptionalPadding, "closing brace").Parse(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	np := newTemplateNodeParser(closeBraceWithOptionalPadding, "templ element closing brace")
+	if r.Children, ok, err = Must[[]Node](np, fmt.Sprintf("@%s: expected nodes, but none were found", r.Expression.Value)).Parse(pi); err != nil || !ok {
+		return
 	}
-	// If there's no match, there's a problem in the template nodes.
-	if !pr.Success {
-		return parse.Failure("templElementParser", newParseError(fmt.Sprintf("@%s: expected nodes, but none were found", r.Expression.Value), from, NewPositionFromInput(pi)))
-	}
-
-	r.Children = pr.Item.([]Node)
 
 	// Read the required closing brace.
-	if ie := closeBraceWithOptionalPadding(pi); !ie.Success {
-		return parse.Failure("templElementParser", newParseError(fmt.Sprintf("@%s: missing end (expected '}')", r.Expression.Value), from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(closeBraceWithOptionalPadding, fmt.Sprintf("@%s: missing end (expected '}')", r.Expression.Value)).Parse(pi); err != nil || !ok {
+		return
 	}
-	return parse.Success("templElementParser", r, nil)
-}
 
-var templSelfClosingElementExpression templSelfClosingElementExpressionParser
+	return r, true, nil
+})
 
-type templSelfClosingElementExpressionParser struct{}
-
-func (p templSelfClosingElementExpressionParser) asTemplElement(parts []interface{}) (result interface{}, ok bool) {
-	return TemplElementExpression{
-		Expression: parts[1].(Expression),
-	}, true
-}
-
-func (p templSelfClosingElementExpressionParser) parseExpression(pi parse.Input) parse.Result {
+var templSelfClosingElementExpression = parse.Func(func(pi *parse.Input) (e TemplElementExpression, ok bool, err error) {
 	start := pi.Index()
-	var e Expression
-	from := NewPositionFromInput(pi)
-	pr := parse.StringUntil(newLine)(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return parse.Failure("templElementParser", nil)
-	}
-	if strings.HasSuffix(strings.TrimSpace(pr.Item.(string)), "{") {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return parse.Failure("templElementParser", nil)
-	}
-	// If there's no match, there's no \n, which is an error.
-	if !pr.Success {
-		return parse.Failure("templElementParser", newParseError("templ element: unterminated (missing closing newline)", from, NewPositionFromInput(pi)))
-	}
-	e = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
-	return parse.Success("templElementParser", e, nil)
-}
-func (p templSelfClosingElementExpressionParser) Parse(pi parse.Input) parse.Result {
-	return parse.All(p.asTemplElement,
-		parse.Rune('@'),
-		p.parseExpression,
-	)(pi)
-}
 
-var templElementExpression templElementExpressionParser
-
-type templElementExpressionParser struct{}
-
-func (p templElementExpressionParser) Parse(pi parse.Input) parse.Result {
-	var r TemplElementExpression
-
-	// Self closing.
-	pr := templSelfClosingElementExpression.Parse(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
-	}
-	if pr.Success {
-		r = pr.Item.(TemplElementExpression)
-		return parse.Success("templElementParser", r, nil)
+	// Check the prefix first.
+	if _, ok, err = parse.Rune('@').Parse(pi); err != nil || !ok {
+		return
 	}
 
-	// Block.
-	pr = templBlockElementExpression.Parse(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
-	}
-	if pr.Success {
-		r = pr.Item.(TemplElementExpression)
-		return parse.Success("templElementParser", r, nil)
+	// Once we've got a prefix, read until \n.
+	endOfStatementExpression := ExpressionOf(parse.StringUntil(parse.NewLine))
+	if e.Expression, ok, err = Must(endOfStatementExpression, "templ element: unterminated (missing closing newline)").Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Failure("templElementParser", nil)
-}
+	// It isn't a self-closing expression if there's an opening brace.
+	if strings.HasSuffix(strings.TrimSpace(e.Expression.Value), "{") {
+		pi.Seek(start)
+		return e, false, nil
+	}
+
+	return e, true, nil
+})
+
+var templElementExpression = parse.Any(templSelfClosingElementExpression, templBlockElementExpression)

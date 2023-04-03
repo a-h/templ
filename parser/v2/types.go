@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
 // package parser
@@ -56,16 +56,7 @@ func (p Position) String() string {
 }
 
 // NewPosition initialises a position.
-func NewPosition() Position {
-	return Position{
-		Index: 0,
-		Line:  0,
-		Col:   0,
-	}
-}
-
-// NewPositionFromValues initialises a position.
-func NewPositionFromValues(index int64, line, col uint32) Position {
+func NewPosition(index int64, line, col uint32) Position {
 	return Position{
 		Index: index,
 		Line:  line,
@@ -73,32 +64,22 @@ func NewPositionFromValues(index int64, line, col uint32) Position {
 	}
 }
 
-// NewPositionFromInput creates a position from a parse input.
-func NewPositionFromInput(pi parse.Input) Position {
-	l, c := pi.Position()
-	return Position{
-		Index: pi.Index(),
-		Line:  uint32(l) - 1,
-		Col:   uint32(c),
-	}
-}
-
 // NewExpression creates a Go expression.
-func NewExpression(value string, from, to Position) Expression {
+func NewExpression(value string, from, to parse.Position) Expression {
 	return Expression{
 		Value: value,
 		Range: Range{
-			From: from,
-			To:   to,
+			From: Position{
+				Index: int64(from.Index),
+				Line:  uint32(from.Line),
+				Col:   uint32(from.Col),
+			},
+			To: Position{
+				Index: int64(to.Index),
+				Line:  uint32(to.Line),
+				Col:   uint32(to.Col),
+			},
 		},
-	}
-}
-
-// NewRange creates a range.
-func NewRange(from, to Position) Range {
-	return Range{
-		From: from,
-		To:   to,
 	}
 }
 
@@ -182,11 +163,12 @@ func (ws Whitespace) Write(w io.Writer, indent int) error {
 }
 
 // CSS definition.
-// css Name() {
-//   color: #ffffff;
-//   background-color: { constants.BackgroundColor };
-//   background-image: url('./somewhere.png');
-// }
+//
+//	css Name() {
+//	  color: #ffffff;
+//	  background-color: { constants.BackgroundColor };
+//	  background-image: url('./somewhere.png');
+//	}
 type CSSTemplate struct {
 	Name       Expression
 	Properties []CSSProperty
@@ -259,11 +241,12 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 }
 
 // HTMLTemplate definition.
-// templ Name(p Parameter) {
-//   if ... {
-//       <Element></Element>
-//   }
-// }
+//
+//	templ Name(p Parameter) {
+//	  if ... {
+//	      <Element></Element>
+//	  }
+//	}
 type HTMLTemplate struct {
 	Expression Expression
 	Children   []Node
@@ -637,9 +620,9 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 	return nil
 }
 
-// switch p.Type {
-//  case "Something":
-// }
+//	switch p.Type {
+//	 case "Something":
+//	}
 type SwitchExpression struct {
 	Expression Expression
 	Cases      []CaseExpression
@@ -653,7 +636,7 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 	indent++
 	for i := 0; i < len(se.Cases); i++ {
 		c := se.Cases[i]
-		if err := writeIndent(w, indent, c.Expression.Value); err != nil {
+		if err := writeIndent(w, indent, c.Expression.Value+"\n"); err != nil {
 			return err
 		}
 		if err := writeNodesBlock(w, indent+1, c.Children); err != nil {
@@ -673,9 +656,9 @@ type CaseExpression struct {
 	Children   []Node
 }
 
-// for i, v := range p.Addresses {
-//   {! Address(v) }
-// }
+//	for i, v := range p.Addresses {
+//	  {! Address(v) }
+//	}
 type ForExpression struct {
 	Expression Expression
 	Children   []Node

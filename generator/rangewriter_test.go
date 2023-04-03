@@ -12,7 +12,7 @@ func TestRangeWriter(t *testing.T) {
 	w := new(bytes.Buffer)
 	rw := NewRangeWriter(w)
 	t.Run("indices are zero bound", func(t *testing.T) {
-		if diff := cmp.Diff(parser.NewPosition(), rw.Current); diff != "" {
+		if diff := cmp.Diff(parser.NewPosition(0, 0, 0), rw.Current); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -20,7 +20,7 @@ func TestRangeWriter(t *testing.T) {
 		if _, err := rw.Write("abc"); err != nil {
 			t.Fatalf("failed to write: %v", err)
 		}
-		if diff := cmp.Diff(parser.NewPositionFromValues(3, 0, 3), rw.Current); diff != "" {
+		if diff := cmp.Diff(parser.NewPosition(3, 0, 3), rw.Current); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -28,7 +28,7 @@ func TestRangeWriter(t *testing.T) {
 		if _, err := rw.Write("\n1"); err != nil {
 			t.Fatalf("failed to write: %v", err)
 		}
-		if diff := cmp.Diff(parser.NewPositionFromValues(5, 1, 1), rw.Current); diff != "" {
+		if diff := cmp.Diff(parser.NewPosition(5, 1, 1), rw.Current); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -36,7 +36,7 @@ func TestRangeWriter(t *testing.T) {
 		if _, err := rw.Write("\n你"); err != nil {
 			t.Fatalf("failed to write: %v", err)
 		}
-		if diff := cmp.Diff(parser.NewPositionFromValues(9, 2, 1), rw.Current); diff != "" {
+		if diff := cmp.Diff(parser.NewPosition(9, 2, 1), rw.Current); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -48,10 +48,10 @@ func TestRangeWriter(t *testing.T) {
 		if err != nil {
 			t.Fatalf("expected successful write, got error: %v", err)
 		}
-		if diff := cmp.Diff(parser.NewPositionFromValues(10, 3, 0), r.From); diff != "" {
+		if diff := cmp.Diff(parser.NewPosition(10, 3, 0), r.From); diff != "" {
 			t.Errorf("unexpected from:\n%s", diff)
 		}
-		if diff := cmp.Diff(parser.NewPositionFromValues(14, 3, 4), r.To); diff != "" {
+		if diff := cmp.Diff(parser.NewPosition(14, 3, 4), r.To); diff != "" {
 			t.Errorf("unexpected to:\n%s", diff)
 		}
 	})

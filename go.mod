@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/a-h/lexical v0.0.53
+	github.com/a-h/parse v0.0.0-20230402144745-e6c8bc86e846
 	github.com/a-h/pathvars v0.0.12
 	github.com/a-h/protocol v0.0.0-20230224160810-b4eec67c1c22
 	github.com/google/go-cmp v0.5.9
@@ -27,4 +28,4 @@ require (
 	golang.org/x/sys v0.5.0 // indirect
 )
 
-//replace github.com/a-h/lexical => /Users/adrian/github.com/a-h/lexical
+// replace github.com/a-h/parse => /Users/adrian/github.com/a-h/parse

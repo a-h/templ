@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"github.com/a-h/lexical/input"
+	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -34,7 +34,6 @@ func TestTemplateParser(t *testing.T) {
 						},
 					},
 				},
-				Children: []Node{},
 			},
 		},
 		{
@@ -57,7 +56,6 @@ func TestTemplateParser(t *testing.T) {
 						},
 					},
 				},
-				Children: []Node{},
 			},
 		},
 		{
@@ -80,7 +78,6 @@ func TestTemplateParser(t *testing.T) {
 						},
 					},
 				},
-				Children: []Node{},
 			},
 		},
 		{
@@ -103,7 +100,6 @@ func TestTemplateParser(t *testing.T) {
 						},
 					},
 				},
-				Children: []Node{},
 			},
 		},
 		{
@@ -129,8 +125,7 @@ func TestTemplateParser(t *testing.T) {
 				},
 				Children: []Node{
 					Element{
-						Name:       "span",
-						Attributes: []Attribute{},
+						Name: "span",
 						Children: []Node{
 							StringExpression{
 								Expression: Expression{
@@ -185,8 +180,7 @@ func TestTemplateParser(t *testing.T) {
 				},
 				Children: []Node{
 					Element{
-						Name:       "div",
-						Attributes: []Attribute{},
+						Name: "div",
 						Children: []Node{
 							Whitespace{Value: "\n  "},
 							StringExpression{
@@ -208,8 +202,7 @@ func TestTemplateParser(t *testing.T) {
 							},
 							Whitespace{Value: "\n  "},
 							Element{
-								Name:       "span",
-								Attributes: []Attribute{},
+								Name: "span",
 								Children: []Node{
 									Whitespace{Value: "\n\t"},
 									StringExpression{
@@ -285,8 +278,7 @@ func TestTemplateParser(t *testing.T) {
 						Then: []Node{
 							Whitespace{Value: "\t\t"},
 							Element{
-								Name:       "span",
-								Attributes: []Attribute{},
+								Name: "span",
 								Children: []Node{
 									Whitespace{"\n\t\t\t"},
 									StringExpression{
@@ -313,7 +305,6 @@ func TestTemplateParser(t *testing.T) {
 								Value: "\n\t",
 							},
 						},
-						Else: []Node{},
 					},
 					Whitespace{
 						Value: "\n",
@@ -407,16 +398,16 @@ func TestTemplateParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := template.Parse(input)
-			diff := cmp.Diff(tt.expected, result.Item)
+			input := parse.NewInput(tt.input)
+			actual, ok, err := template.Parse(input)
+			diff := cmp.Diff(tt.expected, actual)
 			switch {
-			case tt.expectError && result.Error == nil:
-				t.Error("expected an error got nil")
-			case !tt.expectError && result.Error != nil:
-				t.Errorf("parser error: %v", result.Error)
-			case tt.expectError == result.Success:
-				t.Errorf("Success=%v want=%v", result.Success, !tt.expectError)
+			case tt.expectError && err == nil:
+				t.Errorf("expected an error got nil: %+v", actual)
+			case !tt.expectError && err != nil:
+				t.Errorf("unexpected error: %v", err)
+			case tt.expectError && ok:
+				t.Errorf("Success=%v want=%v", ok, !tt.expectError)
 			case !tt.expectError && diff != "":
 				t.Errorf(diff)
 			}
@@ -435,18 +426,21 @@ func TestTemplateParserErrors(t *testing.T) {
 			input: `templ Name(p Parameter) {
 <span
 }`,
-			expected: "closing brace not found",
+			expected: "<span>: malformed open element: line 2, col 0",
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := template.Parse(input)
-			if result.Error == nil {
+			input := parse.NewInput(tt.input)
+			_, ok, err := template.Parse(input)
+			if err == nil {
 				t.Fatalf("expected error %q, got nil", tt.expected)
 			}
-			if diff := cmp.Diff(tt.expected, result.Error.Error()); diff != "" {
+			if ok {
+				t.Error("expected failure, but got success")
+			}
+			if diff := cmp.Diff(tt.expected, err.Error()); diff != "" {
 				t.Errorf(diff)
 			}
 		})

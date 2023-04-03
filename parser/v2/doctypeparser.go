@@ -1,53 +1,25 @@
 package parser
 
 import (
-	"io"
-
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
-
-func newDocTypeParser() docTypeParser {
-	return docTypeParser{}
-}
-
-type docTypeParser struct {
-}
 
 var doctypeStartParser = parse.StringInsensitive("<!doctype ")
 
-func (p docTypeParser) Parse(pi parse.Input) parse.Result {
-	var r DocType
-
-	from := NewPositionFromInput(pi)
-	dtr := doctypeStartParser(pi)
-	if dtr.Error != nil && dtr.Error != io.EOF {
-		return dtr
-	}
-	if !dtr.Success {
-		return parse.Failure("docTypeParser", nil)
+var docTypeParser = parse.Func(func(pi *parse.Input) (r DocType, ok bool, err error) {
+	if _, ok, err = doctypeStartParser.Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once a doctype has started, take everything until the end.
-	tagOpen := parse.Rune('<')
-	tagClose := parse.Rune('>')
-	dtr = parse.StringUntil(parse.Or(tagClose, tagOpen))(pi)
-	if dtr.Error != nil && dtr.Error != io.EOF {
-		return dtr
+	if r.Value, ok, err = Must(parse.StringUntil(parse.Or(lt, gt)), "unclosed DOCTYPE").Parse(pi); err != nil || !ok {
+		return
 	}
-	if !dtr.Success {
-		return parse.Failure("docTypeParser", newParseError("unclosed DOCTYPE", from, NewPositionFromInput(pi)))
-	}
-	r.Value = dtr.Item.(string)
 
 	// Clear the final '>'.
-	from = NewPositionFromInput(pi)
-	dtr = tagClose(pi)
-	if dtr.Error != nil && dtr.Error != io.EOF {
-		return dtr
-	}
-	if !dtr.Success {
-		return parse.Failure("docTypeParser", newParseError("unclosed DOCTYPE", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(gt, "unclosed DOCTYPE").Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Success("docTypeParser", r, nil)
-}
+	return r, true, nil
+})

@@ -3,11 +3,9 @@ package parser
 import (
 	"fmt"
 	"html"
-	"io"
 	"strings"
 
-	"github.com/a-h/lexical/input"
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
 // Element.
@@ -18,399 +16,358 @@ type elementOpenTag struct {
 	Attributes []Attribute
 }
 
-func newElementOpenTagParser() elementOpenTagParser {
-	return elementOpenTagParser{}
-}
+var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, ok bool, err error) {
+	start := pi.Index()
 
-type elementOpenTagParser struct {
-}
+	// <
+	if _, ok, err = lt.Parse(pi); err != nil || !ok {
+		return
+	}
 
-func asElementOpenTag(parts []interface{}) (result interface{}, ok bool) {
-	return elementOpenTag{
-		Name:       parts[1].(string),
-		Attributes: parts[2].([]Attribute),
-	}, true
-}
+	// Element name.
+	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
 
-func (p elementOpenTagParser) Parse(pi parse.Input) parse.Result {
-	return parse.All(asElementOpenTag,
-		parse.Rune('<'),
-		elementNameParser,
-		newAttributesParser().Parse,
-		parse.Optional(parse.WithStringConcatCombiner, whitespaceParser),
-		parse.Rune('>'),
-	)(pi)
-}
+	if e.Attributes, ok, err = attributesParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	// Optional whitespace.
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		pi.Seek(start)
+		return
+	}
+
+	// >
+	if _, ok, err = gt.Parse(pi); err != nil {
+		return
+	}
+	if !ok {
+		err = parse.Error(fmt.Sprintf("<%s>: malformed open element", e.Name), pi.Position())
+		return e, false, err
+	}
+
+	return e, true, nil
+})
 
 // Element close tag.
 type elementCloseTag struct {
 	Name string
 }
 
-func asElementCloseTag(parts []interface{}) (result interface{}, ok bool) {
-	return elementCloseTag{
-		Name: parts[1].(string),
-	}, true
-}
-
-var elementCloseTagParser = parse.All(asElementCloseTag,
-	parse.String("</"),
-	elementNameParser,
-	parse.Rune('>'),
-)
+var elementCloseTagParser = parse.Func(func(in *parse.Input) (ect elementCloseTag, ok bool, err error) {
+	var parts []string
+	parts, ok, err = parse.All(
+		parse.String("</"),
+		elementNameParser,
+		parse.Rune('>')).Parse(in)
+	if err != nil || !ok {
+		return
+	}
+	ect.Name = parts[1]
+	return ect, true, nil
+})
 
 // Attribute name.
 var attributeNameFirst = "abcdefghijklmnopqrstuvwxyz"
 var attributeNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
-var attributeNameParser = parse.Then(parse.WithStringConcatCombiner,
-	parse.RuneIn(attributeNameFirst),
-	parse.Many(parse.WithStringConcatCombiner, 0, 128, parse.RuneIn(attributeNameSubsequent)),
-)
+var attributeNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
+	start := in.Index()
+	var prefix, suffix string
+	if prefix, ok, err = parse.RuneIn(attributeNameFirst).Parse(in); err != nil || !ok {
+		return
+	}
+	if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(attributeNameSubsequent)).Parse(in); err != nil {
+		in.Seek(start)
+		return
+	}
+	if len(suffix)+1 > 128 {
+		ok = false
+		err = parse.Error("attribute names must be < 128 characters long", in.Position())
+		return
+	}
+	return prefix + suffix, true, nil
+})
 
 // Constant attribute.
 var attributeConstantValueParser = parse.StringUntil(parse.Rune('"'))
+var constantAttributeParser = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
+	start := pi.Index()
 
-func newConstantAttributeParser() constantAttributeParser {
-	return constantAttributeParser{}
-}
+	// whitespace leader
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+		return
+	}
 
-type constantAttributeParser struct {
-}
+	// Attribute name.
+	if attr.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
 
-func (p constantAttributeParser) asConstantAttribute(parts []interface{}) (result interface{}, ok bool) {
-	return ConstantAttribute{
-		Name:  parts[1].(string),
-		Value: html.UnescapeString(parts[4].(string)),
-	}, true
-}
+	// ="
+	if _, ok, err = parse.String(`="`).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
 
-func (p constantAttributeParser) Parse(pi parse.Input) parse.Result {
-	return parse.All(p.asConstantAttribute,
-		whitespaceParser,
-		attributeNameParser,
-		parse.Rune('='),
-		parse.Rune('"'),
-		attributeConstantValueParser,
-		parse.Rune('"'),
-	)(pi)
-}
+	// Attribute value.
+	if attr.Value, ok, err = attributeConstantValueParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	attr.Value = html.UnescapeString(attr.Value)
+
+	// " - closing quote.
+	if _, ok, err = Must(parse.String(`"`), fmt.Sprintf("missing closing quote on attribute %q", attr.Name)).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	return attr, true, nil
+})
 
 // BoolConstantAttribute.
-func newBoolConstantAttributeParser() boolConstantAttributeParser {
-	return boolConstantAttributeParser{}
-}
-
-type boolConstantAttributeParser struct {
-}
-
-func (p boolConstantAttributeParser) Parse(pi parse.Input) parse.Result {
-	var r BoolConstantAttribute
-
+var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr BoolConstantAttribute, ok bool, err error) {
 	start := pi.Index()
-	pr := whitespaceParser(pi)
-	if !pr.Success {
-		return pr
+
+	// whitespace leader
+	if _, ok, err = parse.Whitespace.Parse(pi); err != nil || !ok {
+		return
 	}
 
-	pr = attributeNameParser(pi)
-	if !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
+	// Attribute name.
+	if attr.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	r.Name = pr.Item.(string)
 
 	// We have a name, but if we have an equals sign, it's not a constant boolean attribute.
-	next, err := pi.Peek()
-	if err != nil {
-		return parse.Failure("boolConstantAttributeParser", fmt.Errorf("boolConstantAttributeParser: unexpected error reading after attribute name: %w", pr.Error))
+	next, ok := pi.Peek(1)
+	if !ok {
+		err = parse.Error("boolConstantAttributeParser: unexpected EOF after attribute name", pi.Position())
+		return
 	}
-	if next == '=' || next == '?' {
+	if next == "=" || next == "?" {
 		// It's one of the other attribute types.
-		err := rewind(pi, start)
-		if err != nil && err != input.ErrStartOfFile {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return parse.Failure("boolConstantAttributeParser", nil)
+		pi.Seek(start)
+		return attr, false, nil
 	}
-	if !(next == ' ' || next == '\n' || next == '/') {
-		return parse.Failure("boolConstantAttributeParser", fmt.Errorf("boolConstantAttributeParser: expected attribute name to end with space, newline or '/>', but got %q", string(next)))
+	if !(next == " " || next == "\t" || next == "\n" || next == "/") {
+		err = parse.Error(fmt.Sprintf("boolConstantAttributeParser: expected attribute name to end with space, newline or '/>', but got %q", next), pi.Position())
+		return attr, false, err
 	}
 
-	return parse.Success("boolConstantAttributeParser", r, nil)
-}
+	return attr, true, nil
+})
 
 // BoolExpressionAttribute.
-func newBoolExpressionAttributeParser() boolExpressionAttributeParser {
-	return boolExpressionAttributeParser{}
-}
-
 var boolExpressionStart = parse.Or(parse.String("?={ "), parse.String("?={"))
 
-type boolExpressionAttributeParser struct {
-}
-
-func (p boolExpressionAttributeParser) Parse(pi parse.Input) parse.Result {
-	var r BoolExpressionAttribute
-
+var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r BoolExpressionAttribute, ok bool, err error) {
 	start := pi.Index()
-	pr := whitespaceParser(pi)
-	if !pr.Success {
-		return pr
+
+	// whitespace leader
+	if _, ok, err = parse.Whitespace.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
 
-	pr = attributeNameParser(pi)
-	if !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
+	// Attribute name.
+	if r.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	r.Name = pr.Item.(string)
 
 	// Check whether this is a boolean expression attribute.
-	if pr = boolExpressionStart(pi); !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
+	if _, ok, err = boolExpressionStart.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
 
 	// Once we have a prefix, we must have an expression that returns a template.
-	from := NewPositionFromInput(pi)
-	pr = exp.Parse(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
-	}
-	if !pr.Success {
-		return pr
-	}
-	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
-
-	// Eat the final brace.
-	if pr, ok := chompBrace(pi); !ok {
-		return pr
+	if r.Expression, ok, err = Must[Expression](exp, "boolean expression: expected Go expression not found").Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
 
-	return parse.Success("boolExpressionAttributeParser", r, nil)
-}
+	// Eat the Final brace.
+	if _, ok, err = Must(closeBraceWithOptionalPadding, "boolean expression: missing closing brace").Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
 
-// ExpressionAttribute.
-func newExpressionAttributeParser() expressionAttributeParser {
-	return expressionAttributeParser{}
-}
+	return r, true, nil
+})
 
-type expressionAttributeParser struct {
-}
-
-func (p expressionAttributeParser) Parse(pi parse.Input) parse.Result {
-	var r ExpressionAttribute
-
+var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr ExpressionAttribute, ok bool, err error) {
 	start := pi.Index()
-	pr := whitespaceParser(pi)
-	if !pr.Success {
-		return pr
+
+	// whitespace leader
+	if _, ok, err = parse.Whitespace.Parse(pi); err != nil || !ok {
+		return
 	}
 
-	pr = attributeNameParser(pi)
-	if !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
-	}
-	r.Name = pr.Item.(string)
-
-	if pr = parse.Or(parse.String("={ "), parse.String("={"))(pi); !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
+	// Attribute name.
+	if attr.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
 
-	// Once we've seen a expression prefix, read until the tag end.
-	from := NewPositionFromInput(pi)
-	pr = exp.Parse(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	// ={
+	if _, ok, err = parse.Or(parse.String("={ "), parse.String("={")).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	if !pr.Success {
-		return pr
+
+	// Expression.
+	if attr.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
 	// Eat the final brace.
-	if pr, ok := chompBrace(pi); !ok {
-		return pr
+	if _, ok, err = Must(closeBraceWithOptionalPadding, "boolean expression: missing closing brace").Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
 
-	return parse.Success("expressionAttributeParser", r, nil)
-}
-
-func rewind(pi parse.Input, to int64) error {
-	for i := pi.Index(); i > to; i-- {
-		if _, err := pi.Retreat(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+	return attr, true, nil
+})
 
 // Attributes.
-func newAttributesParser() attributesParser {
-	return attributesParser{}
-}
-
-type attributesParser struct {
-}
-
-func (p attributesParser) asAttributeArray(parts []interface{}) (result interface{}, ok bool) {
-	op := make([]Attribute, len(parts))
-	for i := 0; i < len(parts); i++ {
-		switch v := parts[i].(type) {
-		case BoolConstantAttribute:
-			op[i] = v
-		case ConstantAttribute:
-			op[i] = v
-		case BoolExpressionAttribute:
-			op[i] = v
-		case ExpressionAttribute:
-			op[i] = v
-		}
+var attributeParser = parse.Func(func(in *parse.Input) (out Attribute, ok bool, err error) {
+	if out, ok, err = boolConstantAttributeParser.Parse(in); err != nil || ok {
+		return
 	}
-	return op, true
-}
-
-var attributeParser = parse.Any(
-	newBoolConstantAttributeParser().Parse,
-	newConstantAttributeParser().Parse,
-	newBoolExpressionAttributeParser().Parse,
-	newExpressionAttributeParser().Parse,
-)
-
-func (p attributesParser) Parse(pi parse.Input) parse.Result {
-	return parse.Many(p.asAttributeArray, 0, 255, attributeParser)(pi)
-}
+	if out, ok, err = boolConstantAttributeParser.Parse(in); err != nil || ok {
+		return
+	}
+	if out, ok, err = constantAttributeParser.Parse(in); err != nil || ok {
+		return
+	}
+	if out, ok, err = boolExpressionAttributeParser.Parse(in); err != nil || ok {
+		return
+	}
+	if out, ok, err = expressionAttributeParser.Parse(in); err != nil || ok {
+		return
+	}
+	return
+})
+var attributesParser = parse.AtMost(255, attributeParser)
 
 // Element name.
 var elementNameFirst = "abcdefghijklmnopqrstuvwxyz"
 var elementNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
-var elementNameParser = parse.Then(parse.WithStringConcatCombiner,
-	parse.RuneIn(elementNameFirst),
-	parse.Many(parse.WithStringConcatCombiner, 0, 15, parse.RuneIn(elementNameSubsequent)),
-)
+var elementNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
+	start := in.Index()
+	var prefix, suffix string
+	if prefix, ok, err = parse.RuneIn(elementNameFirst).Parse(in); err != nil || !ok {
+		return
+	}
+	if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(elementNameSubsequent)).Parse(in); err != nil || !ok {
+		in.Seek(start)
+		return
+	}
+	if len(suffix)+1 > 16 {
+		ok = false
+		err = parse.Error("element property names must be < 16 characters long", in.Position())
+		return
+	}
+	return prefix + suffix, true, nil
+})
 
 // Element.
-func newElementOpenCloseParser() elementOpenCloseParser {
-	return elementOpenCloseParser{}
-}
+var elementOpenClose elementOpenCloseParser
 
-type elementOpenCloseParser struct {
-	SourceRangeToItemLookup SourceMap
-}
+type elementOpenCloseParser struct{}
 
-func (p elementOpenCloseParser) Parse(pi parse.Input) parse.Result {
-	var r Element
-
+func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err error) {
 	// Check the open tag.
-	otr := newElementOpenTagParser().Parse(pi)
-	if otr.Error != nil || !otr.Success {
-		return otr
+	var ot elementOpenTag
+	if ot, ok, err = elementOpenTagParser.Parse(pi); err != nil || !ok {
+		return
 	}
-	ot := otr.Item.(elementOpenTag)
 	r.Name = ot.Name
 	r.Attributes = ot.Attributes
 
 	// Once we've got an open tag, the rest must be present.
-	from := NewPositionFromInput(pi)
-	tnpr := newTemplateNodeParser(nil, "").Parse(pi)
-	if !tnpr.Success {
-		if _, isParseError := tnpr.Error.(ParseError); isParseError {
-			return tnpr
-		}
-		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("<%s>: %v", r.Name, tnpr.Error), from, NewPositionFromInput(pi)))
-	}
-	if arr, isArray := tnpr.Item.([]Node); isArray {
-		r.Children = append(r.Children, arr...)
+	if r.Children, ok, err = newTemplateNodeParser[any](nil, "").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Close tag.
-	ectpr := elementCloseTagParser(pi)
-	if !ectpr.Success {
-		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("<%s>: expected end tag not present or invalid tag contents", r.Name), from, NewPositionFromInput(pi)))
+	pos := pi.Position()
+	var ct elementCloseTag
+	ct, ok, err = elementCloseTagParser.Parse(pi)
+	if err != nil {
+		return
 	}
-	if ct := ectpr.Item.(elementCloseTag); ct.Name != r.Name {
-		return parse.Failure("elementOpenCloseParser", newParseError(fmt.Sprintf("<%s>: mismatched end tag, expected '</%s>', got '</%s>'", r.Name, r.Name, ct.Name), from, NewPositionFromInput(pi)))
+	if !ok {
+		err = parse.Error(fmt.Sprintf("<%s>: expected end tag not present or invalid tag contents", r.Name), pi.Position())
+		return
+	}
+	if ct.Name != r.Name {
+		err = parse.Error(fmt.Sprintf("<%s>: mismatched end tag, expected '</%s>', got '</%s>'", r.Name, r.Name, ct.Name), pos)
+		return
 	}
 
-	return parse.Success("elementOpenCloseParser", r, nil)
+	return r, true, nil
 }
 
 // Element self-closing tag.
-var selfClosingElement = elementSelfClosingParser{}
+var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, err error) {
+	start := pi.Index()
 
-type elementSelfClosingParser struct {
-	SourceRangeToItemLookup SourceMap
-}
+	// lt
+	if _, ok, err = lt.Parse(pi); err != nil || !ok {
+		return
+	}
 
-func (p elementSelfClosingParser) asElement(parts []interface{}) (result interface{}, ok bool) {
-	return Element{
-		Name:       parts[1].(string),
-		Attributes: parts[2].([]Attribute),
-	}, true
-}
+	// Element name.
+	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
 
-func (p elementSelfClosingParser) Parse(pi parse.Input) parse.Result {
-	return parse.All(p.asElement,
-		parse.Rune('<'),
-		elementNameParser,
-		newAttributesParser().Parse,
-		optionalWhitespaceParser,
-		parse.String("/>"),
-	)(pi)
-}
+	if e.Attributes, ok, err = attributesParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	// Optional whitespace.
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		pi.Seek(start)
+		return
+	}
+
+	if _, ok, err = parse.String("/>").Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	return e, true, nil
+})
 
 // Element
 var element elementParser
 
-type elementParser struct {
-}
+type elementParser struct{}
 
-func (p elementParser) Parse(pi parse.Input) parse.Result {
-	var r Element
+func (elementParser) Parse(pi *parse.Input) (r Element, ok bool, err error) {
+	start := pi.Position()
 
-	// Self closing.
-	from := NewPositionFromInput(pi)
-	scr := selfClosingElement.Parse(pi)
-	if scr.Error != nil && scr.Error != io.EOF {
-		return scr
+	if r, ok, err = parse.Any[Element](selfClosingElement, elementOpenClose).Parse(pi); err != nil || !ok {
+		return
 	}
-	if scr.Success {
-		r = scr.Item.(Element)
-		if msgs, ok := r.Validate(); !ok {
-			return parse.Failure("elementParser", newParseError(fmt.Sprintf("<%s>: %s", r.Name, strings.Join(msgs, ", ")), from, NewPositionFromInput(pi)))
-		}
-		return parse.Success("elementParser", r, nil)
+	var msgs []string
+	if msgs, ok = r.Validate(); !ok {
+		err = parse.Error(fmt.Sprintf("<%s>: %s", r.Name, strings.Join(msgs, ", ")), start)
 	}
 
-	// Open/close pair.
-	ocr := newElementOpenCloseParser().Parse(pi)
-	if ocr.Error != nil && ocr.Error != io.EOF {
-		return ocr
-	}
-	if ocr.Success {
-		r = ocr.Item.(Element)
-		if msgs, ok := r.Validate(); !ok {
-			return parse.Failure("elementParser", newParseError(fmt.Sprintf("<%s>: %s", r.Name, strings.Join(msgs, ", ")), from, NewPositionFromInput(pi)))
-		}
-		return parse.Success("elementParser", r, nil)
-	}
-
-	return parse.Failure("elementParser", nil)
+	return r, ok, err
 }

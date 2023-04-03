@@ -1,71 +1,57 @@
 package parser
 
 import (
-	"errors"
-	"io"
 	"strings"
 
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
-func parseUntil(combiner parse.MultipleResultCombiner, p parse.Function, delimiter parse.Function) parse.Function {
-	return func(pi parse.Input) parse.Result {
-		name := "function until delimiter"
-
-		results := make([]interface{}, 0)
-		for {
-			current := pi.Index()
-			ds := delimiter(pi)
-			if ds.Success {
-				err := rewind(pi, current)
-				if err != nil {
-					return parse.Failure("failed to rewind reader", err)
-				}
-				break
-			}
-			pr := p(pi)
-			if pr.Error != nil {
-				return parse.Failure(name, pr.Error)
-			}
-			if !pr.Success {
-				return parse.Failure(name+": failed to match function", nil)
-			}
-			results = append(results, pr.Item)
-		}
-		item, ok := combiner(results)
-		if !ok {
-			return parse.Failure("until", errors.New("failed to combine results"))
-		}
-		return parse.Success("until", item, nil)
-	}
+// StripType takes the parser and throws away the return value.
+func StripType[T any](p parse.Parser[T]) parse.Parser[interface{}] {
+	return parse.Func(func(in *parse.Input) (out interface{}, ok bool, err error) {
+		return p.Parse(in)
+	})
 }
 
+func Must[T any](p parse.Parser[T], msg string) parse.Parser[T] {
+	return parse.Func(func(in *parse.Input) (out T, ok bool, err error) {
+		out, ok, err = p.Parse(in)
+		if err != nil {
+			return
+		}
+		if !ok {
+			err = parse.Error(msg, in.Position())
+		}
+		return out, ok, err
+	})
+}
+
+func ExpressionOf(p parse.Parser[string]) parse.Parser[Expression] {
+	return parse.Func(func(in *parse.Input) (out Expression, ok bool, err error) {
+		from := in.Position()
+
+		var exp string
+		if exp, ok, err = p.Parse(in); err != nil || !ok {
+			return
+		}
+
+		return NewExpression(exp, from, in.Position()), true, nil
+	})
+}
+
+var lt = parse.Rune('<')
+var gt = parse.Rune('>')
 var openBrace = parse.String("{")
-var optionalSpaces = parse.Optional(parse.WithStringConcatCombiner,
-	parse.AtLeast(parse.WithStringConcatCombiner, 1, parse.Rune(' ')))
-var openBraceWithPadding = parse.All(parse.WithStringConcatCombiner,
-	optionalSpaces,
+var optionalSpaces = parse.StringFrom(parse.Optional(
+	parse.AtLeast(1, parse.Rune(' '))))
+var openBraceWithPadding = parse.StringFrom(optionalSpaces,
 	openBrace,
 	optionalSpaces)
-var openBraceWithOptionalPadding = parse.Or(openBraceWithPadding, openBrace)
+var openBraceWithOptionalPadding = parse.Any(openBraceWithPadding, openBrace)
 
 var closeBrace = parse.String("}")
 var closeBraceWithPadding = parse.String(" }")
-var closeBraceWithOptionalPadding = parse.Or(closeBraceWithPadding, closeBrace)
-
-func chompBrace(pi parse.Input) (pr parse.Result, ok bool) {
-	from := NewPositionFromInput(pi)
-	pr = closeBraceWithOptionalPadding(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return
-	}
-	if !pr.Success {
-		pr = parse.Failure("end brace missing", newParseError("expected closing brace not found", from, NewPositionFromInput(pi)))
-		return
-	}
-	ok = true
-	return
-}
+var closeBraceWithOptionalPadding = parse.Any(closeBraceWithPadding, closeBrace)
 
 var exp = expressionParser{
 	startBraceCount: 1,
@@ -75,88 +61,77 @@ type expressionParser struct {
 	startBraceCount int
 }
 
-func (p expressionParser) Parse(pi parse.Input) parse.Result {
+func (p expressionParser) Parse(pi *parse.Input) (s Expression, ok bool, err error) {
+	from := pi.Position()
+
 	braceCount := p.startBraceCount
 
 	var sb strings.Builder
-	var r rune
-	var err error
 loop:
 	for {
+		var result string
+
 		// Try to read a string literal first.
-		result := string_lit(pi)
-		if result.Error != nil && result.Error != io.EOF {
-			return result
+		if result, ok, err = string_lit.Parse(pi); err != nil {
+			return
 		}
-		if result.Success {
-			sb.WriteString(string(result.Item.(string)))
+		if ok {
+			sb.WriteString(result)
 			continue
 		}
 		// Also try for a rune literal.
-		result = rune_lit(pi)
-		if result.Error != nil && result.Error != io.EOF {
-			return result
+		if result, ok, err = rune_lit.Parse(pi); err != nil {
+			return
 		}
-		if result.Success {
-			sb.WriteString(string(result.Item.(string)))
+		if ok {
+			sb.WriteString(result)
 			continue
 		}
 		// Try opener.
-		result = openBrace(pi)
-		if result.Error != nil && result.Error != io.EOF {
-			return result
+		if result, ok, err = openBrace.Parse(pi); err != nil {
+			return
 		}
-		if result.Success {
+		if ok {
 			braceCount++
-			sb.WriteString(result.Item.(string))
+			sb.WriteString(result)
 			continue
 		}
 		// Try closer.
-		startOfCloseBrace := NewPositionFromInput(pi)
-		result = closeBraceWithOptionalPadding(pi)
-		if result.Error != nil && result.Error != io.EOF {
-			return result
+		startOfCloseBrace := pi.Index()
+		if result, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil {
+			return
 		}
-		if result.Success {
+		if ok {
 			braceCount--
 			if braceCount < 0 {
-				return parse.Failure("expression: too many closing braces", nil)
+				err = parse.Error("expression: too many closing braces", pi.Position())
+				return
 			}
 			if braceCount == 0 {
-				err := rewind(pi, startOfCloseBrace.Index)
-				if err != nil {
-					return parse.Failure("failed to rewind reader", err)
-				}
+				pi.Seek(startOfCloseBrace)
 				break loop
 			}
-			switch r := result.Item.(type) {
-			case string:
-				sb.WriteString(r)
-			case rune:
-				sb.WriteRune(r)
-			default:
-				return parse.Failure("expression: internal error, unexpected result of brace", nil)
-			}
+			sb.WriteString(result)
 			continue
 		}
 
 		// Read anything else.
-		r, err = pi.Advance()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break loop
-			}
-			return parse.Failure("expression: failed to read", err)
-		}
-		if r == 65533 { // Invalid Unicode.
+		var c string
+		c, ok = pi.Take(1)
+		if !ok {
 			break loop
 		}
-		sb.WriteRune(r)
+		if rune(c[0]) == 65533 { // Invalid Unicode.
+			break loop
+		}
+		sb.WriteString(c)
 	}
 	if braceCount != 0 {
-		return parse.Failure("expression: unexpected brace count", nil)
+		err = parse.Error("expression: unexpected brace count", pi.Position())
+		return
 	}
-	return parse.Success("expression", sb.String(), nil)
+
+	return NewExpression(sb.String(), from, pi.Position()), true, nil
 }
 
 // Letters and digits
@@ -166,12 +141,12 @@ var hex_digit = parse.RuneIn("0123456789ABCDEFabcdef")
 
 // https://go.dev/ref/spec#Rune_literals
 
-var rune_lit = parse.All(parse.WithStringConcatCombiner,
+var rune_lit = parse.StringFrom(
 	parse.Rune('\''),
-	parseUntil(parse.WithStringConcatCombiner,
-		parse.Or(unicode_value_rune, byte_value),
+	parse.StringFrom(parse.Until(
+		parse.Any(unicode_value_rune, byte_value),
 		parse.Rune('\''),
-	),
+	)),
 	parse.Rune('\''),
 )
 var unicode_value_rune = parse.Any(little_u_value, big_u_value, escaped_char, parse.RuneNotIn("'"))
@@ -180,33 +155,33 @@ var unicode_value_rune = parse.Any(little_u_value, big_u_value, escaped_char, pa
 var byte_value = parse.Any(octal_byte_value, hex_byte_value)
 
 // octal_byte_value = `\` octal_digit octal_digit octal_digit .
-var octal_byte_value = parse.All(parse.WithStringConcatCombiner,
+var octal_byte_value = parse.StringFrom(
 	parse.String(`\`),
 	octal_digit, octal_digit, octal_digit,
 )
 
 // hex_byte_value   = `\` "x" hex_digit hex_digit .
-var hex_byte_value = parse.All(parse.WithStringConcatCombiner,
+var hex_byte_value = parse.StringFrom(
 	parse.String(`\x`),
 	hex_digit, hex_digit,
 )
 
 // little_u_value   = `\` "u" hex_digit hex_digit hex_digit hex_digit .
-var little_u_value = parse.All(parse.WithStringConcatCombiner,
+var little_u_value = parse.StringFrom(
 	parse.String(`\u`),
 	hex_digit, hex_digit,
 	hex_digit, hex_digit,
 )
 
 // big_u_value      = `\` "U" hex_digit hex_digit hex_digit hex_digit
-var big_u_value = parse.All(parse.WithStringConcatCombiner,
+var big_u_value = parse.StringFrom(
 	parse.String(`\U`),
 	hex_digit, hex_digit, hex_digit, hex_digit,
 	hex_digit, hex_digit, hex_digit, hex_digit,
 )
 
 // escaped_char     = `\` ( "a" | "b" | "f" | "n" | "r" | "t" | "v" | `\` | "'" | `"` ) .
-var escaped_char = parse.All(parse.WithStringConcatCombiner,
+var escaped_char = parse.StringFrom(
 	parse.Rune('\\'),
 	parse.Any(
 		parse.Rune('a'),
@@ -224,24 +199,24 @@ var escaped_char = parse.All(parse.WithStringConcatCombiner,
 
 // https://go.dev/ref/spec#String_literals
 
-var string_lit = parse.Or(interpreted_string_lit, raw_string_lit)
+var string_lit = parse.Any(interpreted_string_lit, raw_string_lit)
 
-var interpreted_string_lit = parse.All(parse.WithStringConcatCombiner,
+var interpreted_string_lit = parse.StringFrom(
 	parse.Rune('"'),
-	parseUntil(parse.WithStringConcatCombiner,
-		parse.Or(unicode_value_interpreted, byte_value),
+	parse.StringFrom(parse.Until(
+		parse.Any(unicode_value_interpreted, byte_value),
 		parse.Rune('"'),
-	),
+	)),
 	parse.Rune('"'),
 )
 var unicode_value_interpreted = parse.Any(little_u_value, big_u_value, escaped_char, parse.RuneNotIn("\n\""))
 
-var raw_string_lit = parse.All(parse.WithStringConcatCombiner,
+var raw_string_lit = parse.StringFrom(
 	parse.Rune('`'),
-	parseUntil(parse.WithStringConcatCombiner,
+	parse.StringFrom(parse.Until(
 		unicode_value_raw,
 		parse.Rune('`'),
-	),
+	)),
 	parse.Rune('`'),
 )
 var unicode_value_raw = parse.Any(little_u_value, big_u_value, escaped_char, parse.RuneNotIn("`"))

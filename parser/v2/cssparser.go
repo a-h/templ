@@ -1,279 +1,221 @@
 package parser
 
 import (
-	"io"
+	"strings"
+	"unicode"
 
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
 // CSS.
 
 // CSS Parser.
-
-func newCSSParser() cssParser {
-	return cssParser{}
-}
-
-type cssParser struct {
-}
-
-func (p cssParser) Parse(pi parse.Input) parse.Result {
-	r := CSSTemplate{
+var cssParser = parse.Func(func(pi *parse.Input) (r CSSTemplate, ok bool, err error) {
+	r = CSSTemplate{
 		Properties: []CSSProperty{},
 	}
 
 	// Parse the name.
-	pr := newCSSExpressionParser().Parse(pi)
-	if !pr.Success {
-		return pr
+	var exp cssExpression
+	if exp, ok, err = cssExpressionParser.Parse(pi); err != nil || !ok {
+		return
 	}
-	r.Name = pr.Item.(cssExpression).Name
+	r.Name = exp.Name
 
 	for {
-		var pr parse.Result
+		var cssProperty CSSProperty
 
 		// Try for an expression CSS declaration.
 		// background-color: { constants.BackgroundColor };
-		pr = newExpressionCSSPropertyParser().Parse(pi)
-		if pr.Error != nil {
-			return pr
+		cssProperty, ok, err = expressionCSSPropertyParser.Parse(pi)
+		if err != nil {
+			return
 		}
-		if pr.Success {
-			r.Properties = append(r.Properties, pr.Item.(CSSProperty))
+		if ok {
+			r.Properties = append(r.Properties, cssProperty)
 			continue
 		}
 
 		// Try for a constant CSS declaration.
 		// color: #ffffff;
-		pr = newConstantCSSPropertyParser().Parse(pi)
-		if pr.Error != nil {
-			return pr
+		cssProperty, ok, err = constantCSSPropertyParser.Parse(pi)
+		if err != nil {
+			return
 		}
-		if pr.Success {
-			r.Properties = append(r.Properties, pr.Item.(CSSProperty))
+		if ok {
+			r.Properties = append(r.Properties, cssProperty)
 			continue
 		}
 
 		// Eat any whitespace.
-		pr = optionalWhitespaceParser(pi)
-		if pr.Error != nil {
-			return pr
+		if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+			return
 		}
 
 		// Try for }
-		pr, ok := chompBrace(pi)
-		if !ok {
-			return pr
+		if _, ok, err = Must(closeBraceWithOptionalPadding, "css property expression: missing closing brace").Parse(pi); err != nil || !ok {
+			return
 		}
-		return parse.Success("css", r, nil)
+
+		return r, true, nil
 	}
-}
+})
 
 // css Func() {
 type cssExpression struct {
 	Name Expression
 }
 
-func newCSSExpressionParser() cssExpressionParser {
-	return cssExpressionParser{}
-}
-
-type cssExpressionParser struct {
-}
-
 var cssExpressionStartParser = parse.String("css ")
 
-var cssExpressionNameParser = parse.All(parse.WithStringConcatCombiner,
-	parse.Letter,
-	parse.Many(parse.WithStringConcatCombiner, 0, 1000, parse.Any(parse.Letter, parse.ZeroToNine)),
-)
+var cssExpressionNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
+	var c string
+	if c, ok = in.Peek(1); !ok || !unicode.IsLetter(rune(c[0])) {
+		return
+	}
+	prefix, _, _ := parse.Letter.Parse(in)
+	suffix, _, _ := parse.AtMost(1000, parse.Any(parse.Letter, parse.ZeroToNine)).Parse(in)
+	return prefix + strings.Join(suffix, ""), true, nil
+})
 
-func (p cssExpressionParser) Parse(pi parse.Input) parse.Result {
-	var r cssExpression
-
+var cssExpressionParser = parse.Func(func(pi *parse.Input) (r cssExpression, ok bool, err error) {
 	// Check the prefix first.
-	prefixResult := cssExpressionStartParser(pi)
-	if !prefixResult.Success {
-		return prefixResult
+	if _, ok, err = cssExpressionStartParser.Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once we have the prefix, we must have a name and parameters.
 	// Read the name of the function.
-	from := NewPositionFromInput(pi)
-	pr := cssExpressionNameParser(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
-	}
+	from := pi.Position()
 	// If there's no match, the name wasn't correctly terminated.
-	if !pr.Success {
-		return parse.Failure("cssExpressionParser", newParseError("css expression: invalid name", from, NewPositionFromInput(pi)))
+	var name string
+	if name, ok, err = Must(cssExpressionNameParser, "css expression: invalid name").Parse(pi); err != nil || !ok {
+		return
 	}
-	to := NewPositionFromInput(pi)
-	r.Name = NewExpression(pr.Item.(string), from, to)
-	from = to
+	r.Name = NewExpression(name, from, pi.Position())
 
 	// Eat the open bracket.
-	if lb := parse.Rune('(')(pi); !lb.Success {
-		return parse.Failure("cssExpressionParser", newParseError("css expression: parameters missing open bracket", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(parse.Rune('('), "css expression: parameters missing open bracket").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Check there's no parameters.
-	from = NewPositionFromInput(pi)
-	pr = parse.StringUntil(parse.Rune(')'))(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	from = pi.Position()
+	if _, ok, err = parse.StringUntil(parse.Rune(')')).Parse(pi); err != nil {
+		return
 	}
 	// If there's no match, the name wasn't correctly terminated.
-	if !pr.Success {
-		return parse.Failure("cssExpressionParser", newParseError("css expression: parameters missing close bracket", from, NewPositionFromInput(pi)))
+	if !ok {
+		return r, ok, parse.Error("css expression: parameters missing close bracket", pi.Position())
 	}
-	if len(pr.Item.(string)) > 1 {
-		return parse.Failure("cssExpressionParser", newParseError("css expression: found unexpected parameters", from, NewPositionFromInput(pi)))
+	if pi.Index()-int(from.Index) > 0 {
+		return r, ok, parse.Error("css expression: found unexpected parameters", pi.Position())
 	}
 
 	// Eat ") {".
-	from = NewPositionFromInput(pi)
-	if lb := expressionFuncEnd(pi); !lb.Success {
-		return parse.Failure("cssExpressionParser", newParseError("css expression: unterminated (missing ') {')", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(expressionFuncEnd, "css expression: unterminated (missing ') {')").Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Expect a newline.
-	from = NewPositionFromInput(pi)
-	if lb := newLine(pi); !lb.Success {
-		return parse.Failure("cssExpressionParser", newParseError("css expression: missing terminating newline", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(parse.NewLine, "css expression: missing terminating newline").Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Success("cssExpressionParser", r, nil)
-}
+	return r, true, nil
+})
 
 // CSS property name parser.
 var cssPropertyNameFirst = "abcdefghijklmnopqrstuvwxyz"
 var cssPropertyNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
-var cssPropertyNameParser = parse.Then(parse.WithStringConcatCombiner,
-	parse.RuneIn(cssPropertyNameFirst),
-	parse.Many(parse.WithStringConcatCombiner, 0, 128, parse.RuneIn(cssPropertyNameSubsequent)),
-)
+var cssPropertyNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
+	start := in.Position()
+	var prefix, suffix string
+	if prefix, ok, err = parse.RuneIn(cssPropertyNameFirst).Parse(in); err != nil || !ok {
+		return
+	}
+	if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(cssPropertyNameSubsequent)).Parse(in); err != nil || !ok {
+		in.Seek(start.Index)
+		return
+	}
+	if len(suffix)+1 > 128 {
+		ok = false
+		err = parse.Error("css property names must be < 128 characters long", in.Position())
+		return
+	}
+	return prefix + suffix, true, nil
+})
 
 // background-color: {%= constants.BackgroundColor %};
-func newExpressionCSSPropertyParser() expressionCSSPropertyParser {
-	return expressionCSSPropertyParser{}
-}
-
-type expressionCSSPropertyParser struct {
-}
-
-func (p expressionCSSPropertyParser) Parse(pi parse.Input) parse.Result {
-	var r ExpressionCSSProperty
-	var pr parse.Result
+var expressionCSSPropertyParser = parse.Func(func(pi *parse.Input) (r ExpressionCSSProperty, ok bool, err error) {
 	start := pi.Index()
 
 	// Optional whitespace.
-	if pr = optionalWhitespaceParser(pi); pr.Error != nil {
-		return pr
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+		return
 	}
 	// Property name.
-	if pr = cssPropertyNameParser(pi); !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
+	if r.Name, ok, err = cssPropertyNameParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	r.Name = pr.Item.(string)
 	// <space>:<space>
-	pr = parse.All(parse.WithStringConcatCombiner,
-		optionalWhitespaceParser,
-		parse.Rune(':'),
-		optionalWhitespaceParser)(pi)
-	if !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
+	if _, ok, err = parse.All(parse.OptionalWhitespace, parse.Rune(':'), parse.OptionalWhitespace).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
 
 	// { string }
-	pr = stringExpression.Parse(pi)
-	if !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
+	if r.Value, ok, err = stringExpression.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	r.Value = pr.Item.(StringExpression)
 
 	// ;
-	from := NewPositionFromInput(pi)
-	if pr = parse.String(";")(pi); !pr.Success {
-		return parse.Failure("expression css declaration", newParseError("missing expected semicolon (;)", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(parse.String(";"), "missing expected semicolon (;)").Parse(pi); err != nil || !ok {
+		return
 	}
 	// \n
-	from = NewPositionFromInput(pi)
-	if pr = newLine(pi); !pr.Success {
-		return parse.Failure("expression css declaration", newParseError("missing expected linebreak", from, NewPositionFromInput(pi)))
+	if _, ok, err = Must(parse.NewLine, "missing expected linebreak").Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Success("expression css declaration", r, nil)
-}
+	return r, true, nil
+})
 
 // background-color: #ffffff;
-func newConstantCSSPropertyParser() constantCSSPropertyParser {
-	return constantCSSPropertyParser{}
-}
-
-type constantCSSPropertyParser struct {
-}
-
-func (p constantCSSPropertyParser) Parse(pi parse.Input) parse.Result {
-	var r ConstantCSSProperty
-	var pr parse.Result
+var constantCSSPropertyParser = parse.Func(func(pi *parse.Input) (r ConstantCSSProperty, ok bool, err error) {
 	start := pi.Index()
 
 	// Optional whitespace.
-	if pr = optionalWhitespaceParser(pi); pr.Error != nil {
-		return pr
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+		return
 	}
 	// Property name.
-	if pr = cssPropertyNameParser(pi); !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
+	if r.Name, ok, err = cssPropertyNameParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
-	r.Name = pr.Item.(string)
 	// <space>:<space>
-	pr = parse.All(parse.WithStringConcatCombiner,
-		optionalWhitespaceParser,
-		parse.Rune(':'),
-		optionalWhitespaceParser)(pi)
-	if !pr.Success {
-		err := rewind(pi, start)
-		if err != nil {
-			return parse.Failure("failed to rewind reader", err)
-		}
-		return pr
+	if _, ok, err = parse.All(parse.OptionalWhitespace, parse.Rune(':'), parse.OptionalWhitespace).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
 	}
 
 	// Everything until ';\n'
-	from := NewPositionFromInput(pi)
-	untilEnd := parse.All(parse.WithStringConcatCombiner,
-		optionalWhitespaceParser,
+	untilEnd := parse.All(
+		parse.OptionalWhitespace,
 		parse.Rune(';'),
-		newLine,
+		parse.NewLine,
 	)
-	pr = parse.StringUntil(untilEnd)(pi)
-	if !pr.Success {
-		return parse.Failure("constant css declaration", newParseError("missing expected semicolon and linebreak (;\\n)", from, NewPositionFromInput(pi)))
-	}
-	r.Value = pr.Item.(string)
-	// Chomp the ;\n
-	pr = untilEnd(pi)
-	if !pr.Success {
-		return parse.Failure("constant css declaration", newParseError("failed to chomp semicolon and linebreak (;\\n)", from, NewPositionFromInput(pi)))
+	if r.Value, ok, err = Must(parse.StringUntil(untilEnd), "missing expected semicolon and linebreak (;\\n").Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Success("constant css declaration", r, nil)
-}
+	// Chomp the ;\n
+	if _, ok, err = Must(untilEnd, "failed to chomp semicolon and linebreak (;\\n)").Parse(pi); err != nil || !ok {
+		return
+	}
+
+	return r, true, nil
+})

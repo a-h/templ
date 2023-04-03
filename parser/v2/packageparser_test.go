@@ -1,10 +1,9 @@
 package parser
 
 import (
-	"io"
 	"testing"
 
-	"github.com/a-h/lexical/input"
+	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -12,20 +11,15 @@ func TestPackageParserErrors(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected ParseError
+		expected parse.ParseError
 	}{
 		{
 			name:  "unterminated package",
 			input: "package ",
-			expected: newParseError(
+			expected: parse.Error(
 				"package literal not terminated",
-				Position{
-					Index: 0,
-					Line:  0,
-					Col:   0,
-				},
-				Position{
-					Index: 9,
+				parse.Position{
+					Index: 8,
 					Line:  0,
 					Col:   8,
 				},
@@ -34,17 +28,12 @@ func TestPackageParserErrors(t *testing.T) {
 		{
 			name:  "unterminated package, new line",
 			input: "package \n",
-			expected: newParseError(
+			expected: parse.Error(
 				"package literal not terminated",
-				Position{
+				parse.Position{
 					Index: 0,
 					Line:  0,
 					Col:   0,
-				},
-				Position{
-					Index: 8,
-					Line:  0,
-					Col:   8,
 				},
 			),
 		},
@@ -52,12 +41,12 @@ func TestPackageParserErrors(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			pi := input.NewFromString(tt.input)
-			actual := pkg.Parse(pi)
-			if actual.Success {
+			pi := parse.NewInput(tt.input)
+			_, ok, err := pkg.Parse(pi)
+			if ok {
 				t.Errorf("expected parsing to fail, but it succeeded")
 			}
-			if diff := cmp.Diff(tt.expected, actual.Error); diff != "" {
+			if diff := cmp.Diff(tt.expected, err); diff != "" {
 				t.Errorf(diff)
 			}
 		})
@@ -95,16 +84,16 @@ func TestPackageParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := input.NewFromString(tt.input)
-			result := pkg.Parse(input)
-			if result.Error != nil && result.Error != io.EOF {
-				t.Fatalf("parser error: %v", result.Error)
+			input := parse.NewInput(tt.input)
+			actual, ok, err := pkg.Parse(input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
-			if !result.Success {
-				t.Fatalf("failed to parse at %d", input.Index())
+			if !ok {
+				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
-			if diff := cmp.Diff(tt.expected, result.Item); diff != "" {
-				t.Errorf(diff)
+			if diff := cmp.Diff(tt.expected, actual); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}

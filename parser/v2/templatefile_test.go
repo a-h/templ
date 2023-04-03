@@ -23,7 +23,7 @@ Hello
 }`
 		tf, err := ParseString(input)
 		if err != nil {
-			t.Fatalf("failed to parse template, with error: %v", err)
+			t.Fatalf("failed to parse template, with t.Fatalf(parser %v", err)
 		}
 		if len(tf.Nodes) != 1 {
 			t.Errorf("expected 1 node, got %d nodes with content %+v", len(tf.Nodes), tf.Nodes)
@@ -37,7 +37,7 @@ templ Hello() {
 }`
 		tf, err := ParseString(input)
 		if err != nil {
-			t.Fatalf("failed to parse template, with error: %v", err)
+			t.Fatalf("failed to parse template, with t.Fatalf(parser %v", err)
 		}
 		if len(tf.Nodes) != 1 {
 			t.Errorf("expected 2 nodes, got %+v", tf.Nodes)
@@ -59,7 +59,7 @@ const y = "456"
 `
 		tf, err := ParseString(input)
 		if err != nil {
-			t.Fatalf("failed to parse template, with error: %v", err)
+			t.Fatalf("failed to parse template, with t.Fatalf(parser %v", err)
 		}
 		if len(tf.Nodes) != 3 {
 			var nodeTypes []string
@@ -95,7 +95,7 @@ templ Hello() {
 const y = ` + "`456`"
 		tf, err := ParseString(input)
 		if err != nil {
-			t.Fatalf("failed to parse template, with error: %v", err)
+			t.Fatalf("failed to parse template, with t.Fatalf(parser %v", err)
 		}
 		if len(tf.Nodes) != 3 {
 			var nodeTypes []string

@@ -1,41 +1,24 @@
 package parser
 
 import (
-	"io"
-
-	"github.com/a-h/lexical/parse"
+	"github.com/a-h/parse"
 )
 
-var stringExpression stringExpressionParser
-
-type stringExpressionParser struct {
-}
-
-var stringExpressionStartParser = parse.Or(parse.String("{ "), parse.String("{"))
-
-func (p stringExpressionParser) Parse(pi parse.Input) parse.Result {
-	var r StringExpression
+var stringExpression = parse.Func(func(pi *parse.Input) (r StringExpression, ok bool, err error) {
 	// Check the prefix first.
-	prefixResult := stringExpressionStartParser(pi)
-	if !prefixResult.Success {
-		return prefixResult
+	if _, ok, err = parse.Or(parse.String("{ "), parse.String("{")).Parse(pi); err != nil || !ok {
+		return
 	}
 
 	// Once we have a prefix, we must have an expression that returns a string.
-	from := NewPositionFromInput(pi)
-	pr := exp.Parse(pi)
-	if pr.Error != nil && pr.Error != io.EOF {
-		return pr
+	if r.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
+		return
 	}
-	if !pr.Success {
-		return pr
-	}
-	r.Expression = NewExpression(pr.Item.(string), from, NewPositionFromInput(pi))
 
 	// }
-	if pr, ok := chompBrace(pi); !ok {
-		return pr
+	if _, ok, err = Must(closeBraceWithOptionalPadding, "string expression: missing close brace").Parse(pi); err != nil || !ok {
+		return
 	}
 
-	return parse.Success("stringExpressionParser", r, nil)
-}
+	return r, true, nil
+})

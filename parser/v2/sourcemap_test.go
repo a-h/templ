@@ -4,11 +4,14 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
 )
 
 // Test data.
-//   | 0 1 2 3 4 5 6 7 8 9
+//
+//	| 0 1 2 3 4 5 6 7 8 9
+//
 // - - - - - - - - - - -
 // 0 |
 // 1 |   a b c d e f g h i
@@ -20,6 +23,13 @@ import (
 // 7 |   m u l t i
 // 8 | l i n e
 // 9 | m a t c h
+func pos(index, line, col int) parse.Position {
+	return parse.Position{
+		Index: index,
+		Line:  line,
+		Col:   col,
+	}
+}
 
 func TestSourceMapPosition(t *testing.T) {
 	sm := NewSourceMap()
@@ -46,62 +56,62 @@ func TestSourceMapPosition(t *testing.T) {
 		{
 			name: "searching within the map returns a result",
 			setup: func(sm *SourceMap) {
-				sm.Add(NewExpression("abc", NewPositionFromValues(0, 1, 1), NewPositionFromValues(2, 1, 3)),
-					NewRange(NewPositionFromValues(0, 5, 1), NewPositionFromValues(0, 5, 3)))
+				sm.Add(NewExpression("abc", pos(0, 1, 1), pos(2, 1, 3)),
+					Range{From: NewPosition(0, 5, 1), To: NewPosition(0, 5, 3)})
 			},
-			source: NewPositionFromValues(0, 1, 1), // a
-			target: NewPositionFromValues(0, 5, 1),
+			source: NewPosition(0, 1, 1), // a
+			target: NewPosition(0, 5, 1),
 		},
 		{
 			name: "offsets within the match are handled",
 			setup: func(sm *SourceMap) {
-				sm.Add(NewExpression("abc", NewPositionFromValues(0, 1, 1), NewPositionFromValues(2, 1, 3)),
-					NewRange(NewPositionFromValues(0, 5, 1), NewPositionFromValues(0, 5, 3)))
+				sm.Add(NewExpression("abc", pos(0, 1, 1), pos(2, 1, 3)),
+					Range{From: NewPosition(0, 5, 1), To: NewPosition(0, 5, 3)})
 			},
-			source: NewPositionFromValues(1, 1, 2), // b
-			target: NewPositionFromValues(1, 5, 2),
+			source: NewPosition(1, 1, 2), // b
+			target: NewPosition(1, 5, 2),
 		},
 		{
 			name: "the match that starts closest to the source is returned",
 			setup: func(sm *SourceMap) {
-				sm.Add(NewExpression("rst", NewPositionFromValues(4, 3, 3), NewPositionFromValues(7, 3, 6)),
-					NewRange(NewPositionFromValues(0, 8, 6), NewPositionFromValues(0, 8, 9)))
+				sm.Add(NewExpression("rst", pos(4, 3, 3), pos(7, 3, 6)),
+					Range{From: NewPosition(0, 8, 6), To: NewPosition(0, 8, 9)})
 				// s is inside rst.
-				sm.Add(NewExpression("s", NewPositionFromValues(-1, 3, 4), NewPositionFromValues(-1, 3, 4)),
-					NewRange(NewPositionFromValues(-1, 8, 7), NewPositionFromValues(-1, 8, 7)))
+				sm.Add(NewExpression("s", pos(-1, 3, 4), pos(-1, 3, 4)),
+					Range{From: NewPosition(-1, 8, 7), To: NewPosition(-1, 8, 7)})
 			},
-			source: NewPositionFromValues(-1, 3, 4), // s
-			target: NewPositionFromValues(-1, 8, 7),
+			source: NewPosition(-1, 3, 4), // s
+			target: NewPosition(-1, 8, 7),
 		},
 		{
 			name: "the start line within a multiline match is detected",
 			setup: func(sm *SourceMap) {
 				// Multi-line match.
-				sm.Add(NewExpression("multi\nline\nmatch", NewPositionFromValues(0, 0, 0), NewPositionFromValues(16, 2, 5)),
-					NewRange(NewPositionFromValues(1, 1, 1), NewPositionFromValues(17, 3, 5)))
+				sm.Add(NewExpression("multi\nline\nmatch", pos(0, 0, 0), pos(16, 2, 5)),
+					Range{From: NewPosition(1, 1, 1), To: NewPosition(17, 3, 5)})
 			},
-			source: NewPositionFromValues(0, 0, 0), // m (ulti)
-			target: NewPositionFromValues(1, 1, 1),
+			source: NewPosition(0, 0, 0), // m (ulti)
+			target: NewPosition(1, 1, 1),
 		},
 		{
 			name: "the middle line within a multiline match is detected",
 			setup: func(sm *SourceMap) {
 				// Multi-line match.
-				sm.Add(NewExpression("multi\nline\nmatch", NewPositionFromValues(0, 0, 0), NewPositionFromValues(16, 2, 5)),
-					NewRange(NewPositionFromValues(1, 1, 1), NewPositionFromValues(17, 3, 5)))
+				sm.Add(NewExpression("multi\nline\nmatch", pos(0, 0, 0), pos(16, 2, 5)),
+					Range{From: NewPosition(1, 1, 1), To: NewPosition(17, 3, 5)})
 			},
-			source: NewPositionFromValues(7, 1, 1), // (l) i (ne)
-			target: NewPositionFromValues(8, 2, 1),
+			source: NewPosition(7, 1, 1), // (l) i (ne)
+			target: NewPosition(8, 2, 1),
 		},
 		{
 			name: "the final line within a multiline match is detected",
 			setup: func(sm *SourceMap) {
 				// Multi-line match.
-				sm.Add(NewExpression("multi\nline\nmatch", NewPositionFromValues(0, 0, 0), NewPositionFromValues(16, 2, 5)),
-					NewRange(NewPositionFromValues(1, 1, 1), NewPositionFromValues(17, 3, 5)))
+				sm.Add(NewExpression("multi\nline\nmatch", pos(0, 0, 0), pos(16, 2, 5)),
+					Range{From: NewPosition(1, 1, 1), To: NewPosition(17, 3, 5)})
 			},
-			source: NewPositionFromValues(11, 2, 0), // m (atch)
-			target: NewPositionFromValues(12, 3, 0),
+			source: NewPosition(11, 2, 0), // m (atch)
+			target: NewPosition(12, 3, 0),
 		},
 	}
 	for _, tt := range tests {
@@ -109,7 +119,7 @@ func TestSourceMapPosition(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			sm := NewSourceMap()
 			tt.setup(sm)
-			actualTarget, ok := sm.TargetPositionFromSource(tt.source.Line, tt.source.Col)
+			actualTarget, ok := sm.TargetPositionFromSource(uint32(tt.source.Line), uint32(tt.source.Col))
 			if !ok {
 				t.Errorf("TargetPositionFromSource: expected result from source %v, got no results", tt.source)
 			}
