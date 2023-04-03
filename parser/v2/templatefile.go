@@ -91,7 +91,7 @@ func (p TemplateFileParser) Parse(pi *parse.Input) (tf TemplateFile, ok bool, er
 	}
 
 	// Optional whitespace.
-	parse.OptionalWhitespace.Parse(pi)
+	_, _, _ = parse.OptionalWhitespace.Parse(pi)
 
 outer:
 	for {
@@ -104,7 +104,7 @@ outer:
 		}
 		if ok {
 			tf.Nodes = append(tf.Nodes, tn)
-			parse.OptionalWhitespace.Parse(pi)
+			_, _, _ = parse.OptionalWhitespace.Parse(pi)
 			continue
 		}
 
@@ -116,7 +116,7 @@ outer:
 		}
 		if ok {
 			tf.Nodes = append(tf.Nodes, cn)
-			parse.OptionalWhitespace.Parse(pi)
+			_, _, _ = parse.OptionalWhitespace.Parse(pi)
 			continue
 		}
 

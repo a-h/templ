@@ -68,7 +68,7 @@ var caseExpressionStartParser = parse.Func(func(in *parse.Input) (e Expression, 
 	}
 
 	// Eat terminating newline.
-	parse.String("\n").Parse(in)
+	_, _, _ = parse.String("\n").Parse(in)
 
 	return
 })

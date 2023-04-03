@@ -56,7 +56,7 @@ func (p rawElementParser) Parse(pi *parse.Input) (e RawElement, ok bool, err err
 		return
 	}
 	// Cut the end element.
-	end.Parse(pi)
+	_, _, _ = end.Parse(pi)
 
 	return e, true, nil
 }
