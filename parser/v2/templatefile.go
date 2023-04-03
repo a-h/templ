@@ -128,7 +128,7 @@ outer:
 		}
 		if ok {
 			tf.Nodes = append(tf.Nodes, sn)
-			parse.OptionalWhitespace.Parse(pi)
+			_, _, _ = parse.OptionalWhitespace.Parse(pi)
 			continue
 		}
 
