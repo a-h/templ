@@ -52,6 +52,61 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
+			name: "conditional expression attribute",
+			input: `
+if test { 
+	class="itIsTrue"
+	noshade
+	name={ "other" }
+}
+"`,
+			parser: StripType(conditionalAttributeParser),
+			expected: ConditionalAttribute{
+				Expression: Expression{
+					Value: "test",
+					Range: Range{
+						From: Position{
+							Index: 4,
+							Line:  1,
+							Col:   3,
+						},
+						To: Position{
+							Index: 8,
+							Line:  1,
+							Col:   7,
+						},
+					},
+				},
+				Then: []Attribute{
+					ConstantAttribute{
+						Name:  "class",
+						Value: "itIsTrue",
+					},
+					BoolConstantAttribute{
+						Name: "noshade",
+					},
+					ExpressionAttribute{
+						Name: "name",
+						Expression: Expression{
+							Value: `"other"`,
+							Range: Range{
+								From: Position{
+									Index: 47,
+									Line:  4,
+									Col:   8,
+								},
+								To: Position{
+									Index: 54,
+									Line:  4,
+									Col:   15,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name:   "boolean expression attribute",
 			input:  ` noshade?={ true }"`,
 			parser: StripType(boolExpressionAttributeParser),
@@ -100,7 +155,7 @@ func TestAttributeParser(t *testing.T) {
 		{
 			name:   "attribute parsing handles boolean expression attributes",
 			input:  ` noshade?={ true }`,
-			parser: StripType(attributeParser),
+			parser: StripType[Attribute](attributeParser{}),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
 				Expression: Expression{
@@ -166,7 +221,7 @@ func TestAttributeParser(t *testing.T) {
 				t.Error(err)
 			}
 			if !ok {
-				t.Errorf("failed to parse at %d", input.Index())
+				t.Errorf("failed to parse at %v", input.Position())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
@@ -339,14 +394,14 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: self closing with no attributes",
+			name:  "element: self-closing with no attributes",
 			input: `<hr/>`,
 			expected: Element{
 				Name: "hr",
 			},
 		},
 		{
-			name:  "element: self closing with attribute",
+			name:  "element: self-closing with attribute",
 			input: `<hr style="padding: 10px" />`,
 			expected: Element{
 				Name: "hr",
@@ -355,6 +410,137 @@ func TestElementParser(t *testing.T) {
 						Name:  "style",
 						Value: "padding: 10px",
 					},
+				},
+			},
+		},
+		{
+			name: "element: self-closing with conditional attribute",
+			input: `<hr style="padding: 10px" 
+			if true {
+				class="itIsTrue"
+			}
+/>`,
+			expected: Element{
+				Name: "hr",
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "style",
+						Value: "padding: 10px",
+					},
+					ConditionalAttribute{
+						Expression: Expression{
+							Value: "true",
+							Range: Range{
+								From: Position{
+									Index: 33,
+									Line:  1,
+									Col:   6,
+								},
+								To: Position{
+									Index: 37,
+									Line:  1,
+									Col:   10,
+								},
+							},
+						},
+						Then: []Attribute{
+							ConstantAttribute{
+								Name:  "class",
+								Value: "itIsTrue",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "element: self-closing with conditional attribute with else block",
+			input: `<hr style="padding: 10px" 
+			if true {
+				class="itIsTrue"
+			} else {
+				class="itIsNotTrue"
+			}
+/>`,
+			expected: Element{
+				Name: "hr",
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "style",
+						Value: "padding: 10px",
+					},
+					ConditionalAttribute{
+						Expression: Expression{
+							Value: "true",
+							Range: Range{
+								From: Position{
+									Index: 33,
+									Line:  1,
+									Col:   6,
+								},
+								To: Position{
+									Index: 37,
+									Line:  1,
+									Col:   10,
+								},
+							},
+						},
+						Then: []Attribute{
+							ConstantAttribute{
+								Name:  "class",
+								Value: "itIsTrue",
+							},
+						},
+						Else: []Attribute{
+							ConstantAttribute{
+								Name:  "class",
+								Value: "itIsNotTrue",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "element: open and close with conditional attribute",
+			input: `<p style="padding: 10px" 
+			if true {
+				class="itIsTrue"
+			}
+>Test</p>`,
+			expected: Element{
+				Name: "p",
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "style",
+						Value: "padding: 10px",
+					},
+					ConditionalAttribute{
+						Expression: Expression{
+							Value: "true",
+							Range: Range{
+								From: Position{
+									Index: 32,
+									Line:  1,
+									Col:   6,
+								},
+								To: Position{
+									Index: 36,
+									Line:  1,
+									Col:   10,
+								},
+							},
+						},
+						Then: []Attribute{
+							ConstantAttribute{
+								Name:  "class",
+								Value: "itIsTrue",
+							},
+						},
+					},
+				},
+				Children: []Node{
+					Text{Value: "Test"},
 				},
 			},
 		},

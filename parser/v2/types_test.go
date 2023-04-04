@@ -312,6 +312,87 @@ templ table(accountNumber string, registration string) {
 
 `,
 		},
+		{
+			name: "conditional expressions are placed on their own lines",
+			input: ` // first line removed to make indentation clear
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div id="conditional" if addClass {
+		class="itWasTrue"
+	}
+	width="300">Content</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div id="conditional"
+		if addClass {
+			class="itWasTrue"
+		}
+		width="300">Content</div>
+}
+
+`,
+		},
+		{
+			name: "conditional expressions are indented on their own lines",
+			input: ` // first line removed to make indentation clear
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div id="conditional"
+if addClass {
+class="itWasTrue"
+}
+width="300">Content</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div id="conditional"
+		if addClass {
+			class="itWasTrue"
+		}
+		width="300">Content</div>
+}
+
+`,
+		},
+		{
+			name: "conditional expressions with else blocks are also formatted",
+			input: ` // first line removed to make indentation clear
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div id="conditional"
+if addClass {
+class="itWasTrue"
+} else {
+	class="itWasNotTrue"
+}
+width="300">Content</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div id="conditional"
+		if addClass {
+			class="itWasTrue"
+		} else {
+			class="itWasNotTrue"
+		}
+		width="300">Content</div>
+}
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

@@ -30,7 +30,7 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 		return
 	}
 
-	if e.Attributes, ok, err = attributesParser.Parse(pi); err != nil || !ok {
+	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
@@ -97,7 +97,7 @@ var attributeConstantValueParser = parse.StringUntil(parse.Rune('"'))
 var constantAttributeParser = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
 	start := pi.Index()
 
-	// whitespace leader
+	// Optional whitespace leader.
 	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
 		return
 	}
@@ -135,8 +135,8 @@ var constantAttributeParser = parse.Func(func(pi *parse.Input) (attr ConstantAtt
 var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr BoolConstantAttribute, ok bool, err error) {
 	start := pi.Index()
 
-	// whitespace leader
-	if _, ok, err = parse.Whitespace.Parse(pi); err != nil || !ok {
+	// Optional whitespace leader.
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
 		return
 	}
 
@@ -171,8 +171,8 @@ var boolExpressionStart = parse.Or(parse.String("?={ "), parse.String("?={"))
 var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r BoolExpressionAttribute, ok bool, err error) {
 	start := pi.Index()
 
-	// whitespace leader
-	if _, ok, err = parse.Whitespace.Parse(pi); err != nil || !ok {
+	// Optional whitespace leader.
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
@@ -207,8 +207,8 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r BoolExpr
 var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr ExpressionAttribute, ok bool, err error) {
 	start := pi.Index()
 
-	// whitespace leader
-	if _, ok, err = parse.Whitespace.Parse(pi); err != nil || !ok {
+	// Optional whitespace leader.
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
 		return
 	}
 
@@ -240,8 +240,16 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr Expressio
 })
 
 // Attributes.
-var attributeParser = parse.Func(func(in *parse.Input) (out Attribute, ok bool, err error) {
-	if out, ok, err = boolConstantAttributeParser.Parse(in); err != nil || ok {
+type attributeParser struct{}
+
+func (attributeParser) Parse(in *parse.Input) (out Attribute, ok bool, err error) {
+	if out, ok, err = boolExpressionAttributeParser.Parse(in); err != nil || ok {
+		return
+	}
+	if out, ok, err = expressionAttributeParser.Parse(in); err != nil || ok {
+		return
+	}
+	if out, ok, err = conditionalAttributeParser.Parse(in); err != nil || ok {
 		return
 	}
 	if out, ok, err = boolConstantAttributeParser.Parse(in); err != nil || ok {
@@ -250,15 +258,26 @@ var attributeParser = parse.Func(func(in *parse.Input) (out Attribute, ok bool, 
 	if out, ok, err = constantAttributeParser.Parse(in); err != nil || ok {
 		return
 	}
-	if out, ok, err = boolExpressionAttributeParser.Parse(in); err != nil || ok {
-		return
-	}
-	if out, ok, err = expressionAttributeParser.Parse(in); err != nil || ok {
-		return
-	}
 	return
-})
-var attributesParser = parse.AtMost(255, attributeParser)
+}
+
+// var attributesParser = parse.AtMost[Attribute](255, attributeParser{})
+type attributesParser struct{}
+
+func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool, err error) {
+	for {
+		var attr Attribute
+		attr, ok, err = attributeParser{}.Parse(in)
+		if err != nil {
+			return
+		}
+		if !ok {
+			break
+		}
+		attributes = append(attributes, attr)
+	}
+	return attributes, true, nil
+}
 
 // Element name.
 var elementNameFirst = "abcdefghijklmnopqrstuvwxyz"
@@ -334,7 +353,7 @@ var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, e
 		return
 	}
 
-	if e.Attributes, ok, err = attributesParser.Parse(pi); err != nil || !ok {
+	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
