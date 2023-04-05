@@ -5,18 +5,18 @@ templ render(p person) {
 		if p.important {
 			class="important"
 		}
->Important</div>
+	>Important</div>
 	<div style="width: 100;"
 		if !p.important {
 			class="unimportant"
 		}
->Unimportant</div>
+	>Unimportant</div>
 	<div style="width: 100;"
 		if p.important {
 			class="important"
 		} else {
 			class="unimportant"
 		}
->Else</div>
+	>Else</div>
 }
 

@@ -385,10 +385,8 @@ func (e Element) Write(w io.Writer, indent int) error {
 		// Only the conditional attributes get indented.
 		var attrIndent int
 		if previousWasMultiline || a.IsMultilineAttr() {
-			previousWasMultiline = true
 			attrIndent = indent + 1
 		} else {
-			previousWasMultiline = false
 			if _, err := w.Write([]byte(" ")); err != nil {
 				return err
 			}
@@ -396,10 +394,15 @@ func (e Element) Write(w io.Writer, indent int) error {
 		if err := a.Write(w, attrIndent); err != nil {
 			return err
 		}
+		previousWasMultiline = a.IsMultilineAttr()
+	}
+	var closeAngleBracketIndent int
+	if previousWasMultiline {
+		closeAngleBracketIndent = indent + 1
 	}
 	if e.hasNonWhitespaceChildren() {
 		if e.containsBlockElement() {
-			if _, err := w.Write([]byte(">\n")); err != nil {
+			if err := writeIndent(w, closeAngleBracketIndent, ">\n"); err != nil {
 				return err
 			}
 			if err := writeNodesBlock(w, indent+1, e.Children); err != nil {
@@ -410,7 +413,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 			}
 			return nil
 		}
-		if _, err := w.Write([]byte(">")); err != nil {
+		if err := writeIndent(w, closeAngleBracketIndent, ">"); err != nil {
 			return err
 		}
 		if err := writeNodesInline(w, e.Children); err != nil {
@@ -422,12 +425,12 @@ func (e Element) Write(w io.Writer, indent int) error {
 		return nil
 	}
 	if e.IsVoidElement() {
-		if _, err := w.Write([]byte("/>")); err != nil {
+		if err := writeIndent(w, closeAngleBracketIndent, "/>"); err != nil {
 			return err
 		}
 		return nil
 	}
-	if _, err := w.Write([]byte("></" + e.Name + ">")); err != nil {
+	if err := writeIndent(w, closeAngleBracketIndent, "></"+e.Name+">"); err != nil {
 		return err
 	}
 	return nil
