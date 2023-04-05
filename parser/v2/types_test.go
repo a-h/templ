@@ -364,6 +364,32 @@ templ conditionalAttributes(addClass bool) {
 `,
 		},
 		{
+			name: "conditional expressions have their end > indented",
+			input: ` // first line removed to make indentation clear
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div id="conditional"
+if addClass {
+class="itWasTrue"
+}
+>Content</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div id="conditional"
+		if addClass {
+			class="itWasTrue"
+		}
+		>Content</div>
+}
+
+`,
+		},
+		{
 			name: "conditional expressions with else blocks are also formatted",
 			input: ` // first line removed to make indentation clear
 package test
