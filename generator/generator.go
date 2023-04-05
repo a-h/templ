@@ -1059,7 +1059,9 @@ func (g *generator) writeConditionalAttribute(indentLevel int, elementName strin
 	}
 	{
 		indentLevel++
-		g.writeElementAttributes(indentLevel, elementName, attr.Then)
+		if err = g.writeElementAttributes(indentLevel, elementName, attr.Then); err != nil {
+			return err
+		}
 		indentLevel--
 	}
 	if len(attr.Else) > 0 {
@@ -1069,7 +1071,9 @@ func (g *generator) writeConditionalAttribute(indentLevel int, elementName strin
 		}
 		{
 			indentLevel++
-			g.writeElementAttributes(indentLevel, elementName, attr.Else)
+			if err = g.writeElementAttributes(indentLevel, elementName, attr.Else); err != nil {
+				return err
+			}
 			indentLevel--
 		}
 	}

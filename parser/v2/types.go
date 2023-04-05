@@ -591,7 +591,9 @@ func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
 	{
 		indent++
 		for _, attr := range ca.Then {
-			attr.Write(w, indent)
+			if err := attr.Write(w, indent); err != nil {
+				return err
+			}
 			if _, err := w.Write([]byte("\n")); err != nil {
 				return err
 			}
@@ -614,7 +616,9 @@ func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
 	{
 		indent++
 		for _, attr := range ca.Else {
-			attr.Write(w, indent)
+			if err := attr.Write(w, indent); err != nil {
+				return err
+			}
 			if _, err := w.Write([]byte("\n")); err != nil {
 				return err
 			}
