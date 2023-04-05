@@ -29,8 +29,17 @@ var conditionalAttributeParser = parse.Func(func(pi *parse.Input) (r Conditional
 		return
 	}
 
+	if len(r.Then) == 0 {
+		err = parse.Error("attribute if: invalid content or no attributes were found in the if block", pi.Position())
+		return
+	}
+
 	// Read the optional 'Else' Nodes.
-	if r.Else, _, err = attributeElseExpression.Parse(pi); err != nil {
+	if r.Else, ok, err = attributeElseExpression.Parse(pi); err != nil {
+		return
+	}
+	if ok && len(r.Else) == 0 {
+		err = parse.Error("attribute if: invalid content or no attributes were found in the else block", pi.Position())
 		return
 	}
 
