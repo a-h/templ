@@ -46,7 +46,7 @@ templ Hello() {
 			t.Errorf("expected \"goof\", got %q", tf.Package.Expression.Value)
 		}
 	})
-	t.Run("template files can end with Go too", func(t *testing.T) {
+	t.Run("template files can end with Go expressions", func(t *testing.T) {
 		input := `package goof
 
 const x = "123"

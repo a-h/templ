@@ -510,21 +510,25 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 	if _, err = g.w.Write(` {` + "\n"); err != nil {
 		return err
 	}
-	indentLevel++
-	if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Then)); err != nil {
-		return err
+	{
+		indentLevel++
+		if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Then)); err != nil {
+			return err
+		}
+		indentLevel--
 	}
-	indentLevel--
 	if len(n.Else) > 0 {
 		// } else {
 		if _, err = g.w.WriteIndent(indentLevel, `} else {`+"\n"); err != nil {
 			return err
 		}
-		indentLevel++
-		if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Else)); err != nil {
-			return err
+		{
+			indentLevel++
+			if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Else)); err != nil {
+				return err
+			}
+			indentLevel--
 		}
-		indentLevel--
 	}
 	// }
 	if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
@@ -1038,6 +1042,44 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	return nil
 }
 
+func (g *generator) writeConditionalAttribute(indentLevel int, elementName string, attr parser.ConditionalAttribute) (err error) {
+	// if
+	if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
+		return err
+	}
+	// x == y
+	var r parser.Range
+	if r, err = g.w.Write(attr.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(attr.Expression, r)
+	// {
+	if _, err = g.w.Write(` {` + "\n"); err != nil {
+		return err
+	}
+	{
+		indentLevel++
+		g.writeElementAttributes(indentLevel, elementName, attr.Then)
+		indentLevel--
+	}
+	if len(attr.Else) > 0 {
+		// } else {
+		if _, err = g.w.WriteIndent(indentLevel, `} else {`+"\n"); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			g.writeElementAttributes(indentLevel, elementName, attr.Else)
+			indentLevel--
+		}
+	}
+	// }
+	if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (g *generator) writeElementAttributes(indentLevel int, name string, attrs []parser.Attribute) (err error) {
 	if _, err = g.w.WriteIndent(indentLevel, "// Element Attributes\n"); err != nil {
 		return err
@@ -1045,26 +1087,20 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 	for i := 0; i < len(attrs); i++ {
 		switch attr := attrs[i].(type) {
 		case parser.BoolConstantAttribute:
-			if err = g.writeBoolConstantAttribute(indentLevel, attr); err != nil {
-				return err
-			}
+			err = g.writeBoolConstantAttribute(indentLevel, attr)
 		case parser.ConstantAttribute:
-			if err = g.writeConstantAttribute(indentLevel, attr); err != nil {
-				return err
-			}
+			err = g.writeConstantAttribute(indentLevel, attr)
 		case parser.BoolExpressionAttribute:
-			if err = g.writeBoolExpressionAttribute(indentLevel, attr); err != nil {
-				return err
-			}
+			err = g.writeBoolExpressionAttribute(indentLevel, attr)
 		case parser.ExpressionAttribute:
-			if err = g.writeExpressionAttribute(indentLevel, name, attr); err != nil {
-				return err
-			}
+			err = g.writeExpressionAttribute(indentLevel, name, attr)
+		case parser.ConditionalAttribute:
+			err = g.writeConditionalAttribute(indentLevel, name, attr)
 		default:
-			return fmt.Errorf("unknown attribute type %s", reflect.TypeOf(attrs[i]))
+			err = fmt.Errorf("unknown attribute type %s", reflect.TypeOf(attrs[i]))
 		}
 	}
-	return err
+	return
 }
 
 func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err error) {

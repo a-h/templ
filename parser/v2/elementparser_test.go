@@ -52,7 +52,39 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
-			name: "conditional expression attribute",
+			name: "conditional expression attribute - single",
+			input: `
+		if p.important {
+			class="important"
+		}
+"`,
+			parser: StripType(conditionalAttributeParser),
+			expected: ConditionalAttribute{
+				Expression: Expression{
+					Value: "p.important",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  1,
+							Col:   5,
+						},
+						To: Position{
+							Index: 17,
+							Line:  1,
+							Col:   16,
+						},
+					},
+				},
+				Then: []Attribute{
+					ConstantAttribute{
+						Name:  "class",
+						Value: "important",
+					},
+				},
+			},
+		},
+		{
+			name: "conditional expression attribute - multiple",
 			input: `
 if test { 
 	class="itIsTrue"
@@ -391,6 +423,52 @@ func TestElementParser(t *testing.T) {
 						Value: "text-underline: auto",
 					},
 				},
+			},
+		},
+		{
+			name: "element: self-closing with multiple constant, conditional and expr attributes",
+			input: `<div style="width: 100;"
+		if p.important {
+			class="important"
+		}
+>Test</div>
+}
+
+`,
+			expected: Element{
+				Name: "div",
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "style",
+						Value: "width: 100;",
+					},
+					ConditionalAttribute{
+						Expression: Expression{
+							Value: `p.important`,
+							Range: Range{
+								From: Position{
+									Index: 30,
+									Line:  1,
+									Col:   5,
+								},
+								To: Position{
+									Index: 41,
+									Line:  1,
+									Col:   16,
+								},
+							},
+						},
+						Then: []Attribute{
+							ConstantAttribute{
+								Name:  "class",
+								Value: "important",
+							},
+						},
+					},
+				},
+				Children: []Node{Text{
+					Value: "Test",
+				}},
 			},
 		},
 		{
