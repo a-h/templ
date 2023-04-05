@@ -374,13 +374,6 @@ func containsNonTextNodes(nodes []Node) bool {
 	return false
 }
 
-func nextAttribute(attrs []Attribute, index int) (attr Attribute, ok bool) {
-	if index+1 >= len(attrs) {
-		return
-	}
-	return attrs[index+1], true
-}
-
 func (e Element) IsNode() bool { return true }
 func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<"+e.Name); err != nil {
