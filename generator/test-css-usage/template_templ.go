@@ -46,7 +46,7 @@ func Button(text string) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
 		// Element CSS
-		var var_2 templ.CSSClasses = templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe"))
+		var var_2 templ.CSSClasses = templ.Classes(className(), templ.Class("&&&unsafe"), "safe", templ.SafeClass("safe2"))
 		err = templ.RenderCSSItems(ctx, templBuffer, var_2...)
 		if err != nil {
 			return err
@@ -97,7 +97,7 @@ func Button(text string) templ.Component {
 	})
 }
 
-func ThreeButtons() templ.Component {
+func MapCSSExample() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -110,24 +110,14 @@ func ThreeButtons() templ.Component {
 			var_4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// CallTemplate
-		err = Button("A").Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
-		// CallTemplate
-		err = Button("B").Render(ctx, templBuffer)
-		if err != nil {
-			return err
-		}
 		// Element (standard)
 		// Element CSS
-		var var_5 templ.CSSClasses = templ.Classes(green())
+		var var_5 templ.CSSClasses = templ.Classes(map[string]bool{ "a": true, "b": false, "c": true })
 		err = templ.RenderCSSItems(ctx, templBuffer, var_5...)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<button")
+		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
 		}
@@ -148,6 +138,72 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
+		_, err = templBuffer.WriteString(">")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</div>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = io.Copy(w, templBuffer)
+		}
+		return err
+	})
+}
+
+func ThreeButtons() templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_6 := templ.GetChildren(ctx)
+		if var_6 == nil {
+			var_6 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		// CallTemplate
+		err = Button("A").Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		// CallTemplate
+		err = Button("B").Render(ctx, templBuffer)
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		// Element CSS
+		var var_7 templ.CSSClasses = templ.Classes(green())
+		err = templ.RenderCSSItems(ctx, templBuffer, var_7...)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<button")
+		if err != nil {
+			return err
+		}
+		// Element Attributes
+		_, err = templBuffer.WriteString(" class=")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(var_7.String()))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\"")
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString(" type=\"button\"")
 		if err != nil {
 			return err
@@ -157,12 +213,17 @@ func ThreeButtons() templ.Component {
 			return err
 		}
 		// StringExpression
-		var var_6 string = "Green"
-		_, err = templBuffer.WriteString(templ.EscapeString(var_6))
+		var var_8 string = "Green"
+		_, err = templBuffer.WriteString(templ.EscapeString(var_8))
 		if err != nil {
 			return err
 		}
 		_, err = templBuffer.WriteString("</button>")
+		if err != nil {
+			return err
+		}
+		// CallTemplate
+		err = MapCSSExample().Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}

@@ -128,37 +128,77 @@ func Bool(value bool) bool {
 }
 
 // Classes for CSS.
-func Classes(classes ...CSSClass) CSSClasses {
+// Supported types are string, ConstantCSSClass, ComponentCSSClass, map[string]bool.
+func Classes(classes ...any) CSSClasses {
 	return CSSClasses(classes)
 }
 
 // CSSClasses is a slice of CSS classes.
-type CSSClasses []CSSClass
+type CSSClasses []any
 
 // String returns the names of all CSS classes.
 func (classes CSSClasses) String() string {
 	if len(classes) == 0 {
 		return ""
 	}
-	sb := new(strings.Builder)
+
+	// Work through the CSS class types, and determine whether the classes are enabled.
+	classNameToEnabled := make(map[string]bool)
+	var orderedNames []string
 	for i := 0; i < len(classes); i++ {
-		c := classes[i]
-		sb.WriteString(c.ClassName())
-		if i < len(classes)-1 {
-			sb.WriteRune(' ')
+		switch c := classes[i].(type) {
+		case string:
+			if !safeClassName.MatchString(c) {
+				classNameToEnabled[fallbackClassName] = true
+				orderedNames = append(orderedNames, fallbackClassName)
+				continue
+			}
+			classNameToEnabled[c] = true
+			orderedNames = append(orderedNames, c)
+		case ConstantCSSClass:
+			classNameToEnabled[c.ClassName()] = true
+			orderedNames = append(orderedNames, c.ClassName())
+		case ComponentCSSClass:
+			classNameToEnabled[c.ID] = true
+			orderedNames = append(orderedNames, c.ClassName())
+		case map[string]bool:
+			for className, enabled := range c {
+				classNameToEnabled[className] = enabled
+				orderedNames = append(orderedNames, className)
+			}
+		default:
+			// Unknown type.
+			classNameToEnabled[unknownTypeClassName] = true
+			orderedNames = append(orderedNames, unknownTypeClassName)
 		}
 	}
-	return sb.String()
+
+	// Order the outputs according to how they were input, and remove disabled names.
+	rendered := make(map[string]any, len(classNameToEnabled))
+	var names []string
+	for _, name := range orderedNames {
+		if enabled := classNameToEnabled[name]; !enabled {
+			continue
+		}
+		if _, hasBeenRendered := rendered[name]; hasBeenRendered {
+			continue
+		}
+		names = append(names, name)
+		rendered[name] = struct{}{}
+	}
+
+	return strings.Join(names, " ")
 }
 
 var safeClassName = regexp.MustCompile(`^-?[_a-zA-Z]+[-_a-zA-Z0-9]*$`)
 
-const fallbackClassName = ConstantCSSClass("--templ-css-class-safe-name")
+const fallbackClassName = "--templ-css-class-safe-name"
+const unknownTypeClassName = "--templ-css-class-unknown-type"
 
 // Class returns a sanitized CSS class name.
 func Class(name string) CSSClass {
 	if !safeClassName.MatchString(name) {
-		return fallbackClassName
+		return SafeClass(fallbackClassName)
 	}
 	return SafeClass(name)
 }
@@ -228,7 +268,7 @@ func (cssm CSSMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Add registered classes to the context.
 	ctx, v := getContext(r.Context())
 	for _, c := range cssm.CSSHandler.Classes {
-		v.addClass(c.ClassName())
+		v.addClass(c.ID)
 	}
 	// Serve the request. Templ components will use the updated context
 	// to know to skip rendering <style> elements for any component CSS
@@ -262,7 +302,7 @@ func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // RenderCSSItems renders the CSS to the writer, if the items haven't already been rendered.
-func RenderCSSItems(ctx context.Context, w io.Writer, classes ...CSSClass) (err error) {
+func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error) {
 	if len(classes) == 0 {
 		return nil
 	}
@@ -270,9 +310,9 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...CSSClass) (err 
 	sb := new(strings.Builder)
 	for _, c := range classes {
 		if ccc, ok := c.(ComponentCSSClass); ok {
-			if !v.hasClassBeenRendered(ccc.ClassName()) {
+			if !v.hasClassBeenRendered(ccc.ID) {
 				sb.WriteString(string(ccc.Class))
-				v.addClass(ccc.ClassName())
+				v.addClass(ccc.ID)
 			}
 		}
 	}

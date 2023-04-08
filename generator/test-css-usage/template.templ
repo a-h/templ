@@ -10,12 +10,17 @@ css className() {
 }
 
 templ Button(text string) {
-	<button class={ templ.Classes(className(), templ.Class("&&&unsafe"), templ.SafeClass("safe")) } type="button">{ text }</button>
+	<button class={ templ.Classes(className(), templ.Class("&&&unsafe"), "safe", templ.SafeClass("safe2")) } type="button">{ text }</button>
+}
+
+templ MapCSSExample() {
+	<div class={ templ.Classes(map[string]bool{ "a": true, "b": false, "c": true }) }></div>
 }
 
 templ ThreeButtons() {
 	{! Button("A") }
 	{! Button("B") }
 	<button class={ templ.Classes(green()) } type="button">{ "Green" }</button>
+	{! MapCSSExample() }
 }
 
