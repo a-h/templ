@@ -379,18 +379,30 @@ func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<"+e.Name); err != nil {
 		return err
 	}
+	var previousWasMultiline bool
 	for i := 0; i < len(e.Attributes); i++ {
-		if _, err := w.Write([]byte(" ")); err != nil {
-			return err
-		}
 		a := e.Attributes[i]
-		if _, err := w.Write([]byte(a.String())); err != nil {
+		// Only the conditional attributes get indented.
+		var attrIndent int
+		if previousWasMultiline || a.IsMultilineAttr() {
+			attrIndent = indent + 1
+		} else {
+			if _, err := w.Write([]byte(" ")); err != nil {
+				return err
+			}
+		}
+		if err := a.Write(w, attrIndent); err != nil {
 			return err
 		}
+		previousWasMultiline = a.IsMultilineAttr()
+	}
+	var closeAngleBracketIndent int
+	if previousWasMultiline {
+		closeAngleBracketIndent = indent + 1
 	}
 	if e.hasNonWhitespaceChildren() {
 		if e.containsBlockElement() {
-			if _, err := w.Write([]byte(">\n")); err != nil {
+			if err := writeIndent(w, closeAngleBracketIndent, ">\n"); err != nil {
 				return err
 			}
 			if err := writeNodesBlock(w, indent+1, e.Children); err != nil {
@@ -401,7 +413,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 			}
 			return nil
 		}
-		if _, err := w.Write([]byte(">")); err != nil {
+		if err := writeIndent(w, closeAngleBracketIndent, ">"); err != nil {
 			return err
 		}
 		if err := writeNodesInline(w, e.Children); err != nil {
@@ -413,12 +425,12 @@ func (e Element) Write(w io.Writer, indent int) error {
 		return nil
 	}
 	if e.IsVoidElement() {
-		if _, err := w.Write([]byte("/>")); err != nil {
+		if err := writeIndent(w, closeAngleBracketIndent, "/>"); err != nil {
 			return err
 		}
 		return nil
 	}
-	if _, err := w.Write([]byte("></" + e.Name + ">")); err != nil {
+	if err := writeIndent(w, closeAngleBracketIndent, "></"+e.Name+">"); err != nil {
 		return err
 	}
 	return nil
@@ -466,7 +478,8 @@ func (e RawElement) Write(w io.Writer, indent int) error {
 			return err
 		}
 		a := e.Attributes[i]
-		if _, err := w.Write([]byte(a.String())); err != nil {
+		// Don't indent the attributes, only the conditional attributes get indented.
+		if err := a.Write(w, 0); err != nil {
 			return err
 		}
 	}
@@ -485,8 +498,9 @@ func (e RawElement) Write(w io.Writer, indent int) error {
 }
 
 type Attribute interface {
-	IsAttribute() bool
-	String() string
+	IsMultilineAttr() bool
+	// Write out the string.
+	Write(w io.Writer, indent int) error
 }
 
 // <hr noshade/>
@@ -494,9 +508,12 @@ type BoolConstantAttribute struct {
 	Name string
 }
 
-func (bca BoolConstantAttribute) IsAttribute() bool { return true }
+func (bca BoolConstantAttribute) IsMultilineAttr() bool { return false }
 func (bca BoolConstantAttribute) String() string {
 	return bca.Name
+}
+func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, bca.String())
 }
 
 // href=""
@@ -505,9 +522,12 @@ type ConstantAttribute struct {
 	Value string
 }
 
-func (ca ConstantAttribute) IsAttribute() bool { return true }
+func (ca ConstantAttribute) IsMultilineAttr() bool { return false }
 func (ca ConstantAttribute) String() string {
 	return ca.Name + `="` + html.EscapeString(ca.Value) + `"`
+}
+func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, ca.String())
 }
 
 // href={ templ.Bool(...) }
@@ -516,9 +536,12 @@ type BoolExpressionAttribute struct {
 	Expression Expression
 }
 
-func (ea BoolExpressionAttribute) IsAttribute() bool { return true }
+func (ea BoolExpressionAttribute) IsMultilineAttr() bool { return false }
 func (ea BoolExpressionAttribute) String() string {
 	return ea.Name + `?={ ` + ea.Expression.Value + ` }`
+}
+func (ea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, ea.String())
 }
 
 // href={ ... }
@@ -527,9 +550,85 @@ type ExpressionAttribute struct {
 	Expression Expression
 }
 
-func (ea ExpressionAttribute) IsAttribute() bool { return true }
+func (ea ExpressionAttribute) IsMultilineAttr() bool { return false }
 func (ea ExpressionAttribute) String() string {
 	return ea.Name + `={ ` + ea.Expression.Value + ` }`
+}
+func (ea ExpressionAttribute) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, ea.String())
+}
+
+//	<a href="test" \
+//		if active {
+//	   class="isActive"
+//	 }
+type ConditionalAttribute struct {
+	Expression Expression
+	Then       []Attribute
+	Else       []Attribute
+}
+
+func (ca ConditionalAttribute) IsMultilineAttr() bool { return true }
+func (ca ConditionalAttribute) String() string {
+	sb := new(strings.Builder)
+	_ = ca.Write(sb, 0)
+	return sb.String()
+}
+
+func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
+	if _, err := w.Write([]byte("\n")); err != nil {
+		return err
+	}
+	if err := writeIndent(w, indent, "if "); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte(ca.Expression.Value)); err != nil {
+		return err
+	}
+	if _, err := w.Write([]byte(" {\n")); err != nil {
+		return err
+	}
+	{
+		indent++
+		for _, attr := range ca.Then {
+			if err := attr.Write(w, indent); err != nil {
+				return err
+			}
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
+		}
+		indent--
+	}
+	if err := writeIndent(w, indent, "}"); err != nil {
+		return err
+	}
+	if len(ca.Else) == 0 {
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
+		return nil
+	}
+	// Write the else blocks.
+	if _, err := w.Write([]byte(" else {\n")); err != nil {
+		return err
+	}
+	{
+		indent++
+		for _, attr := range ca.Else {
+			if err := attr.Write(w, indent); err != nil {
+				return err
+			}
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
+		}
+		indent--
+	}
+	if err := writeIndent(w, indent, "}\n"); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Nodes.

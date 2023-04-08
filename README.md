@@ -699,6 +699,12 @@ go tool covdata percent -i=./coverage/generate,./coverage/unit
 go tool covdata textfmt -i=./coverage/generate,./coverage/unit -o coverage.out
 ```
 
+### lint
+
+```sh
+docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.52.2 golangci-lint run -v
+```
+
 ### release
 
 Create production build with goreleaser.

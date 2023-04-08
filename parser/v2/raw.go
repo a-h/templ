@@ -32,7 +32,7 @@ func (p rawElementParser) Parse(pi *parse.Input) (e RawElement, ok bool, err err
 		return
 	}
 
-	if e.Attributes, ok, err = attributesParser.Parse(pi); err != nil || !ok {
+	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
