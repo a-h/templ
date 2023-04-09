@@ -286,6 +286,29 @@ func TestClassesFunction(t *testing.T) {
 			},
 			expected: "--templ-css-class-unknown-type c",
 		},
+		{
+			name: "string arrays are supported",
+			input: []any{
+				[]string{"a", "b", "c"},
+				"d",
+			},
+			expected: "a b c d",
+		},
+		{
+			name: "string arrays are checked for unsafe class names",
+			input: []any{
+				[]string{"a", "b", "c </style>"},
+				"d",
+			},
+			expected: "a b c --templ-css-class-safe-name d",
+		},
+		{
+			name: "strings are broken up",
+			input: []any{
+				"a </style>",
+			},
+			expected: "a --templ-css-class-safe-name",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

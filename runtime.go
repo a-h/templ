@@ -147,14 +147,30 @@ func (classes CSSClasses) String() string {
 	var orderedNames []string
 	for i := 0; i < len(classes); i++ {
 		switch c := classes[i].(type) {
-		case string:
-			if !safeClassName.MatchString(c) {
-				classNameToEnabled[fallbackClassName] = true
-				orderedNames = append(orderedNames, fallbackClassName)
-				continue
+		case []string:
+			for _, item := range c {
+				for _, className := range strings.Split(item, " ") {
+					className = strings.TrimSpace(className)
+					if !safeClassName.MatchString(className) {
+						classNameToEnabled[fallbackClassName] = true
+						orderedNames = append(orderedNames, fallbackClassName)
+						continue
+					}
+					classNameToEnabled[className] = true
+					orderedNames = append(orderedNames, className)
+				}
 			}
-			classNameToEnabled[c] = true
-			orderedNames = append(orderedNames, c)
+		case string:
+			for _, className := range strings.Split(c, " ") {
+				className = strings.TrimSpace(className)
+				if !safeClassName.MatchString(className) {
+					classNameToEnabled[fallbackClassName] = true
+					orderedNames = append(orderedNames, fallbackClassName)
+					continue
+				}
+				classNameToEnabled[className] = true
+				orderedNames = append(orderedNames, className)
+			}
 		case ConstantCSSClass:
 			classNameToEnabled[c.ClassName()] = true
 			orderedNames = append(orderedNames, c.ClassName())
