@@ -17,10 +17,15 @@ templ MapCSSExample() {
 	<div class={ templ.Classes(map[string]bool{ "a": true, "b": false, "c": true }) }></div>
 }
 
+templ KVExample() {
+	<div class={ templ.Classes("a", templ.KV("b", false)) }></div>
+}
+
 templ ThreeButtons() {
 	{! Button("A") }
 	{! Button("B") }
 	<button class={ templ.Classes(green()) } type="button">{ "Green" }</button>
 	{! MapCSSExample() }
+	{! KVExample() }
 }
 

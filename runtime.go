@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
@@ -143,57 +144,79 @@ func (classes CSSClasses) String() string {
 	}
 
 	// Work through the CSS class types, and determine whether the classes are enabled.
-	classNameToEnabled := make(map[string]bool)
-	var orderedNames []string
+	cp := newCSSProcessor()
 	for i := 0; i < len(classes); i++ {
 		switch c := classes[i].(type) {
 		case []string:
-			for _, item := range c {
-				for _, className := range strings.Split(item, " ") {
-					className = strings.TrimSpace(className)
-					if !safeClassName.MatchString(className) {
-						classNameToEnabled[fallbackClassName] = true
-						orderedNames = append(orderedNames, fallbackClassName)
-						continue
-					}
-					classNameToEnabled[className] = true
-					orderedNames = append(orderedNames, className)
-				}
+			for _, className := range c {
+				cp.AddUnsanitized(className, true)
 			}
 		case string:
-			for _, className := range strings.Split(c, " ") {
-				className = strings.TrimSpace(className)
-				if !safeClassName.MatchString(className) {
-					classNameToEnabled[fallbackClassName] = true
-					orderedNames = append(orderedNames, fallbackClassName)
-					continue
-				}
-				classNameToEnabled[className] = true
-				orderedNames = append(orderedNames, className)
-			}
+			cp.AddUnsanitized(c, true)
 		case ConstantCSSClass:
-			classNameToEnabled[c.ClassName()] = true
-			orderedNames = append(orderedNames, c.ClassName())
+			cp.AddSanitized(c.ClassName(), true)
 		case ComponentCSSClass:
-			classNameToEnabled[c.ID] = true
-			orderedNames = append(orderedNames, c.ClassName())
+			cp.AddSanitized(c.ClassName(), true)
 		case map[string]bool:
-			for className, enabled := range c {
-				classNameToEnabled[className] = enabled
-				orderedNames = append(orderedNames, className)
+			// In Go, map keys are iterated in a randomized order.
+			// So the keys in the map must be sorted to produce consistent output.
+			keys := make([]string, len(c))
+			var i int
+			for key := range c {
+				keys[i] = key
+				i++
 			}
+			sort.Strings(keys)
+			for _, className := range keys {
+				cp.AddUnsanitized(className, c[className])
+			}
+		case []KeyValue[string, bool]:
+			for _, kv := range c {
+				cp.AddUnsanitized(kv.Key, kv.Value)
+			}
+		case KeyValue[string, bool]:
+			cp.AddUnsanitized(c.Key, c.Value)
 		default:
-			// Unknown type.
-			classNameToEnabled[unknownTypeClassName] = true
-			orderedNames = append(orderedNames, unknownTypeClassName)
+			cp.AddSanitized(unknownTypeClassName, true)
 		}
 	}
 
+	return cp.String()
+}
+
+func newCSSProcessor() *cssProcessor {
+	return &cssProcessor{
+		classNameToEnabled: make(map[string]bool),
+	}
+}
+
+type cssProcessor struct {
+	classNameToEnabled map[string]bool
+	orderedNames       []string
+}
+
+func (cp *cssProcessor) AddUnsanitized(className string, enabled bool) {
+	for _, className := range strings.Split(className, " ") {
+		className = strings.TrimSpace(className)
+		if isSafe := safeClassName.MatchString(className); !isSafe {
+			className = fallbackClassName
+			enabled = true // Always display the fallback classname.
+		}
+		cp.AddSanitized(className, enabled)
+	}
+}
+
+func (cp *cssProcessor) AddSanitized(className string, enabled bool) {
+	cp.classNameToEnabled[className] = enabled
+	cp.orderedNames = append(cp.orderedNames, className)
+}
+
+func (cp *cssProcessor) String() string {
 	// Order the outputs according to how they were input, and remove disabled names.
-	rendered := make(map[string]any, len(classNameToEnabled))
+	rendered := make(map[string]any, len(cp.classNameToEnabled))
 	var names []string
-	for _, name := range orderedNames {
-		if enabled := classNameToEnabled[name]; !enabled {
+	for _, name := range cp.orderedNames {
+		if enabled := cp.classNameToEnabled[name]; !enabled {
 			continue
 		}
 		if _, hasBeenRendered := rendered[name]; hasBeenRendered {
@@ -204,6 +227,20 @@ func (classes CSSClasses) String() string {
 	}
 
 	return strings.Join(names, " ")
+}
+
+// KeyValue is a key and value pair.
+type KeyValue[TKey comparable, TValue any] struct {
+	Key   TKey   `json:"name"`
+	Value TValue `json:"value"`
+}
+
+// KV creates a new key/value pair from the input key and value.
+func KV[TKey comparable, TValue any](key TKey, value TValue) KeyValue[TKey, TValue] {
+	return KeyValue[TKey, TValue]{
+		Key:   key,
+		Value: value,
+	}
 }
 
 var safeClassName = regexp.MustCompile(`^-?[_a-zA-Z]+[-_a-zA-Z0-9]*$`)
