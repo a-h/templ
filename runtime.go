@@ -195,6 +195,8 @@ func (cp *cssProcessor) Add(item any) {
 		for _, item := range c {
 			cp.Add(item)
 		}
+	case func() CSSClass:
+		cp.AddSanitized(c().ClassName(), true)
 	default:
 		cp.AddSanitized(unknownTypeClassName, true)
 	}
@@ -375,6 +377,8 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 			}
 		case CSSClasses:
 			RenderCSSItems(ctx, w, ccc...)
+		case func() CSSClass:
+			RenderCSSItems(ctx, w, ccc())
 		}
 	}
 	if sb.Len() > 0 {

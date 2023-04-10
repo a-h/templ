@@ -290,7 +290,7 @@ func ThreeButtons() templ.Component {
 		}
 		// Element (standard)
 		// Element CSS
-		var var_11 = []any{templ.Classes(green())}
+		var var_11 = []any{templ.Classes(green)}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_11...)
 		if err != nil {
 			return err

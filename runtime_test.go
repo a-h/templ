@@ -347,6 +347,18 @@ func TestClassesFunction(t *testing.T) {
 			},
 			expected: "a b d",
 		},
+		{
+			name: "the brackets on component CSS function calls can be elided",
+			input: []any{
+				func() templ.CSSClass {
+					return templ.ComponentCSSClass{
+						ID:    "a",
+						Class: "",
+					}
+				},
+			},
+			expected: "a",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
