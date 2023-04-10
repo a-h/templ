@@ -376,9 +376,13 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 				v.addClass(ccc.ID)
 			}
 		case CSSClasses:
-			RenderCSSItems(ctx, w, ccc...)
+			if err = RenderCSSItems(ctx, w, ccc...); err != nil {
+				return
+			}
 		case func() CSSClass:
-			RenderCSSItems(ctx, w, ccc())
+			if err = RenderCSSItems(ctx, w, ccc()); err != nil {
+				return
+			}
 		}
 	}
 	if sb.Len() > 0 {
