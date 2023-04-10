@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/yosssi/gohtml"
 )
 
 //go:embed expected.html
@@ -18,7 +19,9 @@ func TestHTML(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to render: %v", err)
 	}
-	if diff := cmp.Diff(strings.TrimSpace(expected), w.String()); diff != "" {
+	actual := gohtml.Format(w.String())
+	expected = gohtml.Format(expected)
+	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Error(diff)
 	}
 }

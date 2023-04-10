@@ -142,45 +142,10 @@ func (classes CSSClasses) String() string {
 	if len(classes) == 0 {
 		return ""
 	}
-
-	// Work through the CSS class types, and determine whether the classes are enabled.
 	cp := newCSSProcessor()
-	for i := 0; i < len(classes); i++ {
-		switch c := classes[i].(type) {
-		case []string:
-			for _, className := range c {
-				cp.AddUnsanitized(className, true)
-			}
-		case string:
-			cp.AddUnsanitized(c, true)
-		case ConstantCSSClass:
-			cp.AddSanitized(c.ClassName(), true)
-		case ComponentCSSClass:
-			cp.AddSanitized(c.ClassName(), true)
-		case map[string]bool:
-			// In Go, map keys are iterated in a randomized order.
-			// So the keys in the map must be sorted to produce consistent output.
-			keys := make([]string, len(c))
-			var i int
-			for key := range c {
-				keys[i] = key
-				i++
-			}
-			sort.Strings(keys)
-			for _, className := range keys {
-				cp.AddUnsanitized(className, c[className])
-			}
-		case []KeyValue[string, bool]:
-			for _, kv := range c {
-				cp.AddUnsanitized(kv.Key, kv.Value)
-			}
-		case KeyValue[string, bool]:
-			cp.AddUnsanitized(c.Key, c.Value)
-		default:
-			cp.AddSanitized(unknownTypeClassName, true)
-		}
+	for _, v := range classes {
+		cp.Add(v)
 	}
-
 	return cp.String()
 }
 
@@ -193,6 +158,46 @@ func newCSSProcessor() *cssProcessor {
 type cssProcessor struct {
 	classNameToEnabled map[string]bool
 	orderedNames       []string
+}
+
+func (cp *cssProcessor) Add(item any) {
+	switch c := item.(type) {
+	case []string:
+		for _, className := range c {
+			cp.AddUnsanitized(className, true)
+		}
+	case string:
+		cp.AddUnsanitized(c, true)
+	case ConstantCSSClass:
+		cp.AddSanitized(c.ClassName(), true)
+	case ComponentCSSClass:
+		cp.AddSanitized(c.ClassName(), true)
+	case map[string]bool:
+		// In Go, map keys are iterated in a randomized order.
+		// So the keys in the map must be sorted to produce consistent output.
+		keys := make([]string, len(c))
+		var i int
+		for key := range c {
+			keys[i] = key
+			i++
+		}
+		sort.Strings(keys)
+		for _, className := range keys {
+			cp.AddUnsanitized(className, c[className])
+		}
+	case []KeyValue[string, bool]:
+		for _, kv := range c {
+			cp.AddUnsanitized(kv.Key, kv.Value)
+		}
+	case KeyValue[string, bool]:
+		cp.AddUnsanitized(c.Key, c.Value)
+	case CSSClasses:
+		for _, item := range c {
+			cp.Add(item)
+		}
+	default:
+		cp.AddSanitized(unknownTypeClassName, true)
+	}
 }
 
 func (cp *cssProcessor) AddUnsanitized(className string, enabled bool) {
@@ -362,11 +367,14 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 	_, v := getContext(ctx)
 	sb := new(strings.Builder)
 	for _, c := range classes {
-		if ccc, ok := c.(ComponentCSSClass); ok {
+		switch ccc := c.(type) {
+		case ComponentCSSClass:
 			if !v.hasClassBeenRendered(ccc.ID) {
 				sb.WriteString(string(ccc.Class))
 				v.addClass(ccc.ID)
 			}
+		case CSSClasses:
+			RenderCSSItems(ctx, w, ccc...)
 		}
 	}
 	if sb.Len() > 0 {

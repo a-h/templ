@@ -309,6 +309,44 @@ func TestClassesFunction(t *testing.T) {
 			},
 			expected: "a --templ-css-class-safe-name",
 		},
+		{
+			name: "if a templ.CSSClasses is passed in, the nested CSSClasses are extracted",
+			input: []any{
+				templ.Classes(
+					"a",
+					templ.SafeClass("b"),
+					templ.Class("c"),
+					templ.ComponentCSSClass{
+						ID:    "d",
+						Class: "{}",
+					},
+				),
+			},
+			expected: "a b c d",
+		},
+		{
+			name: "kv types can be used to show or hide classes",
+			input: []any{
+				"a",
+				templ.KV("b", true),
+				"c",
+				templ.KV("c", false),
+			},
+			expected: "a b",
+		},
+		{
+			name: "an array of KV types can be used to show or hide classes",
+			input: []any{
+				"a",
+				"c",
+				[]templ.KeyValue[string, bool]{
+					templ.KV("b", true),
+					templ.KV("c", false),
+					{"d", true},
+				},
+			},
+			expected: "a b d",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
