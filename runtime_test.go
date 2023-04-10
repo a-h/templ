@@ -14,7 +14,7 @@ import (
 )
 
 func TestCSSHandler(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name             string
 		input            []templ.ComponentCSSClass
 		expectedMIMEType string
@@ -73,7 +73,7 @@ func TestCSSMiddleware(t *testing.T) {
 		Class: ".c2{color:blue}",
 	}
 
-	var tests = []struct {
+	tests := []struct {
 		name             string
 		input            *http.Request
 		handler          http.Handler
@@ -127,9 +127,9 @@ func TestRenderCSS(t *testing.T) {
 		Class: ".c2{color:blue}",
 	}
 
-	var tests = []struct {
+	tests := []struct {
 		name     string
-		toIgnore []templ.CSSClass
+		toIgnore []any
 		expected string
 	}{
 		{
@@ -139,7 +139,7 @@ func TestRenderCSS(t *testing.T) {
 		},
 		{
 			name: "if something outside the expected is ignored, if has no effect",
-			toIgnore: []templ.CSSClass{
+			toIgnore: []any{
 				templ.ComponentCSSClass{
 					ID:    "c3",
 					Class: templ.SafeCSS(".c3{color:yellow}"),
@@ -149,12 +149,12 @@ func TestRenderCSS(t *testing.T) {
 		},
 		{
 			name:     "if one is ignored, it's not rendered",
-			toIgnore: []templ.CSSClass{c1},
+			toIgnore: []any{c1},
 			expected: `<style type="text/css">.c2{color:blue}</style>`,
 		},
 		{
 			name: "if all are ignored, not even style tags are rendered",
-			toIgnore: []templ.CSSClass{
+			toIgnore: []any{
 				c1,
 				c2,
 				templ.ComponentCSSClass{
@@ -180,7 +180,7 @@ func TestRenderCSS(t *testing.T) {
 
 			// Now render again to check that only the expected classes were rendered.
 			b.Reset()
-			err = templ.RenderCSSItems(ctx, b, []templ.CSSClass{c1, c2}...)
+			err = templ.RenderCSSItems(ctx, b, []any{c1, c2}...)
 			if err != nil {
 				t.Fatalf("failed to render CSS: %v", err)
 			}
@@ -193,7 +193,7 @@ func TestRenderCSS(t *testing.T) {
 }
 
 func TestClassSanitization(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		input    string
 		expected string
 	}{
@@ -227,7 +227,147 @@ func TestClassSanitization(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestClassesFunction(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []any
+		expected string
+	}{
+		{
+			name:     "safe constants are allowed",
+			input:    []any{"a", "b", "c"},
+			expected: "a b c",
+		},
+		{
+			name:     "unsafe constants are filtered",
+			input:    []any{"</style>", "b", "</style>"},
+			expected: "--templ-css-class-safe-name b",
+		},
+		{
+			name:     "legacy CSS types are supported",
+			input:    []any{"a", templ.SafeClass("b"), templ.Class("c")},
+			expected: "a b c",
+		},
+		{
+			name: "CSS components are included in the output",
+			input: []any{
+				templ.ComponentCSSClass{ID: "classA", Class: templ.SafeCSS(".classA{background-color:white;}")},
+				templ.ComponentCSSClass{ID: "classB", Class: templ.SafeCSS(".classB{background-color:green;}")},
+				"c",
+			},
+			expected: "classA classB c",
+		},
+		{
+			name: "optional classes can be applied with expressions",
+			input: []any{
+				"a",
+				templ.ComponentCSSClass{ID: "classA", Class: templ.SafeCSS(".classA{background-color:white;}")},
+				templ.ComponentCSSClass{ID: "classB", Class: templ.SafeCSS(".classB{background-color:green;}")},
+				"c",
+				map[string]bool{
+					"a":      false,
+					"classA": false,
+					"classB": false,
+					"c":      true,
+					"d":      false,
+				},
+			},
+			expected: "c",
+		},
+		{
+			name: "unknown types for classes get rendered as --templ-css-class-unknown-type",
+			input: []any{
+				123,
+				map[string]string{"test": "no"},
+				false,
+				"c",
+			},
+			expected: "--templ-css-class-unknown-type c",
+		},
+		{
+			name: "string arrays are supported",
+			input: []any{
+				[]string{"a", "b", "c"},
+				"d",
+			},
+			expected: "a b c d",
+		},
+		{
+			name: "string arrays are checked for unsafe class names",
+			input: []any{
+				[]string{"a", "b", "c </style>"},
+				"d",
+			},
+			expected: "a b c --templ-css-class-safe-name d",
+		},
+		{
+			name: "strings are broken up",
+			input: []any{
+				"a </style>",
+			},
+			expected: "a --templ-css-class-safe-name",
+		},
+		{
+			name: "if a templ.CSSClasses is passed in, the nested CSSClasses are extracted",
+			input: []any{
+				templ.Classes(
+					"a",
+					templ.SafeClass("b"),
+					templ.Class("c"),
+					templ.ComponentCSSClass{
+						ID:    "d",
+						Class: "{}",
+					},
+				),
+			},
+			expected: "a b c d",
+		},
+		{
+			name: "kv types can be used to show or hide classes",
+			input: []any{
+				"a",
+				templ.KV("b", true),
+				"c",
+				templ.KV("c", false),
+			},
+			expected: "a b",
+		},
+		{
+			name: "an array of KV types can be used to show or hide classes",
+			input: []any{
+				"a",
+				"c",
+				[]templ.KeyValue[string, bool]{
+					templ.KV("b", true),
+					templ.KV("c", false),
+					{"d", true},
+				},
+			},
+			expected: "a b d",
+		},
+		{
+			name: "the brackets on component CSS function calls can be elided",
+			input: []any{
+				func() templ.CSSClass {
+					return templ.ComponentCSSClass{
+						ID:    "a",
+						Class: "",
+					}
+				},
+			},
+			expected: "a",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual := templ.Classes(test.input...).String()
+			if actual != test.expected {
+				t.Errorf("expected %q, got %q", test.expected, actual)
+			}
+		})
+	}
 }
 
 func TestHandler(t *testing.T) {
@@ -241,7 +381,7 @@ func TestHandler(t *testing.T) {
 		return errors.New("handler error")
 	})
 
-	var tests = []struct {
+	tests := []struct {
 		name           string
 		input          *templ.ComponentHandler
 		expectedStatus int

@@ -139,7 +139,7 @@ if err != nil {
 		}
 		// Element (standard)
 		// Element CSS
-		var var_6 templ.CSSClasses = templ.Classes(row())
+		var var_6 = []any{templ.Classes(row())}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_6...)
 		if err != nil {
 			return err
@@ -157,7 +157,7 @@ if err != nil {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(var_6.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_6).String()))
 		if err != nil {
 			return err
 		}
@@ -171,7 +171,7 @@ if err != nil {
 		}
 		// Element (standard)
 		// Element CSS
-		var var_7 templ.CSSClasses = templ.Classes(column(), code())
+		var var_7 = []any{templ.Classes(column(), code())}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_7...)
 		if err != nil {
 			return err
@@ -189,7 +189,7 @@ if err != nil {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(var_7.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_7).String()))
 		if err != nil {
 			return err
 		}
@@ -212,7 +212,7 @@ if err != nil {
 		}
 		// Element (standard)
 		// Element CSS
-		var var_8 templ.CSSClasses = templ.Classes(column(), code())
+		var var_8 = []any{templ.Classes(column(), code())}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_8...)
 		if err != nil {
 			return err
@@ -230,7 +230,7 @@ if err != nil {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(var_8.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_8).String()))
 		if err != nil {
 			return err
 		}
@@ -315,7 +315,7 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
 		// Element CSS
-		var var_10 templ.CSSClasses = templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))
+		var var_10 = []any{templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_10...)
 		if err != nil {
 			return err
@@ -338,7 +338,7 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(var_10.String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_10).String()))
 		if err != nil {
 			return err
 		}

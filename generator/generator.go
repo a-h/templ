@@ -837,9 +837,10 @@ func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err erro
 				return err
 			}
 			// Create a class name for the style.
-			// var templCSSClassess templ.CSSClasses =
+			// The expression can either be expecting a templ.Classes call, or an expression that returns
+			// var templCSSClassess = []any{
 			classesName := g.createVariableName()
-			if _, err = g.w.WriteIndent(indentLevel, "var "+classesName+" templ.CSSClasses = "); err != nil {
+			if _, err = g.w.WriteIndent(indentLevel, "var "+classesName+" = []any{"); err != nil {
 				return err
 			}
 			// p.Name()
@@ -847,7 +848,8 @@ func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err erro
 				return err
 			}
 			g.sourceMap.Add(attr.Expression, r)
-			if _, err = g.w.Write("\n"); err != nil {
+			// }\n
+			if _, err = g.w.Write("}\n"); err != nil {
 				return err
 			}
 			// Render the CSS before the element if required.
@@ -860,7 +862,7 @@ func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err erro
 			}
 			// Rewrite the ExpressionAttribute to point at the new variable.
 			attr.Expression = parser.Expression{
-				Value: classesName + ".String()",
+				Value: "templ.CSSClasses(" + classesName + ").String()",
 			}
 			n.Attributes[i] = attr
 		}

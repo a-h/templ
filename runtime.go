@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
@@ -128,37 +129,136 @@ func Bool(value bool) bool {
 }
 
 // Classes for CSS.
-func Classes(classes ...CSSClass) CSSClasses {
+// Supported types are string, ConstantCSSClass, ComponentCSSClass, map[string]bool.
+func Classes(classes ...any) CSSClasses {
 	return CSSClasses(classes)
 }
 
 // CSSClasses is a slice of CSS classes.
-type CSSClasses []CSSClass
+type CSSClasses []any
 
 // String returns the names of all CSS classes.
 func (classes CSSClasses) String() string {
 	if len(classes) == 0 {
 		return ""
 	}
-	sb := new(strings.Builder)
-	for i := 0; i < len(classes); i++ {
-		c := classes[i]
-		sb.WriteString(c.ClassName())
-		if i < len(classes)-1 {
-			sb.WriteRune(' ')
-		}
+	cp := newCSSProcessor()
+	for _, v := range classes {
+		cp.Add(v)
 	}
-	return sb.String()
+	return cp.String()
+}
+
+func newCSSProcessor() *cssProcessor {
+	return &cssProcessor{
+		classNameToEnabled: make(map[string]bool),
+	}
+}
+
+type cssProcessor struct {
+	classNameToEnabled map[string]bool
+	orderedNames       []string
+}
+
+func (cp *cssProcessor) Add(item any) {
+	switch c := item.(type) {
+	case []string:
+		for _, className := range c {
+			cp.AddUnsanitized(className, true)
+		}
+	case string:
+		cp.AddUnsanitized(c, true)
+	case ConstantCSSClass:
+		cp.AddSanitized(c.ClassName(), true)
+	case ComponentCSSClass:
+		cp.AddSanitized(c.ClassName(), true)
+	case map[string]bool:
+		// In Go, map keys are iterated in a randomized order.
+		// So the keys in the map must be sorted to produce consistent output.
+		keys := make([]string, len(c))
+		var i int
+		for key := range c {
+			keys[i] = key
+			i++
+		}
+		sort.Strings(keys)
+		for _, className := range keys {
+			cp.AddUnsanitized(className, c[className])
+		}
+	case []KeyValue[string, bool]:
+		for _, kv := range c {
+			cp.AddUnsanitized(kv.Key, kv.Value)
+		}
+	case KeyValue[string, bool]:
+		cp.AddUnsanitized(c.Key, c.Value)
+	case CSSClasses:
+		for _, item := range c {
+			cp.Add(item)
+		}
+	case func() CSSClass:
+		cp.AddSanitized(c().ClassName(), true)
+	default:
+		cp.AddSanitized(unknownTypeClassName, true)
+	}
+}
+
+func (cp *cssProcessor) AddUnsanitized(className string, enabled bool) {
+	for _, className := range strings.Split(className, " ") {
+		className = strings.TrimSpace(className)
+		if isSafe := safeClassName.MatchString(className); !isSafe {
+			className = fallbackClassName
+			enabled = true // Always display the fallback classname.
+		}
+		cp.AddSanitized(className, enabled)
+	}
+}
+
+func (cp *cssProcessor) AddSanitized(className string, enabled bool) {
+	cp.classNameToEnabled[className] = enabled
+	cp.orderedNames = append(cp.orderedNames, className)
+}
+
+func (cp *cssProcessor) String() string {
+	// Order the outputs according to how they were input, and remove disabled names.
+	rendered := make(map[string]any, len(cp.classNameToEnabled))
+	var names []string
+	for _, name := range cp.orderedNames {
+		if enabled := cp.classNameToEnabled[name]; !enabled {
+			continue
+		}
+		if _, hasBeenRendered := rendered[name]; hasBeenRendered {
+			continue
+		}
+		names = append(names, name)
+		rendered[name] = struct{}{}
+	}
+
+	return strings.Join(names, " ")
+}
+
+// KeyValue is a key and value pair.
+type KeyValue[TKey comparable, TValue any] struct {
+	Key   TKey   `json:"name"`
+	Value TValue `json:"value"`
+}
+
+// KV creates a new key/value pair from the input key and value.
+func KV[TKey comparable, TValue any](key TKey, value TValue) KeyValue[TKey, TValue] {
+	return KeyValue[TKey, TValue]{
+		Key:   key,
+		Value: value,
+	}
 }
 
 var safeClassName = regexp.MustCompile(`^-?[_a-zA-Z]+[-_a-zA-Z0-9]*$`)
 
-const fallbackClassName = ConstantCSSClass("--templ-css-class-safe-name")
+const fallbackClassName = "--templ-css-class-safe-name"
+const unknownTypeClassName = "--templ-css-class-unknown-type"
 
 // Class returns a sanitized CSS class name.
 func Class(name string) CSSClass {
 	if !safeClassName.MatchString(name) {
-		return fallbackClassName
+		return SafeClass(fallbackClassName)
 	}
 	return SafeClass(name)
 }
@@ -228,7 +328,7 @@ func (cssm CSSMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Add registered classes to the context.
 	ctx, v := getContext(r.Context())
 	for _, c := range cssm.CSSHandler.Classes {
-		v.addClass(c.ClassName())
+		v.addClass(c.ID)
 	}
 	// Serve the request. Templ components will use the updated context
 	// to know to skip rendering <style> elements for any component CSS
@@ -262,17 +362,26 @@ func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // RenderCSSItems renders the CSS to the writer, if the items haven't already been rendered.
-func RenderCSSItems(ctx context.Context, w io.Writer, classes ...CSSClass) (err error) {
+func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error) {
 	if len(classes) == 0 {
 		return nil
 	}
 	_, v := getContext(ctx)
 	sb := new(strings.Builder)
 	for _, c := range classes {
-		if ccc, ok := c.(ComponentCSSClass); ok {
-			if !v.hasClassBeenRendered(ccc.ClassName()) {
+		switch ccc := c.(type) {
+		case ComponentCSSClass:
+			if !v.hasClassBeenRendered(ccc.ID) {
 				sb.WriteString(string(ccc.Class))
-				v.addClass(ccc.ClassName())
+				v.addClass(ccc.ID)
+			}
+		case CSSClasses:
+			if err = RenderCSSItems(ctx, w, ccc...); err != nil {
+				return
+			}
+		case func() CSSClass:
+			if err = RenderCSSItems(ctx, w, ccc()); err != nil {
+				return
 			}
 		}
 	}
