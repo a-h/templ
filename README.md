@@ -744,7 +744,7 @@ Requires: docs-install
 Directory: docs
 
 ```
-./build.sh
+hugo
 ```
 
 # Code signing
