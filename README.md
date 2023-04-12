@@ -1,4 +1,4 @@
-![templ](templ.png)
+![templ](https://github.com/a-h/templ/raw/main/templ.png)
 
 ## A HTML templating language for Go that has great developer tooling.
 
@@ -713,6 +713,38 @@ Create production build with goreleaser.
 if [ "${GITHUB_TOKEN}" == "" ]; then echo "No github token, run:"; echo "export GITHUB_TOKEN=`pass github.com/goreleaser_access_token`"; exit 1; fi
 ./push-tag.sh
 goreleaser --clean
+```
+
+### docs-install
+
+Install hugo dependencies.
+
+```
+go install --tags extended github.com/gohugoio/hugo@latest 
+```
+
+### docs-run
+
+Run the hugo development server.
+
+Requires: docs-install
+
+Directory: docs
+
+```
+hugo serve
+```
+
+### docs-build
+
+Build production docs site.
+
+Requires: docs-install
+
+Directory: docs
+
+```
+./build.sh
 ```
 
 # Code signing
