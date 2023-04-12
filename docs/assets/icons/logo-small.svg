@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="200.00012"
-   height="82.587265"
-   viewBox="0 0 158.75003 21.851215"
+   width="600"
+   height="600"
+   viewBox="0 0 21 21"
    version="1.1"
    id="svg5"
    inkscape:version="1.1.2 (1:1.1+202202050942+0a00cf5339)"
@@ -66,21 +66,19 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-57.174085,-202.41188)">
+     transform="translate(-57.174085,-209.41188)">
     <text
        xml:space="preserve"
        style="font-size:28.9091px;line-height:1.25;font-family:'Permanent Marker';-inkscape-font-specification:'Permanent Marker';stroke-width:0.150548;stroke-miterlimit:4;stroke-dasharray:none"
        x="57.175026"
-       y="223.67023"
+       y="50.67023"
        id="text6171"><tspan
          sodipodi:role="line"
          id="tspan6169"
-         style="font-size:28.9091px;stroke-width:0.150548;stroke-miterlimit:4;stroke-dasharray:none"
+         style="font-size:12.9091px;stroke-width:0.150548;stroke-miterlimit:4;stroke-dasharray:none"
          x="57.175026"
          y="223.67023"><tspan
    style="fill:#dbbd30;fill-opacity:1;stroke-width:0.150548;stroke-miterlimit:4;stroke-dasharray:none"
-   id="tspan17572">&lt;/&gt;</tspan> <tspan
-   style="fill:#66d0dd;fill-opacity:1;stroke-width:0.150548;stroke-miterlimit:4;stroke-dasharray:none"
-   id="tspan20372">TEMPL</tspan></tspan></text>
+   id="tspan17572">&lt;/&gt;</tspan></tspan></text>
   </g>
 </svg>
