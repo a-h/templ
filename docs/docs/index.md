@@ -11,3 +11,23 @@ sidebar_position: 1
 ## Features and benefits
 
 `todo`
+
+```html
+templ PersonTemplate(p Person) {
+	<div>
+	    for _, v := range p.Addresses {
+		    {! AddressTemplate(v) }
+	    }
+	</div>
+}
+```
+
+```go
+templ PersonTemplate(p Person) {
+	<div>
+	    for _, v := range p.Addresses {
+		    {! AddressTemplate(v) }
+	    }
+	</div>
+}
+```
