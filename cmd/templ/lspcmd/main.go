@@ -2,6 +2,7 @@ package lspcmd
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -63,7 +64,7 @@ func run(ctx context.Context, args Arguments) (err error) {
 		}
 		log, err = cfg.Build()
 		if err != nil {
-			log.Error("failed to create logger: %v\n", zap.Error(err))
+			_, _ = fmt.Printf("failed to create logger: %v\n", err)
 			os.Exit(1)
 		}
 	}
