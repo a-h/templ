@@ -1,4 +1,4 @@
-![templ](templ.png)
+![templ](https://github.com/a-h/templ/raw/main/templ.png)
 
 ## A HTML templating language for Go that has great developer tooling.
 
@@ -713,6 +713,26 @@ Create production build with goreleaser.
 if [ "${GITHUB_TOKEN}" == "" ]; then echo "No github token, run:"; echo "export GITHUB_TOKEN=`pass github.com/goreleaser_access_token`"; exit 1; fi
 ./push-tag.sh
 goreleaser --clean
+```
+
+### docs-run
+
+Run the development server.
+
+Directory: docs
+
+```
+npm run start
+```
+
+### docs-build
+
+Build production docs site.
+
+Directory: docs
+
+```
+npm run build
 ```
 
 # Code signing

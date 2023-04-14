@@ -1,0 +1,11 @@
+{
+  "position": 3,
+  "label": "Syntax and Usage",
+  "collapsible": true,
+  "collapsed": true,
+  "className": "red",
+  "link": {
+    "type": "generated-index",
+    "title": "Syntax and Usage"
+  }
+}
