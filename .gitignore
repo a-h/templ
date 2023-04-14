@@ -5,6 +5,6 @@ cmd/templ/lspcmd/*log.txt
 .DS_Store
 coverage.out
 coverage
-docs/public/
+docs/build/
 docs/resources/_gen/
 node_modules/

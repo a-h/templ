@@ -1,0 +1,11 @@
+{
+  "position": 2,
+  "label": "Getting Started",
+  "collapsible": true,
+  "collapsed": true,
+  "className": "red",
+  "link": {
+    "type": "generated-index",
+    "title": "Getting Started"
+  }
+}

@@ -715,36 +715,24 @@ if [ "${GITHUB_TOKEN}" == "" ]; then echo "No github token, run:"; echo "export 
 goreleaser --clean
 ```
 
-### docs-install
-
-Install hugo dependencies.
-
-```
-go install --tags extended github.com/gohugoio/hugo@latest 
-```
-
 ### docs-run
 
-Run the hugo development server.
-
-Requires: docs-install
+Run the development server.
 
 Directory: docs
 
 ```
-hugo serve
+npm run start
 ```
 
 ### docs-build
 
 Build production docs site.
 
-Requires: docs-install
-
 Directory: docs
 
 ```
-hugo
+npm run build
 ```
 
 # Code signing
