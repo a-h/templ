@@ -19,7 +19,6 @@ concurrency:
 
 defaults:
   run:
-    working-directory: docs
     shell: bash
 
 jobs:
@@ -38,6 +37,7 @@ jobs:
         with:
           node-version: '16'
           cache: npm
+          cache-dependency-path: "./docs/package-lock.json"
       - name: Install Node.js dependencies
         run: |
           cd docs
@@ -49,7 +49,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: ./build
+          path: ./docs/build
 
   deploy-docs:
     environment:
