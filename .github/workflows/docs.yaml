@@ -19,6 +19,7 @@ concurrency:
 
 defaults:
   run:
+    working-directory: docs
     shell: bash
 
 jobs:
@@ -41,14 +42,14 @@ jobs:
         run: |
           cd docs
           npm ci
-      - name: Build with Hugo
+      - name: Build
         run: |
           cd docs
           npm run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: ./docs/build
+          path: ./build
 
   deploy-docs:
     environment:
