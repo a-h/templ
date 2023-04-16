@@ -1,4 +1,0 @@
-# Installing templ
-
-`todo`
-
