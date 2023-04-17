@@ -608,6 +608,9 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 		return err
 	}
 	indentLevel++
+	if _, err = g.w.WriteIndent(indentLevel, "templBuffer := w.(*bytes.Buffer)\n"); err != nil {
+		return err
+	}
 	if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Children)); err != nil {
 		return err
 	}
