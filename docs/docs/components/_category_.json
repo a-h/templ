@@ -3,9 +3,5 @@
   "label": "Components",
   "collapsible": true,
   "collapsed": true,
-  "className": "red",
-  "link": {
-    "type": "generated-index",
-    "title": "Components"
-  }
+  "className": "red"
 }
