@@ -100,6 +100,11 @@ const config = {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
       },
+      algolia: {
+        appId: 'PVCVW9GL1Z',
+        apiKey: '06d455be65af1b8547a86243f870709f',
+        indexName: 'templ',
+      },
     }),
 };
 
