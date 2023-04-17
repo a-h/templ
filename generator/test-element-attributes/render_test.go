@@ -1,27 +1,28 @@
 package testelementattributes
 
 import (
-	"context"
 	_ "embed"
-	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	_ "embed"
+
+	"github.com/a-h/templ/generator/htmldiff"
 )
 
 //go:embed expected.html
 var expected string
 
-func TestHTML(t *testing.T) {
-	w := new(strings.Builder)
-	err := render(person{
+func Test(t *testing.T) {
+	component := render(person{
 		name:  "Luiz Bonfa",
 		email: "luiz@example.com",
-	}).Render(context.Background(), w)
+	})
+
+	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
-		t.Errorf("failed to render: %v", err)
+		t.Fatal(err)
 	}
-	if diff := cmp.Diff(strings.TrimSpace(expected), w.String()); diff != "" {
+	if diff != "" {
 		t.Error(diff)
 	}
 }

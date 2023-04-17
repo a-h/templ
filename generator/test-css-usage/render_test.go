@@ -10,7 +10,7 @@ import (
 //go:embed expected.html
 var expected string
 
-func TestHTML(t *testing.T) {
+func Test(t *testing.T) {
 	component := ThreeButtons()
 
 	diff, err := htmldiff.Diff(component, expected)

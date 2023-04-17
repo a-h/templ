@@ -1,24 +1,23 @@
 package testahref
 
 import (
-	"context"
-	"strings"
+	_ "embed"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/a-h/templ/generator/htmldiff"
 )
 
-const expected = `<a href="javascript:alert(&#39;unaffected&#39;);">Ignored</a>` +
-	`<a href="about:invalid#TemplFailedSanitizationURL">Sanitized</a>` +
-	`<a href="javascript:alert(&#39;should not be sanitized&#39;)">Unsanitized</a>`
+//go:embed expected.html
+var expected string
 
-func TestAHref(t *testing.T) {
-	w := new(strings.Builder)
-	err := render().Render(context.Background(), w)
+func Test(t *testing.T) {
+	component := render()
+
+	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
-		t.Errorf("failed to render: %v", err)
+		t.Fatal(err)
 	}
-	if diff := cmp.Diff(expected, w.String()); diff != "" {
+	if diff != "" {
 		t.Error(diff)
 	}
 }

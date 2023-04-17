@@ -1,22 +1,23 @@
 package testif
 
 import (
-	"context"
-	"strings"
+	_ "embed"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/a-h/templ/generator/htmldiff"
 )
 
-const expected = `True`
+//go:embed expected.html
+var expected string
 
-func TestRender(t *testing.T) {
-	w := new(strings.Builder)
-	err := render(data{}).Render(context.Background(), w)
+func Test(t *testing.T) {
+	component := render(data{})
+
+	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
-		t.Errorf("failed to render: %v", err)
+		t.Fatal(err)
 	}
-	if diff := cmp.Diff(expected, w.String()); diff != "" {
+	if diff != "" {
 		t.Error(diff)
 	}
 }

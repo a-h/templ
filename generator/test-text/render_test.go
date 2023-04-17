@@ -1,25 +1,24 @@
 package testtext
 
 import (
-	"context"
-	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	_ "embed"
+
+	"github.com/a-h/templ/generator/htmldiff"
 )
 
-const expected = `<div>Name: Luiz Bonfa</div>` +
-	`<div>Text ` + "`" + `with backticks` + "`" + `</div>` +
-	`<div>Text ` + "`" + `with backtick` + `</div>` +
-	`<div>Text ` + "`" + `with backtick alongside variable: ` + `Luiz Bonfa</div>`
+//go:embed expected.html
+var expected string
 
-func TestHTML(t *testing.T) {
-	w := new(strings.Builder)
-	err := BasicTemplate("Luiz Bonfa").Render(context.Background(), w)
+func Test(t *testing.T) {
+	component := BasicTemplate("Luiz Bonfa")
+
+	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
-		t.Errorf("failed to render: %v", err)
+		t.Fatal(err)
 	}
-	if diff := cmp.Diff(expected, w.String()); diff != "" {
+	if diff != "" {
 		t.Error(diff)
 	}
 }

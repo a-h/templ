@@ -1,22 +1,24 @@
 package testtemplelement
 
 import (
-	"context"
-	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	_ "embed"
+
+	"github.com/a-h/templ/generator/htmldiff"
 )
 
-const expected = `<div id="1">child1 <div id="2">child2 <div id="3">child3 <div id="4"></div></div></div></div>`
+//go:embed expected.html
+var expected string
 
-func TestFor(t *testing.T) {
-	w := new(strings.Builder)
-	err := template().Render(context.Background(), w)
+func Test(t *testing.T) {
+	component := template()
+
+	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
-		t.Errorf("failed to render: %v", err)
+		t.Fatal(err)
 	}
-	if diff := cmp.Diff(expected, w.String()); diff != "" {
+	if diff != "" {
 		t.Error(diff)
 	}
 }

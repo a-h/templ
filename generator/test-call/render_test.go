@@ -1,25 +1,26 @@
 package testcall
 
 import (
-	"context"
-	"strings"
+	_ "embed"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/a-h/templ/generator/htmldiff"
 )
 
-const expected = `<div><h1>Luiz Bonfa</h1><div style="font-family: &#39;sans-serif&#39;" id="test" data-contents="something with &#34;quotes&#34; and a &lt;tag&gt;"><div>email:<a href="mailto: luiz@example.com">luiz@example.com</a></div></div></div>`
+//go:embed expected.html
+var expected string
 
-func TestCall(t *testing.T) {
-	w := new(strings.Builder)
-	err := personTemplate(person{
+func Test(t *testing.T) {
+	component := personTemplate(person{
 		name:  "Luiz Bonfa",
 		email: "luiz@example.com",
-	}).Render(context.Background(), w)
+	})
+
+	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
-		t.Errorf("failed to render: %v", err)
+		t.Fatal(err)
 	}
-	if diff := cmp.Diff(expected, w.String()); diff != "" {
+	if diff != "" {
 		t.Error(diff)
 	}
 }

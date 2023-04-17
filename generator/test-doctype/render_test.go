@@ -1,31 +1,23 @@
 package testdoctype
 
 import (
-	"context"
-	"strings"
+	_ "embed"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/a-h/templ/generator/htmldiff"
 )
 
-const expected = `<!doctype html>` +
-	`<html lang="en">` +
-	`<head>` +
-	`<meta charset="UTF-8">` +
-	`<meta http-equiv="X-UA-Compatible" content="IE=edge">` +
-	`<meta name="viewport" content="width=device-width, initial-scale=1.0">` +
-	`<title>title</title>` +
-	`</head>` +
-	`<body>content</body>` +
-	`</html>`
+//go:embed expected.html
+var expected string
 
-func TestHTML(t *testing.T) {
-	w := new(strings.Builder)
-	err := Layout("title", "content").Render(context.Background(), w)
+func Test(t *testing.T) {
+	component := Layout("title", "content")
+
+	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
-		t.Errorf("failed to render: %v", err)
+		t.Fatal(err)
 	}
-	if diff := cmp.Diff(expected, w.String()); diff != "" {
+	if diff != "" {
 		t.Error(diff)
 	}
 }
