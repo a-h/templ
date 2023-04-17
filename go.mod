@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
+	github.com/a-h/htmlformat v0.0.0-20230417105637-bdff660c6c36
 	github.com/a-h/lexical v0.0.53
 	github.com/a-h/parse v0.0.0-20230402144745-e6c8bc86e846
 	github.com/a-h/pathvars v0.0.12
@@ -21,7 +22,6 @@ require (
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/segmentio/encoding v0.3.6 // indirect
-	github.com/yosssi/gohtml v0.0.0-20201013000340-ee4748c638f4 // indirect
 	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
