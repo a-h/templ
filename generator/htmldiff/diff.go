@@ -46,7 +46,9 @@ func Diff(input templ.Component, expected string) (diff string, err error) {
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to render component: %w", err))
 	}
+	w.Close()
 
+	// Wait for processing.
 	wg.Wait()
 
 	return cmp.Diff(expected, actual.String()), errors.Join(errs...)
