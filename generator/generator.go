@@ -254,6 +254,32 @@ func (g *generator) writeGoExpression(n parser.GoExpression) (err error) {
 	return err
 }
 
+func (g *generator) writeTemplBuffer(indentLevel int) (err error) {
+	// templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	if _, err = g.w.WriteIndent(indentLevel, "templBuffer, templIsBuffer := w.(*bytes.Buffer)\n"); err != nil {
+		return err
+	}
+	if _, err = g.w.WriteIndent(indentLevel, "if !templIsBuffer {\n"); err != nil {
+		return err
+	}
+	{
+		indentLevel++
+		// templBuffer = templ.GetBuffer()
+		if _, err = g.w.WriteIndent(indentLevel, "templBuffer = templ.GetBuffer()\n"); err != nil {
+			return err
+		}
+		// defer templ.ReleaseBuffer(templBuffer)
+		if _, err = g.w.WriteIndent(indentLevel, "defer templ.ReleaseBuffer(templBuffer)\n"); err != nil {
+			return err
+		}
+		indentLevel--
+	}
+	if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+		return err
+	}
+	return
+}
+
 func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 	var r parser.Range
 	var err error
@@ -279,26 +305,7 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 	}
 	{
 		indentLevel++
-		// templBuffer, templIsBuffer := w.(*bytes.Buffer)
-		if _, err = g.w.WriteIndent(indentLevel, "templBuffer, templIsBuffer := w.(*bytes.Buffer)\n"); err != nil {
-			return err
-		}
-		if _, err = g.w.WriteIndent(indentLevel, "if !templIsBuffer {\n"); err != nil {
-			return err
-		}
-		{
-			indentLevel++
-			// templBuffer = templ.GetBuffer()
-			if _, err = g.w.WriteIndent(indentLevel, "templBuffer = templ.GetBuffer()\n"); err != nil {
-				return err
-			}
-			// defer templ.ReleaseBuffer(templBuffer)
-			if _, err = g.w.WriteIndent(indentLevel, "defer templ.ReleaseBuffer(templBuffer)\n"); err != nil {
-				return err
-			}
-			indentLevel--
-		}
-		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+		if err := g.writeTemplBuffer(indentLevel); err != nil {
 			return err
 		}
 		// ctx = templ.InitializeContext(ctx)
@@ -608,10 +615,25 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 		return err
 	}
 	indentLevel++
-	if _, err = g.w.WriteIndent(indentLevel, "templBuffer := w.(*bytes.Buffer)\n"); err != nil {
+	if err := g.writeTemplBuffer(indentLevel); err != nil {
 		return err
 	}
 	if err = g.writeNodes(indentLevel, n, stripLeadingAndTrailingWhitespace(n.Children)); err != nil {
+		return err
+	}
+	// Return the buffer.
+	if _, err = g.w.WriteIndent(indentLevel, "if !templIsBuffer {\n"); err != nil {
+		return err
+	}
+	{
+		indentLevel++
+		// _, err = io.Copy(w, templBuffer)
+		if _, err = g.w.WriteIndent(indentLevel, "_, err = io.Copy(w, templBuffer)\n"); err != nil {
+			return err
+		}
+		indentLevel--
+	}
+	if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
 		return err
 	}
 	// return nil
