@@ -10,7 +10,7 @@ You start a component with the `templ` keyword, followed by the function signatu
 
 Inside the function body, you can add text, elements, and use standard Go `if`, `for` and `switch` statements.
 
-```html
+```templ
 package main
 
 templ list(items []string) {

@@ -4,7 +4,7 @@ Since templ produces Go code, you can share templates the same way that you shar
 
 templ follows the same rules as Go. If a `templ` block starts with an uppercase letter, then it is public, otherwise, it is private.
 
-```html title="greeting.templ"
+```templ title="greeting.templ"
 package main
 
 // Private.
