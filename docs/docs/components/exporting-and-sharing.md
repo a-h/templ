@@ -15,7 +15,7 @@ templ hello(name string) {
 // Public.
 templ Greeting(person Person) {
   <div class="greeting">
-    {! hello(person.Name) }
+    @hello(person.Name)
   </div>
 }
 ```
