@@ -451,6 +451,11 @@ func home() templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		// TemplElement
 		var_15 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			templBuffer, templIsBuffer := w.(*bytes.Buffer)
+			if !templIsBuffer {
+				templBuffer = templ.GetBuffer()
+				defer templ.ReleaseBuffer(templBuffer)
+			}
 			// Element (standard)
 			_, err = templBuffer.WriteString("<div")
 			if err != nil {
@@ -474,6 +479,9 @@ func home() templ.Component {
 			_, err = templBuffer.WriteString("</div>")
 			if err != nil {
 				return err
+			}
+			if !templIsBuffer {
+				_, err = io.Copy(w, templBuffer)
 			}
 			return err
 		})
@@ -503,10 +511,18 @@ func posts(posts []Post) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		// TemplElement
 		var_18 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			templBuffer, templIsBuffer := w.(*bytes.Buffer)
+			if !templIsBuffer {
+				templBuffer = templ.GetBuffer()
+				defer templ.ReleaseBuffer(templBuffer)
+			}
 			// TemplElement
 			err = postsTemplate(posts).Render(ctx, templBuffer)
 			if err != nil {
 				return err
+			}
+			if !templIsBuffer {
+				_, err = io.Copy(w, templBuffer)
 			}
 			return err
 		})

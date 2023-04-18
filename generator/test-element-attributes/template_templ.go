@@ -8,6 +8,27 @@ import "github.com/a-h/templ"
 import "context"
 import "io"
 import "bytes"
+import "strings"
+
+func important() templ.CSSClass {
+	var templCSSBuilder strings.Builder
+	templCSSBuilder.WriteString(`width:100;`)
+	templCSSID := templ.CSSID(`important`, templCSSBuilder.String())
+	return templ.ComponentCSSClass{
+		ID: templCSSID,
+		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
+	}
+}
+
+func unimportant() templ.CSSClass {
+	var templCSSBuilder strings.Builder
+	templCSSBuilder.WriteString(`width:50;`)
+	templCSSID := templ.CSSID(`unimportant`, templCSSBuilder.String())
+	return templ.ComponentCSSClass{
+		ID: templCSSID,
+		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
+	}
+}
 
 func render(p person) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
@@ -23,6 +44,12 @@ func render(p person) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
+		// Element CSS
+		var var_2 = []any{important()}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_2...)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
@@ -34,7 +61,19 @@ func render(p person) templ.Component {
 		}
 		if p.important {
 			// Element Attributes
-			_, err = templBuffer.WriteString(" class=\"important\"")
+			_, err = templBuffer.WriteString(" class=")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_2).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
 			if err != nil {
 				return err
 			}
@@ -44,8 +83,8 @@ func render(p person) templ.Component {
 			return err
 		}
 		// Text
-		var_2 := `Important`
-		_, err = templBuffer.WriteString(var_2)
+		var_3 := `Important`
+		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
 			return err
 		}
@@ -54,6 +93,12 @@ func render(p person) templ.Component {
 			return err
 		}
 		// Element (standard)
+		// Element CSS
+		var var_4 = []any{unimportant}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_4...)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
@@ -65,7 +110,19 @@ func render(p person) templ.Component {
 		}
 		if !p.important {
 			// Element Attributes
-			_, err = templBuffer.WriteString(" class=\"unimportant\"")
+			_, err = templBuffer.WriteString(" class=")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_4).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
 			if err != nil {
 				return err
 			}
@@ -75,8 +132,8 @@ func render(p person) templ.Component {
 			return err
 		}
 		// Text
-		var_3 := `Unimportant`
-		_, err = templBuffer.WriteString(var_3)
+		var_5 := `Unimportant`
+		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
 		}
@@ -85,6 +142,18 @@ func render(p person) templ.Component {
 			return err
 		}
 		// Element (standard)
+		// Element CSS
+		var var_6 = []any{important}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_6...)
+		if err != nil {
+			return err
+		}
+		// Element CSS
+		var var_7 = []any{unimportant}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_7...)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("<div")
 		if err != nil {
 			return err
@@ -96,13 +165,37 @@ func render(p person) templ.Component {
 		}
 		if p.important {
 			// Element Attributes
-			_, err = templBuffer.WriteString(" class=\"important\"")
+			_, err = templBuffer.WriteString(" class=")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_6).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
 			if err != nil {
 				return err
 			}
 		} else {
 			// Element Attributes
-			_, err = templBuffer.WriteString(" class=\"unimportant\"")
+			_, err = templBuffer.WriteString(" class=")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_7).String()))
+			if err != nil {
+				return err
+			}
+			_, err = templBuffer.WriteString("\"")
 			if err != nil {
 				return err
 			}
@@ -112,8 +205,8 @@ func render(p person) templ.Component {
 			return err
 		}
 		// Text
-		var_4 := `Else`
-		_, err = templBuffer.WriteString(var_4)
+		var_8 := `Else`
+		_, err = templBuffer.WriteString(var_8)
 		if err != nil {
 			return err
 		}

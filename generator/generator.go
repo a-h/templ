@@ -850,49 +850,75 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 	return err
 }
 
-func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err error) {
+func (g *generator) writeAttributeCSS(indentLevel int, attr parser.ExpressionAttribute) (result parser.ExpressionAttribute, ok bool, err error) {
 	var r parser.Range
-	for i := 0; i < len(n.Attributes); i++ {
-		if attr, ok := n.Attributes[i].(parser.ExpressionAttribute); ok {
-			name := html.EscapeString(attr.Name)
-			if name != "class" {
-				continue
-			}
-			if _, err = g.w.WriteIndent(indentLevel, "// Element CSS\n"); err != nil {
+	name := html.EscapeString(attr.Name)
+	if name != "class" {
+		ok = false
+		return
+	}
+	if _, err = g.w.WriteIndent(indentLevel, "// Element CSS\n"); err != nil {
+		return
+	}
+	// Create a class name for the style.
+	// The expression can either be expecting a templ.Classes call, or an expression that returns
+	// var templCSSClassess = []any{
+	classesName := g.createVariableName()
+	if _, err = g.w.WriteIndent(indentLevel, "var "+classesName+" = []any{"); err != nil {
+		return
+	}
+	// p.Name()
+	if r, err = g.w.Write(attr.Expression.Value); err != nil {
+		return
+	}
+	g.sourceMap.Add(attr.Expression, r)
+	// }\n
+	if _, err = g.w.Write("}\n"); err != nil {
+		return
+	}
+	// Render the CSS before the element if required.
+	// err = templ.RenderCSSItems(ctx, templBuffer, templCSSClassess...)
+	if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderCSSItems(ctx, templBuffer, "+classesName+"...)\n"); err != nil {
+		return
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return
+	}
+	// Rewrite the ExpressionAttribute to point at the new variable.
+	attr.Expression = parser.Expression{
+		Value: "templ.CSSClasses(" + classesName + ").String()",
+	}
+	return attr, true, nil
+}
+
+func (g *generator) writeAttributesCSS(indentLevel int, attrs []parser.Attribute) (err error) {
+	for i := 0; i < len(attrs); i++ {
+		if attr, ok := attrs[i].(parser.ExpressionAttribute); ok {
+			attr, ok, err = g.writeAttributeCSS(indentLevel, attr)
+			if err != nil {
 				return err
 			}
-			// Create a class name for the style.
-			// The expression can either be expecting a templ.Classes call, or an expression that returns
-			// var templCSSClassess = []any{
-			classesName := g.createVariableName()
-			if _, err = g.w.WriteIndent(indentLevel, "var "+classesName+" = []any{"); err != nil {
+			if ok {
+				attrs[i] = attr
+			}
+		}
+		if cattr, ok := attrs[i].(parser.ConditionalAttribute); ok {
+			err = g.writeAttributesCSS(indentLevel, cattr.Then)
+			if err != nil {
 				return err
 			}
-			// p.Name()
-			if r, err = g.w.Write(attr.Expression.Value); err != nil {
+			err = g.writeAttributesCSS(indentLevel, cattr.Else)
+			if err != nil {
 				return err
 			}
-			g.sourceMap.Add(attr.Expression, r)
-			// }\n
-			if _, err = g.w.Write("}\n"); err != nil {
-				return err
-			}
-			// Render the CSS before the element if required.
-			// err = templ.RenderCSSItems(ctx, templBuffer, templCSSClassess...)
-			if _, err = g.w.WriteIndent(indentLevel, "err = templ.RenderCSSItems(ctx, templBuffer, "+classesName+"...)\n"); err != nil {
-				return err
-			}
-			if err = g.writeErrorHandler(indentLevel); err != nil {
-				return err
-			}
-			// Rewrite the ExpressionAttribute to point at the new variable.
-			attr.Expression = parser.Expression{
-				Value: "templ.CSSClasses(" + classesName + ").String()",
-			}
-			n.Attributes[i] = attr
+			attrs[i] = cattr
 		}
 	}
-	return err
+	return nil
+}
+
+func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err error) {
+	return g.writeAttributesCSS(indentLevel, n.Attributes)
 }
 
 func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err error) {
