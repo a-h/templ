@@ -671,12 +671,20 @@ Use goreleaser to build the command line binary using goreleaser.
 goreleaser build --snapshot --rm-dist
 ```
 
+### generate
+
+Run templ generate using local version.
+
+```sh
+go run ./cmd/templ generate
+```
+
 ### test
 
 Run Go tests.
 
 ```sh
-templ generate && go test ./...
+go run ./cmd/templ generate && go test ./...
 ```
 
 ### test-cover
