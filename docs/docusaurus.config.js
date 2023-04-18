@@ -102,7 +102,7 @@ const config = {
       },
       algolia: {
         appId: 'PVCVW9GL1Z',
-        apiKey: '06d455be65af1b8547a86243f870709f',
+        apiKey: '0823e4b4272c719b5338ed75843f38ef',
         indexName: 'templ',
       },
     }),
