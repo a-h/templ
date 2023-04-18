@@ -82,6 +82,11 @@ func template() templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		// TemplElement
 		var_3 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			templBuffer, templIsBuffer := w.(*bytes.Buffer)
+			if !templIsBuffer {
+				templBuffer = templ.GetBuffer()
+				defer templ.ReleaseBuffer(templBuffer)
+			}
 			// Text
 			var_4 := `child1`
 			_, err = templBuffer.WriteString(var_4)
@@ -95,6 +100,11 @@ func template() templ.Component {
 			}
 			// TemplElement
 			var_5 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+				templBuffer, templIsBuffer := w.(*bytes.Buffer)
+				if !templIsBuffer {
+					templBuffer = templ.GetBuffer()
+					defer templ.ReleaseBuffer(templBuffer)
+				}
 				// Text
 				var_6 := `child2`
 				_, err = templBuffer.WriteString(var_6)
@@ -108,6 +118,11 @@ func template() templ.Component {
 				}
 				// TemplElement
 				var_7 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+					templBuffer, templIsBuffer := w.(*bytes.Buffer)
+					if !templIsBuffer {
+						templBuffer = templ.GetBuffer()
+						defer templ.ReleaseBuffer(templBuffer)
+					}
 					// Text
 					var_8 := `child3`
 					_, err = templBuffer.WriteString(var_8)
@@ -124,17 +139,26 @@ func template() templ.Component {
 					if err != nil {
 						return err
 					}
+					if !templIsBuffer {
+						_, err = io.Copy(w, templBuffer)
+					}
 					return err
 				})
 				err = wrapper(3).Render(templ.WithChildren(ctx, var_7), templBuffer)
 				if err != nil {
 					return err
 				}
+				if !templIsBuffer {
+					_, err = io.Copy(w, templBuffer)
+				}
 				return err
 			})
 			err = wrapper(2).Render(templ.WithChildren(ctx, var_5), templBuffer)
 			if err != nil {
 				return err
+			}
+			if !templIsBuffer {
+				_, err = io.Copy(w, templBuffer)
 			}
 			return err
 		})
