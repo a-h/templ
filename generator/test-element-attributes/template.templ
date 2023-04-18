@@ -1,22 +1,30 @@
 package testelementattributes
 
+css important() {
+	width: 100;
+}
+
+css unimportant() {
+	width: 50;
+}
+
 templ render(p person) {
 	<div style="width: 100;"
 		if p.important {
-			class="important"
+			class={ important() }
 		}
-	>Important</div>
+		>Important</div>
 	<div style="width: 100;"
 		if !p.important {
-			class="unimportant"
+			class={ unimportant }
 		}
-	>Unimportant</div>
+		>Unimportant</div>
 	<div style="width: 100;"
 		if p.important {
-			class="important"
+			class={ important }
 		} else {
-			class="unimportant"
+			class={ unimportant }
 		}
-	>Else</div>
+		>Else</div>
 }
 
