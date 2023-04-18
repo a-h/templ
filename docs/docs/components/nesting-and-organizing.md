@@ -6,7 +6,7 @@ Each `templ` block is converted into a Go function that return a `templ.Componen
 
 It is possible to nest templates, by using the "call" syntax.
 
-```html title="greeting.templ"
+```templ title="greeting.templ"
 package main
 
 templ Hello(name string) {

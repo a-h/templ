@@ -21,7 +21,7 @@ go mod init github.com/a-h/templ-examples/static-rendering
 
 To use it, create a `hello.templ` file containing a component.
 
-```html
+```templ
 package main
 
 templ hello(name string) {

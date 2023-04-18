@@ -15,7 +15,7 @@ Create components that render fragments of HTML and compose them to create scree
 * No JavaScript: Does not require any client or server-side JavaScript.
 * Great developer experience: Ships with IDE autocompletion.
 
-```html
+```templ
 package main
 
 templ Hello(name string) {
