@@ -1211,6 +1211,9 @@ func (g *generator) createVariableName() string {
 }
 
 func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) (err error) {
+	if strings.TrimSpace(e.Value) == "" {
+		return
+	}
 	if _, err = g.w.WriteIndent(indentLevel, "// StringExpression\n"); err != nil {
 		return err
 	}

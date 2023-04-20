@@ -1,23 +1,23 @@
 package teststring
 
 import (
-	"context"
-	"strings"
+	_ "embed"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/a-h/templ/generator/htmldiff"
 )
 
-const input = `Strings are HTML escaped. So ampersands (&), greater than (>), and less than symbols (<) are converted.`
-const expected = `Strings are HTML escaped. So ampersands (&amp;), greater than (&gt;), and less than symbols (&lt;) are converted.`
+//go:embed expected.html
+var expected string
 
-func TestRender(t *testing.T) {
-	w := new(strings.Builder)
-	err := render(input).Render(context.Background(), w)
+func Test(t *testing.T) {
+	component := render(`Strings are HTML escaped. So ampersands (&), greater than (>), and less than symbols (<) are converted.`)
+
+	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
-		t.Errorf("failed to render: %v", err)
+		t.Fatal(err)
 	}
-	if diff := cmp.Diff(expected, w.String()); diff != "" {
+	if diff != "" {
 		t.Error(diff)
 	}
 }
