@@ -16,7 +16,7 @@ templ Hello(name string) {
 templ Greeting(person Person) {
   <div class="greeting">
     // highlight-next-line
-    {! Hello(person.Name) }
+    @Hello(person.Name)
   </div>
 }
 ```
