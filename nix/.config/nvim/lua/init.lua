@@ -1,0 +1,5 @@
+require('goimports')
+require('lsp')
+require('settings')
+require('theme')
+require('treesitter')

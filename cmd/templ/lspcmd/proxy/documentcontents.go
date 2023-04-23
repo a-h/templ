@@ -146,6 +146,10 @@ func (d *Document) String() string {
 	return strings.Join(d.Lines, "\n")
 }
 
+func (d *Document) Replace(with string) {
+	d.Lines = strings.Split(with, "\n")
+}
+
 func (d *Document) Apply(r *lsp.Range, with string) {
 	withLines := strings.Split(with, "\n")
 	d.normalize(r)

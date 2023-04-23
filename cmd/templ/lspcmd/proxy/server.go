@@ -631,6 +631,7 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 		},
 		NewText: w.String(),
 	})
+	d.Replace(w.String())
 	return
 }
 

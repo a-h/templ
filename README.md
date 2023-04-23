@@ -645,6 +645,14 @@ To add extensive debug information, you can include additional args to the LSP, 
 
 ## Tasks
 
+### nix-develop
+
+Run a Nix shell that contains everything required to build templ.
+
+```sh
+nix develop --impure
+```
+
 ### build
 
 Build a local version.
@@ -741,6 +749,22 @@ Directory: docs
 
 ```
 npm run build
+```
+
+### docker-build
+
+Build a Docker container with a full development environment and Neovim setup for testing the LSP.
+
+```
+docker build -t templ:latest .
+```
+
+### docker-run
+
+Run a Docker development container in the current directory.
+
+```
+docker run -p 7474:7474 -v `pwd`:/templ -it --rm templ:latest
 ```
 
 # Code signing
