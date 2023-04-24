@@ -6,10 +6,6 @@
       url = "github:joerdav/xc";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    go = {
-      url = "github:a-h/nix-golang";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     neovim-nightly-overlay = {
       url = "github:nix-community/neovim-nightly-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -18,7 +14,7 @@
     };
   };
 
-  outputs = { self, flake-utils, nixpkgs, xc, go, neovim-nightly-overlay }:
+  outputs = { self, flake-utils, nixpkgs, xc, neovim-nightly-overlay }:
     flake-utils.lib.eachDefaultSystem (system:
     let 
       pkgsDefault = import nixpkgs { overlays = [ neovim-nightly-overlay.overlay ]; };
@@ -27,10 +23,9 @@
           (self: super: {
             xc = xc.packages.${system}.xc;
             neovim = import ./nix/nvim.nix { pkgs = pkgsDefault; };
-            go = go.packages.${system}.go_1_20_3;
             gopls = pkgs.callPackage ./nix/gopls.nix { };
             templ = pkgs.callPackage ./nix/templ.nix {
-              go = self.go;
+              go = pkgs.go_1_20;
               xc = self.xc;
             };
             nerdfonts = (pkgsDefault.nerdfonts.override { fonts = [ "IBMPlexMono" ]; });
