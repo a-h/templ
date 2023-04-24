@@ -2,9 +2,11 @@
 sidebar_position: 4
 ---
 
-# For loops
+# Loops
 
-templ supports iterating over slices, arrays and channels etc. using the for loop:
+## for
+
+templ supports iterating over slices, arrays and channels etc. using the Go `for` loop.
 
 ```templ
 templ listNames(items []Item) {
