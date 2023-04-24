@@ -26,19 +26,14 @@ Running the `templ generate` command will create a corresponding `.go` file cont
 
 In a `main.go` file, you can then use the list component.
 
-```
-package main
-
-import (
-	"context"
-	"os"
-)
-
+```go
 func main() {
 	ctx := context.Background()
 	list([]string{"a", "b", "c"}).Render(ctx, os.Stdout)
 }
 ```
+
+templ automatically minifies HTML. Piping the output through a formatter for readability gives the following result.
 
 ```
 go run *.go | htmlformat

@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Elements
 
-templ elements are used to render HTML. temp, except that they can also include placeholders for text.
+templ elements are used to render HTML.
 
 ## Output is minified
 
