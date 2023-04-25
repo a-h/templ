@@ -79,21 +79,6 @@ const config = {
       },
       footer: {
         style: 'dark',
-        links: [
-          {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Introduction',
-                to: '/',
-              },
-              {
-                label: 'Getting Started',
-                to: '/category/getting-started',
-              },
-            ],
-          },
-        ],
         copyright: `Copyright © ${new Date().getFullYear()} Adrian Hesketh, Built with Docusaurus.`,
       },
       prism: {
