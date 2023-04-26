@@ -11,7 +11,7 @@ import "bytes"
 
 // GoExpression
 import "path"
-	import "github.com/gosimple/slug"
+import "github.com/gosimple/slug"
 
 func headerComponent(title string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
@@ -182,7 +182,7 @@ func indexPage(posts []Post) templ.Component {
 			return err
 		}
 		// TemplElement
-		err = headerComponent("My Website").Render(ctx, templBuffer)
+		err = headerComponent("My Blog").Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
@@ -197,7 +197,7 @@ func indexPage(posts []Post) templ.Component {
 			return err
 		}
 		// Text
-		var_7 := `My Website`
+		var_7 := `My Blog`
 		_, err = templBuffer.WriteString(var_7)
 		if err != nil {
 			return err
@@ -227,7 +227,7 @@ func indexPage(posts []Post) templ.Component {
 			if err != nil {
 				return err
 			}
-			var var_8 templ.SafeURL = templ.SafeURL(path.Join(post.Date.Format("2006/01/02"), slug.Make(post.Title)))
+			var var_8 templ.SafeURL = templ.SafeURL(path.Join(post.Date.Format("2006/01/02"), slug.Make(post.Title), "/"))
 			_, err = templBuffer.WriteString(templ.EscapeString(string(var_8)))
 			if err != nil {
 				return err
