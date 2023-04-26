@@ -1,4 +1,4 @@
-# IDE Support
+# IDE support
 
 ## vscode
 
