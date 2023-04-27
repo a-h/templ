@@ -126,8 +126,14 @@ import (
 )
 
 func main() {
+	// Output path.
+	rootPath := "public"
+	if err := os.Mkdir(rootPath, 0755); err != nil {
+		log.Fatalf("failed to create output directory: %v", err)
+	}
+
 	// Create an index page.
-	name := path.Join("index.html")
+	name := path.Join(rootPath, "index.html")
 	f, err := os.Create(name)
 	if err != nil {
 		log.Fatalf("failed to create output file: %v", err)
@@ -141,7 +147,7 @@ func main() {
 	// Create a page for each post.
 	for _, post := range posts {
 		// Create the output directory.
-		dir := path.Join(".", post.Date.Format("2006/01/02"), slug.Make(post.Title))
+		dir := path.Join(rootPath, post.Date.Format("2006/01/02"), slug.Make(post.Title))
 		if err := os.MkdirAll(dir, 0755); err != nil && err != os.ErrExist {
 			log.Fatalf("failed to create dir %q: %v", dir, err)
 		}
@@ -151,6 +157,12 @@ func main() {
 		f, err := os.Create(name)
 		if err != nil {
 			log.Fatalf("failed to create output file: %v", err)
+		}
+
+		// Convert the markdown to HTML, and pass it to the template.
+		var buf bytes.Buffer
+		if err := goldmark.Convert([]byte(post.Content), &buf); err != nil {
+			log.Fatalf("failed to convert markdown to HTML: %v", err)
 		}
 
 		// Convert the markdown to HTML, and pass it to the template.
@@ -176,9 +188,9 @@ func main() {
 After generating Go code from the templates, and running it with `templ generate` followed by `go run *.go`, the following files will be created.
 
 ```
-index.html
-2023/01/01/happy-new-year/index.html
-2023/05/01/may-day/index.html
+public/index.html
+public/2023/01/01/happy-new-year/index.html
+public/2023/05/01/may-day/index.html
 ```
 
 The `index.html` contains links to all of the posts.
@@ -235,4 +247,4 @@ While each content page contains the HTML generated from the markdown, and the s
 </div>
 ```
 
-The files can then be hosted in any static website hosting provider.
+The files in the `public` directory can then be hosted in any static website hosting provider.
