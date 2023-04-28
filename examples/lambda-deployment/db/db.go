@@ -2,10 +2,11 @@ package db
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
@@ -40,6 +41,90 @@ type CountStore struct {
 	tableName string
 }
 
+func stripEmpty(strings []string) (op []string) {
+	for _, s := range strings {
+		if s != "" {
+			op = append(op, s)
+		}
+	}
+	return
+}
+
+type countRecord struct {
+	PK    string `dynamodbav:"_pk"`
+	Count int    `dynamodbav:"count"`
+}
+
+func (s CountStore) BatchGet(ctx context.Context, ids ...string) (counts []int, err error) {
+	ids = stripEmpty(ids)
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	// Make DynamoDB keys.
+	ris := make(map[string]types.KeysAndAttributes)
+	for _, id := range ids {
+		ri := ris[s.tableName]
+		ri.Keys = append(ris[s.tableName].Keys, map[string]types.AttributeValue{
+			"_pk": &types.AttributeValueMemberS{
+				Value: id,
+			},
+		})
+		ri.ConsistentRead = aws.Bool(true)
+		ris[s.tableName] = ri
+	}
+
+	// Execute the batch request.
+	var batchResponses []map[string]types.AttributeValue
+
+	// DynamoDB might not process everything, so we need a loop.
+	var unprocessedAttempts int
+	for {
+		var bgio *dynamodb.BatchGetItemOutput
+		bgio, err = s.db.BatchGetItem(ctx, &dynamodb.BatchGetItemInput{
+			RequestItems: ris,
+		})
+		if err != nil {
+			return
+		}
+		for _, responses := range bgio.Responses {
+			batchResponses = append(batchResponses, responses...)
+		}
+		if len(bgio.UnprocessedKeys) > 0 {
+			ris = bgio.UnprocessedKeys
+			unprocessedAttempts++
+			if unprocessedAttempts > 3 {
+				err = fmt.Errorf("countstore: exceeded three attempts to get all counts")
+				return
+			}
+			continue
+		}
+		break
+	}
+
+	// Process the responses into structs.
+	crs := []countRecord{}
+	err = attributevalue.UnmarshalListOfMaps(batchResponses, &crs)
+	if err != nil {
+		err = fmt.Errorf("countstore: failed to unmarshal result of BatchGet: %w", err)
+		return
+	}
+
+	// Match up the inputs to the records.
+	idToCount := make(map[string]int, len(ids))
+	for _, cr := range crs {
+		idToCount[cr.PK] = cr.Count
+	}
+
+	// Create the output in the right order.
+	// Missing values are defaulted to zero.
+	for _, id := range ids {
+		counts = append(counts, idToCount[id])
+	}
+
+	return
+}
+
 func (s CountStore) Get(ctx context.Context, id string) (count int, err error) {
 	if id == "" {
 		return
@@ -56,18 +141,14 @@ func (s CountStore) Get(ctx context.Context, id string) (count int, err error) {
 	if err != nil || gio.Item == nil {
 		return
 	}
-	// Get the count.
-	lsv, ok := gio.Item["count"]
-	if !ok {
-		return
+
+	var cr countRecord
+	err = attributevalue.UnmarshalMap(gio.Item, &cr)
+	if err != nil {
+		return 0, fmt.Errorf("countstore: failed to process result of Get: %w", err)
 	}
-	// Check the type of the attribute.
-	lsvs, ok := lsv.(*types.AttributeValueMemberN)
-	if !ok {
-		return
-	}
-	// Parse the attribute value.
-	count, err = strconv.Atoi(lsvs.Value)
+	count = cr.Count
+
 	return
 }
 
@@ -95,17 +176,14 @@ func (s CountStore) Increment(ctx context.Context, id string) (count int, err er
 	if err != nil {
 		return
 	}
-	// Get the count.
-	lsv, ok := uio.Attributes["count"]
-	if !ok {
-		return
+
+	// Parse the response.
+	var cr countRecord
+	err = attributevalue.UnmarshalMap(uio.Attributes, &cr)
+	if err != nil {
+		return 0, fmt.Errorf("countstore: failed to process result of Increment: %w", err)
 	}
-	// Check the type of the attribute.
-	lsvs, ok := lsv.(*types.AttributeValueMemberN)
-	if !ok {
-		return
-	}
-	// Parse the attribute value.
-	count, err = strconv.Atoi(lsvs.Value)
+	count = cr.Count
+
 	return
 }
