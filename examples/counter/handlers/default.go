@@ -1,15 +1,21 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
-	"github.com/a-h/templ/examples/lambda-deployment/components"
-	"github.com/a-h/templ/examples/lambda-deployment/services"
-	"github.com/a-h/templ/examples/lambda-deployment/session"
+	"github.com/a-h/templ/examples/counter/components"
+	"github.com/a-h/templ/examples/counter/services"
+	"github.com/a-h/templ/examples/counter/session"
 	"golang.org/x/exp/slog"
 )
 
-func New(log *slog.Logger, cs services.Count) *DefaultHandler {
+type CountService interface {
+	Increment(ctx context.Context, it services.IncrementType, sessionID string) (counts services.Counts, err error)
+	Get(ctx context.Context, sessionID string) (counts services.Counts, err error)
+}
+
+func New(log *slog.Logger, cs CountService) *DefaultHandler {
 	return &DefaultHandler{
 		Log:          log,
 		CountService: cs,
@@ -18,7 +24,7 @@ func New(log *slog.Logger, cs services.Count) *DefaultHandler {
 
 type DefaultHandler struct {
 	Log          *slog.Logger
-	CountService services.Count
+	CountService CountService
 }
 
 func (h *DefaultHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

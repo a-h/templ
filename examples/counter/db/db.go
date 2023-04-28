@@ -56,14 +56,14 @@ type countRecord struct {
 }
 
 func (s CountStore) BatchGet(ctx context.Context, ids ...string) (counts []int, err error) {
-	ids = stripEmpty(ids)
-	if len(ids) == 0 {
+	nonEmptyIDs := stripEmpty(ids)
+	if len(nonEmptyIDs) == 0 {
 		return nil, nil
 	}
 
 	// Make DynamoDB keys.
 	ris := make(map[string]types.KeysAndAttributes)
-	for _, id := range ids {
+	for _, id := range nonEmptyIDs {
 		ri := ris[s.tableName]
 		ri.Keys = append(ris[s.tableName].Keys, map[string]types.AttributeValue{
 			"_pk": &types.AttributeValueMemberS{

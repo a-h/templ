@@ -425,7 +425,7 @@ func Page(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(" href=\"https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css\"")
+		_, err = templBuffer.WriteString(" href=\"/assets/bulma.min.css\"")
 		if err != nil {
 			return err
 		}

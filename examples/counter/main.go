@@ -2,65 +2,42 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"time"
 
-	"github.com/alexedwards/scs/v2"
+	"github.com/a-h/templ/examples/counter/db"
+	"github.com/a-h/templ/examples/counter/handlers"
+	"github.com/a-h/templ/examples/counter/services"
+	"github.com/a-h/templ/examples/counter/session"
+	"golang.org/x/exp/slog"
 )
 
-type GlobalState struct {
-	Count int
-}
-
-var global GlobalState
-var sessionManager *scs.SessionManager
-
-func getHandler(w http.ResponseWriter, r *http.Request) {
-	userCount := sessionManager.GetInt(r.Context(), "count")
-	component := page(global.Count, userCount)
-	component.Render(r.Context(), w)
-}
-
-func postHandler(w http.ResponseWriter, r *http.Request) {
-	// Update state.
-	r.ParseForm()
-
-	// Check to see if the global button was pressed.
-	if r.Form.Has("global") {
-		global.Count++
-	}
-	if r.Form.Has("user") {
-		currentCount := sessionManager.GetInt(r.Context(), "count")
-		sessionManager.Put(r.Context(), "count", currentCount+1)
-	}
-
-	// Display the form.
-	getHandler(w, r)
-}
-
 func main() {
-	// Initialize the session.
-	sessionManager = scs.New()
-	sessionManager.Lifetime = 24 * time.Hour
-
-	mux := http.NewServeMux()
-
-	// Handle POST and GET requests.
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			postHandler(w, r)
-			return
-		}
-		getHandler(w, r)
-	})
-
-	// Add the middleware.
-	muxWithSessionMiddleware := sessionManager.LoadAndSave(mux)
-
-	// Start the server.
-	fmt.Println("listening on http://localhost:8000")
-	if err := http.ListenAndServe("localhost:8000", muxWithSessionMiddleware); err != nil {
-		log.Printf("error listening: %v", err)
+	log := slog.New(slog.NewJSONHandler(os.Stdout))
+	s, err := db.NewCountStore(os.Getenv("TABLE_NAME"), os.Getenv("AWS_REGION"))
+	if err != nil {
+		log.Error("failed to create store", slog.Any("error", err))
+		os.Exit(1)
 	}
+	cs := services.NewCount(log, s)
+	h := handlers.New(log, cs)
+
+	var secureFlag bool
+	if os.Getenv("SECURE_FLAG") == "false" {
+		secureFlag = false
+	}
+
+	// Add session middleware.
+	sh := session.NewMiddleware(h, session.WithSecure(secureFlag))
+
+	server := &http.Server{
+		Addr:         "localhost:9000",
+		Handler:      sh,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
+	}
+
+	fmt.Printf("Listening on %v\n", server.Addr)
+	server.ListenAndServe()
 }

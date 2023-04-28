@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/a-h/templ/examples/lambda-deployment/db"
-	"github.com/a-h/templ/examples/lambda-deployment/handlers"
-	"github.com/a-h/templ/examples/lambda-deployment/services"
-	"github.com/a-h/templ/examples/lambda-deployment/session"
+	"github.com/a-h/templ/examples/counter/db"
+	"github.com/a-h/templ/examples/counter/handlers"
+	"github.com/a-h/templ/examples/counter/services"
+	"github.com/a-h/templ/examples/counter/session"
 	"github.com/akrylysov/algnhsa"
 	"golang.org/x/exp/slog"
 )
