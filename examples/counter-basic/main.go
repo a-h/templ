@@ -55,12 +55,15 @@ func main() {
 		getHandler(w, r)
 	})
 
+	// Include the static content.
+	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
+
 	// Add the middleware.
 	muxWithSessionMiddleware := sessionManager.LoadAndSave(mux)
 
 	// Start the server.
-	fmt.Println("listening on http://localhost:8000")
-	if err := http.ListenAndServe("localhost:8000", muxWithSessionMiddleware); err != nil {
+	fmt.Println("listening on :8080")
+	if err := http.ListenAndServe(":8080", muxWithSessionMiddleware); err != nil {
 		log.Printf("error listening: %v", err)
 	}
 }
