@@ -433,6 +433,98 @@ func Page(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
+		// Element (void)
+		_, err = templBuffer.WriteString("<link")
+		if err != nil {
+			return err
+		}
+		// Element Attributes
+		_, err = templBuffer.WriteString(" rel=\"apple-touch-icon\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" sizes=\"180x180\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" href=\"/assets/favicon/apple-touch-icon.png\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(">")
+		if err != nil {
+			return err
+		}
+		// Element (void)
+		_, err = templBuffer.WriteString("<link")
+		if err != nil {
+			return err
+		}
+		// Element Attributes
+		_, err = templBuffer.WriteString(" rel=\"icon\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" type=\"image/png\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" sizes=\"32x32\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" href=\"/assets/favicon/favicon-32x32.png\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(">")
+		if err != nil {
+			return err
+		}
+		// Element (void)
+		_, err = templBuffer.WriteString("<link")
+		if err != nil {
+			return err
+		}
+		// Element Attributes
+		_, err = templBuffer.WriteString(" rel=\"icon\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" type=\"image/png\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" sizes=\"16x16\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" href=\"/assets/favicon/favicon-16x16.png\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(">")
+		if err != nil {
+			return err
+		}
+		// Element (void)
+		_, err = templBuffer.WriteString("<link")
+		if err != nil {
+			return err
+		}
+		// Element Attributes
+		_, err = templBuffer.WriteString(" rel=\"manifest\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" href=\"/assets/favicon/site.webmanifest\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(">")
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</head>")
 		if err != nil {
 			return err
