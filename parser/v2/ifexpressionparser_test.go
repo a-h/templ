@@ -352,6 +352,225 @@ func TestIfExpression(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "if: else if",
+			input: `if p.A {
+	{ "A" }
+} else if p.B {
+	{ "B" }
+}`,
+			expected: IfExpression{
+				Expression: Expression{
+					Value: `p.A`,
+					Range: Range{
+						From: Position{Index: 3, Line: 0, Col: 3},
+						To:   Position{Index: 6, Line: 0, Col: 6},
+					},
+				},
+				Then: []Node{
+					Whitespace{Value: "\t"},
+					StringExpression{
+						Expression: Expression{
+							Value: `"A"`,
+							Range: Range{
+								From: Position{Index: 12, Line: 1, Col: 3},
+								To:   Position{Index: 15, Line: 1, Col: 6},
+							},
+						},
+					},
+				},
+				ElseIfs: []ElseIfExpression{
+					{
+						Expression: Expression{
+							Value: `p.B`,
+							Range: Range{
+								From: Position{Index: 28, Line: 2, Col: 10},
+								To:   Position{Index: 31, Line: 2, Col: 13},
+							},
+						},
+						Then: []Node{
+							Whitespace{Value: "\t"},
+							StringExpression{
+								Expression: Expression{
+									Value: `"B"`,
+									Range: Range{
+										From: Position{Index: 37, Line: 3, Col: 3},
+										To:   Position{Index: 40, Line: 3, Col: 6},
+									},
+								},
+							},
+							Whitespace{Value: "\n"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "if: else if, else if",
+			input: `if p.A {
+	{ "A" }
+} else if p.B {
+	{ "B" }
+} else if p.C {
+	{ "C" }
+}`,
+			expected: IfExpression{
+				Expression: Expression{
+					Value: `p.A`,
+					Range: Range{
+						From: Position{Index: 3, Line: 0, Col: 3},
+						To:   Position{Index: 6, Line: 0, Col: 6},
+					},
+				},
+				Then: []Node{
+					Whitespace{Value: "\t"},
+					StringExpression{
+						Expression: Expression{
+							Value: `"A"`,
+							Range: Range{
+								From: Position{Index: 12, Line: 1, Col: 3},
+								To:   Position{Index: 15, Line: 1, Col: 6},
+							},
+						},
+					},
+				},
+				ElseIfs: []ElseIfExpression{
+					{
+						Expression: Expression{
+							Value: `p.B`,
+							Range: Range{
+								From: Position{Index: 28, Line: 2, Col: 10},
+								To:   Position{Index: 31, Line: 2, Col: 13},
+							},
+						},
+						Then: []Node{
+							Whitespace{Value: "\t"},
+							StringExpression{
+								Expression: Expression{
+									Value: `"B"`,
+									Range: Range{
+										From: Position{Index: 37, Line: 3, Col: 3},
+										To:   Position{Index: 40, Line: 3, Col: 6},
+									},
+								},
+							},
+						},
+					},
+					{
+						Expression: Expression{
+							Value: `p.C`,
+							Range: Range{
+								From: Position{Index: 53, Line: 4, Col: 10},
+								To:   Position{Index: 56, Line: 4, Col: 13},
+							},
+						},
+						Then: []Node{
+							Whitespace{Value: "\t"},
+							StringExpression{
+								Expression: Expression{
+									Value: `"C"`,
+									Range: Range{
+										From: Position{Index: 62, Line: 5, Col: 3},
+										To:   Position{Index: 65, Line: 5, Col: 6},
+									},
+								},
+							},
+							Whitespace{Value: "\n"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "if: else if, else if, else",
+			input: `if p.A {
+	{ "A" }
+} else if p.B {
+	{ "B" }
+} else if p.C {
+	{ "C" }
+} else {
+	{ "D" }
+}`,
+			expected: IfExpression{
+				Expression: Expression{
+					Value: `p.A`,
+					Range: Range{
+						From: Position{Index: 3, Line: 0, Col: 3},
+						To:   Position{Index: 6, Line: 0, Col: 6},
+					},
+				},
+				Then: []Node{
+					Whitespace{Value: "\t"},
+					StringExpression{
+						Expression: Expression{
+							Value: `"A"`,
+							Range: Range{
+								From: Position{Index: 12, Line: 1, Col: 3},
+								To:   Position{Index: 15, Line: 1, Col: 6},
+							},
+						},
+					},
+				},
+				ElseIfs: []ElseIfExpression{
+					{
+						Expression: Expression{
+							Value: `p.B`,
+							Range: Range{
+								From: Position{Index: 28, Line: 2, Col: 10},
+								To:   Position{Index: 31, Line: 2, Col: 13},
+							},
+						},
+						Then: []Node{
+							Whitespace{Value: "\t"},
+							StringExpression{
+								Expression: Expression{
+									Value: `"B"`,
+									Range: Range{
+										From: Position{Index: 37, Line: 3, Col: 3},
+										To:   Position{Index: 40, Line: 3, Col: 6},
+									},
+								},
+							},
+						},
+					},
+					{
+						Expression: Expression{
+							Value: `p.C`,
+							Range: Range{
+								From: Position{Index: 53, Line: 4, Col: 10},
+								To:   Position{Index: 56, Line: 4, Col: 13},
+							},
+						},
+						Then: []Node{
+							Whitespace{Value: "\t"},
+							StringExpression{
+								Expression: Expression{
+									Value: `"C"`,
+									Range: Range{
+										From: Position{Index: 62, Line: 5, Col: 3},
+										To:   Position{Index: 65, Line: 5, Col: 6},
+									},
+								},
+							},
+							Whitespace{Value: "\n"},
+						},
+					},
+				},
+				Else: []Node{
+					StringExpression{
+						Expression: Expression{
+							Value: `"D"`,
+							Range: Range{
+								From: Position{Index: 80, Line: 7, Col: 3},
+								To:   Position{Index: 83, Line: 7, Col: 6},
+							},
+						},
+					},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

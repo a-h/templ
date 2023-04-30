@@ -692,7 +692,13 @@ func (ChildrenExpression) Write(w io.Writer, indent int) error {
 type IfExpression struct {
 	Expression Expression
 	Then       []Node
+	ElseIfs    []ElseIfExpression
 	Else       []Node
+}
+
+type ElseIfExpression struct {
+	Expression Expression
+	Then       []Node
 }
 
 func (n IfExpression) IsNode() bool { return true }
@@ -705,6 +711,16 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 		return err
 	}
 	indent--
+	for _, elseIf := range n.ElseIfs {
+		if err := writeIndent(w, indent, "} else if "+elseIf.Expression.Value+" {\n"); err != nil {
+			return err
+		}
+		indent++
+		if err := writeNodesBlock(w, indent, elseIf.Then); err != nil {
+			return err
+		}
+		indent--
+	}
 	if len(n.Else) > 0 {
 		if err := writeIndent(w, indent, "} else {\n"); err != nil {
 			return err

@@ -29,8 +29,13 @@ func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err e
 
 	// Read the 'Then' nodes.
 	// If there's no match, there's a problem in the template nodes.
-	np := newTemplateNodeParser(parse.Any(StripType(elseExpression), StripType(closeBraceWithOptionalPadding)), "else expression or closing brace")
+	np := newTemplateNodeParser(parse.Any(StripType(elseIfExpression), StripType(elseExpression), StripType(closeBraceWithOptionalPadding)), "else expression or closing brace")
 	if r.Then, ok, err = Must[[]Node](np, "if: expected nodes, but none were found").Parse(pi); err != nil || !ok {
+		return
+	}
+
+	// Read the optional 'ElseIf' Nodes.
+	if r.ElseIfs, _, err = parse.ZeroOrMore(elseIfExpression).Parse(pi); err != nil {
 		return
 	}
 
@@ -41,6 +46,44 @@ func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err e
 
 	// Read the required closing brace.
 	if _, ok, err = Must(closeBraceWithOptionalPadding, "if: missing end (expected '}')").Parse(pi); err != nil || !ok {
+		return
+	}
+
+	return r, true, nil
+}
+
+var elseIfExpression parse.Parser[ElseIfExpression] = elseIfExpressionParser{}
+
+type elseIfExpressionParser struct{}
+
+func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, ok bool, err error) {
+	// Check the prefix first.
+	if _, ok, err = parse.All(
+		parse.OptionalWhitespace,
+		parse.Rune('}'),
+		parse.OptionalWhitespace,
+		parse.String("else if"),
+		parse.Whitespace).Parse(pi); err != nil || !ok {
+		return
+	}
+
+	// Once we've got a prefix, read until {\n.
+	// If there's no match, there's no {\n, which is an error.
+	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine))), "if: unterminated else if (missing closing '{\n')").Parse(pi); err != nil || !ok {
+		return
+	}
+
+	// Eat " {\n".
+	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "if: unterminated (missing closing '{')").Parse(pi); err != nil || !ok {
+		return
+	}
+
+	// Once we've had the start of an if block, we must conclude the block.
+
+	// Read the 'Then' nodes.
+	// If there's no match, there's a problem in the template nodes.
+	np := newTemplateNodeParser(parse.Any(StripType(elseIfExpression), StripType(elseExpression), StripType(closeBraceWithOptionalPadding)), "else expression or closing brace")
+	if r.Then, ok, err = Must[[]Node](np, "if: expected nodes, but none were found").Parse(pi); err != nil || !ok {
 		return
 	}
 
