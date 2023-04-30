@@ -46,11 +46,23 @@ func counts(global, session int) templ.Component {
 			return err
 		}
 		// Element Attributes
+		_, err = templBuffer.WriteString(" id=\"countsForm\"")
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString(" action=\"/\"")
 		if err != nil {
 			return err
 		}
 		_, err = templBuffer.WriteString(" method=\"POST\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" hx-post=\"/\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" hx-select=\"#countsForm\"")
 		if err != nil {
 			return err
 		}
@@ -425,7 +437,7 @@ func Page(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(" href=\"/assets/bulma.min.css\"")
+		_, err = templBuffer.WriteString(" href=\"/assets/css/bulma.min.css\"")
 		if err != nil {
 			return err
 		}
@@ -525,6 +537,30 @@ func Page(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
+// RawElement
+		_, err = templBuffer.WriteString("<script")
+		if err != nil {
+			return err
+		}
+		// Element Attributes
+		_, err = templBuffer.WriteString(" src=\"/assets/js/htmx.min.js\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(">")
+		if err != nil {
+			return err
+		}
+// Text
+var_12 := ``
+_, err = templBuffer.WriteString(var_12)
+if err != nil {
+	return err
+}
+		_, err = templBuffer.WriteString("</script>")
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</head>")
 		if err != nil {
 			return err
@@ -600,8 +636,8 @@ func Page(global, session int) templ.Component {
 			return err
 		}
 		// Text
-		var_12 := `Counts`
-		_, err = templBuffer.WriteString(var_12)
+		var_13 := `Counts`
+		_, err = templBuffer.WriteString(var_13)
 		if err != nil {
 			return err
 		}

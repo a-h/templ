@@ -14,12 +14,13 @@ func BenchmarkCurrent(b *testing.B) {
 		Email: "luiz@example.com",
 	})
 
+	w := new(strings.Builder)
 	for i := 0; i < b.N; i++ {
-		w := new(strings.Builder)
 		err := t.Render(context.Background(), w)
 		if err != nil {
 			b.Errorf("failed to render: %v", err)
 		}
+		w.Reset()
 	}
 }
 
