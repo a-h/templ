@@ -174,3 +174,4 @@ func ComplexAttributes() templ.Component {
 		return err
 	})
 }
+
