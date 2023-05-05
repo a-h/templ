@@ -72,8 +72,8 @@ var elementCloseTagParser = parse.Func(func(in *parse.Input) (ect elementCloseTa
 })
 
 // Attribute name.
-var attributeNameFirst = "abcdefghijklmnopqrstuvwxyz"
-var attributeNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+var attributeNameFirst = "abcdefghijklmnopqrstuvwxyz@:"
+var attributeNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-"
 var attributeNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
 	start := in.Index()
 	var prefix, suffix string

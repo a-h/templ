@@ -34,6 +34,24 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
+			name:   "element: open with complex attributes",
+			input:  `<div @click="show = true" :class="{'foo': true}">`,
+			parser: StripType(elementOpenTagParser),
+			expected: elementOpenTag{
+				Name: "div",
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "@click",
+						Value: "show = true",
+					},
+					ConstantAttribute{
+						Name:  ":class",
+						Value: "{'foo': true}",
+					},
+				},
+			},
+		},
+		{
 			name:   "element: open with attributes",
 			input:  `<div id="123" style="padding: 10px">`,
 			parser: StripType(elementOpenTagParser),
@@ -466,9 +484,11 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
-				Children: []Node{Text{
-					Value: "Test",
-				}},
+				Children: []Node{
+					Text{
+						Value: "Test",
+					},
+				},
 			},
 		},
 		{
