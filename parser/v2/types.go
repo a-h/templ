@@ -157,9 +157,24 @@ type Whitespace struct {
 }
 
 func (ws Whitespace) IsNode() bool { return true }
+
 func (ws Whitespace) Write(w io.Writer, indent int) error {
-	// Explicit whitespace nodes are removed from templates because they're auto-formatted.
-	return nil
+	if ws.Value == "" || !strings.Contains(ws.Value, "\n") {
+		return nil
+	}
+	// https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Whitespace
+	// - All spaces and tabs immediately before and after a line break are ignored.
+	// - All tab characters are handled as space characters.
+	// - Line breaks are converted to spaces.
+	// Any space immediately following another space (even across two separate inline elements) is ignored.
+	// Sequences of spaces at the beginning and end of an element are removed.
+
+	// Notes: Since we only have whitespace in this node, we can strip anything that isn't a line break.
+	// Since any space following another space is ignored, we can collapse to a single rule.
+	// So, the rule is... if there's a newline, it becomes a single space, or it's stripped.
+	// We have to remove the start and end space elsewhere.
+	_, err := io.WriteString(w, " ")
+	return err
 }
 
 // CSS definition.
@@ -333,6 +348,11 @@ func (e Element) containsBlockElement() bool {
 			continue
 		case Text:
 			continue
+		case TemplElementExpression:
+			if len(n.Children) > 0 {
+				return true
+			}
+			continue
 		}
 		// Any template elements should be considered block.
 		return true
@@ -446,7 +466,13 @@ func writeNodesBlock(w io.Writer, indent int, nodes []Node) error {
 
 func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
 	for i := 0; i < len(nodes); i++ {
-		if _, isWhitespace := nodes[i].(Whitespace); isWhitespace {
+		// Terminating and leading whitespace is stripped.
+		_, isWhitespace := nodes[i].(Whitespace)
+		if isWhitespace && (i == 0 || i == len(nodes)-1) {
+			continue
+		}
+		// Whitespace is stripped from block elements.
+		if isWhitespace && block {
 			continue
 		}
 		if err := nodes[i].Write(w, indent); err != nil {

@@ -419,6 +419,29 @@ templ conditionalAttributes(addClass bool) {
 
 `,
 		},
+		{
+			name: "templ expression elements without children are considered to be inline elements",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+	<li>
+		<a href="/">
+	    Home
+	    @hello("home")
+     </a>
+	</li>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+	<li><a href="/">Home @hello("home")</a></li>
+}
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
