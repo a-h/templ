@@ -35,7 +35,11 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (r TemplElementExpr
 	}
 
 	// Once we've got a start expression, check to see if there's an open brace for children. {\n.
-	_, hasOpenBrace, err := openBraceWithOptionalPadding.Parse(pi)
+	var hasOpenBrace bool
+	_, hasOpenBrace, err = openBraceWithOptionalPadding.Parse(pi)
+	if err != nil {
+		return
+	}
 	if !hasOpenBrace {
 		return r, true, nil
 	}
