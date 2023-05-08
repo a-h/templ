@@ -56,7 +56,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					Whitespace{Value: "\t"},
+					Whitespace{Value: "\n\t"},
 					Text{Value: "some words"},
 					Whitespace{Value: "\n"},
 				},
@@ -84,7 +84,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					Whitespace{Value: "\t\t\t"},
+					Whitespace{Value: "\n\t\t\t"},
 					Element{Name: "a", Attributes: []Attribute{
 						ConstantAttribute{"href", "someurl"},
 					}},
@@ -114,7 +114,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					Whitespace{Value: "\t\t\t\t"},
+					Whitespace{Value: "\n\t\t\t\t"},
 					TemplElementExpression{
 						Expression: Expression{
 							Value: "other2",
@@ -125,6 +125,28 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 					Whitespace{Value: "\n\t\t\t"},
+				},
+			},
+		},
+		{
+			name: "templelement: can parse the initial expression and leave the text",
+			input: `@Icon("home", Inline) Home</a>
+}`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `Icon("home", Inline)`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 21,
+							Line:  0,
+							Col:   21,
+						},
+					},
 				},
 			},
 		},

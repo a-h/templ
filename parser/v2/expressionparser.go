@@ -53,6 +53,11 @@ var closeBrace = parse.String("}")
 var closeBraceWithPadding = parse.String(" }")
 var closeBraceWithOptionalPadding = parse.Any(closeBraceWithPadding, closeBrace)
 
+var openBracket = parse.String("(")
+var openBracketWithOptionalPadding = parse.StringFrom(optionalSpaces, openBracket)
+var closeBracket = parse.String(")")
+var closeBracketWithOptionalPadding = parse.StringFrom(optionalSpaces, closeBracket)
+
 var exp = expressionParser{
 	startBraceCount: 1,
 }
@@ -128,6 +133,83 @@ loop:
 	}
 	if braceCount != 0 {
 		err = parse.Error("expression: unexpected brace count", pi.Position())
+		return
+	}
+
+	return NewExpression(sb.String(), from, pi.Position()), true, nil
+}
+
+type functionArgsParser struct {
+	startBracketCount int
+}
+
+func (p functionArgsParser) Parse(pi *parse.Input) (s Expression, ok bool, err error) {
+	from := pi.Position()
+
+	bracketCount := p.startBracketCount
+
+	var sb strings.Builder
+loop:
+	for {
+		var result string
+
+		// Try to read a string literal first.
+		if result, ok, err = string_lit.Parse(pi); err != nil {
+			return
+		}
+		if ok {
+			sb.WriteString(result)
+			continue
+		}
+		// Also try for a rune literal.
+		if result, ok, err = rune_lit.Parse(pi); err != nil {
+			return
+		}
+		if ok {
+			sb.WriteString(result)
+			continue
+		}
+		// Try opener.
+		if result, ok, err = openBracket.Parse(pi); err != nil {
+			return
+		}
+		if ok {
+			bracketCount++
+			sb.WriteString(result)
+			continue
+		}
+		// Try closer.
+		startOfCloseBracket := pi.Index()
+		if result, ok, err = closeBracketWithOptionalPadding.Parse(pi); err != nil {
+			return
+		}
+		if ok {
+			bracketCount--
+			if bracketCount < 0 {
+				err = parse.Error("expression: too many closing brackets", pi.Position())
+				return
+			}
+			if bracketCount == 0 {
+				pi.Seek(startOfCloseBracket)
+				break loop
+			}
+			sb.WriteString(result)
+			continue
+		}
+
+		// Read anything else.
+		var c string
+		c, ok = pi.Take(1)
+		if !ok {
+			break loop
+		}
+		if rune(c[0]) == 65533 { // Invalid Unicode.
+			break loop
+		}
+		sb.WriteString(c)
+	}
+	if bracketCount != 0 {
+		err = parse.Error("expression: unexpected bracket count", pi.Position())
 		return
 	}
 

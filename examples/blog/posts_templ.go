@@ -286,12 +286,12 @@ func layout(name string) templ.Component {
 			return err
 		}
 		// TemplElement
-		err = headerTemplate(name) .Render(ctx, templBuffer)
+		err = headerTemplate(name).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
 		// TemplElement
-		err = navTemplate() .Render(ctx, templBuffer)
+		err = navTemplate().Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}

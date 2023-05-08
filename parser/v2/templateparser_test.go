@@ -394,6 +394,66 @@ func TestTemplateParser(t *testing.T) {
 			expected:    HTMLTemplate{},
 			expectError: true,
 		},
+		{
+			name: "template: can contain inline templ elements",
+			input: `templ x() {
+ <a href="/"> @Icon("home", Inline) Home</a>
+}`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "x()",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  0,
+							Col:   6,
+						},
+						To: Position{
+							Index: 9,
+							Line:  0,
+							Col:   9,
+						},
+					},
+				},
+				Children: []Node{
+					Whitespace{
+						Value: " ",
+					},
+					Element{
+						Name: "a",
+						Attributes: []Attribute{
+							ConstantAttribute{
+								Name:  "href",
+								Value: "/",
+							},
+						},
+						Children: []Node{
+							Whitespace{Value: " "},
+							TemplElementExpression{
+								Expression: Expression{
+									Value: `Icon("home", Inline)`,
+									Range: Range{
+										From: Position{
+											Index: 27,
+											Line:  1,
+											Col:   15,
+										},
+										To: Position{
+											Index: 47,
+											Line:  1,
+											Col:   35,
+										},
+									},
+								},
+							},
+							Whitespace{Value: " "},
+							Text{Value: "Home"},
+						},
+					},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
