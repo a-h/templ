@@ -150,6 +150,48 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "templelement: supports the use of templ elements in other packages",
+			input: `@templates.Icon("home", Inline)`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates.Icon("home", Inline)`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 31,
+							Line:  0,
+							Col:   31,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: supports the use of params which contain braces and params",
+			input: `@templates.New(test{}, other())`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates.New(test{}, other())`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 31,
+							Line:  0,
+							Col:   31,
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
