@@ -3,7 +3,7 @@ package safehtml
 import "testing"
 
 func TestSanitizeCSS(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name             string
 		inputProperty    string
 		expectedProperty string
@@ -198,6 +198,13 @@ func TestSanitizeCSS(t *testing.T) {
 			expectedProperty: "background-image",
 			inputValue:       `url("http://safe.example.com/img.png"), url("https://safe.example.com/other.png")`,
 			expectedValue:    `url("http://safe.example.com/img.png"), url("https://safe.example.com/other.png")`,
+		},
+		{
+			name:             "-webkit-text-stroke-color safe webkit",
+			inputProperty:    "-webkit-text-stroke-color",
+			expectedProperty: "-webkit-text-stroke-color",
+			inputValue:       `#000`,
+			expectedValue:    `#000`,
 		},
 		{
 			name:             "escape attempt property name",

@@ -8,7 +8,7 @@ import (
 )
 
 func TestExpressionCSSPropertyParser(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected ExpressionCSSProperty
@@ -81,7 +81,7 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 }
 
 func TestConstantCSSPropertyParser(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected ConstantCSSProperty
@@ -91,6 +91,14 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 			input: `background-color: #ffffff;`,
 			expected: ConstantCSSProperty{
 				Name:  "background-color",
+				Value: "#ffffff",
+			},
+		},
+		{
+			name:  "css: single constant webkit property",
+			input: `-webkit-text-stroke-color: #ffffff;`,
+			expected: ConstantCSSProperty{
+				Name:  "-webkit-text-stroke-color",
 				Value: "#ffffff",
 			},
 		},
@@ -114,7 +122,7 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 }
 
 func TestCSSParser(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected CSSTemplate
