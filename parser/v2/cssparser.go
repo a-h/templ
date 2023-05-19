@@ -126,7 +126,7 @@ var cssExpressionParser = parse.Func(func(pi *parse.Input) (r cssExpression, ok 
 })
 
 // CSS property name parser.
-var cssPropertyNameFirst = "abcdefghijklmnopqrstuvwxyz"
+var cssPropertyNameFirst = "abcdefghijklmnopqrstuvwxyz-"
 var cssPropertyNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
 var cssPropertyNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
 	start := in.Position()

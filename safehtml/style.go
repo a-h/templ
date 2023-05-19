@@ -29,7 +29,7 @@ func SanitizeCSS(property, value string) (string, string) {
 // identifierPattern matches a subset of valid <ident-token> values defined in
 // https://www.w3.org/TR/css-syntax-3/#ident-token-diagram. This pattern matches all generic family name
 // keywords defined in https://drafts.csswg.org/css-fonts-3/#family-name-value.
-var identifierPattern = regexp.MustCompile(`^[a-zA-Z][-a-zA-Z]+$`)
+var identifierPattern = regexp.MustCompile(`^[-a-zA-Z]+$`)
 
 var cssPropertyNameToValueSanitizer = map[string]func(string) string{
 	"background-image":    sanitizeBackgroundImage,
@@ -124,14 +124,14 @@ const InnocuousPropertyValue = "zTemplUnsafeCSSPropertyValue"
 // Specifically, it matches string where every '*' or '/' is followed by end-of-text or a safe rune
 // (i.e. alphanumberics or runes in the set [+-.!#%_ \t]). This regex ensures that the following
 // are disallowed:
-//    * "/*" and "*/", which are CSS comment markers.
-//    * "//", even though this is not a comment marker in the CSS specification. Disallowing
-//      this string minimizes the chance that browser peculiarities or parsing bugs will allow
-//      sanitization to be bypassed.
-//    * '(' and ')', which can be used to call functions.
-//    * ',', since it can be used to inject extra values into a property.
-//    * Runes which could be matched on CSS error recovery of a previously malformed token, such as '@'
-//      and ':'. See http://www.w3.org/TR/css3-syntax/#error-handling.
+//   - "/*" and "*/", which are CSS comment markers.
+//   - "//", even though this is not a comment marker in the CSS specification. Disallowing
+//     this string minimizes the chance that browser peculiarities or parsing bugs will allow
+//     sanitization to be bypassed.
+//   - '(' and ')', which can be used to call functions.
+//   - ',', since it can be used to inject extra values into a property.
+//   - Runes which could be matched on CSS error recovery of a previously malformed token, such as '@'
+//     and ':'. See http://www.w3.org/TR/css3-syntax/#error-handling.
 var safeRegularPropertyValuePattern = regexp.MustCompile(`^(?:[*/]?(?:[0-9a-zA-Z+-.!#%_ \t]|$))*$`)
 
 // safeEnumPropertyValuePattern matches strings that are safe to use as enumerated property values.
