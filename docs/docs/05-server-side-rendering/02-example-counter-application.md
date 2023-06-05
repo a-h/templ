@@ -202,3 +202,5 @@ Incrementing a count by reading and setting the value is not an atomic operation
 :::note
 The default behaviour of `scs` is to store session data in RAM, which isn't suitable for stateless function deployments, or load balanced applications, but the library supports a range of backend storage solutions.
 :::
+
+Complete source code including AWS CDK code to set up the infrastructure is available at https://github.com/a-h/templ/tree/main/examples/counter
