@@ -52,3 +52,5 @@ templ counts(global, session int) {
 ```
 
 The example can be viewed at https://d3qfg6xxljj3ky.cloudfront.net
+
+Complete source code including AWS CDK code to set up the infrastructure is available at https://github.com/a-h/templ/tree/main/examples/counter
