@@ -165,12 +165,6 @@ func main() {
 			log.Fatalf("failed to convert markdown to HTML: %v", err)
 		}
 
-		// Convert the markdown to HTML, and pass it to the template.
-		var buf bytes.Buffer
-		if err := goldmark.Convert([]byte(post.Content), &buf); err != nil {
-			log.Fatalf("failed to convert markdown to HTML: %v", err)
-		}
-
 		// Create an unsafe component containing raw HTML.
 		content := Unsafe(buf.String())
 
