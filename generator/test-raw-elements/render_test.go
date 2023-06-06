@@ -1,38 +1,22 @@
 package testrawelements
 
 import (
-	"context"
-	"strings"
+	_ "embed"
 	"testing"
 
-	"github.com/a-h/templ"
-	"github.com/google/go-cmp/cmp"
+	"github.com/a-h/templ/generator/htmldiff"
 )
 
-func TestRawElements(t *testing.T) {
-	for _, test := range []struct {
-		name     string
-		input    templ.Component
-		expected string
-	}{
-		{
-			name:     "style",
-			input:    StyleElement(),
-			expected: StyleElementExpected,
-		},
-		{
-			name:     "script",
-			input:    ScriptElement(),
-			expected: ScriptElementExpected,
-		},
-	} {
-		w := new(strings.Builder)
-		err := test.input.Render(context.Background(), w)
-		if err != nil {
-			t.Errorf("failed to render: %v", err)
-		}
-		if diff := cmp.Diff(test.expected, w.String()); diff != "" {
-			t.Error(diff)
-		}
+//go:embed expected.html
+var expected string
+
+func Test(t *testing.T) {
+	component := Example()
+	diff, err := htmldiff.Diff(component, expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff != "" {
+		t.Error(diff)
 	}
 }

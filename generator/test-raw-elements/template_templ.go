@@ -9,7 +9,7 @@ import "context"
 import "io"
 import "bytes"
 
-func StyleElement() templ.Component {
+func Example() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -22,6 +22,25 @@ func StyleElement() templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		// Element (standard)
+		_, err = templBuffer.WriteString("<html>")
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		_, err = templBuffer.WriteString("<head>")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</head>")
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		_, err = templBuffer.WriteString("<body>")
+		if err != nil {
+			return err
+		}
 // RawElement
 		_, err = templBuffer.WriteString("<style>")
 		if err != nil {
@@ -37,29 +56,25 @@ if err != nil {
 		if err != nil {
 			return err
 		}
-		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+// RawElement
+		_, err = templBuffer.WriteString("<style>")
+		if err != nil {
+			return err
 		}
-		return err
-	})
+// Text
+var_3 := `
+        .customClass {
+          border: 1px solid black;
+        }
+      `
+_, err = templBuffer.WriteString(var_3)
+if err != nil {
+	return err
 }
-
-// GoExpression
-const StyleElementExpected = `<style><!-- Some stuff --></style>`
-
-func ScriptElement() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+		_, err = templBuffer.WriteString("</style>")
+		if err != nil {
+			return err
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_3 := templ.GetChildren(ctx)
-		if var_3 == nil {
-			var_3 = templ.NopComponent
-		}
-		ctx = templ.ClearChildren(ctx)
 // RawElement
 		_, err = templBuffer.WriteString("<script")
 		if err != nil {
@@ -76,16 +91,39 @@ func ScriptElement() templ.Component {
 		}
 // Text
 var_4 := `
-    $("div").marquee();
-    function test() {
-          window.open("https://example.com")
-    }
-  `
+        $("div").marquee();
+        function test() {
+              window.open("https://example.com")
+        }
+      `
 _, err = templBuffer.WriteString(var_4)
 if err != nil {
 	return err
 }
 		_, err = templBuffer.WriteString("</script>")
+		if err != nil {
+			return err
+		}
+		// Element (standard)
+		_, err = templBuffer.WriteString("<h1>")
+		if err != nil {
+			return err
+		}
+		// Text
+		var_5 := `Hello`
+		_, err = templBuffer.WriteString(var_5)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</h1>")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</body>")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</html>")
 		if err != nil {
 			return err
 		}
@@ -95,12 +133,4 @@ if err != nil {
 		return err
 	})
 }
-
-// GoExpression
-const ScriptElementExpected = `<script type="text/javascript">
-    $("div").marquee();
-    function test() {
-          window.open("https://example.com")
-    }
-  </script>`
 

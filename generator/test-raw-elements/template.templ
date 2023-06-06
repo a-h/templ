@@ -1,24 +1,23 @@
 package testrawelements
 
-templ StyleElement() {
-  <style><!-- Some stuff --></style>
+templ Example() {
+	<html>
+		<head></head>
+		<body>
+			<style><!-- Some stuff --></style>
+			<style>
+        .customClass {
+          border: 1px solid black;
+        }
+      </style>
+			<script type="text/javascript">
+        $("div").marquee();
+        function test() {
+              window.open("https://example.com")
+        }
+      </script>
+			<h1>Hello</h1>
+		</body>
+	</html>
 }
-
-const StyleElementExpected = `<style><!-- Some stuff --></style>`
-
-templ ScriptElement() {
-  <script type="text/javascript">
-    $("div").marquee();
-    function test() {
-          window.open("https://example.com")
-    }
-  </script>
-}
-
-const ScriptElementExpected = `<script type="text/javascript">
-    $("div").marquee();
-    function test() {
-          window.open("https://example.com")
-    }
-  </script>`
 
