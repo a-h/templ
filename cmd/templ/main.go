@@ -12,6 +12,7 @@ import (
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
 	"github.com/a-h/templ/cmd/templ/migratecmd"
+	"github.com/a-h/templ/cmd/templ/watchcmd"
 )
 
 // Source builds use this value. When installed using `go install github.com/a-h/templ/cmd/templ@latest` the `version` variable is empty, but
@@ -43,6 +44,9 @@ func main() {
 	case "migrate":
 		migrateCmd(os.Args[2:])
 		return
+	case "watch":
+		watchCmd(os.Args[2:])
+		return
 	case "fmt":
 		fmtCmd(os.Args[2:])
 		return
@@ -70,6 +74,28 @@ To see help text, you can run:
 examples:
   templ generate`)
 	os.Exit(1)
+}
+
+func watchCmd(args []string) {
+	cmd := flag.NewFlagSet("watch", flag.ExitOnError)
+	path := cmd.String("path", ".", "Generates code for all files in path.")
+	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "Set to true to generate HTML files to visualise the templ code and its corresponding Go code.")
+	workerCount := cmd.Int("w", runtime.NumCPU(), "Number of workers to run in parallel.")
+	helpFlag := cmd.Bool("help", false, "Print help and exit.")
+	err := cmd.Parse(args)
+	if err != nil || *helpFlag {
+		cmd.PrintDefaults()
+		return
+	}
+	err = watchcmd.Run(watchcmd.Arguments{
+		Path:                            *path,
+		WorkerCount:                     *workerCount,
+		GenerateSourceMapVisualisations: *sourceMapVisualisations,
+	})
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }
 
 func generateCmd(args []string) {
