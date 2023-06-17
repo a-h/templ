@@ -56,6 +56,47 @@ func main() {
 </button>
 ```
 
+## CSS elements
+
+You can use a standard `<style>` element within a template and its contents will be rendered to the output without any changes.
+
+```templ
+templ page() {
+	<style type="text/css">
+		p {
+			font-family: sans-serif;
+		}
+		.button {
+			background-color: black;
+			foreground-color: white;
+		}
+	</style>
+	<p>
+		Paragraph contents.
+	</p>
+}
+```
+
+```html title="Output"
+<style type="text/css">
+	p {
+		font-family: sans-serif;
+	}
+	.button {
+		background-color: black;
+		foreground-color: white;
+	}
+</style>
+<p>
+	Paragraph contents.
+</p>
+```
+
+:::tip
+If you want to make sure that the CSS element is only output once, even if you use a template many times, use a CSS expression.
+:::
+
+
 ## CSS expressions
 
 When developing a component library, it may not be desirable to require that specific CSS classes are present when the HTML is rendered.
