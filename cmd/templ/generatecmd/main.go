@@ -2,9 +2,11 @@ package generatecmd
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"go/format"
 	"os"
 	"runtime"
 	"strings"
@@ -73,20 +75,31 @@ func compile(fileName string, generateSourceMapVisualisations bool) (err error) 
 		return fmt.Errorf("%s parsing error: %w", fileName, err)
 	}
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
+
+	var b bytes.Buffer
+	sourceMap, err := generator.Generate(t, &b)
+	if err != nil {
+		return fmt.Errorf("%s generation error: %w", fileName, err)
+	}
+
+	data, err := format.Source(b.Bytes())
+	if err != nil {
+		return fmt.Errorf("%s source formatting error: %w", fileName, err)
+	}
+
 	w, err := os.Create(targetFileName)
 	if err != nil {
 		return fmt.Errorf("%s compilation error: %w", fileName, err)
 	}
-	defer w.Close()
-	b := bufio.NewWriter(w)
-	defer b.Flush()
-	sourceMap, err := generator.Generate(t, b)
-	if err != nil {
-		return fmt.Errorf("%s generation error: %w", fileName, err)
+	if _, err := w.Write(data); err != nil {
+		return fmt.Errorf("%s compilation error: %w", fileName, err)
 	}
-	if b.Flush() != nil {
+
+	defer w.Close()
+	if w.Sync() != nil {
 		return fmt.Errorf("%s write file error: %w", targetFileName, err)
 	}
+
 	if generateSourceMapVisualisations {
 		err = generateSourceMapVisualisation(fileName, targetFileName, sourceMap)
 	}
