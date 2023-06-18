@@ -144,7 +144,7 @@ func (g *generator) writeTemplateNodes() error {
 				return err
 			}
 		case parser.HTMLTemplate:
-			if err := g.writeTemplate(n); err != nil {
+			if err := g.writeTemplate(i, n); err != nil {
 				return err
 			}
 		case parser.CSSTemplate:
@@ -280,7 +280,7 @@ func (g *generator) writeTemplBuffer(indentLevel int) (err error) {
 	return
 }
 
-func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
+func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 	var r parser.Range
 	var err error
 	var indentLevel int
@@ -368,7 +368,15 @@ func (g *generator) writeTemplate(t parser.HTMLTemplate) error {
 	}
 	indentLevel--
 	// }
-	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
+
+	// Note: gofmt wants to remove a single empty line at the end of a file
+	// so we have to make sure we don't output one if this is the last node.
+	closingBrace := "}\n\n"
+	if nodeIdx+1 >= len(g.tf.Nodes) {
+		closingBrace = "}\n"
+	}
+
+	if _, err = g.w.WriteIndent(indentLevel, closingBrace); err != nil {
 		return err
 	}
 	return nil
