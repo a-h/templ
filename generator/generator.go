@@ -1183,7 +1183,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 }
 
 func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err error) {
-	if _, err = g.w.WriteIndent(0, "// RawElement\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "// RawElement\n"); err != nil {
 		return err
 	}
 	if len(n.Attributes) == 0 {
@@ -1214,7 +1214,7 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		}
 	}
 	// Contents.
-	if err = g.writeText(0, parser.Text{Value: n.Contents}); err != nil {
+	if err = g.writeText(indentLevel, parser.Text{Value: n.Contents}); err != nil {
 		return err
 	}
 	// </div>
