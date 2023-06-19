@@ -24,7 +24,7 @@ templ Hello(name string) {
 
 templ Greeting(person Person) {
   <div class="greeting">
-    {! Hello(person.Name) }
+    @Hello(person.Name)
   </div>
 }
 ```
