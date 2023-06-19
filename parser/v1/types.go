@@ -198,9 +198,11 @@ func (imp Import) Write(w io.Writer, indent int) error {
 
 // CSS definition.
 // {% css Name() %}
-//   color: #ffffff;
-//   background-color: {%= constants.BackgroundColor %};
-//   background-image: url('./somewhere.png');
+//
+//	color: #ffffff;
+//	background-color: {%= constants.BackgroundColor %};
+//	background-image: url('./somewhere.png');
+//
 // {% endcss %}
 type CSSTemplate struct {
 	Name       Expression
@@ -275,8 +277,10 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 
 // HTMLTemplate definition.
 // {% templ Name(p Parameter) %}
-//   {% if ... %}
-//   <Element></Element>
+//
+//	{% if ... %}
+//	<Element></Element>
+//
 // {% endtempl %}
 type HTMLTemplate struct {
 	Name       Expression
@@ -578,8 +582,10 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 }
 
 // {% switch p.Type %}
-//  {% case "Something" %}
-//  {% endcase %}
+//
+//	{% case "Something" %}
+//	{% endcase %}
+//
 // {% endswitch %}
 type SwitchExpression struct {
 	Expression Expression
@@ -632,7 +638,9 @@ type CaseExpression struct {
 }
 
 // {% for i, v := range p.Addresses %}
-//   {% call Address(v) %}
+//
+//	{% call Address(v) %}
+//
 // {% endfor %}
 type ForExpression struct {
 	Expression Expression

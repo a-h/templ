@@ -15,7 +15,7 @@ func important() templ.CSSClass {
 	templCSSBuilder.WriteString(`width:100;`)
 	templCSSID := templ.CSSID(`important`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID: templCSSID,
+		ID:    templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
 }
@@ -25,7 +25,7 @@ func unimportant() templ.CSSClass {
 	templCSSBuilder.WriteString(`width:50;`)
 	templCSSID := templ.CSSID(`unimportant`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID: templCSSID,
+		ID:    templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
 }
@@ -220,4 +220,3 @@ func render(p person) templ.Component {
 		return err
 	})
 }
-

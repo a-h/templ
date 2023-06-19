@@ -308,4 +308,3 @@ func list(uris []string) templ.Component {
 		return err
 	})
 }
-

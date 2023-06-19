@@ -202,4 +202,3 @@ func Render(p Person) templ.Component {
 		return err
 	})
 }
-

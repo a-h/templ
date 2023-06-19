@@ -15,7 +15,7 @@ func green() templ.CSSClass {
 	templCSSBuilder.WriteString(`color:#00ff00;`)
 	templCSSID := templ.CSSID(`green`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID: templCSSID,
+		ID:    templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
 }
@@ -26,7 +26,7 @@ func className() templ.CSSClass {
 	templCSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
 	templCSSID := templ.CSSID(`className`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID: templCSSID,
+		ID:    templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
 }
@@ -168,7 +168,7 @@ func MapCSSExample() templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		// Element (standard)
 		// Element CSS
-		var var_7 = []any{map[string]bool{ "a": true, "b": false, "c": true }}
+		var var_7 = []any{map[string]bool{"a": true, "b": false, "c": true}}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_7...)
 		if err != nil {
 			return err
@@ -350,4 +350,3 @@ func ThreeButtons() templ.Component {
 		return err
 	})
 }
-

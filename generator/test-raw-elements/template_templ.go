@@ -41,41 +41,41 @@ func Example() templ.Component {
 		if err != nil {
 			return err
 		}
-// RawElement
+		// RawElement
 		_, err = templBuffer.WriteString("<style>")
 		if err != nil {
 			return err
 		}
-// Text
-var_2 := `<!-- Some stuff -->`
-_, err = templBuffer.WriteString(var_2)
-if err != nil {
-	return err
-}
+		// Text
+		var_2 := `<!-- Some stuff -->`
+		_, err = templBuffer.WriteString(var_2)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</style>")
 		if err != nil {
 			return err
 		}
-// RawElement
+		// RawElement
 		_, err = templBuffer.WriteString("<style>")
 		if err != nil {
 			return err
 		}
-// Text
-var_3 := `
+		// Text
+		var_3 := `
         .customClass {
           border: 1px solid black;
         }
       `
-_, err = templBuffer.WriteString(var_3)
-if err != nil {
-	return err
-}
+		_, err = templBuffer.WriteString(var_3)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</style>")
 		if err != nil {
 			return err
 		}
-// RawElement
+		// RawElement
 		_, err = templBuffer.WriteString("<script")
 		if err != nil {
 			return err
@@ -89,17 +89,17 @@ if err != nil {
 		if err != nil {
 			return err
 		}
-// Text
-var_4 := `
+		// Text
+		var_4 := `
         $("div").marquee();
         function test() {
               window.open("https://example.com")
         }
       `
-_, err = templBuffer.WriteString(var_4)
-if err != nil {
-	return err
-}
+		_, err = templBuffer.WriteString(var_4)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</script>")
 		if err != nil {
 			return err
@@ -133,4 +133,3 @@ if err != nil {
 		return err
 	})
 }
-

@@ -74,4 +74,3 @@ func BasicTemplate(url string) templ.Component {
 		return err
 	})
 }
-

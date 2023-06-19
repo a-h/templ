@@ -55,4 +55,3 @@ func list(items []string) templ.Component {
 		return err
 	})
 }
-

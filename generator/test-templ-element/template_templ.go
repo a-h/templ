@@ -172,4 +172,3 @@ func template() templ.Component {
 		return err
 	})
 }
-

@@ -100,4 +100,3 @@ func BasicTemplate(name string) templ.Component {
 		return err
 	})
 }
-

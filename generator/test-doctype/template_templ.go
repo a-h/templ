@@ -140,4 +140,3 @@ func Layout(title, content string) templ.Component {
 		return err
 	})
 }
-

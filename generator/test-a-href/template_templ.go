@@ -126,4 +126,3 @@ func render() templ.Component {
 		return err
 	})
 }
-

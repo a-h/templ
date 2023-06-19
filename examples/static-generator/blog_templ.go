@@ -269,4 +269,3 @@ func indexPage(posts []Post) templ.Component {
 		return err
 	})
 }
-

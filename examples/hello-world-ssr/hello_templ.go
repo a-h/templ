@@ -49,4 +49,3 @@ func hello(name string) templ.Component {
 		return err
 	})
 }
-

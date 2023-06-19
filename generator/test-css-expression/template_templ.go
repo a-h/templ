@@ -13,8 +13,7 @@ func className() templ.CSSClass {
 	templCSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
 	templCSSID := templ.CSSID(`className`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID: templCSSID,
+		ID:    templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
 }
-

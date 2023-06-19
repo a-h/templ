@@ -167,4 +167,3 @@ func email(s string) templ.Component {
 		return err
 	})
 }
-

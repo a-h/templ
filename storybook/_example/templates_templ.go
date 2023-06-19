@@ -124,4 +124,3 @@ func footerTemplate() templ.Component {
 		return err
 	})
 }
-

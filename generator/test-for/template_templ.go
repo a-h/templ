@@ -46,4 +46,3 @@ func render(items []string) templ.Component {
 		return err
 	})
 }
-

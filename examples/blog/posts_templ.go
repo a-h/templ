@@ -536,4 +536,3 @@ func posts(posts []Post) templ.Component {
 		return err
 	})
 }
-

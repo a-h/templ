@@ -154,4 +154,3 @@ func removeTemplate(action string, target string) templ.Component {
 		return err
 	})
 }
-

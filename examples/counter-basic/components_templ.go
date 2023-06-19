@@ -570,4 +570,3 @@ func page(global, user int) templ.Component {
 		return err
 	})
 }
-

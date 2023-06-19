@@ -15,7 +15,7 @@ func row() templ.CSSClass {
 	templCSSBuilder.WriteString(`display:flex;`)
 	templCSSID := templ.CSSID(`row`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID: templCSSID,
+		ID:    templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
 }
@@ -27,7 +27,7 @@ func column() templ.CSSClass {
 	templCSSBuilder.WriteString(`max-height:100vh;`)
 	templCSSID := templ.CSSID(`column`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID: templCSSID,
+		ID:    templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
 }
@@ -37,7 +37,7 @@ func code() templ.CSSClass {
 	templCSSBuilder.WriteString(`font-family:monospace;`)
 	templCSSID := templ.CSSID(`code`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID: templCSSID,
+		ID:    templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
 }
@@ -86,7 +86,7 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 		if err != nil {
 			return err
 		}
-// RawElement
+		// RawElement
 		_, err = templBuffer.WriteString("<style")
 		if err != nil {
 			return err
@@ -100,15 +100,15 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 		if err != nil {
 			return err
 		}
-// Text
-var_4 := `
+		// Text
+		var_4 := `
 				.mapped { background-color: green }
 				.highlighted { background-color: yellow }
 			`
-_, err = templBuffer.WriteString(var_4)
-if err != nil {
-	return err
-}
+		_, err = templBuffer.WriteString(var_4)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</style>")
 		if err != nil {
 			return err
@@ -400,4 +400,3 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		return err
 	})
 }
-

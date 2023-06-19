@@ -130,4 +130,3 @@ func TestPackageParser(t *testing.T) {
 		})
 	}
 }
-
