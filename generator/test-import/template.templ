@@ -1,0 +1,25 @@
+package testimport
+
+templ listItem() {
+	<li>{ children... }</li>
+}
+
+templ list() {
+	<ul>
+		{ children... }
+	</ul>
+}
+
+templ main() {
+	@list() {
+		@listItem() {
+			<u>Item 1</u>
+		}
+		@listItem() {
+			<u>Item 2</u>
+		}
+		@listItem() {
+			<u>Item 3</u>
+		}
+	}
+}
