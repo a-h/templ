@@ -50,11 +50,11 @@ func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache) (s *Se
 }
 
 // updatePosition maps positions and filenames from source templ files into the target *.go files.
-func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) (goURI lsp.DocumentURI, updated lsp.Position) {
+func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) (ok bool, goURI lsp.DocumentURI, updated lsp.Position) {
 	log := p.Log.With(zap.String("uri", string(templURI)))
 	var isTemplFile bool
 	if isTemplFile, goURI = convertTemplToGoURI(templURI); !isTemplFile {
-		return templURI, current
+		return false, templURI, current
 	}
 	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
 	if !ok {
@@ -65,13 +65,13 @@ func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) 
 	to, ok := sourceMap.TargetPositionFromSource(current.Line, current.Character)
 	if !ok {
 		log.Info("updatePosition: not found", zap.String("from", fmt.Sprintf("%d:%d", current.Line, current.Character)))
-		return templURI, current
+		return false, templURI, current
 	}
 	log.Info("updatePosition: found", zap.String("fromTempl", fmt.Sprintf("%d:%d", current.Line, current.Character)),
 		zap.String("toGo", fmt.Sprintf("%d:%d", to.Line, to.Col)))
 	updated.Line = to.Line
 	updated.Character = to.Col
-	return goURI, updated
+	return true, goURI, updated
 }
 
 func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range) {
@@ -178,6 +178,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	}
 	result.Capabilities.ExecuteCommandProvider.Commands = []string{}
 	result.Capabilities.DocumentFormattingProvider = true
+	result.Capabilities.SemanticTokensProvider = nil
 	return result, err
 }
 
@@ -316,7 +317,11 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	}
 	// Get the sourcemap from the cache.
 	templURI := params.TextDocument.URI
-	params.TextDocument.URI, params.TextDocumentPositionParams.Position = p.updatePosition(templURI, params.TextDocumentPositionParams.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.TextDocumentPositionParams.Position = p.updatePosition(templURI, params.TextDocumentPositionParams.Position)
+	if !ok {
+		return nil, nil
+	}
 	// Call the target.
 	result, err = p.Target.Completion(ctx, params)
 	if err != nil {
@@ -349,7 +354,11 @@ func (p *Server) Declaration(ctx context.Context, params *lsp.DeclarationParams)
 	defer p.Log.Info("client -> server: Declaration end")
 	// Rewrite the request.
 	templURI := params.TextDocument.URI
-	params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	if !ok {
+		return nil, nil
+	}
 	// Call gopls and get the result.
 	result, err = p.Target.Declaration(ctx, params)
 	if err != nil {
@@ -372,7 +381,11 @@ func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (
 	defer p.Log.Info("client -> server: Definition end")
 	// Rewrite the request.
 	templURI := params.TextDocument.URI
-	params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	if !ok {
+		return result, nil
+	}
 	// Call gopls and get the result.
 	result, err = p.Target.Definition(ctx, params)
 	if err != nil {
@@ -640,7 +653,11 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 	defer p.Log.Info("client -> server: Hover end")
 	// Rewrite the request.
 	templURI := params.TextDocument.URI
-	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
+	}
 	result, err = p.Target.Hover(ctx, params)
 	if err != nil {
 		return
@@ -660,7 +677,11 @@ func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationP
 	defer p.Log.Info("client -> server: Implementation end")
 	templURI := params.TextDocument.URI
 	// Rewrite the request.
-	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
+	}
 	result, err = p.Target.Implementation(ctx, params)
 	if err != nil {
 		return
@@ -683,7 +704,11 @@ func (p *Server) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTyp
 	defer p.Log.Info("client -> server: OnTypeFormatting end")
 	templURI := params.TextDocument.URI
 	// Rewrite the request.
-	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
+	}
 	// Get the response.
 	result, err = p.Target.OnTypeFormatting(ctx, params)
 	if err != nil {
@@ -706,7 +731,11 @@ func (p *Server) PrepareRename(ctx context.Context, params *lsp.PrepareRenamePar
 	defer p.Log.Info("client -> server: PrepareRename end")
 	templURI := params.TextDocument.URI
 	// Rewrite the request.
-	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
+	}
 	// Get the response.
 	result, err = p.Target.PrepareRename(ctx, params)
 	if err != nil {
@@ -780,7 +809,11 @@ func (p *Server) Rename(ctx context.Context, params *lsp.RenameParams) (result *
 func (p *Server) SignatureHelp(ctx context.Context, params *lsp.SignatureHelpParams) (result *lsp.SignatureHelp, err error) {
 	p.Log.Info("client -> server: SignatureHelp")
 	defer p.Log.Info("client -> server: SignatureHelp end")
-	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
+	}
 	return p.Target.SignatureHelp(ctx, params)
 }
 
@@ -793,7 +826,11 @@ func (p *Server) Symbols(ctx context.Context, params *lsp.WorkspaceSymbolParams)
 func (p *Server) TypeDefinition(ctx context.Context, params *lsp.TypeDefinitionParams) (result []lsp.Location, err error) {
 	p.Log.Info("client -> server: TypeDefinition")
 	defer p.Log.Info("client -> server: TypeDefinition end")
-	params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
+	}
 	return p.Target.TypeDefinition(ctx, params)
 }
 
@@ -884,18 +921,33 @@ func (p *Server) OutgoingCalls(ctx context.Context, params *lsp.CallHierarchyOut
 func (p *Server) SemanticTokensFull(ctx context.Context, params *lsp.SemanticTokensParams) (result *lsp.SemanticTokens, err error) {
 	p.Log.Info("client -> server: SemanticTokensFull")
 	defer p.Log.Info("client -> server: SemanticTokensFull end")
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return nil, nil
+	}
+	params.TextDocument.URI = goURI
 	return p.Target.SemanticTokensFull(ctx, params)
 }
 
 func (p *Server) SemanticTokensFullDelta(ctx context.Context, params *lsp.SemanticTokensDeltaParams) (result interface{} /* SemanticTokens | SemanticTokensDelta */, err error) {
 	p.Log.Info("client -> server: SemanticTokensFullDelta")
 	defer p.Log.Info("client -> server: SemanticTokensFullDelta end")
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return nil, nil
+	}
+	params.TextDocument.URI = goURI
 	return p.Target.SemanticTokensFullDelta(ctx, params)
 }
 
 func (p *Server) SemanticTokensRange(ctx context.Context, params *lsp.SemanticTokensRangeParams) (result *lsp.SemanticTokens, err error) {
 	p.Log.Info("client -> server: SemanticTokensRange")
 	defer p.Log.Info("client -> server: SemanticTokensRange end")
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return nil, nil
+	}
+	params.TextDocument.URI = goURI
 	return p.Target.SemanticTokensRange(ctx, params)
 }
 
@@ -915,7 +967,11 @@ func (p *Server) Moniker(ctx context.Context, params *lsp.MonikerParams) (result
 	p.Log.Info("client -> server: Moniker")
 	defer p.Log.Info("client -> server: Moniker end")
 	templURI := params.TextDocument.URI
-	params.TextDocument.URI, params.TextDocumentPositionParams.Position = p.updatePosition(templURI, params.TextDocumentPositionParams.Position)
+	var ok bool
+	ok, params.TextDocument.URI, params.TextDocumentPositionParams.Position = p.updatePosition(templURI, params.TextDocumentPositionParams.Position)
+	if !ok {
+		return nil, nil
+	}
 	return p.Target.Moniker(ctx, params)
 }
 
