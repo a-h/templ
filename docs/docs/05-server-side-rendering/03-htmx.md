@@ -34,7 +34,7 @@ The `/` endpoint returns a complete HTML page instead of just the updated `<form
 ```templ title="components/components.templ"
 templ counts(global, session int) {
 	// highlight-next-line
-	<form id="countsForm" action="/" method="POST" hx-post="/" hx-select="#countsForm">
+	<form id="countsForm" action="/" method="POST" hx-post="/" hx-select="#countsForm" hx-swap="outerHTML">
 		<div class="columns">
 			<div class={ "column", "has-text-centered", "is-primary", border }>
 				<h1 class="title is-size-1 has-text-centered">{ strconv.Itoa(global) }</h1>
