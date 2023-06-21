@@ -22,7 +22,7 @@ func border() templ.CSSClass {
 	templCSSBuilder.WriteString(`padding-bottom:30px;`)
 	templCSSID := templ.CSSID(`border`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID: templCSSID,
+		ID:    templCSSID,
 		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
 	}
 }
@@ -541,7 +541,7 @@ func Page(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-// RawElement
+		// RawElement
 		_, err = templBuffer.WriteString("<script")
 		if err != nil {
 			return err
@@ -555,12 +555,12 @@ func Page(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-// Text
-var_12 := ``
-_, err = templBuffer.WriteString(var_12)
-if err != nil {
-	return err
-}
+		// Text
+		var_12 := ``
+		_, err = templBuffer.WriteString(var_12)
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</script>")
 		if err != nil {
 			return err
@@ -752,4 +752,3 @@ if err != nil {
 		return err
 	})
 }
-
