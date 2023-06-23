@@ -9,7 +9,6 @@ import "context"
 import "io"
 import "bytes"
 
-// GoExpression
 import "fmt"
 
 func wrapper(index int) templ.Component {
@@ -25,17 +24,7 @@ func wrapper(index int) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" id=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<div id=\"")
 		if err != nil {
 			return err
 		}
@@ -43,15 +32,10 @@ func wrapper(index int) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Children
 		err = var_1.Render(ctx, templBuffer)
 		if err != nil {
 			return err
@@ -80,61 +64,51 @@ func template() templ.Component {
 			var_2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// TemplElement
 		var_3 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			templBuffer, templIsBuffer := w.(*bytes.Buffer)
 			if !templIsBuffer {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			// Text
 			var_4 := `child1`
 			_, err = templBuffer.WriteString(var_4)
 			if err != nil {
 				return err
 			}
-			// Whitespace (normalised)
-			_, err = templBuffer.WriteString(` `)
+			_, err = templBuffer.WriteString(" ")
 			if err != nil {
 				return err
 			}
-			// TemplElement
 			var_5 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 				templBuffer, templIsBuffer := w.(*bytes.Buffer)
 				if !templIsBuffer {
 					templBuffer = templ.GetBuffer()
 					defer templ.ReleaseBuffer(templBuffer)
 				}
-				// Text
 				var_6 := `child2`
 				_, err = templBuffer.WriteString(var_6)
 				if err != nil {
 					return err
 				}
-				// Whitespace (normalised)
-				_, err = templBuffer.WriteString(` `)
+				_, err = templBuffer.WriteString(" ")
 				if err != nil {
 					return err
 				}
-				// TemplElement
 				var_7 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 					templBuffer, templIsBuffer := w.(*bytes.Buffer)
 					if !templIsBuffer {
 						templBuffer = templ.GetBuffer()
 						defer templ.ReleaseBuffer(templBuffer)
 					}
-					// Text
 					var_8 := `child3`
 					_, err = templBuffer.WriteString(var_8)
 					if err != nil {
 						return err
 					}
-					// Whitespace (normalised)
-					_, err = templBuffer.WriteString(` `)
+					_, err = templBuffer.WriteString(" ")
 					if err != nil {
 						return err
 					}
-					// TemplElement
 					err = wrapper(4).Render(ctx, templBuffer)
 					if err != nil {
 						return err

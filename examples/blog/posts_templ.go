@@ -9,7 +9,6 @@ import "context"
 import "io"
 import "bytes"
 
-// GoExpression
 import "fmt"
 import "time"
 
@@ -26,36 +25,16 @@ func headerTemplate(name string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<header")
+		_, err = templBuffer.WriteString("<header data-testid=\"headerTemplate\"><h1>")
 		if err != nil {
 			return err
 		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" data-testid=\"headerTemplate\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<h1>")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_2 string = name
 		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h1>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</header>")
+		_, err = templBuffer.WriteString("</h1></header>")
 		if err != nil {
 			return err
 		}
@@ -79,42 +58,21 @@ func footerTemplate() templ.Component {
 			var_3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<footer")
+		_, err = templBuffer.WriteString("<footer data-testid=\"footerTemplate\"><div>")
 		if err != nil {
 			return err
 		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" data-testid=\"footerTemplate\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_4 := `&copy; `
 		_, err = templBuffer.WriteString(var_4)
 		if err != nil {
 			return err
 		}
-		// StringExpression
 		var var_5 string = fmt.Sprintf("%d", time.Now().Year())
 		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</footer>")
+		_, err = templBuffer.WriteString("</div></footer>")
 		if err != nil {
 			return err
 		}
@@ -138,96 +96,25 @@ func navTemplate() templ.Component {
 			var_6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<nav")
+		_, err = templBuffer.WriteString("<nav data-testid=\"navTemplate\"><ul><li><a href=\"/\">")
 		if err != nil {
 			return err
 		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" data-testid=\"navTemplate\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<ul>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<li>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<a")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" href=\"/\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_7 := `Home`
 		_, err = templBuffer.WriteString(var_7)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</a>")
+		_, err = templBuffer.WriteString("</a></li><li><a href=\"/posts\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</li>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<li>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<a")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" href=\"/posts\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_8 := `Posts`
 		_, err = templBuffer.WriteString(var_8)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</a>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</li>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</ul>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</nav>")
+		_, err = templBuffer.WriteString("</a></li></ul></nav>")
 		if err != nil {
 			return err
 		}
@@ -251,69 +138,39 @@ func layout(name string) templ.Component {
 			var_9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<html>")
+		_, err = templBuffer.WriteString("<html><head><title>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<head>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<title>")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_10 string = name
 		_, err = templBuffer.WriteString(templ.EscapeString(var_10))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</title>")
+		_, err = templBuffer.WriteString("</title></head><body>")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</head>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<body>")
-		if err != nil {
-			return err
-		}
-		// TemplElement
 		err = headerTemplate(name).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		// TemplElement
 		err = navTemplate().Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		// Element (standard)
 		_, err = templBuffer.WriteString("<main>")
 		if err != nil {
 			return err
 		}
-		// Children
 		err = var_9.Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</main>")
+		_, err = templBuffer.WriteString("</main></body>")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</body>")
-		if err != nil {
-			return err
-		}
-		// TemplElement
 		err = footerTemplate().Render(ctx, templBuffer)
 		if err != nil {
 			return err
@@ -342,85 +199,30 @@ func postsTemplate(posts []Post) templ.Component {
 			var_11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div")
+		_, err = templBuffer.WriteString("<div data-testid=\"postsTemplate\">")
 		if err != nil {
 			return err
 		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" data-testid=\"postsTemplate\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// For
 		for _, p := range posts {
-			// Element (standard)
-			_, err = templBuffer.WriteString("<div")
+			_, err = templBuffer.WriteString("<div data-testid=\"postsTemplatePost\"><div data-testid=\"postsTemplatePostName\">")
 			if err != nil {
 				return err
 			}
-			// Element Attributes
-			_, err = templBuffer.WriteString(" data-testid=\"postsTemplatePost\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(">")
-			if err != nil {
-				return err
-			}
-			// Element (standard)
-			_, err = templBuffer.WriteString("<div")
-			if err != nil {
-				return err
-			}
-			// Element Attributes
-			_, err = templBuffer.WriteString(" data-testid=\"postsTemplatePostName\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(">")
-			if err != nil {
-				return err
-			}
-			// StringExpression
 			var var_12 string = p.Name
 			_, err = templBuffer.WriteString(templ.EscapeString(var_12))
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</div>")
+			_, err = templBuffer.WriteString("</div><div data-testid=\"postsTemplatePostAuthor\">")
 			if err != nil {
 				return err
 			}
-			// Element (standard)
-			_, err = templBuffer.WriteString("<div")
-			if err != nil {
-				return err
-			}
-			// Element Attributes
-			_, err = templBuffer.WriteString(" data-testid=\"postsTemplatePostAuthor\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(">")
-			if err != nil {
-				return err
-			}
-			// StringExpression
 			var var_13 string = p.Author
 			_, err = templBuffer.WriteString(templ.EscapeString(var_13))
 			if err != nil {
 				return err
 			}
-			_, err = templBuffer.WriteString("</div>")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("</div>")
+			_, err = templBuffer.WriteString("</div></div>")
 			if err != nil {
 				return err
 			}
@@ -449,28 +251,16 @@ func home() templ.Component {
 			var_14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// TemplElement
 		var_15 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			templBuffer, templIsBuffer := w.(*bytes.Buffer)
 			if !templIsBuffer {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			// Element (standard)
-			_, err = templBuffer.WriteString("<div")
+			_, err = templBuffer.WriteString("<div data-testid=\"homeTemplate\">")
 			if err != nil {
 				return err
 			}
-			// Element Attributes
-			_, err = templBuffer.WriteString(" data-testid=\"homeTemplate\"")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString(">")
-			if err != nil {
-				return err
-			}
-			// Text
 			var_16 := `Welcome to my website.`
 			_, err = templBuffer.WriteString(var_16)
 			if err != nil {
@@ -509,14 +299,12 @@ func posts(posts []Post) templ.Component {
 			var_17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// TemplElement
 		var_18 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			templBuffer, templIsBuffer := w.(*bytes.Buffer)
 			if !templIsBuffer {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			// TemplElement
 			err = postsTemplate(posts).Render(ctx, templBuffer)
 			if err != nil {
 				return err

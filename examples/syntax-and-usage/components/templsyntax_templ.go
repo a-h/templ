@@ -22,19 +22,15 @@ func list(items []string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
 		_, err = templBuffer.WriteString("<ol>")
 		if err != nil {
 			return err
 		}
-		// For
 		for _, item := range items {
-			// Element (standard)
 			_, err = templBuffer.WriteString("<li>")
 			if err != nil {
 				return err
 			}
-			// StringExpression
 			var var_2 string = item
 			_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 			if err != nil {

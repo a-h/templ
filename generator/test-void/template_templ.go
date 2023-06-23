@@ -22,32 +22,7 @@ func render() templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (void)
-		_, err = templBuffer.WriteString("<br>")
-		if err != nil {
-			return err
-		}
-		// Element (void)
-		_, err = templBuffer.WriteString("<img")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" src=\"https://example.com/image.png\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (void)
-		_, err = templBuffer.WriteString("<br>")
-		if err != nil {
-			return err
-		}
-		// Element (void)
-		_, err = templBuffer.WriteString("<br>")
+		_, err = templBuffer.WriteString("<br><img src=\"https://example.com/image.png\"><br><br>")
 		if err != nil {
 			return err
 		}

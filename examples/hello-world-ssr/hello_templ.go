@@ -22,18 +22,15 @@ func hello(name string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
 		_, err = templBuffer.WriteString("<div>")
 		if err != nil {
 			return err
 		}
-		// Text
 		var_2 := `Hello, `
 		_, err = templBuffer.WriteString(var_2)
 		if err != nil {
 			return err
 		}
-		// StringExpression
 		var var_3 string = name
 		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 		if err != nil {

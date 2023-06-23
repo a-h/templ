@@ -38,22 +38,11 @@ func Button(text string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		// Element Script
 		err = templ.RenderScriptItems(ctx, templBuffer, withParameters("test", text, 123), withoutParameters())
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<button")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" onClick=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<button onClick=\"")
 		if err != nil {
 			return err
 		}
@@ -62,15 +51,7 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" onMouseover=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\" onMouseover=\"")
 		if err != nil {
 			return err
 		}
@@ -79,19 +60,10 @@ func Button(text string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\" type=\"button\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(" type=\"button\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_4 string = text
 		_, err = templBuffer.WriteString(templ.EscapeString(var_4))
 		if err != nil {
@@ -121,35 +93,18 @@ func ThreeButtons() templ.Component {
 			var_5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// CallTemplate
 		err = Button("A").Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		// CallTemplate
 		err = Button("B").Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<button")
+		_, err = templBuffer.WriteString("<button onMouseover=\"console.log(&#39;mouseover&#39;)\" type=\"button\">")
 		if err != nil {
 			return err
 		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" onMouseover=\"console.log(&#39;mouseover&#39;)\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" type=\"button\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_6 := `Button C`
 		_, err = templBuffer.WriteString(var_6)
 		if err != nil {

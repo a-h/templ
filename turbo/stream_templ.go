@@ -22,17 +22,7 @@ func actionTemplate(action string, target string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<turbo-stream")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" action=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<turbo-stream action=\"")
 		if err != nil {
 			return err
 		}
@@ -40,15 +30,7 @@ func actionTemplate(action string, target string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" target=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\" target=\"")
 		if err != nil {
 			return err
 		}
@@ -56,29 +38,15 @@ func actionTemplate(action string, target string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\"><template>")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<template>")
-		if err != nil {
-			return err
-		}
-		// Children
 		err = var_1.Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</template>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</turbo-stream>")
+		_, err = templBuffer.WriteString("</template></turbo-stream>")
 		if err != nil {
 			return err
 		}
@@ -102,17 +70,7 @@ func removeTemplate(action string, target string) templ.Component {
 			var_2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<turbo-stream")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" action=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<turbo-stream action=\"")
 		if err != nil {
 			return err
 		}
@@ -120,15 +78,7 @@ func removeTemplate(action string, target string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" target=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\" target=\"")
 		if err != nil {
 			return err
 		}
@@ -136,15 +86,7 @@ func removeTemplate(action string, target string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</turbo-stream>")
+		_, err = templBuffer.WriteString("\"></turbo-stream>")
 		if err != nil {
 			return err
 		}

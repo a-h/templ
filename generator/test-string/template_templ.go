@@ -22,36 +22,16 @@ func render(s string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<ul>")
+		_, err = templBuffer.WriteString("<ul><li></li><li>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<li>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</li>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<li>")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_2 string = s
 		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</li>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</ul>")
+		_, err = templBuffer.WriteString("</li></ul>")
 		if err != nil {
 			return err
 		}

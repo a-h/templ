@@ -22,45 +22,16 @@ func Render(p Person) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
+		_, err = templBuffer.WriteString("<div><h1>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<h1>")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_2 string = p.Name
 		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h1>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" style=\"font-family: &#39;sans-serif&#39;\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" id=\"test\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" data-contents=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("</h1><div style=\"font-family: &#39;sans-serif&#39;\" id=\"test\" data-contents=\"")
 		if err != nil {
 			return err
 		}
@@ -68,36 +39,16 @@ func Render(p Person) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\"><div>")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_3 := `email:`
 		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<a")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" href=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<a href=\"")
 		if err != nil {
 			return err
 		}
@@ -106,59 +57,26 @@ func Render(p Person) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_5 string = p.Email
 		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</a>")
+		_, err = templBuffer.WriteString("</a></div></div></div><hr")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
-		}
-		// Element (void)
-		_, err = templBuffer.WriteString("<hr")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
 		if true {
 			_, err = templBuffer.WriteString(" noshade")
 			if err != nil {
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (void)
-		_, err = templBuffer.WriteString("<hr")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" optionA")
+		_, err = templBuffer.WriteString("><hr optionA")
 		if err != nil {
 			return err
 		}
@@ -178,21 +96,7 @@ func Render(p Person) templ.Component {
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (void)
-		_, err = templBuffer.WriteString("<hr")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" noshade")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
+		_, err = templBuffer.WriteString("><hr noshade>")
 		if err != nil {
 			return err
 		}

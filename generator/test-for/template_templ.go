@@ -22,14 +22,11 @@ func render(items []string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// For
 		for _, item := range items {
-			// Element (standard)
 			_, err = templBuffer.WriteString("<div>")
 			if err != nil {
 				return err
 			}
-			// StringExpression
 			var var_2 string = item
 			_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 			if err != nil {

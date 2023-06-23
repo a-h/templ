@@ -22,69 +22,47 @@ func BasicTemplate(name string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
 		_, err = templBuffer.WriteString("<div>")
 		if err != nil {
 			return err
 		}
-		// Text
 		var_2 := `Name: `
 		_, err = templBuffer.WriteString(var_2)
 		if err != nil {
 			return err
 		}
-		// StringExpression
 		var var_3 string = name
 		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
+		_, err = templBuffer.WriteString("</div><div>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_4 := `Text ` + "`" + `with backticks` + "`" + ``
 		_, err = templBuffer.WriteString(var_4)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
+		_, err = templBuffer.WriteString("</div><div>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_5 := `Text ` + "`" + `with backtick`
 		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
+		_, err = templBuffer.WriteString("</div><div>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_6 := `Text ` + "`" + `with backtick alongside variable: `
 		_, err = templBuffer.WriteString(var_6)
 		if err != nil {
 			return err
 		}
-		// StringExpression
 		var var_7 string = name
 		_, err = templBuffer.WriteString(templ.EscapeString(var_7))
 		if err != nil {
