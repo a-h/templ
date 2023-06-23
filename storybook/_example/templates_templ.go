@@ -9,7 +9,6 @@ import "context"
 import "io"
 import "bytes"
 
-// GoExpression
 import "fmt"
 import "time"
 
@@ -26,36 +25,16 @@ func headerTemplate(name string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<header")
+		_, err = templBuffer.WriteString("<header data-testid=\"headerTemplate\"><h1>")
 		if err != nil {
 			return err
 		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" data-testid=\"headerTemplate\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<h1>")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_2 string = name
 		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h1>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</header>")
+		_, err = templBuffer.WriteString("</h1></header>")
 		if err != nil {
 			return err
 		}
@@ -79,42 +58,21 @@ func footerTemplate() templ.Component {
 			var_3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<footer")
+		_, err = templBuffer.WriteString("<footer data-testid=\"footerTemplate\"><div>")
 		if err != nil {
 			return err
 		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" data-testid=\"footerTemplate\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_4 := `&copy; `
 		_, err = templBuffer.WriteString(var_4)
 		if err != nil {
 			return err
 		}
-		// StringExpression
 		var var_5 string = fmt.Sprintf("%d", time.Now().Year())
 		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</footer>")
+		_, err = templBuffer.WriteString("</div></footer>")
 		if err != nil {
 			return err
 		}

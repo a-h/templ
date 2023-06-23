@@ -55,52 +55,24 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<html>")
+		_, err = templBuffer.WriteString("<html><head><title>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<head>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<title>")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_2 string = templFileName
 		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
-		// Text
 		var_3 := `- Source Map Visualisation`
 		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</title>")
+		_, err = templBuffer.WriteString("</title><style type=\"text/css\">")
 		if err != nil {
 			return err
 		}
-		// RawElement
-		_, err = templBuffer.WriteString("<style")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" type=\"text/css\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_4 := `
 				.mapped { background-color: green }
 				.highlighted { background-color: yellow }
@@ -109,25 +81,10 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</style>")
+		_, err = templBuffer.WriteString("</style></head><body><h1>")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</head>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<body>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<h1>")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_5 string = templFileName
 		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
 		if err != nil {
@@ -137,23 +94,12 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		// Element CSS
 		var var_6 = []any{templ.Classes(row())}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_6...)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" class=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<div class=\"")
 		if err != nil {
 			return err
 		}
@@ -161,31 +107,16 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		// Element CSS
 		var var_7 = []any{templ.Classes(column(), code())}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_7...)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" class=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<div class=\"")
 		if err != nil {
 			return err
 		}
@@ -193,15 +124,10 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// CallTemplate
 		err = left.Render(ctx, templBuffer)
 		if err != nil {
 			return err
@@ -210,23 +136,12 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		// Element CSS
 		var var_8 = []any{templ.Classes(column(), code())}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_8...)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" class=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<div class=\"")
 		if err != nil {
 			return err
 		}
@@ -234,32 +149,15 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// CallTemplate
 		err = right.Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</body>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</html>")
+		_, err = templBuffer.WriteString("</div></div></body></html>")
 		if err != nil {
 			return err
 		}
@@ -313,28 +211,16 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 			var_9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		// Element CSS
 		var var_10 = []any{templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_10...)
 		if err != nil {
 			return err
 		}
-		// Element Script
 		err = templ.RenderScriptItems(ctx, templBuffer, highlight(sourceID, targetID), removeHighlight(sourceID, targetID))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<span")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" class=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<span class=\"")
 		if err != nil {
 			return err
 		}
@@ -342,15 +228,7 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" onMouseOver=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\" onMouseOver=\"")
 		if err != nil {
 			return err
 		}
@@ -359,15 +237,7 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" onMouseOut=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\" onMouseOut=\"")
 		if err != nil {
 			return err
 		}
@@ -376,15 +246,10 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_13 string = s
 		_, err = templBuffer.WriteString(templ.EscapeString(var_13))
 		if err != nil {

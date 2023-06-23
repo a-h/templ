@@ -22,46 +22,19 @@ func Example() templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<html>")
+		_, err = templBuffer.WriteString("<html><head></head><body><style>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<head>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</head>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<body>")
-		if err != nil {
-			return err
-		}
-		// RawElement
-		_, err = templBuffer.WriteString("<style>")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_2 := `<!-- Some stuff -->`
 		_, err = templBuffer.WriteString(var_2)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</style>")
+		_, err = templBuffer.WriteString("</style><style>")
 		if err != nil {
 			return err
 		}
-		// RawElement
-		_, err = templBuffer.WriteString("<style>")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_3 := `
         .customClass {
           border: 1px solid black;
@@ -71,25 +44,10 @@ func Example() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</style>")
+		_, err = templBuffer.WriteString("</style><script type=\"text/javascript\">")
 		if err != nil {
 			return err
 		}
-		// RawElement
-		_, err = templBuffer.WriteString("<script")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" type=\"text/javascript\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_4 := `
         $("div").marquee();
         function test() {
@@ -100,30 +58,16 @@ func Example() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</script>")
+		_, err = templBuffer.WriteString("</script><h1>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<h1>")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_5 := `Hello`
 		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h1>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</body>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</html>")
+		_, err = templBuffer.WriteString("</h1></body></html>")
 		if err != nil {
 			return err
 		}

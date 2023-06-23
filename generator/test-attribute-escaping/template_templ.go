@@ -22,22 +22,7 @@ func BasicTemplate(url string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<a")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" href=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<div><a href=\"")
 		if err != nil {
 			return err
 		}
@@ -46,25 +31,16 @@ func BasicTemplate(url string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_3 := `text`
 		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</a>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div>")
+		_, err = templBuffer.WriteString("</a></div>")
 		if err != nil {
 			return err
 		}

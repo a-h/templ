@@ -22,12 +22,10 @@ func listItem() templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
 		_, err = templBuffer.WriteString("<li>")
 		if err != nil {
 			return err
 		}
-		// Children
 		err = var_1.Render(ctx, templBuffer)
 		if err != nil {
 			return err
@@ -56,12 +54,10 @@ func list() templ.Component {
 			var_2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
 		_, err = templBuffer.WriteString("<ul>")
 		if err != nil {
 			return err
 		}
-		// Children
 		err = var_2.Render(ctx, templBuffer)
 		if err != nil {
 			return err
@@ -90,26 +86,22 @@ func main() templ.Component {
 			var_3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// TemplElement
 		var_4 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 			templBuffer, templIsBuffer := w.(*bytes.Buffer)
 			if !templIsBuffer {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			// TemplElement
 			var_5 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 				templBuffer, templIsBuffer := w.(*bytes.Buffer)
 				if !templIsBuffer {
 					templBuffer = templ.GetBuffer()
 					defer templ.ReleaseBuffer(templBuffer)
 				}
-				// Element (standard)
 				_, err = templBuffer.WriteString("<u>")
 				if err != nil {
 					return err
 				}
-				// Text
 				var_6 := `Item 1`
 				_, err = templBuffer.WriteString(var_6)
 				if err != nil {
@@ -128,24 +120,20 @@ func main() templ.Component {
 			if err != nil {
 				return err
 			}
-			// Whitespace (normalised)
-			_, err = templBuffer.WriteString(` `)
+			_, err = templBuffer.WriteString(" ")
 			if err != nil {
 				return err
 			}
-			// TemplElement
 			var_7 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 				templBuffer, templIsBuffer := w.(*bytes.Buffer)
 				if !templIsBuffer {
 					templBuffer = templ.GetBuffer()
 					defer templ.ReleaseBuffer(templBuffer)
 				}
-				// Element (standard)
 				_, err = templBuffer.WriteString("<u>")
 				if err != nil {
 					return err
 				}
-				// Text
 				var_8 := `Item 2`
 				_, err = templBuffer.WriteString(var_8)
 				if err != nil {
@@ -164,24 +152,20 @@ func main() templ.Component {
 			if err != nil {
 				return err
 			}
-			// Whitespace (normalised)
-			_, err = templBuffer.WriteString(` `)
+			_, err = templBuffer.WriteString(" ")
 			if err != nil {
 				return err
 			}
-			// TemplElement
 			var_9 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 				templBuffer, templIsBuffer := w.(*bytes.Buffer)
 				if !templIsBuffer {
 					templBuffer = templ.GetBuffer()
 					defer templ.ReleaseBuffer(templBuffer)
 				}
-				// Element (standard)
 				_, err = templBuffer.WriteString("<u>")
 				if err != nil {
 					return err
 				}
-				// Text
 				var_10 := `Item 3`
 				_, err = templBuffer.WriteString(var_10)
 				if err != nil {

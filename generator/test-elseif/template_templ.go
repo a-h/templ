@@ -22,92 +22,69 @@ func render(d data) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
 		_, err = templBuffer.WriteString("<div>")
 		if err != nil {
 			return err
 		}
-		// If
 		if d.IsTrue() {
-			// StringExpression
 			var var_2 string = "True"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 			if err != nil {
 				return err
 			}
 		} else if !d.IsTrue() {
-			// StringExpression
 			var var_3 string = "False"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 			if err != nil {
 				return err
 			}
 		} else {
-			// StringExpression
 			var var_4 string = "Else"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_4))
 			if err != nil {
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("</div>")
+		_, err = templBuffer.WriteString("</div><div>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
-		}
-		// If
 		if 1 == 2 {
-			// StringExpression
 			var var_5 string = "If"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_5))
 			if err != nil {
 				return err
 			}
 		} else if 1 == 1 {
-			// StringExpression
 			var var_6 string = "ElseIf"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_6))
 			if err != nil {
 				return err
 			}
 		}
-		_, err = templBuffer.WriteString("</div>")
+		_, err = templBuffer.WriteString("</div><div>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
-		}
-		// If
 		if 1 == 2 {
-			// StringExpression
 			var var_7 string = "If"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_7))
 			if err != nil {
 				return err
 			}
 		} else if 1 == 3 {
-			// StringExpression
 			var var_8 string = "ElseIf"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_8))
 			if err != nil {
 				return err
 			}
 		} else if 1 == 4 {
-			// StringExpression
 			var var_9 string = "ElseIf"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_9))
 			if err != nil {
 				return err
 			}
 		} else if 1 == 1 {
-			// StringExpression
 			var var_10 string = "OK"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_10))
 			if err != nil {

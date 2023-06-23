@@ -23,9 +23,7 @@ func TestGeneratorSourceMap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to write Go expression: %v", err)
 	}
-	// The from value is (16, 1, 0) because the generator prefixes the
-	// expression with a "// GoExpression" comment.
-	expected := parser.NewPosition(16, 1, 0)
+	expected := parser.NewPosition(0, 0, 0)
 
 	actual, ok := g.sourceMap.TargetPositionFromSource(0, 0)
 	if !ok {

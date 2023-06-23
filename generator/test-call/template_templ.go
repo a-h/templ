@@ -22,45 +22,16 @@ func personTemplate(p person) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div>")
+		_, err = templBuffer.WriteString("<div><h1>")
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<h1>")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_2 string = p.name
 		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</h1>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" style=\"font-family: &#39;sans-serif&#39;\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" id=\"test\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(" data-contents=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("</h1><div style=\"font-family: &#39;sans-serif&#39;\" id=\"test\" data-contents=\"")
 		if err != nil {
 			return err
 		}
@@ -68,24 +39,15 @@ func personTemplate(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// CallTemplate
 		err = email(p.email).Render(ctx, templBuffer)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div>")
+		_, err = templBuffer.WriteString("</div></div>")
 		if err != nil {
 			return err
 		}
@@ -109,28 +71,16 @@ func email(s string) templ.Component {
 			var_3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
 		_, err = templBuffer.WriteString("<div>")
 		if err != nil {
 			return err
 		}
-		// Text
 		var_4 := `email:`
 		_, err = templBuffer.WriteString(var_4)
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<a")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" href=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("<a href=\"")
 		if err != nil {
 			return err
 		}
@@ -139,25 +89,16 @@ func email(s string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// StringExpression
 		var var_6 string = s
 		_, err = templBuffer.WriteString(templ.EscapeString(var_6))
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</a>")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("</div>")
+		_, err = templBuffer.WriteString("</a></div>")
 		if err != nil {
 			return err
 		}

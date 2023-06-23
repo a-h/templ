@@ -43,29 +43,17 @@ func render(p person) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		// Element CSS
 		var var_2 = []any{important()}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_2...)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" style=\"width: 100;\"")
+		_, err = templBuffer.WriteString("<div style=\"width: 100;\"")
 		if err != nil {
 			return err
 		}
 		if p.important {
-			// Element Attributes
-			_, err = templBuffer.WriteString(" class=")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\"")
+			_, err = templBuffer.WriteString(" class=\"")
 			if err != nil {
 				return err
 			}
@@ -82,7 +70,6 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		// Text
 		var_3 := `Important`
 		_, err = templBuffer.WriteString(var_3)
 		if err != nil {
@@ -92,29 +79,17 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		// Element CSS
 		var var_4 = []any{unimportant}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_4...)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" style=\"width: 100;\"")
+		_, err = templBuffer.WriteString("<div style=\"width: 100;\"")
 		if err != nil {
 			return err
 		}
 		if !p.important {
-			// Element Attributes
-			_, err = templBuffer.WriteString(" class=")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\"")
+			_, err = templBuffer.WriteString(" class=\"")
 			if err != nil {
 				return err
 			}
@@ -131,7 +106,6 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		// Text
 		var_5 := `Unimportant`
 		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
@@ -141,35 +115,22 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		// Element (standard)
-		// Element CSS
 		var var_6 = []any{important}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_6...)
 		if err != nil {
 			return err
 		}
-		// Element CSS
 		var var_7 = []any{unimportant}
 		err = templ.RenderCSSItems(ctx, templBuffer, var_7...)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("<div")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" style=\"width: 100;\"")
+		_, err = templBuffer.WriteString("<div style=\"width: 100;\"")
 		if err != nil {
 			return err
 		}
 		if p.important {
-			// Element Attributes
-			_, err = templBuffer.WriteString(" class=")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\"")
+			_, err = templBuffer.WriteString(" class=\"")
 			if err != nil {
 				return err
 			}
@@ -182,12 +143,7 @@ func render(p person) templ.Component {
 				return err
 			}
 		} else {
-			// Element Attributes
-			_, err = templBuffer.WriteString(" class=")
-			if err != nil {
-				return err
-			}
-			_, err = templBuffer.WriteString("\"")
+			_, err = templBuffer.WriteString(" class=\"")
 			if err != nil {
 				return err
 			}
@@ -204,7 +160,6 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		// Text
 		var_8 := `Else`
 		_, err = templBuffer.WriteString(var_8)
 		if err != nil {

@@ -22,41 +22,16 @@ func render() templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Element (standard)
-		_, err = templBuffer.WriteString("<a")
+		_, err = templBuffer.WriteString("<a href=\"javascript:alert(&#39;unaffected&#39;);\">")
 		if err != nil {
 			return err
 		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" href=\"javascript:alert(&#39;unaffected&#39;);\"")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_2 := `Ignored`
 		_, err = templBuffer.WriteString(var_2)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</a>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<a")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" href=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("</a><a href=\"")
 		if err != nil {
 			return err
 		}
@@ -65,35 +40,16 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_4 := `Sanitized`
 		_, err = templBuffer.WriteString(var_4)
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</a>")
-		if err != nil {
-			return err
-		}
-		// Element (standard)
-		_, err = templBuffer.WriteString("<a")
-		if err != nil {
-			return err
-		}
-		// Element Attributes
-		_, err = templBuffer.WriteString(" href=")
-		if err != nil {
-			return err
-		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("</a><a href=\"")
 		if err != nil {
 			return err
 		}
@@ -102,15 +58,10 @@ func render() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("\"")
+		_, err = templBuffer.WriteString("\">")
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(">")
-		if err != nil {
-			return err
-		}
-		// Text
 		var_6 := `Unsanitized`
 		_, err = templBuffer.WriteString(var_6)
 		if err != nil {

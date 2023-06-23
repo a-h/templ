@@ -22,15 +22,14 @@ func render(input string) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		// Switch
 		switch input {
-		case "a": // StringExpression
+		case "a":
 			var var_2 string = "it was 'a'"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_2))
 			if err != nil {
 				return err
 			}
-		default: // StringExpression
+		default:
 			var var_3 string = "it was something else"
 			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
 			if err != nil {
