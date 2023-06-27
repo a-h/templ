@@ -72,64 +72,68 @@ var elementCloseTagParser = parse.Func(func(in *parse.Input) (ect elementCloseTa
 })
 
 // Attribute name.
-var attributeNameFirst = "abcdefghijklmnopqrstuvwxyz@:"
-var attributeNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:-"
-var attributeNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
-	start := in.Index()
-	var prefix, suffix string
-	if prefix, ok, err = parse.RuneIn(attributeNameFirst).Parse(in); err != nil || !ok {
-		return
-	}
-	if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(attributeNameSubsequent)).Parse(in); err != nil {
-		in.Seek(start)
-		return
-	}
-	if len(suffix)+1 > 128 {
-		ok = false
-		err = parse.Error("attribute names must be < 128 characters long", in.Position())
-		return
-	}
-	return prefix + suffix, true, nil
-})
+var (
+	attributeNameFirst      = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:_@"
+	attributeNameSubsequent = attributeNameFirst + "-.0123456789"
+	attributeNameParser     = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
+		start := in.Index()
+		var prefix, suffix string
+		if prefix, ok, err = parse.RuneIn(attributeNameFirst).Parse(in); err != nil || !ok {
+			return
+		}
+		if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(attributeNameSubsequent)).Parse(in); err != nil {
+			in.Seek(start)
+			return
+		}
+		if len(suffix)+1 > 128 {
+			ok = false
+			err = parse.Error("attribute names must be < 128 characters long", in.Position())
+			return
+		}
+		return prefix + suffix, true, nil
+	})
+)
 
 // Constant attribute.
-var attributeConstantValueParser = parse.StringUntil(parse.Rune('"'))
-var constantAttributeParser = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
-	start := pi.Index()
+var (
+	attributeConstantValueParser = parse.StringUntil(parse.Rune('"'))
+	constantAttributeParser      = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
+		start := pi.Index()
 
-	// Optional whitespace leader.
-	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
-		return
-	}
+		// Optional whitespace leader.
+		if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+			return
+		}
 
-	// Attribute name.
-	if attr.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return
-	}
+		// Attribute name.
+		if attr.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
+			pi.Seek(start)
+			return
+		}
 
-	// ="
-	if _, ok, err = parse.String(`="`).Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return
-	}
+		// ="
+		if _, ok, err = parse.String(`="`).Parse(pi); err != nil || !ok {
+			pi.Seek(start)
+			return
+		}
 
-	// Attribute value.
-	if attr.Value, ok, err = attributeConstantValueParser.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return
-	}
+		// Attribute value.
+		if attr.Value, ok, err = attributeConstantValueParser.Parse(pi); err != nil || !ok {
+			pi.Seek(start)
+			return
+		}
 
-	attr.Value = html.UnescapeString(attr.Value)
+		attr.Value = html.UnescapeString(attr.Value)
 
-	// " - closing quote.
-	if _, ok, err = Must(parse.String(`"`), fmt.Sprintf("missing closing quote on attribute %q", attr.Name)).Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return
-	}
+		// " - closing quote.
+		if _, ok, err = Must(parse.String(`"`), fmt.Sprintf("missing closing quote on attribute %q", attr.Name)).Parse(pi); err != nil || !ok {
+			pi.Seek(start)
+			return
+		}
 
-	return attr, true, nil
-})
+		return attr, true, nil
+	})
+)
 
 // BoolConstantAttribute.
 var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr BoolConstantAttribute, ok bool, err error) {
@@ -280,25 +284,27 @@ func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool,
 }
 
 // Element name.
-var elementNameFirst = "abcdefghijklmnopqrstuvwxyz"
-var elementNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
-var elementNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
-	start := in.Index()
-	var prefix, suffix string
-	if prefix, ok, err = parse.RuneIn(elementNameFirst).Parse(in); err != nil || !ok {
-		return
-	}
-	if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(elementNameSubsequent)).Parse(in); err != nil || !ok {
-		in.Seek(start)
-		return
-	}
-	if len(suffix)+1 > 16 {
-		ok = false
-		err = parse.Error("element property names must be < 16 characters long", in.Position())
-		return
-	}
-	return prefix + suffix, true, nil
-})
+var (
+	elementNameFirst      = "abcdefghijklmnopqrstuvwxyz"
+	elementNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+	elementNameParser     = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
+		start := in.Index()
+		var prefix, suffix string
+		if prefix, ok, err = parse.RuneIn(elementNameFirst).Parse(in); err != nil || !ok {
+			return
+		}
+		if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(elementNameSubsequent)).Parse(in); err != nil || !ok {
+			in.Seek(start)
+			return
+		}
+		if len(suffix)+1 > 16 {
+			ok = false
+			err = parse.Error("element property names must be < 16 characters long", in.Position())
+			return
+		}
+		return prefix + suffix, true, nil
+	})
+)
 
 // Element.
 var elementOpenClose elementOpenCloseParser
