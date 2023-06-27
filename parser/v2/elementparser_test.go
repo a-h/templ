@@ -16,7 +16,7 @@ type attributeTest[T any] struct {
 }
 
 func TestAttributeParser(t *testing.T) {
-	var tests = []attributeTest[any]{
+	tests := []attributeTest[any]{
 		{
 			name:   "element: open",
 			input:  `<a>`,
@@ -31,6 +31,20 @@ func TestAttributeParser(t *testing.T) {
 			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
 				Name: "turbo-frame",
+			},
+		},
+		{
+			name:   "element: open with hyperscript attribute",
+			input:  `<div _="show = true">`,
+			parser: StripType(elementOpenTagParser),
+			expected: elementOpenTag{
+				Name: "div",
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "_",
+						Value: "show = true",
+					},
+				},
 			},
 		},
 		{
@@ -281,7 +295,7 @@ if test {
 }
 
 func TestElementParser(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected Element
@@ -316,7 +330,6 @@ func TestElementParser(t *testing.T) {
 									Col:   15,
 								},
 								To: Position{
-
 									Index: 19,
 									Line:  0,
 									Col:   19,
@@ -344,7 +357,6 @@ func TestElementParser(t *testing.T) {
 									Col:   10,
 								},
 								To: Position{
-
 									Index: 16,
 									Line:  0,
 									Col:   16,
@@ -392,7 +404,6 @@ func TestElementParser(t *testing.T) {
 									Col:   23,
 								},
 								To: Position{
-
 									Index: 27,
 									Line:  0,
 									Col:   27,
@@ -428,7 +439,6 @@ func TestElementParser(t *testing.T) {
 									Col:   23,
 								},
 								To: Position{
-
 									Index: 50,
 									Line:  0,
 									Col:   50,
@@ -775,7 +785,7 @@ func TestElementParser(t *testing.T) {
 }
 
 func TestElementParserErrors(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected error
