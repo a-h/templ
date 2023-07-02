@@ -773,6 +773,14 @@ func (g *generator) writeVoidElement(indentLevel int, n parser.Element) (err err
 			return err
 		}
 	} else {
+		// <style type="text/css"></style>
+		if err = g.writeElementCSS(indentLevel, n); err != nil {
+			return err
+		}
+		// <script type="text/javascript"></script>
+		if err = g.writeElementScript(indentLevel, n); err != nil {
+			return err
+		}
 		// <hr
 		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s`, html.EscapeString(n.Name))); err != nil {
 			return err

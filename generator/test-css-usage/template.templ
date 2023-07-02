@@ -23,6 +23,7 @@ templ MapCSSExample() {
 
 templ KVExample() {
 	<div class={ "a", templ.KV("b", false) }></div>
+	<input type="email" id="email" name="email" class={ "a", "b", "c", templ.KV("c", false) } placeholder="your@email.com" autocomplete="off"/>
 }
 
 templ ThreeButtons() {

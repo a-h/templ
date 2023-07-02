@@ -181,6 +181,23 @@ func KVExample() templ.Component {
 		if err != nil {
 			return err
 		}
+		var var_10 = []any{"a", "b", "c", templ.KV("c", false)}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_10...)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<input type=\"email\" id=\"email\" name=\"email\" class=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_10).String()))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" placeholder=\"your@email.com\" autocomplete=\"off\">")
+		if err != nil {
+			return err
+		}
 		if !templIsBuffer {
 			_, err = io.Copy(w, templBuffer)
 		}
@@ -196,9 +213,9 @@ func ThreeButtons() templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_10 := templ.GetChildren(ctx)
-		if var_10 == nil {
-			var_10 = templ.NopComponent
+		var_11 := templ.GetChildren(ctx)
+		if var_11 == nil {
+			var_11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		err = Button("A").Render(ctx, templBuffer)
@@ -209,8 +226,8 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_11 = []any{templ.Classes(green)}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_11...)
+		var var_12 = []any{templ.Classes(green)}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_12...)
 		if err != nil {
 			return err
 		}
@@ -218,7 +235,7 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_11).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_12).String()))
 		if err != nil {
 			return err
 		}
@@ -226,8 +243,8 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_12 string = "Green"
-		_, err = templBuffer.WriteString(templ.EscapeString(var_12))
+		var var_13 string = "Green"
+		_, err = templBuffer.WriteString(templ.EscapeString(var_13))
 		if err != nil {
 			return err
 		}

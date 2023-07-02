@@ -765,6 +765,53 @@ func TestElementParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "element: inputs can contain class attributes",
+			input: `<input  type="email" id="email" name="email" class={ "a", "b", "c",  templ.KV("c", false)}	placeholder="your@email.com" autocomplete="off"/>`,
+			expected: Element{
+				Name: "input",
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "type",
+						Value: "email",
+					},
+					ConstantAttribute{
+						Name:  "id",
+						Value: "email",
+					},
+					ConstantAttribute{
+						Name:  "name",
+						Value: "email",
+					},
+					ExpressionAttribute{
+						Name: "class",
+						Expression: Expression{
+							Value: `"a", "b", "c",  templ.KV("c", false)`,
+							Range: Range{
+								From: Position{
+									Index: 53,
+									Line:  0,
+									Col:   53,
+								},
+								To: Position{
+									Index: 89,
+									Line:  0,
+									Col:   89,
+								},
+							},
+						},
+					},
+					ConstantAttribute{
+						Name:  "placeholder",
+						Value: "your@email.com",
+					},
+					ConstantAttribute{
+						Name:  "autocomplete",
+						Value: "off",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
