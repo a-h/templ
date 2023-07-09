@@ -42,7 +42,7 @@ func formatStdin() (err error) {
 func formatDir(dir string) (err error) {
 	start := time.Now()
 	results := make(chan processor.Result)
-	go processor.Process(".", format, workerCount, results)
+	go processor.Process(dir, format, workerCount, results)
 	var successCount, errorCount int
 	for r := range results {
 		if r.Error != nil {
