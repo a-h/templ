@@ -8,7 +8,7 @@ import (
 )
 
 func TestTemplElementExpressionParser(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected TemplElementExpression
@@ -29,6 +29,27 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							Index: 14,
 							Line:  0,
 							Col:   14,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: simple with underscore",
+			input: `@Other_Component(p.Test)` + "\n",
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: "Other_Component(p.Test)",
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 24,
+							Line:  0,
+							Col:   24,
 						},
 					},
 				},

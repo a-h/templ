@@ -18,6 +18,7 @@ var templElementStartExpressionParams = parse.StringFrom(
 var templElementStartExpression = ExpressionOf(parse.StringFrom(
 	parse.AtLeast(1, parse.StringFrom(
 		parse.StringFrom(parse.Optional(parse.String("."))),
+		parse.StringFrom(parse.Optional(parse.String("_"))),
 		parse.RuneInRanges(unicode.Letter),
 		parse.StringFrom(parse.AtMost(255, parse.RuneInRanges(unicode.Letter, unicode.Number))),
 		parse.StringFrom(parse.Optional(templElementStartExpressionParams)),
