@@ -267,6 +267,19 @@ if test {
 			},
 		},
 		{
+			name:   "bool constant attribute",
+			input:  `<div data>`,
+			parser: StripType(elementOpenTagParser),
+			expected: elementOpenTag{
+				Name:       "div",
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Name: "data",
+					},	
+				},
+			},
+		},
+		{
 			name:   "attribute containing escaped text",
 			input:  ` href="&lt;&quot;&gt;"`,
 			parser: StripType(constantAttributeParser),
@@ -766,7 +779,7 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: inputs can contain class attributes",
+			name: "element: inputs can contain class attributes",
 			input: `<input  type="email" id="email" name="email" class={ "a", "b", "c",  templ.KV("c", false)}	placeholder="your@email.com" autocomplete="off"/>`,
 			expected: Element{
 				Name: "input",

@@ -161,8 +161,8 @@ var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr BoolCon
 		pi.Seek(start)
 		return attr, false, nil
 	}
-	if !(next == " " || next == "\t" || next == "\n" || next == "/") {
-		err = parse.Error(fmt.Sprintf("boolConstantAttributeParser: expected attribute name to end with space, newline or '/>', but got %q", next), pi.Position())
+	if !(next == " " || next == "\t" || next == "\n" || next == "/" || next == ">") {
+		err = parse.Error(fmt.Sprintf("boolConstantAttributeParser: expected attribute name to end with space, newline, '/>' or '>', but got %q", next), pi.Position())
 		return attr, false, err
 	}
 
