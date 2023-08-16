@@ -344,8 +344,8 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		}
 		{
 			indentLevel++
-			// _, err = io.Copy(w, templBuffer)
-			if _, err = g.w.WriteIndent(indentLevel, "_, err = io.Copy(w, templBuffer)\n"); err != nil {
+			// _, err = templBuffer.WriteTo(w)
+			if _, err = g.w.WriteIndent(indentLevel, "_, err = templBuffer.WriteTo(w)\n"); err != nil {
 				return err
 			}
 			indentLevel--
