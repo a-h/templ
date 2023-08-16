@@ -132,7 +132,7 @@ func counts(global, session int) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -191,7 +191,7 @@ func Page(global, session int) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})

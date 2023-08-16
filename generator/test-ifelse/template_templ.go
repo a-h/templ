@@ -36,7 +36,7 @@ func render(d data) templ.Component {
 			}
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})

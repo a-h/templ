@@ -39,7 +39,7 @@ func headerTemplate(name string) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -77,7 +77,7 @@ func footerTemplate() templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -119,7 +119,7 @@ func navTemplate() templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -180,7 +180,7 @@ func layout(name string) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -232,7 +232,7 @@ func postsTemplate(posts []Post) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -280,7 +280,7 @@ func home() templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -319,7 +319,7 @@ func posts(posts []Post) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})

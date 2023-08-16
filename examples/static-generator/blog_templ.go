@@ -39,7 +39,7 @@ func headerComponent(title string) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -80,7 +80,7 @@ func contentComponent(title string, body templ.Component) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -116,7 +116,7 @@ func contentPage(title string, body templ.Component) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -185,7 +185,7 @@ func indexPage(posts []Post) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})

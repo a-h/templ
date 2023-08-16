@@ -57,7 +57,7 @@ func counts(global, user int) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -99,7 +99,7 @@ func form() templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -153,7 +153,7 @@ func page(global, user int) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})

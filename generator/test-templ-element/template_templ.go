@@ -45,7 +45,7 @@ func wrapper(index int) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -141,7 +141,7 @@ func template() templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})

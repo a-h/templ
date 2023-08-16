@@ -162,7 +162,7 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
@@ -260,7 +260,7 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 			return err
 		}
 		if !templIsBuffer {
-			_, err = io.Copy(w, templBuffer)
+			_, err = templBuffer.WriteTo(w)
 		}
 		return err
 	})
