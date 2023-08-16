@@ -249,6 +249,15 @@ if test {
 			},
 		},
 		{
+			name:   "single quote constant attribute",
+			input:  ` href='"test"'`,
+			parser: StripType(constantAttributeParser),
+			expected: ConstantAttribute{
+				Name:  "href",
+				Value: `"test"`,
+			},
+		},
+		{
 			name:   "attribute name with hyphens",
 			input:  ` data-turbo-permanent="value"`,
 			parser: StripType(constantAttributeParser),

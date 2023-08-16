@@ -96,8 +96,9 @@ var (
 
 // Constant attribute.
 var (
-	attributeConstantValueParser = parse.StringUntil(parse.Rune('"'))
-	constantAttributeParser      = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
+	attributeConstantValueParser            = parse.StringUntil(parse.Rune('"'))
+	attributeConstantValueSingleQuoteParser = parse.StringUntil(parse.Rune('\''))
+	constantAttributeParser                 = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
 		start := pi.Index()
 
 		// Optional whitespace leader.
@@ -112,13 +113,21 @@ var (
 		}
 
 		// ="
-		if _, ok, err = parse.String(`="`).Parse(pi); err != nil || !ok {
+		result, ok, err := parse.Or(parse.String(`="`), parse.String(`='`)).Parse(pi)
+		if err != nil || !ok {
 			pi.Seek(start)
 			return
 		}
 
+		valueParser := attributeConstantValueParser
+		closeParser := parse.String(`"`)
+		if result.B.OK {
+			valueParser = attributeConstantValueSingleQuoteParser
+			closeParser = parse.String(`'`)
+		}
+
 		// Attribute value.
-		if attr.Value, ok, err = attributeConstantValueParser.Parse(pi); err != nil || !ok {
+		if attr.Value, ok, err = valueParser.Parse(pi); err != nil || !ok {
 			pi.Seek(start)
 			return
 		}
@@ -126,7 +135,7 @@ var (
 		attr.Value = html.UnescapeString(attr.Value)
 
 		// " - closing quote.
-		if _, ok, err = Must(parse.String(`"`), fmt.Sprintf("missing closing quote on attribute %q", attr.Name)).Parse(pi); err != nil || !ok {
+		if _, ok, err = Must(closeParser, fmt.Sprintf("missing closing quote on attribute %q", attr.Name)).Parse(pi); err != nil || !ok {
 			pi.Seek(start)
 			return
 		}
