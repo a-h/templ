@@ -308,7 +308,8 @@ type Element struct {
 }
 
 var voidElements = map[string]struct{}{
-	"area": {}, "base": {}, "br": {}, "col": {}, "command": {}, "embed": {}, "hr": {}, "img": {}, "input": {}, "keygen": {}, "link": {}, "meta": {}, "param": {}, "source": {}, "track": {}, "wbr": {}}
+	"area": {}, "base": {}, "br": {}, "col": {}, "command": {}, "embed": {}, "hr": {}, "img": {}, "input": {}, "keygen": {}, "link": {}, "meta": {}, "param": {}, "source": {}, "track": {}, "wbr": {},
+}
 
 // https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#void-element
 func (e Element) IsVoidElement() bool {
@@ -538,6 +539,7 @@ func (bca BoolConstantAttribute) IsMultilineAttr() bool { return false }
 func (bca BoolConstantAttribute) String() string {
 	return bca.Name
 }
+
 func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, bca.String())
 }
@@ -552,6 +554,7 @@ func (ca ConstantAttribute) IsMultilineAttr() bool { return false }
 func (ca ConstantAttribute) String() string {
 	return ca.Name + `="` + html.EscapeString(ca.Value) + `"`
 }
+
 func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, ca.String())
 }
@@ -566,6 +569,7 @@ func (ea BoolExpressionAttribute) IsMultilineAttr() bool { return false }
 func (ea BoolExpressionAttribute) String() string {
 	return ea.Name + `?={ ` + ea.Expression.Value + ` }`
 }
+
 func (ea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, ea.String())
 }
@@ -580,6 +584,7 @@ func (ea ExpressionAttribute) IsMultilineAttr() bool { return false }
 func (ea ExpressionAttribute) String() string {
 	return ea.Name + `={ ` + ea.Expression.Value + ` }`
 }
+
 func (ea ExpressionAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, ea.String())
 }

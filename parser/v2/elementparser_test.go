@@ -267,15 +267,27 @@ if test {
 			},
 		},
 		{
+			name: "multiline attribute",
+			input: ` data-script="on click
+                do something
+             end"
+`,
+			parser: StripType(constantAttributeParser),
+			expected: ConstantAttribute{
+				Name:  "data-script",
+				Value: "on click\n                do something\n             end",
+			},
+		},
+		{
 			name:   "bool constant attribute",
 			input:  `<div data>`,
 			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
-				Name:       "div",
+				Name: "div",
 				Attributes: []Attribute{
 					BoolConstantAttribute{
 						Name: "data",
-					},	
+					},
 				},
 			},
 		},
