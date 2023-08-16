@@ -165,7 +165,7 @@ func render(p person) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</div>")
+		_, err = templBuffer.WriteString("</div><div data-script=\"on click\n                do something\n             end\"></div>")
 		if err != nil {
 			return err
 		}
