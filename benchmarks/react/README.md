@@ -8,8 +8,16 @@
 npm i
 ```
 
-### run
+### build
 
 ```sh
-npx babel src --out-dir . && node index.js
+npm run build
+```
+
+### run
+
+requires: build
+
+```sh
+npm start
 ```

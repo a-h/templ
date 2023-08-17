@@ -2,25 +2,18 @@
   "name": "react-benchmark",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./src/index.jsx",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "esbuild ./src/index.jsx --bundle --outfile=index.js",
+    "start": "node index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@babel/core": "^7.17.5",
-    "@babel/runtime": "^7.17.2",
-    "babel-preset-react-app": "^3.1.2",
     "benchmark": "^2.1.4",
+    "esbuild": "0.19.2",
     "microtime": "^3.0.0",
-    "react": "^17.0.2"
-  },
-  "devDependencies": {
-    "@babel/cli": "^7.17.6",
-    "@babel/plugin-transform-runtime": "^7.17.0",
-    "@babel/preset-env": "^7.16.11",
-    "@babel/preset-react": "^7.16.7",
-    "react-dom": "^17.0.2"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }
