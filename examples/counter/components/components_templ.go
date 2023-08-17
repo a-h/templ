@@ -26,7 +26,7 @@ func border() templ.CSSClass {
 	}
 }
 
-func counts(global, session int) templ.Component {
+func test(other string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
 		if !templIsBuffer {
@@ -39,12 +39,44 @@ func counts(global, session int) templ.Component {
 			var_1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<div id=\"")
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(templ.EscapeString(other))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\"></div>")
+		if err != nil {
+			return err
+		}
+		if !templIsBuffer {
+			_, err = templBuffer.WriteTo(w)
+		}
+		return err
+	})
+}
+
+func counts(global, session int) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		if !templIsBuffer {
+			templBuffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templBuffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		var_2 := templ.GetChildren(ctx)
+		if var_2 == nil {
+			var_2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<form id=\"countsForm\" action=\"/\" method=\"POST\" hx-post=\"/\" hx-select=\"#countsForm\" hx-swap=\"outerHTML\"><div class=\"columns\">")
 		if err != nil {
 			return err
 		}
-		var var_2 = []any{"column", "has-text-centered", "is-primary", border}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_2...)
+		var var_3 = []any{"column", "has-text-centered", "is-primary", border}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_3...)
 		if err != nil {
 			return err
 		}
@@ -52,7 +84,7 @@ func counts(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_2).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_3).String()))
 		if err != nil {
 			return err
 		}
@@ -60,8 +92,8 @@ func counts(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_3 string = strconv.Itoa(global)
-		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
+		var var_4 string = strconv.Itoa(global)
+		_, err = templBuffer.WriteString(templ.EscapeString(var_4))
 		if err != nil {
 			return err
 		}
@@ -69,8 +101,8 @@ func counts(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_4 := `Global`
-		_, err = templBuffer.WriteString(var_4)
+		var_5 := `Global`
+		_, err = templBuffer.WriteString(var_5)
 		if err != nil {
 			return err
 		}
@@ -78,8 +110,8 @@ func counts(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_5 := `+1`
-		_, err = templBuffer.WriteString(var_5)
+		var_6 := `+1`
+		_, err = templBuffer.WriteString(var_6)
 		if err != nil {
 			return err
 		}
@@ -87,8 +119,8 @@ func counts(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_6 = []any{"column", "has-text-centered", border}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_6...)
+		var var_7 = []any{"column", "has-text-centered", border}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_7...)
 		if err != nil {
 			return err
 		}
@@ -96,7 +128,7 @@ func counts(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_6).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_7).String()))
 		if err != nil {
 			return err
 		}
@@ -104,8 +136,8 @@ func counts(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_7 string = strconv.Itoa(session)
-		_, err = templBuffer.WriteString(templ.EscapeString(var_7))
+		var var_8 string = strconv.Itoa(session)
+		_, err = templBuffer.WriteString(templ.EscapeString(var_8))
 		if err != nil {
 			return err
 		}
@@ -113,8 +145,8 @@ func counts(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_8 := `Session`
-		_, err = templBuffer.WriteString(var_8)
+		var_9 := `Session`
+		_, err = templBuffer.WriteString(var_9)
 		if err != nil {
 			return err
 		}
@@ -122,8 +154,8 @@ func counts(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_9 := `+1`
-		_, err = templBuffer.WriteString(var_9)
+		var_10 := `+1`
+		_, err = templBuffer.WriteString(var_10)
 		if err != nil {
 			return err
 		}
@@ -146,17 +178,17 @@ func Page(global, session int) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_10 := templ.GetChildren(ctx)
-		if var_10 == nil {
-			var_10 = templ.NopComponent
+		var_11 := templ.GetChildren(ctx)
+		if var_11 == nil {
+			var_11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
 		if err != nil {
 			return err
 		}
-		var_11 := `Counts`
-		_, err = templBuffer.WriteString(var_11)
+		var_12 := `Counts`
+		_, err = templBuffer.WriteString(var_12)
 		if err != nil {
 			return err
 		}
@@ -164,8 +196,8 @@ func Page(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_12 := ``
-		_, err = templBuffer.WriteString(var_12)
+		var_13 := ``
+		_, err = templBuffer.WriteString(var_13)
 		if err != nil {
 			return err
 		}
@@ -173,8 +205,8 @@ func Page(global, session int) templ.Component {
 		if err != nil {
 			return err
 		}
-		var_13 := `Counts`
-		_, err = templBuffer.WriteString(var_13)
+		var_14 := `Counts`
+		_, err = templBuffer.WriteString(var_14)
 		if err != nil {
 			return err
 		}

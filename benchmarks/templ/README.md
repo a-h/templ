@@ -10,23 +10,18 @@ Used to test code generation strategies for improvements to render time.
 go test -bench .
 ```
 
-## Results
-
-Currently getting the following results which show that using an internal `bytes.Buffer` within a template could save 25% of time.
-
-To put this in perspective, the React benchmark is hitting 156,735 operations per second.
-
-There are 1,000,000,000 nanoseconds in a second, so this is 6,380 ns per operation, which is 6 times slower than templ.
-
+## Results as of 2023-08-17
 
 ```
 go test -bench .
 goos: darwin
 goarch: arm64
 pkg: github.com/a-h/templ/benchmarks/templ
-BenchmarkCurrent-10              1029445              1153 ns/op            1088 B/op         21 allocs/op
-BenchmarkCandidate-10            1419076               845.7 ns/op          1464 B/op         20 allocs/op
-BenchmarkIOWriteString-10       14667363                82.41 ns/op          352 B/op          2 allocs/op
+BenchmarkTempl-10                3291883               369.1 ns/op           536 B/op          6 allocs/op
+BenchmarkGoTemplate-10            481052              2475 ns/op            1400 B/op         38 allocs/op
+BenchmarkIOWriteString-10       20353198                56.64 ns/op          320 B/op          1 allocs/op
 PASS
-ok      github.com/a-h/templ/benchmarks/templ   5.448s
-````
+ok      github.com/a-h/templ/benchmarks/templ   4.650s
+```
+
+React comes in at 1,000,000,000ns / 114,131 ops/s = 8,757.5 ns per operation.
