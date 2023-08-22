@@ -101,9 +101,10 @@ func main() {
 ```
 
 ```html title="output"
-<div id="wrapper">
- <div>
-  Inserted from the top
- </div>
+<div id="left">
+	<p>Left contents</p>
+</div>
+<div id="right">
+	<p>Right contents</p>
 </div>
 ```
