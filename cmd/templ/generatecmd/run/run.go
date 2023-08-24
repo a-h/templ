@@ -2,6 +2,7 @@ package run
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -17,13 +18,9 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 	cmd, ok := running[input]
 	if ok {
 		if err = cmd.Process.Kill(); err != nil {
-			return
-		}
-		if _, err = cmd.Process.Wait(); err != nil {
-			return
+			return nil, fmt.Errorf("failed to kill existing process: %w", err)
 		}
 		delete(running, input)
-		return
 	}
 
 	parts := strings.SplitN(input, " ", 2)
@@ -38,6 +35,7 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 	cmd.Dir = workingDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	running[input] = cmd
 	err = cmd.Start()
 	return
 }

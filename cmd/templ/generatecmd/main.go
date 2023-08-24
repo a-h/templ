@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"go/format"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -15,11 +17,13 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd/run"
+	"github.com/a-h/templ/cmd/templ/generatecmd/sse"
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
@@ -39,6 +43,9 @@ type Arguments struct {
 }
 
 var defaultWorkerCount = runtime.NumCPU()
+
+//go:embed script.js
+var script string
 
 func Run(args Arguments) (err error) {
 	start := time.Now()
@@ -69,6 +76,11 @@ func Run(args Arguments) (err error) {
 		}
 	}
 
+	var sses *sse.Server
+	if args.Proxy != "" {
+		sses = sse.New()
+	}
+
 	fmt.Println("Processing path:", args.Path)
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
@@ -84,16 +96,49 @@ func Run(args Arguments) (err error) {
 				if _, err := run.Run(context.Background(), args.Path, args.Command); err != nil {
 					fmt.Printf("Error starting command: %v\n", err)
 				}
+				// Send server-sent event.
+				if sses != nil {
+					sses.Send("message", "reload")
+				}
 			}
 			if !firstRunComplete && proxy != nil {
 				proxyURL := fmt.Sprintf("http://127.0.0.1:%d", args.ProxyPort)
+				scriptTag := `<script src="/_templ/reload/script.js"></script>`
 				go func() {
 					fmt.Printf("Proxying from %s to target: %s\n", proxyURL, proxy.String())
-					//TODO: Update this to add additional routes:
-					// 1. /_templ/reload/script.js - provides a script that executes  SSE to reload the page.
-					// 2. /_templ/reload/events - provides a list of events.
 					proxy := httputil.NewSingleHostReverseProxy(proxy)
-					if err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", args.ProxyPort), proxy); err != nil {
+					proxy.ModifyResponse = func(r *http.Response) error {
+						if contentType := r.Header.Get("Content-Type"); contentType != "text/html" {
+							return nil
+						}
+						body, err := io.ReadAll(r.Body)
+						if err != nil {
+							return err
+						}
+						updated := strings.Replace(string(body), "</body>", scriptTag+"</body>", -1)
+						r.Body = io.NopCloser(strings.NewReader(updated))
+						r.ContentLength = int64(len(updated))
+						r.Header.Set("Content-Length", strconv.Itoa(len(updated)))
+						return nil
+					}
+					h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						if r.URL.Path == "/_templ/reload/script.js" {
+							// Provides a script that reloads the page.
+							w.Header().Add("Content-Type", "text/javascript")
+							_, err := io.WriteString(w, script)
+							if err != nil {
+								fmt.Printf("failed to write script: %v\n", err)
+							}
+							return
+						}
+						if r.URL.Path == "/_templ/reload/events" {
+							// Provides a list of messages including a reload message.
+							sses.ServeHTTP(w, r)
+							return
+						}
+						proxy.ServeHTTP(w, r)
+					})
+					if err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", args.ProxyPort), h); err != nil {
 						fmt.Printf("Error starting proxy: %v\n", err)
 					}
 				}()
