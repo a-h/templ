@@ -77,6 +77,9 @@ func generateCmd(args []string) {
 	fileName := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
 	path := cmd.String("path", ".", "Generates code for all files in path.")
 	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "Set to true to generate HTML files to visualise the templ code and its corresponding Go code.")
+	watchFlag := cmd.Bool("watch", false, "Set to true to watch the path for changes and regenerate code.")
+	cmdFlag := cmd.String("cmd", "", "Set the command to run after generating code.")
+	proxyFlag := cmd.String("proxy", "", "Set the URL to proxy after generating code and executing the command.")
 	workerCount := cmd.Int("w", runtime.NumCPU(), "Number of workers to run in parallel.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
@@ -87,6 +90,9 @@ func generateCmd(args []string) {
 	err = generatecmd.Run(generatecmd.Arguments{
 		FileName:                        *fileName,
 		Path:                            *path,
+		Watch:                           *watchFlag,
+		Command:                         *cmdFlag,
+		Proxy:                           *proxyFlag,
 		WorkerCount:                     *workerCount,
 		GenerateSourceMapVisualisations: *sourceMapVisualisations,
 	})

@@ -7,21 +7,33 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"log"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
+	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/a-h/templ/cmd/templ/processor"
+	"github.com/a-h/templ/cmd/templ/generatecmd/run"
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/pkg/browser"
 )
 
 type Arguments struct {
 	FileName                        string
 	Path                            string
+	Watch                           bool
+	Command                         string
+	ProxyPort                       int
+	Proxy                           string
 	WorkerCount                     int
 	GenerateSourceMapVisualisations bool
 }
@@ -29,13 +41,147 @@ type Arguments struct {
 var defaultWorkerCount = runtime.NumCPU()
 
 func Run(args Arguments) (err error) {
+	start := time.Now()
+	if args.Watch && args.FileName != "" {
+		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
+	}
 	if args.FileName != "" {
 		return processSingleFile(args.FileName, args.GenerateSourceMapVisualisations)
 	}
+	var proxy *url.URL
+	if args.Proxy != "" {
+		proxy, err = url.Parse(args.Proxy)
+		if err != nil {
+			return fmt.Errorf("failed to parse proxy URL: %w", err)
+		}
+	}
+	if args.ProxyPort == 0 {
+		args.ProxyPort = 7331
+	}
+
 	if args.WorkerCount == 0 {
 		args.WorkerCount = defaultWorkerCount
 	}
-	return processPath(args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount)
+	if !path.IsAbs(args.Path) {
+		args.Path, err = filepath.Abs(args.Path)
+		if err != nil {
+			return
+		}
+	}
+
+	fmt.Println("Processing path:", args.Path)
+	var firstRunComplete bool
+	fileNameToLastModTime := make(map[string]time.Time)
+	for !firstRunComplete || args.Watch {
+		changesFound, errs := processChanges(fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount)
+		if len(errs) > 0 {
+			fmt.Printf("Error processing path: %v\n", errors.Join(errs...))
+		}
+		if changesFound > 0 {
+			fmt.Printf("Generated code for %d templates with %d errors in %s\n", changesFound, len(errs), time.Since(start))
+			if args.Command != "" {
+				fmt.Printf("Executing command: %s\n", args.Command)
+				if _, err := run.Run(context.Background(), args.Path, args.Command); err != nil {
+					fmt.Printf("Error starting command: %v\n", err)
+				}
+			}
+			if !firstRunComplete && proxy != nil {
+				proxyURL := fmt.Sprintf("http://127.0.0.1:%d", args.ProxyPort)
+				go func() {
+					fmt.Printf("Proxying from %s to target: %s\n", proxyURL, proxy.String())
+					//TODO: Update this to add additional routes:
+					// 1. /_templ/reload/script.js - provides a script that executes  SSE to reload the page.
+					// 2. /_templ/reload/events - provides a list of events.
+					proxy := httputil.NewSingleHostReverseProxy(proxy)
+					if err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", args.ProxyPort), proxy); err != nil {
+						fmt.Printf("Error starting proxy: %v\n", err)
+					}
+				}()
+				fmt.Printf("Opening URL: %s\n", proxyURL)
+				go func() {
+					if err := openURL(proxyURL); err != nil {
+						fmt.Printf("Error opening URL: %v\n", err)
+					}
+				}()
+			}
+		}
+		if firstRunComplete {
+			time.Sleep(250 * time.Millisecond)
+		}
+		firstRunComplete = true
+		start = time.Now()
+	}
+	return err
+}
+
+func shouldSkipDir(dir string) bool {
+	if dir == "." {
+		return false
+	}
+	if dir == "vendor" || dir == "node_modules" {
+		return true
+	}
+	_, name := path.Split(dir)
+	// These directories are ignored by the Go tool.
+	if strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") {
+		return true
+	}
+	return false
+}
+
+func processChanges(fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, maxWorkerCount int) (changesFound int, errs []error) {
+	sem := make(chan struct{}, maxWorkerCount)
+	var wg sync.WaitGroup
+
+	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() && shouldSkipDir(path) {
+			return filepath.SkipDir
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(path, ".templ") {
+			lastModTime := fileNameToLastModTime[path]
+			if info.ModTime().After(lastModTime) {
+				fileNameToLastModTime[path] = info.ModTime()
+				changesFound++
+
+				// Start a processor, but limit to maxWorkerCount.
+				sem <- struct{}{}
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					if err := processSingleFile(path, generateSourceMapVisualisations); err != nil {
+						errs = append(errs, err)
+					}
+					<-sem
+				}()
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	wg.Wait()
+
+	return changesFound, errs
+}
+
+func openURL(url string) error {
+	backoff := backoff.NewExponentialBackOff()
+	var client http.Client
+	client.Timeout = 1 * time.Second
+	for {
+		if _, err := client.Get(url); err == nil {
+			break
+		}
+		d := backoff.NextBackOff()
+		log.Printf("Server not ready. Retrying in %v...", d)
+		time.Sleep(d)
+	}
+	return browser.OpenURL(url)
 }
 
 func processSingleFile(fileName string, generateSourceMapVisualisations bool) error {
@@ -45,27 +191,6 @@ func processSingleFile(fileName string, generateSourceMapVisualisations bool) er
 		return err
 	}
 	fmt.Printf("Generated code for %q in %s\n", fileName, time.Since(start))
-	return err
-}
-
-func processPath(path string, generateSourceMapVisualisations bool, workerCount int) (err error) {
-	start := time.Now()
-	results := make(chan processor.Result)
-	p := func(fileName string) error {
-		return compile(fileName, generateSourceMapVisualisations)
-	}
-	go processor.Process(path, p, workerCount, results)
-	var successCount, errorCount int
-	for r := range results {
-		if r.Error != nil {
-			err = errors.Join(err, fmt.Errorf("%s: %w", r.FileName, r.Error))
-			errorCount++
-			continue
-		}
-		successCount++
-		fmt.Printf("%s complete in %v\n", r.FileName, r.Duration)
-	}
-	fmt.Printf("Generated code for %d templates with %d errors in %s\n", successCount+errorCount, errorCount, time.Since(start))
 	return err
 }
 
