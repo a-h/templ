@@ -1,33 +1,40 @@
 package sse
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 )
 
-func New() *Server {
-	return &Server{
-		requests: map[int64]chan Event{},
+func New() *Handler {
+	return &Handler{
+		m:        new(sync.Mutex),
+		requests: map[int64]chan event{},
 	}
 }
 
-type Server struct {
+type Handler struct {
+	m        *sync.Mutex
 	counter  int64
-	requests map[int64]chan Event
+	requests map[int64]chan event
 }
 
-type Event struct {
+type event struct {
 	Type string
 	Data string
 }
 
-func (s *Server) Send(eventType string, data string) {
+// Send an event to all connected clients.
+func (s *Handler) Send(eventType string, data string) {
+	s.m.Lock()
+	defer s.m.Unlock()
 	for _, f := range s.requests {
 		f := f
-		go func(f chan Event) {
-			f <- Event{
+		go func(f chan event) {
+			f <- event{
 				Type: eventType,
 				Data: data,
 			}
@@ -35,7 +42,7 @@ func (s *Server) Send(eventType string, data string) {
 	}
 }
 
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -43,9 +50,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 
 	id := atomic.AddInt64(&s.counter, 1)
-	events := make(chan Event)
+	events := make(chan event)
 	s.requests[id] = events
-	defer delete(s.requests, id)
+	defer func() {
+		s.m.Lock()
+		defer s.m.Unlock()
+		delete(s.requests, id)
+		close(events)
+	}()
 
 	timer := time.NewTimer(0)
 loop:

@@ -80,6 +80,7 @@ func generateCmd(args []string) {
 	watchFlag := cmd.Bool("watch", false, "Set to true to watch the path for changes and regenerate code.")
 	cmdFlag := cmd.String("cmd", "", "Set the command to run after generating code.")
 	proxyFlag := cmd.String("proxy", "", "Set the URL to proxy after generating code and executing the command.")
+	proxyPortFlag := cmd.Int("proxyport", 7331, "The port the proxy will listen on.")
 	workerCount := cmd.Int("w", runtime.NumCPU(), "Number of workers to run in parallel.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
@@ -93,6 +94,7 @@ func generateCmd(args []string) {
 		Watch:                           *watchFlag,
 		Command:                         *cmdFlag,
 		Proxy:                           *proxyFlag,
+		ProxyPort:                       *proxyPortFlag,
 		WorkerCount:                     *workerCount,
 		GenerateSourceMapVisualisations: *sourceMapVisualisations,
 	})
