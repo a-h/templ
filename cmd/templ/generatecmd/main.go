@@ -12,12 +12,15 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
+
+	_ "net/http/pprof"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd/proxy"
 	"github.com/a-h/templ/cmd/templ/generatecmd/run"
@@ -37,17 +40,45 @@ type Arguments struct {
 	Proxy                           string
 	WorkerCount                     int
 	GenerateSourceMapVisualisations bool
+	// PPROFPort is the port to run the pprof server on.
+	PPROFPort int
 }
 
 var defaultWorkerCount = runtime.NumCPU()
 
 func Run(args Arguments) (err error) {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	defer func() {
+		signal.Stop(signalChan)
+		cancel()
+	}()
+	if args.PPROFPort > 0 {
+		go func() {
+			_ = http.ListenAndServe(fmt.Sprintf("localhost:%d", args.PPROFPort), nil)
+		}()
+	}
+	go func() {
+		select {
+		case <-signalChan: // First signal, cancel context.
+			cancel()
+		case <-ctx.Done():
+		}
+		<-signalChan // Second signal, hard exit.
+		os.Exit(2)
+	}()
+	return runCmd(ctx, args)
+}
+
+func runCmd(ctx context.Context, args Arguments) (err error) {
 	start := time.Now()
 	if args.Watch && args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}
 	if args.FileName != "" {
-		return processSingleFile(args.FileName, args.GenerateSourceMapVisualisations)
+		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations)
 	}
 	var target *url.URL
 	if args.Proxy != "" {
@@ -79,7 +110,7 @@ func Run(args Arguments) (err error) {
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
-		changesFound, errs := processChanges(fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount)
+		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount)
 		if len(errs) > 0 {
 			fmt.Printf("Error processing path: %v\n", errors.Join(errs...))
 		}
@@ -87,7 +118,7 @@ func Run(args Arguments) (err error) {
 			fmt.Printf("Generated code for %d templates with %d errors in %s\n", changesFound, len(errs), time.Since(start))
 			if args.Command != "" {
 				fmt.Printf("Executing command: %s\n", args.Command)
-				if _, err := run.Run(context.Background(), args.Path, args.Command); err != nil {
+				if _, err := run.Run(ctx, args.Path, args.Command); err != nil {
 					fmt.Printf("Error starting command: %v\n", err)
 				}
 				// Send server-sent event.
@@ -134,11 +165,14 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, maxWorkerCount int) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, maxWorkerCount int) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if info.IsDir() && shouldSkipDir(path) {
 			return filepath.SkipDir
 		}
@@ -156,7 +190,7 @@ func processChanges(fileNameToLastModTime map[string]time.Time, path string, gen
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					if err := processSingleFile(path, generateSourceMapVisualisations); err != nil {
+					if err := processSingleFile(ctx, path, generateSourceMapVisualisations); err != nil {
 						errs = append(errs, err)
 					}
 					<-sem
@@ -189,9 +223,9 @@ func openURL(url string) error {
 	return browser.OpenURL(url)
 }
 
-func processSingleFile(fileName string, generateSourceMapVisualisations bool) error {
+func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool) error {
 	start := time.Now()
-	err := compile(fileName, generateSourceMapVisualisations)
+	err := compile(ctx, fileName, generateSourceMapVisualisations)
 	if err != nil {
 		return err
 	}
@@ -199,7 +233,7 @@ func processSingleFile(fileName string, generateSourceMapVisualisations bool) er
 	return err
 }
 
-func compile(fileName string, generateSourceMapVisualisations bool) (err error) {
+func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool) (err error) {
 	t, err := parser.Parse(fileName)
 	if err != nil {
 		return fmt.Errorf("%s parsing error: %w", fileName, err)
@@ -231,12 +265,12 @@ func compile(fileName string, generateSourceMapVisualisations bool) (err error) 
 	}
 
 	if generateSourceMapVisualisations {
-		err = generateSourceMapVisualisation(fileName, targetFileName, sourceMap)
+		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, sourceMap)
 	}
 	return
 }
 
-func generateSourceMapVisualisation(templFileName, goFileName string, sourceMap *parser.SourceMap) error {
+func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
 	var templContents, goContents []byte
 	var templErr, goErr error
 	var wg sync.WaitGroup
@@ -266,5 +300,5 @@ func generateSourceMapVisualisation(templFileName, goFileName string, sourceMap 
 	b := bufio.NewWriter(w)
 	defer b.Flush()
 
-	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).Render(context.Background(), b)
+	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).Render(ctx, b)
 }
