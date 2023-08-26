@@ -28,7 +28,7 @@ import (
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/pkg/browser"
+	"github.com/cli/browser"
 )
 
 type Arguments struct {
