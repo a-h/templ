@@ -30,7 +30,7 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 		args = append(args, parts[1])
 	}
 
-	cmd = exec.Command(executable, args...)
+	cmd = exec.CommandContext(ctx, executable, args...)
 	cmd.Env = os.Environ()
 	cmd.Dir = workingDir
 	cmd.Stdout = os.Stdout
