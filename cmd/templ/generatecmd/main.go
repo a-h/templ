@@ -169,7 +169,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
-	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -181,8 +181,12 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 		}
 		if strings.HasSuffix(path, ".templ") {
 			lastModTime := fileNameToLastModTime[path]
-			if info.ModTime().After(lastModTime) {
-				fileNameToLastModTime[path] = info.ModTime()
+			fileInfo, err := info.Info()
+			if err != nil {
+				return fmt.Errorf("failed to get file info: %w", err)
+			}
+			if fileInfo.ModTime().After(lastModTime) {
+				fileNameToLastModTime[path] = fileInfo.ModTime()
 				changesFound++
 
 				// Start a processor, but limit to maxWorkerCount.
