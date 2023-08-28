@@ -10,7 +10,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/a-h/templ"
 	"github.com/a-h/templ/parser/v2"
 )
 
@@ -188,8 +187,8 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 		for i := 0; i < len(n.Properties); i++ {
 			switch p := n.Properties[i].(type) {
 			case parser.ConstantCSSProperty:
-				// Carry out sanitization at compile time for constants.
-				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templCSSBuilder.WriteString(`%s`)\n", templ.SanitizeCSS(p.Name, p.Value))); err != nil {
+				// Constant CSS property values are not sanitized.
+				if _, err = g.w.WriteIndent(indentLevel, "templCSSBuilder.WriteString("+createGoString(p.String(true))+")\n"); err != nil {
 					return err
 				}
 			case parser.ExpressionCSSProperty:
