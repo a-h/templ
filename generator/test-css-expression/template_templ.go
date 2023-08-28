@@ -10,6 +10,7 @@ import "strings"
 func className() templ.CSSClass {
 	var templCSSBuilder strings.Builder
 	templCSSBuilder.WriteString(`background-color:#ffffff;`)
+	templCSSBuilder.WriteString(`max-height:calc(100vh - 170px);`)
 	templCSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
 	templCSSID := templ.CSSID(`className`, templCSSBuilder.String())
 	return templ.ComponentCSSClass{

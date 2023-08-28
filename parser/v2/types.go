@@ -219,10 +219,25 @@ type ConstantCSSProperty struct {
 
 func (c ConstantCSSProperty) IsCSSProperty() bool { return true }
 func (c ConstantCSSProperty) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, c.Name+": "+c.Value+";\n"); err != nil {
+	if err := writeIndent(w, indent, c.String(false)); err != nil {
 		return err
 	}
 	return nil
+}
+func (c ConstantCSSProperty) String(minified bool) string {
+	var sb strings.Builder
+	sb.WriteString(c.Name)
+	if minified {
+		sb.WriteString(":")
+	} else {
+		sb.WriteString(": ")
+	}
+	sb.WriteString(c.Value)
+	sb.WriteString(";")
+	if !minified {
+		sb.WriteString("\n")
+	}
+	return sb.String()
 }
 
 // background-color: { constants.BackgroundColor };
