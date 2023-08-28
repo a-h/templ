@@ -58,7 +58,11 @@ func formatDir(dir string) (err error) {
 }
 
 func format(fileName string) (err error) {
-	t, err := parser.Parse(fileName)
+	contents, err := os.ReadFile(fileName)
+	if err != nil {
+		return fmt.Errorf("failed to read file %q: %w", fileName, err)
+	}
+	t, err := parser.ParseString(string(contents))
 	if err != nil {
 		return fmt.Errorf("%s parsing error: %w", fileName, err)
 	}
@@ -66,6 +70,9 @@ func format(fileName string) (err error) {
 	err = t.Write(w)
 	if err != nil {
 		return fmt.Errorf("%s formatting error: %w", fileName, err)
+	}
+	if string(contents) == w.String() {
+		return nil
 	}
 	err = atomic.WriteFile(fileName, w)
 	if err != nil {
