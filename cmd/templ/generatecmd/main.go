@@ -47,8 +47,7 @@ type Arguments struct {
 var defaultWorkerCount = runtime.NumCPU()
 
 func Run(args Arguments) (err error) {
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
 	defer func() {
@@ -63,13 +62,18 @@ func Run(args Arguments) (err error) {
 	go func() {
 		select {
 		case <-signalChan: // First signal, cancel context.
+			fmt.Println("\nCancelling...")
 			cancel()
 		case <-ctx.Done():
 		}
 		<-signalChan // Second signal, hard exit.
 		os.Exit(2)
 	}()
-	return runCmd(ctx, args)
+	err = runCmd(ctx, args)
+	if errors.Is(err, context.Canceled) {
+		return nil
+	}
+	return err
 }
 
 func runCmd(ctx context.Context, args Arguments) (err error) {
@@ -112,6 +116,9 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	for !firstRunComplete || args.Watch {
 		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount)
 		if len(errs) > 0 {
+			if errors.Is(errs[0], context.Canceled) {
+				return errs[0]
+			}
 			fmt.Printf("Error processing path: %v\n", errors.Join(errs...))
 		}
 		if changesFound > 0 {
@@ -171,6 +178,9 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 
 	err := filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
 		if err != nil {
+			return err
+		}
+		if err = ctx.Err(); err != nil {
 			return err
 		}
 		if info.IsDir() && shouldSkipDir(path) {
@@ -238,6 +248,10 @@ func processSingleFile(ctx context.Context, fileName string, generateSourceMapVi
 }
 
 func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool) (err error) {
+	if err = ctx.Err(); err != nil {
+		return
+	}
+
 	t, err := parser.Parse(fileName)
 	if err != nil {
 		return fmt.Errorf("%s parsing error: %w", fileName, err)
@@ -255,16 +269,7 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 		return fmt.Errorf("%s source formatting error: %w", fileName, err)
 	}
 
-	w, err := os.Create(targetFileName)
-	if err != nil {
-		return fmt.Errorf("%s compilation error: %w", fileName, err)
-	}
-	if _, err := w.Write(data); err != nil {
-		return fmt.Errorf("%s compilation error: %w", fileName, err)
-	}
-
-	defer w.Close()
-	if w.Sync() != nil {
+	if err = os.WriteFile(targetFileName, data, 0644); err != nil {
 		return fmt.Errorf("%s write file error: %w", targetFileName, err)
 	}
 
@@ -275,6 +280,9 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	var templContents, goContents []byte
 	var templErr, goErr error
 	var wg sync.WaitGroup
