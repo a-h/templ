@@ -3,9 +3,11 @@ package proxy
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
@@ -28,6 +30,7 @@ type Handler struct {
 
 func New(port int, target *url.URL) *Handler {
 	p := httputil.NewSingleHostReverseProxy(target)
+	p.ErrorLog = log.New(os.Stderr, "Proxy to target error: ", 0)
 	p.ModifyResponse = func(r *http.Response) error {
 		if contentType := r.Header.Get("Content-Type"); contentType != "text/html" {
 			return nil

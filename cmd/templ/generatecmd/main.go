@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -111,6 +110,9 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	}
 
 	fmt.Println("Processing path:", args.Path)
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = time.Millisecond * 500
+	bo.MaxInterval = time.Second * 3
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
@@ -149,7 +151,10 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 			}
 		}
 		if firstRunComplete {
-			time.Sleep(250 * time.Millisecond)
+			if changesFound > 0 {
+				bo.Reset()
+			}
+			time.Sleep(bo.NextBackOff())
 		}
 		firstRunComplete = true
 		start = time.Now()
@@ -224,6 +229,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 
 func openURL(url string) error {
 	backoff := backoff.NewExponentialBackOff()
+	backoff.InitialInterval = time.Second
 	var client http.Client
 	client.Timeout = 1 * time.Second
 	for {
@@ -231,7 +237,7 @@ func openURL(url string) error {
 			break
 		}
 		d := backoff.NextBackOff()
-		log.Printf("Server not ready. Retrying in %v...", d)
+		fmt.Printf("Server not ready. Retrying in %v...\n", d)
 		time.Sleep(d)
 	}
 	return browser.OpenURL(url)
