@@ -21,16 +21,26 @@ The `templ generate` command generates Go code from `*.templ` files in the curre
 The command provides additional options:
 
 ```
+  -cmd string
+        Set the command to run after generating code.
   -f string
         Optionally generates code for a single file, e.g. -f header.templ
   -help
         Print help and exit.
   -path string
         Generates code for all files in path. (default ".")
+  -pprof int
+        Port to start pprof web server on.
+  -proxy string
+        Set the URL to proxy after generating code and executing the command.
+  -proxyport int
+        The port the proxy will listen on. (default 7331)
   -sourceMapVisualisations
         Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
   -w int
         Number of workers to run in parallel. (default 4)
+  -watch
+        Set to true to watch the path for changes and regenerate code.
 ```
 
 For example, to generate code for a single file:
