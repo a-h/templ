@@ -901,12 +901,21 @@ func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err erro
 	return g.writeAttributesCSS(indentLevel, n.Attributes)
 }
 
+func isScriptAttribute(name string) bool {
+	for _, prefix := range []string{"on", "hx-on:"} {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err error) {
 	var scriptExpressions []string
 	for i := 0; i < len(n.Attributes); i++ {
 		if attr, ok := n.Attributes[i].(parser.ExpressionAttribute); ok {
 			name := html.EscapeString(attr.Name)
-			if strings.HasPrefix(name, "on") {
+			if isScriptAttribute(name) {
 				scriptExpressions = append(scriptExpressions, attr.Expression.Value)
 			}
 		}
@@ -1006,7 +1015,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 			return err
 		}
 	} else {
-		if strings.HasPrefix(attr.Name, "on") {
+		if isScriptAttribute(attr.Name) {
 			// It's a JavaScript handler, and requires special handling, because we expect a JavaScript expression.
 			vn := g.createVariableName()
 			// var vn templ.ComponentScript =
