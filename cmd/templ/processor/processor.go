@@ -72,4 +72,3 @@ func ProcessChannel(templates <-chan string, dir string, f func(fileName string)
 	}
 	wg.Wait()
 }
-

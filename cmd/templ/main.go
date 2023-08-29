@@ -74,10 +74,15 @@ examples:
 
 func generateCmd(args []string) {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
-	fileName := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
-	path := cmd.String("path", ".", "Generates code for all files in path.")
+	fileNameFlag := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
+	pathFlag := cmd.String("path", ".", "Generates code for all files in path.")
 	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "Set to true to generate HTML files to visualise the templ code and its corresponding Go code.")
-	workerCount := cmd.Int("w", runtime.NumCPU(), "Number of workers to run in parallel.")
+	watchFlag := cmd.Bool("watch", false, "Set to true to watch the path for changes and regenerate code.")
+	cmdFlag := cmd.String("cmd", "", "Set the command to run after generating code.")
+	proxyFlag := cmd.String("proxy", "", "Set the URL to proxy after generating code and executing the command.")
+	proxyPortFlag := cmd.Int("proxyport", 7331, "The port the proxy will listen on.")
+	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "Number of workers to run in parallel.")
+	pprofPortFlag := cmd.Int("pprof", 0, "Port to start pprof web server on.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
@@ -85,10 +90,15 @@ func generateCmd(args []string) {
 		return
 	}
 	err = generatecmd.Run(generatecmd.Arguments{
-		FileName:                        *fileName,
-		Path:                            *path,
-		WorkerCount:                     *workerCount,
+		FileName:                        *fileNameFlag,
+		Path:                            *pathFlag,
+		Watch:                           *watchFlag,
+		Command:                         *cmdFlag,
+		Proxy:                           *proxyFlag,
+		ProxyPort:                       *proxyPortFlag,
+		WorkerCount:                     *workerCountFlag,
 		GenerateSourceMapVisualisations: *sourceMapVisualisations,
+		PPROFPort:                       *pprofPortFlag,
 	})
 	if err != nil {
 		fmt.Println(err.Error())
