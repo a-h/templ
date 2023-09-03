@@ -381,6 +381,10 @@ func findLastImport(document *Document) (insertAtLine int, multiLineImport bool,
 		if multiLineImport && strings.HasPrefix(line, ")") {
 			return
 		}
+		// Only add import statements before templates, functions, css, and script templates.
+		if strings.HasPrefix(line, "templ ") || strings.HasPrefix(line, "func ") || strings.HasPrefix(line, "css ") || strings.HasPrefix(line, "script ") {
+			break
+		}
 	}
 	return latestSingleLineImport, false, hasOtherImports
 }
