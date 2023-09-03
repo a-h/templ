@@ -338,9 +338,51 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		if item.TextEdit != nil {
 			item.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.Range)
 		}
+		if item.Kind == lsp.CompletionItemKindModule && len(item.AdditionalTextEdits) > 0 {
+			doc, ok := p.TemplSource.Get(string(templURI))
+			if !ok {
+				continue
+			}
+			insertAtLine, multiLineImport, hasOtherImports := findLastImport(doc)
+			te := lsp.TextEdit{
+				Range: lsp.Range{
+					Start: lsp.Position{Line: uint32(insertAtLine), Character: 0},
+					End:   lsp.Position{Line: uint32(insertAtLine), Character: 0},
+				},
+				NewText: fmt.Sprintf("import \"%s\"", item.Label),
+			}
+			if multiLineImport {
+				te.NewText = fmt.Sprintf("\t\"%s\"\n", item.Label)
+			}
+			if !hasOtherImports {
+				te.NewText = "\n" + te.NewText + "\n"
+			}
+			item.AdditionalTextEdits = []lsp.TextEdit{te}
+		}
 		result.Items[i] = item
 	}
 	return
+}
+
+func findLastImport(document *Document) (insertAtLine int, multiLineImport bool, hasOtherImports bool) {
+	latestSingleLineImport := 1
+	var line string
+	for insertAtLine, line = range document.Lines {
+		if strings.HasPrefix(line, "import (") {
+			multiLineImport = true
+			hasOtherImports = true
+			continue
+		}
+		if strings.HasPrefix(line, "import \"") {
+			latestSingleLineImport = insertAtLine
+			hasOtherImports = true
+			continue
+		}
+		if multiLineImport && strings.HasPrefix(line, ")") {
+			return
+		}
+	}
+	return latestSingleLineImport, false, hasOtherImports
 }
 
 func (p *Server) CompletionResolve(ctx context.Context, params *lsp.CompletionItem) (result *lsp.CompletionItem, err error) {
