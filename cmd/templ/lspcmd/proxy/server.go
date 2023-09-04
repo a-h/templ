@@ -344,7 +344,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 			if !ok {
 				continue
 			}
-			imp := addImport(doc.Lines, item.Label)
+			imp := addImport(doc.Lines, item.Detail)
 			te := lsp.TextEdit{
 				Range: lsp.Range{
 					Start: lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
@@ -381,7 +381,7 @@ func addImport(lines []string, pkg string) (result importInsert) {
 		if isInMultiLineImport && strings.HasPrefix(line, ")") {
 			return importInsert{
 				LineIndex: lineIndex,
-				Text:      fmt.Sprintf("\t%q\n", pkg),
+				Text:      fmt.Sprintf("\t%s\n", pkg),
 			}
 		}
 		// Only add import statements before templates, functions, css, and script templates.
@@ -396,7 +396,7 @@ func addImport(lines []string, pkg string) (result importInsert) {
 	}
 	return importInsert{
 		LineIndex: lastSingleLineImportIndex + 1,
-		Text:      fmt.Sprintf("import %q\n%s", pkg, suffix),
+		Text:      fmt.Sprintf("import %s\n%s", pkg, suffix),
 	}
 }
 

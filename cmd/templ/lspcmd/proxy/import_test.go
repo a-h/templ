@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -252,7 +253,7 @@ import "other"
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			lines := strings.Split(test.templContents, "\n")
-			imp := addImport(lines, test.packageName)
+			imp := addImport(lines, fmt.Sprintf("%q", test.packageName))
 			textWithoutNewline := strings.TrimSuffix(imp.Text, "\n")
 			actualLines := append(lines[:imp.LineIndex], append([]string{textWithoutNewline}, lines[imp.LineIndex:]...)...)
 			actual := strings.Join(actualLines, "\n")
