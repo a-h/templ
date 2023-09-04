@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/a-h/parse"
@@ -343,19 +344,13 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 			if !ok {
 				continue
 			}
-			insertAtLine, multiLineImport, hasOtherImports := findLastImport(doc)
+			imp := addImport(doc.Lines, item.Label)
 			te := lsp.TextEdit{
 				Range: lsp.Range{
-					Start: lsp.Position{Line: uint32(insertAtLine), Character: 0},
-					End:   lsp.Position{Line: uint32(insertAtLine), Character: 0},
+					Start: lsp.Position{Line: uint32(imp.InsertAtLine), Character: 0},
+					End:   lsp.Position{Line: uint32(imp.InsertAtLine), Character: 0},
 				},
-				NewText: fmt.Sprintf("import \"%s\"", item.Label),
-			}
-			if multiLineImport {
-				te.NewText = fmt.Sprintf("\t\"%s\"\n", item.Label)
-			}
-			if !hasOtherImports {
-				te.NewText = "\n" + te.NewText + "\n"
+				NewText: imp.Text,
 			}
 			item.AdditionalTextEdits = []lsp.TextEdit{te}
 		}
@@ -364,29 +359,45 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	return
 }
 
-func findLastImport(document *Document) (insertAtLine int, multiLineImport bool, hasOtherImports bool) {
-	latestSingleLineImport := 1
-	var line string
-	for insertAtLine, line = range document.Lines {
+type importInsert struct {
+	InsertAtLine int
+	Text         string
+}
+
+var nonImportKeywordRegexp = regexp.MustCompile(`^(?:templ|func|css|script|var|const|type)\s`)
+
+func addImport(lines []string, pkg string) (result importInsert) {
+	var isInMultiLineImport bool
+	lastSingleLineImportIndex := -1
+	for lineIndex, line := range lines {
 		if strings.HasPrefix(line, "import (") {
-			multiLineImport = true
-			hasOtherImports = true
+			isInMultiLineImport = true
 			continue
 		}
 		if strings.HasPrefix(line, "import \"") {
-			latestSingleLineImport = insertAtLine
-			hasOtherImports = true
+			lastSingleLineImportIndex = lineIndex
 			continue
 		}
-		if multiLineImport && strings.HasPrefix(line, ")") {
-			return
+		if isInMultiLineImport && strings.HasPrefix(line, ")") {
+			return importInsert{
+				InsertAtLine: lineIndex,
+				Text:         fmt.Sprintf("\t%q\n", pkg),
+			}
 		}
 		// Only add import statements before templates, functions, css, and script templates.
-		if strings.HasPrefix(line, "templ ") || strings.HasPrefix(line, "func ") || strings.HasPrefix(line, "css ") || strings.HasPrefix(line, "script ") {
+		if nonImportKeywordRegexp.MatchString(line) {
 			break
 		}
 	}
-	return latestSingleLineImport, false, hasOtherImports
+	var suffix string
+	if lastSingleLineImportIndex == -1 {
+		lastSingleLineImportIndex = 1
+		suffix = "\n"
+	}
+	return importInsert{
+		InsertAtLine: lastSingleLineImportIndex + 1,
+		Text:         fmt.Sprintf("import %q\n%s", pkg, suffix),
+	}
 }
 
 func (p *Server) CompletionResolve(ctx context.Context, params *lsp.CompletionItem) (result *lsp.CompletionItem, err error) {
