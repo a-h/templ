@@ -347,8 +347,8 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 			imp := addImport(doc.Lines, item.Label)
 			te := lsp.TextEdit{
 				Range: lsp.Range{
-					Start: lsp.Position{Line: uint32(imp.InsertAtLine), Character: 0},
-					End:   lsp.Position{Line: uint32(imp.InsertAtLine), Character: 0},
+					Start: lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+					End:   lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
 				},
 				NewText: imp.Text,
 			}
@@ -360,8 +360,8 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 }
 
 type importInsert struct {
-	InsertAtLine int
-	Text         string
+	LineIndex int
+	Text      string
 }
 
 var nonImportKeywordRegexp = regexp.MustCompile(`^(?:templ|func|css|script|var|const|type)\s`)
@@ -380,8 +380,8 @@ func addImport(lines []string, pkg string) (result importInsert) {
 		}
 		if isInMultiLineImport && strings.HasPrefix(line, ")") {
 			return importInsert{
-				InsertAtLine: lineIndex,
-				Text:         fmt.Sprintf("\t%q\n", pkg),
+				LineIndex: lineIndex,
+				Text:      fmt.Sprintf("\t%q\n", pkg),
 			}
 		}
 		// Only add import statements before templates, functions, css, and script templates.
@@ -395,8 +395,8 @@ func addImport(lines []string, pkg string) (result importInsert) {
 		suffix = "\n"
 	}
 	return importInsert{
-		InsertAtLine: lastSingleLineImportIndex + 1,
-		Text:         fmt.Sprintf("import %q\n%s", pkg, suffix),
+		LineIndex: lastSingleLineImportIndex + 1,
+		Text:      fmt.Sprintf("import %q\n%s", pkg, suffix),
 	}
 }
 

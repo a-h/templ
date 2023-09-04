@@ -254,7 +254,7 @@ import "other"
 			lines := strings.Split(test.templContents, "\n")
 			imp := addImport(lines, test.packageName)
 			textWithoutNewline := strings.TrimSuffix(imp.Text, "\n")
-			actualLines := append(lines[:imp.InsertAtLine], append([]string{textWithoutNewline}, lines[imp.InsertAtLine:]...)...)
+			actualLines := append(lines[:imp.LineIndex], append([]string{textWithoutNewline}, lines[imp.LineIndex:]...)...)
 			actual := strings.Join(actualLines, "\n")
 			if diff := cmp.Diff(test.expected, actual); diff != "" {
 				t.Error(diff)
