@@ -307,7 +307,7 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 	return
 }
 
-var pgkFromImportDetail = regexp.MustCompile(`"([^"]+)"`)
+var pkgFromImportDetail = regexp.MustCompile(`"([^"]+)"`)
 
 func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (result *lsp.CompletionList, err error) {
 	p.Log.Info("client -> server: Completion")
@@ -355,7 +355,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 			if !ok {
 				continue
 			}
-			pkg := pgkFromImportDetail.FindStringSubmatch(item.Detail)[0]
+			pkg := pkgFromImportDetail.FindStringSubmatch(item.Detail)[0]
 			te := handleImportTextEdit(doc, pkg)
 			item.AdditionalTextEdits = []lsp.TextEdit{te}
 		}
