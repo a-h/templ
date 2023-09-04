@@ -362,6 +362,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	return
 }
 
+
 func handleImportTextEdit(doc *Document, item *lsp.CompletionItem, pkg string) lsp.TextEdit {
 	insertAtLine, multiLineImport, hasOtherImports := findLastImport(doc)
 	te := lsp.TextEdit{
@@ -385,8 +386,7 @@ func findLastImport(document *Document) (insertAtLine int, multiLineImport bool,
 	var line string
 	for insertAtLine, line = range document.Lines {
 		if strings.HasPrefix(line, "import (") {
-			multiLineImport = true
-			hasOtherImports = true
+			isInMultiLineImport = true
 			continue
 		}
 		if strings.HasPrefix(line, "import \"") {
@@ -394,15 +394,26 @@ func findLastImport(document *Document) (insertAtLine int, multiLineImport bool,
 			hasOtherImports = true
 			continue
 		}
-		if multiLineImport && strings.HasPrefix(line, ")") {
-			return
+		if isInMultiLineImport && strings.HasPrefix(line, ")") {
+			return importInsert{
+				LineIndex: lineIndex,
+				Text:      fmt.Sprintf("\t%s\n", pkg),
+			}
 		}
 		// Only add import statements before templates, functions, css, and script templates.
-		if strings.HasPrefix(line, "templ ") || strings.HasPrefix(line, "func ") || strings.HasPrefix(line, "css ") || strings.HasPrefix(line, "script ") {
+		if nonImportKeywordRegexp.MatchString(line) {
 			break
 		}
 	}
-	return latestSingleLineImport, false, hasOtherImports
+	var suffix string
+	if lastSingleLineImportIndex == -1 {
+		lastSingleLineImportIndex = 1
+		suffix = "\n"
+	}
+	return importInsert{
+		LineIndex: lastSingleLineImportIndex + 1,
+		Text:      fmt.Sprintf("import %s\n%s", pkg, suffix),
+	}
 }
 
 func (p *Server) CompletionResolve(ctx context.Context, params *lsp.CompletionItem) (result *lsp.CompletionItem, err error) {
