@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/a-h/parse"
@@ -332,7 +333,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		return
 	}
 	// Rewrite the result positions.
-	p.Log.Info("completion: received items", zap.Int("count", len(result.Items)))
+	p.Log.Info("completion: received items", zap.Int("count", len(result.Items)), zap.Any("items", result.Items))
 	for i := 0; i < len(result.Items); i++ {
 		item := result.Items[i]
 		if item.TextEdit != nil {
@@ -343,25 +344,40 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 			if !ok {
 				continue
 			}
-			insertAtLine, multiLineImport, hasOtherImports := findLastImport(doc)
-			te := lsp.TextEdit{
-				Range: lsp.Range{
-					Start: lsp.Position{Line: uint32(insertAtLine), Character: 0},
-					End:   lsp.Position{Line: uint32(insertAtLine), Character: 0},
-				},
-				NewText: fmt.Sprintf("import \"%s\"", item.Label),
-			}
-			if multiLineImport {
-				te.NewText = fmt.Sprintf("\t\"%s\"\n", item.Label)
-			}
-			if !hasOtherImports {
-				te.NewText = "\n" + te.NewText + "\n"
-			}
+			te := handleImportTextEdit(doc, &item, item.Detail)
 			item.AdditionalTextEdits = []lsp.TextEdit{te}
 		}
+		if strings.Contains(item.Detail, "(from \"") {
+			doc, ok := p.TemplSource.Get(string(templURI))
+			if !ok {
+				continue
+			}
+			pkg := regexp.MustCompile(`"([^"]+)"`).FindStringSubmatch(item.Detail)[0]
+			te := handleImportTextEdit(doc, &item, pkg)
+			item.AdditionalTextEdits = []lsp.TextEdit{te}
+		}
+
 		result.Items[i] = item
 	}
 	return
+}
+
+func handleImportTextEdit(doc *Document, item *lsp.CompletionItem, pkg string) lsp.TextEdit {
+	insertAtLine, multiLineImport, hasOtherImports := findLastImport(doc)
+	te := lsp.TextEdit{
+		Range: lsp.Range{
+			Start: lsp.Position{Line: uint32(insertAtLine), Character: 0},
+			End:   lsp.Position{Line: uint32(insertAtLine), Character: 0},
+		},
+		NewText: fmt.Sprintf("import %s\n", pkg),
+	}
+	if multiLineImport {
+		te.NewText = fmt.Sprintf("\t%s\n", pkg)
+	}
+	if !hasOtherImports {
+		te.NewText = "\n" + te.NewText + "\n"
+	}
+	return te
 }
 
 func findLastImport(document *Document) (insertAtLine int, multiLineImport bool, hasOtherImports bool) {
@@ -374,7 +390,7 @@ func findLastImport(document *Document) (insertAtLine int, multiLineImport bool,
 			continue
 		}
 		if strings.HasPrefix(line, "import \"") {
-			latestSingleLineImport = insertAtLine
+			latestSingleLineImport = insertAtLine + 1
 			hasOtherImports = true
 			continue
 		}
