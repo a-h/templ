@@ -308,7 +308,7 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 }
 
 var pkgFromImportDetail = regexp.MustCompile(`"([^"]+)"`)
-var completionWithImport = regexp.MustCompile(`^.*\s?(\(from\s".+"\))$`)
+var completionWithImport = regexp.MustCompile(`^.*(\(from\s".+"\))$`)
 
 func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (result *lsp.CompletionList, err error) {
 	p.Log.Info("client -> server: Completion")
