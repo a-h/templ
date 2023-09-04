@@ -307,6 +307,8 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 	return
 }
 
+var pgkFromImportDetail = regexp.MustCompile(`"([^"]+)"`)
+
 func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (result *lsp.CompletionList, err error) {
 	p.Log.Info("client -> server: Completion")
 	defer p.Log.Info("client -> server: Completion end")
@@ -344,19 +346,34 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 			if !ok {
 				continue
 			}
-			imp := addImport(doc.Lines, item.Detail)
-			te := lsp.TextEdit{
-				Range: lsp.Range{
-					Start: lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
-					End:   lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
-				},
-				NewText: imp.Text,
+
+			te := handleImportTextEdit(doc, &item, item.Detail)
+			item.AdditionalTextEdits = []lsp.TextEdit{te}
+		}
+		if strings.Contains(item.Detail, "(from \"") {
+			doc, ok := p.TemplSource.Get(string(templURI))
+			if !ok {
+				continue
 			}
+			pkg := pgkFromImportDetail.FindStringSubmatch(item.Detail)[0]
+			te := handleImportTextEdit(doc, &item, pkg)
 			item.AdditionalTextEdits = []lsp.TextEdit{te}
 		}
 		result.Items[i] = item
 	}
 	return
+}
+
+func handleImportTextEdit(doc *Document, item *lsp.CompletionItem, pkg string) lsp.TextEdit {
+	imp := addImport(doc.Lines, pkg)
+	te := lsp.TextEdit{
+		Range: lsp.Range{
+			Start: lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+			End:   lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+		},
+		NewText: imp.Text,
+	}
+	return te
 }
 
 type importInsert struct {
