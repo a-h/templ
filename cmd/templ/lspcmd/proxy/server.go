@@ -308,6 +308,7 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 }
 
 var pkgFromImportDetail = regexp.MustCompile(`"([^"]+)"`)
+var completionWithImport = regexp.MustCompile(`^.*\s?(\(from\s".+"\))$`)
 
 func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (result *lsp.CompletionList, err error) {
 	p.Log.Info("client -> server: Completion")
@@ -346,18 +347,19 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 			if !ok {
 				continue
 			}
-
 			te := handleImportTextEdit(doc, item.Detail)
 			item.AdditionalTextEdits = []lsp.TextEdit{te}
-		}
-		if strings.Contains(item.Detail, "(from \"") {
-			doc, ok := p.TemplSource.Get(string(templURI))
-			if !ok {
-				continue
+		} else {
+			m := completionWithImport.FindStringSubmatch(item.Detail)
+			if m != nil {
+				doc, ok := p.TemplSource.Get(string(templURI))
+				if !ok {
+					continue
+				}
+				pkg := pkgFromImportDetail.FindStringSubmatch(m[1])[0]
+				te := handleImportTextEdit(doc, pkg)
+				item.AdditionalTextEdits = []lsp.TextEdit{te}
 			}
-			pkg := pkgFromImportDetail.FindStringSubmatch(item.Detail)[0]
-			te := handleImportTextEdit(doc, pkg)
-			item.AdditionalTextEdits = []lsp.TextEdit{te}
 		}
 		result.Items[i] = item
 	}
