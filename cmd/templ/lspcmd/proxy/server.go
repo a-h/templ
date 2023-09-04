@@ -347,7 +347,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 				continue
 			}
 
-			te := handleImportTextEdit(doc, &item, item.Detail)
+			te := handleImportTextEdit(doc, item.Detail)
 			item.AdditionalTextEdits = []lsp.TextEdit{te}
 		}
 		if strings.Contains(item.Detail, "(from \"") {
@@ -356,7 +356,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 				continue
 			}
 			pkg := pgkFromImportDetail.FindStringSubmatch(item.Detail)[0]
-			te := handleImportTextEdit(doc, &item, pkg)
+			te := handleImportTextEdit(doc, pkg)
 			item.AdditionalTextEdits = []lsp.TextEdit{te}
 		}
 		result.Items[i] = item
@@ -364,7 +364,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	return
 }
 
-func handleImportTextEdit(doc *Document, item *lsp.CompletionItem, pkg string) lsp.TextEdit {
+func handleImportTextEdit(doc *Document, pkg string) lsp.TextEdit {
 	imp := addImport(doc.Lines, pkg)
 	te := lsp.TextEdit{
 		Range: lsp.Range{
