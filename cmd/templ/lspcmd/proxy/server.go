@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/a-h/parse"
@@ -338,9 +339,76 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		if item.TextEdit != nil {
 			item.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.Range)
 		}
+		if len(item.AdditionalTextEdits) > 0 {
+			doc, ok := p.TemplSource.Get(string(templURI))
+			if !ok {
+				continue
+			}
+			pkg := getPackageFromItemDetail(item.Detail)
+			imp := addImport(doc.Lines, pkg)
+			item.AdditionalTextEdits = []lsp.TextEdit{
+				{
+					Range: lsp.Range{
+						Start: lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+						End:   lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+					},
+					NewText: imp.Text,
+				},
+			}
+		}
 		result.Items[i] = item
 	}
 	return
+}
+
+var completionWithImport = regexp.MustCompile(`^.*\(from\s(".+")\)$`)
+
+func getPackageFromItemDetail(pkg string) string {
+	if m := completionWithImport.FindStringSubmatch(pkg); len(m) == 2 {
+		return m[1]
+	}
+	return pkg
+}
+
+type importInsert struct {
+	LineIndex int
+	Text      string
+}
+
+var nonImportKeywordRegexp = regexp.MustCompile(`^(?:templ|func|css|script|var|const|type)\s`)
+
+func addImport(lines []string, pkg string) (result importInsert) {
+	var isInMultiLineImport bool
+	lastSingleLineImportIndex := -1
+	for lineIndex, line := range lines {
+		if strings.HasPrefix(line, "import (") {
+			isInMultiLineImport = true
+			continue
+		}
+		if strings.HasPrefix(line, "import \"") {
+			lastSingleLineImportIndex = lineIndex
+			continue
+		}
+		if isInMultiLineImport && strings.HasPrefix(line, ")") {
+			return importInsert{
+				LineIndex: lineIndex,
+				Text:      fmt.Sprintf("\t%s\n", pkg),
+			}
+		}
+		// Only add import statements before templates, functions, css, and script templates.
+		if nonImportKeywordRegexp.MatchString(line) {
+			break
+		}
+	}
+	var suffix string
+	if lastSingleLineImportIndex == -1 {
+		lastSingleLineImportIndex = 1
+		suffix = "\n"
+	}
+	return importInsert{
+		LineIndex: lastSingleLineImportIndex + 1,
+		Text:      fmt.Sprintf("import %s\n%s", pkg, suffix),
+	}
 }
 
 func (p *Server) CompletionResolve(ctx context.Context, params *lsp.CompletionItem) (result *lsp.CompletionItem, err error) {
