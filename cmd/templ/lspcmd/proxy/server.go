@@ -307,9 +307,6 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 	return
 }
 
-var pkgFromImportDetail = regexp.MustCompile(`"([^"]+)"`)
-var completionWithImport = regexp.MustCompile(`^.*(\(from\s".+"\))$`)
-
 func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (result *lsp.CompletionList, err error) {
 	p.Log.Info("client -> server: Completion")
 	defer p.Log.Info("client -> server: Completion end")
@@ -342,23 +339,21 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		if item.TextEdit != nil {
 			item.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.Range)
 		}
-		if item.Kind == lsp.CompletionItemKindModule && len(item.AdditionalTextEdits) > 0 {
+		if len(item.AdditionalTextEdits) > 0 {
 			doc, ok := p.TemplSource.Get(string(templURI))
 			if !ok {
 				continue
 			}
-			te := handleImportTextEdit(doc, item.Detail)
-			item.AdditionalTextEdits = []lsp.TextEdit{te}
-		} else {
-			m := completionWithImport.FindStringSubmatch(item.Detail)
-			if m != nil {
-				doc, ok := p.TemplSource.Get(string(templURI))
-				if !ok {
-					continue
-				}
-				pkg := pkgFromImportDetail.FindStringSubmatch(m[1])[0]
-				te := handleImportTextEdit(doc, pkg)
-				item.AdditionalTextEdits = []lsp.TextEdit{te}
+			pkg := getPackageFromItemDetail(item.Detail)
+			imp := addImport(doc.Lines, pkg)
+			item.AdditionalTextEdits = []lsp.TextEdit{
+				{
+					Range: lsp.Range{
+						Start: lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+						End:   lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+					},
+					NewText: imp.Text,
+				},
 			}
 		}
 		result.Items[i] = item
@@ -366,16 +361,13 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	return
 }
 
-func handleImportTextEdit(doc *Document, pkg string) lsp.TextEdit {
-	imp := addImport(doc.Lines, pkg)
-	te := lsp.TextEdit{
-		Range: lsp.Range{
-			Start: lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
-			End:   lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
-		},
-		NewText: imp.Text,
+var completionWithImport = regexp.MustCompile(`^.*\(from\s(".+")\)$`)
+
+func getPackageFromItemDetail(pkg string) string {
+	if m := completionWithImport.FindStringSubmatch(pkg); len(m) == 2 {
+		return m[1]
 	}
-	return te
+	return pkg
 }
 
 type importInsert struct {

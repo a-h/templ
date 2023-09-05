@@ -263,3 +263,31 @@ import "other"
 		})
 	}
 }
+
+func TestGetPackageFromItemDetail(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    `"fmt"`,
+			expected: `"fmt"`,
+		},
+		{
+			input:    `func(state fmt.State, verb rune) string (from "fmt")`,
+			expected: `"fmt"`,
+		},
+		{
+			input:    `non matching`,
+			expected: `non matching`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			actual := getPackageFromItemDetail(test.input)
+			if test.expected != actual {
+				t.Errorf("expected %q, got %q", test.expected, actual)
+			}
+		})
+	}
+}
