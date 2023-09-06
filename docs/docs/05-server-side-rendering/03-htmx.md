@@ -27,7 +27,7 @@ Advanced HTMX installation and usage is convered in the user guide at https://ht
 
 To update the counts on the page without a full postback, the `hx-post="/"` and `hx-select="#countsForm"` attributes must be added to the `<form>` element, along with an `id` attribute to uniquely identify the element.
 
-Adding these attributes instructs the HTMX library to replace the browser's HTTP form POST and subequent refresh with a request from HTMX instead. HTMX issues a HTTP POST operation to the `/` endpoint, and replaces the `<form>` element with the HTML that is returned.
+Adding these attributes instructs the HTMX library to replace the browser's HTTP form POST and subsequent refresh with a request from HTMX instead. HTMX issues a HTTP POST operation to the `/` endpoint, and replaces the `<form>` element with the HTML that is returned.
 
 The `/` endpoint returns a complete HTML page instead of just the updated `<form>` element HTML. The `hx-select="#countsForm"` instructs HTMX to extract the HTML content within the `countsForm` element that is returned by the web server to replace the `<form>` element.
 

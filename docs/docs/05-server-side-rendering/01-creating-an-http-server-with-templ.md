@@ -76,7 +76,7 @@ The output will always be the date and time that the web server was started up, 
 2023-04-26 08:40:03.421358 +0100 BST m=+0.000779501
 ```
 
-To display the current time, we could update the component to use the `time.Now()` function itself, but this would limit the reusability of the component. It's better when components are take parameters for their display values.
+To display the current time, we could update the component to use the `time.Now()` function itself, but this would limit the reusability of the component. It's better when components take parameters for their display values.
 
 :::tip
 Good templ components are idempotent, pure functions - they don't rely on data that's not passed in as parameters. As long as the parameters are the same, they always return the same HTML - they don't rely on any network calls or disk access.
@@ -88,7 +88,7 @@ Let's update the previous example to display dynamic content.
 
 templ components implement the `templ.Component` interface, which provides a `Render` method.
 
-The `Render` method can be used withing HTTP handlers to write HTML to the `http.ResponseWriter`.
+The `Render` method can be used within HTTP handlers to write HTML to the `http.ResponseWriter`.
 
 ```go title="main.go"
 package main

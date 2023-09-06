@@ -19,7 +19,7 @@ templ Example() {
 }
 ```
 
-`onClick` attributes, and other `on*` attributes are used to execute JavaScript. To prevent user data from being unescapted, `on*` attributes accept a `templ.ComponentScript`.
+`onClick` attributes, and other `on*` attributes are used to execute JavaScript. To prevent user data from being unescaped, `on*` attributes accept a `templ.ComponentScript`.
 
 ```html
 script onClickHandler(msg string) {
