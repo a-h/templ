@@ -13,7 +13,7 @@ var htmlSnippets = []lsp.CompletionItem{
 	},
 	{
 		Label:            "a",
-		InsertText:       `a href="${1:}">{%= ${2:""} %}</a>`,
+		InsertText:       `a href="${1:}">${2:}</a>`,
 		Kind:             lsp.CompletionItemKind(lsp.CompletionItemKindSnippet),
 		InsertTextFormat: lsp.InsertTextFormatSnippet,
 	},
