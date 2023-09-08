@@ -8,13 +8,19 @@ script withoutParameters() {
 	alert("hello");
 }
 
+script onClick() {
+	alert("clicked");
+}
+
 templ Button(text string) {
 	<button onClick={ withParameters("test", text, 123) } onMouseover={ withoutParameters() } type="button">{ text }</button>
 }
 
 templ ThreeButtons() {
 	{! Button("A") }
-	{! Button("B") }
-	<button onMouseover="console.log('mouseover')" type="button">Button C</button>
+	@Button("B")
+	<button onMouseover="console.log(&#39;mouseover&#39;)" type="button">Button C</button>
+	<button hx-on::click="alert(&#39;clicked inline&#39;)" type="button">Button D</button>
+	<button hx-on::click={ onClick() } type="button">Button E</button>
 }
 

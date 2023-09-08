@@ -25,6 +25,14 @@ func withoutParameters() templ.ComponentScript {
 	}
 }
 
+func onClick() templ.ComponentScript {
+	return templ.ComponentScript{
+		Name:     `__templ_onClick_657d`,
+		Function: `function __templ_onClick_657d(){alert("clicked");}`,
+		Call:     templ.SafeScript(`__templ_onClick_657d`),
+	}
+}
+
 func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		templBuffer, templIsBuffer := w.(*bytes.Buffer)
@@ -107,6 +115,41 @@ func ThreeButtons() templ.Component {
 		}
 		var_6 := `Button C`
 		_, err = templBuffer.WriteString(var_6)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</button><button hx-on::click=\"alert(&#39;clicked inline&#39;)\" type=\"button\">")
+		if err != nil {
+			return err
+		}
+		var_7 := `Button D`
+		_, err = templBuffer.WriteString(var_7)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</button>")
+		if err != nil {
+			return err
+		}
+		err = templ.RenderScriptItems(ctx, templBuffer, onClick())
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("<button hx-on::click=\"")
+		if err != nil {
+			return err
+		}
+		var var_8 templ.ComponentScript = onClick()
+		_, err = templBuffer.WriteString(var_8.Call)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("\" type=\"button\">")
+		if err != nil {
+			return err
+		}
+		var_9 := `Button E`
+		_, err = templBuffer.WriteString(var_9)
 		if err != nil {
 			return err
 		}
