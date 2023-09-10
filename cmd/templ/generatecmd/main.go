@@ -121,7 +121,7 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
 			}
-			fmt.Printf("Error processing path: %v\n", errors.Join(errs...))
+			return fmt.Errorf("Error processing path: %w\n", errors.Join(errs...))
 		}
 		if changesFound > 0 {
 			fmt.Printf("Generated code for %d templates with %d errors in %s\n", changesFound, len(errs), time.Since(start))
