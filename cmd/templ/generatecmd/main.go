@@ -121,6 +121,9 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
 			}
+			if !args.Watch {
+				return fmt.Errorf("failed to process path: %v", errors.Join(errs...))
+			}
 			fmt.Printf("Error processing path: %v\n", errors.Join(errs...))
 		}
 		if changesFound > 0 {
