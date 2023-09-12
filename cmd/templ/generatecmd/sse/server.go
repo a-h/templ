@@ -34,6 +34,7 @@ func (s *Handler) Send(eventType string, data string) {
 	for _, f := range s.requests {
 		f := f
 		go func(f chan event) {
+			time.Sleep(2 * time.Second)
 			f <- event{
 				Type: eventType,
 				Data: data,

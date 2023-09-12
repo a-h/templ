@@ -9,8 +9,10 @@ import (
 	"sync"
 )
 
-var m = &sync.Mutex{}
-var running = map[string]*exec.Cmd{}
+var (
+	m       = &sync.Mutex{}
+	running = map[string]*exec.Cmd{}
+)
 
 func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err error) {
 	m.Lock()
@@ -23,11 +25,11 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 		delete(running, input)
 	}
 
-	parts := strings.SplitN(input, " ", 2)
+	parts := strings.Fields(input)
 	executable := parts[0]
 	args := []string{}
 	if len(parts) > 1 {
-		args = append(args, parts[1])
+		args = append(args, parts[1:]...)
 	}
 
 	cmd = exec.CommandContext(ctx, executable, args...)

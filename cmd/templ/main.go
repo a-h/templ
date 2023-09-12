@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"time"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
@@ -21,7 +22,7 @@ func goInstallVersion() string {
 	if !ok {
 		return "unknown"
 	}
-	return info.Main.Version
+	return info.Main.Version + " " + time.Now().Format(time.UnixDate)
 }
 
 func getVersion() string {

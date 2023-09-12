@@ -32,7 +32,8 @@ func New(port int, target *url.URL) *Handler {
 	p := httputil.NewSingleHostReverseProxy(target)
 	p.ErrorLog = log.New(os.Stderr, "Proxy to target error: ", 0)
 	p.ModifyResponse = func(r *http.Response) error {
-		if contentType := r.Header.Get("Content-Type"); contentType != "text/html" {
+		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "text/html") {
+			fmt.Println("ignored", contentType, r.Request.URL.String())
 			return nil
 		}
 		body, err := io.ReadAll(r.Body)

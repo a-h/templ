@@ -133,24 +133,26 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 				if _, err := run.Run(ctx, args.Path, args.Command); err != nil {
 					fmt.Printf("Error starting command: %v\n", err)
 				}
-				// Send server-sent event.
-				if p != nil {
-					p.SendSSE("message", "reload")
-				}
+			}
+			// Send server-sent event.
+			if p != nil {
+				time.Sleep(time.Second)
+				p.SendSSE("message", "reload")
 			}
 			if !firstRunComplete && p != nil {
-				go func() {
+				go func(p *proxy.Handler, args Arguments) {
 					fmt.Printf("Proxying from %s to target: %s\n", p.URL, p.Target.String())
 					if err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", args.ProxyPort), p); err != nil {
 						fmt.Printf("Error starting proxy: %v\n", err)
 					}
-				}()
-				go func() {
+				}(p, args)
+				go func(p *proxy.Handler) {
+					time.Sleep(500 * time.Millisecond)
 					fmt.Printf("Opening URL: %s\n", p.Target.String())
 					if err := openURL(p.URL); err != nil {
 						fmt.Printf("Error opening URL: %v\n", err)
 					}
-				}()
+				}(p)
 			}
 		}
 		if firstRunComplete {
@@ -278,7 +280,7 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 		return fmt.Errorf("%s source formatting error: %w", fileName, err)
 	}
 
-	if err = os.WriteFile(targetFileName, data, 0644); err != nil {
+	if err = os.WriteFile(targetFileName, data, 0o644); err != nil {
 		return fmt.Errorf("%s write file error: %w", targetFileName, err)
 	}
 
