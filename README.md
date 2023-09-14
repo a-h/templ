@@ -1,6 +1,7 @@
 ![templ](https://github.com/a-h/templ/raw/main/templ.png)
 
 ## A HTML templating language for Go that has great developer tooling.
+[![Go Reference](https://pkg.go.dev/badge/github.com/a-h/templ.svg)](https://pkg.go.dev/github.com/a-h/templ)
 
 ![templ](https://user-images.githubusercontent.com/1029947/171962961-38aec64d-eac3-4166-8cb6-e7337c907bae.gif)
 
