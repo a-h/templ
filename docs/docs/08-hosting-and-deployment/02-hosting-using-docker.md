@@ -25,7 +25,7 @@ COPY . /app
 RUN CGO_ENABLED=0 GOOS=linux go build -o /entrypoint
 
 # Deploy.
-FROM gcr.io/distroless/base-debian11 AS release-stage
+FROM gcr.io/distroless/static-debian11 AS release-stage
 WORKDIR /
 COPY --from=build-stage /entrypoint /entrypoint
 // highlight-next-line
