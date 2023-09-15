@@ -13,7 +13,7 @@ mkdir hello-world
 Initialize a new Go project within it.
 
 ```sh
-cd static-rendering
+cd hello-world
 go mod init github.com/a-h/templ-examples/hello-world
 ```
 
