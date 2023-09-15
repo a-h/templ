@@ -174,8 +174,8 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 		return err
 	}
 	g.sourceMap.Add(n.Name, r)
-	// () templ.CSSClass {
-	if _, err = g.w.Write("() templ.CSSClass {\n"); err != nil {
+	// () templ.ComponentCSSClass {
+	if _, err = g.w.Write("() templ.ComponentCSSClass {\n"); err != nil {
 		return err
 	}
 	{
