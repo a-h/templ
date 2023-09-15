@@ -71,6 +71,24 @@ func main() {
 }
 ```
 
+## Building and running the Docker container locally
+
+Before you deploy your application to a hosting provider, you can build and run it locally.
+
+First, you'll need to build the Docker container image.
+
+```bash
+docker build -t counter-basic:latest .
+```
+
+Then you can run the container image, making port `8080` on your `localhost` connect through to port `8080` inside the Docker container.
+
+```bash
+docker run -p 8080:8080 counter-basic:latest
+```
+
+Once the container starts, you can open a web browser at `localhost:8080` and view the application.
+
 ## Example deployment
 
 The https://github.com/a-h/templ/tree/main/examples/counter-basic example is deployed at https://counter-basic.fly.dev/
