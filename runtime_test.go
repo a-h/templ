@@ -16,7 +16,7 @@ import (
 func TestCSSHandler(t *testing.T) {
 	tests := []struct {
 		name             string
-		input            []templ.ComponentCSSClass
+		input            []templ.CSSClass
 		expectedMIMEType string
 		expectedBody     string
 	}{
@@ -28,15 +28,15 @@ func TestCSSHandler(t *testing.T) {
 		},
 		{
 			name:             "classes are rendered",
-			input:            []templ.ComponentCSSClass{{ID: "className", Class: templ.SafeCSS(".className{background-color:white;}")}},
+			input:            []templ.CSSClass{templ.ComponentCSSClass{ID: "className", Class: templ.SafeCSS(".className{background-color:white;}")}},
 			expectedMIMEType: "text/css",
 			expectedBody:     ".className{background-color:white;}",
 		},
 		{
 			name: "classes are rendered",
-			input: []templ.ComponentCSSClass{
-				{ID: "classA", Class: templ.SafeCSS(".classA{background-color:white;}")},
-				{ID: "classB", Class: templ.SafeCSS(".classB{background-color:green;}")},
+			input: []templ.CSSClass{
+				templ.ComponentCSSClass{ID: "classA", Class: templ.SafeCSS(".classA{background-color:white;}")},
+				templ.ComponentCSSClass{ID: "classB", Class: templ.SafeCSS(".classB{background-color:green;}")},
 			},
 			expectedMIMEType: "text/css",
 			expectedBody:     ".classA{background-color:white;}.classB{background-color:green;}",
