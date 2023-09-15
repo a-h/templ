@@ -8,6 +8,8 @@
 
 See user documentation at https://templ.guide
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/a-h/templ.svg)](https://pkg.go.dev/github.com/a-h/templ)
+
 ## Tasks
 
 ### nix-develop
