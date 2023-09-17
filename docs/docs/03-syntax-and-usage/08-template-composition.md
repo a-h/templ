@@ -18,7 +18,7 @@ templ middle() {
 }
 
 templ right() {
-	<div>Middle</div>
+	<div>Right</div>
 }
 ```
 
@@ -30,7 +30,7 @@ templ right() {
  Middle
 </div>
 <div>
- Middle
+ Right
 </div>
 ```
 
