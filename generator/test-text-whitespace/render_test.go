@@ -35,6 +35,11 @@ func TestTextWhitespace(t *testing.T) {
 			input:    WhiteSpaceAroundValues(),
 			expected: WhiteSpaceAroundValuesExpected,
 		},
+		{
+			name:     "whitespace around templated values is maintained",
+			input:    WhiteSpaceAroundTemplatedValues("templ", "allows whitespace around templated values."),
+			expected: WhiteSpaceAroundTemplatedValuesExpected,
+		},
 	} {
 		w := new(strings.Builder)
 		err := test.input.Render(context.Background(), w)

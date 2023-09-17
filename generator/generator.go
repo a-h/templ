@@ -412,6 +412,14 @@ func stripNonCriticalElementWhitespace(input []parser.Node) (output []parser.Nod
 			output = append(output, curr)
 			continue
 		}
+		
+		_, prevIsStringExpr := prev.(parser.StringExpression)
+		_, nextIsStringExpr := next.(parser.StringExpression)
+		if prevIsStringExpr || nextIsStringExpr {
+			// Allow whitespace that comes before or after a template expression.
+			output = append(output, curr)
+			continue
+		}
 	}
 	return
 }

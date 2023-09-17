@@ -31,3 +31,9 @@ templ WhiteSpaceAroundValues() {
 }
 
 const WhiteSpaceAroundValuesExpected = `<p>templ allows strings to be included in sentences.</p>`
+
+const WhiteSpaceAroundTemplatedValuesExpected = `<div>templ allows whitespace around templated values.</div>`
+
+templ WhiteSpaceAroundTemplatedValues(prefix, statement string) {
+  <div>{prefix} {statement}</div>
+}
