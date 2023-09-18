@@ -305,7 +305,7 @@ func CSSID(name string, css string) string {
 // CSS if the request path matches, or updates the HTTP context to ensure that any handlers that
 // use templ.Components skip rendering <style> elements for classes that are included in the global
 // stylesheet. By default, the stylesheet path is /styles/templ.css
-func NewCSSMiddleware(next http.Handler, classes ...ComponentCSSClass) CSSMiddleware {
+func NewCSSMiddleware(next http.Handler, classes ...CSSClass) CSSMiddleware {
 	return CSSMiddleware{
 		Path:       "/styles/templ.css",
 		CSSHandler: NewCSSHandler(classes...),
@@ -339,9 +339,17 @@ func (cssm CSSMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // NewCSSHandler creates a handler that serves a stylesheet containing the CSS of the
 // classes passed in. This is used by the CSSMiddleware to provide global stylesheets
 // for templ components.
-func NewCSSHandler(classes ...ComponentCSSClass) CSSHandler {
+func NewCSSHandler(classes ...CSSClass) CSSHandler {
+	ccssc := make([]ComponentCSSClass, 0, len(classes))
+	for _, c := range classes {
+		ccss, ok := c.(ComponentCSSClass)
+		if !ok {
+			continue
+		}
+		ccssc = append(ccssc, ccss)
+	}
 	return CSSHandler{
-		Classes: classes,
+		Classes: ccssc,
 	}
 }
 
