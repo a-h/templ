@@ -677,6 +677,16 @@ func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+// Comments.
+type Comment struct {
+	Contents string
+}
+
+func (c Comment) IsNode() bool { return true }
+func (c Comment) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, "<!--"+c.Contents+"-->")
+}
+
 // Nodes.
 
 // CallTemplateExpression can be used to create and render a template using data.

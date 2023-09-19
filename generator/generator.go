@@ -464,6 +464,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node) (err error) 
 		err = g.writeDocType(indentLevel, n)
 	case parser.Element:
 		err = g.writeElement(indentLevel, n)
+	case parser.Comment:
+		err = g.writeComment(indentLevel, n)
 	case parser.ChildrenExpression:
 		err = g.writeChildrenExpression(indentLevel)
 	case parser.RawElement:
@@ -1153,6 +1155,11 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`</%s>`, html.EscapeString(n.Name))); err != nil {
 		return err
 	}
+	return err
+}
+
+func (g *generator) writeComment(indentLevel int, c parser.Comment) (err error) {
+	_, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<!--%s-->`, c.Contents))
 	return err
 }
 
