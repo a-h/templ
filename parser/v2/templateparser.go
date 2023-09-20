@@ -98,7 +98,6 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op []Node, ok bool, err e
 			return
 		}
 		if ok {
-			fmt.Println(commentNode.Contents)
 			op = append(op, commentNode)
 			continue
 		}
