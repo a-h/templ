@@ -17,7 +17,7 @@ var htmlComment = commentParser{
 }
 
 func (p commentParser) Parse(pi *parse.Input) (c Comment, ok bool, err error) {
-	// Comment start
+	// Comment start.
 	if _, ok, err = p.start.Parse(pi); err != nil || !ok {
 		return
 	}
