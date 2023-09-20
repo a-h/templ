@@ -26,11 +26,16 @@ templ KVExample() {
 	<input type="email" id="email" name="email" class={ "a", "b", "c", templ.KV("c", false) } placeholder="your@email.com" autocomplete="off"/>
 }
 
+templ PsuedoAttributes() {
+	<button class={ "bg-violet-500", templ.KV(templ.SafeClass("hover:bg-violet-600"), true) }>Save changes</button>
+}
+
 templ ThreeButtons() {
 	{! Button("A") }
 	{! Button("B") }
 	<button class={ templ.Classes(green) } type="button">{ "Green" }</button>
 	{! MapCSSExample() }
 	{! KVExample() }
+	{! PsuedoAttributes() }
 }
 
