@@ -331,8 +331,10 @@ func TestClassesFunction(t *testing.T) {
 				templ.KV("b", true),
 				"c",
 				templ.KV("c", false),
+				templ.KV(templ.SafeClass("d"), true),
+				templ.KV(templ.SafeClass("e"), false),
 			},
-			expected: "a b",
+			expected: "a b d",
 		},
 		{
 			name: "an array of KV types can be used to show or hide classes",

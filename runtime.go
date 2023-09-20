@@ -191,6 +191,12 @@ func (cp *cssProcessor) Add(item any) {
 		}
 	case KeyValue[string, bool]:
 		cp.AddUnsanitized(c.Key, c.Value)
+	case []KeyValue[CSSClass, bool]:
+		for _, kv := range c {
+			cp.AddSanitized(kv.Key.ClassName(), kv.Value)
+		}
+	case KeyValue[CSSClass, bool]:
+		cp.AddSanitized(c.Key.ClassName(), c.Value)
 	case CSSClasses:
 		for _, item := range c {
 			cp.Add(item)
