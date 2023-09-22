@@ -1,8 +1,8 @@
 # CSS style management
 
-## Constant attributes
+## HTML class attribute
 
-templ supports standard class attributes for HTML elements.
+templ supports the HTML `class` attribute.
 
 ```templ
 templ button(text string) {
@@ -16,24 +16,60 @@ templ button(text string) {
 </button>
 ```
 
-## Dynamic classes
+## Class expression
 
-CSS libraries like https://bulma.io and https://tailwindcss.com often require lots of CSS classes to be added to an element, some of which may be optional based on data.
+To use a variables as the name of a CSS class, use a CSS expression.
 
-To support dynamic allocation of classes, the `class` attribute accepts a variadic slice of inputs:
+```templ title="component.templ"
+package main
 
-* String constants, which are sanitized prior to rendering.
-* `templ.SafeCSS` expressions which are not sanitized.
-* A map of string class names to a boolean that determines if the class is added to the element (a `map[string]bool`).
-* A templ CSS expression.
+templ button(text string, className string) {
+	<button class={ className }>{ text }</button>
+}
+```
 
-This allows for dynamic addition of content.
+The class expression can take an array of values.
+
+```templ title="component.templ"
+package main
+
+templ button(text string, className string) {
+	<button class={ "button", className }>{ text }</button>
+}
+```
+
+## CSS class name sanitization
+
+CSS class names that are passed to the class expression attribute as variables are sanitized, since the Go string might come from an untrustworthy source such as user input.
+
+If the class name fails the sanitization check, it will be replaced with `--templ-css-class-safe-name`.
+
+If you know that the CSS class name is from a trustworthy source (e.g. a string constant under your control), you can bypass sanitization by marking the class name as safe with the `templ.SafeClass()` function.
+
+```templ title="component.templ"
+package main
+
+templ button(text string) {
+	<button class={ "button", templ.SafeClass("hover:do_not_sanitize) }>{ text }</button>
+}
+```
+
+### Dynamic class names
+
+Toggle addition of CSS classes to an element based on a boolean value by passing:
+
+* A `templ.KV` value containing the name of the class to add to the element, and a boolean that determines whether the class is added to the attribute at render time.
+  * `templ.KV("is-primary", true)`
+  * `templ.KV(templ.SafeClass("hover:do_not_sanitize"), true)`
+* A map of string class names to a boolean that determines if the class is added to the class attribute value at render time:
+  * `map[string]bool`
+	* `map[CSSClass]bool`
 
 ```templ title="component.templ"
 package main
 
 templ button(text string, isPrimary bool) {
-	<button class={ "button", templ.KV("is-primary", isPrimary) }>{ text }</button>
+	<button class={ "button", templ.KV("is-primary", isPrimary), templ.KV(templ.SafeClass("hover:do_not_sanitize", isPrimary) }>{ text }</button>
 }
 ```
 
@@ -58,7 +94,9 @@ func main() {
 
 ## CSS elements
 
-You can use a standard `<style>` element within a template and its contents will be rendered to the output without any changes.
+The standard `<style>` element can be used within a template.
+
+`<style>` element contents are rendered to the output without any changes.
 
 ```templ
 templ page() {
@@ -96,27 +134,34 @@ templ page() {
 If you want to make sure that the CSS element is only output once, even if you use a template many times, use a CSS expression.
 :::
 
-
-## CSS expressions
+## CSS components
 
 When developing a component library, it may not be desirable to require that specific CSS classes are present when the HTML is rendered.
 
 There may be CSS class name clashes, or developers may forget to include the required CSS.
 
-To support inclusion of CSS within a component library, templ supports CSS components.
+To include CSS within a component library, use a CSS component.
+
+CSS components can also be conditionally rendered.
 
 ```templ title="component.templ"
 package main
 
 var red = "#ff0000";
+var blue = "#0000ff";
 
-css className() {
+css primaryClassName() {
 	background-color: #ffffff;
 	color: { red };
 }
 
-templ button(text string) {
-	<button class={ className, "button" }>{ text }</button>
+css className() {
+	background-color: #ffffff;
+	color: { blue };
+}
+
+templ button(text string, isPrimary bool) {
+	<button class={ "button", className, templ.KV(primaryClassName, isPrimary) }>{ text }</button>
 }
 ```
 
@@ -124,7 +169,7 @@ templ button(text string) {
 <style type="text/css">
  .className_f179{background-color:#ffffff;color:#ff0000;}
 </style>
-<button class="className_f179 button">
+<button class="button className_f179">
  Click me
 </button>
 ```
