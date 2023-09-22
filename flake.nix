@@ -1,65 +1,37 @@
 {
+  description = "templ";
+
   inputs = {
-    flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.url = "nixpkgs/nixos-22.11";
-    xc = {
-      url = "github:joerdav/xc";
+    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
+    gitignore = {
+      url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-    neovim-nightly-overlay = {
-      url = "github:nix-community/neovim-nightly-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-      # Neovim 0.9.0
-      inputs.neovim-flake.url = "github:neovim/neovim?dir=contrib&rev=040f1459849ab05b04f6bb1e77b3def16b4c2f2b";
     };
   };
 
-  outputs = { self, flake-utils, nixpkgs, xc, neovim-nightly-overlay }:
-    flake-utils.lib.eachDefaultSystem (system:
-    let 
-      pkgsDefault = import nixpkgs { overlays = [ neovim-nightly-overlay.overlay ]; };
-      pkgs = import nixpkgs {
-        inherit system; overlays = [
-          (self: super: {
-            xc = xc.packages.${system}.xc;
-            neovim = import ./nix/nvim.nix { pkgs = pkgsDefault; };
-            gopls = pkgs.callPackage ./nix/gopls.nix { };
-            templ = pkgs.callPackage ./nix/templ.nix {
-              go = pkgs.go_1_20;
-              xc = self.xc;
-            };
-            nerdfonts = (pkgsDefault.nerdfonts.override { fonts = [ "IBMPlexMono" ]; });
-          })
-        ];
-      };
-      shell = pkgs.mkShell {
-        packages = [
-          pkgs.asciinema
-          pkgs.git
-          pkgs.go
-          pkgs.gopls
-          pkgs.gotools
-          pkgs.ibm-plex
-          pkgs.neovim
-          pkgs.nerdfonts
-          pkgs.ripgrep
-          pkgs.silver-searcher
-          pkgs.templ
-          pkgs.tmux
-          pkgs.wget
-          pkgs.xc
-          pkgs.zip
-        ];
-      };
+  outputs = { self, nixpkgs, gitignore }:
+    let
+      # Systems supported
+      allSystems = [
+        "x86_64-linux" # 64-bit Intel/AMD Linux
+        "aarch64-linux" # 64-bit ARM Linux
+        "x86_64-darwin" # 64-bit Intel macOS
+        "aarch64-darwin" # 64-bit ARM macOS
+      ];
+
+      # Helper to provide system-specific attributes
+      forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f {
+        pkgs = import nixpkgs { inherit system; };
+      });
     in
-      {
-        defaultPackage = pkgs.templ;
-        packages = {
-          templ = pkgs.templ;
+    {
+      packages = forAllSystems ({ pkgs }: {
+        default = pkgs.buildGoModule {
+          name = "templ";
+          src = gitignore.lib.gitignoreSource ./.;
+          subPackages = [ "./cmd/templ" ];
+          vendorSha256 = "sha256-7QYF8BvLpTcDstkLWxR0BgBP0NUlJ20IqW/nNqMSBn4=";
         };
-        devShells = {
-          default = shell;
-        };
-      }
-  );
+      });
+    };
 }

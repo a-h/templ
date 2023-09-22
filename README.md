@@ -12,14 +12,6 @@ See user documentation at https://templ.guide
 
 ## Tasks
 
-### nix-develop
-
-Run a Nix shell that contains everything required to build templ.
-
-```sh
-nix develop --impure
-```
-
 ### build
 
 Build a local version.

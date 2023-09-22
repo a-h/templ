@@ -1,10 +1,21 @@
-cmd/example/*.go
-dist/
+# Output.
 cmd/templ/templ
+
+# Logs.
 cmd/templ/lspcmd/*log.txt
-.DS_Store
+
+# Go code coverage.
 coverage.out
 coverage
+
+# Mac filesystem jank.
+.DS_Store
+
+# Docusaurus.
 docs/build/
 docs/resources/_gen/
 node_modules/
+dist/
+
+# Nix artifacts.
+result
