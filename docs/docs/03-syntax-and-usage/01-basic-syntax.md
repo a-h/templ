@@ -34,12 +34,15 @@ Outside of templ Components, templ files are ordinary Go code.
 ```templ name="header.templ"
 package main
 
+// Ordinary Go code that we can use in our Component.
 var greeting = "Welcome!"
 
+// templ Component
 templ headerTemplate(name string) {
   <header>
     <h1>{ name }</h1>
-    <h2>{ greeting }</h2>
+    <h2>"{ greeting }" comes from ordinary Go code</h2>
   </header>
 }
 ```
+
