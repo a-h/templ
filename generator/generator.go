@@ -1159,7 +1159,18 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 }
 
 func (g *generator) writeComment(indentLevel int, c parser.Comment) (err error) {
-	_, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<!--%s-->`, c.Contents))
+	// <!--
+	if _, err = g.w.WriteStringLiteral(indentLevel, "<!--"); err != nil {
+		return err
+	}
+	// Contents
+	if err = g.writeText(indentLevel, parser.Text{Value: c.Contents}); err != nil {
+		return err
+	}
+	// -->
+	if _, err = g.w.WriteStringLiteral(indentLevel, "-->"); err != nil {
+		return err
+	}
 	return err
 }
 
