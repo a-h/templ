@@ -22,7 +22,7 @@ func (p commentParser) Parse(pi *parse.Input) (c Comment, ok bool, err error) {
 
 	// Once we've got the comment start sequence, parse anything until the end
 	// sequence as the comment contents.
-	if c.Contents, ok, err = Must(parse.StringUntil(htmlCommentEnd), fmt.Sprintf("expected end comment sequence not found")).Parse(pi); err != nil || !ok {
+	if c.Contents, ok, err = Must(parse.StringUntil(htmlCommentEnd), fmt.Sprintf("expected end comment sequence not present")).Parse(pi); err != nil || !ok {
 		return
 	}
 	// Cut the end element.
