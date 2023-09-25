@@ -12,8 +12,9 @@ import (
 
 // Element open tag.
 type elementOpenTag struct {
-	Name       string
-	Attributes []Attribute
+	Name        string
+	Attributes  []Attribute
+	IndentAttrs bool
 }
 
 var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, ok bool, err error) {
@@ -25,6 +26,7 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 	}
 
 	// Element name.
+	l := pi.Position().Line
 	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
@@ -33,6 +35,11 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
+	}
+
+	// if any attr is not on the same line as elm name then we will indent them
+	if pi.Position().Line != l {
+		e.IndentAttrs = true
 	}
 
 	// Optional whitespace.
@@ -328,10 +335,16 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 	}
 	r.Name = ot.Name
 	r.Attributes = ot.Attributes
+	r.IndentAttrs = ot.IndentAttrs
 
 	// Once we've got an open tag, the rest must be present.
+	l := pi.Position().Line
 	if r.Children, ok, err = newTemplateNodeParser[any](nil, "").Parse(pi); err != nil || !ok {
 		return
+	}
+	// if all the children are not on the same line indent them
+	if l != pi.Position().Line {
+		r.IndentChildren = true
 	}
 
 	// Close tag.
@@ -363,6 +376,7 @@ var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, e
 	}
 
 	// Element name.
+	l := pi.Position().Line
 	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
@@ -377,6 +391,11 @@ var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, e
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
 		pi.Seek(start)
 		return
+	}
+
+	// if any attr is not on the same line as elm name then we will indent them
+	if pi.Position().Line != l {
+		e.IndentAttrs = true
 	}
 
 	if _, ok, err = parse.String("/>").Parse(pi); err != nil || !ok {
