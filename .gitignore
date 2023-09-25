@@ -19,3 +19,7 @@ dist/
 
 # Nix artifacts.
 result
+
+# Editors
+## nvim
+.null-ls*

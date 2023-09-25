@@ -317,9 +317,11 @@ func (t Text) Write(w io.Writer, indent int) error {
 
 // <a .../> or <div ...>...</div>
 type Element struct {
-	Name       string
-	Attributes []Attribute
-	Children   []Node
+	Name           string
+	Attributes     []Attribute
+	IndentAttrs    bool
+	Children       []Node
+	IndentChildren bool
 }
 
 var voidElements = map[string]struct{}{
@@ -420,8 +422,12 @@ func (e Element) Write(w io.Writer, indent int) error {
 		a := e.Attributes[i]
 		// Only the conditional attributes get indented.
 		var attrIndent int
-		if previousWasMultiline || a.IsMultilineAttr() {
+		if e.IndentAttrs {
+			w.Write([]byte("\n"))
 			attrIndent = indent + 1
+		}
+		if previousWasMultiline || a.IsMultilineAttr() {
+			attrIndent++
 		} else {
 			if _, err := w.Write([]byte(" ")); err != nil {
 				return err
@@ -432,12 +438,15 @@ func (e Element) Write(w io.Writer, indent int) error {
 		}
 		previousWasMultiline = a.IsMultilineAttr()
 	}
+	if e.IndentAttrs {
+		w.Write([]byte("\n"))
+	}
 	var closeAngleBracketIndent int
-	if previousWasMultiline {
+	if previousWasMultiline || e.IndentAttrs {
 		closeAngleBracketIndent = indent + 1
 	}
 	if e.hasNonWhitespaceChildren() {
-		if e.containsBlockElement() {
+		if e.IndentChildren {
 			if err := writeIndent(w, closeAngleBracketIndent, ">\n"); err != nil {
 				return err
 			}
