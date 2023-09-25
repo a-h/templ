@@ -417,7 +417,6 @@ func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<"+e.Name); err != nil {
 		return err
 	}
-	var previousWasMultiline bool
 	for i := 0; i < len(e.Attributes); i++ {
 		a := e.Attributes[i]
 		// Only the conditional attributes get indented.
@@ -426,24 +425,17 @@ func (e Element) Write(w io.Writer, indent int) error {
 			w.Write([]byte("\n"))
 			attrIndent = indent + 1
 		}
-		if previousWasMultiline || a.IsMultilineAttr() {
-			attrIndent++
-		} else {
-			if _, err := w.Write([]byte(" ")); err != nil {
-				return err
-			}
+		if _, err := w.Write([]byte(" ")); err != nil {
+			return err
 		}
 		if err := a.Write(w, attrIndent); err != nil {
 			return err
 		}
-		previousWasMultiline = a.IsMultilineAttr()
-	}
-	if e.IndentAttrs {
-		w.Write([]byte("\n"))
 	}
 	var closeAngleBracketIndent int
-	if previousWasMultiline || e.IndentAttrs {
-		closeAngleBracketIndent = indent + 1
+	if  e.IndentAttrs {
+		w.Write([]byte("\n"))
+		closeAngleBracketIndent = indent
 	}
 	if e.hasNonWhitespaceChildren() {
 		if e.IndentChildren {
@@ -631,9 +623,6 @@ func (ca ConditionalAttribute) String() string {
 }
 
 func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
-	if _, err := w.Write([]byte("\n")); err != nil {
-		return err
-	}
 	if err := writeIndent(w, indent, "if "); err != nil {
 		return err
 	}
@@ -659,9 +648,6 @@ func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
 		return err
 	}
 	if len(ca.Else) == 0 {
-		if _, err := w.Write([]byte("\n")); err != nil {
-			return err
-		}
 		return nil
 	}
 	// Write the else blocks.
@@ -680,7 +666,7 @@ func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
 		}
 		indent--
 	}
-	if err := writeIndent(w, indent, "}\n"); err != nil {
+	if err := writeIndent(w, indent, "}"); err != nil {
 		return err
 	}
 	return nil
