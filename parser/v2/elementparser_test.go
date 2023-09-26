@@ -528,6 +528,7 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				IndentAttrs: true,
 				Children: []Node{
 					Text{
 						Value: "Test",
@@ -593,6 +594,7 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				IndentAttrs: true,
 			},
 		},
 		{
@@ -641,6 +643,7 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				IndentAttrs: true,
 			},
 		},
 		{
@@ -681,6 +684,7 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				IndentAttrs: true,
 				Children: []Node{
 					Text{Value: "Test"},
 				},
@@ -800,7 +804,7 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name: "element: inputs can contain class attributes",
+			name:  "element: inputs can contain class attributes",
 			input: `<input  type="email" id="email" name="email" class={ "a", "b", "c",  templ.KV("c", false)}	placeholder="your@email.com" autocomplete="off"/>`,
 			expected: Element{
 				Name: "input",

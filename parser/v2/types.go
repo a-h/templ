@@ -334,46 +334,11 @@ func (e Element) IsVoidElement() bool {
 	return ok
 }
 
-var blockElements = map[string]struct{}{
-	"address": {}, "article": {}, "aside": {}, "body": {}, "blockquote": {}, "canvas": {}, "dd": {}, "div": {}, "dl": {}, "dt": {}, "fieldset": {}, "figcaption": {}, "figure": {}, "footer": {}, "form": {}, "h1": {}, "h2": {}, "h3": {}, "h4": {}, "h5": {}, "h6": {}, "head": {}, "header": {}, "hr": {}, "html": {}, "li": {}, "main": {}, "meta": {}, "nav": {}, "noscript": {}, "ol": {}, "p": {}, "pre": {}, "script": {}, "section": {}, "table": {}, "tr": {}, "th": {}, "td": {}, "template": {}, "tfoot": {}, "turbo-stream": {}, "ul": {}, "video": {},
-}
-
-func (e Element) isBlockElement() bool {
-	_, ok := blockElements[e.Name]
-	return ok
-}
-
 func (e Element) hasNonWhitespaceChildren() bool {
 	for _, c := range e.Children {
 		if _, isWhitespace := c.(Whitespace); !isWhitespace {
 			return true
 		}
-	}
-	return false
-}
-
-func (e Element) containsBlockElement() bool {
-	for _, c := range e.Children {
-		switch n := c.(type) {
-		case Whitespace:
-			continue
-		case Element:
-			if n.isBlockElement() {
-				return true
-			}
-			continue
-		case StringExpression:
-			continue
-		case Text:
-			continue
-		case TemplElementExpression:
-			if len(n.Children) > 0 {
-				return true
-			}
-			continue
-		}
-		// Any template elements should be considered block.
-		return true
 	}
 	return false
 }
@@ -433,7 +398,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 		}
 	}
 	var closeAngleBracketIndent int
-	if  e.IndentAttrs {
+	if e.IndentAttrs {
 		w.Write([]byte("\n"))
 		closeAngleBracketIndent = indent
 	}
@@ -541,7 +506,6 @@ func (e RawElement) Write(w io.Writer, indent int) error {
 }
 
 type Attribute interface {
-	IsMultilineAttr() bool
 	// Write out the string.
 	Write(w io.Writer, indent int) error
 }
@@ -551,7 +515,6 @@ type BoolConstantAttribute struct {
 	Name string
 }
 
-func (bca BoolConstantAttribute) IsMultilineAttr() bool { return false }
 func (bca BoolConstantAttribute) String() string {
 	return bca.Name
 }
@@ -566,7 +529,6 @@ type ConstantAttribute struct {
 	Value string
 }
 
-func (ca ConstantAttribute) IsMultilineAttr() bool { return false }
 func (ca ConstantAttribute) String() string {
 	return ca.Name + `="` + html.EscapeString(ca.Value) + `"`
 }
@@ -581,7 +543,6 @@ type BoolExpressionAttribute struct {
 	Expression Expression
 }
 
-func (ea BoolExpressionAttribute) IsMultilineAttr() bool { return false }
 func (ea BoolExpressionAttribute) String() string {
 	return ea.Name + `?={ ` + ea.Expression.Value + ` }`
 }
@@ -596,7 +557,6 @@ type ExpressionAttribute struct {
 	Expression Expression
 }
 
-func (ea ExpressionAttribute) IsMultilineAttr() bool { return false }
 func (ea ExpressionAttribute) String() string {
 	return ea.Name + `={ ` + ea.Expression.Value + ` }`
 }
@@ -615,7 +575,6 @@ type ConditionalAttribute struct {
 	Else       []Attribute
 }
 
-func (ca ConditionalAttribute) IsMultilineAttr() bool { return true }
 func (ca ConditionalAttribute) String() string {
 	sb := new(strings.Builder)
 	_ = ca.Write(sb, 0)
