@@ -506,6 +506,42 @@ templ x() {
 
 `,
 		},
+		{
+			name: "spacing between string expressions is kept",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+    <div>{firstName} {lastName}</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+	<div>{ firstName } { lastName }</div>
+}
+
+`,
+		},
+		{
+			name: "spacing between string expressions is not magically added",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+    <div>{pt1}{pt2}</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+	<div>{ pt1 }{ pt2 }</div>
+}
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

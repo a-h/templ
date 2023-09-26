@@ -450,6 +450,14 @@ func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
 	for i := 0; i < len(nodes); i++ {
 		// Terminating and leading whitespace is stripped.
 		_, isWhitespace := nodes[i].(Whitespace)
+
+		// allow a single space between StringExpressions
+		// prevents <div>{firstName} {lastName}</div> from becoming <div>{firstName}{lastName}</div>
+		if isWhitespace && !block && previousIs[StringExpression](nodes, i) && futureHasAnythingOtherThan[Whitespace](nodes, i) {
+			w.Write([]byte(" "))
+			continue
+		}
+
 		if isWhitespace && (i == 0 || i == len(nodes)-1) {
 			continue
 		}
@@ -467,6 +475,24 @@ func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
 		}
 	}
 	return nil
+}
+
+func futureHasAnythingOtherThan[T any](nodes []Node, cur int) bool {
+	for i := cur + 1; i < len(nodes); i++ {
+		if _, ok := nodes[i].(T); !ok {
+			return true
+		}
+	}
+	return false
+}
+
+func previousIs[T any](nodes []Node, cur int) bool {
+	for i := cur; i >= 0; i-- {
+		if _, ok := nodes[i].(T); ok {
+			return true
+		}
+	}
+	return false
 }
 
 type RawElement struct {
