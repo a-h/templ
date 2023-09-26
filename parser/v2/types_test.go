@@ -106,12 +106,13 @@ templ input(value, validation string) {
 `,
 		},
 		{
-			name: "if the element only contains inline elements, they end up on the same line",
+			name: "children indented, closing elm",
 			input: ` // first line removed to make indentation clear in Go code
 package test
 
 templ input(value, validation string) {
-	<div><p>{ "the" }<a href="http://example.com">{ "data" }</a></p></div>
+	<div><p>{ "the" }<a href="http://example.com">{ "data" }</a></p>
+    </div>
 }
 `,
 			expected: `// first line removed to make indentation clear in Go code
@@ -126,7 +127,54 @@ templ input(value, validation string) {
 `,
 		},
 		{
-			name: "if an element contains any block elements, all of the child elements are split onto new lines",
+			name: "children indented, first child",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div>
+        <p>{ "the" }<a href="http://example.com">{ "data" }</a></p></div>
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div>
+		<p>{ "the" }<a href="http://example.com">{ "data" }</a></p>
+	</div>
+}
+
+`,
+		},
+		{
+			name: "all children indented, with nested indentation",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div><p>{ "the" }<a href="http://example.com">{ "data" }
+</a></p></div>
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div>
+		<p>
+			{ "the" }
+			<a href="http://example.com">
+				{ "data" }
+			</a>
+		</p>
+	</div>
+}
+
+`,
+		},
+		{
+			name: "formatting does not alter whitespace",
 			input: ` // first line removed to make indentation clear in Go code
 package test
 
@@ -139,10 +187,7 @@ templ nested() {
 package test
 
 templ nested() {
-	<div>
-		{ "the" }
-		<div>{ "other" }</div>
-	</div>
+	<div>{ "the" }<div>{ "other" }</div></div>
 }
 
 `,
@@ -313,7 +358,7 @@ templ table(accountNumber string, registration string) {
 `,
 		},
 		{
-			name: "conditional expressions are placed on their own lines",
+			name: "conditional expressions result in all atters indented",
 			input: ` // first line removed to make indentation clear
 package test
 
@@ -324,21 +369,23 @@ templ conditionalAttributes(addClass bool) {
 	width="300">Content</div>
 }
 `,
-			expected: ` // first line removed to make indentation clear
+			expected: `// first line removed to make indentation clear
 package test
 
 templ conditionalAttributes(addClass bool) {
-	<div id="conditional"
-		if addClass {
+	<div
+ 		id="conditional"
+ 		if addClass {
 			class="itWasTrue"
 		}
-		width="300">Content</div>
+ 		width="300"
+	>Content</div>
 }
 
 `,
 		},
 		{
-			name: "conditional expressions are indented on their own lines",
+			name: "conditional expressions result in all atters indented, 2",
 			input: ` // first line removed to make indentation clear
 package test
 
@@ -350,21 +397,23 @@ class="itWasTrue"
 width="300">Content</div>
 }
 `,
-			expected: ` // first line removed to make indentation clear
+			expected: `// first line removed to make indentation clear
 package test
 
 templ conditionalAttributes(addClass bool) {
-	<div id="conditional"
-		if addClass {
+	<div
+ 		id="conditional"
+ 		if addClass {
 			class="itWasTrue"
 		}
-		width="300">Content</div>
+ 		width="300"
+	>Content</div>
 }
 
 `,
 		},
 		{
-			name: "conditional expressions have their end > indented",
+			name: "conditional expressions have the same child indentation rules as regular elements",
 			input: ` // first line removed to make indentation clear
 package test
 
@@ -373,18 +422,22 @@ templ conditionalAttributes(addClass bool) {
 if addClass {
 class="itWasTrue"
 }
->Content</div>
+>
+Content</div>
 }
 `,
 			expected: ` // first line removed to make indentation clear
 package test
 
 templ conditionalAttributes(addClass bool) {
-	<div id="conditional"
-		if addClass {
+	<div
+ 		id="conditional"
+ 		if addClass {
 			class="itWasTrue"
 		}
-		>Content</div>
+	>
+		Content
+	</div>
 }
 
 `,
@@ -408,19 +461,21 @@ width="300">Content</div>
 package test
 
 templ conditionalAttributes(addClass bool) {
-	<div id="conditional"
-		if addClass {
+	<div
+ 		id="conditional"
+ 		if addClass {
 			class="itWasTrue"
 		} else {
 			class="itWasNotTrue"
 		}
-		width="300">Content</div>
+ 		width="300"
+	>Content</div>
 }
 
 `,
 		},
 		{
-			name: "templ expression elements without children are considered to be inline elements",
+			name: "templ expression elements are formatted the same as other elements",
 			input: ` // first line removed to make indentation clear
 package main
 
@@ -428,7 +483,9 @@ templ x() {
 	<li>
 		<a href="/">
 	    Home
-	    @hello("home")
+	    @hello("home") {
+                data
+                }
      </a>
 	</li>
 }
@@ -437,7 +494,14 @@ templ x() {
 package main
 
 templ x() {
-	<li><a href="/">Home @hello("home")</a></li>
+	<li>
+		<a href="/">
+			Home
+			@hello("home") {
+				data
+			}
+		</a>
+	</li>
 }
 
 `,
