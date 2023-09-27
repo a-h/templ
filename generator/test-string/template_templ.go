@@ -31,6 +31,33 @@ func render(s string) templ.Component {
 		if err != nil {
 			return err
 		}
+		_, err = templBuffer.WriteString("</li><li>")
+		if err != nil {
+			return err
+		}
+		var var_3 string = "Spaces"
+		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" ")
+		if err != nil {
+			return err
+		}
+		var var_4 string = "are"
+		_, err = templBuffer.WriteString(templ.EscapeString(var_4))
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString(" ")
+		if err != nil {
+			return err
+		}
+		var var_5 string = "preserved."
+		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
+		if err != nil {
+			return err
+		}
 		_, err = templBuffer.WriteString("</li></ul>")
 		if err != nil {
 			return err
