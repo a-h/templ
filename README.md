@@ -77,7 +77,7 @@ go tool covdata textfmt -i=./coverage/generate,./coverage/unit -o coverage.out
 ### lint
 
 ```sh
-docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.52.2 golangci-lint run -v
+docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.54 golangci-lint run -v
 ```
 
 ### release
