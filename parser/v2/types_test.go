@@ -358,7 +358,7 @@ templ table(accountNumber string, registration string) {
 `,
 		},
 		{
-			name: "conditional expressions result in all atters indented",
+			name: "conditional expressions result in all attrs indented",
 			input: ` // first line removed to make indentation clear
 package test
 
@@ -385,7 +385,7 @@ templ conditionalAttributes(addClass bool) {
 `,
 		},
 		{
-			name: "conditional expressions result in all atters indented, 2",
+			name: "conditional expressions result in all attrs indented, 2",
 			input: ` // first line removed to make indentation clear
 package test
 

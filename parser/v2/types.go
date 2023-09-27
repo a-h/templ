@@ -451,8 +451,7 @@ func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
 		// Terminating and leading whitespace is stripped.
 		_, isWhitespace := nodes[i].(Whitespace)
 
-		// allow a single space between StringExpressions
-		// prevents <div>{firstName} {lastName}</div> from becoming <div>{firstName}{lastName}</div>
+		// Allow a single space between StringExpressions to prevent <div>{firstName} {lastName}</div> from becoming <div>{firstName}{lastName}</div>.
 		if isWhitespace && !block && previousIs[StringExpression](nodes, i) && futureHasAnythingOtherThan[Whitespace](nodes, i) {
 			w.Write([]byte(" "))
 			continue

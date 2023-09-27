@@ -37,7 +37,7 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 		return
 	}
 
-	// if any attr is not on the same line as elm name then we will indent them
+	// If any attribute is not on the same line as the elemenet name, indent them.
 	if pi.Position().Line != l {
 		e.IndentAttrs = true
 	}
@@ -342,7 +342,7 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 	if r.Children, ok, err = newTemplateNodeParser[any](nil, "").Parse(pi); err != nil || !ok {
 		return
 	}
-	// if all the children are not on the same line indent them
+	// If the children are not all on the same line, indent them
 	if l != pi.Position().Line {
 		r.IndentChildren = true
 	}
@@ -393,7 +393,7 @@ var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, e
 		return
 	}
 
-	// if any attr is not on the same line as elm name then we will indent them
+	// If any attribute is not on the same line as the element name, indent them.
 	if pi.Position().Line != l {
 		e.IndentAttrs = true
 	}
