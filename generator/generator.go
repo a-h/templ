@@ -412,7 +412,6 @@ func stripNonCriticalElementWhitespace(input []parser.Node) (output []parser.Nod
 			output = append(output, curr)
 			continue
 		}
-		
 		_, prevIsStringExpr := prev.(parser.StringExpression)
 		_, nextIsStringExpr := next.(parser.StringExpression)
 		if prevIsStringExpr || nextIsStringExpr {

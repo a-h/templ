@@ -387,7 +387,9 @@ func (e Element) Write(w io.Writer, indent int) error {
 		// Only the conditional attributes get indented.
 		var attrIndent int
 		if e.IndentAttrs {
-			w.Write([]byte("\n"))
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
 			attrIndent = indent + 1
 		}
 		if _, err := w.Write([]byte(" ")); err != nil {
@@ -399,7 +401,9 @@ func (e Element) Write(w io.Writer, indent int) error {
 	}
 	var closeAngleBracketIndent int
 	if e.IndentAttrs {
-		w.Write([]byte("\n"))
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
 		closeAngleBracketIndent = indent
 	}
 	if e.hasNonWhitespaceChildren() {
@@ -453,7 +457,9 @@ func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
 
 		// Allow a single space between StringExpressions to prevent <div>{firstName} {lastName}</div> from becoming <div>{firstName}{lastName}</div>.
 		if isWhitespace && !block && previousIs[StringExpression](nodes, i) && futureHasAnythingOtherThan[Whitespace](nodes, i) {
-			w.Write([]byte(" "))
+			if _, err := w.Write([]byte(" ")); err != nil {
+				return err
+			}
 			continue
 		}
 
