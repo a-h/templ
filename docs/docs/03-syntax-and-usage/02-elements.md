@@ -1,6 +1,6 @@
 # Elements
 
-templ elements are used render HTML within templ components.
+templ elements are used to render HTML within templ components.
 
 ```templ title="button.templ"
 package main
