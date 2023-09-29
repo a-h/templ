@@ -45,6 +45,13 @@ func TestCommentParser(t *testing.T) {
 				Contents: ` <p class="test">tag</p> `,
 			},
 		},
+		{
+			name:  "comments can contain tags",
+			input: `<!-- <div> hello world </div> -->`,
+			expected: Comment{
+				Contents: ` <div> hello world </div> `,
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
