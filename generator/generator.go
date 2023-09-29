@@ -1170,7 +1170,7 @@ func (g *generator) writeComment(indentLevel int, c parser.Comment) (err error) 
 	if _, err = g.w.WriteStringLiteral(indentLevel, "<!--"); err != nil {
 		return err
 	}
-	// Contents
+	// Contents.
 	if err = g.writeText(indentLevel, parser.Text{Value: c.Contents}); err != nil {
 		return err
 	}
