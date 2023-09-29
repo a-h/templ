@@ -73,12 +73,21 @@ func TestCommentParserErrors(t *testing.T) {
 		{
 			name:  "unclosed HTML comment",
 			input: `<!-- unclosed HTML comment`,
-			expected: parse.Error("expected end comment sequence not present",
+			expected: parse.Error("expected end comment literal '-->' not found",
 				parse.Position{
 					Index: 26,
 					Line:  0,
 					Col:   26,
 				}),
+		},
+		{
+			name:  "comment in comment",
+			input: `<!-- <-- other --> -->`,
+			expected: parse.Error("comment contains invalid sequence '--'", parse.Position{
+				Index: 8,
+				Line:  0,
+				Col:   8,
+			}),
 		},
 	}
 	for _, tt := range tests {
