@@ -14,8 +14,10 @@ templ render(content string) {
 	@paragraph("third paragraph")
 	<!-- commented out string expression: { content } -->
 	<span>{ content }</span>
+	<!-- <div>comment with html</div> -->
 }
 
 templ paragraph(content string) {
 	<p>{ content }</p>
 }
+

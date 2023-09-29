@@ -96,7 +96,16 @@ func render(content string) templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString("</span>")
+		_, err = templBuffer.WriteString("</span><!--")
+		if err != nil {
+			return err
+		}
+		var_7 := ` <div>comment with html</div> `
+		_, err = templBuffer.WriteString(var_7)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("-->")
 		if err != nil {
 			return err
 		}
@@ -115,17 +124,17 @@ func paragraph(content string) templ.Component {
 			defer templ.ReleaseBuffer(templBuffer)
 		}
 		ctx = templ.InitializeContext(ctx)
-		var_7 := templ.GetChildren(ctx)
-		if var_7 == nil {
-			var_7 = templ.NopComponent
+		var_8 := templ.GetChildren(ctx)
+		if var_8 == nil {
+			var_8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		_, err = templBuffer.WriteString("<p>")
 		if err != nil {
 			return err
 		}
-		var var_8 string = content
-		_, err = templBuffer.WriteString(templ.EscapeString(var_8))
+		var var_9 string = content
+		_, err = templBuffer.WriteString(templ.EscapeString(var_9))
 		if err != nil {
 			return err
 		}
