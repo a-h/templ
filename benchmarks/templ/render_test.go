@@ -6,9 +6,11 @@ import (
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/a-h/templ/parser/v2"
 )
 
-func BenchmarkTempl(b *testing.B) {
+func BenchmarkTemplRender(b *testing.B) {
 	b.ReportAllocs()
 	t := Render(Person{
 		Name:  "Luiz Bonfa",
@@ -25,6 +27,21 @@ func BenchmarkTempl(b *testing.B) {
 	}
 }
 
+// go:embed template.templ
+var parserBenchmarkTemplate string
+
+func BenchmarkTemplParser(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		tf, err := parser.ParseString(parserBenchmarkTemplate)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if tf.Package.Expression.Value == "" {
+			b.Fatal("unexpected nil template")
+		}
+	}
+}
+
 var goTemplate = template.Must(template.New("example").Parse(`<div>
 	<h1>{{.Name}}</h1>
 	<div style="font-family: &#39;sans-serif&#39;" id="test" data-contents="something with &#34;quotes&#34; and a &lt;tag&gt;">
@@ -37,7 +54,7 @@ var goTemplate = template.Must(template.New("example").Parse(`<div>
 	<hr noshade>
 `))
 
-func BenchmarkGoTemplate(b *testing.B) {
+func BenchmarkGoTemplateRender(b *testing.B) {
 	w := new(strings.Builder)
 	person := Person{
 		Name:  "Luiz Bonfa",

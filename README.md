@@ -74,6 +74,14 @@ go tool covdata percent -i=./coverage/generate,./coverage/unit
 go tool covdata textfmt -i=./coverage/generate,./coverage/unit -o coverage.out
 ```
 
+### benchmark
+
+Run benchmarks.
+
+```sh
+go run ./cmd/templ generate && go test ./... -bench=. -benchmem
+```
+
 ### lint
 
 ```sh
