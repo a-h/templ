@@ -31,6 +31,11 @@ templ PsuedoAttributes() {
 }
 
 templ ThreeButtons() {
+	<style>
+		.test {
+			color: #ff0000;
+		}
+	</style>
 	{! Button("A") }
 	{! Button("B") }
 	<button class={ templ.Classes(green) } type="button">{ "Green" }</button>

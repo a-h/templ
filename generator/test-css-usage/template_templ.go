@@ -264,6 +264,23 @@ func ThreeButtons() templ.Component {
 			var_14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		_, err = templBuffer.WriteString("<style>")
+		if err != nil {
+			return err
+		}
+		var_15 := `
+		.test {
+			color: #ff0000;
+		}
+	`
+		_, err = templBuffer.WriteString(var_15)
+		if err != nil {
+			return err
+		}
+		_, err = templBuffer.WriteString("</style>")
+		if err != nil {
+			return err
+		}
 		err = Button("A").Render(ctx, templBuffer)
 		if err != nil {
 			return err
@@ -272,8 +289,8 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_15 = []any{templ.Classes(green)}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_15...)
+		var var_16 = []any{templ.Classes(green)}
+		err = templ.RenderCSSItems(ctx, templBuffer, var_16...)
 		if err != nil {
 			return err
 		}
@@ -281,7 +298,7 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_15).String()))
+		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_16).String()))
 		if err != nil {
 			return err
 		}
@@ -289,8 +306,8 @@ func ThreeButtons() templ.Component {
 		if err != nil {
 			return err
 		}
-		var var_16 string = "Green"
-		_, err = templBuffer.WriteString(templ.EscapeString(var_16))
+		var var_17 string = "Green"
+		_, err = templBuffer.WriteString(templ.EscapeString(var_17))
 		if err != nil {
 			return err
 		}
