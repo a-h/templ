@@ -30,7 +30,7 @@ func main() {
 ```
 
 :::info
-templ automatically minifies HTML reponses, output is shown formatted for readability.
+templ automatically minifies HTML responses, output is shown formatted for readability.
 :::
 
 ## Tags must be closed

@@ -22,7 +22,7 @@ templ follows the same rules as Go. If a `templ` block starts with an uppercase 
 
 ## Code-only components
 
-Since templ Components ultimately implement the `templ.Component`, any code that implments the interface can be used in place of a templ component generated from a `*.templ` file.
+Since templ Components ultimately implement the `templ.Component`, any code that implements the interface can be used in place of a templ component generated from a `*.templ` file.
 
 ```go
 package main

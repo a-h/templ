@@ -83,7 +83,7 @@ Top May Day Activities in the UK:
 * Dancing around the Maypole, a traditional folk activity
 * Attending local village fetes and fairs
 * Watching or participating in Morris dancing performances
-* Enjoying the day off as a public holiday, known as Early May Bank Holiday
+* Enjoying having a day off from the Early May Bank Holiday
 `,
 	},
 }
@@ -235,7 +235,7 @@ While each content page contains the HTML generated from the markdown, and the s
    Watching or participating in Morris dancing performances
   </li>
   <li>
-   Enjoying the day off as a public holiday, known as Early May Bank Holiday
+   Enjoying having a day off from the Early May Bank Holiday
   </li>
  </ul>
 </div>

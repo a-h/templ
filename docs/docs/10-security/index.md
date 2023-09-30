@@ -2,7 +2,7 @@
 
 ## Injection attacks
 
-templ is designed to prevent user provided data from being used to inject vulnerabilities.
+templ is designed to prevent user-provided data from being used to inject vulnerabilities.
 
 `<script>` and `<style>` tags could allow user data to inject vulnerabilities, so variables are not permitted in these sections.
 

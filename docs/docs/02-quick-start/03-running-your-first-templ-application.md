@@ -1,6 +1,6 @@
 # Running your first templ application
 
-Lets update the previous application to serve HTML over HTTP instead of writing it to the terminal.
+Let's update the previous application to serve HTML over HTTP instead of writing it to the terminal.
 
 ## Create a web server
 

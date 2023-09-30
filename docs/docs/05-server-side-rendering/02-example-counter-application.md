@@ -13,7 +13,7 @@ flowchart TD
 
 ## Updating global state
 
-First, define a HTML form post with two buttons. One for global, and for one per-user.
+First, define a HTML form post with two buttons. One to update a global state, and one for a per-user state.
 
 ```templ title="components.templ"
 package main
@@ -101,7 +101,7 @@ func main() {
 ```
 
 :::note
-In this example, the global state is stored in RAM, and will be lost when the web server reboots. To support load balanced web servers, and stateless function deployments, you might consider storing the state in a data store such as Redis, DynamoDB, or Cloud Firestore.
+In this example, the global state is stored in RAM, and will be lost when the web server reboots. To support load-balanced web servers, and stateless function deployments, you might consider storing the state in a data store such as Redis, DynamoDB, or Cloud Firestore.
 :::
 
 ## Adding per-user session state
@@ -196,11 +196,11 @@ func main() {
 ```
 
 :::note
-Incrementing a count by reading and setting the value is not an atomic operation (not thread safe). In a production application, to increment a per-user count you may wish to use a database that provides a transactional increment operation.
+Incrementing a count by reading and setting the value is not an atomic operation (not thread-safe). In a production application, to increment a per-user count you may wish to use a database that provides a transactional increment operation.
 :::
 
 :::note
-The default behaviour of `scs` is to store session data in RAM, which isn't suitable for stateless function deployments, or load balanced applications, but the library supports a range of backend storage solutions.
+The default behaviour of `scs` is to store session data in RAM, which isn't suitable for stateless function deployments, or load-balanced applications, but the library supports a range of backend storage solutions.
 :::
 
 Complete source code including AWS CDK code to set up the infrastructure is available at https://github.com/a-h/templ/tree/main/examples/counter
