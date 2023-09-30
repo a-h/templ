@@ -37,5 +37,5 @@ templ generate --help
   -sourceMapVisualisations
         Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
   -w int
-        Number of workers to run in parallel. (default 10)
+        Number of workers to run in parallel. (default runtime.NumCPU())
 ```
