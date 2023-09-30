@@ -60,7 +60,7 @@ templ page(data []TimeValue) {
 }
 ```
 
-The data is loaded by the backend into the template. This example uses a constant, but it could easily have colleted the `[]TimeValue` from a database.
+The data is loaded by the backend into the template. This example uses a constant, but it could easily have collected the `[]TimeValue` from a database.
 
 ```go
 package main
