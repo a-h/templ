@@ -41,12 +41,18 @@ templ Example() {
 }
 ```
 
-Class names are escaped unless bypassed.
+Class names are sanitized by default. A failed class name is replaced by `--templ-css-class-safe-name`. The sanitization can be bypassed using the `templ.SafeClass` function, but the result is still subject to escaping.
 
 ```html
 templ Example() {
-  <div class={ templ.CSSClasses(templ.Class("unsafe</style&gt;-will-sanitized"), templ.SafeClass("sanitization bypassed")) }</div>
+  <div class={ "unsafe</style&gt;-will-sanitized", templ.SafeClass("&sanitization bypassed") }></div>
 }
+```
+
+Rendered output:
+
+```html
+<div class="--templ-css-class-safe-name &amp;sanitization bypassed"></div>
 ```
 
 ```html
