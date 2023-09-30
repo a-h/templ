@@ -10,201 +10,201 @@ import "io"
 import "bytes"
 
 func WhitespaceIsAddedWithinTemplStatements() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<p>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<p>")
+		if templErr != nil {
+			return templErr
 		}
-		var_2 := `This is some text.`
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
+		templVar2 := `This is some text.`
+		_, templErr = templBuffer.WriteString(templVar2)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(" ")
+		if templErr != nil {
+			return templErr
 		}
 		if true {
-			var_3 := `So is this.`
-			_, err = templBuffer.WriteString(var_3)
-			if err != nil {
-				return err
+			templVar3 := `So is this.`
+			_, templErr = templBuffer.WriteString(templVar3)
+			if templErr != nil {
+				return templErr
 			}
 		}
-		_, err = templBuffer.WriteString("</p>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</p>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 const WhitespaceIsAddedWithinTemplStatementsExpected = `<p>This is some text. So is this.</p>`
 
 func InlineElementsAreNotPadded() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_4 := templ.GetChildren(ctx)
-		if var_4 == nil {
-			var_4 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar4 := templ.GetChildren(templCtx)
+		if templVar4 == nil {
+			templVar4 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<p>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<p>")
+		if templErr != nil {
+			return templErr
 		}
-		var_5 := `Inline text `
-		_, err = templBuffer.WriteString(var_5)
-		if err != nil {
-			return err
+		templVar5 := `Inline text `
+		_, templErr = templBuffer.WriteString(templVar5)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<b>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<b>")
+		if templErr != nil {
+			return templErr
 		}
-		var_6 := `is spaced properly`
-		_, err = templBuffer.WriteString(var_6)
-		if err != nil {
-			return err
+		templVar6 := `is spaced properly`
+		_, templErr = templBuffer.WriteString(templVar6)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</b> ")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</b> ")
+		if templErr != nil {
+			return templErr
 		}
-		var_7 := `without adding extra spaces.`
-		_, err = templBuffer.WriteString(var_7)
-		if err != nil {
-			return err
+		templVar7 := `without adding extra spaces.`
+		_, templErr = templBuffer.WriteString(templVar7)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</p>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</p>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 const InlineElementsAreNotPaddedExpected = `<p>Inline text <b>is spaced properly</b> without adding extra spaces.</p>`
 
 func WhiteSpaceInHTMLIsNormalised() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_8 := templ.GetChildren(ctx)
-		if var_8 == nil {
-			var_8 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar8 := templ.GetChildren(templCtx)
+		if templVar8 == nil {
+			templVar8 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<p>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<p>")
+		if templErr != nil {
+			return templErr
 		}
-		var_9 := `newlines and other whitespace are stripped`
-		_, err = templBuffer.WriteString(var_9)
-		if err != nil {
-			return err
+		templVar9 := `newlines and other whitespace are stripped`
+		_, templErr = templBuffer.WriteString(templVar9)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(" ")
+		if templErr != nil {
+			return templErr
 		}
-		var_10 := `but it is normalised`
-		_, err = templBuffer.WriteString(var_10)
-		if err != nil {
-			return err
+		templVar10 := `but it is normalised`
+		_, templErr = templBuffer.WriteString(templVar10)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(" ")
+		if templErr != nil {
+			return templErr
 		}
-		var_11 := `like HTML.`
-		_, err = templBuffer.WriteString(var_11)
-		if err != nil {
-			return err
+		templVar11 := `like HTML.`
+		_, templErr = templBuffer.WriteString(templVar11)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</p>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</p>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 const WhiteSpaceInHTMLIsNormalisedExpected = `<p>newlines and other whitespace are stripped but it is normalised like HTML.</p>`
 
 func WhiteSpaceAroundValues() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_12 := templ.GetChildren(ctx)
-		if var_12 == nil {
-			var_12 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar12 := templ.GetChildren(templCtx)
+		if templVar12 == nil {
+			templVar12 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<p>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<p>")
+		if templErr != nil {
+			return templErr
 		}
-		var_13 := `templ allows `
-		_, err = templBuffer.WriteString(var_13)
-		if err != nil {
-			return err
+		templVar13 := `templ allows `
+		_, templErr = templBuffer.WriteString(templVar13)
+		if templErr != nil {
+			return templErr
 		}
-		var var_14 string = "strings"
-		_, err = templBuffer.WriteString(templ.EscapeString(var_14))
-		if err != nil {
-			return err
+		var templVar14 string = "strings"
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar14))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(" ")
+		if templErr != nil {
+			return templErr
 		}
-		var_15 := `to be included in sentences.`
-		_, err = templBuffer.WriteString(var_15)
-		if err != nil {
-			return err
+		templVar15 := `to be included in sentences.`
+		_, templErr = templBuffer.WriteString(templVar15)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</p>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</p>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
@@ -213,43 +213,43 @@ const WhiteSpaceAroundValuesExpected = `<p>templ allows strings to be included i
 const WhiteSpaceAroundTemplatedValuesExpected = `<div>templ allows whitespace around templated values.</div>`
 
 func WhiteSpaceAroundTemplatedValues(prefix, statement string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_16 := templ.GetChildren(ctx)
-		if var_16 == nil {
-			var_16 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar16 := templ.GetChildren(templCtx)
+		if templVar16 == nil {
+			templVar16 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<div>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_17 string = prefix
-		_, err = templBuffer.WriteString(templ.EscapeString(var_17))
-		if err != nil {
-			return err
+		var templVar17 string = prefix
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar17))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(" ")
+		if templErr != nil {
+			return templErr
 		}
-		var var_18 string = statement
-		_, err = templBuffer.WriteString(templ.EscapeString(var_18))
-		if err != nil {
-			return err
+		var templVar18 string = statement
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar18))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

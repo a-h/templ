@@ -43,128 +43,128 @@ func code() templ.CSSClass {
 }
 
 func combine(templFileName string, left, right templ.Component) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<html><head><title>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<html><head><title>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_2 string = templFileName
-		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
-		if err != nil {
-			return err
+		var templVar2 string = templFileName
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar2))
+		if templErr != nil {
+			return templErr
 		}
-		var_3 := `- Source Map Visualisation`
-		_, err = templBuffer.WriteString(var_3)
-		if err != nil {
-			return err
+		templVar3 := `- Source Map Visualisation`
+		_, templErr = templBuffer.WriteString(templVar3)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</title><style type=\"text/css\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</title><style type=\"text/css\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_4 := `
+		templVar4 := `
 				.mapped { background-color: green }
 				.highlighted { background-color: yellow }
 			`
-		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templVar4)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</style></head><body><h1>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</style></head><body><h1>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_5 string = templFileName
-		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
-		if err != nil {
-			return err
+		var templVar5 string = templFileName
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar5))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</h1>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</h1>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_6 = []any{templ.Classes(row())}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_6...)
-		if err != nil {
-			return err
+		var templVar6 = []any{templ.Classes(row())}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar6...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<div class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<div class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_6).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar6).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\">")
+		if templErr != nil {
+			return templErr
 		}
-		var var_7 = []any{templ.Classes(column(), code())}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_7...)
-		if err != nil {
-			return err
+		var templVar7 = []any{templ.Classes(column(), code())}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar7...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<div class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<div class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_7).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar7).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\">")
+		if templErr != nil {
+			return templErr
 		}
-		err = left.Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = left.Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_8 = []any{templ.Classes(column(), code())}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_8...)
-		if err != nil {
-			return err
+		var templVar8 = []any{templ.Classes(column(), code())}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar8...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<div class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<div class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_8).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar8).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\">")
+		if templErr != nil {
+			return templErr
 		}
-		err = right.Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = right.Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div></div></body></html>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div></div></body></html>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
@@ -199,69 +199,69 @@ func removeHighlight(sourceId, targetId string) templ.ComponentScript {
 }
 
 func mappedCharacter(s string, sourceID, targetID string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_9 := templ.GetChildren(ctx)
-		if var_9 == nil {
-			var_9 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar9 := templ.GetChildren(templCtx)
+		if templVar9 == nil {
+			templVar9 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		var var_10 = []any{templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_10...)
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		var templVar10 = []any{templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID))}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar10...)
+		if templErr != nil {
+			return templErr
 		}
-		err = templ.RenderScriptItems(ctx, templBuffer, highlight(sourceID, targetID), removeHighlight(sourceID, targetID))
-		if err != nil {
-			return err
+		templErr = templ.RenderScriptItems(templCtx, templBuffer, highlight(sourceID, targetID), removeHighlight(sourceID, targetID))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<span class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<span class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_10).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar10).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" onMouseOver=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" onMouseOver=\"")
+		if templErr != nil {
+			return templErr
 		}
-		var var_11 templ.ComponentScript = highlight(sourceID, targetID)
-		_, err = templBuffer.WriteString(var_11.Call)
-		if err != nil {
-			return err
+		var templVar11 templ.ComponentScript = highlight(sourceID, targetID)
+		_, templErr = templBuffer.WriteString(templVar11.Call)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" onMouseOut=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" onMouseOut=\"")
+		if templErr != nil {
+			return templErr
 		}
-		var var_12 templ.ComponentScript = removeHighlight(sourceID, targetID)
-		_, err = templBuffer.WriteString(var_12.Call)
-		if err != nil {
-			return err
+		var templVar12 templ.ComponentScript = removeHighlight(sourceID, targetID)
+		_, templErr = templBuffer.WriteString(templVar12.Call)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\">")
+		if templErr != nil {
+			return templErr
 		}
-		var var_13 string = s
-		_, err = templBuffer.WriteString(templ.EscapeString(var_13))
-		if err != nil {
-			return err
+		var templVar13 string = s
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar13))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</span>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</span>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

@@ -10,99 +10,99 @@ import "io"
 import "bytes"
 
 func render(p person) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div><h1>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<div><h1>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_2 string = p.name
-		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
-		if err != nil {
-			return err
+		var templVar2 string = p.name
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar2))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</h1><div style=\"font-family: &#39;sans-serif&#39;\" id=\"test\" data-contents=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</h1><div style=\"font-family: &#39;sans-serif&#39;\" id=\"test\" data-contents=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(`something with "quotes" and a <tag>`))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(`something with "quotes" and a <tag>`))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\"><div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\"><div>")
+		if templErr != nil {
+			return templErr
 		}
-		var_3 := `email:`
-		_, err = templBuffer.WriteString(var_3)
-		if err != nil {
-			return err
+		templVar3 := `email:`
+		_, templErr = templBuffer.WriteString(templVar3)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<a href=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<a href=\"")
+		if templErr != nil {
+			return templErr
 		}
-		var var_4 templ.SafeURL = templ.URL("mailto: " + p.email)
-		_, err = templBuffer.WriteString(templ.EscapeString(string(var_4)))
-		if err != nil {
-			return err
+		var templVar4 templ.SafeURL = templ.URL("mailto: " + p.email)
+		_, templErr = templBuffer.WriteString(templ.EscapeString(string(templVar4)))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\">")
+		if templErr != nil {
+			return templErr
 		}
-		var var_5 string = p.email
-		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
-		if err != nil {
-			return err
+		var templVar5 string = p.email
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar5))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</a></div></div></div><hr")
-		if err != nil {
-			return err
-		}
-		if true {
-			_, err = templBuffer.WriteString(" noshade")
-			if err != nil {
-				return err
-			}
-		}
-		_, err = templBuffer.WriteString("><hr optionA")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</a></div></div></div><hr")
+		if templErr != nil {
+			return templErr
 		}
 		if true {
-			_, err = templBuffer.WriteString(" optionB")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString(" noshade")
+			if templErr != nil {
+				return templErr
 			}
 		}
-		_, err = templBuffer.WriteString(" optionC=\"other\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("><hr optionA")
+		if templErr != nil {
+			return templErr
+		}
+		if true {
+			_, templErr = templBuffer.WriteString(" optionB")
+			if templErr != nil {
+				return templErr
+			}
+		}
+		_, templErr = templBuffer.WriteString(" optionC=\"other\"")
+		if templErr != nil {
+			return templErr
 		}
 		if false {
-			_, err = templBuffer.WriteString(" optionD")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString(" optionD")
+			if templErr != nil {
+				return templErr
 			}
 		}
-		_, err = templBuffer.WriteString("><hr noshade>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("><hr noshade>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

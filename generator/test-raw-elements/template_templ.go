@@ -10,70 +10,70 @@ import "io"
 import "bytes"
 
 func Example() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<html><head></head><body><style>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<html><head></head><body><style>")
+		if templErr != nil {
+			return templErr
 		}
-		var_2 := `<!-- Some stuff -->`
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
+		templVar2 := `<!-- Some stuff -->`
+		_, templErr = templBuffer.WriteString(templVar2)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</style><style>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</style><style>")
+		if templErr != nil {
+			return templErr
 		}
-		var_3 := `
+		templVar3 := `
         .customClass {
           border: 1px solid black;
         }
       `
-		_, err = templBuffer.WriteString(var_3)
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templVar3)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</style><script type=\"text/javascript\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</style><script type=\"text/javascript\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_4 := `
+		templVar4 := `
         $("div").marquee();
         function test() {
               window.open("https://example.com")
         }
       `
-		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templVar4)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</script><h1>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</script><h1>")
+		if templErr != nil {
+			return templErr
 		}
-		var_5 := `Hello`
-		_, err = templBuffer.WriteString(var_5)
-		if err != nil {
-			return err
+		templVar5 := `Hello`
+		_, templErr = templBuffer.WriteString(templVar5)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</h1></body></html>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</h1></body></html>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

@@ -34,132 +34,132 @@ func onClick() templ.ComponentScript {
 }
 
 func Button(text string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		err = templ.RenderScriptItems(ctx, templBuffer, withParameters("test", text, 123), withoutParameters())
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		templErr = templ.RenderScriptItems(templCtx, templBuffer, withParameters("test", text, 123), withoutParameters())
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<button onClick=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<button onClick=\"")
+		if templErr != nil {
+			return templErr
 		}
-		var var_2 templ.ComponentScript = withParameters("test", text, 123)
-		_, err = templBuffer.WriteString(var_2.Call)
-		if err != nil {
-			return err
+		var templVar2 templ.ComponentScript = withParameters("test", text, 123)
+		_, templErr = templBuffer.WriteString(templVar2.Call)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" onMouseover=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" onMouseover=\"")
+		if templErr != nil {
+			return templErr
 		}
-		var var_3 templ.ComponentScript = withoutParameters()
-		_, err = templBuffer.WriteString(var_3.Call)
-		if err != nil {
-			return err
+		var templVar3 templ.ComponentScript = withoutParameters()
+		_, templErr = templBuffer.WriteString(templVar3.Call)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" type=\"button\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" type=\"button\">")
+		if templErr != nil {
+			return templErr
 		}
-		var var_4 string = text
-		_, err = templBuffer.WriteString(templ.EscapeString(var_4))
-		if err != nil {
-			return err
+		var templVar4 string = text
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar4))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func ThreeButtons() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_5 := templ.GetChildren(ctx)
-		if var_5 == nil {
-			var_5 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar5 := templ.GetChildren(templCtx)
+		if templVar5 == nil {
+			templVar5 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		err = Button("A").Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		templErr = Button("A").Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		err = Button("B").Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = Button("B").Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<button onMouseover=\"console.log(&#39;mouseover&#39;)\" type=\"button\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<button onMouseover=\"console.log(&#39;mouseover&#39;)\" type=\"button\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_6 := `Button C`
-		_, err = templBuffer.WriteString(var_6)
-		if err != nil {
-			return err
+		templVar6 := `Button C`
+		_, templErr = templBuffer.WriteString(templVar6)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button><button hx-on::click=\"alert(&#39;clicked inline&#39;)\" type=\"button\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button><button hx-on::click=\"alert(&#39;clicked inline&#39;)\" type=\"button\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_7 := `Button D`
-		_, err = templBuffer.WriteString(var_7)
-		if err != nil {
-			return err
+		templVar7 := `Button D`
+		_, templErr = templBuffer.WriteString(templVar7)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button>")
+		if templErr != nil {
+			return templErr
 		}
-		err = templ.RenderScriptItems(ctx, templBuffer, onClick())
-		if err != nil {
-			return err
+		templErr = templ.RenderScriptItems(templCtx, templBuffer, onClick())
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<button hx-on::click=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<button hx-on::click=\"")
+		if templErr != nil {
+			return templErr
 		}
-		var var_8 templ.ComponentScript = onClick()
-		_, err = templBuffer.WriteString(var_8.Call)
-		if err != nil {
-			return err
+		var templVar8 templ.ComponentScript = onClick()
+		_, templErr = templBuffer.WriteString(templVar8.Call)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" type=\"button\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" type=\"button\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_9 := `Button E`
-		_, err = templBuffer.WriteString(var_9)
-		if err != nil {
-			return err
+		templVar9 := `Button E`
+		_, templErr = templBuffer.WriteString(templVar9)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

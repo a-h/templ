@@ -27,172 +27,172 @@ func border() templ.CSSClass {
 }
 
 func counts(global, session int) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<form id=\"countsForm\" action=\"/\" method=\"POST\" hx-post=\"/\" hx-select=\"#countsForm\" hx-swap=\"outerHTML\"><div class=\"columns\">")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<form id=\"countsForm\" action=\"/\" method=\"POST\" hx-post=\"/\" hx-select=\"#countsForm\" hx-swap=\"outerHTML\"><div class=\"columns\">")
+		if templErr != nil {
+			return templErr
 		}
-		var var_2 = []any{"column", "has-text-centered", "is-primary", border}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_2...)
-		if err != nil {
-			return err
+		var templVar2 = []any{"column", "has-text-centered", "is-primary", border}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar2...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<div class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<div class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_2).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar2).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\"><h1 class=\"title is-size-1 has-text-centered\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\"><h1 class=\"title is-size-1 has-text-centered\">")
+		if templErr != nil {
+			return templErr
 		}
-		var var_3 string = strconv.Itoa(global)
-		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
-		if err != nil {
-			return err
+		var templVar3 string = strconv.Itoa(global)
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar3))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</h1><p class=\"subtitle has-text-centered\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</h1><p class=\"subtitle has-text-centered\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_4 := `Global`
-		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
+		templVar4 := `Global`
+		_, templErr = templBuffer.WriteString(templVar4)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</p><div><button class=\"button is-primary\" type=\"submit\" name=\"global\" value=\"global\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</p><div><button class=\"button is-primary\" type=\"submit\" name=\"global\" value=\"global\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_5 := `+1`
-		_, err = templBuffer.WriteString(var_5)
-		if err != nil {
-			return err
+		templVar5 := `+1`
+		_, templErr = templBuffer.WriteString(templVar5)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button></div></div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button></div></div>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_6 = []any{"column", "has-text-centered", border}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_6...)
-		if err != nil {
-			return err
+		var templVar6 = []any{"column", "has-text-centered", border}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar6...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<div class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<div class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_6).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar6).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\"><h1 class=\"title is-size-1 has-text-centered\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\"><h1 class=\"title is-size-1 has-text-centered\">")
+		if templErr != nil {
+			return templErr
 		}
-		var var_7 string = strconv.Itoa(session)
-		_, err = templBuffer.WriteString(templ.EscapeString(var_7))
-		if err != nil {
-			return err
+		var templVar7 string = strconv.Itoa(session)
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar7))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</h1><p class=\"subtitle has-text-centered\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</h1><p class=\"subtitle has-text-centered\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_8 := `Session`
-		_, err = templBuffer.WriteString(var_8)
-		if err != nil {
-			return err
+		templVar8 := `Session`
+		_, templErr = templBuffer.WriteString(templVar8)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</p><div><button class=\"button is-secondary\" type=\"submit\" name=\"session\" value=\"session\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</p><div><button class=\"button is-secondary\" type=\"submit\" name=\"session\" value=\"session\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_9 := `+1`
-		_, err = templBuffer.WriteString(var_9)
-		if err != nil {
-			return err
+		templVar9 := `+1`
+		_, templErr = templBuffer.WriteString(templVar9)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button></div></div></div></form>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button></div></div></div></form>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func Page(global, session int) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_10 := templ.GetChildren(ctx)
-		if var_10 == nil {
-			var_10 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar10 := templ.GetChildren(templCtx)
+		if templVar10 == nil {
+			templVar10 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
+		if templErr != nil {
+			return templErr
 		}
-		var_11 := `Counts`
-		_, err = templBuffer.WriteString(var_11)
-		if err != nil {
-			return err
+		templVar11 := `Counts`
+		_, templErr = templBuffer.WriteString(templVar11)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</title><link rel=\"stylesheet\" href=\"/assets/css/bulma.min.css\"><link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/assets/favicon/apple-touch-icon.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/assets/favicon/favicon-32x32.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/assets/favicon/favicon-16x16.png\"><link rel=\"manifest\" href=\"/assets/favicon/site.webmanifest\"><script src=\"/assets/js/htmx.min.js\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</title><link rel=\"stylesheet\" href=\"/assets/css/bulma.min.css\"><link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/assets/favicon/apple-touch-icon.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/assets/favicon/favicon-32x32.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/assets/favicon/favicon-16x16.png\"><link rel=\"manifest\" href=\"/assets/favicon/site.webmanifest\"><script src=\"/assets/js/htmx.min.js\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_12 := ``
-		_, err = templBuffer.WriteString(var_12)
-		if err != nil {
-			return err
+		templVar12 := ``
+		_, templErr = templBuffer.WriteString(templVar12)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</script></head><body class=\"bg-gray-100\"><header class=\"hero is-primary\"><div class=\"hero-body\"><div class=\"container\"><h1 class=\"title\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</script></head><body class=\"bg-gray-100\"><header class=\"hero is-primary\"><div class=\"hero-body\"><div class=\"container\"><h1 class=\"title\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_13 := `Counts`
-		_, err = templBuffer.WriteString(var_13)
-		if err != nil {
-			return err
+		templVar13 := `Counts`
+		_, templErr = templBuffer.WriteString(templVar13)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</h1></div></div></header><section class=\"section\"><div class=\"container\"><div class=\"columns is-centered\"><div class=\"column is-half\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</h1></div></div></header><section class=\"section\"><div class=\"container\"><div class=\"columns is-centered\"><div class=\"column is-half\">")
+		if templErr != nil {
+			return templErr
 		}
-		err = counts(global, session).Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = counts(global, session).Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div></div></div></section></body></html>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div></div></div></section></body></html>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

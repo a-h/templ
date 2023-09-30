@@ -10,39 +10,39 @@ import "io"
 import "bytes"
 
 func hello(name string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<div>")
+		if templErr != nil {
+			return templErr
 		}
-		var_2 := `Hello, `
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
+		templVar2 := `Hello, `
+		_, templErr = templBuffer.WriteString(templVar2)
+		if templErr != nil {
+			return templErr
 		}
-		var var_3 string = name
-		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
-		if err != nil {
-			return err
+		var templVar3 string = name
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar3))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

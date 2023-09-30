@@ -10,43 +10,43 @@ import "io"
 import "bytes"
 
 func BasicTemplate(url string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div><a href=\"")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<div><a href=\"")
+		if templErr != nil {
+			return templErr
 		}
-		var var_2 templ.SafeURL = templ.URL(url)
-		_, err = templBuffer.WriteString(templ.EscapeString(string(var_2)))
-		if err != nil {
-			return err
+		var templVar2 templ.SafeURL = templ.URL(url)
+		_, templErr = templBuffer.WriteString(templ.EscapeString(string(templVar2)))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_3 := `text`
-		_, err = templBuffer.WriteString(var_3)
-		if err != nil {
-			return err
+		templVar3 := `text`
+		_, templErr = templBuffer.WriteString(templVar3)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</a></div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</a></div>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

@@ -10,35 +10,35 @@ import "io"
 import "bytes"
 
 func template(input string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
+		templCtx = templ.ClearChildren(templCtx)
 		switch input {
 		case "a":
-			var var_2 string = "it was 'a'"
-			_, err = templBuffer.WriteString(templ.EscapeString(var_2))
-			if err != nil {
-				return err
+			var templVar2 string = "it was 'a'"
+			_, templErr = templBuffer.WriteString(templ.EscapeString(templVar2))
+			if templErr != nil {
+				return templErr
 			}
 		default:
-			var var_3 string = "it was something else"
-			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
-			if err != nil {
-				return err
+			var templVar3 string = "it was something else"
+			_, templErr = templBuffer.WriteString(templ.EscapeString(templVar3))
+			if templErr != nil {
+				return templErr
 			}
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

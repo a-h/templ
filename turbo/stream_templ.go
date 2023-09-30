@@ -10,89 +10,89 @@ import "io"
 import "bytes"
 
 func actionTemplate(action string, target string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<turbo-stream action=\"")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<turbo-stream action=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(action))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(action))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" target=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" target=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(target))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(target))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\"><template>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\"><template>")
+		if templErr != nil {
+			return templErr
 		}
-		err = var_1.Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = templVar1.Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</template></turbo-stream>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</template></turbo-stream>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func removeTemplate(action string, target string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_2 := templ.GetChildren(ctx)
-		if var_2 == nil {
-			var_2 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar2 := templ.GetChildren(templCtx)
+		if templVar2 == nil {
+			templVar2 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<turbo-stream action=\"")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<turbo-stream action=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(action))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(action))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" target=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" target=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(target))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(target))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\"></turbo-stream>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\"></turbo-stream>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

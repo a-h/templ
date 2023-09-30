@@ -10,125 +10,125 @@ import "io"
 import "bytes"
 
 func list(uris []string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<table><tr><th>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<table><tr><th>")
+		if templErr != nil {
+			return templErr
 		}
-		var_2 := `File`
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
+		templVar2 := `File`
+		_, templErr = templBuffer.WriteString(templVar2)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</th><th></th><th></th><th></th><th></th></tr>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</th><th></th><th></th><th></th><th></th></tr>")
+		if templErr != nil {
+			return templErr
 		}
 		for _, uri := range uris {
-			_, err = templBuffer.WriteString("<tr><td>")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("<tr><td>")
+			if templErr != nil {
+				return templErr
 			}
-			var var_3 string = uri
-			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
-			if err != nil {
-				return err
+			var templVar3 string = uri
+			_, templErr = templBuffer.WriteString(templ.EscapeString(templVar3))
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("</td><td><a href=\"")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("</td><td><a href=\"")
+			if templErr != nil {
+				return templErr
 			}
-			var var_4 templ.SafeURL = getMapURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_4)))
-			if err != nil {
-				return err
+			var templVar4 templ.SafeURL = getMapURL(uri)
+			_, templErr = templBuffer.WriteString(templ.EscapeString(string(templVar4)))
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("\">")
+			if templErr != nil {
+				return templErr
 			}
-			var_5 := `Mapping`
-			_, err = templBuffer.WriteString(var_5)
-			if err != nil {
-				return err
+			templVar5 := `Mapping`
+			_, templErr = templBuffer.WriteString(templVar5)
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("</a></td><td><a href=\"")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("</a></td><td><a href=\"")
+			if templErr != nil {
+				return templErr
 			}
-			var var_6 templ.SafeURL = getSourceMapURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_6)))
-			if err != nil {
-				return err
+			var templVar6 templ.SafeURL = getSourceMapURL(uri)
+			_, templErr = templBuffer.WriteString(templ.EscapeString(string(templVar6)))
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("\">")
+			if templErr != nil {
+				return templErr
 			}
-			var_7 := `Source Map`
-			_, err = templBuffer.WriteString(var_7)
-			if err != nil {
-				return err
+			templVar7 := `Source Map`
+			_, templErr = templBuffer.WriteString(templVar7)
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("</a></td><td><a href=\"")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("</a></td><td><a href=\"")
+			if templErr != nil {
+				return templErr
 			}
-			var var_8 templ.SafeURL = getTemplURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_8)))
-			if err != nil {
-				return err
+			var templVar8 templ.SafeURL = getTemplURL(uri)
+			_, templErr = templBuffer.WriteString(templ.EscapeString(string(templVar8)))
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("\">")
+			if templErr != nil {
+				return templErr
 			}
-			var_9 := `Templ`
-			_, err = templBuffer.WriteString(var_9)
-			if err != nil {
-				return err
+			templVar9 := `Templ`
+			_, templErr = templBuffer.WriteString(templVar9)
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("</a></td><td><a href=\"")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("</a></td><td><a href=\"")
+			if templErr != nil {
+				return templErr
 			}
-			var var_10 templ.SafeURL = getGoURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_10)))
-			if err != nil {
-				return err
+			var templVar10 templ.SafeURL = getGoURL(uri)
+			_, templErr = templBuffer.WriteString(templ.EscapeString(string(templVar10)))
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("\">")
+			if templErr != nil {
+				return templErr
 			}
-			var_11 := `Go`
-			_, err = templBuffer.WriteString(var_11)
-			if err != nil {
-				return err
+			templVar11 := `Go`
+			_, templErr = templBuffer.WriteString(templVar11)
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("</a></td></tr>")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("</a></td></tr>")
+			if templErr != nil {
+				return templErr
 			}
 		}
-		_, err = templBuffer.WriteString("</table>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</table>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

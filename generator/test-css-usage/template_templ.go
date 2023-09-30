@@ -32,287 +32,287 @@ func className() templ.CSSClass {
 }
 
 func Button(text string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		var var_2 = []any{className(), templ.Class("&&&unsafe"), "safe", templ.SafeClass("safe2")}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_2...)
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		var templVar2 = []any{className(), templ.Class("&&&unsafe"), "safe", templ.SafeClass("safe2")}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar2...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<button class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<button class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_2).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar2).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" type=\"button\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" type=\"button\">")
+		if templErr != nil {
+			return templErr
 		}
-		var var_3 string = text
-		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
-		if err != nil {
-			return err
+		var templVar3 string = text
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar3))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func LegacySupport() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_4 := templ.GetChildren(ctx)
-		if var_4 == nil {
-			var_4 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar4 := templ.GetChildren(templCtx)
+		if templVar4 == nil {
+			templVar4 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		var var_5 = []any{templ.Classes(templ.Class("test"), "a")}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_5...)
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		var templVar5 = []any{templ.Classes(templ.Class("test"), "a")}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar5...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<div class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<div class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_5).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar5).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\"></div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\"></div>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func MapCSSExample() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_6 := templ.GetChildren(ctx)
-		if var_6 == nil {
-			var_6 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar6 := templ.GetChildren(templCtx)
+		if templVar6 == nil {
+			templVar6 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		var var_7 = []any{map[string]bool{"a": true, "b": false, "c": true}}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_7...)
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		var templVar7 = []any{map[string]bool{"a": true, "b": false, "c": true}}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar7...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<div class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<div class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_7).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar7).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\"></div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\"></div>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func KVExample() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_8 := templ.GetChildren(ctx)
-		if var_8 == nil {
-			var_8 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar8 := templ.GetChildren(templCtx)
+		if templVar8 == nil {
+			templVar8 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		var var_9 = []any{"a", templ.KV("b", false)}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_9...)
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		var templVar9 = []any{"a", templ.KV("b", false)}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar9...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<div class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<div class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_9).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar9).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\"></div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\"></div>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_10 = []any{"a", "b", "c", templ.KV("c", false)}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_10...)
-		if err != nil {
-			return err
+		var templVar10 = []any{"a", "b", "c", templ.KV("c", false)}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar10...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<input type=\"email\" id=\"email\" name=\"email\" class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<input type=\"email\" id=\"email\" name=\"email\" class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_10).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar10).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" placeholder=\"your@email.com\" autocomplete=\"off\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" placeholder=\"your@email.com\" autocomplete=\"off\">")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func PsuedoAttributes() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_11 := templ.GetChildren(ctx)
-		if var_11 == nil {
-			var_11 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar11 := templ.GetChildren(templCtx)
+		if templVar11 == nil {
+			templVar11 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		var var_12 = []any{"bg-violet-500", templ.KV(templ.SafeClass("hover:bg-violet-600"), true)}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_12...)
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		var templVar12 = []any{"bg-violet-500", templ.KV(templ.SafeClass("hover:bg-violet-600"), true)}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar12...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<button class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<button class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_12).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar12).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_13 := `Save changes`
-		_, err = templBuffer.WriteString(var_13)
-		if err != nil {
-			return err
+		templVar13 := `Save changes`
+		_, templErr = templBuffer.WriteString(templVar13)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func ThreeButtons() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_14 := templ.GetChildren(ctx)
-		if var_14 == nil {
-			var_14 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar14 := templ.GetChildren(templCtx)
+		if templVar14 == nil {
+			templVar14 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		err = Button("A").Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		templErr = Button("A").Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		err = Button("B").Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = Button("B").Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		var var_15 = []any{templ.Classes(green)}
-		err = templ.RenderCSSItems(ctx, templBuffer, var_15...)
-		if err != nil {
-			return err
+		var templVar15 = []any{templ.Classes(green)}
+		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar15...)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<button class=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<button class=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(var_15).String()))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar15).String()))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\" type=\"button\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\" type=\"button\">")
+		if templErr != nil {
+			return templErr
 		}
-		var var_16 string = "Green"
-		_, err = templBuffer.WriteString(templ.EscapeString(var_16))
-		if err != nil {
-			return err
+		var templVar16 string = "Green"
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar16))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button>")
+		if templErr != nil {
+			return templErr
 		}
-		err = MapCSSExample().Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = MapCSSExample().Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		err = KVExample().Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = KVExample().Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		err = PsuedoAttributes().Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = PsuedoAttributes().Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

@@ -13,314 +13,314 @@ import "fmt"
 import "time"
 
 func headerTemplate(name string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<header data-testid=\"headerTemplate\"><h1>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<header data-testid=\"headerTemplate\"><h1>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_2 string = name
-		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
-		if err != nil {
-			return err
+		var templVar2 string = name
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar2))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</h1></header>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</h1></header>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func footerTemplate() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_3 := templ.GetChildren(ctx)
-		if var_3 == nil {
-			var_3 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar3 := templ.GetChildren(templCtx)
+		if templVar3 == nil {
+			templVar3 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<footer data-testid=\"footerTemplate\"><div>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<footer data-testid=\"footerTemplate\"><div>")
+		if templErr != nil {
+			return templErr
 		}
-		var_4 := `&copy; `
-		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
+		templVar4 := `&copy; `
+		_, templErr = templBuffer.WriteString(templVar4)
+		if templErr != nil {
+			return templErr
 		}
-		var var_5 string = fmt.Sprintf("%d", time.Now().Year())
-		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
-		if err != nil {
-			return err
+		var templVar5 string = fmt.Sprintf("%d", time.Now().Year())
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar5))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div></footer>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div></footer>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func navTemplate() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_6 := templ.GetChildren(ctx)
-		if var_6 == nil {
-			var_6 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar6 := templ.GetChildren(templCtx)
+		if templVar6 == nil {
+			templVar6 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<nav data-testid=\"navTemplate\"><ul><li><a href=\"/\">")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<nav data-testid=\"navTemplate\"><ul><li><a href=\"/\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_7 := `Home`
-		_, err = templBuffer.WriteString(var_7)
-		if err != nil {
-			return err
+		templVar7 := `Home`
+		_, templErr = templBuffer.WriteString(templVar7)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</a></li><li><a href=\"/posts\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</a></li><li><a href=\"/posts\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_8 := `Posts`
-		_, err = templBuffer.WriteString(var_8)
-		if err != nil {
-			return err
+		templVar8 := `Posts`
+		_, templErr = templBuffer.WriteString(templVar8)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</a></li></ul></nav>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</a></li></ul></nav>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func layout(name string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_9 := templ.GetChildren(ctx)
-		if var_9 == nil {
-			var_9 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar9 := templ.GetChildren(templCtx)
+		if templVar9 == nil {
+			templVar9 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<html><head><title>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<html><head><title>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_10 string = name
-		_, err = templBuffer.WriteString(templ.EscapeString(var_10))
-		if err != nil {
-			return err
+		var templVar10 string = name
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar10))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</title></head><body>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</title></head><body>")
+		if templErr != nil {
+			return templErr
 		}
-		err = headerTemplate(name).Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = headerTemplate(name).Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		err = navTemplate().Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = navTemplate().Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<main>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<main>")
+		if templErr != nil {
+			return templErr
 		}
-		err = var_9.Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = templVar9.Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</main></body>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</main></body>")
+		if templErr != nil {
+			return templErr
 		}
-		err = footerTemplate().Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = footerTemplate().Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</html>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</html>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func postsTemplate(posts []Post) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_11 := templ.GetChildren(ctx)
-		if var_11 == nil {
-			var_11 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar11 := templ.GetChildren(templCtx)
+		if templVar11 == nil {
+			templVar11 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div data-testid=\"postsTemplate\">")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<div data-testid=\"postsTemplate\">")
+		if templErr != nil {
+			return templErr
 		}
 		for _, p := range posts {
-			_, err = templBuffer.WriteString("<div data-testid=\"postsTemplatePost\"><div data-testid=\"postsTemplatePostName\">")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("<div data-testid=\"postsTemplatePost\"><div data-testid=\"postsTemplatePostName\">")
+			if templErr != nil {
+				return templErr
 			}
-			var var_12 string = p.Name
-			_, err = templBuffer.WriteString(templ.EscapeString(var_12))
-			if err != nil {
-				return err
+			var templVar12 string = p.Name
+			_, templErr = templBuffer.WriteString(templ.EscapeString(templVar12))
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("</div><div data-testid=\"postsTemplatePostAuthor\">")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("</div><div data-testid=\"postsTemplatePostAuthor\">")
+			if templErr != nil {
+				return templErr
 			}
-			var var_13 string = p.Author
-			_, err = templBuffer.WriteString(templ.EscapeString(var_13))
-			if err != nil {
-				return err
+			var templVar13 string = p.Author
+			_, templErr = templBuffer.WriteString(templ.EscapeString(templVar13))
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("</div></div>")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("</div></div>")
+			if templErr != nil {
+				return templErr
 			}
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func home() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_14 := templ.GetChildren(ctx)
-		if var_14 == nil {
-			var_14 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar14 := templ.GetChildren(templCtx)
+		if templVar14 == nil {
+			templVar14 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		var_15 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-			templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		templCtx = templ.ClearChildren(templCtx)
+		templVar15 := templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+			templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 			if !templIsBuffer {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			_, err = templBuffer.WriteString("<div data-testid=\"homeTemplate\">")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("<div data-testid=\"homeTemplate\">")
+			if templErr != nil {
+				return templErr
 			}
-			var_16 := `Welcome to my website.`
-			_, err = templBuffer.WriteString(var_16)
-			if err != nil {
-				return err
+			templVar16 := `Welcome to my website.`
+			_, templErr = templBuffer.WriteString(templVar16)
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString("</div>")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString("</div>")
+			if templErr != nil {
+				return templErr
 			}
 			if !templIsBuffer {
-				_, err = io.Copy(w, templBuffer)
+				_, templErr = io.Copy(templW, templBuffer)
 			}
-			return err
+			return templErr
 		})
-		err = layout("Home").Render(templ.WithChildren(ctx, var_15), templBuffer)
-		if err != nil {
-			return err
+		templErr = layout("Home").Render(templ.WithChildren(templCtx, templVar15), templBuffer)
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func posts(posts []Post) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_17 := templ.GetChildren(ctx)
-		if var_17 == nil {
-			var_17 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar17 := templ.GetChildren(templCtx)
+		if templVar17 == nil {
+			templVar17 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		var_18 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-			templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		templCtx = templ.ClearChildren(templCtx)
+		templVar18 := templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+			templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 			if !templIsBuffer {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			err = postsTemplate(posts).Render(ctx, templBuffer)
-			if err != nil {
-				return err
+			templErr = postsTemplate(posts).Render(templCtx, templBuffer)
+			if templErr != nil {
+				return templErr
 			}
 			if !templIsBuffer {
-				_, err = io.Copy(w, templBuffer)
+				_, templErr = io.Copy(templW, templBuffer)
 			}
-			return err
+			return templErr
 		})
-		err = layout("Posts").Render(templ.WithChildren(ctx, var_18), templBuffer)
-		if err != nil {
-			return err
+		templErr = layout("Posts").Render(templ.WithChildren(templCtx, templVar18), templBuffer)
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

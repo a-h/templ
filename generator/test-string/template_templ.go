@@ -10,61 +10,61 @@ import "io"
 import "bytes"
 
 func render(s string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<ul><li></li><li>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<ul><li></li><li>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_2 string = s
-		_, err = templBuffer.WriteString(templ.EscapeString(var_2))
-		if err != nil {
-			return err
+		var templVar2 string = s
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar2))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</li><li>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</li><li>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_3 string = "Spaces"
-		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
-		if err != nil {
-			return err
+		var templVar3 string = "Spaces"
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar3))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(" ")
+		if templErr != nil {
+			return templErr
 		}
-		var var_4 string = "are"
-		_, err = templBuffer.WriteString(templ.EscapeString(var_4))
-		if err != nil {
-			return err
+		var templVar4 string = "are"
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar4))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(" ")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(" ")
+		if templErr != nil {
+			return templErr
 		}
-		var var_5 string = "preserved."
-		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
-		if err != nil {
-			return err
+		var templVar5 string = "preserved."
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar5))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</li></ul>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</li></ul>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

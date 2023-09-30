@@ -12,149 +12,149 @@ import "bytes"
 import "strconv"
 
 func counts(global, user int) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<div>")
+		if templErr != nil {
+			return templErr
 		}
-		var_2 := `Global: `
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
+		templVar2 := `Global: `
+		_, templErr = templBuffer.WriteString(templVar2)
+		if templErr != nil {
+			return templErr
 		}
-		var var_3 string = strconv.Itoa(global)
-		_, err = templBuffer.WriteString(templ.EscapeString(var_3))
-		if err != nil {
-			return err
+		var templVar3 string = strconv.Itoa(global)
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar3))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div><div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div><div>")
+		if templErr != nil {
+			return templErr
 		}
-		var_4 := `User: `
-		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
+		templVar4 := `User: `
+		_, templErr = templBuffer.WriteString(templVar4)
+		if templErr != nil {
+			return templErr
 		}
-		var var_5 string = strconv.Itoa(user)
-		_, err = templBuffer.WriteString(templ.EscapeString(var_5))
-		if err != nil {
-			return err
+		var templVar5 string = strconv.Itoa(user)
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar5))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func form() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_6 := templ.GetChildren(ctx)
-		if var_6 == nil {
-			var_6 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar6 := templ.GetChildren(templCtx)
+		if templVar6 == nil {
+			templVar6 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<form action=\"/\" method=\"POST\"><div><button type=\"submit\" name=\"global\" value=\"global\">")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<form action=\"/\" method=\"POST\"><div><button type=\"submit\" name=\"global\" value=\"global\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_7 := `Global`
-		_, err = templBuffer.WriteString(var_7)
-		if err != nil {
-			return err
+		templVar7 := `Global`
+		_, templErr = templBuffer.WriteString(templVar7)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button></div><div><button type=\"submit\" name=\"user\" value=\"user\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button></div><div><button type=\"submit\" name=\"user\" value=\"user\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_8 := `User`
-		_, err = templBuffer.WriteString(var_8)
-		if err != nil {
-			return err
+		templVar8 := `User`
+		_, templErr = templBuffer.WriteString(templVar8)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</button></div></form>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</button></div></form>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func page(global, user int) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_9 := templ.GetChildren(ctx)
-		if var_9 == nil {
-			var_9 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar9 := templ.GetChildren(templCtx)
+		if templVar9 == nil {
+			templVar9 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
+		if templErr != nil {
+			return templErr
 		}
-		var_10 := `Counts`
-		_, err = templBuffer.WriteString(var_10)
-		if err != nil {
-			return err
+		templVar10 := `Counts`
+		_, templErr = templBuffer.WriteString(templVar10)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</title><link rel=\"stylesheet\" href=\"/assets/bulma.min.css\"><link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/assets/favicon/apple-touch-icon.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/assets/favicon/favicon-32x32.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/assets/favicon/favicon-16x16.png\"><link rel=\"manifest\" href=\"/assets/favicon/site.webmanifest\"></head><body class=\"bg-gray-100\"><header class=\"hero is-primary\"><div class=\"hero-body\"><div class=\"container\"><h1 class=\"title\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</title><link rel=\"stylesheet\" href=\"/assets/bulma.min.css\"><link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/assets/favicon/apple-touch-icon.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/assets/favicon/favicon-32x32.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/assets/favicon/favicon-16x16.png\"><link rel=\"manifest\" href=\"/assets/favicon/site.webmanifest\"></head><body class=\"bg-gray-100\"><header class=\"hero is-primary\"><div class=\"hero-body\"><div class=\"container\"><h1 class=\"title\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_11 := `Counts`
-		_, err = templBuffer.WriteString(var_11)
-		if err != nil {
-			return err
+		templVar11 := `Counts`
+		_, templErr = templBuffer.WriteString(templVar11)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</h1></div></div></header><section class=\"section\"><div class=\"container\"><div class=\"columns is-centered\"><div class=\"column is-half\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</h1></div></div></header><section class=\"section\"><div class=\"container\"><div class=\"columns is-centered\"><div class=\"column is-half\">")
+		if templErr != nil {
+			return templErr
 		}
-		err = counts(global, user).Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = counts(global, user).Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		err = form().Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = form().Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div></div></div></section></body></html>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div></div></div></section></body></html>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

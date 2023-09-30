@@ -12,137 +12,137 @@ import "bytes"
 import "fmt"
 
 func wrapper(index int) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<div id=\"")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<div id=\"")
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString(templ.EscapeString(fmt.Sprint(index)))
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templ.EscapeString(fmt.Sprint(index)))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\">")
+		if templErr != nil {
+			return templErr
 		}
-		err = var_1.Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = templVar1.Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</div>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</div>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func template() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_2 := templ.GetChildren(ctx)
-		if var_2 == nil {
-			var_2 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar2 := templ.GetChildren(templCtx)
+		if templVar2 == nil {
+			templVar2 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		var_3 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-			templBuffer, templIsBuffer := w.(*bytes.Buffer)
+		templCtx = templ.ClearChildren(templCtx)
+		templVar3 := templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+			templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 			if !templIsBuffer {
 				templBuffer = templ.GetBuffer()
 				defer templ.ReleaseBuffer(templBuffer)
 			}
-			var_4 := `child1`
-			_, err = templBuffer.WriteString(var_4)
-			if err != nil {
-				return err
+			templVar4 := `child1`
+			_, templErr = templBuffer.WriteString(templVar4)
+			if templErr != nil {
+				return templErr
 			}
-			_, err = templBuffer.WriteString(" ")
-			if err != nil {
-				return err
+			_, templErr = templBuffer.WriteString(" ")
+			if templErr != nil {
+				return templErr
 			}
-			var_5 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-				templBuffer, templIsBuffer := w.(*bytes.Buffer)
+			templVar5 := templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+				templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 				if !templIsBuffer {
 					templBuffer = templ.GetBuffer()
 					defer templ.ReleaseBuffer(templBuffer)
 				}
-				var_6 := `child2`
-				_, err = templBuffer.WriteString(var_6)
-				if err != nil {
-					return err
+				templVar6 := `child2`
+				_, templErr = templBuffer.WriteString(templVar6)
+				if templErr != nil {
+					return templErr
 				}
-				_, err = templBuffer.WriteString(" ")
-				if err != nil {
-					return err
+				_, templErr = templBuffer.WriteString(" ")
+				if templErr != nil {
+					return templErr
 				}
-				var_7 := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-					templBuffer, templIsBuffer := w.(*bytes.Buffer)
+				templVar7 := templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+					templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 					if !templIsBuffer {
 						templBuffer = templ.GetBuffer()
 						defer templ.ReleaseBuffer(templBuffer)
 					}
-					var_8 := `child3`
-					_, err = templBuffer.WriteString(var_8)
-					if err != nil {
-						return err
+					templVar8 := `child3`
+					_, templErr = templBuffer.WriteString(templVar8)
+					if templErr != nil {
+						return templErr
 					}
-					_, err = templBuffer.WriteString(" ")
-					if err != nil {
-						return err
+					_, templErr = templBuffer.WriteString(" ")
+					if templErr != nil {
+						return templErr
 					}
-					err = wrapper(4).Render(ctx, templBuffer)
-					if err != nil {
-						return err
+					templErr = wrapper(4).Render(templCtx, templBuffer)
+					if templErr != nil {
+						return templErr
 					}
 					if !templIsBuffer {
-						_, err = io.Copy(w, templBuffer)
+						_, templErr = io.Copy(templW, templBuffer)
 					}
-					return err
+					return templErr
 				})
-				err = wrapper(3).Render(templ.WithChildren(ctx, var_7), templBuffer)
-				if err != nil {
-					return err
+				templErr = wrapper(3).Render(templ.WithChildren(templCtx, templVar7), templBuffer)
+				if templErr != nil {
+					return templErr
 				}
 				if !templIsBuffer {
-					_, err = io.Copy(w, templBuffer)
+					_, templErr = io.Copy(templW, templBuffer)
 				}
-				return err
+				return templErr
 			})
-			err = wrapper(2).Render(templ.WithChildren(ctx, var_5), templBuffer)
-			if err != nil {
-				return err
+			templErr = wrapper(2).Render(templ.WithChildren(templCtx, templVar5), templBuffer)
+			if templErr != nil {
+				return templErr
 			}
 			if !templIsBuffer {
-				_, err = io.Copy(w, templBuffer)
+				_, templErr = io.Copy(templW, templBuffer)
 			}
-			return err
+			return templErr
 		})
-		err = wrapper(1).Render(templ.WithChildren(ctx, var_3), templBuffer)
-		if err != nil {
-			return err
+		templErr = wrapper(1).Render(templ.WithChildren(templCtx, templVar3), templBuffer)
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

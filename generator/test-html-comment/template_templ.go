@@ -10,141 +10,141 @@ import "io"
 import "bytes"
 
 func render(content string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<!--")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<!--")
+		if templErr != nil {
+			return templErr
 		}
-		var_2 := ` simple html comment `
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
+		templVar2 := ` simple html comment `
+		_, templErr = templBuffer.WriteString(templVar2)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("-->")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("-->")
+		if templErr != nil {
+			return templErr
 		}
-		err = paragraph(content).Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = paragraph(content).Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<!--")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<!--")
+		if templErr != nil {
+			return templErr
 		}
-		var_3 := `
+		templVar3 := `
 		multiline
 		comment
 	`
-		_, err = templBuffer.WriteString(var_3)
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templVar3)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("-->")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("-->")
+		if templErr != nil {
+			return templErr
 		}
-		err = paragraph("second paragraph").Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = paragraph("second paragraph").Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<!--")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<!--")
+		if templErr != nil {
+			return templErr
 		}
-		var_4 := `
+		templVar4 := `
 		@paragraph("commented out composed element")
 	`
-		_, err = templBuffer.WriteString(var_4)
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString(templVar4)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("-->")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("-->")
+		if templErr != nil {
+			return templErr
 		}
-		err = paragraph("third paragraph").Render(ctx, templBuffer)
-		if err != nil {
-			return err
+		templErr = paragraph("third paragraph").Render(templCtx, templBuffer)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<!--")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<!--")
+		if templErr != nil {
+			return templErr
 		}
-		var_5 := ` commented out string expression: { content } `
-		_, err = templBuffer.WriteString(var_5)
-		if err != nil {
-			return err
+		templVar5 := ` commented out string expression: { content } `
+		_, templErr = templBuffer.WriteString(templVar5)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("--><span>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("--><span>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_6 string = content
-		_, err = templBuffer.WriteString(templ.EscapeString(var_6))
-		if err != nil {
-			return err
+		var templVar6 string = content
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar6))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</span><!--")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</span><!--")
+		if templErr != nil {
+			return templErr
 		}
-		var_7 := ` <div>comment with html</div> `
-		_, err = templBuffer.WriteString(var_7)
-		if err != nil {
-			return err
+		templVar7 := ` <div>comment with html</div> `
+		_, templErr = templBuffer.WriteString(templVar7)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("-->")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("-->")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
 
 func paragraph(content string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_8 := templ.GetChildren(ctx)
-		if var_8 == nil {
-			var_8 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar8 := templ.GetChildren(templCtx)
+		if templVar8 == nil {
+			templVar8 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<p>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<p>")
+		if templErr != nil {
+			return templErr
 		}
-		var var_9 string = content
-		_, err = templBuffer.WriteString(templ.EscapeString(var_9))
-		if err != nil {
-			return err
+		var templVar9 string = content
+		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar9))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</p>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</p>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }

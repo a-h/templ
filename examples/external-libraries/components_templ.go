@@ -20,60 +20,60 @@ func graph(data []TimeValue) templ.ComponentScript {
 }
 
 func page(data []TimeValue) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
+	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
+		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
 		if !templIsBuffer {
 			templBuffer = templ.GetBuffer()
 			defer templ.ReleaseBuffer(templBuffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templCtx = templ.InitializeContext(templCtx)
+		templVar1 := templ.GetChildren(templCtx)
+		if templVar1 == nil {
+			templVar1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
-		if err != nil {
-			return err
+		templCtx = templ.ClearChildren(templCtx)
+		_, templErr = templBuffer.WriteString("<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
+		if templErr != nil {
+			return templErr
 		}
-		var_2 := `Graphs`
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
+		templVar2 := `Graphs`
+		_, templErr = templBuffer.WriteString(templVar2)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</title><script src=\"https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js\">")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</title><script src=\"https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js\">")
+		if templErr != nil {
+			return templErr
 		}
-		var_3 := ``
-		_, err = templBuffer.WriteString(var_3)
-		if err != nil {
-			return err
+		templVar3 := ``
+		_, templErr = templBuffer.WriteString(templVar3)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("</script></head>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("</script></head>")
+		if templErr != nil {
+			return templErr
 		}
-		err = templ.RenderScriptItems(ctx, templBuffer, graph(data))
-		if err != nil {
-			return err
+		templErr = templ.RenderScriptItems(templCtx, templBuffer, graph(data))
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("<body onload=\"")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("<body onload=\"")
+		if templErr != nil {
+			return templErr
 		}
-		var var_4 templ.ComponentScript = graph(data)
-		_, err = templBuffer.WriteString(var_4.Call)
-		if err != nil {
-			return err
+		var templVar4 templ.ComponentScript = graph(data)
+		_, templErr = templBuffer.WriteString(templVar4.Call)
+		if templErr != nil {
+			return templErr
 		}
-		_, err = templBuffer.WriteString("\"></body></html>")
-		if err != nil {
-			return err
+		_, templErr = templBuffer.WriteString("\"></body></html>")
+		if templErr != nil {
+			return templErr
 		}
 		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+			_, templErr = templBuffer.WriteTo(templW)
 		}
-		return err
+		return templErr
 	})
 }
