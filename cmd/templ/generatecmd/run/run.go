@@ -14,7 +14,7 @@ import (
 var m = &sync.Mutex{}
 var running = map[string]*exec.Cmd{}
 
-func KillAll() {
+func KillAll() (err error) {
 	m.Lock()
 	defer m.Unlock()
 	for _, cmd := range running {
@@ -22,12 +22,19 @@ func KillAll() {
 			kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
 			kill.Stderr = os.Stderr
 			kill.Stdout = os.Stdout
-			kill.Run()
+			err := kill.Run()
+			if err != nil {
+				return err
+			}
 			continue
 		}
-		syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		if err != nil {
+			return err
+		}
 	}
 	running = map[string]*exec.Cmd{}
+	return
 }
 
 func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err error) {
