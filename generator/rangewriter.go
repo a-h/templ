@@ -48,7 +48,7 @@ func (rw *RangeWriter) WriteStringLiteral(level int, s string) (r parser.Range, 
 		if err != nil {
 			return
 		}
-		if _, err = rw.WriteIndent(level, `_, err = templBuffer.WriteString("`); err != nil {
+		if _, err = rw.WriteIndent(level, `_, templErr = templBuffer.WriteString("`); err != nil {
 			return
 		}
 	}
@@ -93,12 +93,12 @@ func (rw *RangeWriter) write(s string) (r parser.Range, err error) {
 }
 
 func (rw *RangeWriter) writeErrorHandler(indentLevel int) (err error) {
-	_, err = rw.WriteIndent(indentLevel, "if err != nil {\n")
+	_, err = rw.WriteIndent(indentLevel, "if templErr != nil {\n")
 	if err != nil {
 		return err
 	}
 	indentLevel++
-	_, err = rw.WriteIndent(indentLevel, "return err\n")
+	_, err = rw.WriteIndent(indentLevel, "return templErr\n")
 	if err != nil {
 		return err
 	}
