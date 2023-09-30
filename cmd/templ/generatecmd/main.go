@@ -134,11 +134,12 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 				if _, err := run.Run(ctx, args.Path, args.Command); err != nil {
 					fmt.Printf("Error starting command: %v\n", err)
 				}
-				// Send server-sent event.
-				if p != nil {
-					p.SendSSE("message", "reload")
-				}
 			}
+			// Send server-sent event.
+			if p != nil {
+				p.SendSSE("message", "reload")
+			}
+
 			if !firstRunComplete && p != nil {
 				go func() {
 					fmt.Printf("Proxying from %s to target: %s\n", p.URL, p.Target.String())
