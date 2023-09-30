@@ -52,7 +52,7 @@ templ Example() {
 ```html
 templ Example() {
   <div>Node text is not modified at all.</div>
-  <div>{ "will be escaped using templ.Escape" }</div>
+  <div>{ "will be escaped using templ.EscapeString" }</div>
 }
 ```
 
