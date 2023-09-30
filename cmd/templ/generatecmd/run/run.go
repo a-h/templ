@@ -46,7 +46,10 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			KillAll()
+			err = KillAll()
+			if err != nil {
+				return
+			}
 		}()
 		wg.Wait()
 		delete(running, input)
