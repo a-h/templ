@@ -36,9 +36,9 @@ import (
 )
 
 func button(text string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		io.WriteString(w, "<button>"+text+"</button>")
-		return nil
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		_, err := io.WriteString(w, "<button>"+text+"</button>")
+		return err
 	})
 }
 
@@ -54,6 +54,6 @@ func main() {
 ```
 
 :::warning
-This code is unsafe! In code-only components, you're responsible for escaping the HTML content yourself.
+This code is unsafe! In code-only components, you're responsible for escaping the HTML content yourself, e.g. with the `templ.EscapeString` function.
 :::
 
