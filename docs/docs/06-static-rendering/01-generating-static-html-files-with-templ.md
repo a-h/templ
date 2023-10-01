@@ -36,7 +36,7 @@ go mod init github.com/a-h/templ-examples/static-generator
 
 To use it, create a `hello.templ` file containing a component.
 
-Components are functions that contain templ elements, markup, along with the `if`, `switch` and `for` Go expressions.
+Components are functions that contain templ elements, markup, `if`, `switch` and `for` Go expressions.
 
 ```templ title="hello.templ"
 package main
