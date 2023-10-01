@@ -235,7 +235,7 @@ While each content page contains the HTML generated from the markdown, and the s
    Watching or participating in Morris dancing performances
   </li>
   <li>
-   Enjoying having a day off from the Early May Bank Holiday
+   Enjoying the public holiday known as Early May Bank Holiday
   </li>
  </ul>
 </div>
