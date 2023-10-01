@@ -79,7 +79,7 @@ The output will always be the date and time that the web server was started up, 
 To display the current time, we could update the component to use the `time.Now()` function itself, but this would limit the reusability of the component. It's better when components take parameters for their display values.
 
 :::tip
-Good templ components are idempotent, pure functions - they don't rely on data that's not passed in as parameters. As long as the parameters are the same, they always return the same HTML - they don't rely on any network calls or disk access.
+Good templ components are idempotent, pure functions - they don't rely on data that is not passed in through parameters. As long as the parameters are the same, they always return the same HTML - they don't rely on any network calls or disk access.
 :::
 
 ## Displaying dynamic data

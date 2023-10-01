@@ -13,7 +13,7 @@ type Component interface {
 
 In Go, the `io.Writer` interface is implemented by many built-in types in the standard library, including `os.File` (files), `os.Stdout`, and `http.ResponseWriter` (HTTP responses).
 
-This make it easy to use templ components in a variety of contexts to generate HTML.
+This makes it easy to use templ components in a variety of contexts to generate HTML.
 
 To render static HTML files using templ component, first create a new Go project.
 
@@ -36,7 +36,7 @@ go mod init github.com/a-h/templ-examples/static-generator
 
 To use it, create a `hello.templ` file containing a component.
 
-Components are functions that contain templ elements, markup, and `if`, `switch`, and `for` Go expressions.
+Components are functions that contain templ elements, markup, `if`, `switch` and `for` Go expressions.
 
 ```templ title="hello.templ"
 package main

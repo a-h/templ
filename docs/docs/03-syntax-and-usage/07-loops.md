@@ -1,6 +1,6 @@
 # For loops
 
-templ supports iterating over slices, arrays and channels etc. using the standard Go `for` loop.
+Use the standard Go `for` loop for iteration.
 
 ```templ title="component.templ"
 package main

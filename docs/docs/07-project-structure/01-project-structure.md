@@ -32,7 +32,7 @@ graph LR
   * Does not contain application logic itself
   * Uses `services` that carry out application logic
   * Takes the responses from `services` and uses `components` to render HTML
-  * Creates HTTP repsonses
+  * Creates HTTP responses
 * Services
   * Carries out application logic such as orchestrating API calls, or making database calls
   * Does not do anything related to HTML or HTTP
@@ -74,7 +74,7 @@ type DefaultHandler struct {
 }
 ```
 
-Changing the signature of `New` to add a new dependency will result in a compilation error that shows you all affected code in your application.
+Changing the signature of `New` to add a new dependency will result in a compilation error that shows you all the affected code in your application.
 
 :::tip
 Dependency injection frameworks are not typically used in Go. If you're coming from a language like C# or Java, this may seem unusual to you, but go with it, you don't need one.

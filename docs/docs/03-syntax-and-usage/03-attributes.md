@@ -116,4 +116,4 @@ templ Button(text string) {
 
 ## CSS attributes
 
-CSS handling is discussed in detail at [CSS style management](css-style-management).
+CSS handling is discussed in detail in [CSS style management](css-style-management).

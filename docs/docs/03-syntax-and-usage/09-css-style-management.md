@@ -18,7 +18,7 @@ templ button(text string) {
 
 ## Class expression
 
-To use a variables as the name of a CSS class, use a CSS expression.
+To use a variable as the name of a CSS class, use a CSS expression.
 
 ```templ title="component.templ"
 package main

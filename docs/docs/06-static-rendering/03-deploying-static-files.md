@@ -10,7 +10,7 @@ Ways you could host your site include:
 * AWS Amplify
 * Firebase Hosting
 
-Typically specialist static hosting services are more cost effective than VM or Docker based services, due to the less complex compute and networking requirements.
+Typically specialist static hosting services are more cost-effective than VM or Docker-based services, due to the less complex compute and networking requirements.
 
 Most require you to commit your code to a source repository, with a build process being triggered on commit, but Fly.io allows you to deploy easily from the CLI.
 

@@ -1,6 +1,6 @@
 # HTMX
 
-https://htmx.org can be used to selectively replace content within a web page, instead of replacing the whole page in the browser. This avoids "full-page postbacks", where the whole of the browser window is updated when a button is clicked, and results in better user experience by reducing sreen "flicker", or losing scroll position.
+https://htmx.org can be used to selectively replace content within a web page, instead of replacing the whole page in the browser. This avoids "full-page postbacks", where the whole of the browser window is updated when a button is clicked, and results in a better user experience by reducing screen "flicker", or losing scroll position.
 
 ## Usage
 
@@ -20,7 +20,7 @@ Then add a `<script>` tag to the `<head>` section of your HTML with the `src` at
 ```
 
 :::info
-Advanced HTMX installation and usage is convered in the user guide at https://htmx.org.
+Advanced HTMX installation and usage help is covered in the user guide at https://htmx.org.
 :::
 
 ## Count example
