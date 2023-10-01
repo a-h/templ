@@ -42,16 +42,9 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 	defer m.Unlock()
 	cmd, ok := running[input]
 	if ok {
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err = KillAll()
-			if err != nil {
-				return
-			}
-		}()
-		wg.Wait()
+		if err = KillAll(); err != nil {
+			return
+		}
 		delete(running, input)
 	}
 
