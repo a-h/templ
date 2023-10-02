@@ -22,10 +22,13 @@ jobs:
         with:
           task: test-cover
 
+      - name: List files
+        run: ls -lah
+
       - name: Update coverage report
         uses: ncruces/go-coverage-report@996ea4db69919ab8f45df581093fcc94915c3a9e
         with:
-          coverage-file: coverage.out
+          coverage-file: ./coverage.out
           report: 'true'
           chart: 'true'
           reuse-go: 'true'
