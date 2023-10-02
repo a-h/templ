@@ -92,7 +92,7 @@ func generateCmd(args []string) {
 	}
 	err = generatecmd.Run(generatecmd.Arguments{
 		FileName:                        *fileNameFlag,
-		Output:                  *outputFlag,
+		Output:                          *outputFlag,
 		Path:                            *pathFlag,
 		Watch:                           *watchFlag,
 		Command:                         *cmdFlag,
