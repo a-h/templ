@@ -10,125 +10,125 @@ import "io"
 import "bytes"
 
 func list(uris []string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		templBuffer, templIsBuffer := w.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		ctx = templ.InitializeContext(ctx)
-		var_1 := templ.GetChildren(ctx)
-		if var_1 == nil {
-			var_1 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var1 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var1 == nil {
+			templ_7745c5c3_Var1 = templ.NopComponent
 		}
-		ctx = templ.ClearChildren(ctx)
-		_, err = templBuffer.WriteString("<table><tr><th>")
-		if err != nil {
-			return err
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<table><tr><th>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var_2 := `File`
-		_, err = templBuffer.WriteString(var_2)
-		if err != nil {
-			return err
+		templ_7745c5c3_Var2 := `File`
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, err = templBuffer.WriteString("</th><th></th><th></th><th></th><th></th></tr>")
-		if err != nil {
-			return err
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</th><th></th><th></th><th></th><th></th></tr>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		for _, uri := range uris {
-			_, err = templBuffer.WriteString("<tr><td>")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<tr><td>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			var var_3 string = uri
-			_, err = templBuffer.WriteString(templ.EscapeString(var_3))
-			if err != nil {
-				return err
+			var templ_7745c5c3_Var3 string = uri
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, err = templBuffer.WriteString("</td><td><a href=\"")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</td><td><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			var var_4 templ.SafeURL = getMapURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_4)))
-			if err != nil {
-				return err
+			var templ_7745c5c3_Var4 templ.SafeURL = getMapURL(uri)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var4)))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			var_5 := `Mapping`
-			_, err = templBuffer.WriteString(var_5)
-			if err != nil {
-				return err
+			templ_7745c5c3_Var5 := `Mapping`
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, err = templBuffer.WriteString("</a></td><td><a href=\"")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></td><td><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			var var_6 templ.SafeURL = getSourceMapURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_6)))
-			if err != nil {
-				return err
+			var templ_7745c5c3_Var6 templ.SafeURL = getSourceMapURL(uri)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var6)))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			var_7 := `Source Map`
-			_, err = templBuffer.WriteString(var_7)
-			if err != nil {
-				return err
+			templ_7745c5c3_Var7 := `Source Map`
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, err = templBuffer.WriteString("</a></td><td><a href=\"")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></td><td><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			var var_8 templ.SafeURL = getTemplURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_8)))
-			if err != nil {
-				return err
+			var templ_7745c5c3_Var8 templ.SafeURL = getTemplURL(uri)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var8)))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			var_9 := `Templ`
-			_, err = templBuffer.WriteString(var_9)
-			if err != nil {
-				return err
+			templ_7745c5c3_Var9 := `Templ`
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, err = templBuffer.WriteString("</a></td><td><a href=\"")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></td><td><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			var var_10 templ.SafeURL = getGoURL(uri)
-			_, err = templBuffer.WriteString(templ.EscapeString(string(var_10)))
-			if err != nil {
-				return err
+			var templ_7745c5c3_Var10 templ.SafeURL = getGoURL(uri)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string(templ_7745c5c3_Var10)))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, err = templBuffer.WriteString("\">")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			var_11 := `Go`
-			_, err = templBuffer.WriteString(var_11)
-			if err != nil {
-				return err
+			templ_7745c5c3_Var11 := `Go`
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, err = templBuffer.WriteString("</a></td></tr>")
-			if err != nil {
-				return err
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</a></td></tr>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
 		}
-		_, err = templBuffer.WriteString("</table>")
-		if err != nil {
-			return err
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</table>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, err = templBuffer.WriteTo(w)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return err
+		return templ_7745c5c3_Err
 	})
 }
