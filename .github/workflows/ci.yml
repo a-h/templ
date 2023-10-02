@@ -25,10 +25,16 @@ jobs:
       - name: List files
         run: ls -lah
 
+      - name: Copy coverage.out to temp
+        run: cp coverage.out $RUNNER_TEMP
+
+      - name: List temp
+        run: ls -lah $RUNNER_TEMP
+
       - name: Update coverage report
-        uses: ncruces/go-coverage-report@996ea4db69919ab8f45df581093fcc94915c3a9e
+        uses: ncruces/go-coverage-report@21fa4b59396f242b81896a3cd212a463589b6742
         with:
-          coverage-file: ./coverage.out
+          coverage-file: $RUNNER_TEMP/coverage.out
           report: 'true'
           chart: 'true'
           reuse-go: 'true'
