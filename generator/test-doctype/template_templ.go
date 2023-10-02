@@ -10,43 +10,43 @@ import "io"
 import "bytes"
 
 func Layout(title, content string) templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar1 := templ.GetChildren(templCtx)
-		if templVar1 == nil {
-			templVar1 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var1 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var1 == nil {
+			templ_7745c5c3_Var1 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		_, templErr = templBuffer.WriteString("<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var templVar2 string = title
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar2))
-		if templErr != nil {
-			return templErr
+		var templ_7745c5c3_Var2 string = title
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</title></head><body>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</title></head><body>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var templVar3 string = content
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar3))
-		if templErr != nil {
-			return templErr
+		var templ_7745c5c3_Var3 string = content
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</body></html>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</body></html>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }

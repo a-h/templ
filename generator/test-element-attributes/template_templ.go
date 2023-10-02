@@ -11,167 +11,167 @@ import "bytes"
 import "strings"
 
 func important() templ.CSSClass {
-	var templCSSBuilder strings.Builder
-	templCSSBuilder.WriteString(`width:100;`)
-	templCSSID := templ.CSSID(`important`, templCSSBuilder.String())
+	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder.WriteString(`width:100;`)
+	templ_7745c5c3_CSSID := templ.CSSID(`important`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID:    templCSSID,
-		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
+		ID:    templ_7745c5c3_CSSID,
+		Class: templ.SafeCSS(`.` + templ_7745c5c3_CSSID + `{` + templ_7745c5c3_CSSBuilder.String() + `}`),
 	}
 }
 
 func unimportant() templ.CSSClass {
-	var templCSSBuilder strings.Builder
-	templCSSBuilder.WriteString(`width:50;`)
-	templCSSID := templ.CSSID(`unimportant`, templCSSBuilder.String())
+	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder.WriteString(`width:50;`)
+	templ_7745c5c3_CSSID := templ.CSSID(`unimportant`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID:    templCSSID,
-		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
+		ID:    templ_7745c5c3_CSSID,
+		Class: templ.SafeCSS(`.` + templ_7745c5c3_CSSID + `{` + templ_7745c5c3_CSSBuilder.String() + `}`),
 	}
 }
 
 func render(p person) templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar1 := templ.GetChildren(templCtx)
-		if templVar1 == nil {
-			templVar1 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var1 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var1 == nil {
+			templ_7745c5c3_Var1 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		var templVar2 = []any{important()}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar2...)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		var templ_7745c5c3_Var2 = []any{important()}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<div style=\"width: 100;\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div style=\"width: 100;\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		if p.important {
-			_, templErr = templBuffer.WriteString(" class=\"")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar2).String()))
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var2).String()))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString("\"")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
 		}
-		_, templErr = templBuffer.WriteString(">")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templVar3 := `Important`
-		_, templErr = templBuffer.WriteString(templVar3)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Var3 := `Important`
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</div>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var templVar4 = []any{unimportant}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar4...)
-		if templErr != nil {
-			return templErr
+		var templ_7745c5c3_Var4 = []any{unimportant}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var4...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<div style=\"width: 100;\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div style=\"width: 100;\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		if !p.important {
-			_, templErr = templBuffer.WriteString(" class=\"")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar4).String()))
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var4).String()))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString("\"")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
 		}
-		_, templErr = templBuffer.WriteString(">")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templVar5 := `Unimportant`
-		_, templErr = templBuffer.WriteString(templVar5)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Var5 := `Unimportant`
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</div>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var templVar6 = []any{important}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar6...)
-		if templErr != nil {
-			return templErr
+		var templ_7745c5c3_Var6 = []any{important}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var6...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var templVar7 = []any{unimportant}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar7...)
-		if templErr != nil {
-			return templErr
+		var templ_7745c5c3_Var7 = []any{unimportant}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var7...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<div style=\"width: 100;\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div style=\"width: 100;\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		if p.important {
-			_, templErr = templBuffer.WriteString(" class=\"")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar6).String()))
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var6).String()))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString("\"")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
 		} else {
-			_, templErr = templBuffer.WriteString(" class=\"")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar7).String()))
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var7).String()))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString("\"")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
 		}
-		_, templErr = templBuffer.WriteString(">")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templVar8 := `Else`
-		_, templErr = templBuffer.WriteString(templVar8)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Var8 := `Else`
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</div><div data-script=\"on click\n                do something\n             end\"></div>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div data-script=\"on click\n                do something\n             end\"></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }

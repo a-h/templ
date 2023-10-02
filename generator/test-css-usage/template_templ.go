@@ -11,308 +11,308 @@ import "bytes"
 import "strings"
 
 func green() templ.CSSClass {
-	var templCSSBuilder strings.Builder
-	templCSSBuilder.WriteString(`color:#00ff00;`)
-	templCSSID := templ.CSSID(`green`, templCSSBuilder.String())
+	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder.WriteString(`color:#00ff00;`)
+	templ_7745c5c3_CSSID := templ.CSSID(`green`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID:    templCSSID,
-		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
+		ID:    templ_7745c5c3_CSSID,
+		Class: templ.SafeCSS(`.` + templ_7745c5c3_CSSID + `{` + templ_7745c5c3_CSSBuilder.String() + `}`),
 	}
 }
 
 func className() templ.CSSClass {
-	var templCSSBuilder strings.Builder
-	templCSSBuilder.WriteString(`background-color:#ffffff;`)
-	templCSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
-	templCSSID := templ.CSSID(`className`, templCSSBuilder.String())
+	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder.WriteString(`background-color:#ffffff;`)
+	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
+	templ_7745c5c3_CSSID := templ.CSSID(`className`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
-		ID:    templCSSID,
-		Class: templ.SafeCSS(`.` + templCSSID + `{` + templCSSBuilder.String() + `}`),
+		ID:    templ_7745c5c3_CSSID,
+		Class: templ.SafeCSS(`.` + templ_7745c5c3_CSSID + `{` + templ_7745c5c3_CSSBuilder.String() + `}`),
 	}
 }
 
 func Button(text string) templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar1 := templ.GetChildren(templCtx)
-		if templVar1 == nil {
-			templVar1 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var1 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var1 == nil {
+			templ_7745c5c3_Var1 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		var templVar2 = []any{className(), templ.Class("&&&unsafe"), "safe", templ.SafeClass("safe2")}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar2...)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		var templ_7745c5c3_Var2 = []any{className(), templ.Class("&&&unsafe"), "safe", templ.SafeClass("safe2")}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<button class=\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar2).String()))
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var2).String()))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("\" type=\"button\">")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" type=\"button\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var templVar3 string = text
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar3))
-		if templErr != nil {
-			return templErr
+		var templ_7745c5c3_Var3 string = text
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</button>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }
 
 func LegacySupport() templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar4 := templ.GetChildren(templCtx)
-		if templVar4 == nil {
-			templVar4 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var4 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var4 == nil {
+			templ_7745c5c3_Var4 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		var templVar5 = []any{templ.Classes(templ.Class("test"), "a")}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar5...)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		var templ_7745c5c3_Var5 = []any{templ.Classes(templ.Class("test"), "a")}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var5...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<div class=\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar5).String()))
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var5).String()))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("\"></div>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }
 
 func MapCSSExample() templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar6 := templ.GetChildren(templCtx)
-		if templVar6 == nil {
-			templVar6 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var6 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var6 == nil {
+			templ_7745c5c3_Var6 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		var templVar7 = []any{map[string]bool{"a": true, "b": false, "c": true}}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar7...)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		var templ_7745c5c3_Var7 = []any{map[string]bool{"a": true, "b": false, "c": true}}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var7...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<div class=\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar7).String()))
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var7).String()))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("\"></div>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }
 
 func KVExample() templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar8 := templ.GetChildren(templCtx)
-		if templVar8 == nil {
-			templVar8 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var8 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var8 == nil {
+			templ_7745c5c3_Var8 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		var templVar9 = []any{"a", templ.KV("b", false)}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar9...)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		var templ_7745c5c3_Var9 = []any{"a", templ.KV("b", false)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var9...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<div class=\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar9).String()))
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var9).String()))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("\"></div>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var templVar10 = []any{"a", "b", "c", templ.KV("c", false)}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar10...)
-		if templErr != nil {
-			return templErr
+		var templ_7745c5c3_Var10 = []any{"a", "b", "c", templ.KV("c", false)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var10...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<input type=\"email\" id=\"email\" name=\"email\" class=\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input type=\"email\" id=\"email\" name=\"email\" class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar10).String()))
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var10).String()))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("\" placeholder=\"your@email.com\" autocomplete=\"off\">")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" placeholder=\"your@email.com\" autocomplete=\"off\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }
 
 func PsuedoAttributes() templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar11 := templ.GetChildren(templCtx)
-		if templVar11 == nil {
-			templVar11 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var11 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var11 == nil {
+			templ_7745c5c3_Var11 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		var templVar12 = []any{"bg-violet-500", templ.KV(templ.SafeClass("hover:bg-violet-600"), true)}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar12...)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		var templ_7745c5c3_Var12 = []any{"bg-violet-500", templ.KV(templ.SafeClass("hover:bg-violet-600"), true)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var12...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<button class=\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar12).String()))
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var12).String()))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("\">")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templVar13 := `Save changes`
-		_, templErr = templBuffer.WriteString(templVar13)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Var13 := `Save changes`
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</button>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }
 
 func ThreeButtons() templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar14 := templ.GetChildren(templCtx)
-		if templVar14 == nil {
-			templVar14 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var14 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var14 == nil {
+			templ_7745c5c3_Var14 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		templErr = Button("A").Render(templCtx, templBuffer)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Err = Button("A").Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templErr = Button("B").Render(templCtx, templBuffer)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Err = Button("B").Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var templVar15 = []any{templ.Classes(green)}
-		templErr = templ.RenderCSSItems(templCtx, templBuffer, templVar15...)
-		if templErr != nil {
-			return templErr
+		var templ_7745c5c3_Var15 = []any{templ.Classes(green)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var15...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("<button class=\"")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templ.CSSClasses(templVar15).String()))
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ.CSSClasses(templ_7745c5c3_Var15).String()))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("\" type=\"button\">")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" type=\"button\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		var templVar16 string = "Green"
-		_, templErr = templBuffer.WriteString(templ.EscapeString(templVar16))
-		if templErr != nil {
-			return templErr
+		var templ_7745c5c3_Var16 string = "Green"
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</button>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templErr = MapCSSExample().Render(templCtx, templBuffer)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Err = MapCSSExample().Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templErr = KVExample().Render(templCtx, templBuffer)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Err = KVExample().Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templErr = PsuedoAttributes().Render(templCtx, templBuffer)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Err = PsuedoAttributes().Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }

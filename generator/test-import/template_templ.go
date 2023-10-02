@@ -10,192 +10,192 @@ import "io"
 import "bytes"
 
 func listItem() templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar1 := templ.GetChildren(templCtx)
-		if templVar1 == nil {
-			templVar1 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var1 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var1 == nil {
+			templ_7745c5c3_Var1 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		_, templErr = templBuffer.WriteString("<li>")
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templErr = templVar1.Render(templCtx, templBuffer)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Err = templ_7745c5c3_Var1.Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</li>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</li>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }
 
 func list() templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar2 := templ.GetChildren(templCtx)
-		if templVar2 == nil {
-			templVar2 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var2 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		_, templErr = templBuffer.WriteString("<ul>")
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<ul>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templErr = templVar2.Render(templCtx, templBuffer)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Err = templ_7745c5c3_Var2.Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		_, templErr = templBuffer.WriteString("</ul>")
-		if templErr != nil {
-			return templErr
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }
 
 func main() templ.Component {
-	return templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-		templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-		if !templIsBuffer {
-			templBuffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templBuffer)
+	return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 		}
-		templCtx = templ.InitializeContext(templCtx)
-		templVar3 := templ.GetChildren(templCtx)
-		if templVar3 == nil {
-			templVar3 = templ.NopComponent
+		templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var3 := templ.GetChildren(templ_7745c5c3_Ctx)
+		if templ_7745c5c3_Var3 == nil {
+			templ_7745c5c3_Var3 = templ.NopComponent
 		}
-		templCtx = templ.ClearChildren(templCtx)
-		templVar4 := templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-			templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-			if !templIsBuffer {
-				templBuffer = templ.GetBuffer()
-				defer templ.ReleaseBuffer(templBuffer)
+		templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)
+		templ_7745c5c3_Var4 := templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+			if !templ_7745c5c3_IsBuffer {
+				templ_7745c5c3_Buffer = templ.GetBuffer()
+				defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 			}
-			templVar5 := templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-				templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-				if !templIsBuffer {
-					templBuffer = templ.GetBuffer()
-					defer templ.ReleaseBuffer(templBuffer)
+			templ_7745c5c3_Var5 := templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+				if !templ_7745c5c3_IsBuffer {
+					templ_7745c5c3_Buffer = templ.GetBuffer()
+					defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 				}
-				_, templErr = templBuffer.WriteString("<u>")
-				if templErr != nil {
-					return templErr
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<u>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
-				templVar6 := `Item 1`
-				_, templErr = templBuffer.WriteString(templVar6)
-				if templErr != nil {
-					return templErr
+				templ_7745c5c3_Var6 := `Item 1`
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
-				_, templErr = templBuffer.WriteString("</u>")
-				if templErr != nil {
-					return templErr
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</u>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
-				if !templIsBuffer {
-					_, templErr = io.Copy(templW, templBuffer)
+				if !templ_7745c5c3_IsBuffer {
+					_, templ_7745c5c3_Err = io.Copy(templ_7745c5c3_W, templ_7745c5c3_Buffer)
 				}
-				return templErr
+				return templ_7745c5c3_Err
 			})
-			templErr = listItem().Render(templ.WithChildren(templCtx, templVar5), templBuffer)
-			if templErr != nil {
-				return templErr
+			templ_7745c5c3_Err = listItem().Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString(" ")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			templVar7 := templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-				templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-				if !templIsBuffer {
-					templBuffer = templ.GetBuffer()
-					defer templ.ReleaseBuffer(templBuffer)
+			templ_7745c5c3_Var7 := templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+				if !templ_7745c5c3_IsBuffer {
+					templ_7745c5c3_Buffer = templ.GetBuffer()
+					defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 				}
-				_, templErr = templBuffer.WriteString("<u>")
-				if templErr != nil {
-					return templErr
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<u>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
-				templVar8 := `Item 2`
-				_, templErr = templBuffer.WriteString(templVar8)
-				if templErr != nil {
-					return templErr
+				templ_7745c5c3_Var8 := `Item 2`
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
-				_, templErr = templBuffer.WriteString("</u>")
-				if templErr != nil {
-					return templErr
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</u>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
-				if !templIsBuffer {
-					_, templErr = io.Copy(templW, templBuffer)
+				if !templ_7745c5c3_IsBuffer {
+					_, templ_7745c5c3_Err = io.Copy(templ_7745c5c3_W, templ_7745c5c3_Buffer)
 				}
-				return templErr
+				return templ_7745c5c3_Err
 			})
-			templErr = listItem().Render(templ.WithChildren(templCtx, templVar7), templBuffer)
-			if templErr != nil {
-				return templErr
+			templ_7745c5c3_Err = listItem().Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			_, templErr = templBuffer.WriteString(" ")
-			if templErr != nil {
-				return templErr
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			templVar9 := templ.ComponentFunc(func(templCtx context.Context, templW io.Writer) (templErr error) {
-				templBuffer, templIsBuffer := templW.(*bytes.Buffer)
-				if !templIsBuffer {
-					templBuffer = templ.GetBuffer()
-					defer templ.ReleaseBuffer(templBuffer)
+			templ_7745c5c3_Var9 := templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+				if !templ_7745c5c3_IsBuffer {
+					templ_7745c5c3_Buffer = templ.GetBuffer()
+					defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
 				}
-				_, templErr = templBuffer.WriteString("<u>")
-				if templErr != nil {
-					return templErr
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<u>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
-				templVar10 := `Item 3`
-				_, templErr = templBuffer.WriteString(templVar10)
-				if templErr != nil {
-					return templErr
+				templ_7745c5c3_Var10 := `Item 3`
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
-				_, templErr = templBuffer.WriteString("</u>")
-				if templErr != nil {
-					return templErr
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</u>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
 				}
-				if !templIsBuffer {
-					_, templErr = io.Copy(templW, templBuffer)
+				if !templ_7745c5c3_IsBuffer {
+					_, templ_7745c5c3_Err = io.Copy(templ_7745c5c3_W, templ_7745c5c3_Buffer)
 				}
-				return templErr
+				return templ_7745c5c3_Err
 			})
-			templErr = listItem().Render(templ.WithChildren(templCtx, templVar9), templBuffer)
-			if templErr != nil {
-				return templErr
+			templ_7745c5c3_Err = listItem().Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var9), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
-			if !templIsBuffer {
-				_, templErr = io.Copy(templW, templBuffer)
+			if !templ_7745c5c3_IsBuffer {
+				_, templ_7745c5c3_Err = io.Copy(templ_7745c5c3_W, templ_7745c5c3_Buffer)
 			}
-			return templErr
+			return templ_7745c5c3_Err
 		})
-		templErr = list().Render(templ.WithChildren(templCtx, templVar4), templBuffer)
-		if templErr != nil {
-			return templErr
+		templ_7745c5c3_Err = list().Render(templ.WithChildren(templ_7745c5c3_Ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		if !templIsBuffer {
-			_, templErr = templBuffer.WriteTo(templW)
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
-		return templErr
+		return templ_7745c5c3_Err
 	})
 }
