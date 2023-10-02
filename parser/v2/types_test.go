@@ -59,7 +59,6 @@ templ input(value, validation string) {
 	<track/>
 	<wbr/>
 }
-
 `,
 		},
 		{
@@ -78,7 +77,6 @@ package test
 templ input(value, validation string) {
 	<script src="https://example.com/myscript.js"></script>
 }
-
 `,
 		},
 		{
@@ -92,7 +90,6 @@ templ input(value, validation string) {
 		</p>
 	</div>
 }
-
 `,
 			expected: `// first line removed to make indentation clear in Go code
 package test
@@ -102,7 +99,6 @@ templ input(value, validation string) {
 		<p></p>
 	</div>
 }
-
 `,
 		},
 		{
@@ -123,7 +119,6 @@ templ input(value, validation string) {
 		<p>{ "the" }<a href="http://example.com">{ "data" }</a></p>
 	</div>
 }
-
 `,
 		},
 		{
@@ -144,7 +139,6 @@ templ input(value, validation string) {
 		<p>{ "the" }<a href="http://example.com">{ "data" }</a></p>
 	</div>
 }
-
 `,
 		},
 		{
@@ -170,7 +164,6 @@ templ input(value, validation string) {
 		</p>
 	</div>
 }
-
 `,
 		},
 		{
@@ -189,7 +182,6 @@ package test
 templ nested() {
 	<div>{ "the" }<div>{ "other" }</div></div>
 }
-
 `,
 		},
 		{
@@ -215,7 +207,6 @@ templ input(items []string) {
 		}
 	</div>
 }
-
 `,
 		},
 		{
@@ -246,7 +237,6 @@ templ input(items []string) {
 		}
 	</div>
 }
-
 `,
 		},
 		{
@@ -278,7 +268,6 @@ templ input(items []string) {
 		}
 	</div>
 }
-
 `,
 		},
 		{
@@ -298,7 +287,6 @@ css ClassName() {
 	background-color: #ffffff;
 	color: { constants.White };
 }
-
 `,
 		},
 		{
@@ -318,7 +306,6 @@ css ClassName() {
 	background-color: #ffffff;
 	color: { constants.White };
 }
-
 `,
 		},
 		{
@@ -354,7 +341,6 @@ templ table(accountNumber string, registration string) {
 		</tr>
 	</table>
 }
-
 `,
 		},
 		{
@@ -381,7 +367,6 @@ templ conditionalAttributes(addClass bool) {
  		width="300"
 	>Content</div>
 }
-
 `,
 		},
 		{
@@ -409,7 +394,6 @@ templ conditionalAttributes(addClass bool) {
  		width="300"
 	>Content</div>
 }
-
 `,
 		},
 		{
@@ -439,7 +423,6 @@ templ conditionalAttributes(addClass bool) {
 		Content
 	</div>
 }
-
 `,
 		},
 		{
@@ -471,7 +454,6 @@ templ conditionalAttributes(addClass bool) {
  		width="300"
 	>Content</div>
 }
-
 `,
 		},
 		{
@@ -503,7 +485,6 @@ templ x() {
 		</a>
 	</li>
 }
-
 `,
 		},
 		{
@@ -521,7 +502,6 @@ package main
 templ x() {
 	<div>{ firstName } { lastName }</div>
 }
-
 `,
 		},
 		{
@@ -539,7 +519,6 @@ package main
 templ x() {
 	<div>{ pt1 }{ pt2 }</div>
 }
-
 `,
 		},
 	}
