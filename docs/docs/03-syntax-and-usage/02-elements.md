@@ -52,7 +52,7 @@ templ component() {
 ```templ title="Output"
 <div>Test</div>
 <img src="images/test.png">
-<br/>
+<br>
 ```
 
 ## Attributes and elements can contain expressions
