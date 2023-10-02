@@ -122,7 +122,7 @@ const InnocuousPropertyValue = "zTemplUnsafeCSSPropertyValue"
 
 // safeRegularPropertyValuePattern matches strings that are safe to use as property values.
 // Specifically, it matches string where every '*' or '/' is followed by end-of-text or a safe rune
-// (i.e. alphanumberics or runes in the set [+-.!#%_ \t]). This regex ensures that the following
+// (i.e. alphanumerics or runes in the set [+-.!#%_ \t]). This regex ensures that the following
 // are disallowed:
 //   - "/*" and "*/", which are CSS comment markers.
 //   - "//", even though this is not a comment marker in the CSS specification. Disallowing

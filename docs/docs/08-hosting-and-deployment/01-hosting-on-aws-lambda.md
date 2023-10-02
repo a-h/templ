@@ -2,7 +2,7 @@
 
 AWS Lambda is a great way to host templ applications.
 
-The example at https://github.com/a-h/templ/tree/main/examples/counter includes example AWS CDK code for deploying onto AWS Lambda.
+The example at https://github.com/a-h/templ/tree/main/examples/counter includes AWS CDK code for deploying onto AWS Lambda.
 
 See the `/cdk` directory for the details.
 
