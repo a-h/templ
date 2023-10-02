@@ -147,8 +147,8 @@ CSS components can also be conditionally rendered.
 ```templ title="component.templ"
 package main
 
-var red = "#ff0000";
-var blue = "#0000ff";
+var red = "#ff0000"
+var blue = "#0000ff"
 
 css primaryClassName() {
 	background-color: #ffffff;
@@ -161,7 +161,7 @@ css className() {
 }
 
 templ button(text string, isPrimary bool) {
-	<button class={ "button", className, templ.KV(primaryClassName, isPrimary) }>{ text }</button>
+	<button class={ "button", className(), templ.KV(primaryClassName(), isPrimary) }>{ text }</button>
 }
 ```
 
