@@ -22,15 +22,9 @@ jobs:
         with:
           task: test-cover
 
-      - name: List files
-        run: ls -lah
-
       - name: Copy coverage.out to temp
         run: cp coverage.out $RUNNER_TEMP
       
-      - name: List temp
-        run: ls -lah $RUNNER_TEMP
-
       - name: Update coverage report
         uses: ncruces/go-coverage-report@21fa4b59396f242b81896a3cd212a463589b6742
         with:
