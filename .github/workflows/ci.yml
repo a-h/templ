@@ -20,7 +20,18 @@ jobs:
       - name: Test
         uses: joerdav/run-xc@1.0.0
         with:
-          task: test
+          task: test-cover
+
+      - name: Update coverage report
+        uses: ncruces/go-coverage-report@996ea4db69919ab8f45df581093fcc94915c3a9e
+        with:
+          coverage-file: coverage.out
+          report: 'true'
+          chart: 'true'
+          reuse-go: 'true'
+        if: |
+          github.event_name == 'push'  
+        continue-on-error: true
 
   lint:
     runs-on: ubuntu-latest
