@@ -75,6 +75,7 @@ examples:
 func generateCmd(args []string) {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
 	fileNameFlag := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
+	outputFlag := cmd.String("o", "", "Optionally set an output for the Go code. If -f is set this should be a filename if not this should be a directory.")
 	pathFlag := cmd.String("path", ".", "Generates code for all files in path.")
 	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "Set to true to generate HTML files to visualise the templ code and its corresponding Go code.")
 	watchFlag := cmd.Bool("watch", false, "Set to true to watch the path for changes and regenerate code.")
@@ -91,6 +92,7 @@ func generateCmd(args []string) {
 	}
 	err = generatecmd.Run(generatecmd.Arguments{
 		FileName:                        *fileNameFlag,
+		Output:                  *outputFlag,
 		Path:                            *pathFlag,
 		Watch:                           *watchFlag,
 		Command:                         *cmdFlag,

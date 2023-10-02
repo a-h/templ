@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -21,17 +22,19 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/cenkalti/backoff/v4"
+	"github.com/cli/browser"
+
 	"github.com/a-h/templ/cmd/templ/generatecmd/proxy"
 	"github.com/a-h/templ/cmd/templ/generatecmd/run"
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
-	"github.com/cenkalti/backoff/v4"
-	"github.com/cli/browser"
 )
 
 type Arguments struct {
 	FileName                        string
+	Output                          string
 	Path                            string
 	Watch                           bool
 	Command                         string
@@ -85,7 +88,7 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}
 	if args.FileName != "" {
-		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations)
+		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations, args.Output)
 	}
 	var target *url.URL
 	if args.Proxy != "" {
@@ -120,7 +123,7 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
-		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount)
+		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount, args.Output)
 		if len(errs) > 0 {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
@@ -185,7 +188,7 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, maxWorkerCount int) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, maxWorkerCount int, outputDir string) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
@@ -203,6 +206,14 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 			return nil
 		}
 		if strings.HasSuffix(path, ".templ") {
+			pathSlices := regexp.MustCompile("[\\/]").Split(path, -1)
+			fileName := pathSlices[len(pathSlices)-1]
+			outputFileName := ""
+
+			if outputDir != "" {
+				outputFileName = filepath.Join(outputDir, fileName)
+			}
+
 			lastModTime := fileNameToLastModTime[path]
 			fileInfo, err := info.Info()
 			if err != nil {
@@ -217,7 +228,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					if err := processSingleFile(ctx, path, generateSourceMapVisualisations); err != nil {
+					if err := processSingleFile(ctx, path, generateSourceMapVisualisations, outputFileName); err != nil {
 						errs = append(errs, err)
 					}
 					<-sem
@@ -251,9 +262,9 @@ func openURL(url string) error {
 	return browser.OpenURL(url)
 }
 
-func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool) error {
+func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, outputFileName string) error {
 	start := time.Now()
-	err := compile(ctx, fileName, generateSourceMapVisualisations)
+	err := compile(ctx, fileName, generateSourceMapVisualisations, outputFileName)
 	if err != nil {
 		return err
 	}
@@ -261,7 +272,7 @@ func processSingleFile(ctx context.Context, fileName string, generateSourceMapVi
 	return err
 }
 
-func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool) (err error) {
+func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, outputFileName string) (err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
@@ -270,7 +281,11 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 	if err != nil {
 		return fmt.Errorf("%s parsing error: %w", fileName, err)
 	}
-	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
+
+	targetFileName := outputFileName
+	if targetFileName == "" {
+		targetFileName = strings.TrimSuffix(fileName, ".templ") + "_templ.go"
+	}
 
 	var b bytes.Buffer
 	sourceMap, err := generator.Generate(t, &b)
