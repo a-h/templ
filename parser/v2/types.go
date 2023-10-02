@@ -108,11 +108,18 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	if _, err := w.Write([]byte("\n\n")); err != nil {
 		return err
 	}
-	for i := 0; i < len(tf.Nodes); i++ {
-		if err := tf.Nodes[i].Write(w, indent); err != nil {
+	count := len(tf.Nodes)
+	for i := 0; i < count; i++ {
+		var err error
+		if err = tf.Nodes[i].Write(w, indent); err != nil {
 			return err
 		}
-		if _, err := w.Write([]byte("\n\n")); err != nil {
+		if i == count - 1 {
+			_, err = w.Write([]byte("\n"))
+		} else {
+			_, err = w.Write([]byte("\n\n"))
+		}
+		if err != nil {
 			return err
 		}
 	}
