@@ -50,7 +50,7 @@ If you know that the CSS class name is from a trustworthy source (e.g. a string 
 package main
 
 templ button(text string) {
-	<button class={ "button", templ.SafeClass("hover:do_not_sanitize) }>{ text }</button>
+	<button class={ "button", templ.SafeClass("hover:do_not_sanitize") }>{ text }</button>
 }
 ```
 
