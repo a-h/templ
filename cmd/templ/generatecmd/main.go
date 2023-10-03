@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -86,8 +87,11 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	if args.Watch && args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}
+	if args.Output != "" && args.FileName != "" && !strings.HasSuffix(args.FileName, "_templ.go") {
+		return fmt.Errorf("output filename must follow the pattern *_templ.go")
+	}
 	if args.FileName != "" {
-		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations, args.Output)
+		return processSingleFile(ctx, args.FileName, args.Output, args.GenerateSourceMapVisualisations)
 	}
 	var target *url.URL
 	if args.Proxy != "" {
@@ -105,6 +109,21 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	}
 	if !path.IsAbs(args.Path) {
 		args.Path, err = filepath.Abs(args.Path)
+		if err != nil {
+			return
+		}
+	}
+	if args.Output != "" {
+		var stat fs.FileInfo
+		stat, err = os.Stat(args.Output)
+		if err != nil {
+			return fmt.Errorf("output directory does not exist: %s", args.Output)
+		}
+		if !stat.IsDir() {
+			return fmt.Errorf("expected a directory as output when -f is not provided")
+		}
+
+		args.Output, err = filepath.Abs(args.Output)
 		if err != nil {
 			return
 		}
