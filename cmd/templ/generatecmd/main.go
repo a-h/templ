@@ -14,7 +14,6 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -206,8 +205,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 			return nil
 		}
 		if strings.HasSuffix(path, ".templ") {
-			pathSlices := regexp.MustCompile(`[\\/]`).Split(path, -1)
-			fileName := pathSlices[len(pathSlices)-1]
+			_, fileName := filepath.Split(path)
 			outputFileName := ""
 
 			if outputDir != "" {
