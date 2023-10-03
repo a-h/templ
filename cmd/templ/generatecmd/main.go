@@ -90,6 +90,12 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	if args.Output != "" && args.FileName != "" && !strings.HasSuffix(args.FileName, "_templ.go") {
 		return fmt.Errorf("output filename must follow the pattern *_templ.go")
 	}
+	if args.Output != "" && args.FileName != "" && !path.IsAbs(args.Output) {
+		args.Output, err = filepath.Abs(args.Output)
+		if err != nil {
+			return
+		}
+	}
 	if args.FileName != "" {
 		return processSingleFile(ctx, args.FileName, args.Output, args.GenerateSourceMapVisualisations)
 	}
@@ -114,6 +120,11 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 		}
 	}
 	if args.Output != "" {
+		// If the output is relative, resolve it with respect to args.Path
+		if !path.IsAbs(args.Output) {
+			args.Output = filepath.Join(args.Path, args.Output)
+		}
+
 		var stat fs.FileInfo
 		stat, err = os.Stat(args.Output)
 		if err != nil {
@@ -121,11 +132,6 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 		}
 		if !stat.IsDir() {
 			return fmt.Errorf("expected a directory as output when -f is not provided")
-		}
-
-		args.Output, err = filepath.Abs(args.Output)
-		if err != nil {
-			return
 		}
 	}
 
