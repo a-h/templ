@@ -117,7 +117,7 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 		var stat fs.FileInfo
 		stat, err = os.Stat(args.Output)
 		if err != nil {
-			return fmt.Errorf("output directory does not exist: %s", args.Output)
+			return
 		}
 		if !stat.IsDir() {
 			return fmt.Errorf("expected a directory as output when -f is not provided")
@@ -141,7 +141,7 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
-		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount, args.Output)
+		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.Output, args.GenerateSourceMapVisualisations, args.WorkerCount)
 		if len(errs) > 0 {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
@@ -206,38 +206,42 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, maxWorkerCount int, outputDir string) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path, outputDir string, generateSourceMapVisualisations bool, maxWorkerCount int) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
-	err := filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
+	err := filepath.WalkDir(path, func(filePath string, info os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if err = ctx.Err(); err != nil {
 			return err
 		}
-		if info.IsDir() && shouldSkipDir(path) {
+		if info.IsDir() && shouldSkipDir(filePath) {
 			return filepath.SkipDir
 		}
 		if info.IsDir() {
 			return nil
 		}
-		if strings.HasSuffix(path, ".templ") {
-			_, fileName := filepath.Split(path)
+		if strings.HasSuffix(filePath, ".templ") {
 			outputFileName := ""
 
 			if outputDir != "" {
-				outputFileName = filepath.Join(outputDir, fileName)
+				// This makes the assumption that filePath starts with path which
+				// should be a safe assumption to make since that should be the functionality
+				// of filepath.WalkDir...
+				restPath := strings.TrimPrefix(filePath, path)
+				fullNewPath := filepath.Join(outputDir, restPath)
+				outputFileName = genGoFileNameFromTempl(fullNewPath)
 			}
 
-			lastModTime := fileNameToLastModTime[path]
+			lastModTime := fileNameToLastModTime[filePath]
 			fileInfo, err := info.Info()
 			if err != nil {
 				return fmt.Errorf("failed to get file info: %w", err)
 			}
 			if fileInfo.ModTime().After(lastModTime) {
-				fileNameToLastModTime[path] = fileInfo.ModTime()
+				fileNameToLastModTime[filePath] = fileInfo.ModTime()
 				changesFound++
 
 				// Start a processor, but limit to maxWorkerCount.
@@ -245,7 +249,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					if err := processSingleFile(ctx, path, outputFileName, generateSourceMapVisualisations); err != nil {
+					if err := processSingleFile(ctx, filePath, outputFileName, generateSourceMapVisualisations); err != nil {
 						errs = append(errs, err)
 					}
 					<-sem
@@ -301,7 +305,7 @@ func compile(ctx context.Context, inputFileName, outputFileName string, generate
 
 	targetFileName := outputFileName
 	if targetFileName == "" {
-		targetFileName = strings.TrimSuffix(inputFileName, ".templ") + "_templ.go"
+		targetFileName = genGoFileNameFromTempl(inputFileName)
 	}
 
 	var b bytes.Buffer
@@ -359,4 +363,8 @@ func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileNa
 	defer b.Flush()
 
 	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).Render(ctx, b)
+}
+
+func genGoFileNameFromTempl(path string) string {
+	return strings.TrimSuffix(path, ".templ") + "_templ.go"
 }
