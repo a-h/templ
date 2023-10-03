@@ -74,6 +74,8 @@ go test -cover ./... -args -test.gocoverdir="$PWD/coverage/unit"
 go tool covdata percent -i=./coverage/generate,./coverage/unit
 # Generate a text coverage profile for tooling to use.
 go tool covdata textfmt -i=./coverage/generate,./coverage/unit -o coverage.out
+# Print total
+go tool cover -func coverage.out | grep total
 ```
 
 ### benchmark
