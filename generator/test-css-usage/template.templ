@@ -9,6 +9,14 @@ css className() {
 	color: { red };
 }
 
+css d() {
+	font-size: 12pt;
+}
+
+css e() {
+	font-size: 14pt;
+}
+
 templ Button(text string) {
 	<button class={ className(), templ.Class("&&&unsafe"), "safe", templ.SafeClass("safe2") } type="button">{ text }</button>
 }
@@ -23,7 +31,7 @@ templ MapCSSExample() {
 
 templ KVExample() {
 	<div class={ "a", templ.KV("b", false) }></div>
-	<input type="email" id="email" name="email" class={ "a", "b", "c", templ.KV("c", false) } placeholder="your@email.com" autocomplete="off"/>
+	<input type="email" id="email" name="email" class={ "a", "b", "c", templ.KV("c", false), templ.KV(d(), false), templ.KV(e(), true) } placeholder="your@email.com" autocomplete="off"/>
 }
 
 templ PsuedoAttributes() {

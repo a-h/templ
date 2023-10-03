@@ -117,6 +117,47 @@ func TestCSSMiddleware(t *testing.T) {
 	}
 }
 
+var cssInputs = []any{
+	[]string{"a", "b"},          // []string
+	"c",                         // string
+	templ.ConstantCSSClass("d"), // ConstantCSSClass
+	templ.ComponentCSSClass{ID: "e", Class: ".e{color:red}"}, // ComponentCSSClass
+	map[string]bool{"f": true, "ff": false},                  // map[string]bool
+	templ.KV[string, bool]("g", true),                        // KeyValue[string, bool]
+	templ.KV[string, bool]("gg", false),                      // KeyValue[string, bool]
+	[]templ.KeyValue[string, bool]{
+		templ.KV("h", true),
+		templ.KV("hh", false),
+	}, // []KeyValue[string, bool]
+	templ.KV[templ.CSSClass, bool](templ.ConstantCSSClass("i"), true),   // KeyValue[CSSClass, bool]
+	templ.KV[templ.CSSClass, bool](templ.ConstantCSSClass("ii"), false), // KeyValue[CSSClass, bool]
+	templ.KV[templ.ComponentCSSClass, bool](templ.ComponentCSSClass{
+		ID:    "j",
+		Class: ".j{color:red}",
+	}, true), // KeyValue[ComponentCSSClass, bool]
+	templ.KV[templ.ComponentCSSClass, bool](templ.ComponentCSSClass{
+		ID:    "jj",
+		Class: ".jj{color:red}",
+	}, false), // KeyValue[ComponentCSSClass, bool]
+	templ.CSSClasses{templ.ConstantCSSClass("k")},                             // CSSClasses
+	func() templ.CSSClass { return templ.ConstantCSSClass("l") },              // func() CSSClass
+	templ.CSSClass(templ.ConstantCSSClass("m")),                               // CSSClass
+	customClass{name: "n"},                                                    // CSSClass
+	templ.KV[templ.ConstantCSSClass, bool](templ.ConstantCSSClass("o"), true), // KeyValue[ConstantCSSClass, bool]
+	[]templ.KeyValue[templ.ConstantCSSClass, bool]{
+		templ.KV(templ.ConstantCSSClass("p"), true),
+		templ.KV(templ.ConstantCSSClass("pp"), false),
+	}, // []KeyValue[ConstantCSSClass, bool]
+}
+
+type customClass struct {
+	name string
+}
+
+func (cc customClass) ClassName() string {
+	return cc.name
+}
+
 func TestRenderCSS(t *testing.T) {
 	c1 := templ.ComponentCSSClass{
 		ID:    "c1",
@@ -130,11 +171,13 @@ func TestRenderCSS(t *testing.T) {
 	tests := []struct {
 		name     string
 		toIgnore []any
+		toRender []any
 		expected string
 	}{
 		{
 			name:     "if none are ignored, everything is rendered",
 			toIgnore: nil,
+			toRender: []any{c1, c2},
 			expected: `<style type="text/css">.c1{color:red}.c2{color:blue}</style>`,
 		},
 		{
@@ -145,11 +188,13 @@ func TestRenderCSS(t *testing.T) {
 					Class: templ.SafeCSS(".c3{color:yellow}"),
 				},
 			},
+			toRender: []any{c1, c2},
 			expected: `<style type="text/css">.c1{color:red}.c2{color:blue}</style>`,
 		},
 		{
 			name:     "if one is ignored, it's not rendered",
 			toIgnore: []any{c1},
+			toRender: []any{c1, c2},
 			expected: `<style type="text/css">.c2{color:blue}</style>`,
 		},
 		{
@@ -162,7 +207,14 @@ func TestRenderCSS(t *testing.T) {
 					Class: templ.SafeCSS(".c3{color:yellow}"),
 				},
 			},
+			toRender: []any{c1, c2},
 			expected: ``,
+		},
+		{
+			name:     "CSS classes are rendered",
+			toIgnore: nil,
+			toRender: cssInputs,
+			expected: `<style type="text/css">.e{color:red}.j{color:red}</style>`,
 		},
 	}
 	for _, tt := range tests {
@@ -180,7 +232,7 @@ func TestRenderCSS(t *testing.T) {
 
 			// Now render again to check that only the expected classes were rendered.
 			b.Reset()
-			err = templ.RenderCSSItems(ctx, b, []any{c1, c2}...)
+			err = templ.RenderCSSItems(ctx, b, tt.toRender...)
 			if err != nil {
 				t.Fatalf("failed to render CSS: %v", err)
 			}

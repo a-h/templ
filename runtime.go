@@ -382,23 +382,7 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 	}
 	_, v := getContext(ctx)
 	sb := new(strings.Builder)
-	for _, c := range classes {
-		switch ccc := c.(type) {
-		case ComponentCSSClass:
-			if !v.hasClassBeenRendered(ccc.ID) {
-				sb.WriteString(string(ccc.Class))
-				v.addClass(ccc.ID)
-			}
-		case CSSClasses:
-			if err = RenderCSSItems(ctx, w, ccc...); err != nil {
-				return
-			}
-		case func() CSSClass:
-			if err = RenderCSSItems(ctx, w, ccc()); err != nil {
-				return
-			}
-		}
-	}
+	renderCSSItemsToBuilder(sb, v, classes...)
 	if sb.Len() > 0 {
 		if _, err = io.WriteString(w, `<style type="text/css">`); err != nil {
 			return err
@@ -411,6 +395,50 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 		}
 	}
 	return nil
+}
+
+func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...any) {
+	for _, c := range classes {
+		switch ccc := c.(type) {
+		case ComponentCSSClass:
+			if !v.hasClassBeenRendered(ccc.ID) {
+				sb.WriteString(string(ccc.Class))
+				v.addClass(ccc.ID)
+			}
+		case KeyValue[ComponentCSSClass, bool]:
+			if !ccc.Value {
+				continue
+			}
+			renderCSSItemsToBuilder(sb, v, ccc.Key)
+		case KeyValue[CSSClass, bool]:
+			if !ccc.Value {
+				continue
+			}
+			renderCSSItemsToBuilder(sb, v, ccc.Key)
+		case CSSClasses:
+			renderCSSItemsToBuilder(sb, v, ccc...)
+		case func() CSSClass:
+			renderCSSItemsToBuilder(sb, v, ccc())
+		case []string:
+			// Skip. These are class names, not CSS classes.
+		case string:
+			// Skip. This is a class name, not a CSS class.
+		case ConstantCSSClass:
+			// Skip. This is a class name, not a CSS class.
+		case CSSClass:
+			// Skip. This is a class name, not a CSS class.
+		case map[string]bool:
+			// Skip. These are class names, not CSS classes.
+		case KeyValue[string, bool]:
+			// Skip. These are class names, not CSS classes.
+		case []KeyValue[string, bool]:
+			// Skip. These are class names, not CSS classes.
+		case KeyValue[ConstantCSSClass, bool]:
+			// Skip. These are class names, not CSS classes.
+		case []KeyValue[ConstantCSSClass, bool]:
+			// Skip. These are class names, not CSS classes.
+		}
+	}
 }
 
 // SafeCSS is CSS that has been sanitized.
