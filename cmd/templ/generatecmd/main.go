@@ -226,7 +226,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					if err := processSingleFile(ctx, path, generateSourceMapVisualisations, outputFileName); err != nil {
+					if err := processSingleFile(ctx, path, outputFileName, generateSourceMapVisualisations); err != nil {
 						errs = append(errs, err)
 					}
 					<-sem
@@ -260,40 +260,40 @@ func openURL(url string) error {
 	return browser.OpenURL(url)
 }
 
-func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, outputFileName string) error {
+func processSingleFile(ctx context.Context, inputFileName, outputFileName string, generateSourceMapVisualisations bool) error {
 	start := time.Now()
-	err := compile(ctx, fileName, generateSourceMapVisualisations, outputFileName)
+	err := compile(ctx, inputFileName, outputFileName, generateSourceMapVisualisations)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Generated code for %q in %s\n", fileName, time.Since(start))
+	fmt.Printf("Generated code for %q in %s\n", inputFileName, time.Since(start))
 	return err
 }
 
-func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, outputFileName string) (err error) {
+func compile(ctx context.Context, inputFileName, outputFileName string, generateSourceMapVisualisations bool) (err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
 
-	t, err := parser.Parse(fileName)
+	t, err := parser.Parse(inputFileName)
 	if err != nil {
-		return fmt.Errorf("%s parsing error: %w", fileName, err)
+		return fmt.Errorf("%s parsing error: %w", inputFileName, err)
 	}
 
 	targetFileName := outputFileName
 	if targetFileName == "" {
-		targetFileName = strings.TrimSuffix(fileName, ".templ") + "_templ.go"
+		targetFileName = strings.TrimSuffix(inputFileName, ".templ") + "_templ.go"
 	}
 
 	var b bytes.Buffer
 	sourceMap, err := generator.Generate(t, &b)
 	if err != nil {
-		return fmt.Errorf("%s generation error: %w", fileName, err)
+		return fmt.Errorf("%s generation error: %w", inputFileName, err)
 	}
 
 	data, err := format.Source(b.Bytes())
 	if err != nil {
-		return fmt.Errorf("%s source formatting error: %w", fileName, err)
+		return fmt.Errorf("%s source formatting error: %w", inputFileName, err)
 	}
 
 	if err = os.WriteFile(targetFileName, data, 0644); err != nil {
@@ -301,7 +301,7 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 	}
 
 	if generateSourceMapVisualisations {
-		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, sourceMap)
+		err = generateSourceMapVisualisation(ctx, inputFileName, targetFileName, sourceMap)
 	}
 	return
 }
