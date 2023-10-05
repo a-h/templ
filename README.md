@@ -2,7 +2,7 @@
 
 ## A HTML templating language for Go that has great developer tooling.
 
-![templ](https://user-images.githubusercontent.com/1029947/171962961-38aec64d-eac3-4166-8cb6-e7337c907bae.gif)
+![templ](ide-demo.gif)
 
 ## Documentation
 
