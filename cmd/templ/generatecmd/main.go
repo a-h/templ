@@ -62,7 +62,7 @@ func Run(args Arguments) (err error) {
 		select {
 		case <-signalChan: // First signal, cancel context.
 			fmt.Println("\nCancelling...")
-			err = run.KillAll()
+			err = run.Stop()
 			if err != nil {
 				fmt.Printf("Error killing command: %v\n", err)
 			}
