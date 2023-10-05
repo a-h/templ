@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"go/format"
 	"html"
 	"io"
 	"strings"
@@ -139,7 +140,13 @@ type GoExpression struct {
 
 func (exp GoExpression) IsTemplateFileNode() bool { return true }
 func (exp GoExpression) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, exp.Expression.Value)
+	data, err := format.Source([]byte(exp.Expression.Value))
+	if err != nil {
+		return writeIndent(w, indent, exp.Expression.Value)
+	}
+
+	_, err = w.Write(data)
+	return err
 }
 
 func writeIndent(w io.Writer, level int, s string) (err error) {
