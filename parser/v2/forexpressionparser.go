@@ -4,6 +4,11 @@ import (
 	"github.com/a-h/parse"
 )
 
+const (
+	unterminatedMissingCurly = `switch: unterminated (missing closing '{\n') - INSERT LINK`
+	unterminatedMissingEnd   = `switch: missing end (expected '}') - INSERT LINK`
+)
+
 var forExpression = parse.Func(func(pi *parse.Input) (r ForExpression, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.String("for ").Parse(pi); err != nil || !ok {
@@ -15,13 +20,13 @@ var forExpression = parse.Func(func(pi *parse.Input) (r ForExpression, ok bool, 
 	from := pi.Position()
 	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
 	var fexp string
-	if fexp, ok, err = Must(parse.StringUntil(until), "for: unterminated (missing closing '{\n')").Parse(pi); err != nil || !ok {
+	if fexp, ok, err = Must(parse.StringUntil(until), "for: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
 		return
 	}
 	r.Expression = NewExpression(fexp, from, pi.Position())
 
 	// Eat " {".
-	if _, ok, err = Must(until, "for: unterminated expression (missing '{\n')").Parse(pi); err != nil || !ok {
+	if _, ok, err = Must(until, "for: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
 		return
 	}
 
@@ -32,7 +37,7 @@ var forExpression = parse.Func(func(pi *parse.Input) (r ForExpression, ok bool, 
 	}
 
 	// Read the required closing brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "for: missing end (expected '}')").Parse(pi); err != nil || !ok {
+	if _, ok, err = Must(closeBraceWithOptionalPadding, "for: "+unterminatedMissingEnd).Parse(pi); err != nil || !ok {
 		return
 	}
 

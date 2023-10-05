@@ -16,12 +16,12 @@ func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err e
 
 	// Once we've got a prefix, read until {\n.
 	// If there's no match, there's no {\n, which is an error.
-	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine))), "if: unterminated (missing closing '{\n')").Parse(pi); err != nil || !ok {
+	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine))), "if: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
 		return
 	}
 
 	// Eat " {\n".
-	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "if: unterminated (missing closing '{')").Parse(pi); err != nil || !ok {
+	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "if: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
 		return
 	}
 
@@ -45,7 +45,7 @@ func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err e
 	}
 
 	// Read the required closing brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "if: missing end (expected '}')").Parse(pi); err != nil || !ok {
+	if _, ok, err = Must(closeBraceWithOptionalPadding, "if: "+unterminatedMissingEnd).Parse(pi); err != nil || !ok {
 		return
 	}
 

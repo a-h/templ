@@ -14,12 +14,12 @@ var switchExpression = parse.Func(func(pi *parse.Input) (r SwitchExpression, ok 
 
 	// Once we've got a prefix, read until {\n.
 	endOfStatementExpression := ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine)))
-	if r.Expression, ok, err = Must(endOfStatementExpression, "switch: unterminated (missing closing '{\n')").Parse(pi); err != nil || !ok {
+	if r.Expression, ok, err = Must(endOfStatementExpression, "switch: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
 		return
 	}
 
 	// Eat " {\n".
-	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "switch: unterminated (missing closing '{\n')").Parse(pi); err != nil || !ok {
+	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "switch: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
 		return
 	}
 
@@ -39,7 +39,7 @@ var switchExpression = parse.Func(func(pi *parse.Input) (r SwitchExpression, ok 
 	}
 
 	// Read the required closing brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "switch: missing end (expected '}')").Parse(pi); err != nil || !ok {
+	if _, ok, err = Must(closeBraceWithOptionalPadding, "switch: "+unterminatedMissingEnd).Parse(pi); err != nil || !ok {
 		return
 	}
 
