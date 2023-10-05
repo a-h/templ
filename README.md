@@ -4,12 +4,13 @@
 
 ![templ](ide-demo.gif)
 
+
 ## Documentation
 
 See user documentation at https://templ.guide
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/a-h/templ.svg)](https://pkg.go.dev/github.com/a-h/templ)
-
+[![xc compatible](https://xcfile.dev/badge.svg)](https://xcfile.dev)
 [![Go Coverage](https://github.com/a-h/templ/wiki/coverage.svg)](https://raw.githack.com/wiki/a-h/templ/coverage.html)
 
 ## Tasks
