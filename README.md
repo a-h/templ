@@ -9,9 +9,12 @@
 
 See user documentation at https://templ.guide
 
+<p align="center">
 [![Go Reference](https://pkg.go.dev/badge/github.com/a-h/templ.svg)](https://pkg.go.dev/github.com/a-h/templ)
 [![xc compatible](https://xcfile.dev/badge.svg)](https://xcfile.dev)
 [![Go Coverage](https://github.com/a-h/templ/wiki/coverage.svg)](https://raw.githack.com/wiki/a-h/templ/coverage.html)
+[![Go Report Card](https://goreportcard.com/badge/github.com/a-h/templ)](https://goreportcard.com/report/github.com/a-h/templ)
+</p>
 
 ## Tasks
 
