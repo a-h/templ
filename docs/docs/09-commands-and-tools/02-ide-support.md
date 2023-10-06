@@ -13,22 +13,12 @@ A vim / neovim plugin is available from https://github.com/Joe-Davidson1802/temp
 
 For neovim you can also use [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) for syntax highlighting with the custom parser [tree-sitter-templ](https://github.com/vrischmann/tree-sitter-templ).
 
-To enable the built-in Language Server support of Neovim 5.x add the following code to your `.vimrc` prior to calling `setup` on the language servers, e.g.:
+The configuration for the templ Language Server is included in [lsbconfig](https://github.com/neovim/nvim-lspconfig), [mason](https://github.com/williamboman/mason.nvim),
+and [mason-lspconfig](https://github.com/williamboman/mason-lspconfig.nvim).
+
+Therefore, installing and configuring the templ Language Server is as straightforward as setting up any other Language Server:
 
 ```lua
--- Add templ configuration.
-local configs = require'lspconfig/configs'
-if not nvim_lsp.templ then
-  configs.templ = {
-    default_config = {
-      cmd = {"templ", "lsp"},
-      filetypes = {'templ'},
-      root_dir = nvim_lsp.util.root_pattern("go.mod", ".git"),
-      settings = {},
-    };
-  }
-end
-
 -- Use a loop to conveniently call 'setup' on multiple servers and
 -- map buffer local keybindings when the language server attaches
 local servers = { 'gopls', 'ccls', 'cmake', 'tsserver', 'templ' }
@@ -40,4 +30,15 @@ for _, lsp in ipairs(servers) do
     },
   }
 end
+```
+
+If the language server fails to start, it could be due to the unregistered templ file extension. To resolve this issue, add the following code to your configuration: 
+
+```lua
+-- additional filetypes
+vim.filetype.add({
+	extension = {
+		templ = "templ",
+	},
+})
 ```
