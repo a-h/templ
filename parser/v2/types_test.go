@@ -522,7 +522,7 @@ templ x() {
 `,
 		},
 		{
-			name: "written Go must be formatted with builtin Go formatter",
+			name: "go expressions are formatted by the go formatter",
 			input: ` // first line removed to make indentation clear
 package main
 
