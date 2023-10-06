@@ -171,48 +171,87 @@ func migrateV1NodesToV2Nodes(in []v1.Node) (out []v2.Node, err error) {
 	if in == nil {
 		return
 	}
-	out = make([]v2.Node, len(in))
-	for i, n := range in {
-		out[i], err = migrateV1NodeToV2Node(n)
+	for _, n := range in {
+		migrated, err := migrateV1NodeToV2Nodes(n)
 		if err != nil {
-			return
+			return out, err
 		}
+		out = append(out, migrated...)
 	}
 	return
 }
 
-func migrateV1NodeToV2Node(in v1.Node) (out v2.Node, err error) {
+var expressionPrefixes = []string{"if ", "switch ", "for "}
+
+func hasExpressionPrefix(s string) bool {
+	s = strings.TrimSpace(s)
+	for _, p := range expressionPrefixes {
+		if strings.HasPrefix(s, p) {
+			return true
+		}
+	}
+	return false
+}
+
+func migrateV1NodeToV2Nodes(in v1.Node) (out []v2.Node, err error) {
 	switch n := in.(type) {
 	case v1.Whitespace:
-		return v2.Whitespace{Value: n.Value}, nil
+		out = append(out, v2.Whitespace{Value: n.Value})
 	case v1.DocType:
-		return v2.DocType{Value: n.Value}, nil
+		out = append(out, v2.DocType{Value: n.Value})
 	case v1.Text:
-		return v2.Text{Value: n.Value}, nil
+		if hasExpressionPrefix(n.Value) {
+			out = append(out, v2.StringExpression{
+				Expression: v2.Expression{
+					Value: "`" + n.Value + "`",
+				},
+			})
+			break
+		}
+		out = append(out, v2.Text{Value: n.Value})
 	case v1.Element:
-		return migrateV1ElementToV2Element(n)
+		e, err := migrateV1ElementToV2Element(n)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, e)
 	case v1.CallTemplateExpression:
 		cte := v2.CallTemplateExpression{
 			Expression: v2.Expression{
 				Value: n.Expression.Value,
 			},
 		}
-		return cte, nil
+		out = append(out, cte)
 	case v1.IfExpression:
-		return migrateV1IfExpressionToV2IfExpression(n)
+		out = append(out, v2.Text{Value: "\n"})
+		ie, err := migrateV1IfExpressionToV2IfExpression(n)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, ie)
 	case v1.SwitchExpression:
-		return migrateV1SwitchExpressionToV2SwitchExpression(n)
+		se, err := migrateV1SwitchExpressionToV2SwitchExpression(n)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, se)
 	case v1.ForExpression:
-		return migrateV1ForExpressionToV2ForExpression(n)
+		fe, err := migrateV1ForExpressionToV2ForExpression(n)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, fe)
 	case v1.StringExpression:
 		se := v2.StringExpression{
 			Expression: v2.Expression{
 				Value: n.Expression.Value,
 			},
 		}
-		return se, nil
+		out = append(out, se)
+	default:
+		return nil, fmt.Errorf("migrate: unknown node type: %s", reflect.TypeOf(in).Name())
 	}
-	return nil, fmt.Errorf("migrate: unknown node type: %s", reflect.TypeOf(in).Name())
+	return
 }
 
 func migrateV1ForExpressionToV2ForExpression(in v1.ForExpression) (out v2.ForExpression, err error) {
@@ -275,12 +314,12 @@ func migrateV1ElementToV2Element(in v1.Element) (out v2.Element, err error) {
 			return
 		}
 	}
-	out.Children = make([]v2.Node, len(in.Children))
-	for i, child := range in.Children {
-		out.Children[i], err = migrateV1NodeToV2Node(child)
+	for _, child := range in.Children {
+		v2Nodes, err := migrateV1NodeToV2Nodes(child)
 		if err != nil {
-			return
+			return out, err
 		}
+		out.Children = append(out.Children, v2Nodes...)
 	}
 	out.Name = in.Name
 	return out, nil
