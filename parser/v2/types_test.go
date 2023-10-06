@@ -8,7 +8,7 @@ import (
 )
 
 func TestFormatting(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected string
@@ -518,6 +518,53 @@ package main
 
 templ x() {
 	<div>{ pt1 }{ pt2 }</div>
+}
+`,
+		},
+		{
+			name: "written Go must be formatted with builtin Go formatter",
+			input: ` // first line removed to make indentation clear
+package main
+
+      type Link struct {
+Name string
+	        Url  string
+}
+
+var a = false;
+
+func test() {
+	      log.Print("hoi")
+
+	      if (a) {
+      log.Fatal("OH NO !")
+	}
+}
+
+templ x() {
+	<div>Hello World</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+type Link struct {
+	Name string
+	Url  string
+}
+
+var a = false
+
+func test() {
+	log.Print("hoi")
+
+	if a {
+		log.Fatal("OH NO !")
+	}
+}
+
+templ x() {
+	<div>Hello World</div>
 }
 `,
 		},
