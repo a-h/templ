@@ -8,7 +8,7 @@ import (
 )
 
 func TestIfExpression(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected IfExpression
@@ -589,5 +589,13 @@ func TestIfExpression(t *testing.T) {
 				t.Error(diff)
 			}
 		})
+	}
+}
+
+func TestIncompleteIf(t *testing.T) {
+	input := parse.NewInput(`if a tree falls in the woods`)
+	_, _, err := ifExpression.Parse(input)
+	if err.Error() != "if: "+unterminatedMissingCurly {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
