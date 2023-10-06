@@ -315,7 +315,7 @@ var (
 		}
 		if len(suffix)+1 > 32 {
 			ok = false
-			err = parse.Error("element property names must be < 32 characters long", in.Position())
+			err = parse.Error("element names must be < 32 characters long", in.Position())
 			return
 		}
 		return prefix + suffix, true, nil

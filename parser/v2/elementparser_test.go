@@ -945,6 +945,16 @@ func TestElementParserErrors(t *testing.T) {
 					Col:   0,
 				}),
 		},
+		{
+			name:  "element: names cannot be greater than 32 characters",
+			input: `<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa></aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>`,
+			expected: parse.Error("element names must be < 32 characters long",
+				parse.Position{
+					Index: 34,
+					Line:  0,
+					Col:   34,
+				}),
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
