@@ -4,11 +4,6 @@ import (
 	"github.com/a-h/parse"
 )
 
-const (
-	unterminatedMissingCurly = `switch: unterminated (missing closing '{\n') - INSERT LINK`
-	unterminatedMissingEnd   = `switch: missing end (expected '}') - INSERT LINK`
-)
-
 var forExpression = parse.Func(func(pi *parse.Input) (r ForExpression, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.String("for ").Parse(pi); err != nil || !ok {

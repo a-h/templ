@@ -45,6 +45,12 @@ var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpre
 	return r, true, nil
 })
 
+const (
+	unterminatedMissingCurly = `switch: unterminated (missing closing '{\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
+	unterminatedMissingEnd   = `switch: missing end (expected '}') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
+)
+
+
 // Template node (element, call, if, switch, for, whitespace etc.)
 func newTemplateNodeParser[TUntil any](until parse.Parser[TUntil], untilName string) templateNodeParser[TUntil] {
 	return templateNodeParser[TUntil]{
