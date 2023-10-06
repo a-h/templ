@@ -8,7 +8,7 @@ import (
 )
 
 func TestIfExpression(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected IfExpression
@@ -590,4 +590,24 @@ func TestIfExpression(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIncompleteIf(t *testing.T) {
+	t.Run("no opening brace", func(t *testing.T) {
+		input := parse.NewInput(`if a tree falls in the woods`)
+		_, _, err := ifExpression.Parse(input)
+		if err.Error() != "if: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements: line 0, col 28" {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+	t.Run("capitalised If", func(t *testing.T) {
+		input := parse.NewInput(`If a tree falls in the woods`)
+		_, ok, err := ifExpression.Parse(input)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if ok {
+			t.Fatal("expected a non match")
+		}
+	})
 }
