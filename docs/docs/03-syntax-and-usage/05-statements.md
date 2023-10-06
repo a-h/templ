@@ -1,19 +1,59 @@
 # Statements
 
-## Control Flow
+## Control flow
 
-Within a templ element, some Go statements are valid. Control flow statements can be used to render child elements
-conditionally or multiple times.
+Within a templ element, a subset of Go statements can be used directly.
 
-For individual implementation guides see: [If/else](/syntax-and-usage/if-else), [Switch](/syntax-and-usage/switch) and
-[For loops](/syntax-and-usage/loops)
+These Go statements can be used to conditionally render child elements, or to iterate variables.
 
-## Incomplete Statements
+For individual implementation guides see:
 
-The templ parser does not make any assumptions on whether a templ element is a broken control flow statement or a text
-element.
+* [if/else](/syntax-and-usage/if-else)
+* [switch](/syntax-and-usage/switch)
+* [for loops](/syntax-and-usage/loops)
 
-The following would cause the templ parser to return an error to prevent backend template code from being leaked.
+## if/switch/for within text
+
+Go statements can be used without any escaping to make it simple for developers to include them.
+
+The templ parser assumes that text that starts with `if`, `switch` or `for` denotes the start of one of those expressions as per this example.
+
+```templ title="show-hello.templ"
+package main
+
+templ showHelloIfTrue(b bool) {
+	<div>
+		if b {
+			<p>Hello</p>
+		}
+	</div>
+}
+```
+
+If you need to start a text block with the words `if`, `switch`, or `for`:
+
+* Use a Go string expression.
+* Capitalise `if`, `switch`, or `for`.
+
+```templ title="paragraph.templ"
+package main
+
+templ display(price float64, count int) {
+	<p>Switch to Linux</p>
+	<p>{ `switch to Linux` }</p>
+	<p>{ "for a day" }</p>
+	<p>{ fmt.Sprintf("%f", price) }{ "for" }{ fmt.Sprintf("%d", count) }</p>
+	<p>{ fmt.Sprintf("%f for %d", price, count) }</p>
+}
+```
+
+## Design considerations
+
+We decided to not require a special prefix for `if`, `switch` and `for` expressions on the basis that we were more likely to want to use a Go control statement than start a text run with those strings.
+
+To reduce the risk of a broken control statement, resulting in printing out the source code of the application, templ will complain if a text run starts with `if`, `switch` or `for`, but no opening brace `{` is found.
+
+For example, the following code causes the templ parser to return an error:
 
 ```templ title="broken-if.templ"
 package main
@@ -29,7 +69,7 @@ templ showIfTrue(b bool) {
 Note the missing `{` on line 4.
 :::
 
-The following would also error as the parser will not distinguish the sentence from a broken `if`.
+The following code also produces an error, since the text run starts with `if`, but no opening `{` is found.
 
 ```templ title="paragraph.templ"
 package main
@@ -43,14 +83,19 @@ templ text(b bool) {
 This also applies to `for` and `switch` statements.
 :::
 
-To tell the parser the intention was for it to be a text element and not a control flow, either capitalise the first
-letter, or use a Go string literal.
+To resolve the issue:
+
+* Use a Go string expression.
+* Capitalise `if`, `switch`, or `for`.
 
 ```templ title="paragraph.templ"
 package main
 
-templ text(b bool) {
-	<p>If a tree fell in the woods</p>
-	<p>{ "if a tree fell in the woods" }</p>
+templ display(price float64, count int) {
+	<p>Switch to Linux</p>
+	<p>{ `switch to Linux` }</p>
+	<p>{ "for a day" }</p>
+	<p>{ fmt.Sprintf("%f", price) }{ "for" }{ fmt.Sprintf("%d", count) }</p>
+	<p>{ fmt.Sprintf("%f for %d", price, count) }</p>
 }
 ```
