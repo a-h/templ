@@ -46,8 +46,8 @@ var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpre
 })
 
 const (
-	unterminatedMissingCurly = `switch: unterminated (missing closing '{\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
-	unterminatedMissingEnd   = `switch: missing end (expected '}') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
+	unterminatedMissingCurly = `unterminated (missing closing '{\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
+	unterminatedMissingEnd   = `missing end (expected '}') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
 )
 
 
