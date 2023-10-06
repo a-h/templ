@@ -313,9 +313,9 @@ var (
 			in.Seek(start)
 			return
 		}
-		if len(suffix)+1 > 16 {
+		if len(suffix)+1 > 32 {
 			ok = false
-			err = parse.Error("element property names must be < 16 characters long", in.Position())
+			err = parse.Error("element names must be < 32 characters long", in.Position())
 			return
 		}
 		return prefix + suffix, true, nil
