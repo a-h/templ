@@ -507,9 +507,7 @@ func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
 			if i > 1 && isWhitespace && !strings.Contains(whitespace.Value, "\n") {
 				startLineIndent = 0
 				if i > 2 {
-					if _, err := w.Write([]byte(whitespace.Value)); err != nil {
-						return err
-					}
+					w.Write([]byte(whitespace.Value))
 				}
 			}
 		}
