@@ -180,6 +180,14 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	result.Capabilities.ExecuteCommandProvider.Commands = []string{}
 	result.Capabilities.DocumentFormattingProvider = true
 	result.Capabilities.SemanticTokensProvider = nil
+	result.Capabilities.DocumentRangeFormattingProvider = false
+	result.Capabilities.TextDocumentSync = lsp.TextDocumentSyncOptions{
+		OpenClose:         true,
+		Change:            lsp.TextDocumentSyncKindFull,
+		WillSave:          false,
+		WillSaveWaitUntil: false,
+		Save:              &lsp.SaveOptions{IncludeText: true},
+	}
 	return result, err
 }
 
