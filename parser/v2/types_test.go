@@ -568,6 +568,38 @@ templ x() {
 }
 `,
 		},
+		{
+			name: "should preserve new line for text elements like span or strong",
+			input: ` // first line removed to make indentation clear
+package main
+
+      templ x() {
+<p class="cupcake">
+      Cupcake ipsum dolor sit amet sesame snaps chocolate cake apple pie<strong>.</strong>
+      <strong>Alone</strong>
+    Topping cupcake icing <strong>cookie wafer</strong>, powder cake bonbon pastry sweet roll.
+      Caramels topping donut apple <span>pie donut</span>, liquorice croissant pastry pastry chupa chups gummies jelly-o liquorice.
+        <strong>Souffle</strong> chocolate bar tootsie roll halvah gingerbread, liquorice muffin dragée lemon drops jujubes.
+</p>
+<p>
+</p>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+	<p class="cupcake">
+		Cupcake ipsum dolor sit amet sesame snaps chocolate cake apple pie<strong>.</strong>
+		<strong>Alone</strong>
+		Topping cupcake icing <strong>cookie wafer</strong>, powder cake bonbon pastry sweet roll.
+		Caramels topping donut apple <span>pie donut</span>, liquorice croissant pastry pastry chupa chups gummies jelly-o liquorice.
+		<strong>Souffle</strong> chocolate bar tootsie roll halvah gingerbread, liquorice muffin dragée lemon drops jujubes.
+	</p>
+	<p></p>
+}
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

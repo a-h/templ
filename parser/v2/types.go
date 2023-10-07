@@ -173,7 +173,7 @@ type Whitespace struct {
 func (ws Whitespace) IsNode() bool { return true }
 
 func (ws Whitespace) Write(w io.Writer, indent int) error {
-	if ws.Value == "" || !strings.Contains(ws.Value, "\n") {
+	if ws.Value == "" || strings.Contains(ws.Value, "\n") {
 		return nil
 	}
 	// https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Whitespace
@@ -336,6 +336,7 @@ type Element struct {
 	IndentAttrs    bool
 	Children       []Node
 	IndentChildren bool
+	NotAtEndOfLine bool
 }
 
 var voidElements = map[string]struct{}{
@@ -345,6 +346,16 @@ var voidElements = map[string]struct{}{
 // https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#void-element
 func (e Element) IsVoidElement() bool {
 	_, ok := voidElements[e.Name]
+	return ok
+}
+
+// https://www.w3schools.com/html/html_blocks.asp
+var blockElements = map[string]struct{}{
+	"address": {}, "article": {}, "aside": {}, "body": {}, "blockquote": {}, "canvas": {}, "dd": {}, "div": {}, "dl": {}, "dt": {}, "fieldset": {}, "figcaption": {}, "figure": {}, "footer": {}, "form": {}, "h1": {}, "h2": {}, "h3": {}, "h4": {}, "h5": {}, "h6": {}, "head": {}, "header": {}, "hr": {}, "html": {}, "li": {}, "main": {}, "meta": {}, "nav": {}, "noscript": {}, "ol": {}, "p": {}, "pre": {}, "script": {}, "section": {}, "table": {}, "template": {}, "tfoot": {}, "turbo-stream": {}, "ul": {}, "video": {},
+}
+
+func (e Element) isBlockElement() bool {
+	_, ok := blockElements[e.Name]
 	return ok
 }
 
@@ -465,6 +476,9 @@ func writeNodesBlock(w io.Writer, indent int, nodes []Node) error {
 }
 
 func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
+	isStartOfTheLine := true
+	ignoreLineBreak := false
+
 	for i := 0; i < len(nodes); i++ {
 		// Terminating and leading whitespace is stripped.
 		_, isWhitespace := nodes[i].(Whitespace)
@@ -477,17 +491,53 @@ func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
 			continue
 		}
 
+		e, isElement := nodes[i].(Element)
+
+		// Inline element should not line break
+		if isElement {
+			if !e.isBlockElement() {
+				ignoreLineBreak = e.NotAtEndOfLine
+			} else {
+				ignoreLineBreak = false
+			}
+		}
+
+		_, isText := nodes[i].(Text)
+
+		// Text Element should always line break except if next element is an inline element
+		if isText && i+1 < len(nodes) {
+			e, ok := nodes[i+1].(Element)
+
+			if ok && !e.isBlockElement() {
+				ignoreLineBreak = true
+			} else {
+				ignoreLineBreak = false
+			}
+		}
+
 		if isWhitespace && (i == 0 || i == len(nodes)-1) {
 			continue
 		}
 		// Whitespace is stripped from block elements.
-		if isWhitespace && block {
+		if isWhitespace && block && !ignoreLineBreak {
 			continue
 		}
-		if err := nodes[i].Write(w, indent); err != nil {
-			return err
+
+		// Only indent at start of the line
+		if isStartOfTheLine {
+			isStartOfTheLine = false
+			if err := nodes[i].Write(w, indent); err != nil {
+				return err
+			}
+		} else {
+			if err := nodes[i].Write(w, 0); err != nil {
+				return err
+			}
 		}
-		if block {
+
+		// If we are in a block, we should always break line after last element otherwise respect ignoreLineBreak
+		if block && (!ignoreLineBreak || i == len(nodes)-1) {
+			isStartOfTheLine = true
 			if _, err := w.Write([]byte("\n")); err != nil {
 				return err
 			}

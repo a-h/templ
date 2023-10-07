@@ -422,5 +422,13 @@ func (elementParser) Parse(pi *parse.Input) (r Element, ok bool, err error) {
 		err = parse.Error(fmt.Sprintf("<%s>: %s", r.Name, strings.Join(msgs, ", ")), start)
 	}
 
+	line, hasNextText := pi.Peek(1)
+
+	r.NotAtEndOfLine = hasNextText
+
+	if line == "\n" {
+		r.NotAtEndOfLine = false
+	}
+
 	return r, ok, err
 }

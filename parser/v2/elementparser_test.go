@@ -716,7 +716,8 @@ func TestElementParser(t *testing.T) {
 				Name: "a",
 				Children: []Node{
 					Element{
-						Name: "b",
+						Name:           "b",
+						NotAtEndOfLine: true,
 					},
 				},
 			},
@@ -728,7 +729,8 @@ func TestElementParser(t *testing.T) {
 				Name: "a",
 				Children: []Node{
 					Element{
-						Name: "b",
+						Name:           "b",
+						NotAtEndOfLine: true,
 					},
 				},
 			},
@@ -745,6 +747,7 @@ func TestElementParser(t *testing.T) {
 						Children: []Node{
 							Whitespace{Value: " "},
 						},
+						NotAtEndOfLine: true,
 					},
 					Whitespace{Value: " "},
 				},
@@ -757,15 +760,18 @@ func TestElementParser(t *testing.T) {
 				Name: "a",
 				Children: []Node{
 					Element{
-						Name: "b",
+						Name:           "b",
+						NotAtEndOfLine: true,
 					},
 					Element{
 						Name: "c",
 						Children: []Node{
 							Element{
-								Name: "d",
+								Name:           "d",
+								NotAtEndOfLine: true,
 							},
 						},
+						NotAtEndOfLine: true,
 					},
 				},
 			},
