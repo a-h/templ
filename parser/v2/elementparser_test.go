@@ -345,7 +345,6 @@ func TestElementParser(t *testing.T) {
 						Value: "test",
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -373,7 +372,6 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -401,7 +399,6 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -419,7 +416,6 @@ func TestElementParser(t *testing.T) {
 						Value: "text-underline: auto",
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -454,7 +450,6 @@ func TestElementParser(t *testing.T) {
 						Value: "other",
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -490,7 +485,6 @@ func TestElementParser(t *testing.T) {
 						Value: "text-underline: auto",
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -537,19 +531,16 @@ func TestElementParser(t *testing.T) {
 				IndentAttrs: true,
 				Children: []Node{
 					Text{
-						Value:     "Test",
-						LineBreak: true,
+						Value: "Test",
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
 			name:  "element: self-closing with no attributes",
 			input: `<hr/>`,
 			expected: Element{
-				Name:      "hr",
-				LineBreak: true,
+				Name: "hr",
 			},
 		},
 		{
@@ -563,7 +554,6 @@ func TestElementParser(t *testing.T) {
 						Value: "padding: 10px",
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -605,7 +595,6 @@ func TestElementParser(t *testing.T) {
 					},
 				},
 				IndentAttrs: true,
-				LineBreak:   true,
 			},
 		},
 		{
@@ -655,7 +644,6 @@ func TestElementParser(t *testing.T) {
 					},
 				},
 				IndentAttrs: true,
-				LineBreak:   true,
 			},
 		},
 		{
@@ -698,17 +686,15 @@ func TestElementParser(t *testing.T) {
 				},
 				IndentAttrs: true,
 				Children: []Node{
-					Text{Value: "Test", LineBreak: true},
+					Text{Value: "Test"},
 				},
-				LineBreak: true,
 			},
 		},
 		{
 			name:  "element: open and close",
 			input: `<a></a>`,
 			expected: Element{
-				Name:      "a",
-				LineBreak: true,
+				Name: "a",
 			},
 		},
 		{
@@ -718,11 +704,9 @@ func TestElementParser(t *testing.T) {
 				Name: "a",
 				Children: []Node{
 					Text{
-						Value:     "The text",
-						LineBreak: true,
+						Value: "The text",
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -735,7 +719,6 @@ func TestElementParser(t *testing.T) {
 						Name: "b",
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -748,7 +731,6 @@ func TestElementParser(t *testing.T) {
 						Name: "b",
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -766,7 +748,6 @@ func TestElementParser(t *testing.T) {
 					},
 					Whitespace{Value: " "},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -782,22 +763,18 @@ func TestElementParser(t *testing.T) {
 						Name: "c",
 						Children: []Node{
 							Element{
-								Name:      "d",
-								LineBreak: true,
+								Name: "d",
 							},
 						},
-						LineBreak: true,
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
 			name:  "element: empty",
 			input: `<div></div>`,
 			expected: Element{
-				Name:      "div",
-				LineBreak: true,
+				Name: "div",
 			},
 		},
 		{
@@ -824,7 +801,6 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
-				LineBreak: true,
 			},
 		},
 		{
@@ -872,25 +848,6 @@ func TestElementParser(t *testing.T) {
 						Value: "off",
 					},
 				},
-				LineBreak: true,
-			},
-		},
-		{
-			name:  "element: line break information need to be false on some special tag",
-			input: `<div><h1><span></span></h1></div>`,
-			expected: Element{
-				Name: "div",
-				Children: []Node{
-					Element{
-						Name: "h1",
-						Children: []Node{
-							Element{Name: "span", LineBreak: false},
-						},
-						LineBreak: true,
-					},
-				},
-
-				LineBreak: true,
 			},
 		},
 	}

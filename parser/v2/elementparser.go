@@ -411,23 +411,6 @@ var element elementParser
 
 type elementParser struct{}
 
-const maxIgnoreNewLineTagLength = 8
-
-var ignoreNewLinesTags = []string{
-	"b",
-	"strong",
-	"i",
-	"em",
-	"span",
-	"u",
-	"br",
-	"abbr",
-	"code",
-	"mark",
-	"small",
-	"q",
-}
-
 func (elementParser) Parse(pi *parse.Input) (r Element, ok bool, err error) {
 	start := pi.Position()
 
@@ -437,19 +420,6 @@ func (elementParser) Parse(pi *parse.Input) (r Element, ok bool, err error) {
 	var msgs []string
 	if msgs, ok = r.Validate(); !ok {
 		err = parse.Error(fmt.Sprintf("<%s>: %s", r.Name, strings.Join(msgs, ", ")), start)
-	}
-
-	r.LineBreak = true
-
-	for _, t := range ignoreNewLinesTags {
-		if r.Name == t {
-			r.LineBreak = false
-			break
-		}
-	}
-
-	if line, _ := pi.Peek(1); line == "\n" {
-		r.LineBreak = true
 	}
 
 	return r, ok, err

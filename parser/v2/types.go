@@ -321,8 +321,7 @@ type Node interface {
 // Text node within the document.
 type Text struct {
 	// Value is the raw HTML encoded value.
-	Value     string
-	LineBreak bool
+	Value string
 }
 
 func (t Text) IsNode() bool { return true }
@@ -337,7 +336,6 @@ type Element struct {
 	IndentAttrs    bool
 	Children       []Node
 	IndentChildren bool
-	LineBreak      bool
 }
 
 var voidElements = map[string]struct{}{
@@ -486,44 +484,8 @@ func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
 		if isWhitespace && block {
 			continue
 		}
-
-		startLineIndent := indent
-
-		if i >= 1 {
-			element, isElement := nodes[i-1].(Element)
-
-			if isElement && !element.LineBreak {
-				startLineIndent = 0
-			}
-
-			text, isText := nodes[i-1].(Text)
-
-			if isText && !text.LineBreak {
-				startLineIndent = 0
-			}
-
-			whitespace, isWhitespace := nodes[i-1].(Whitespace)
-
-			if i > 1 && isWhitespace && !strings.Contains(whitespace.Value, "\n") {
-				startLineIndent = 0
-				if i > 2 {
-					w.Write([]byte(whitespace.Value))
-				}
-			}
-		}
-		if err := nodes[i].Write(w, startLineIndent); err != nil {
+		if err := nodes[i].Write(w, indent); err != nil {
 			return err
-		}
-		element, isElement := nodes[i].(Element)
-
-		if isElement && !element.LineBreak {
-			continue
-		}
-
-		text, isText := nodes[i].(Text)
-
-		if isText && !text.LineBreak {
-			continue
 		}
 		if block {
 			if _, err := w.Write([]byte("\n")); err != nil {
