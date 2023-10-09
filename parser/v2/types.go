@@ -360,12 +360,12 @@ var _ WhitespaceTrailer = StringExpression{}
 type Text struct {
 	// Value is the raw HTML encoded value.
 	Value string
-	// TS lists what happens after the text.
-	TS TrailingSpace
+	// TrailingSpace lists what happens after the text.
+	TrailingSpace TrailingSpace
 }
 
 func (t Text) Trailing() TrailingSpace {
-	return t.TS
+	return t.TrailingSpace
 }
 
 func (t Text) IsNode() bool { return true }
@@ -380,11 +380,11 @@ type Element struct {
 	IndentAttrs    bool
 	Children       []Node
 	IndentChildren bool
-	TS             TrailingSpace
+	TrailingSpace  TrailingSpace
 }
 
 func (e Element) Trailing() TrailingSpace {
-	return e.TS
+	return e.TrailingSpace
 }
 
 var voidElements = map[string]struct{}{
@@ -537,9 +537,7 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 			return err
 		}
 
-		// Everything gets a newline after it, unless it's:
-		// * A node that isn't the last one in an indent block.
-		// * An element that doen't already have a newline in its trailing whitespace.
+		// Apply trailing whitespace if present.
 		trailing := SpaceVertical
 		if wst, isWhitespaceTrailer := nodes[i].(WhitespaceTrailer); isWhitespaceTrailer {
 			trailing = wst.Trailing()
@@ -922,12 +920,12 @@ func (fe ForExpression) Write(w io.Writer, indent int) error {
 // { ... }
 type StringExpression struct {
 	Expression Expression
-	// TS lists what happens after the expression.
-	TS TrailingSpace
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
 }
 
 func (se StringExpression) Trailing() TrailingSpace {
-	return se.TS
+	return se.TrailingSpace
 }
 
 func (se StringExpression) IsNode() bool                  { return true }

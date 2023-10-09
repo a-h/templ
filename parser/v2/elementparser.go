@@ -368,7 +368,7 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 	if err != nil {
 		return r, false, err
 	}
-	r.TS, err = NewTrailingSpace(ws)
+	r.TrailingSpace, err = NewTrailingSpace(ws)
 	if err != nil {
 		return r, false, err
 	}
@@ -418,7 +418,7 @@ var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, e
 	if err != nil {
 		return e, false, err
 	}
-	e.TS, err = NewTrailingSpace(ws)
+	e.TrailingSpace, err = NewTrailingSpace(ws)
 	if err != nil {
 		return e, false, err
 	}

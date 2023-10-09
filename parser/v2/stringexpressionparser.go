@@ -25,7 +25,7 @@ var stringExpression = parse.Func(func(pi *parse.Input) (r StringExpression, ok 
 	if err != nil {
 		return r, false, err
 	}
-	r.TS, err = NewTrailingSpace(ws)
+	r.TrailingSpace, err = NewTrailingSpace(ws)
 	if err != nil {
 		return r, false, err
 	}

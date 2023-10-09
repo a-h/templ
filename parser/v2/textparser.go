@@ -28,7 +28,7 @@ var textParser = parse.Func(func(pi *parse.Input) (t Text, ok bool, err error) {
 	if err != nil {
 		return t, false, err
 	}
-	t.TS, err = NewTrailingSpace(ws)
+	t.TrailingSpace, err = NewTrailingSpace(ws)
 	if err != nil {
 		return t, false, err
 	}

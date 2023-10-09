@@ -79,7 +79,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				Children: []Node{
 					Whitespace{Value: "\n\t"},
 					Text{Value: "some words",
-						TS: SpaceVertical,
+						TrailingSpace: SpaceVertical,
 					},
 				},
 			},
@@ -110,7 +110,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 					Element{Name: "a", Attributes: []Attribute{
 						ConstantAttribute{"href", "someurl"},
 					},
-						TS: SpaceVertical,
+						TrailingSpace: SpaceVertical,
 					},
 				},
 			},
