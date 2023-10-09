@@ -142,7 +142,7 @@ templ input(value, validation string) {
 `,
 		},
 		{
-			name: "all children indented, with nested indentation",
+			name: "all children indented, with nested indentation, when close tag is on new line",
 			input: ` // first line removed to make indentation clear in Go code
 package test
 
@@ -163,6 +163,23 @@ templ input(value, validation string) {
 			</a>
 		</p>
 	</div>
+}
+`,
+		},
+		{
+			name: "all children indented, with nested indentation, when close tag is on same line",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div><p>{ "the" }<a href="http://example.com">{ "data" } </a></p></div>
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div><p>{ "the" }<a href="http://example.com">{ "data" } </a></p></div>
 }
 `,
 		},
@@ -568,6 +585,31 @@ templ x() {
 }
 `,
 		},
+		{
+			name: "inline elements are not placed on a new line",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ test() {
+	<p>
+		In a flowing <strong>paragraph</strong>, you can use inline elements.
+		These <strong>inline elements</strong> can be <strong>styled</strong>
+		and are not placed on new lines.
+	</p>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ test() {
+	<p>
+		In a flowing <strong>paragraph</strong>, you can use inline elements.
+		These <strong>inline elements</strong> can be <strong>styled</strong>
+		and are not placed on new lines.
+	</p>
+}
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -588,7 +630,18 @@ templ x() {
 			}
 			if diff := cmp.Diff(expected, w.String()); diff != "" {
 				t.Error(diff)
+
+				t.Errorf("input:\n%s", displayWhitespaceChars(input))
+				t.Errorf("expected:\n%s", displayWhitespaceChars(expected))
+				t.Errorf("got:\n%s", displayWhitespaceChars(w.String()))
 			}
 		})
 	}
+}
+
+func displayWhitespaceChars(s string) (output string) {
+	s = strings.ReplaceAll(s, " ", ".")
+	s = strings.ReplaceAll(s, "\t", "→")
+	s = strings.ReplaceAll(s, "\n", "↵\n")
+	return s
 }

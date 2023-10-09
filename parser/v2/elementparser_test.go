@@ -534,6 +534,7 @@ func TestElementParser(t *testing.T) {
 						Value: "Test",
 					},
 				},
+				TS: SpaceVertical,
 			},
 		},
 		{
@@ -745,8 +746,8 @@ func TestElementParser(t *testing.T) {
 						Children: []Node{
 							Whitespace{Value: " "},
 						},
+						TS: SpaceHorizontal,
 					},
-					Whitespace{Value: " "},
 				},
 			},
 		},
