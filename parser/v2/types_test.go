@@ -102,6 +102,43 @@ templ input(value, validation string) {
 `,
 		},
 		{
+			name: "non-empty elements whith children that are all on the same line are not split into multiple lines",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div><div><b>Text</b></div></div>
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div><div><b>Text</b></div></div>
+}
+`,
+		},
+		{
+			name: "when an element contains children that are on new lines, the children are indented",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div>
+	<div><b>Text</b></div></div>
+}
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ input(value, validation string) {
+	<div>
+		<div><b>Text</b></div>
+	</div>
+}
+`,
+		},
+		{
 			name: "children indented, closing elm",
 			input: ` // first line removed to make indentation clear in Go code
 package test
@@ -607,6 +644,52 @@ templ test() {
 		These <strong>inline elements</strong> can be <strong>styled</strong>
 		and are not placed on new lines.
 	</p>
+}
+`,
+		},
+		{
+			name: "br elements are placed on new lines",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ test() {
+	<div>
+		Linebreaks<br/>and<hr/>rules<br/>for<br/>spacing
+	</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ test() {
+	<div>
+		Linebreaks
+		<br/>
+		and
+		<hr/>
+		rules
+		<br/>
+		for
+		<br/>
+		spacing
+	</div>
+}
+`,
+		},
+		{
+			name: "br and hr all on one line are not placed on new lines",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ test() {
+	<div>Linebreaks<br/>used<br/>for<br/>spacing</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ test() {
+	<div>Linebreaks<br/>used<br/>for<br/>spacing</div>
 }
 `,
 		},
