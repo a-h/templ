@@ -50,7 +50,6 @@ const (
 	unterminatedMissingEnd   = `missing end (expected '}') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
 )
 
-
 // Template node (element, call, if, switch, for, whitespace etc.)
 func newTemplateNodeParser[TUntil any](until parse.Parser[TUntil], untilName string) templateNodeParser[TUntil] {
 	return templateNodeParser[TUntil]{

@@ -31,7 +31,7 @@ func ComplexAttributes() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button><span x-text=\"count\"></span></div><div x-data=\"{ count: 0 }\"><button @click=\"count++\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button> <span x-text=\"count\"></span></div><div x-data=\"{ count: 0 }\"><button @click=\"count++\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -40,7 +40,7 @@ func ComplexAttributes() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button><span x-text=\"count\"></span></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button> <span x-text=\"count\"></span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -1,11 +1,13 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"go/format"
 	"html"
 	"io"
 	"strings"
+	"unicode"
 
 	"github.com/a-h/parse"
 )
@@ -115,7 +117,7 @@ func (tf TemplateFile) Write(w io.Writer) error {
 		if err = tf.Nodes[i].Write(w, indent); err != nil {
 			return err
 		}
-		if i == count - 1 {
+		if i == count-1 {
 			_, err = w.Write([]byte("\n"))
 		} else {
 			_, err = w.Write([]byte("\n\n"))
@@ -302,13 +304,41 @@ func (t HTMLTemplate) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "templ "+t.Expression.Value+" {\n"); err != nil {
 		return err
 	}
-	if err := writeNodesBlock(w, indent+1, t.Children); err != nil {
+	if err := writeNodesIndented(w, indent+1, t.Children); err != nil {
 		return err
 	}
 	if err := writeIndent(w, indent, "}"); err != nil {
 		return err
 	}
 	return nil
+}
+
+// TrailingSpace defines the whitespace that may trail behind the close of an element, a
+// text node, or string expression.
+type TrailingSpace string
+
+const SpaceNone TrailingSpace = ""
+const SpaceHorizontal TrailingSpace = " "
+const SpaceVertical TrailingSpace = "\n"
+
+var ErrNonSpaceCharacter = errors.New("non space character found")
+
+func NewTrailingSpace(s string) (ts TrailingSpace, err error) {
+	var hasHorizontalSpace bool
+	for _, r := range s {
+		if r == '\n' {
+			return SpaceVertical, nil
+		}
+		if unicode.IsSpace(r) {
+			hasHorizontalSpace = true
+			continue
+		}
+		return ts, ErrNonSpaceCharacter
+	}
+	if hasHorizontalSpace {
+		return SpaceHorizontal, nil
+	}
+	return SpaceNone, nil
 }
 
 // A Node appears within a template, e.g. an StringExpression, Element, IfExpression etc.
@@ -318,10 +348,24 @@ type Node interface {
 	Write(w io.Writer, indent int) error
 }
 
+type WhitespaceTrailer interface {
+	Trailing() TrailingSpace
+}
+
+var _ WhitespaceTrailer = Element{}
+var _ WhitespaceTrailer = Text{}
+var _ WhitespaceTrailer = StringExpression{}
+
 // Text node within the document.
 type Text struct {
 	// Value is the raw HTML encoded value.
 	Value string
+	// TrailingSpace lists what happens after the text.
+	TrailingSpace TrailingSpace
+}
+
+func (t Text) Trailing() TrailingSpace {
+	return t.TrailingSpace
 }
 
 func (t Text) IsNode() bool { return true }
@@ -336,6 +380,11 @@ type Element struct {
 	IndentAttrs    bool
 	Children       []Node
 	IndentChildren bool
+	TrailingSpace  TrailingSpace
+}
+
+func (e Element) Trailing() TrailingSpace {
+	return e.TrailingSpace
 }
 
 var voidElements = map[string]struct{}{
@@ -355,6 +404,17 @@ func (e Element) hasNonWhitespaceChildren() bool {
 		}
 	}
 	return false
+}
+
+var blockElements = map[string]struct{}{
+	"address": {}, "article": {}, "aside": {}, "body": {}, "blockquote": {}, "canvas": {}, "dd": {}, "div": {}, "dl": {}, "dt": {}, "fieldset": {}, "figcaption": {}, "figure": {}, "footer": {}, "form": {}, "h1": {}, "h2": {}, "h3": {}, "h4": {}, "h5": {}, "h6": {}, "head": {}, "header": {}, "hr": {}, "html": {}, "li": {}, "main": {}, "meta": {}, "nav": {}, "noscript": {}, "ol": {}, "p": {}, "pre": {}, "script": {}, "section": {}, "table": {}, "template": {}, "tfoot": {}, "turbo-stream": {}, "ul": {}, "video": {},
+	// Not strictly block but for the purposes of layout, they are.
+	"title": {}, "style": {}, "link": {}, "td": {}, "th": {}, "tr": {}, "br": {},
+}
+
+func (e Element) IsBlockElement() bool {
+	_, ok := blockElements[e.Name]
+	return ok
 }
 
 // Validate that no invalid expressions have been used.
@@ -425,7 +485,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 			if err := writeIndent(w, closeAngleBracketIndent, ">\n"); err != nil {
 				return err
 			}
-			if err := writeNodesBlock(w, indent+1, e.Children); err != nil {
+			if err := writeNodesIndented(w, indent+1, e.Children); err != nil {
 				return err
 			}
 			if err := writeIndent(w, indent, "</"+e.Name+">"); err != nil {
@@ -436,7 +496,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 		if err := writeIndent(w, closeAngleBracketIndent, ">"); err != nil {
 			return err
 		}
-		if err := writeNodesInline(w, e.Children); err != nil {
+		if err := writeNodesWithoutIndentation(w, e.Children); err != nil {
 			return err
 		}
 		if _, err := w.Write([]byte("</" + e.Name + ">")); err != nil {
@@ -456,60 +516,75 @@ func (e Element) Write(w io.Writer, indent int) error {
 	return nil
 }
 
-func writeNodesInline(w io.Writer, nodes []Node) error {
+func writeNodesWithoutIndentation(w io.Writer, nodes []Node) error {
 	return writeNodes(w, 0, nodes, false)
 }
 
-func writeNodesBlock(w io.Writer, indent int, nodes []Node) error {
-	return writeNodes(w, indent, nodes, true)
+func writeNodesIndented(w io.Writer, level int, nodes []Node) error {
+	return writeNodes(w, level, nodes, true)
 }
 
-func writeNodes(w io.Writer, indent int, nodes []Node, block bool) error {
+func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
+	startLevel := level
 	for i := 0; i < len(nodes); i++ {
-		// Terminating and leading whitespace is stripped.
 		_, isWhitespace := nodes[i].(Whitespace)
 
-		// Allow a single space between StringExpressions to prevent <div>{firstName} {lastName}</div> from becoming <div>{firstName}{lastName}</div>.
-		if isWhitespace && !block && previousIs[StringExpression](nodes, i) && futureHasAnythingOtherThan[Whitespace](nodes, i) {
-			if _, err := w.Write([]byte(" ")); err != nil {
-				return err
-			}
+		// Skip whitespace nodes.
+		if isWhitespace {
 			continue
 		}
-
-		if isWhitespace && (i == 0 || i == len(nodes)-1) {
-			continue
-		}
-		// Whitespace is stripped from block elements.
-		if isWhitespace && block {
-			continue
-		}
-		if err := nodes[i].Write(w, indent); err != nil {
+		if err := nodes[i].Write(w, level); err != nil {
 			return err
 		}
-		if block {
-			if _, err := w.Write([]byte("\n")); err != nil {
-				return err
-			}
+
+		// Apply trailing whitespace if present.
+		trailing := SpaceVertical
+		if wst, isWhitespaceTrailer := nodes[i].(WhitespaceTrailer); isWhitespaceTrailer {
+			trailing = wst.Trailing()
+		}
+		// Put a newline after the last node in indentation mode.
+		if indent && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(nodes[i])) {
+			trailing = SpaceVertical
+		}
+		switch trailing {
+		case SpaceNone:
+			level = 0
+		case SpaceHorizontal:
+			level = 0
+		case SpaceVertical:
+			level = startLevel
+		}
+		if _, err := w.Write([]byte(trailing)); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
-func futureHasAnythingOtherThan[T any](nodes []Node, cur int) bool {
-	for i := cur + 1; i < len(nodes); i++ {
-		if _, ok := nodes[i].(T); !ok {
-			return true
-		}
+func shouldAlwaysBreakAfter(node Node) bool {
+	if el, isElement := node.(Element); isElement {
+		return strings.EqualFold(el.Name, "br") || strings.EqualFold(el.Name, "hr")
 	}
 	return false
 }
 
-func previousIs[T any](nodes []Node, cur int) bool {
-	for i := cur; i >= 0; i-- {
-		if _, ok := nodes[i].(T); ok {
-			return true
-		}
+func nextNodeIsBlock(nodes []Node, i int) bool {
+	if len(nodes)-1 < i+1 {
+		return false
+	}
+	return isBlockNode(nodes[i+1])
+}
+
+func isBlockNode(node Node) bool {
+	switch n := node.(type) {
+	case IfExpression:
+		return true
+	case SwitchExpression:
+		return true
+	case ForExpression:
+		return true
+	case Element:
+		return n.IsBlockElement() || n.IndentChildren
 	}
 	return false
 }
@@ -721,7 +796,7 @@ func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, fmt.Sprintf("@%s {\n", tee.Expression.Value)); err != nil {
 		return err
 	}
-	if err := writeNodesBlock(w, indent+1, tee.Children); err != nil {
+	if err := writeNodesIndented(w, indent+1, tee.Children); err != nil {
 		return err
 	}
 	if err := writeIndent(w, indent, "}"); err != nil {
@@ -762,7 +837,7 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 		return err
 	}
 	indent++
-	if err := writeNodesBlock(w, indent, n.Then); err != nil {
+	if err := writeNodesIndented(w, indent, n.Then); err != nil {
 		return err
 	}
 	indent--
@@ -771,7 +846,7 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 			return err
 		}
 		indent++
-		if err := writeNodesBlock(w, indent, elseIf.Then); err != nil {
+		if err := writeNodesIndented(w, indent, elseIf.Then); err != nil {
 			return err
 		}
 		indent--
@@ -780,7 +855,7 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 		if err := writeIndent(w, indent, "} else {\n"); err != nil {
 			return err
 		}
-		if err := writeNodesBlock(w, indent+1, n.Else); err != nil {
+		if err := writeNodesIndented(w, indent+1, n.Else); err != nil {
 			return err
 		}
 	}
@@ -809,7 +884,7 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 		if err := writeIndent(w, indent, c.Expression.Value+"\n"); err != nil {
 			return err
 		}
-		if err := writeNodesBlock(w, indent+1, c.Children); err != nil {
+		if err := writeNodesIndented(w, indent+1, c.Children); err != nil {
 			return err
 		}
 	}
@@ -839,7 +914,7 @@ func (fe ForExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "for "+fe.Expression.Value+" {\n"); err != nil {
 		return err
 	}
-	if err := writeNodesBlock(w, indent+1, fe.Children); err != nil {
+	if err := writeNodesIndented(w, indent+1, fe.Children); err != nil {
 		return err
 	}
 	if err := writeIndent(w, indent, "}"); err != nil {
@@ -852,6 +927,12 @@ func (fe ForExpression) Write(w io.Writer, indent int) error {
 // { ... }
 type StringExpression struct {
 	Expression Expression
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
+}
+
+func (se StringExpression) Trailing() TrailingSpace {
+	return se.TrailingSpace
 }
 
 func (se StringExpression) IsNode() bool                  { return true }

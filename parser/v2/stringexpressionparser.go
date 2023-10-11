@@ -20,5 +20,15 @@ var stringExpression = parse.Func(func(pi *parse.Input) (r StringExpression, ok 
 		return
 	}
 
+	// Parse trailing whitespace.
+	ws, _, err := parse.Whitespace.Parse(pi)
+	if err != nil {
+		return r, false, err
+	}
+	r.TrailingSpace, err = NewTrailingSpace(ws)
+	if err != nil {
+		return r, false, err
+	}
+
 	return r, true, nil
 })

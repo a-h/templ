@@ -363,6 +363,16 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 		return
 	}
 
+	// Parse trailing whitespace.
+	ws, _, err := parse.Whitespace.Parse(pi)
+	if err != nil {
+		return r, false, err
+	}
+	r.TrailingSpace, err = NewTrailingSpace(ws)
+	if err != nil {
+		return r, false, err
+	}
+
 	return r, true, nil
 }
 
@@ -401,6 +411,16 @@ var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, e
 	if _, ok, err = parse.String("/>").Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
+	}
+
+	// Parse trailing whitespace.
+	ws, _, err := parse.Whitespace.Parse(pi)
+	if err != nil {
+		return e, false, err
+	}
+	e.TrailingSpace, err = NewTrailingSpace(ws)
+	if err != nil {
+		return e, false, err
 	}
 
 	return e, true, nil
