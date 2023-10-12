@@ -41,7 +41,7 @@ cd cmd/templ && go build -o ~/bin/templ
 Use goreleaser to build the command line binary using goreleaser.
 
 ```sh
-goreleaser build --snapshot --rm-dist
+goreleaser build --snapshot --clean
 ```
 
 ### generate

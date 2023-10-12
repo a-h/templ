@@ -1,14 +1,14 @@
+//go:build windows
+
 package run
 
 import (
 	"context"
 	"os"
 	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 )
 
 var m = &sync.Mutex{}
@@ -18,17 +18,10 @@ func KillAll() (err error) {
 	m.Lock()
 	defer m.Unlock()
 	for _, cmd := range running {
-		if runtime.GOOS == "windows" {
-			kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
-			kill.Stderr = os.Stderr
-			kill.Stdout = os.Stdout
-			err := kill.Run()
-			if err != nil {
-				return err
-			}
-			continue
-		}
-		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
+		kill.Stderr = os.Stderr
+		kill.Stdout = os.Stdout
+		err := kill.Run()
 		if err != nil {
 			return err
 		}
@@ -41,17 +34,10 @@ func Stop() (err error) {
 	m.Lock()
 	defer m.Unlock()
 	for _, cmd := range running {
-		if runtime.GOOS == "windows" {
-			kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
-			kill.Stderr = os.Stderr
-			kill.Stdout = os.Stdout
-			err := kill.Run()
-			if err != nil {
-				return err
-			}
-			continue
-		}
-		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
+		kill.Stderr = os.Stderr
+		kill.Stdout = os.Stdout
+		err := kill.Run()
 		if err != nil {
 			return err
 		}
@@ -82,7 +68,6 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 	cmd.Dir = workingDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	running[input] = cmd
 	err = cmd.Start()
 	return
