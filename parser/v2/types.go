@@ -99,11 +99,20 @@ type Expression struct {
 }
 
 type TemplateFile struct {
+	// Header contains comments or whitespace at the top of the file.
+	Header []GoExpression
+	// Package expression.
 	Package Package
-	Nodes   []TemplateFileNode
+	// Nodes in the file.
+	Nodes []TemplateFileNode
 }
 
 func (tf TemplateFile) Write(w io.Writer) error {
+	for _, n := range tf.Header {
+		if err := n.Write(w, 0); err != nil {
+			return err
+		}
+	}
 	var indent int
 	if err := tf.Package.Write(w, indent); err != nil {
 		return err
@@ -751,13 +760,27 @@ func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
 	return nil
 }
 
-// Comments.
-type Comment struct {
+// GoComment.
+type GoComment struct {
+	Contents  string
+	Multiline bool
+}
+
+func (c GoComment) IsNode() bool { return true }
+func (c GoComment) Write(w io.Writer, indent int) error {
+	if c.Multiline {
+		return writeIndent(w, indent, "/*"+c.Contents+"*/")
+	}
+	return writeIndent(w, indent, "//"+c.Contents)
+}
+
+// HTMLComment.
+type HTMLComment struct {
 	Contents string
 }
 
-func (c Comment) IsNode() bool { return true }
-func (c Comment) Write(w io.Writer, indent int) error {
+func (c HTMLComment) IsNode() bool { return true }
+func (c HTMLComment) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, "<!--"+c.Contents+"-->")
 }
 

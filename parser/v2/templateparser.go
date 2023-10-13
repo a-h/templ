@@ -65,8 +65,6 @@ type templateNodeParser[TUntil any] struct {
 
 var rawElements = parse.Any[RawElement](styleElement, scriptElement)
 
-var comment = parse.Any[Comment](htmlComment)
-
 func (p templateNodeParser[T]) Parse(pi *parse.Input) (op []Node, ok bool, err error) {
 	for {
 		// Check if we've reached the end.
@@ -86,7 +84,7 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op []Node, ok bool, err e
 		// Try for a doctype.
 		// <!DOCTYPE html>
 		var docTypeNode DocType
-		docTypeNode, ok, err = docTypeParser.Parse(pi)
+		docTypeNode, ok, err = docType.Parse(pi)
 		if err != nil {
 			return
 		}
@@ -95,15 +93,27 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op []Node, ok bool, err e
 			continue
 		}
 
-		// Try for a comment.
+		// Try for a HTML comment.
 		// <!--
-		var commentNode Comment
-		commentNode, ok, err = comment.Parse(pi)
+		var htmlCommentNode HTMLComment
+		htmlCommentNode, ok, err = htmlComment.Parse(pi)
 		if err != nil {
 			return
 		}
 		if ok {
-			op = append(op, commentNode)
+			op = append(op, htmlCommentNode)
+			continue
+		}
+
+		// Try for a Go comment.
+		// // or /*
+		var goCommentNode GoComment
+		goCommentNode, ok, err = goComment.Parse(pi)
+		if err != nil {
+			return
+		}
+		if ok {
+			op = append(op, goCommentNode)
 			continue
 		}
 

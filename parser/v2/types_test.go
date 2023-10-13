@@ -693,6 +693,35 @@ templ test() {
 }
 `,
 		},
+		{
+			name: "comments are preserved",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ test() {
+	<!-- This is a comment -->
+	// This is not included in the output.
+	<div>Some standard templ</div>
+	/* This is not included in the output too. */
+	/*
+		Leave this alone.
+	*/
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ test() {
+	<!-- This is a comment -->
+	// This is not included in the output.
+	<div>Some standard templ</div>
+	/* This is not included in the output too. */
+	/*
+		Leave this alone.
+	*/
+}
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

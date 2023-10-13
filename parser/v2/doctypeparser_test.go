@@ -46,7 +46,7 @@ func TestDocTypeParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			result, ok, err := docTypeParser.Parse(input)
+			result, ok, err := docType.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
 			}
@@ -92,7 +92,7 @@ func TestDocTypeParserErrors(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			_, _, err := docTypeParser.Parse(input)
+			_, _, err := docType.Parse(input)
 			if diff := cmp.Diff(tt.expected, err); diff != "" {
 				t.Error(diff)
 			}

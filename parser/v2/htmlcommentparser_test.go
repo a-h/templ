@@ -7,23 +7,23 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestCommentParser(t *testing.T) {
+func TestHTMLCommentParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected Comment
+		expected HTMLComment
 	}{
 		{
 			name:  "comment - single line",
 			input: `<!-- single line comment -->`,
-			expected: Comment{
+			expected: HTMLComment{
 				Contents: " single line comment ",
 			},
 		},
 		{
 			name:  "comment - no whitespace",
 			input: `<!--no whitespace between sequence open and close-->`,
-			expected: Comment{
+			expected: HTMLComment{
 				Contents: "no whitespace between sequence open and close",
 			},
 		},
@@ -32,7 +32,7 @@ func TestCommentParser(t *testing.T) {
 			input: `<!-- multiline
 								comment
 					-->`,
-			expected: Comment{
+			expected: HTMLComment{
 				Contents: ` multiline
 								comment
 					`,
@@ -41,14 +41,14 @@ func TestCommentParser(t *testing.T) {
 		{
 			name:  "comment - with tag",
 			input: `<!-- <p class="test">tag</p> -->`,
-			expected: Comment{
+			expected: HTMLComment{
 				Contents: ` <p class="test">tag</p> `,
 			},
 		},
 		{
 			name:  "comments can contain tags",
 			input: `<!-- <div> hello world </div> -->`,
-			expected: Comment{
+			expected: HTMLComment{
 				Contents: ` <div> hello world </div> `,
 			},
 		},
@@ -71,7 +71,7 @@ func TestCommentParser(t *testing.T) {
 	}
 }
 
-func TestCommentParserErrors(t *testing.T) {
+func TestHTMLCommentParserErrors(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string

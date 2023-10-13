@@ -7,12 +7,12 @@ import (
 var htmlCommentStart = parse.String("<!--")
 var htmlCommentEnd = parse.String("--")
 
-type commentParser struct {
+type htmlCommentParser struct {
 }
 
-var htmlComment = commentParser{}
+var htmlComment = htmlCommentParser{}
 
-func (p commentParser) Parse(pi *parse.Input) (c Comment, ok bool, err error) {
+func (p htmlCommentParser) Parse(pi *parse.Input) (c HTMLComment, ok bool, err error) {
 	// Comment start.
 	if _, ok, err = htmlCommentStart.Parse(pi); err != nil || !ok {
 		return

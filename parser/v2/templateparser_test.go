@@ -453,6 +453,92 @@ func TestTemplateParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "template: can contain single line comments",
+			input: `templ x() {
+	// Comment
+}`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "x()",
+					Range: Range{
+						From: Position{Index: 6, Line: 0, Col: 6},
+						To:   Position{Index: 9, Line: 0, Col: 9},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\t"},
+					GoComment{Contents: " Comment", Multiline: false},
+				},
+			},
+		},
+		{
+			name: "template: can contain block comments on the same line",
+			input: `templ x() {
+	/* Comment */
+}`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "x()",
+					Range: Range{
+						From: Position{Index: 6, Line: 0, Col: 6},
+						To:   Position{Index: 9, Line: 0, Col: 9},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\t"},
+					GoComment{Contents: " Comment ", Multiline: true},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
+		{
+			name: "template: can contain block comments on multiple lines",
+			input: `templ x() {
+	/* Line 1
+		 Line 2
+	*/
+}`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "x()",
+					Range: Range{
+						From: Position{Index: 6, Line: 0, Col: 6},
+						To:   Position{Index: 9, Line: 0, Col: 9},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\t"},
+					GoComment{Contents: " Line 1\n\t\t Line 2\n\t", Multiline: true},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
+		{
+			name: "template: can contain HTML comments",
+			input: `templ x() {
+	<!-- Single line -->
+	<!-- 
+		Multiline
+	-->
+}`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "x()",
+					Range: Range{
+						From: Position{Index: 6, Line: 0, Col: 6},
+						To:   Position{Index: 9, Line: 0, Col: 9},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\t"},
+					HTMLComment{Contents: " Single line "},
+					Whitespace{Value: "\n\t"},
+					HTMLComment{Contents: " \n\t\tMultiline\n\t"},
+					Whitespace{Value: "\n"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

@@ -77,20 +77,33 @@ func (p TemplateFileParser) Parse(pi *parse.Input) (tf TemplateFile, ok bool, er
 		return tf, false, ErrLegacyFileFormat
 	}
 
-	// Required package.
-	// package name
-	from := pi.Position()
-	tf.Package, ok, err = pkg.Parse(pi)
-	if err != nil {
-		return
-	}
-	if !ok {
-		tf.Package = Package{
-			Expression: NewExpression("package "+p.DefaultPackage, from, pi.Position()),
+	// Read until the package.
+	for {
+		// Package.
+		// package name
+		from := pi.Position()
+		tf.Package, ok, err = pkg.Parse(pi)
+		if err != nil {
+			return
 		}
+		if ok {
+			break
+		}
+
+		var line string
+		line, ok, err = parse.StringUntil(parse.NewLine).Parse(pi)
+		if err != nil {
+			return
+		}
+		if !ok {
+			break
+		}
+		var newLine string
+		newLine, _, _ = parse.NewLine.Parse(pi)
+		tf.Header = append(tf.Header, GoExpression{Expression: NewExpression(line+newLine, from, pi.Position())})
 	}
 
-	// Optional whitespace.
+	// Strip any whitespace between the template declaration and the first template.
 	_, _, _ = parse.OptionalWhitespace.Parse(pi)
 
 outer:

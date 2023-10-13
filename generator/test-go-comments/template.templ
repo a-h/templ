@@ -1,0 +1,10 @@
+package testcomment
+
+templ render(content string) {
+	// This is not rendered.
+	<p>{ content }</p>
+	/*
+		This is also not rendered.
+	*/
+	/* Neither is this */
+}
