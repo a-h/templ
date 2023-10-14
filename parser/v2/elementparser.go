@@ -65,7 +65,7 @@ type elementCloseTag struct {
 	Name string
 }
 
-var elementCloseTagParser = parse.Func(func(in *parse.Input) (ect elementCloseTag, ok bool, err error) {
+var elementCloseTagParser = parse.Func(func(in *parse.Input) (ct elementCloseTag, ok bool, err error) {
 	var parts []string
 	parts, ok, err = parse.All(
 		parse.String("</"),
@@ -74,8 +74,8 @@ var elementCloseTagParser = parse.Func(func(in *parse.Input) (ect elementCloseTa
 	if err != nil || !ok {
 		return
 	}
-	ect.Name = parts[1]
-	return ect, true, nil
+	ct.Name = parts[1]
+	return ct, true, nil
 })
 
 // Attribute name.
