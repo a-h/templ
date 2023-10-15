@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	_ "embed"
+
 	"github.com/a-h/templ/parser/v2"
 )
 
@@ -27,7 +29,7 @@ func BenchmarkTemplRender(b *testing.B) {
 	}
 }
 
-// go:embed template.templ
+//go:embed template.templ
 var parserBenchmarkTemplate string
 
 func BenchmarkTemplParser(b *testing.B) {

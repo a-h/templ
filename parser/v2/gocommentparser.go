@@ -55,4 +55,4 @@ func (p goMultiLineCommentParser) Parse(pi *parse.Input) (c GoComment, ok bool, 
 	return c, true, nil
 }
 
-var goComment = parse.Any(goSingleLineComment, goMultiLineComment)
+var goComment = parse.Any[GoComment](goSingleLineComment, goMultiLineComment)
