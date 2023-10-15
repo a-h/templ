@@ -37,11 +37,13 @@ templ page(global, user int) {
 			<section class="section">
 				<div class="container">
 					<div class="columns is-centered">
-						<div class="column is-half">@counts(global, user) @form()</div>
+						<div class="column is-half">
+							@counts(global, user)
+							@form()
+						</div>
 					</div>
 				</div>
 			</section>
 		</body>
 	</html>
 }
-

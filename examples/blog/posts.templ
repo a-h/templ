@@ -28,8 +28,8 @@ templ layout(name string) {
 	<html>
 		<head><title>{ name }</title></head>
 		<body>
-			@headerTemplate(name) 
-			@navTemplate() 
+			@headerTemplate(name)
+			@navTemplate()
 			<main>
 				{ children... }
 			</main>
@@ -60,4 +60,3 @@ templ posts(posts []Post) {
 		@postsTemplate(posts)
 	}
 }
-

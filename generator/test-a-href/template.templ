@@ -5,4 +5,3 @@ templ render() {
 	<a href={ templ.URL("javascript:alert('should be sanitized')") }>Sanitized</a>
 	<a href={ templ.SafeURL("javascript:alert('should not be sanitized')") }>Unsanitized</a>
 }
-

@@ -1,33 +1,34 @@
 package testtextwhitespace
 
 templ WhitespaceIsAddedWithinTemplStatements() {
-   <p>
-      This is some text.
-      if true {
-              So is this.
-      }
-   </p>
+	<p>
+		This is some text.
+		if true {
+			So is this.
+		}
+	</p>
 }
 
 const WhitespaceIsAddedWithinTemplStatementsExpected = `<p>This is some text. So is this.</p>`
 
 templ InlineElementsAreNotPadded() {
-  <p>Inline text <b>is spaced properly</b> without adding extra spaces.</p>
+	<p>Inline text <b>is spaced properly</b> without adding extra spaces.</p>
 }
 
 const InlineElementsAreNotPaddedExpected = `<p>Inline text <b>is spaced properly</b> without adding extra spaces.</p>`
 
 templ WhiteSpaceInHTMLIsNormalised() {
-  <p>newlines and other whitespace are stripped
-  but it is normalised
-like HTML.
-  </p>
+	<p>
+		newlines and other whitespace are stripped
+		but it is normalised
+		like HTML.
+	</p>
 }
 
 const WhiteSpaceInHTMLIsNormalisedExpected = `<p>newlines and other whitespace are stripped but it is normalised like HTML.</p>`
 
 templ WhiteSpaceAroundValues() {
-  <p>templ allows { "strings" } to be included in sentences.</p>
+	<p>templ allows { "strings" } to be included in sentences.</p>
 }
 
 const WhiteSpaceAroundValuesExpected = `<p>templ allows strings to be included in sentences.</p>`
@@ -35,5 +36,5 @@ const WhiteSpaceAroundValuesExpected = `<p>templ allows strings to be included i
 const WhiteSpaceAroundTemplatedValuesExpected = `<div>templ allows whitespace around templated values.</div>`
 
 templ WhiteSpaceAroundTemplatedValues(prefix, statement string) {
-  <div>{prefix} {statement}</div>
+	<div>{ prefix } { statement }</div>
 }

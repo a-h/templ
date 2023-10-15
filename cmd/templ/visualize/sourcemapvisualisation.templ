@@ -62,4 +62,3 @@ script removeHighlight(sourceId, targetId string) {
 templ mappedCharacter(s string, sourceID, targetID string) {
 	<span class={ templ.Classes(templ.Class("mapped"), templ.Class(sourceID), templ.Class(targetID)) } onMouseOver={ highlight(sourceID, targetID) } onMouseOut={ removeHighlight(sourceID, targetID) }>{ s }</span>
 }
-

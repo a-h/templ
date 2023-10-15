@@ -9,25 +9,29 @@ css unimportant() {
 }
 
 templ render(p person) {
-	<div style="width: 100;"
-		if p.important {
+	<div
+ 		style="width: 100;"
+ 		if p.important {
 			class={ important() }
 		}
-		>Important</div>
-	<div style="width: 100;"
-		if !p.important {
+	>Important</div>
+	<div
+ 		style="width: 100;"
+ 		if !p.important {
 			class={ unimportant }
 		}
-		>Unimportant</div>
-	<div style="width: 100;"
-		if p.important {
+	>Unimportant</div>
+	<div
+ 		style="width: 100;"
+ 		if p.important {
 			class={ important }
 		} else {
 			class={ unimportant }
 		}
-		>Else</div>
-	<div data-script="on click
+	>Else</div>
+	<div
+ 		data-script="on click
                 do something
-             end"></div>
+             end"
+	></div>
 }
-
