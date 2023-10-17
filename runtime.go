@@ -467,6 +467,9 @@ func URL(s string) SafeURL {
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
 
+// Attributes is an alias to map[string]string made for spread attributes
+type Attributes map[string]string
+
 // Script handling.
 
 func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
