@@ -1177,7 +1177,7 @@ func (g *generator) writeSpreadAttributes(indentLevel int, elementName string, a
 			return err
 		}
 		// attribute name
-		if r, err = g.w.Write(var_n); err != nil {
+		if _, err = g.w.Write(var_n); err != nil {
 			return err
 		}
 		// ))
@@ -1204,7 +1204,7 @@ func (g *generator) writeSpreadAttributes(indentLevel int, elementName string, a
 			return err
 		}
 		// attribute value
-		if r, err = g.w.Write(var_v); err != nil {
+		if _, err = g.w.Write(var_v); err != nil {
 			return err
 		}
 		// ))
