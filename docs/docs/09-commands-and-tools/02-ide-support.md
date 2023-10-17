@@ -62,7 +62,7 @@ end
 
 The `templ` command must be in your system path for the LSP to be able to start.
 
-If the language server fails to start, it could be due to the unregistered templ file extension. To resolve this issue, add the following code to your configuration:
+In Neovim, you can use the `:LspInfo` command to check which Language Servers (if any) are running. If the expected language server has not started, it could be due to the unregistered templ file extension. To resolve this issue, add the following code to your configuration:
 
 ```lua
 -- additional filetypes
