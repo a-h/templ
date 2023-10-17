@@ -113,6 +113,9 @@ Run `templ lsp --help`, you should see help text.
 
 * If you can't run the `templ` command at the command line:
   * Check that the `templ` binary is within a directory that's in your path (`echo $PATH` for Linux/Mac/WSL, `$env:path` for Powershell).
+  * Update your profile to ensure that the change to your path applies to new shells and processes.
+    * On MacOS / Linux, you may need to update your `~/.zsh_profile`, `~/.bash_profile` or `~/.profile` file.
+    * On Windows, you will need to use the "Environment Variables" dialog. For WSL, use the Linux config.
   * On MacOS / Linux, check that the file is executable and resolve it with `chmod +x /path/to/templ`.
   * On MacOS, you might need to go through the steps at https://support.apple.com/en-gb/guide/mac-help/mh40616/mac to enable binaries from an "unidentified developer" to run.
 * If you're running VS Code using Windows Subsystem for Linux (WSL), then templ must also be installed within the WSL environment, not just inside your Windows environment.
