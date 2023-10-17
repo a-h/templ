@@ -1011,7 +1011,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
 		return err
 	}
-	if elementName == "a" && attr.Name == "href" {
+	if (elementName == "a" && attr.Name == "href") || (elementName == "form" && attr.Name == "action") {
 		vn := g.createVariableName()
 		// var vn templ.SafeURL =
 		if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.SafeURL = "); err != nil {
