@@ -107,6 +107,18 @@ You should see 3 lines returned, showing the location of each binary:
 /Users/adrian/bin/templ
 ```
 
+### Check that you can run the templ binary
+
+Run `templ lsp --help`, you should see help text.
+
+* If you can't run the `templ` command at the command line:
+  * Check that the `templ` binary is within a directory that's in your path (`echo $PATH` for Linux/Mac/WSL, `$env:path` for Powershell).
+  * On MacOS / Linux, check that the file is executable and resolve it with `chmod +x /path/to/templ`.
+  * On MacOS, you might need to go through the steps at https://support.apple.com/en-gb/guide/mac-help/mh40616/mac to enable binaries from an "unidentified developer" to run.
+* If you're running VS Code using Windows Subsystem for Linux (WSL), then templ must also be installed within the WSL environment, not just inside your Windows environment.
+* If you're running VS Code in a Devcontainer, it must be installed in there.
+
+
 ### Enable LSP logging
 
 For VS Code, use the "Preferences: Open User Settings (JSON)" command in VS Code and add the configuration options.
