@@ -615,6 +615,23 @@ templ x() {
 `,
 		},
 		{
+			name: "spacing between string spreads attributes is kept",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+    <div>{firstName...} {lastName...}</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+	<div>{ firstName... } { lastName... }</div>
+}
+`,
+		},
+		{
 			name: "go expressions are formatted by the go formatter",
 			input: ` // first line removed to make indentation clear
 package main
