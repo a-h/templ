@@ -2,16 +2,42 @@
 
 ## Visual Studio Code
 
-There's a VS Code extension, just make sure you've already installed templ and that it's on your path. 
+There's a VS Code extension, just make sure you've already installed templ and that it's on your path.
 
-* https://marketplace.visualstudio.com/items?itemName=a-h.templ
-* https://github.com/a-h/templ-vscode
+- <https://marketplace.visualstudio.com/items?itemName=a-h.templ>
+- <https://github.com/a-h/templ-vscode>
 
-VSCodium users can find the extension on the Open VSX Registry at https://open-vsx.org/extension/a-h/templ
+VSCodium users can find the extension on the Open VSX Registry at <https://open-vsx.org/extension/a-h/templ>
+
+### Format on Save
+
+Include the following into your settings.json to activate formatting `.templ` files on save with the
+templ plugin:
+
+```json
+{
+    "editor.formatOnSave": true,
+    "[templ]": {
+        "editor.defaultFormatter": "a-h.templ"
+    },
+{
+```
+
+### Tailwind CSS Intellisense
+
+Include the following to the settings.json in order to enable autocompletion for Tailwind CSS in `.templ` files:
+
+```json
+{
+  "tailwindCSS.includeLanguages": {
+    "templ": "html"
+  }
+}
+```
 
 ## Neovim &gt; 0.5.0
 
-A vim / neovim plugin is available from https://github.com/Joe-Davidson1802/templ.vim which adds syntax highlighting.
+A vim / neovim plugin is available from <https://github.com/Joe-Davidson1802/templ.vim> which adds syntax highlighting.
 
 For neovim you can also use [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) for syntax highlighting with the custom parser [tree-sitter-templ](https://github.com/vrischmann/tree-sitter-templ).
 
@@ -36,20 +62,38 @@ end
 
 The `templ` command must be in your system path for the LSP to be able to start.
 
-If the language server fails to start, it could be due to the unregistered templ file extension. To resolve this issue, add the following code to your configuration: 
+In Neovim, you can use the `:LspInfo` command to check which Language Servers (if any) are running. If the expected language server has not started, it could be due to the unregistered templ file extension. To resolve this issue, add the following code to your configuration:
 
 ```lua
 -- additional filetypes
 vim.filetype.add({
-	extension = {
-		templ = "templ",
-	},
+ extension = {
+  templ = "templ",
+ },
+})
+```
+
+### Tailwind CSS Intellisense
+
+In order to enable autocompletion for Tailwindcss CSS in `.templ` files make sure to add the following config:
+
+```lua
+require("lspconfig").tailwindcss.setup({
+  filetypes = {
+    'templ'
+    -- include any other filetypes where you need tailwindcss
+  },
+  userLanguages = {
+    init_options = {
+        templ = "html"
+    }
+  }
 })
 ```
 
 ## Troubleshooting
 
-### Check that go, gopls and templ are installed and are present in the path.
+### Check that go, gopls and templ are installed and are present in the path
 
 ```shell
 which go gopls templ
