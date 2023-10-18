@@ -269,8 +269,8 @@ var spreadAttributesParser = parse.Func(
 			return
 		}
 
-		// {
-		if _, ok, err = parse.Or(parse.String("{ "), parse.String("{")).Parse(pi); err != nil ||
+		// Eat the first brace.
+		if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil ||
 			!ok {
 			pi.Seek(start)
 			return
