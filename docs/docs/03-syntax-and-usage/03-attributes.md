@@ -63,6 +63,30 @@ templ component() {
 <hr style="padding: 10px" class="itIsTrue" />
 ```
 
+## Spread attributes
+
+Using `{ spread... }` in an element. You can easily transfer attributes from a `map[string]string` into your elements.
+
+To simplify, you can use `templ.Attributes{}` instead of `map[string]string`.
+
+```templ
+templ component(attrs templ.Attributes) {
+  <p { attrs... }></p>
+}
+
+templ usage() {
+  @component(templ.Attributes{"data-testid": "paragraph"}) 
+}
+```
+
+```html title="Output"
+<p data-testid="paragraph">Text</p>
+```
+
+:::note
+You can use conditional attributes with the spread attributes.
+:::
+
 ## URL attributes
 
 The `<a>` element's `href` attribute is treated differently. templ expects you to provide a `templ.SafeURL` instead of a `string`.
