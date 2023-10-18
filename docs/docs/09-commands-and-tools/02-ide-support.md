@@ -83,8 +83,8 @@ require("lspconfig").tailwindcss.setup({
     'templ'
     -- include any other filetypes where you need tailwindcss
   },
-  userLanguages = {
-    init_options = {
+  init_options = {
+    userLanguages = {
         templ = "html"
     }
   }
