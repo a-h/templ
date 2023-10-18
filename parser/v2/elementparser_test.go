@@ -479,7 +479,7 @@ func TestElementParser(t *testing.T) {
 		},
 		{
 			name:  "element: self-closing with multiple spreads attributes",
-			input: `<a { firstSpread... } { secondSpread... }/>`,
+			input: `<a { firstSpread... } { children... }/>`,
 			expected: Element{
 				Name: "a",
 				Attributes: []Attribute{
@@ -502,7 +502,7 @@ func TestElementParser(t *testing.T) {
 					},
 					SpreadAttributes{
 						Expression: Expression{
-							Value: "secondSpread",
+							Value: "children",
 							Range: Range{
 								From: Position{
 									Index: 24,
@@ -510,9 +510,9 @@ func TestElementParser(t *testing.T) {
 									Col:   24,
 								},
 								To: Position{
-									Index: 36,
+									Index: 32,
 									Line:  0,
-									Col:   36,
+									Col:   32,
 								},
 							},
 						},
