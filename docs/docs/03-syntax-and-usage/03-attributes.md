@@ -65,9 +65,10 @@ templ component() {
 
 ## Spread attributes
 
-Using `{ spread... }` in an element. You can easily transfer attributes from a `map[string]string` into your elements.
+Use the `{ attrMap... }` syntax in the open tag of an element to append a dynamic map of attributes, where `attrMap` is of type `templ.Attributes`.
 
-To simplify, you can use `templ.Attributes{}` instead of `map[string]string`.
+`templ.Attributes` is a `map[string]string` type definition.
+
 
 ```templ
 templ component(attrs templ.Attributes) {
