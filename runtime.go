@@ -470,6 +470,18 @@ type SafeURL string
 // Attributes is an alias to map[string]string made for spread attributes
 type Attributes map[string]string
 
+func SortAttributesKey(attributes map[string]string) []string {
+	sortedAttributes := make([]string, 0, len(attributes))
+
+	for k := range attributes {
+		sortedAttributes = append(sortedAttributes, k)
+	}
+
+	sort.Strings(sortedAttributes)
+
+	return sortedAttributes
+}
+
 // Script handling.
 
 func safeEncodeScriptParams(escapeHTML bool, params []any) []string {

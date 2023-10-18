@@ -26,7 +26,8 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for templ_7745c5c3_Var2, templ_7745c5c3_Var3 := range spread {
+		for _, templ_7745c5c3_Var2 := range templ.SortAttributesKey(spread) {
+			templ_7745c5c3_Var3 := spread[templ_7745c5c3_Var2]
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -62,7 +63,8 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if true {
-			for templ_7745c5c3_Var5, templ_7745c5c3_Var6 := range spread {
+			for _, templ_7745c5c3_Var5 := range templ.SortAttributesKey(spread) {
+				templ_7745c5c3_Var6 := spread[templ_7745c5c3_Var5]
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -99,7 +101,8 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if false {
-			for templ_7745c5c3_Var8, templ_7745c5c3_Var9 := range spread {
+			for _, templ_7745c5c3_Var8 := range templ.SortAttributesKey(spread) {
+				templ_7745c5c3_Var9 := spread[templ_7745c5c3_Var8]
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

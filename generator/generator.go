@@ -1148,7 +1148,7 @@ func (g *generator) writeSpreadAttributes(indentLevel int, elementName string, a
 	var_v := g.createVariableName()
 
 	// for n, v := range
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`for %s, %s := range `, var_n, var_v)); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`for _, %s := range templ.SortAttributesKey(`, var_n)); err != nil {
 		return err
 	}
 
@@ -1159,13 +1159,30 @@ func (g *generator) writeSpreadAttributes(indentLevel int, elementName string, a
 	}
 	g.sourceMap.Add(attr.Expression, r)
 
-	// {
-	if _, err = g.w.Write(` {` + "\n"); err != nil {
+	// ) {
+	if _, err = g.w.Write(`) {` + "\n"); err != nil {
 		return err
 	}
 
 	{
 		indentLevel++
+
+		// v :=
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`%s := `, var_v)); err != nil {
+			return err
+		}
+
+		// spread map
+		var r parser.Range
+		if r, err = g.w.Write(attr.Expression.Value); err != nil {
+			return err
+		}
+		g.sourceMap.Add(attr.Expression, r)
+
+		// [n]
+		if _, err = g.w.Write(fmt.Sprintf(`[%s]`+"\n", var_n)); err != nil {
+			return err
+		}
 
 		// Name
 		// (space)
