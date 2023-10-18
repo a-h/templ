@@ -50,10 +50,13 @@ templ component() {
 Use an `if` statement within a templ element to optionally add attributes to elements.
 
 ```templ
-templ component() {
+templ component(attrs templ.Attributes) {
   <hr style="padding: 10px" 
     if true {
       class="itIsTrue"
+    }
+    if false {
+      { attrs... }
     }
   />
 }
@@ -83,10 +86,6 @@ templ usage() {
 ```html title="Output"
 <p data-testid="paragraph">Text</p>
 ```
-
-:::note
-You can use conditional attributes with the spread attributes.
-:::
 
 ## URL attributes
 
