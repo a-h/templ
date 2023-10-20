@@ -98,6 +98,32 @@ type Expression struct {
 	Range Range
 }
 
+// Format go code in expression
+func (e *Expression) Format(formatLikeSlice bool) string {
+	if formatLikeSlice {
+
+		data, err := format.Source([]byte(`[]string{ ` + e.Value + ` }`))
+		if err != nil {
+			return e.Value
+		}
+
+		// Remove Start of slice
+		formatted := strings.Replace(string(data), "[]string{", "", 1)
+
+		// Remove end of slice
+		formatted = strings.Replace(formatted, "}", "", 1)
+
+		return formatted
+	}
+
+	data, err := format.Source([]byte(e.Value))
+	if err != nil {
+		return e.Value
+	}
+
+	return string(data)
+}
+
 type TemplateFile struct {
 	// Header contains comments or whitespace at the top of the file.
 	Header []GoExpression
@@ -687,11 +713,29 @@ type ExpressionAttribute struct {
 }
 
 func (ea ExpressionAttribute) String() string {
-	return ea.Name + `={ ` + ea.Expression.Value + ` }`
+	if strings.Contains(ea.Expression.Value, "\n") && strings.Contains(ea.Expression.Value, ",") {
+		return ea.Name + `={` + ea.Expression.Format(true) + `}`
+	}
+
+	return ea.Name + `={ ` + strings.TrimSpace(ea.Expression.Value) + ` }`
 }
 
 func (ea ExpressionAttribute) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, ea.String())
+	lines := strings.Split(ea.String(), "\n")
+
+	for i, line := range lines {
+		if err := writeIndent(w, indent, line); err != nil {
+			return err
+		}
+
+		if i < len(lines)-1 {
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 //	<a href="test" \
