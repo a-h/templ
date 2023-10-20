@@ -107,11 +107,15 @@ func (e *Expression) Format(formatLikeSlice bool) string {
 			return e.Value
 		}
 
-		// Remove Start of slice
+		// Remove start of slice
 		formatted := strings.Replace(string(data), "[]string{", "", 1)
 
 		// Remove end of slice
-		formatted = strings.Replace(formatted, "}", "", 1)
+		p := strings.LastIndex(formatted, "}")
+
+		if p != -1 {
+			formatted = formatted[:p] + formatted[p+1:]
+		}
 
 		return formatted
 	}
