@@ -112,6 +112,9 @@ require("lspconfig").tailwindcss.setup({
   }
 })
 ```
+## Helix &gt; 23.05
+
+Builtin support.
 
 ## Troubleshooting
 
