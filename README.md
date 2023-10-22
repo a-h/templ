@@ -110,9 +110,8 @@ goreleaser --clean
 
 Run the development server.
 
-Directory: docs
-
 ```
+cd docs
 npm run start
 ```
 
@@ -120,9 +119,8 @@ npm run start
 
 Build production docs site.
 
-Directory: docs
-
 ```
+cd docs
 npm run build
 ```
 
