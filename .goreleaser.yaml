@@ -2,8 +2,11 @@ builds:
   - env:
       - CGO_ENABLED=0
     dir: cmd/templ
+    mod_timestamp: '{{ .CommitTimestamp }}'
+    flags:
+      - -trimpath
     ldflags:
-      - -s -w -X github.com/a-h/templ.Version={{.Version}}
+      - -s -w
     goos:
       - linux
       - windows
