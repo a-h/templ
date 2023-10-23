@@ -112,9 +112,14 @@ require("lspconfig").tailwindcss.setup({
   }
 })
 ```
-## Helix &gt; 23.05
 
-Builtin support.
+## Helix
+
+https://helix-editor.com/
+
+Helix has built-in templ support in unstable since https://github.com/helix-editor/helix/pull/8540/commits/084628d3e0c29f4021f53b3e45997ae92033d2d2
+
+It will be included in official releases after version 23.05.
 
 ## Troubleshooting
 
