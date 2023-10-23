@@ -1,14 +1,11 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os/exec"
 	"strings"
 )
-
-var fileFlag = flag.String("file", ".version", "Set the name of the file to modify")
 
 func main() {
 	gitPath, err := exec.LookPath("git")
@@ -23,11 +20,5 @@ func main() {
 	}
 	count := strings.TrimSpace(string(output))
 
-	var dirty string
-	cmd = exec.Command(gitPath, "diff", "--quiet")
-	if cmd.Run() != nil {
-		dirty = "-next"
-	}
-
-	fmt.Printf("0.2.%s%s", count, dirty)
+	fmt.Printf("0.2.%s", count)
 }
