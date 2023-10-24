@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,17 +22,19 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/cenkalti/backoff/v4"
+	"github.com/cli/browser"
+
 	"github.com/a-h/templ/cmd/templ/generatecmd/proxy"
 	"github.com/a-h/templ/cmd/templ/generatecmd/run"
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
-	"github.com/cenkalti/backoff/v4"
-	"github.com/cli/browser"
 )
 
 type Arguments struct {
 	FileName                        string
+	Output                          string
 	Path                            string
 	Watch                           bool
 	Command                         string
@@ -84,8 +87,17 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	if args.Watch && args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}
+	if args.Output != "" && args.FileName != "" && !strings.HasSuffix(args.FileName, "_templ.go") {
+		return fmt.Errorf("output filename must follow the pattern *_templ.go")
+	}
+	if args.Output != "" && args.FileName != "" && !path.IsAbs(args.Output) {
+		args.Output, err = filepath.Abs(args.Output)
+		if err != nil {
+			return
+		}
+	}
 	if args.FileName != "" {
-		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations)
+		return processSingleFile(ctx, args.FileName, args.Output, args.GenerateSourceMapVisualisations)
 	}
 	var target *url.URL
 	if args.Proxy != "" {
@@ -107,6 +119,21 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 			return
 		}
 	}
+	if args.Output != "" {
+		// If the output is relative, resolve it with respect to args.Path
+		if !path.IsAbs(args.Output) {
+			args.Output = filepath.Join(args.Path, args.Output)
+		}
+
+		var stat fs.FileInfo
+		stat, err = os.Stat(args.Output)
+		if err != nil {
+			return
+		}
+		if !stat.IsDir() {
+			return fmt.Errorf("expected a directory as output when -f is not provided")
+		}
+	}
 
 	var p *proxy.Handler
 	if args.Proxy != "" {
@@ -120,7 +147,7 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
-		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount)
+		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.Output, args.GenerateSourceMapVisualisations, args.WorkerCount)
 		if len(errs) > 0 {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
@@ -185,31 +212,42 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, maxWorkerCount int) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path, outputDir string, generateSourceMapVisualisations bool, maxWorkerCount int) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
-	err := filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
+	err := filepath.WalkDir(path, func(filePath string, info os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if err = ctx.Err(); err != nil {
 			return err
 		}
-		if info.IsDir() && shouldSkipDir(path) {
+		if info.IsDir() && shouldSkipDir(filePath) {
 			return filepath.SkipDir
 		}
 		if info.IsDir() {
 			return nil
 		}
-		if strings.HasSuffix(path, ".templ") {
-			lastModTime := fileNameToLastModTime[path]
+		if strings.HasSuffix(filePath, ".templ") {
+			outputFileName := ""
+
+			if outputDir != "" {
+				// This makes the assumption that filePath starts with path which
+				// should be a safe assumption to make since that should be the functionality
+				// of filepath.WalkDir...
+				restPath := strings.TrimPrefix(filePath, path)
+				fullNewPath := filepath.Join(outputDir, restPath)
+				outputFileName = genGoFileNameFromTempl(fullNewPath)
+			}
+
+			lastModTime := fileNameToLastModTime[filePath]
 			fileInfo, err := info.Info()
 			if err != nil {
 				return fmt.Errorf("failed to get file info: %w", err)
 			}
 			if fileInfo.ModTime().After(lastModTime) {
-				fileNameToLastModTime[path] = fileInfo.ModTime()
+				fileNameToLastModTime[filePath] = fileInfo.ModTime()
 				changesFound++
 
 				// Start a processor, but limit to maxWorkerCount.
@@ -217,7 +255,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					if err := processSingleFile(ctx, path, generateSourceMapVisualisations); err != nil {
+					if err := processSingleFile(ctx, filePath, outputFileName, generateSourceMapVisualisations); err != nil {
 						errs = append(errs, err)
 					}
 					<-sem
@@ -251,36 +289,40 @@ func openURL(url string) error {
 	return browser.OpenURL(url)
 }
 
-func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool) error {
+func processSingleFile(ctx context.Context, inputFileName, outputFileName string, generateSourceMapVisualisations bool) error {
 	start := time.Now()
-	err := compile(ctx, fileName, generateSourceMapVisualisations)
+	err := compile(ctx, inputFileName, outputFileName, generateSourceMapVisualisations)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Generated code for %q in %s\n", fileName, time.Since(start))
+	fmt.Printf("Generated code for %q in %s\n", inputFileName, time.Since(start))
 	return err
 }
 
-func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool) (err error) {
+func compile(ctx context.Context, inputFileName, outputFileName string, generateSourceMapVisualisations bool) (err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
 
-	t, err := parser.Parse(fileName)
+	t, err := parser.Parse(inputFileName)
 	if err != nil {
-		return fmt.Errorf("%s parsing error: %w", fileName, err)
+		return fmt.Errorf("%s parsing error: %w", inputFileName, err)
 	}
-	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
+
+	targetFileName := outputFileName
+	if targetFileName == "" {
+		targetFileName = genGoFileNameFromTempl(inputFileName)
+	}
 
 	var b bytes.Buffer
 	sourceMap, err := generator.Generate(t, &b)
 	if err != nil {
-		return fmt.Errorf("%s generation error: %w", fileName, err)
+		return fmt.Errorf("%s generation error: %w", inputFileName, err)
 	}
 
 	data, err := format.Source(b.Bytes())
 	if err != nil {
-		return fmt.Errorf("%s source formatting error: %w", fileName, err)
+		return fmt.Errorf("%s source formatting error: %w", inputFileName, err)
 	}
 
 	if err = os.WriteFile(targetFileName, data, 0644); err != nil {
@@ -288,7 +330,7 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 	}
 
 	if generateSourceMapVisualisations {
-		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, sourceMap)
+		err = generateSourceMapVisualisation(ctx, inputFileName, targetFileName, sourceMap)
 	}
 	return
 }
@@ -327,4 +369,8 @@ func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileNa
 	defer b.Flush()
 
 	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).Render(ctx, b)
+}
+
+func genGoFileNameFromTempl(path string) string {
+	return strings.TrimSuffix(path, ".templ") + "_templ.go"
 }
