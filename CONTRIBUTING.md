@@ -48,6 +48,12 @@ We follow a few simple guidelines:
 - Comment your code when necessary.
 - Ensure your code adheres to existing coding styles and standards.
 
+For detailed information on code style, unit testing, and code review, please refer to our documentation:
+
+- [Code Style](https://di-engine-docs.readthedocs.io/en/latest/21_code_style/index.html)
+- [Unit Test](https://di-engine-docs.readthedocs.io/en/latest/22_test/index.html)
+- [Code Review](https://di-engine-docs.readthedocs.io/en/latest/24_cooperation/issue_pr.html#pr-s-code-review)
+
 ## 🤖 Code of Conduct
 
 Please be respectful and considerate when interacting with other contributors. We have a [Code of Conduct](LICENSE) to foster a positive and inclusive environment for everyone.
