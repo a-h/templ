@@ -280,7 +280,7 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 	}
 	indentLevel++
 	// return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-	if _, err = g.w.WriteIndent(indentLevel, "return templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {\n"); err != nil {
 		return err
 	}
 	{
@@ -289,7 +289,7 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 			return err
 		}
 		// ctx = templ.InitializeContext(ctx)
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Ctx = templ.InitializeContext(templ_7745c5c3_Ctx)\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeContext(ctx)\n"); err != nil {
 			return err
 		}
 		g.childrenVar = g.createVariableName()
@@ -297,7 +297,7 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		// if templ_7745c5c3_Var1 == nil {
 		//  	templ_7745c5c3_Var1 = templ.NopComponent
 		// }
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s := templ.GetChildren(templ_7745c5c3_Ctx)\n", g.childrenVar)); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s := templ.GetChildren(ctx)\n", g.childrenVar)); err != nil {
 			return err
 		}
 		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("if %s == nil {\n", g.childrenVar)); err != nil {
@@ -314,7 +314,7 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 			return err
 		}
 		// ctx = templ.ClearChildren(children)
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Ctx = templ.ClearChildren(templ_7745c5c3_Ctx)\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.ClearChildren(ctx)\n"); err != nil {
 			return err
 		}
 		// Nodes.
@@ -602,7 +602,7 @@ func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpres
 }
 
 func (g *generator) writeChildrenExpression(indentLevel int) (err error) {
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templ_7745c5c3_Err = %s.Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)\n", g.childrenVar)); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templ_7745c5c3_Err = %s.Render(ctx, templ_7745c5c3_Buffer)\n", g.childrenVar)); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -621,7 +621,7 @@ func (g *generator) writeTemplElementExpression(indentLevel int, n parser.TemplE
 func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.TemplElementExpression) (err error) {
 	var r parser.Range
 	childrenName := g.createVariableName()
-	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templ.ComponentFunc(func(templ_7745c5c3_Ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {\n"); err != nil {
 		return err
 	}
 	indentLevel++
@@ -661,8 +661,8 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	// .Render(templ.WithChildren(templ_7745c5c3_Ctx, children), templ_7745c5c3_Buffer)
-	if _, err = g.w.Write(".Render(templ.WithChildren(templ_7745c5c3_Ctx, " + childrenName + "), templ_7745c5c3_Buffer)\n"); err != nil {
+	// .Render(templ.WithChildren(ctx, children), templ_7745c5c3_Buffer)
+	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), templ_7745c5c3_Buffer)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -681,8 +681,8 @@ func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n pa
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	// .Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
-	if _, err = g.w.Write(".Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)\n"); err != nil {
+	// .Render(ctx, templ_7745c5c3_Buffer)
+	if _, err = g.w.Write(".Render(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -701,8 +701,8 @@ func (g *generator) writeCallTemplateExpression(indentLevel int, n parser.CallTe
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	// .Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)
-	if _, err = g.w.Write(".Render(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer)\n"); err != nil {
+	// .Render(ctx, templ_7745c5c3_Buffer)
+	if _, err = g.w.Write(".Render(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -859,8 +859,8 @@ func (g *generator) writeAttributeCSS(indentLevel int, attr parser.ExpressionAtt
 		return
 	}
 	// Render the CSS before the element if required.
-	// templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, templ_7745c5c3_CSSClassess...)
-	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderCSSItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, "+classesName+"...)\n"); err != nil {
+	// templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_CSSClassess...)
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, "+classesName+"...)\n"); err != nil {
 		return
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -926,8 +926,8 @@ func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err e
 		return
 	}
 	// Render the scripts before the element if required.
-	// templ_7745c5c3_Err = templ.RenderScriptItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, a, b, c)
-	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(templ_7745c5c3_Ctx, templ_7745c5c3_Buffer, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
+	// templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, a, b, c)
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {

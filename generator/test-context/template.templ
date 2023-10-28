@@ -1,0 +1,19 @@
+package testcontext
+
+type contextKey string
+
+var contextKeyName contextKey = "name"
+
+templ render() {
+	<ul>
+		<li>{ ctx.Value(contextKeyName).(string) }</li>
+		if ctx.Value(contextKeyName).(string) == "test" {
+			<li>the if passed</li>
+		}
+		if ctx.Value(contextKeyName).(string) != "test" {
+			<li>the else if failed</li>
+		} else if ctx.Value(contextKeyName).(string) == "test" {
+			<li>the else if passed</li>
+		}
+	</ul>
+}

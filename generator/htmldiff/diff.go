@@ -14,6 +14,10 @@ import (
 )
 
 func Diff(input templ.Component, expected string) (diff string, err error) {
+	return DiffCtx(context.Background(), input, expected)
+}
+
+func DiffCtx(ctx context.Context, input templ.Component, expected string) (diff string, err error) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
@@ -42,7 +46,7 @@ func Diff(input templ.Component, expected string) (diff string, err error) {
 	}()
 
 	// Render the component.
-	err = input.Render(context.Background(), w)
+	err = input.Render(ctx, w)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to render component: %w", err))
 	}
