@@ -95,7 +95,7 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 		opts = append(opts, generator.WithTimestamp(time.Now()))
 	}
 	if args.FileName != "" {
-		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations, opts...)
+		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations, opts)
 	}
 	var target *url.URL
 	if args.Proxy != "" {
@@ -130,7 +130,7 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
-		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, args.WorkerCount)
+		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, opts, args.WorkerCount)
 		if len(errs) > 0 {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
@@ -195,7 +195,7 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, maxWorkerCount int) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
@@ -227,7 +227,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					if err := processSingleFile(ctx, path, generateSourceMapVisualisations); err != nil {
+					if err := processSingleFile(ctx, path, generateSourceMapVisualisations, opts); err != nil {
 						errs = append(errs, err)
 					}
 					<-sem
@@ -261,9 +261,9 @@ func openURL(url string) error {
 	return browser.OpenURL(url)
 }
 
-func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts ...generator.GenerateOpt) error {
+func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) error {
 	start := time.Now()
-	err := compile(ctx, fileName, generateSourceMapVisualisations, opts...)
+	err := compile(ctx, fileName, generateSourceMapVisualisations, opts)
 	if err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func processSingleFile(ctx context.Context, fileName string, generateSourceMapVi
 	return err
 }
 
-func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts ...generator.GenerateOpt) (err error) {
+func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
