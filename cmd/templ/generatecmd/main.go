@@ -21,6 +21,7 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/generatecmd/proxy"
 	"github.com/a-h/templ/cmd/templ/generatecmd/run"
 	"github.com/a-h/templ/cmd/templ/visualize"
@@ -39,6 +40,8 @@ type Arguments struct {
 	Proxy                           string
 	WorkerCount                     int
 	GenerateSourceMapVisualisations bool
+	IncludeVersion                  bool
+	IncludeTimestamp                bool
 	// PPROFPort is the port to run the pprof server on.
 	PPROFPort int
 }
@@ -84,8 +87,15 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 	if args.Watch && args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}
+	var opts []generator.GenerateOpt
+	if args.IncludeVersion {
+		opts = append(opts, generator.WithVersion(templ.Version))
+	}
+	if args.IncludeTimestamp {
+		opts = append(opts, generator.WithTimestamp(time.Now()))
+	}
 	if args.FileName != "" {
-		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations)
+		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations, opts...)
 	}
 	var target *url.URL
 	if args.Proxy != "" {
@@ -251,9 +261,9 @@ func openURL(url string) error {
 	return browser.OpenURL(url)
 }
 
-func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool) error {
+func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts ...generator.GenerateOpt) error {
 	start := time.Now()
-	err := compile(ctx, fileName, generateSourceMapVisualisations)
+	err := compile(ctx, fileName, generateSourceMapVisualisations, opts...)
 	if err != nil {
 		return err
 	}
@@ -261,7 +271,7 @@ func processSingleFile(ctx context.Context, fileName string, generateSourceMapVi
 	return err
 }
 
-func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool) (err error) {
+func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts ...generator.GenerateOpt) (err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
@@ -273,7 +283,7 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
 	var b bytes.Buffer
-	sourceMap, err := generator.Generate(t, &b)
+	sourceMap, err := generator.Generate(t, &b, opts...)
 	if err != nil {
 		return fmt.Errorf("%s generation error: %w", fileName, err)
 	}

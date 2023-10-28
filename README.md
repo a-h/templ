@@ -49,7 +49,7 @@ goreleaser build --snapshot --clean
 Run templ generate using local version.
 
 ```sh
-go run ./cmd/templ generate
+go run ./cmd/templ generate -include-version=false
 ```
 
 ### test
@@ -71,7 +71,7 @@ mkdir -p coverage/unit
 # Build the test binary.
 go build -cover -o ./coverage/templ-cover ./cmd/templ
 # Run the covered generate command.
-GOCOVERDIR=coverage/generate ./coverage/templ-cover generate
+GOCOVERDIR=coverage/generate ./coverage/templ-cover generate -include-version=false
 # Run the unit tests.
 go test -cover ./... -args -test.gocoverdir="$PWD/coverage/unit"
 # Display the combined percentage.
@@ -87,7 +87,7 @@ go tool cover -func coverage.out | grep total
 Run benchmarks.
 
 ```sh
-go run ./cmd/templ generate && go test ./... -bench=. -benchmem
+go run ./cmd/templ generate -include-version=false && go test ./... -bench=. -benchmem
 ```
 
 ### lint

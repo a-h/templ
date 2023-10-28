@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -18,7 +19,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to run git: %v", err)
 	}
-	count := strings.TrimSpace(string(output))
+	count, err := strconv.Atoi(strings.TrimSpace(string(output)))
+	if err != nil {
+		log.Fatalf("failed to parse git output: %v", err)
+	}
 
-	fmt.Printf("0.2.%s", count)
+	// The current commit isn't the one we're about to commit.
+	fmt.Printf("0.2.%d", count+1)
 }

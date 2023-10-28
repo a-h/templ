@@ -77,6 +77,8 @@ func generateCmd(args []string) {
 	fileNameFlag := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
 	pathFlag := cmd.String("path", ".", "Generates code for all files in path.")
 	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "Set to true to generate HTML files to visualise the templ code and its corresponding Go code.")
+	includeVersionFlag := cmd.Bool("include-version", true, "Set to false to skip inclusion of the templ version in the generated code.")
+	includeTimestampFlag := cmd.Bool("include-timestamp", false, "Set to true to include the current time in the generated code.")
 	watchFlag := cmd.Bool("watch", false, "Set to true to watch the path for changes and regenerate code.")
 	cmdFlag := cmd.String("cmd", "", "Set the command to run after generating code.")
 	proxyFlag := cmd.String("proxy", "", "Set the URL to proxy after generating code and executing the command.")
@@ -98,6 +100,8 @@ func generateCmd(args []string) {
 		ProxyPort:                       *proxyPortFlag,
 		WorkerCount:                     *workerCountFlag,
 		GenerateSourceMapVisualisations: *sourceMapVisualisations,
+		IncludeVersion:                  *includeVersionFlag,
+		IncludeTimestamp:                *includeTimestampFlag,
 		PPROFPort:                       *pprofPortFlag,
 	})
 	if err != nil {
