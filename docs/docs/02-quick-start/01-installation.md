@@ -25,3 +25,58 @@ templ also provides a development shell which includes a Neovim configuration se
 ```sh
 nix develop github:a-h/templ
 ```
+
+To install in your Nix Flake:
+
+This flake exposes an overlay, so you can add it to your own Flake and/or NixOS system.
+
+```nix
+{
+  inputs = {
+    ...
+    templ.url = "github:a-h/templ";
+    ...
+  };
+  outputs = inputs@{
+    ...
+  }:
+
+  # For NixOS configuration:
+  {
+    # Add the overlay,
+    nixpkgs.overlays = [
+      inputs.templ.overlays.default
+    ];
+    # and install the package
+    environment.systemPackages = with pkgs; [
+      templ
+    ];
+  };
+
+  # For a flake project:
+  let
+    forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f {
+      inherit system;
+      pkgs = import nixpkgs { inherit system; };
+    });
+    templ = system: inputs.templ.${system}.templ;
+  in {
+    packages = forAllSystems ({ pkgs, system }): {
+      myNewPackage = pkgs.buildGoModule {
+        ...
+        preBuild = ''
+          ${templ system}/bin/templ generate
+        '';
+      };
+    };
+
+    devShell = forAllSystems ({ pkgs, system }):
+      pkgs.mkShell {
+        buildInputs = with pkgs; [
+          go
+          (templ system)
+        ];
+      };
+  };
+}
+```
