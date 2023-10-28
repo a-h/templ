@@ -102,7 +102,7 @@ templ input(value, validation string) {
 `,
 		},
 		{
-			name: "non-empty elements whith children that are all on the same line are not split into multiple lines",
+			name: "non-empty elements with children that are all on the same line are not split into multiple lines",
 			input: ` // first line removed to make indentation clear in Go code
 package test
 
