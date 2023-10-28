@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd/sse"
 
@@ -31,6 +33,11 @@ type Handler struct {
 func New(port int, target *url.URL) *Handler {
 	p := httputil.NewSingleHostReverseProxy(target)
 	p.ErrorLog = log.New(os.Stderr, "Proxy to target error: ", 0)
+	p.Transport = &roundTripper{
+		maxRetries:      10,
+		initialDelay:    100 * time.Millisecond,
+		backoffExponent: 1.5,
+	}
 	p.ModifyResponse = func(r *http.Response) error {
 		if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "text/html") {
 			return nil
@@ -73,4 +80,33 @@ func (p *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (p *Handler) SendSSE(eventType string, data string) {
 	p.sse.Send(eventType, data)
+}
+
+type roundTripper struct {
+	maxRetries      int
+	initialDelay    time.Duration
+	backoffExponent float64
+}
+
+func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	var err error
+
+	for retries := 0; retries < rt.maxRetries; retries++ {
+		req := r.Clone(r.Context())
+
+		req.Body, err = r.GetBody()
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := http.DefaultTransport.RoundTrip(req)
+		if err != nil {
+			time.Sleep(rt.initialDelay * time.Duration(math.Pow(rt.backoffExponent, float64(retries))))
+			continue
+		}
+
+		return resp, nil
+	}
+
+	return nil, fmt.Errorf("max retries reached")
 }
