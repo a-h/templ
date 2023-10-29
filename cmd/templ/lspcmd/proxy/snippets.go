@@ -98,4 +98,3 @@ var htmlSnippets = []lsp.CompletionItem{
 		InsertTextFormat: lsp.InsertTextFormatSnippet,
 	},
 }
-
