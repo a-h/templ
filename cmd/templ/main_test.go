@@ -22,27 +22,57 @@ func TestMain(t *testing.T) {
 			expectedCode: 0,
 		},
 		{
-			name:         "templ help prints help",
+			name:         `"templ help" prints help`,
 			args:         []string{"templ", "help"},
 			expected:     usageText,
 			expectedCode: 0,
 		},
 		{
-			name:         "templ --help prints help",
+			name:         `"templ --help" prints help`,
 			args:         []string{"templ", "--help"},
 			expected:     usageText,
 			expectedCode: 0,
 		},
 		{
-			name:         "templ version prints version",
+			name:         `"templ version" prints version`,
 			args:         []string{"templ", "version"},
 			expected:     templ.Version + "\n",
 			expectedCode: 0,
 		},
 		{
-			name:         "templ --version prints version",
+			name:         `"templ --version" prints version`,
 			args:         []string{"templ", "--version"},
 			expected:     templ.Version + "\n",
+			expectedCode: 0,
+		},
+		{
+			name:         `"templ migrate" prints usage`,
+			args:         []string{"templ", "migrate"},
+			expected:     migrateUsageText,
+			expectedCode: 0,
+		},
+		{
+			name:         `"templ migrate --help" prints usage`,
+			args:         []string{"templ", "migrate", "--help"},
+			expected:     migrateUsageText,
+			expectedCode: 0,
+		},
+		{
+			name:         `"templ fmt --help" prints usage`,
+			args:         []string{"templ", "fmt", "--help"},
+			expected:     fmtUsageText,
+			expectedCode: 0,
+		},
+		{
+			name:         `"templ generate --help" prints usage`,
+			args:         []string{"templ", "generate", "--help"},
+			expected:     generateUsageText,
+			expectedCode: 0,
+		},
+		{
+			name:         `"templ lsp --help" prints usage`,
+			args:         []string{"templ", "lsp", "--help"},
+			expected:     lspUsageText,
 			expectedCode: 0,
 		},
 	}
@@ -57,6 +87,10 @@ func TestMain(t *testing.T) {
 			}
 			if diff := cmp.Diff(test.expected, actual.String()); diff != "" {
 				t.Error(diff)
+				t.Error("expected:")
+				t.Error(test.expected)
+				t.Error("actual:")
+				t.Error(actual.String())
 			}
 		})
 	}

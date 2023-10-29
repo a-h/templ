@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -48,7 +49,7 @@ type Arguments struct {
 
 var defaultWorkerCount = runtime.NumCPU()
 
-func Run(args Arguments) (err error) {
+func Run(w io.Writer, args Arguments) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
@@ -64,10 +65,10 @@ func Run(args Arguments) (err error) {
 	go func() {
 		select {
 		case <-signalChan: // First signal, cancel context.
-			fmt.Println("\nCancelling...")
+			fmt.Fprintln(w, "\nCancelling...")
 			err = run.Stop()
 			if err != nil {
-				fmt.Printf("Error killing command: %v\n", err)
+				fmt.Fprintf(w, "Error killing command: %v\n", err)
 			}
 			cancel()
 		case <-ctx.Done():
@@ -75,14 +76,14 @@ func Run(args Arguments) (err error) {
 		<-signalChan // Second signal, hard exit.
 		os.Exit(2)
 	}()
-	err = runCmd(ctx, args)
+	err = runCmd(ctx, w, args)
 	if errors.Is(err, context.Canceled) {
 		return nil
 	}
 	return err
 }
 
-func runCmd(ctx context.Context, args Arguments) (err error) {
+func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	start := time.Now()
 	if args.Watch && args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
@@ -95,7 +96,7 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 		opts = append(opts, generator.WithTimestamp(time.Now()))
 	}
 	if args.FileName != "" {
-		return processSingleFile(ctx, args.FileName, args.GenerateSourceMapVisualisations, opts)
+		return processSingleFile(ctx, w, args.FileName, args.GenerateSourceMapVisualisations, opts)
 	}
 	var target *url.URL
 	if args.Proxy != "" {
@@ -123,14 +124,14 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 		p = proxy.New(args.ProxyPort, target)
 	}
 
-	fmt.Println("Processing path:", args.Path)
+	fmt.Fprintln(w, "Processing path:", args.Path)
 	bo := backoff.NewExponentialBackOff()
 	bo.InitialInterval = time.Millisecond * 500
 	bo.MaxInterval = time.Second * 3
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
-		changesFound, errs := processChanges(ctx, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, opts, args.WorkerCount)
+		changesFound, errs := processChanges(ctx, w, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, opts, args.WorkerCount)
 		if len(errs) > 0 {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
@@ -138,14 +139,14 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 			if !args.Watch {
 				return fmt.Errorf("failed to process path: %v", errors.Join(errs...))
 			}
-			fmt.Printf("Error processing path: %v\n", errors.Join(errs...))
+			fmt.Fprintf(w, "Error processing path: %v\n", errors.Join(errs...))
 		}
 		if changesFound > 0 {
-			fmt.Printf("Generated code for %d templates with %d errors in %s\n", changesFound, len(errs), time.Since(start))
+			fmt.Fprintf(w, "Generated code for %d templates with %d errors in %s\n", changesFound, len(errs), time.Since(start))
 			if args.Command != "" {
-				fmt.Printf("Executing command: %s\n", args.Command)
+				fmt.Fprintf(w, "Executing command: %s\n", args.Command)
 				if _, err := run.Run(ctx, args.Path, args.Command); err != nil {
-					fmt.Printf("Error starting command: %v\n", err)
+					fmt.Fprintf(w, "Error starting command: %v\n", err)
 				}
 			}
 			// Send server-sent event.
@@ -155,15 +156,15 @@ func runCmd(ctx context.Context, args Arguments) (err error) {
 
 			if !firstRunComplete && p != nil {
 				go func() {
-					fmt.Printf("Proxying from %s to target: %s\n", p.URL, p.Target.String())
+					fmt.Fprintf(w, "Proxying from %s to target: %s\n", p.URL, p.Target.String())
 					if err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", args.ProxyPort), p); err != nil {
-						fmt.Printf("Error starting proxy: %v\n", err)
+						fmt.Fprintf(w, "Error starting proxy: %v\n", err)
 					}
 				}()
 				go func() {
-					fmt.Printf("Opening URL: %s\n", p.Target.String())
-					if err := openURL(p.URL); err != nil {
-						fmt.Printf("Error opening URL: %v\n", err)
+					fmt.Fprintf(w, "Opening URL: %s\n", p.Target.String())
+					if err := openURL(w, p.URL); err != nil {
+						fmt.Fprintf(w, "Error opening URL: %v\n", err)
 					}
 				}()
 			}
@@ -195,7 +196,7 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, w io.Writer, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
@@ -227,7 +228,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					if err := processSingleFile(ctx, path, generateSourceMapVisualisations, opts); err != nil {
+					if err := processSingleFile(ctx, w, path, generateSourceMapVisualisations, opts); err != nil {
 						errs = append(errs, err)
 					}
 					<-sem
@@ -245,7 +246,7 @@ func processChanges(ctx context.Context, fileNameToLastModTime map[string]time.T
 	return changesFound, errs
 }
 
-func openURL(url string) error {
+func openURL(w io.Writer, url string) error {
 	backoff := backoff.NewExponentialBackOff()
 	backoff.InitialInterval = time.Second
 	var client http.Client
@@ -255,19 +256,19 @@ func openURL(url string) error {
 			break
 		}
 		d := backoff.NextBackOff()
-		fmt.Printf("Server not ready. Retrying in %v...\n", d)
+		fmt.Fprintf(w, "Server not ready. Retrying in %v...\n", d)
 		time.Sleep(d)
 	}
 	return browser.OpenURL(url)
 }
 
-func processSingleFile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) error {
+func processSingleFile(ctx context.Context, w io.Writer, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) error {
 	start := time.Now()
 	err := compile(ctx, fileName, generateSourceMapVisualisations, opts)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Generated code for %q in %s\n", fileName, time.Since(start))
+	fmt.Fprintf(w, "Generated code for %q in %s\n", fileName, time.Since(start))
 	return err
 }
 

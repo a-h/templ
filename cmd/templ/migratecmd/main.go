@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -21,21 +22,21 @@ type Arguments struct {
 	Path     string
 }
 
-func Run(args Arguments) (err error) {
+func Run(w io.Writer, args Arguments) (err error) {
 	if args.FileName != "" {
-		return processSingleFile(args.FileName)
+		return processSingleFile(w, args.FileName)
 	}
-	return processPath(args.Path)
+	return processPath(w, args.Path)
 }
 
-func processSingleFile(fileName string) error {
+func processSingleFile(w io.Writer, fileName string) error {
 	start := time.Now()
 	err := migrate(fileName)
-	fmt.Printf("Migrated code for %q in %s\n", fileName, time.Since(start))
+	fmt.Fprintf(w, "Migrated code for %q in %s\n", fileName, time.Since(start))
 	return err
 }
 
-func processPath(path string) (err error) {
+func processPath(w io.Writer, path string) (err error) {
 	start := time.Now()
 	results := make(chan processor.Result)
 	go processor.Process(path, migrate, workerCount, results)
@@ -47,9 +48,9 @@ func processPath(path string) (err error) {
 			continue
 		}
 		successCount++
-		fmt.Printf("%s complete in %v\n", r.FileName, r.Duration)
+		fmt.Fprintf(w, "%s complete in %v\n", r.FileName, r.Duration)
 	}
-	fmt.Printf("Migrated code for %d templates with %d errors in %s\n", successCount+errorCount, errorCount, time.Since(start))
+	fmt.Fprintf(w, "Migrated code for %d templates with %d errors in %s\n", successCount+errorCount, errorCount, time.Since(start))
 	return err
 }
 

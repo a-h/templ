@@ -3,6 +3,7 @@ package lspcmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,7 +29,7 @@ type Arguments struct {
 	HTTPDebug string
 }
 
-func Run(args Arguments) error {
+func Run(w io.Writer, args Arguments) error {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	signalChan := make(chan os.Signal, 1)
@@ -51,10 +52,10 @@ func Run(args Arguments) error {
 		<-signalChan // Second signal, hard exit.
 		os.Exit(2)
 	}()
-	return run(ctx, args)
+	return run(ctx, w, args)
 }
 
-func run(ctx context.Context, args Arguments) (err error) {
+func run(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	log := zap.NewNop()
 	if args.Log != "" {
 		cfg := zap.NewProductionConfig()
@@ -64,7 +65,7 @@ func run(ctx context.Context, args Arguments) (err error) {
 		}
 		log, err = cfg.Build()
 		if err != nil {
-			_, _ = fmt.Printf("failed to create logger: %v\n", err)
+			_, _ = fmt.Fprintf(w, "failed to create logger: %v\n", err)
 			os.Exit(1)
 		}
 	}

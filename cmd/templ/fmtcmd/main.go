@@ -15,16 +15,16 @@ import (
 
 const workerCount = 4
 
-func Run(args []string) (err error) {
+func Run(w io.Writer, args []string) (err error) {
 	if len(args) > 0 {
-		return formatDir(args[0])
+		return formatDir(w, args[0])
 	}
-	return formatStdin()
+	return formatReader(w, os.Stdin)
 }
 
-func formatStdin() (err error) {
+func formatReader(w io.Writer, r io.Reader) (err error) {
 	var bytes []byte
-	bytes, err = io.ReadAll(os.Stdin)
+	bytes, err = io.ReadAll(r)
 	if err != nil {
 		return
 	}
@@ -32,14 +32,14 @@ func formatStdin() (err error) {
 	if err != nil {
 		return fmt.Errorf("parsing error: %w", err)
 	}
-	err = t.Write(os.Stdout)
+	err = t.Write(w)
 	if err != nil {
 		return fmt.Errorf("formatting error: %w", err)
 	}
 	return nil
 }
 
-func formatDir(dir string) (err error) {
+func formatDir(w io.Writer, dir string) (err error) {
 	start := time.Now()
 	results := make(chan processor.Result)
 	go processor.Process(dir, format, workerCount, results)

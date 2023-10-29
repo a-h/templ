@@ -18,6 +18,20 @@ func main() {
 	run(os.Stdout, os.Args)
 }
 
+const usageText = `usage: templ <command> [<args>...]
+
+templ - build HTML UIs with Go
+
+See docs at https://templ.guide
+
+commands:
+  generate   Generates Go code from templ files
+  fmt        Formats templ files
+  lsp        Starts a language server for templ files
+  migrate    Migrates v1 templ files to v2 format
+  version    Prints the version
+`
+
 func run(w io.Writer, args []string) (code int) {
 	if len(args) < 2 {
 		fmt.Fprint(w, usageText)
@@ -25,16 +39,16 @@ func run(w io.Writer, args []string) (code int) {
 	}
 	switch args[1] {
 	case "generate":
-		generateCmd(args[2:])
+		generateCmd(w, args[2:])
 		return
 	case "migrate":
-		migrateCmd(args[2:])
+		migrateCmd(w, args[2:])
 		return
 	case "fmt":
-		fmtCmd(args[2:])
+		fmtCmd(w, args[2:])
 		return
 	case "lsp":
-		lspCmd(args[2:])
+		lspCmd(w, args[2:])
 		return
 	case "version":
 		fmt.Fprintln(w, templ.Version)
@@ -47,37 +61,72 @@ func run(w io.Writer, args []string) (code int) {
 	return 0
 }
 
-const usageText = `usage: templ <command> [parameters]
-To see help text, you can run:
-  templ generate --help
-  templ fmt --help
-  templ lsp --help
-  templ migrate --help
-  templ version
-examples:
-  templ generate
+const generateUsageText = `usage: templ generate [<args>...]
+
+Generates Go code from templ files.
+
+Args:
+  -path <path>
+    Generates code for all files in path. (default .)
+  -f <file>
+    Optionally generates code for a single file, e.g. -f header.templ
+  -sourceMapVisualisations
+    Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
+  -include-version
+    Set to false to skip inclusion of the templ version in the generated code. (default true)
+  -include-timestamp
+    Set to true to include the current time in the generated code.
+  -watch
+    Set to true to watch the path for changes and regenerate code.
+  -cmd <cmd>
+    Set the command to run after generating code.
+  -proxy
+    Set the URL to proxy after generating code and executing the command.
+  -proxyport
+    The port the proxy will listen on. (default 7331)
+  -w
+    Number of workers to use when generating code. (default runtime.NumCPUs)
+  -pprof
+    Port to run the pprof server on.
+  -help
+    Print help and exit.
+
+Examples:
+
+  Generate code for all files in the current directory and subdirectories:
+
+    templ generate
+
+  Generate code for a single file:
+
+    templ generate -f header.templ
+
+  Watch the current directory and subdirectories for changes and regenerate code:
+
+    templ generate -watch
 `
 
-func generateCmd(args []string) {
+func generateCmd(w io.Writer, args []string) (code int) {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
-	fileNameFlag := cmd.String("f", "", "Optionally generates code for a single file, e.g. -f header.templ")
-	pathFlag := cmd.String("path", ".", "Generates code for all files in path.")
-	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "Set to true to generate HTML files to visualise the templ code and its corresponding Go code.")
-	includeVersionFlag := cmd.Bool("include-version", true, "Set to false to skip inclusion of the templ version in the generated code.")
-	includeTimestampFlag := cmd.Bool("include-timestamp", false, "Set to true to include the current time in the generated code.")
-	watchFlag := cmd.Bool("watch", false, "Set to true to watch the path for changes and regenerate code.")
-	cmdFlag := cmd.String("cmd", "", "Set the command to run after generating code.")
-	proxyFlag := cmd.String("proxy", "", "Set the URL to proxy after generating code and executing the command.")
-	proxyPortFlag := cmd.Int("proxyport", 7331, "The port the proxy will listen on.")
-	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "Number of workers to run in parallel.")
-	pprofPortFlag := cmd.Int("pprof", 0, "Port to start pprof web server on.")
-	helpFlag := cmd.Bool("help", false, "Print help and exit.")
+	cmd.SetOutput(w)
+	fileNameFlag := cmd.String("f", "", "")
+	pathFlag := cmd.String("path", ".", "")
+	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "")
+	includeVersionFlag := cmd.Bool("include-version", true, "")
+	includeTimestampFlag := cmd.Bool("include-timestamp", false, "")
+	watchFlag := cmd.Bool("watch", false, "")
+	cmdFlag := cmd.String("cmd", "", "")
+	proxyFlag := cmd.String("proxy", "", "")
+	proxyPortFlag := cmd.Int("proxyport", 7331, "")
+	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
+	pprofPortFlag := cmd.Int("pprof", 0, "")
+	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
-		cmd.PrintDefaults()
+		fmt.Fprint(w, generateUsageText)
 		return
 	}
-	err = generatecmd.Run(generatecmd.Arguments{
+	err = generatecmd.Run(w, generatecmd.Arguments{
 		FileName:                        *fileNameFlag,
 		Path:                            *pathFlag,
 		Watch:                           *watchFlag,
@@ -91,60 +140,119 @@ func generateCmd(args []string) {
 		PPROFPort:                       *pprofPortFlag,
 	})
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		fmt.Fprintln(w, err.Error())
+		return 1
 	}
+	return 0
 }
 
-func migrateCmd(args []string) {
+const migrateUsageText = `usage: templ migrate [<args> ...]
+
+Migrates v1 templ files to v2 format.
+
+Args:
+  -f string
+     Optionally migrate a single file, e.g. -f header.templ
+  -help
+     Print help and exit.
+  -path string
+     Migrates code for all files in path.
+`
+
+func migrateCmd(w io.Writer, args []string) (code int) {
 	cmd := flag.NewFlagSet("migrate", flag.ExitOnError)
-	fileName := cmd.String("f", "", "Optionally migrate a single file, e.g. -f header.templ")
-	path := cmd.String("path", ".", "Migrates code for all files in path.")
-	helpFlag := cmd.Bool("help", false, "Print help and exit.")
+	cmd.SetOutput(w)
+	fileName := cmd.String("f", "", "")
+	path := cmd.String("path", "", "")
+	helpFlag := cmd.Bool("help", false, "")
+	cmd.Usage = func() {
+		fmt.Fprint(w, migrateUsageText)
+	}
 	err := cmd.Parse(args)
-	if err != nil || *helpFlag {
-		cmd.PrintDefaults()
+	if err != nil || *helpFlag || (*path == "" && *fileName == "") {
+		cmd.Usage()
 		return
 	}
-	err = migratecmd.Run(migratecmd.Arguments{
+	err = migratecmd.Run(w, migratecmd.Arguments{
 		FileName: *fileName,
 		Path:     *path,
 	})
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		fmt.Fprintln(w, err.Error())
+		return 1
 	}
+	return 0
 }
 
-func fmtCmd(args []string) {
+const fmtUsageText = `usage: templ fmt [<args> ...]
+
+Format all files in directory:
+
+  templ fmt .
+
+Format stdin to stdout:
+
+  templ fmt < header.templ
+
+Args:
+  -help
+    Print help and exit.
+`
+
+func fmtCmd(w io.Writer, args []string) (code int) {
 	cmd := flag.NewFlagSet("fmt", flag.ExitOnError)
-	helpFlag := cmd.Bool("help", false, "Print help and exit.")
+	cmd.SetOutput(w)
+	cmd.Usage = func() {
+		fmt.Fprint(w, fmtUsageText)
+	}
+	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
-		cmd.PrintDefaults()
+		cmd.Usage()
 		return
 	}
-	err = fmtcmd.Run(args)
+	err = fmtcmd.Run(w, args)
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		fmt.Fprintln(w, err.Error())
+		return 1
 	}
+	return 0
 }
 
-func lspCmd(args []string) {
+const lspUsageText = `usage: templ lsp [<args> ...]
+
+Starts a language server for templ.
+
+Args:
+  -log string
+    The file to log templ LSP output to, or leave empty to disable logging.
+  -goplsLog string
+    The file to log gopls output, or leave empty to disable logging.
+  -goplsRPCTrace
+    Set gopls to log input and output messages.
+  -help
+    Print help and exit.
+  -pprof
+    Enable pprof web server (default address is localhost:9999)
+  -http string
+    Enable http debug server by setting a listen address (e.g. localhost:7474)
+`
+
+func lspCmd(w io.Writer, args []string) (code int) {
 	cmd := flag.NewFlagSet("lsp", flag.ExitOnError)
-	log := cmd.String("log", "", "The file to log templ LSP output to, or leave empty to disable logging.")
-	goplsLog := cmd.String("goplsLog", "", "The file to log gopls output, or leave empty to disable logging.")
-	goplsRPCTrace := cmd.Bool("goplsRPCTrace", false, "Set gopls to log input and output messages.")
-	helpFlag := cmd.Bool("help", false, "Print help and exit.")
-	pprofFlag := cmd.Bool("pprof", false, "Enable pprof web server (default address is localhost:9999)")
-	httpDebugFlag := cmd.String("http", "", "Enable http debug server by setting a listen address (e.g. localhost:7474)")
+	cmd.SetOutput(w)
+	log := cmd.String("log", "", "")
+	goplsLog := cmd.String("goplsLog", "", "")
+	goplsRPCTrace := cmd.Bool("goplsRPCTrace", false, "")
+	helpFlag := cmd.Bool("help", false, "")
+	pprofFlag := cmd.Bool("pprof", false, "")
+	httpDebugFlag := cmd.String("http", "", "")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
-		cmd.PrintDefaults()
+		fmt.Fprint(w, lspUsageText)
 		return
 	}
-	err = lspcmd.Run(lspcmd.Arguments{
+	err = lspcmd.Run(w, lspcmd.Arguments{
 		Log:           *log,
 		GoplsLog:      *goplsLog,
 		GoplsRPCTrace: *goplsRPCTrace,
@@ -152,7 +260,8 @@ func lspCmd(args []string) {
 		HTTPDebug:     *httpDebugFlag,
 	})
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		fmt.Fprintln(w, err.Error())
+		return 1
 	}
+	return 0
 }
