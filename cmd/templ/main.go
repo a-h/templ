@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
-	"runtime/debug"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
@@ -14,53 +14,40 @@ import (
 	"github.com/a-h/templ/cmd/templ/migratecmd"
 )
 
-// Source builds use this value. When installed using `go install github.com/a-h/templ/cmd/templ@latest` the `version` variable is empty, but
-// the debug.ReadBuildInfo return value provides the package version number installed by `go install`
-func goInstallVersion() string {
-	info, ok := debug.ReadBuildInfo()
-	if !ok {
-		return "unknown"
-	}
-	return info.Main.Version
-}
-
-func getVersion() string {
-	if templ.Version != "" {
-		return templ.Version
-	}
-	return goInstallVersion()
-}
-
 func main() {
-	if len(os.Args) < 2 {
-		usage()
-		os.Exit(1)
+	run(os.Stdout, os.Args)
+}
+
+func run(w io.Writer, args []string) (code int) {
+	if len(args) < 2 {
+		fmt.Fprint(w, usageText)
+		return 0
 	}
-	switch os.Args[1] {
+	switch args[1] {
 	case "generate":
-		generateCmd(os.Args[2:])
+		generateCmd(args[2:])
 		return
 	case "migrate":
-		migrateCmd(os.Args[2:])
+		migrateCmd(args[2:])
 		return
 	case "fmt":
-		fmtCmd(os.Args[2:])
+		fmtCmd(args[2:])
 		return
 	case "lsp":
-		lspCmd(os.Args[2:])
+		lspCmd(args[2:])
 		return
 	case "version":
-		fmt.Println(getVersion())
+		fmt.Fprintln(w, templ.Version)
 		return
 	case "--version":
-		fmt.Println(getVersion())
+		fmt.Fprintln(w, templ.Version)
 		return
 	}
-	usage()
+	fmt.Fprint(w, usageText)
+	return 0
 }
 
-func usage() {
-	fmt.Println(`usage: templ <command> [parameters]
+const usageText = `usage: templ <command> [parameters]
 To see help text, you can run:
   templ generate --help
   templ fmt --help
@@ -68,9 +55,8 @@ To see help text, you can run:
   templ migrate --help
   templ version
 examples:
-  templ generate`)
-	os.Exit(1)
-}
+  templ generate
+`
 
 func generateCmd(args []string) {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)

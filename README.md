@@ -23,6 +23,7 @@ See user documentation at https://templ.guide
 Build a local version.
 
 ```sh
+go run ./get-version > .version
 cd cmd/templ
 go build
 ```
@@ -33,6 +34,7 @@ Build and install to ~/bin
 
 ```sh
 rm cmd/templ/lspcmd/*.txt || true
+go run ./get-version > .version
 cd cmd/templ && go build -o ~/bin/templ
 ```
 
@@ -57,7 +59,7 @@ go run ./cmd/templ generate -include-version=false
 Run Go tests.
 
 ```sh
-go run ./cmd/templ generate && go test ./...
+go run ./cmd/templ generate -include-version=false && go test ./...
 ```
 
 ### test-cover
