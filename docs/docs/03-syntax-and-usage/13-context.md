@@ -111,6 +111,28 @@ themeName().Render(ctx, w)
 Attempting to access a context key that doesn't exist, or using an invalid type assertion will trigger a panic.
 :::
 
+### Tidying up
+
+Rather than read from the context object directly, it's common to implement a type-safe function instead.
+
+This is also required when the type of the context key is in a different package to the consumer of the context, and the type is private (which is usually the case).
+
+```templ title="main.go"
+func GetTheme(ctx context.Context) string {
+	// Optionally deal with panics.
+	// Return a default value if no context is available.
+	return ctx.Value(themeContextKey).(string)
+}
+```
+
+This minor change makes the template code a little tidier.
+
+```templ title="component.templ"
+templ themeName() {
+	<div>{ GetTheme(ctx) }</div>
+}
+```
+
 ## Using `context` with HTTP middleware
 
 In HTTP applications, a common pattern is to insert HTTP middleware into the request/response chain.
