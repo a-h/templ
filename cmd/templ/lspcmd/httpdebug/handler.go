@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
 	"github.com/a-h/templ/cmd/templ/visualize"
+	"github.com/a-h/templ/templ_internal"
 	"go.uber.org/zap"
 )
 
@@ -80,23 +80,23 @@ func NewHandler(l *zap.Logger, s *proxy.Server) http.Handler {
 	return m
 }
 
-func getMapURL(uri string) templ.SafeURL {
+func getMapURL(uri string) templ_internal.SafeURL {
 	return withQuery("/", uri)
 }
 
-func getSourceMapURL(uri string) templ.SafeURL {
+func getSourceMapURL(uri string) templ_internal.SafeURL {
 	return withQuery("/sourcemap", uri)
 }
 
-func getTemplURL(uri string) templ.SafeURL {
+func getTemplURL(uri string) templ_internal.SafeURL {
 	return withQuery("/templ", uri)
 }
 
-func getGoURL(uri string) templ.SafeURL {
+func getGoURL(uri string) templ_internal.SafeURL {
 	return withQuery("/go", uri)
 }
 
-func withQuery(path, uri string) templ.SafeURL {
+func withQuery(path, uri string) templ_internal.SafeURL {
 	q := make(url.Values)
 	q.Set("uri", uri)
 	u := &url.URL{
@@ -104,7 +104,7 @@ func withQuery(path, uri string) templ.SafeURL {
 		RawPath:  path,
 		RawQuery: q.Encode(),
 	}
-	return templ.SafeURL(u.String())
+	return templ_internal.SafeURL(u.String())
 }
 
 func JSON(w http.ResponseWriter, v any) {
