@@ -666,7 +666,7 @@ func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, ca.String())
 }
 
-// href={ templ.Bool(...) }
+// noshade={ templ.Bool(...) }
 type BoolExpressionAttribute struct {
 	Name       string
 	Expression Expression

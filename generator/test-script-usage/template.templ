@@ -22,4 +22,19 @@ templ ThreeButtons() {
 	<button onMouseover="console.log(&#39;mouseover&#39;)" type="button">Button C</button>
 	<button hx-on::click="alert(&#39;clicked inline&#39;)" type="button">Button D</button>
 	<button hx-on::click={ onClick() } type="button">Button E</button>
+	@Conditional(true)
+}
+
+script conditionalScript() {
+  alert("conditional");
+}
+
+templ Conditional(show bool) {
+	<input
+ 		type="button"
+ 		value="Click me"
+ 		if show {
+			onclick={ conditionalScript() }
+		}
+	/>
 }

@@ -962,13 +962,8 @@ func isScriptAttribute(name string) bool {
 
 func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err error) {
 	var scriptExpressions []string
-	for i := 0; i < len(n.Attributes); i++ {
-		if attr, ok := n.Attributes[i].(parser.ExpressionAttribute); ok {
-			name := html.EscapeString(attr.Name)
-			if isScriptAttribute(name) {
-				scriptExpressions = append(scriptExpressions, attr.Expression.Value)
-			}
-		}
+	for _, attr := range n.Attributes {
+		scriptExpressions = append(scriptExpressions, getAttributeScripts(attr)...)
 	}
 	if len(scriptExpressions) == 0 {
 		return
@@ -982,6 +977,24 @@ func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err e
 		return err
 	}
 	return err
+}
+
+func getAttributeScripts(attr parser.Attribute) (scripts []string) {
+	if attr, ok := attr.(parser.ConditionalAttribute); ok {
+		for _, attr := range attr.Then {
+			scripts = append(scripts, getAttributeScripts(attr)...)
+		}
+		for _, attr := range attr.Else {
+			scripts = append(scripts, getAttributeScripts(attr)...)
+		}
+	}
+	if attr, ok := attr.(parser.ExpressionAttribute); ok {
+		name := html.EscapeString(attr.Name)
+		if isScriptAttribute(name) {
+			scripts = append(scripts, attr.Expression.Value)
+		}
+	}
+	return scripts
 }
 
 func (g *generator) writeBoolConstantAttribute(indentLevel int, attr parser.BoolConstantAttribute) (err error) {

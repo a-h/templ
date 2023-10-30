@@ -157,6 +157,65 @@ func ThreeButtons() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = Conditional(true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if !templ_7745c5c3_IsBuffer {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
+		}
+		return templ_7745c5c3_Err
+	})
+}
+
+func conditionalScript() templ.ComponentScript {
+	return templ.ComponentScript{
+		Name:     `__templ_conditionalScript_de41`,
+		Function: `function __templ_conditionalScript_de41(){alert("conditional");}`,
+		Call:     templ.SafeScript(`__templ_conditionalScript_de41`),
+	}
+}
+
+func Conditional(show bool) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
+		if !templ_7745c5c3_IsBuffer {
+			templ_7745c5c3_Buffer = templ.GetBuffer()
+			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var10 == nil {
+			templ_7745c5c3_Var10 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, conditionalScript())
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input type=\"button\" value=\"Click me\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if show {
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" onclick=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var11 templ.ComponentScript = conditionalScript()
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11.Call)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		if !templ_7745c5c3_IsBuffer {
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
 		}
