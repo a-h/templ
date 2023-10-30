@@ -68,18 +68,20 @@ Run Go tests.
 
 ```sh
 # Create test profile directories.
+mkdir -p coverage/fmt
 mkdir -p coverage/generate
 mkdir -p coverage/unit
 # Build the test binary.
 go build -cover -o ./coverage/templ-cover ./cmd/templ
 # Run the covered generate command.
+GOCOVERDIR=coverage/fmt ./coverage/templ-cover fmt .
 GOCOVERDIR=coverage/generate ./coverage/templ-cover generate -include-version=false
 # Run the unit tests.
 go test -cover ./... -args -test.gocoverdir="$PWD/coverage/unit"
 # Display the combined percentage.
-go tool covdata percent -i=./coverage/generate,./coverage/unit
+go tool covdata percent -i=./coverage/fmt,./coverage/generate,./coverage/unit
 # Generate a text coverage profile for tooling to use.
-go tool covdata textfmt -i=./coverage/generate,./coverage/unit -o coverage.out
+go tool covdata textfmt -i=./coverage/fmt,./coverage/generate,./coverage/unit -o coverage.out
 # Print total
 go tool cover -func coverage.out | grep total
 ```
@@ -90,6 +92,14 @@ Run benchmarks.
 
 ```sh
 go run ./cmd/templ generate -include-version=false && go test ./... -bench=. -benchmem
+```
+
+### fmt
+
+Format all Go code.
+
+```
+gofmt -s -w .
 ```
 
 ### lint
