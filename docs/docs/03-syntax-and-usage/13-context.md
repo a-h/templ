@@ -119,9 +119,10 @@ This is also required when the type of the context key is in a different package
 
 ```templ title="main.go"
 func GetTheme(ctx context.Context) string {
-	// Optionally deal with panics.
-	// Return a default value if no context is available.
-	return ctx.Value(themeContextKey).(string)
+	if theme, ok := ctx.Value(themeContextKey).(string); ok {
+		return theme
+	}
+	return ""
 }
 ```
 
