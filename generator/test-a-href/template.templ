@@ -3,5 +3,5 @@ package testahref
 templ render() {
 	<a href="javascript:alert(&#39;unaffected&#39;);">Ignored</a>
 	<a href={ templ.URL("javascript:alert('should be sanitized')") }>Sanitized</a>
-	<a href={ templ.SafeURL("javascript:alert('should not be sanitized')") }>Unsanitized</a>
+	<a href={ templ_internal.SafeURL("javascript:alert('should not be sanitized')") }>Unsanitized</a>
 }

@@ -136,12 +136,18 @@ func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
 
 func (g *generator) writeImports() error {
 	var err error
-	// Always import templ because it's the interface type of all templates.
-	if _, err = g.w.Write("import \"github.com/a-h/templ\"\n"); err != nil {
+	if _, err = g.w.Write("import \"github.com/a-h/templ/templ_internal\"\n"); err != nil {
+		return err
+	}
+	// TODO(critical): Another way to determine when to import html package, even if it's not used, it's still imported
+	if _, err := g.w.write("import \"html\"\n"); err != nil {
 		return err
 	}
 	hasTemplates, hasCSS := g.templateNodeInfo()
 	if hasTemplates {
+		if _, err = g.w.write("import \"github.com/a-h/templ\"\n"); err != nil {
+			return err
+		}
 		// The first parameter of a template function.
 		if _, err = g.w.Write("import \"context\"\n"); err != nil {
 			return err
@@ -206,8 +212,8 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 		return err
 	}
 	g.sourceMap.Add(n.Name, r)
-	// () templ.CSSClass {
-	if _, err = g.w.Write("() templ.CSSClass {\n"); err != nil {
+	// () templ_internal.CSSClass {
+	if _, err = g.w.Write("() templ_internal.CSSClass {\n"); err != nil {
 		return err
 	}
 	{
@@ -224,8 +230,8 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 					return err
 				}
 			case parser.ExpressionCSSProperty:
-				// templ_7745c5c3_CSSBuilder.WriteString(templ.SanitizeCSS('name', p.Expression()))
-				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`%s`, ", p.Name)); err != nil {
+				// templ_7745c5c3_CSSBuilder.WriteString(templ_internal.SanitizeCSS('name', p.Expression()))
+				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templ_7745c5c3_CSSBuilder.WriteString(string(templ_internal.SanitizeCSS(`%s`, ", p.Name)); err != nil {
 					return err
 				}
 				if r, err = g.w.Write(p.Value.Expression.Value); err != nil {
@@ -239,11 +245,11 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 				return fmt.Errorf("unknown CSS property type: %v", reflect.TypeOf(p))
 			}
 		}
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templ_7745c5c3_CSSID := templ.CSSID(`%s`, templ_7745c5c3_CSSBuilder.String())\n", n.Name.Value)); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templ_7745c5c3_CSSID := templ_internal.CSSID(`%s`, templ_7745c5c3_CSSBuilder.String())\n", n.Name.Value)); err != nil {
 			return err
 		}
-		// return templ.CSS {
-		if _, err = g.w.WriteIndent(indentLevel, "return templ.ComponentCSSClass{\n"); err != nil {
+		// return templ_internal.CSS {
+		if _, err = g.w.WriteIndent(indentLevel, "return templ_internal.ComponentCSSClass{\n"); err != nil {
 			return err
 		}
 		{
@@ -252,8 +258,8 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 			if _, err = g.w.WriteIndent(indentLevel, "ID: templ_7745c5c3_CSSID,\n"); err != nil {
 				return err
 			}
-			// Class: templ.SafeCSS(".cssID{" + templ.CSSBuilder.String() + "}"),
-			if _, err = g.w.WriteIndent(indentLevel, "Class: templ.SafeCSS(`.` + templ_7745c5c3_CSSID + `{` + templ_7745c5c3_CSSBuilder.String() + `}`),\n"); err != nil {
+			// Class: templ_internal.SafeCSS(".cssID{" + templ_internal.CSSBuilder.String() + "}"),
+			if _, err = g.w.WriteIndent(indentLevel, "Class: templ_internal.SafeCSS(`.` + templ_7745c5c3_CSSID + `{` + templ_7745c5c3_CSSBuilder.String() + `}`),\n"); err != nil {
 				return err
 			}
 			indentLevel--
@@ -292,12 +298,12 @@ func (g *generator) writeTemplBuffer(indentLevel int) (err error) {
 	}
 	{
 		indentLevel++
-		// templ_7745c5c3_Buffer = templ.GetBuffer()
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Buffer = templ.GetBuffer()\n"); err != nil {
+		// templ_7745c5c3_Buffer = templ_internal.GetBuffer()
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Buffer = templ_internal.GetBuffer()\n"); err != nil {
 			return err
 		}
-		// defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		if _, err = g.w.WriteIndent(indentLevel, "defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)\n"); err != nil {
+		// defer templ_internal.ReleaseBuffer(templ_7745c5c3_Buffer)
+		if _, err = g.w.WriteIndent(indentLevel, "defer templ_internal.ReleaseBuffer(templ_7745c5c3_Buffer)\n"); err != nil {
 			return err
 		}
 		indentLevel--
@@ -336,16 +342,16 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		if err := g.writeTemplBuffer(indentLevel); err != nil {
 			return err
 		}
-		// ctx = templ.InitializeContext(ctx)
-		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeContext(ctx)\n"); err != nil {
+		// ctx = templ_internal.InitializeContext(ctx)
+		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ_internal.InitializeContext(ctx)\n"); err != nil {
 			return err
 		}
 		g.childrenVar = g.createVariableName()
-		// templ_7745c5c3_Var1 := templ.GetChildren(ctx)
+		// templ_7745c5c3_Var1 := templ_internal.GetChildren(ctx)
 		// if templ_7745c5c3_Var1 == nil {
-		//  	templ_7745c5c3_Var1 = templ.NopComponent
+		//  	templ_7745c5c3_Var1 = templ_internal.NopComponent
 		// }
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s := templ.GetChildren(ctx)\n", g.childrenVar)); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s := templ_internal.GetChildren(ctx)\n", g.childrenVar)); err != nil {
 			return err
 		}
 		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("if %s == nil {\n", g.childrenVar)); err != nil {
@@ -353,7 +359,7 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		}
 		{
 			indentLevel++
-			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s = templ.NopComponent\n", g.childrenVar)); err != nil {
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s = templ_internal.NopComponent\n", g.childrenVar)); err != nil {
 				return err
 			}
 			indentLevel--
@@ -361,8 +367,8 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
 			return err
 		}
-		// ctx = templ.ClearChildren(children)
-		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.ClearChildren(ctx)\n"); err != nil {
+		// ctx = templ_internal.ClearChildren(children)
+		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ_internal.ClearChildren(ctx)\n"); err != nil {
 			return err
 		}
 		// Nodes.
@@ -709,8 +715,8 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	// .Render(templ.WithChildren(ctx, children), templ_7745c5c3_Buffer)
-	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), templ_7745c5c3_Buffer)\n"); err != nil {
+	// .Render(templ_internal.WithChildren(ctx, children), templ_7745c5c3_Buffer)
+	if _, err = g.w.Write(".Render(templ_internal.WithChildren(ctx, " + childrenName + "), templ_7745c5c3_Buffer)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -891,7 +897,7 @@ func (g *generator) writeAttributeCSS(indentLevel int, attr parser.ExpressionAtt
 		return
 	}
 	// Create a class name for the style.
-	// The expression can either be expecting a templ.Classes call, or an expression that returns
+	// The expression can either be expecting a templ_internal.Classes call, or an expression that returns
 	// var templ_7745c5c3_CSSClassess = []any{
 	classesName := g.createVariableName()
 	if _, err = g.w.WriteIndent(indentLevel, "var "+classesName+" = []any{"); err != nil {
@@ -907,8 +913,8 @@ func (g *generator) writeAttributeCSS(indentLevel int, attr parser.ExpressionAtt
 		return
 	}
 	// Render the CSS before the element if required.
-	// templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_CSSClassess...)
-	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, "+classesName+"...)\n"); err != nil {
+	// templ_7745c5c3_Err = templ_internal.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_CSSClassess...)
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ_internal.RenderCSSItems(ctx, templ_7745c5c3_Buffer, "+classesName+"...)\n"); err != nil {
 		return
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -916,7 +922,7 @@ func (g *generator) writeAttributeCSS(indentLevel int, attr parser.ExpressionAtt
 	}
 	// Rewrite the ExpressionAttribute to point at the new variable.
 	attr.Expression = parser.Expression{
-		Value: "templ.CSSClasses(" + classesName + ").String()",
+		Value: "templ_internal.CSSClasses(" + classesName + ").String()",
 	}
 	return attr, true, nil
 }
@@ -974,8 +980,8 @@ func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err e
 		return
 	}
 	// Render the scripts before the element if required.
-	// templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, a, b, c)
-	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
+	// templ_7745c5c3_Err = templ_internal.RenderScriptItems(ctx, templ_7745c5c3_Buffer, a, b, c)
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ_internal.RenderScriptItems(ctx, templ_7745c5c3_Buffer, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -1045,8 +1051,8 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	}
 	if (elementName == "a" && attr.Name == "href") || (elementName == "form" && attr.Name == "action") {
 		vn := g.createVariableName()
-		// var vn templ.SafeURL =
-		if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.SafeURL = "); err != nil {
+		// var vn templ_internal.SafeURL =
+		if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ_internal.SafeURL = "); err != nil {
 			return err
 		}
 		// p.Name()
@@ -1058,7 +1064,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 		if _, err = g.w.Write("\n"); err != nil {
 			return err
 		}
-		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string("+vn+")))\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(html.EscapeString(string("+vn+")))\n"); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -1068,8 +1074,8 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 		if isScriptAttribute(attr.Name) {
 			// It's a JavaScript handler, and requires special handling, because we expect a JavaScript expression.
 			vn := g.createVariableName()
-			// var vn templ.ComponentScript =
-			if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.ComponentScript = "); err != nil {
+			// var vn templ_internal.ComponentScript =
+			if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ_internal.ComponentScript = "); err != nil {
 				return err
 			}
 			// p.Name()
@@ -1088,8 +1094,8 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 				return err
 			}
 		} else {
-			// templ_7745c5c3_Buffer.WriteString(templ.EscapeString(
-			if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("); err != nil {
+			// templ_7745c5c3_Buffer.WriteString(html.EscapeString(
+			if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(html.EscapeString("); err != nil {
 				return err
 			}
 			// p.Name()
@@ -1243,7 +1249,7 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	}
 	g.sourceMap.Add(e, r)
 	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
-	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(html.EscapeString("+vn+"))\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -1315,13 +1321,13 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		return err
 	}
 	g.sourceMap.Add(t.Parameters, r)
-	// ) templ.ComponentScript {
-	if _, err = g.w.Write(") templ.ComponentScript {\n"); err != nil {
+	// ) templ_internal.ComponentScript {
+	if _, err = g.w.Write(") templ_internal.ComponentScript {\n"); err != nil {
 		return err
 	}
 	indentLevel++
-	// return templ.ComponentScript{
-	if _, err = g.w.WriteIndent(indentLevel, "return templ.ComponentScript{\n"); err != nil {
+	// return templ_internal.ComponentScript{
+	if _, err = g.w.WriteIndent(indentLevel, "return templ_internal.ComponentScript{\n"); err != nil {
 		return err
 	}
 	{
@@ -1338,8 +1344,8 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+strings.TrimSpace(t.Value)+suffix)+",\n"); err != nil {
 			return err
 		}
-		// Call: templ.SafeScript(scriptName, a, b, c)
-		if _, err = g.w.WriteIndent(indentLevel, "Call: templ.SafeScript("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
+		// Call: templ_internal.SafeScript(scriptName, a, b, c)
+		if _, err = g.w.WriteIndent(indentLevel, "Call: templ_internal.SafeScript("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
 			return err
 		}
 		indentLevel--
