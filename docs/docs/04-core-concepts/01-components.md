@@ -57,12 +57,14 @@ func main() {
 This code is unsafe! In code-only components, you're responsible for escaping the HTML content yourself, e.g. with the `templ.EscapeString` function.
 :::
 
-## Methods with components
+## Component as method on types
 
-templ supports methods on types.
+templ Components can be generated as methods on types
+
+Go code:
 
 ```
-package testmethod
+package main
 
 type Data struct {
 	message string
@@ -71,38 +73,14 @@ type Data struct {
 templ (d Data) Method() {
 	<div>{ d.message }</div>
 }
-```
 
-```
-package testmethod
-
-import (
-	_ "embed"
-	"testing"
-
-	"github.com/a-h/templ/generator/htmldiff"
-)
-
-//go:embed expected.html
-var expected string
-
-func Test(t *testing.T) {
+func main() {
 	d := Data{
 		message: "You can implement methods on a type.",
 	}
-	component := d.Method()
-
-	diff, err := htmldiff.Diff(component, expected)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff != "" {
-		t.Error(diff)
-	}
+	d.Method().Render(context.Background(), os.Stdout)
 }
 ```
-
-Methods can be used to
 
 
 
