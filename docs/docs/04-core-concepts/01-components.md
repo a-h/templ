@@ -59,7 +59,7 @@ This code is unsafe! In code-only components, you're responsible for escaping th
 
 ## Method components
 
-templ Components can be generated as methods on types
+templ components can be returned from methods (functions attached to types).
 
 Go code:
 
