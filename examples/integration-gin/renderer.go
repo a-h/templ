@@ -18,7 +18,6 @@ func (t TemplRender) Render(w http.ResponseWriter) error {
 	if t.Data != nil {
 		return t.Data.Render(context.Background(), w)
 	}
-
 	return nil
 }
 

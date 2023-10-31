@@ -13,4 +13,6 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "", Home())
 	})
+
+	r.Run(":8080")
 }
