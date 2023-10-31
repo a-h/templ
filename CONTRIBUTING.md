@@ -1,51 +1,243 @@
-# Contributing to Templ
+# Contributing to templ
 
-Thank you for considering contributing to Templ! Your contributions are vital to the project's success, and we're thrilled to have you onboard. Before you get started, please take a moment to review our contribution guidelines.
+## Vision
 
-## Project Overview
+Enable Go developers to build strongly typed, component-based HTML user interfaces with first-class developer tooling, and a short learning curve.
 
-**Templ** is an HTML templating language for Go, specifically designed with robust developer tooling in mind. To ensure that your contributions align with the project's goals, it's important to understand how the project works, its structure, and testing procedures.
+## Come up with a design and share it
 
-### Testing
+Before starting work on any major pull requests or code changes, start a discussion at https://github.com/a-h/templ/discussions or raise an issue.
 
-Templ relies on an extensive testing suite. It's crucial to comprehend how Templ is tested, including the evaluation of the parser and generation processes. Please note that all tests are named as assertions, and it is expected that new contributions follow this naming convention.
+We don't want you to spend time on a PR or feature that ultimately doesn't get merged because it doesn't fit with the project goals, or the design doesn't work for some reason.
 
-## Raising New Features
+For issues, it really helps if you provide a reproduction repo, or can create a failing unit test to describe the behaviour.
 
-If you have an idea for a new feature, we strongly encourage you to follow these steps:
+In designs, we need to consider:
 
-1. **Discuss the Feature Design**: Before diving into coding, initiate a discussion with the project maintainers. This step helps ensure that your feature aligns with the project's objectives and saves you from investing time in a design that may not work.
+* Backwards compatibility - Not changing the public API between releases, introducing gradual deprecation - don't break people's code.
+* Correctness over time - How can we reduce the risk of defects both now, and in future releases?
+* Threat model - How could each change be used to inject vulnerabilities into web pages?
+* Go version - We target the oldest supported version of Go as per https://go.dev/doc/devel/release
+* Automatic migration - If we need to force through a change.
+* Compile time vs runtime errors - Prefer compile time.
+* Documentation - New features are only useful if people can understand the new feature, what would the documentation look like?
+* Examples - How will we demonstrate the feature?
 
-2. **Provide Examples**: When relevant, include examples of input Templ files and describe the expected output HTML. This helps the development team and other contributors understand your vision more clearly.
+## Project structure
 
-## Reporting Issues
+templ is structured into a few areas:
 
-If you encounter a bug or have an idea for an improvement, please follow these guidelines when reporting issues:
+### Parser `./parser`
 
-1. **Reproduction Repository**: Providing a reproduction repository for the issue is highly valuable. This helps the maintainers understand the problem and work towards a solution effectively.
+The parser directory currently contains both v1 and v2 parsers.
 
-2. **Failing Unit Tests**: If possible, create a failing unit test that reproduces the issue you're facing. This provides a clear and automated way to describe the problem.
+The v1 parser is not maintained, it's only used to migrate v1 code over to the v2 syntax.
 
-3. **LSP Troubleshooting**: When dealing with Language Server Protocol (LSP) issues, refer to the troubleshooting guide available in the online documentation for guidance.
+The parser is responsible for parsing templ files into an object model. The types that make up the object model are in `types.go`. Automatic formatting of the types is tested in `types_test.go`.
 
-## Additional Guidance
+A templ file is parsed into the `TemplateFile` struct object model.
 
-To contribute effectively to Templ, consider the following additional guidance:
+```go
+type TemplateFile struct {
+	// Header contains comments or whitespace at the top of the file.
+	Header []GoExpression
+	// Package expression.
+	Package Package
+	// Nodes in the file.
+	Nodes []TemplateFileNode
+}
+```
 
-- **Using the `xc` Task Runner**: Learn how to use the `xc` task runner to execute tasks, including running unit tests. Ideally, we encourage you to update the `flake.nix` to include a development shell for building and testing the software.
+Parsers are individually tested using two types of unit test.
 
-- **Conventional Commit Syntax**: The project follows a conventional commit syntax. Please reference this syntax when making commits.
+One test covers the successful parsing of text into an object. For example, the `HTMLCommentParser` test checks for successful patterns.
 
-- **Coding Style**: Maintain a clean and non-nested coding style. Ensure that comments are complete sentences and end with a full stop. Minimize unnecessary line breaks; use line breaks to separate "paragraphs" of code.
+```go
+func TestHTMLCommentParser(t *testing.T) {
+	var tests = []struct {
+		name     string
+		input    string
+		expected HTMLComment
+	}{
+		{
+			name:  "comment - single line",
+			input: `<!-- single line comment -->`,
+			expected: HTMLComment{
+				Contents: " single line comment ",
+			},
+		},
+		{
+			name:  "comment - no whitespace",
+			input: `<!--no whitespace between sequence open and close-->`,
+			expected: HTMLComment{
+				Contents: "no whitespace between sequence open and close",
+			},
+		},
+		{
+			name: "comment - multiline",
+			input: `<!-- multiline
+								comment
+					-->`,
+			expected: HTMLComment{
+				Contents: ` multiline
+								comment
+					`,
+			},
+		},
+		{
+			name:  "comment - with tag",
+			input: `<!-- <p class="test">tag</p> -->`,
+			expected: HTMLComment{
+				Contents: ` <p class="test">tag</p> `,
+			},
+		},
+		{
+			name:  "comments can contain tags",
+			input: `<!-- <div> hello world </div> -->`,
+			expected: HTMLComment{
+				Contents: ` <div> hello world </div> `,
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			input := parse.NewInput(tt.input)
+			result, ok, err := htmlComment.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
+			}
+			if !ok {
+				t.Fatalf("failed to parse at %d", input.Index())
+			}
+			if diff := cmp.Diff(tt.expected, result); diff != "" {
+				t.Errorf(diff)
+			}
+		})
+	}
+}
+```
 
-- **Linter**: There is a linter in the continuous integration (CI) process. It is recommended that you run the linter locally with `xc` before submitting a pull request (PR).
+Alongside each success test, is a similar test to check that invalid syntax is detected.
 
-- **Generator Changes**: If you make changes to the generator, remember to run `xc generate` to regenerate all files. This is automatically handled by the `xc test` command.
+```go
+func TestHTMLCommentParserErrors(t *testing.T) {
+	var tests = []struct {
+		name     string
+		input    string
+		expected error
+	}{
+		{
+			name:  "unclosed HTML comment",
+			input: `<!-- unclosed HTML comment`,
+			expected: parse.Error("expected end comment literal '-->' not found",
+				parse.Position{
+					Index: 26,
+					Line:  0,
+					Col:   26,
+				}),
+		},
+		{
+			name:  "comment in comment",
+			input: `<!-- <-- other --> -->`,
+			expected: parse.Error("comment contains invalid sequence '--'", parse.Position{
+				Index: 8,
+				Line:  0,
+				Col:   8,
+			}),
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			input := parse.NewInput(tt.input)
+			_, _, err := htmlComment.Parse(input)
+			if diff := cmp.Diff(tt.expected, err); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+```
 
-## Code of Conduct
+### Generator
 
-Please be respectful and considerate when interacting with other contributors. We have a [Code of Conduct](LICENSE) in place to foster a positive and inclusive environment for everyone.
+The generator takes the object model and writes out Go code that produces the expected output. Any changes to Go code output by templ are made in this area.
 
-Your contributions play a pivotal role in making Templ even better, and we look forward to your involvement. If you have any questions or need further clarification, feel free to reach out to the project maintainers.
+Testing of the generator is carried out by creating a templ file, and a matching expected output file.
 
-Thank you for being part of the Templ community and for helping enhance this project!
+For example, `./generator/test-a-href` contains a templ file of:
+
+```templ
+package testahref
+
+templ render() {
+	<a href="javascript:alert(&#39;unaffected&#39;);">Ignored</a>
+	<a href={ templ.URL("javascript:alert('should be sanitized')") }>Sanitized</a>
+	<a href={ templ.SafeURL("javascript:alert('should not be sanitized')") }>Unsanitized</a>
+}
+```
+
+It also contains an expected output file.
+
+```html
+<a href="javascript:alert(&#39;unaffected&#39;);">Ignored</a>
+<a href="about:invalid#TemplFailedSanitizationURL">Sanitized</a>
+<a href="javascript:alert(&#39;should not be sanitized&#39;)">Unsanitized</a>
+```
+
+These tests contribute towards the code coverage metrics by building an instrumented test CLI program. See the `test-cover` task in the `README.md` file.
+
+### CLI
+
+The command line interface for templ is used to generate Go code from templ files, format templ files, and run the LSP.
+
+The code for this is at `./cmd/templ`.
+
+Testing of the templ command line is done with unit tests to check the argument parsing.
+
+The `templ generate` command is tested by generating templ files in the project, and testing that the expected output HTML is present.
+
+### Runtime
+
+The runtime is used by generated code, and by template authors, to serve template content over HTTP, and to carry out various operations.
+
+It is in the root directory of the project at `./runtime.go`. The runtime is unit tested, as well as being tested as part of the `generate` tests.
+
+### LSP
+
+The LSP is structured within the command line interface, and proxies commands through to the `gopls` LSP.
+
+### Docs
+
+The docs are a Docusaurus project at `./docs`.
+
+## Coding
+
+### Build tasks
+
+templ uses the `xc` task runner - https://github.com/joerdav/xc
+
+If you run `xc` you can get see a list of the development tasks that can be run, or you can read the `README.md` file and see the `Tasks` section.
+
+The most useful tasks for local development are:
+
+* `install-snapshot` - this builds the templ CLI and installs it into `~/bin`. Ensure that this is in your path.
+* `test` - this regenerates all templates, and runs the unit tests.
+* `fmt` - run the `gofmt` tool to format all Go code.
+* `lint` - run the same linting as run in the CI process.
+* `docs-run` - run the Docusaurus documentation site.
+
+### Commit messages
+
+The project using https://www.conventionalcommits.org/en/v1.0.0/
+
+Examples:
+
+* `feat: support Go comments in templates, fixes #234"`
+
+### Coding style
+
+* Reduce nesting - i.e. prefer early returns over an `else` block, as per https://danp.net/posts/reducing-go-nesting/ or https://go.dev/doc/effective_go#if
+* Use line breaks to separate "paragraphs" of code - don't use line breaks in between lines, or at the start/end of functions etc.
+* Use the `fmt` and `lint` build tasks to format and lint your code before submitting a PR.
