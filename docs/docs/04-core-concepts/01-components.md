@@ -57,7 +57,7 @@ func main() {
 This code is unsafe! In code-only components, you're responsible for escaping the HTML content yourself, e.g. with the `templ.EscapeString` function.
 :::
 
-## Component as method on types
+## Method components
 
 templ Components can be generated as methods on types
 
