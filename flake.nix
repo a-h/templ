@@ -69,7 +69,6 @@
           buildInputs = with pkgs; [
             (golangci-lint.override { buildGoModule = buildGo121Module; })
             go_1_21
-            gofmt
             goreleaser
             nodejs
             xc.packages.${system}.xc
