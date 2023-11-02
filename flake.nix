@@ -36,7 +36,7 @@
           name = "templ";
           src = gitignore.lib.gitignoreSource ./.;
           subPackages = [ "cmd/templ" ];
-          vendorSha256 = "sha256-7QYF8BvLpTcDstkLWxR0BgBP0NUlJ20IqW/nNqMSBn4=";
+          vendorSha256 = "sha256-9LHaJuQfA4NhMXIdVCseprlp/EFd6I5SUWvUHp+1SDQ=";
           CGO_ENALBED = 0;
 
           flags = [
