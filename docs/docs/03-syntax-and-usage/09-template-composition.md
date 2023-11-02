@@ -108,3 +108,48 @@ func main() {
 	<p>Right contents</p>
 </div>
 ```
+
+You can pass `templ` components as parameters to other components within templates using standard Go function call syntax.
+
+```templ
+package main
+
+templ layout(l, r templ.Component) {
+	<div id="left">
+		{! l }
+	</div>
+	<div id="right">
+		{! r }
+	</div>
+}
+
+templ paragraph(contents string) {
+	<p>{ contents }</p>
+}
+
+templ root() {
+	@layout(paragraph("Left contents"), paragraph("Right contents"))
+}
+```
+
+```go title="main.go"
+package main
+
+import (
+	"context"
+	"os"
+)
+
+func main() {
+	root().Render(context.Background(), os.Stdout)
+}
+```
+
+```html title="output"
+<div id="left">
+	<p>Left contents</p>
+</div>
+<div id="right">
+	<p>Right contents</p>
+</div>
+```
