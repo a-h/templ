@@ -45,7 +45,7 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lint
-        uses: nix develop --command xc lint
+        run: nix develop --command xc lint
 
   ensure-generated:
     runs-on: ubuntu-latest
@@ -57,7 +57,7 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate
-        uses: nix develop --command xc generate
+        run: nix develop --command xc generate
 
       - name: Ensure clean
         run: git diff --exit-code
