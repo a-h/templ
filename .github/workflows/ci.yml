@@ -26,7 +26,7 @@ jobs:
         run: cp coverage.out $RUNNER_TEMP
       
       - name: Update coverage report
-        uses: ncruces/go-coverage-report@21fa4b59396f242b81896a3cd212a463589b6742
+        uses: ncruces/go-coverage-report@57ac6f0f19874f7afbab596105154f08004f482e
         with:
           coverage-file: ${{ runner.temp }}/coverage.out
           report: 'true'
@@ -34,7 +34,6 @@ jobs:
           reuse-go: 'true'
         if: |
           github.event_name == 'push'  
-        continue-on-error: true
 
   lint:
     runs-on: ubuntu-latest
