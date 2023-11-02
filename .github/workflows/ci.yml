@@ -16,6 +16,8 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+
       - name: Test
         run: nix develop --command xc test-cover
 
@@ -44,6 +46,8 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+
       - name: Lint
         run: nix develop --command xc lint
 
@@ -55,6 +59,8 @@ jobs:
       - uses: cachix/install-nix-action@v22
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
 
       - name: Generate
         run: nix develop --command xc generate
