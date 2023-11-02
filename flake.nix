@@ -28,7 +28,8 @@
         inherit system;
         pkgs = import nixpkgs { inherit system; };
       });
-    in rec {
+    in
+    rec {
       packages = forAllSystems ({ pkgs, ... }: rec {
         default = templ;
 
@@ -66,7 +67,9 @@
       devShell = forAllSystems ({ system, pkgs }:
         pkgs.mkShell {
           buildInputs = with pkgs; [
+            (golangci-lint.override { buildGoModule = buildGo121Module; })
             go_1_21
+            gofmt
             goreleaser
             nodejs
             xc.packages.${system}.xc

@@ -105,7 +105,7 @@ gofmt -s -w .
 ### lint
 
 ```sh
-docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.54 golangci-lint run -v
+golangci-lint run --verbose
 ```
 
 ### release
@@ -136,21 +136,5 @@ Directory: docs
 
 ```
 npm run build
-```
-
-### docker-build
-
-Build a Docker container with a full development environment and Neovim setup for testing the LSP.
-
-```
-docker build -t templ:latest .
-```
-
-### docker-run
-
-Run a Docker development container in the current directory.
-
-```
-docker run -p 7474:7474 -v `pwd`:/templ -it --rm templ:latest
 ```
 
