@@ -20,7 +20,7 @@ https://github.com/a-h/templ/tree/main/examples/integration-chi
 
 A next-generation CLI tool for easily build amazing web applications with Go on the backend, using htmx & hyperscript, and the most popular atomic/utility-first CSS frameworks on the frontend. 
 
-Gowebly CLI supports creating ready-made projects using Templ for the built-in **net/http** and Go web frameworks: **Fiber**, **Chi**, **Echo**.
+Gowebly CLI supports creating ready-made projects using Templ for the built-in **net/http** and Go web frameworks: **Fiber**, **Chi**, **Echo**, **HttpRouter**.
 
 Follow the instructions in the Complete User Guide:
 
