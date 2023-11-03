@@ -1,14 +1,33 @@
 package testcall
 
-templ personTemplate(p person) {
-	<div>
-		<h1>{ p.name }</h1>
-		<div style="font-family: &#39;sans-serif&#39;" id="test" data-contents={ `something with "quotes" and a <tag>` }>
-			{! email(p.email) }
-		</div>
-	</div>
+templ showAll() {
+	@a()
+	@b(c("C"))
+	{! d() }
+	@wrapChildren() {
+		<div>Child content</div>
+	}
 }
 
-templ email(s string) {
-	<div>email:<a href={ templ.URL("mailto: " + s) }>{ s }</a></div>
+templ a() {
+	<div>A</div>
+}
+
+templ b(child templ.Component) {
+	<div>B</div>
+	@child
+}
+
+templ c(text string) {
+	<div>{ text }</div>
+}
+
+templ d() {
+	<div>Legacy call style</div>
+}
+
+templ wrapChildren() {
+	<div id="wrapper">
+		{ children... }
+	</div>
 }

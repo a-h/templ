@@ -11,10 +11,7 @@ import (
 var expected string
 
 func Test(t *testing.T) {
-	component := personTemplate(person{
-		name:  "Luiz Bonfa",
-		email: "luiz@example.com",
-	})
+	component := showAll()
 
 	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
