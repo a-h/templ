@@ -15,7 +15,10 @@ import (
 )
 
 func main() {
-	run(os.Stdout, os.Args)
+	code := run(os.Stdout, os.Args)
+	if code != 0 {
+		os.Exit(code)
+	}
 }
 
 const usageText = `usage: templ <command> [<args>...]
@@ -39,23 +42,19 @@ func run(w io.Writer, args []string) (code int) {
 	}
 	switch args[1] {
 	case "generate":
-		generateCmd(w, args[2:])
-		return
+		return generateCmd(w, args[2:])
 	case "migrate":
-		migrateCmd(w, args[2:])
-		return
+		return migrateCmd(w, args[2:])
 	case "fmt":
-		fmtCmd(w, args[2:])
-		return
+		return fmtCmd(w, args[2:])
 	case "lsp":
-		lspCmd(w, args[2:])
-		return
+		return lspCmd(w, args[2:])
 	case "version":
 		fmt.Fprintln(w, templ.Version)
-		return
+		return 0
 	case "--version":
 		fmt.Fprintln(w, templ.Version)
-		return
+		return 0
 	}
 	fmt.Fprint(w, usageText)
 	return 0
