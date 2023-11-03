@@ -66,17 +66,17 @@ The use of the `{ children... }` expression in the child component.
 
 # Components as parameters
 
-Components can also be passed as parameters and rendered using the `{! component }` expression.
+Components can also be passed as parameters and rendered using the `@component` expression.
 
 ```templ
 package main
 
 templ layout(l, r templ.Component) {
 	<div id="left">
-		{! l }
+		@l
 	</div>
 	<div id="right">
-		{! r }
+		@r
 	</div>
 }
 
@@ -116,10 +116,10 @@ package main
 
 templ layout(l, r templ.Component) {
 	<div id="left">
-		{! l }
+		@l
 	</div>
 	<div id="right">
-		{! r }
+		@r
 	</div>
 }
 
