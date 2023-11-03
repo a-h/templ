@@ -71,12 +71,16 @@ Components can also be passed as parameters and rendered using the `@component` 
 ```templ
 package main
 
-templ layout(l, r templ.Component) {
-	<div id="left">
-		@l
+templ heading() {
+    <h1>Heading</h1>
+}
+
+templ layout(contents templ.Component) {
+	<div id="heading">
+		@heading()
 	</div>
-	<div id="right">
-		@r
+	<div id="contents">
+		@contents
 	</div>
 }
 
@@ -94,18 +98,17 @@ import (
 )
 
 func main() {
-	l := paragraph("Left contents")
-	r := paragraph("Right contents")
-	layout(l, r).Render(context.Background(), os.Stdout)
+	c := paragraph("Dynamic contents")
+	layout(c).Render(context.Background(), os.Stdout)
 }
 ```
 
 ```html title="output"
-<div id="left">
-	<p>Left contents</p>
+<div id="heading">
+	<h1>Heading</h1>
 </div>
 <div id="right">
-	<p>Right contents</p>
+	<p>Dynamic contents</p>
 </div>
 ```
 
@@ -114,12 +117,16 @@ You can pass `templ` components as parameters to other components within templat
 ```templ
 package main
 
-templ layout(l, r templ.Component) {
-	<div id="left">
-		@l
+templ heading() {
+    <h1>Heading</h1>
+}
+
+templ layout(contents templ.Component) {
+	<div id="heading">
+		@heading()
 	</div>
-	<div id="right">
-		@r
+	<div id="contents">
+		@contents
 	</div>
 }
 
@@ -128,7 +135,7 @@ templ paragraph(contents string) {
 }
 
 templ root() {
-	@layout(paragraph("Left contents"), paragraph("Right contents"))
+	@layout(paragraph("Dynamic contents"))
 }
 ```
 
@@ -146,10 +153,10 @@ func main() {
 ```
 
 ```html title="output"
-<div id="left">
-	<p>Left contents</p>
+<div id="heading">
+	<h1>Heading</h1>
 </div>
 <div id="right">
-	<p>Right contents</p>
+	<p>Dynamic contents</p>
 </div>
 ```
