@@ -96,10 +96,11 @@ go run ./cmd/templ generate -include-version=false && go test ./... -bench=. -be
 
 ### fmt
 
-Format all Go code.
+Format all Go and templ code.
 
-```
+```sh
 gofmt -s -w .
+go run ./cmd/templ fmt .
 ```
 
 ### lint
@@ -124,7 +125,7 @@ Run the development server.
 
 Directory: docs
 
-```
+```sh
 npm run start
 ```
 
@@ -134,7 +135,7 @@ Build production docs site.
 
 Directory: docs
 
-```
+```sh
 npm run build
 ```
 

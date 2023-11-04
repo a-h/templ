@@ -67,3 +67,20 @@ jobs:
 
       - name: Ensure clean
         run: git diff --exit-code
+
+  ensure-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: cachix/install-nix-action@v22
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+
+      - name: Fmt
+        run: nix develop --command xc fmt
+
+      - name: Ensure clean
+        run: git diff --exit-code
