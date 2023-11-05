@@ -15,7 +15,8 @@ func graph(data []TimeValue) templ.ComponentScript {
 		Function: `function __templ_graph_c2ba(data){const chart = LightweightCharts.createChart(document.body, { width: 400, height: 300 });
 	const lineSeries = chart.addLineSeries();
 	lineSeries.setData(data);}`,
-		Call: templ.SafeScript(`__templ_graph_c2ba`, data),
+		Call:       templ.SafeScript(`__templ_graph_c2ba`, data),
+		CallInline: templ.SafeScriptInline(`__templ_graph_c2ba`, data),
 	}
 }
 

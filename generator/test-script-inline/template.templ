@@ -1,0 +1,14 @@
+package testscriptusage
+
+script withParameters(a string, b string, c int) {
+	console.log(a, b, c);
+}
+
+script withoutParameters() {
+	alert("hello");
+}
+
+templ InlineJavascript(a string) {
+	{! withoutParameters() }
+	{! withParameters(a, "test", 123) }
+}

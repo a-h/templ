@@ -179,7 +179,8 @@ func highlight(sourceId, targetId string) templ.ComponentScript {
 	for(let i = 0; i < items.length; i ++) {
 		items[i].classList.add("highlighted");
 	}}`,
-		Call: templ.SafeScript(`__templ_highlight_ae80`, sourceId, targetId),
+		Call:       templ.SafeScript(`__templ_highlight_ae80`, sourceId, targetId),
+		CallInline: templ.SafeScriptInline(`__templ_highlight_ae80`, sourceId, targetId),
 	}
 }
 
@@ -194,7 +195,8 @@ func removeHighlight(sourceId, targetId string) templ.ComponentScript {
 	for(let i = 0; i < items.length; i ++) {
 		items[i].classList.remove("highlighted");
 	}}`,
-		Call: templ.SafeScript(`__templ_removeHighlight_58f2`, sourceId, targetId),
+		Call:       templ.SafeScript(`__templ_removeHighlight_58f2`, sourceId, targetId),
+		CallInline: templ.SafeScriptInline(`__templ_removeHighlight_58f2`, sourceId, targetId),
 	}
 }
 

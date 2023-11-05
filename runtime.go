@@ -471,13 +471,33 @@ type SafeURL string
 
 // Script handling.
 
-// SafeScript encodes unknown parameters for safety.
-func SafeScript(functionName string, params ...interface{}) string {
+func safeEncodeScriptParams(escapeHtml bool, params ...interface{}) []string {
 	encodedParams := make([]string, len(params))
 	for i := 0; i < len(encodedParams); i++ {
 		enc, _ := json.Marshal(params[i])
-		encodedParams[i] = EscapeString(string(enc))
+		if escapeHtml {
+			encodedParams[i] = EscapeString(string(enc))
+		} else {
+			encodedParams[i] = string(enc)
+		}
 	}
+	return encodedParams
+}
+
+// SafeScript encodes unknown parameters for safety for inside HTML attributes.
+func SafeScript(functionName string, params ...interface{}) string {
+	encodedParams := safeEncodeScriptParams(true, params...)
+	sb := new(strings.Builder)
+	sb.WriteString(functionName)
+	sb.WriteRune('(')
+	sb.WriteString(strings.Join(encodedParams, ","))
+	sb.WriteRune(')')
+	return sb.String()
+}
+
+// SafeScript encodes unknown parameters for safety for inline scripts.
+func SafeScriptInline(functionName string, params ...interface{}) string {
+	encodedParams := safeEncodeScriptParams(false, params...)
 	sb := new(strings.Builder)
 	sb.WriteString(functionName)
 	sb.WriteRune('(')
@@ -550,9 +570,33 @@ type ComponentScript struct {
 	Name string
 	// Function to render.
 	Function string
-	// Call of the function in JavaScript syntax, including parameters.
+	// Call of the function in JavaScript syntax, including parameters, and ensures parameters are HTML escaped.
 	// e.g. print({ x: 1 })
 	Call string
+	// Call of the function in JavaScript syntax, including parameters. Doesn't not HTML escape parameters; useful for directly calling.
+	// e.g. print({ x: 1 })
+	CallInline string
+}
+
+var _ Component = ComponentScript{}
+
+func (c ComponentScript) Render(ctx context.Context, w io.Writer) error {
+	err := RenderScriptItems(ctx, w, c)
+	if err != nil {
+		return err
+	}
+	if len(c.Call) > 0 {
+		if _, err = io.WriteString(w, `<script type="text/javascript">`); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, c.CallInline); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, `</script>`); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // RenderScriptItems renders a <script> element, if the script has not already been rendered.

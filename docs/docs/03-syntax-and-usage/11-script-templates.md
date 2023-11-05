@@ -103,3 +103,50 @@ func main() {
 	}
 }
 ```
+
+You can also directly render the Javascript function, passing in Go data, using the `!` expression:
+
+```templ
+package main
+
+script printToConsole(content string) {
+	console.log(conent)
+}
+
+templ page(content string) {
+	<html>
+		<body>
+		  {! printToConsole(content) }
+		</body>
+	</html>
+}
+```
+
+The data passed into the Javascript funtion will be JSON encoded, which then can be used inside the function.
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	// Handle template.
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Format the current time and pass it into our template
+		page(time.Now().String()).Render(r.Context(), w)
+	})
+
+	// Start the server.
+	fmt.Println("listening on :8080")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Printf("error listening: %v", err)
+	}
+}
+```
