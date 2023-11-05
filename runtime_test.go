@@ -244,43 +244,6 @@ func TestRenderCSS(t *testing.T) {
 	}
 }
 
-func TestClassSanitization(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{
-			input:    `safe`,
-			expected: `safe`,
-		},
-		{
-			input:    `safe-name`,
-			expected: "safe-name",
-		},
-		{
-			input:    `safe_name`,
-			expected: "safe_name",
-		},
-		{
-			input:    `!unsafe`,
-			expected: "--templ-css-class-safe-name",
-		},
-		{
-			input:    `</style>`,
-			expected: "--templ-css-class-safe-name",
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.input, func(t *testing.T) {
-			actual := templ.Class(tt.input)
-			if actual.ClassName() != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, actual.ClassName())
-			}
-		})
-	}
-}
-
 func TestClassesFunction(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -288,14 +251,9 @@ func TestClassesFunction(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "safe constants are allowed",
-			input:    []any{"a", "b", "c"},
-			expected: "a b c",
-		},
-		{
-			name:     "unsafe constants are filtered",
-			input:    []any{"</style>", "b", "</style>"},
-			expected: "--templ-css-class-safe-name b",
+			name:     "constants are allowed",
+			input:    []any{"a", "b", "c", "</style>"},
+			expected: "a b c </style>",
 		},
 		{
 			name:     "legacy CSS types are supported",
@@ -341,25 +299,17 @@ func TestClassesFunction(t *testing.T) {
 		{
 			name: "string arrays are supported",
 			input: []any{
-				[]string{"a", "b", "c"},
+				[]string{"a", "b", "c", "</style>"},
 				"d",
 			},
-			expected: "a b c d",
-		},
-		{
-			name: "string arrays are checked for unsafe class names",
-			input: []any{
-				[]string{"a", "b", "c </style>"},
-				"d",
-			},
-			expected: "a b c --templ-css-class-safe-name d",
+			expected: "a b c </style> d",
 		},
 		{
 			name: "strings are broken up",
 			input: []any{
 				"a </style>",
 			},
-			expected: "a --templ-css-class-safe-name",
+			expected: "a </style>",
 		},
 		{
 			name: "if a templ.CSSClasses is passed in, the nested CSSClasses are extracted",

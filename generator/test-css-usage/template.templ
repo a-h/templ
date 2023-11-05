@@ -35,7 +35,7 @@ templ KVExample() {
 }
 
 templ PsuedoAttributes() {
-	<button class={ "bg-violet-500", templ.KV(templ.SafeClass("hover:bg-violet-600"), true) }>Save changes</button>
+	<button class={ "bg-violet-500", templ.KV("hover:bg-violet-600", true) }>Save changes</button>
 }
 
 templ ThreeButtons() {
