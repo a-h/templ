@@ -98,36 +98,6 @@ type Expression struct {
 	Range Range
 }
 
-// Format go code in expression
-func (e *Expression) Format(formatLikeSlice bool) string {
-	if formatLikeSlice {
-
-		data, err := format.Source([]byte(`[]string{ ` + e.Value + ` }`))
-		if err != nil {
-			return e.Value
-		}
-
-		// Remove start of slice
-		formatted := strings.Replace(string(data), "[]string{", "", 1)
-
-		// Remove end of slice
-		p := strings.LastIndex(formatted, "}")
-
-		if p != -1 {
-			formatted = formatted[:p] + formatted[p+1:]
-		}
-
-		return formatted
-	}
-
-	data, err := format.Source([]byte(e.Value))
-	if err != nil {
-		return e.Value
-	}
-
-	return string(data)
-}
-
 type TemplateFile struct {
 	// Header contains comments or whitespace at the top of the file.
 	Header []GoExpression
@@ -190,11 +160,13 @@ func (exp GoExpression) Write(w io.Writer, indent int) error {
 	return err
 }
 
-func writeIndent(w io.Writer, level int, s string) (err error) {
+func writeIndent(w io.Writer, level int, s ...string) (err error) {
 	if _, err = w.Write([]byte(strings.Repeat("\t", level))); err != nil {
 		return
 	}
-	_, err = w.Write([]byte(s))
+	for _, ss := range s {
+		_, err = w.Write([]byte(ss))
+	}
 	return
 }
 
@@ -717,26 +689,30 @@ type ExpressionAttribute struct {
 }
 
 func (ea ExpressionAttribute) String() string {
-	if strings.Contains(ea.Expression.Value, "\n") && strings.Contains(ea.Expression.Value, ",") {
-		return ea.Name + `={` + ea.Expression.Format(true) + `}`
-	}
-
-	return ea.Name + `={ ` + strings.TrimSpace(ea.Expression.Value) + ` }`
+	sb := new(strings.Builder)
+	ea.Write(sb, 0)
+	return sb.String()
 }
 
-func (ea ExpressionAttribute) Write(w io.Writer, indent int) error {
-	lines := strings.Split(ea.String(), "\n")
+func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
+	trimmed := strings.TrimSpace(ea.Expression.Value)
+	lines := strings.Split(trimmed, "\n")
+	if len(lines) == 1 {
+		return writeIndent(w, indent, ea.Name, `={ `, trimmed, ` }`)
+	}
 
-	for i, line := range lines {
-		if err := writeIndent(w, indent, line); err != nil {
+	if err = writeIndent(w, indent, ea.Name, `={`, "\n"); err != nil {
+		return err
+	}
+
+	for _, line := range lines {
+		if err := writeIndent(w, indent+1, strings.TrimSpace(line), "\n"); err != nil {
 			return err
 		}
+	}
 
-		if i < len(lines)-1 {
-			if _, err := w.Write([]byte("\n")); err != nil {
-				return err
-			}
-		}
+	if err = writeIndent(w, indent, "}"); err != nil {
+		return err
 	}
 
 	return nil
