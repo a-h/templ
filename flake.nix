@@ -54,7 +54,7 @@
         templ-docs = pkgs.buildNpmPackage {
           name = "templ-docs";
           src = gitignore.lib.gitignoreSource ./docs;
-          npmDepsHash = "sha256-/9FzD38s0bER9zvR4AfU/KBrzRsWDmuFeuMgSL45/1s=";
+          npmDepsHash = "sha256-i6clvSyHtQEGl2C/wcCXonl1W/Kxq7WPTYH46AhUvDM=";
 
           installPhase = ''
             mkdir -p $out/share

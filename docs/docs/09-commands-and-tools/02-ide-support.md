@@ -4,10 +4,10 @@
 
 There's a VS Code extension, just make sure you've already installed templ and that it's on your path.
 
-- <https://marketplace.visualstudio.com/items?itemName=a-h.templ>
-- <https://github.com/a-h/templ-vscode>
+- https://marketplace.visualstudio.com/items?itemName=a-h.templ
+- https://github.com/a-h/templ-vscode
 
-VSCodium users can find the extension on the Open VSX Registry at <https://open-vsx.org/extension/a-h/templ>
+VSCodium users can find the extension on the Open VSX Registry at https://open-vsx.org/extension/a-h/templ
 
 ### Format on Save
 
@@ -37,7 +37,7 @@ Include the following to the settings.json in order to enable autocompletion for
 
 ## Neovim &gt; 0.5.0
 
-A vim / neovim plugin is available from <https://github.com/Joe-Davidson1802/templ.vim> which adds syntax highlighting.
+A vim / neovim plugin is available from https://github.com/Joe-Davidson1802/templ.vim which adds syntax highlighting.
 
 For neovim you can also use [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) for syntax highlighting with the custom parser [tree-sitter-templ](https://github.com/vrischmann/tree-sitter-templ).
 
