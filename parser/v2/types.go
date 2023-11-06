@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/format"
@@ -694,28 +695,50 @@ func (ea ExpressionAttribute) String() string {
 	return sb.String()
 }
 
-func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
+func (ea ExpressionAttribute) formatExpression() (exp []string) {
 	trimmed := strings.TrimSpace(ea.Expression.Value)
-	lines := strings.Split(trimmed, "\n")
-	if len(lines) == 1 {
-		return writeIndent(w, indent, ea.Name, `={ `, trimmed, ` }`)
+	if !strings.Contains(trimmed, "\n") {
+		formatted, err := format.Source([]byte(trimmed))
+		if err != nil {
+			return []string{trimmed}
+		}
+		return []string{string(formatted)}
 	}
 
-	if err = writeIndent(w, indent, ea.Name, `={`, "\n"); err != nil {
+	buf := bytes.NewBufferString("[]any{\n")
+	buf.WriteString(trimmed)
+	buf.WriteString("\n}")
+
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return []string{trimmed}
+	}
+
+	// Trim prefix and suffix.
+	lines := strings.Split(string(formatted), "\n")
+	if len(lines) < 3 {
+		return []string{trimmed}
+	}
+
+	// Return.
+	return lines[1 : len(lines)-1]
+}
+
+func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
+	lines := ea.formatExpression()
+	if len(lines) == 1 {
+		return writeIndent(w, indent, ea.Name, `={ `, lines[0], ` }`)
+	}
+
+	if err = writeIndent(w, indent, ea.Name, "={\n"); err != nil {
 		return err
 	}
-
 	for _, line := range lines {
-		if err := writeIndent(w, indent+1, strings.TrimSpace(line), "\n"); err != nil {
+		if err = writeIndent(w, indent, line, "\n"); err != nil {
 			return err
 		}
 	}
-
-	if err = writeIndent(w, indent, "}"); err != nil {
-		return err
-	}
-
-	return nil
+	return writeIndent(w, indent, "}")
 }
 
 //	<a href="test" \

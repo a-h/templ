@@ -555,6 +555,9 @@ name={
 class={ 
       "blue",
     class,
+		map[string]bool{
+		"a": true,
+		},
 }
 ></button>
 }
@@ -569,6 +572,9 @@ templ x(id string, class string) {
  		class={
 			"blue",
 			class,
+			map[string]bool{
+				"a": true,
+			},
 		}
 	></button>
 }
