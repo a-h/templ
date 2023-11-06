@@ -20,7 +20,7 @@ templ plugin:
     "[templ]": {
         "editor.defaultFormatter": "a-h.templ"
     },
-{
+}
 ```
 
 ### Tailwind CSS Intellisense
