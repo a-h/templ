@@ -81,7 +81,7 @@ var elementCloseTagParser = parse.Func(func(in *parse.Input) (ct elementCloseTag
 // Attribute name.
 var (
 	attributeNameFirst      = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:_@"
-	attributeNameSubsequent = attributeNameFirst + "-.0123456789"
+	attributeNameSubsequent = attributeNameFirst + "-.0123456789*"
 	attributeNameParser     = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
 		start := in.Index()
 		var prefix, suffix string

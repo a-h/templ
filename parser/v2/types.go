@@ -694,7 +694,7 @@ type ExpressionAttribute struct {
 
 func (ea ExpressionAttribute) String() string {
 	sb := new(strings.Builder)
-	ea.Write(sb, 0)
+	_ = ea.Write(sb, 0)
 	return sb.String()
 }
 
