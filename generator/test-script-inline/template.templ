@@ -11,4 +11,7 @@ script withoutParameters() {
 templ InlineJavascript(a string) {
 	{! withoutParameters() }
 	{! withParameters(a, "test", 123) }
+	// Call once more, to ensure it's defined only once
+	{! withoutParameters() }
+	{! withParameters(a, "test", 123) }
 }
