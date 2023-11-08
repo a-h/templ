@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
-	github.com/a-h/htmlformat v0.0.0-20231031103120-c3d4a33d8ada
+	github.com/a-h/htmlformat v0.0.0-20231108124658-5bd994fe268e
 	github.com/a-h/lexical v0.0.53
 	github.com/a-h/parse v0.0.0-20230402144745-e6c8bc86e846
 	github.com/a-h/pathvars v0.0.12
