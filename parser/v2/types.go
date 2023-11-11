@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"go/format"
-	"html"
 	"io"
 	"strings"
 	"unicode"
@@ -665,7 +664,7 @@ type ConstantAttribute struct {
 }
 
 func (ca ConstantAttribute) String() string {
-	return ca.Name + `="` + html.EscapeString(ca.Value) + `"`
+	return ca.Name + `="` + ca.Value + `"`
 }
 
 func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
