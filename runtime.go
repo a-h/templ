@@ -471,22 +471,22 @@ type SafeURL string
 
 // Script handling.
 
-func safeEncodeScriptParams(escapeHtml bool, params ...interface{}) []string {
+func safeEncodeScriptParams(escapeHTML bool, params ...any) []string {
 	encodedParams := make([]string, len(params))
 	for i := 0; i < len(encodedParams); i++ {
 		enc, _ := json.Marshal(params[i])
-		if escapeHtml {
-			encodedParams[i] = EscapeString(string(enc))
-		} else {
+		if !escapeHTML {
 			encodedParams[i] = string(enc)
+			continue
 		}
+		encodedParams[i] = EscapeString(string(enc))
 	}
 	return encodedParams
 }
 
 // SafeScript encodes unknown parameters for safety for inside HTML attributes.
-func SafeScript(functionName string, params ...interface{}) string {
-	encodedParams := safeEncodeScriptParams(true, params...)
+func SafeScript(functionName string, params ...any) string {
+	encodedParams := safeEncodeScriptParams(true, params)
 	sb := new(strings.Builder)
 	sb.WriteString(functionName)
 	sb.WriteRune('(')
@@ -496,8 +496,8 @@ func SafeScript(functionName string, params ...interface{}) string {
 }
 
 // SafeScript encodes unknown parameters for safety for inline scripts.
-func SafeScriptInline(functionName string, params ...interface{}) string {
-	encodedParams := safeEncodeScriptParams(false, params...)
+func SafeScriptInline(functionName string, params ...any) string {
+	encodedParams := safeEncodeScriptParams(false, params)
 	sb := new(strings.Builder)
 	sb.WriteString(functionName)
 	sb.WriteRune('(')
@@ -570,11 +570,29 @@ type ComponentScript struct {
 	Name string
 	// Function to render.
 	Function string
-	// Call of the function in JavaScript syntax, including parameters, and ensures parameters are HTML escaped.
-	// e.g. print({ x: 1 })
+	// Call of the function in JavaScript syntax, including parameters, and
+	// ensures parameters are HTML escaped; useful for injecting into HTML
+	// attributes like onclick, onhover, etc.
+	//
+	// Given:
+	//    functionName("some string",12345)
+	// It would render:
+	//    __templ_functionName_sha(&#34;some string&#34;,12345))
+	//
+	// This is can be injected into HTML attributes:
+	//    <button onClick="__templ_functionName_sha(&#34;some string&#34;,12345))">Click Me</button>
 	Call string
-	// Call of the function in JavaScript syntax, including parameters. Doesn't not HTML escape parameters; useful for directly calling.
-	// e.g. print({ x: 1 })
+	// Call of the function in JavaScript syntax, including parameters. It
+	// does not HTML escape parameters; useful for directly calling in script
+	// elements.
+	//
+	// Given:
+	//    functionName("some string",12345)
+	// It would render:
+	//    __templ_functionName_sha("some string",12345))
+	//
+	// This is can be used to call the function inside a script tag:
+	//    <script>__templ_functionName_sha("some string",12345))</script>
 	CallInline string
 }
 

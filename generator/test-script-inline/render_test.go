@@ -1,4 +1,4 @@
-package testscriptusage
+package testscriptinline
 
 import (
 	_ "embed"

@@ -62,7 +62,7 @@ templ page(data []TimeValue) {
 
 The data is loaded by the backend into the template. This example uses a constant, but it could easily have collected the `[]TimeValue` from a database.
 
-```go
+```go title="main.go"
 package main
 
 import (
@@ -104,19 +104,22 @@ func main() {
 }
 ```
 
-You can also directly render the Javascript function, passing in Go data, using the `!` expression:
+`script` elements are templ Components, so you can also directly render the Javascript function, passing in Go data, using the `@` expression:
 
 ```templ
 package main
 
+import "fmt"
+
 script printToConsole(content string) {
-	console.log(conent)
+	console.log(content)
 }
 
 templ page(content string) {
 	<html>
 		<body>
-		  {! printToConsole(content) }
+		  @printToConsole(content)
+		  @printToConsole(fmt.Sprintf("Again: %s", content))
 		</body>
 	</html>
 }
@@ -124,7 +127,7 @@ templ page(content string) {
 
 The data passed into the Javascript funtion will be JSON encoded, which then can be used inside the function.
 
-```go
+```go title="main.go"
 package main
 
 import (
@@ -149,4 +152,16 @@ func main() {
 		log.Printf("error listening: %v", err)
 	}
 }
+```
+
+After building and running the executable, running `curl http://localhost:8080/` would render:
+
+```html title="Output"
+<html>
+	<body>
+		<script type="text/javascript">function __templ_printToConsole_5a85(content){console.log(content)}</script>
+		<script type="text/javascript">__templ_printToConsole_5a85("2023-11-11 01:01:40.983381358 +0000 UTC")</script>
+		<script type="text/javascript">__templ_printToConsole_5a85("Again: 2023-11-11 01:01:40.983381358 +0000 UTC")</script>
+	</body>
+</html>
 ```
