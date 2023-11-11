@@ -247,11 +247,13 @@ func KV[TKey comparable, TValue any](key TKey, value TValue) KeyValue[TKey, TVal
 const unknownTypeClassName = "--templ-css-class-unknown-type"
 
 // Class returns a CSS class name.
+// Deprecated: use a string instead.
 func Class(name string) CSSClass {
 	return SafeClass(name)
 }
 
 // SafeClass bypasses CSS class name validation.
+// Deprecated: use a string instead.
 func SafeClass(name string) CSSClass {
 	return ConstantCSSClass(name)
 }
@@ -262,6 +264,7 @@ type CSSClass interface {
 }
 
 // ConstantCSSClass is a string constant of a CSS class name.
+// Deprecated: use a string instead.
 type ConstantCSSClass string
 
 // ClassName of the CSS class.
