@@ -1,13 +1,42 @@
 package testcssusage
 
-css green() {
+// Constant class.
+
+templ StyleTagsAreSupported() {
+	<style>
+	.test {
+		color: #ff0000;
+	}
+	</style>
+	<div class="test">Style tags are supported</div>
+}
+
+// CSS components.
+
+css cssComponentGreen() {
 	color: #00ff00;
 }
 
-css className() {
-	background-color: #ffffff;
-	color: { red };
+templ CSSComponentsAreSupported() {
+	<div class={ cssComponentGreen() }>CSS components are supported</div>
 }
+
+// Both CSS components and constants are supported.
+// Only string names are really required. There is no need to use templ.Class or templ.SafeClass.
+
+templ CSSComponentsAndConstantsAreSupported() {
+	<div class={ cssComponentGreen(), "classA", templ.Class("&&&classB"), templ.SafeClass("classC"), "d e" } type="button">Both CSS components and constants are supported</div>
+	// The following is also valid, but not required - you can put the class names in directly.
+	<div class={ templ.Classes(cssComponentGreen(), "classA", templ.Class("&&&classB"), templ.SafeClass("classC")), "d e" } type="button">Both CSS components and constants are supported</div>
+}
+
+// Maps can be used to determine if a class should be added or not.
+
+templ MapsCanBeUsedToConditionallySetClasses() {
+	<div class={ map[string]bool{ "a": true, "b": false, "c": true } }>Maps can be used to determine if a class should be added or not.</div>
+}
+
+// The templ.KV function can be used to add a class if a condition is true.
 
 css d() {
 	font-size: 12pt;
@@ -17,37 +46,23 @@ css e() {
 	font-size: 14pt;
 }
 
-templ Button(text string) {
-	<button class={ className(), templ.Class("&&&unsafe"), "safe", templ.SafeClass("safe2") } type="button">{ text }</button>
+templ KVCanBeUsedToConditionallySetClasses() {
+	<div class={ "a", templ.KV("b", false), "c", templ.KV(d(), false), templ.KV(e(), true) }>KV can be used to conditionally set classes.</div>
 }
 
-templ LegacySupport() {
-	<div class={ templ.Classes(templ.Class("test"), "a") }></div>
+// Pseudo attributes can be used without any special syntax.
+
+templ PsuedoAttributesAndComplexClassNamesAreSupported() {
+	<div class={ "bg-violet-500", "hover:bg-red-600", "hover:bg-sky-700", "text-[#50d71e]", "w-[calc(100%-4rem)" }>Psuedo attributes and complex class names are supported.</div>
 }
 
-templ MapCSSExample() {
-	<div class={ map[string]bool{ "a": true, "b": false, "c": true } }></div>
-}
+// Combine all tests.
 
-templ KVExample() {
-	<div class={ "a", templ.KV("b", false) }></div>
-	<input type="email" id="email" name="email" class={ "a", "b", "c", templ.KV("c", false), templ.KV(d(), false), templ.KV(e(), true) } placeholder="your@email.com" autocomplete="off"/>
-}
-
-templ PsuedoAttributes() {
-	<button class={ "bg-violet-500", templ.KV("hover:bg-violet-600", true) }>Save changes</button>
-}
-
-templ ThreeButtons() {
-	<style>
-		.test {
-			color: #ff0000;
-		}
-	</style>
-	{! Button("A") }
-	{! Button("B") }
-	<button class={ templ.Classes(green) } type="button">{ "Green" }</button>
-	{! MapCSSExample() }
-	{! KVExample() }
-	{! PsuedoAttributes() }
+templ TestComponent() {
+	@StyleTagsAreSupported()
+	@CSSComponentsAreSupported()
+	@CSSComponentsAndConstantsAreSupported()
+	@MapsCanBeUsedToConditionallySetClasses()
+	@KVCanBeUsedToConditionallySetClasses()
+	@PsuedoAttributesAndComplexClassNamesAreSupported()
 }
