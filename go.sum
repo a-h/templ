@@ -1,7 +1,7 @@
 github.com/PuerkitoBio/goquery v1.8.1 h1:uQxhNlArOIdbrH1tr0UXwdVFgDcZDrZVdcpygAcwmWM=
 github.com/PuerkitoBio/goquery v1.8.1/go.mod h1:Q8ICL1kNUJ2sXGoAhPGUdYDJvgQgHzJsnnd3H7Ho5jQ=
-github.com/a-h/htmlformat v0.0.0-20231031103120-c3d4a33d8ada h1:xiVyVl0Ub0/IRgnzuaa/6dLNTrDZzY4Pcy47jUxt+bc=
-github.com/a-h/htmlformat v0.0.0-20231031103120-c3d4a33d8ada/go.mod h1:FMIm5afKmEfarNbIXOaPHFY8X7fo+fRQB6I9MPG2nB0=
+github.com/a-h/htmlformat v0.0.0-20231108124658-5bd994fe268e h1:Eog54DQpku7NpPNff9wzQYT61TGu9jjq5N8UhAkqIgw=
+github.com/a-h/htmlformat v0.0.0-20231108124658-5bd994fe268e/go.mod h1:FMIm5afKmEfarNbIXOaPHFY8X7fo+fRQB6I9MPG2nB0=
 github.com/a-h/lexical v0.0.53 h1:uXaV05/iWmVe8A/TxUXxPrpe7z3/8AVbWmOUEbYPe+Q=
 github.com/a-h/lexical v0.0.53/go.mod h1:d73jw5cgKXuYypRozNBuxRNFrTWQ3y5hVMG7rUjh1Qw=
 github.com/a-h/parse v0.0.0-20230402144745-e6c8bc86e846 h1:4yqkQ38CwznwKvf/K6UbBWmcz7Ok/ZSzAXYe1Y9k7fU=

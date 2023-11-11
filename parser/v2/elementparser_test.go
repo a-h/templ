@@ -309,6 +309,15 @@ if test {
 				Value: `<">`,
 			},
 		},
+		{
+			name:   "HTMX wildcard attribute names are supported",
+			input:  ` hx-target-*="#errors"`,
+			parser: StripType(constantAttributeParser),
+			expected: ConstantAttribute{
+				Name:  "hx-target-*",
+				Value: `#errors`,
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

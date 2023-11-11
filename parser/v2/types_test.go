@@ -542,6 +542,45 @@ templ x() {
 `,
 		},
 		{
+			name: "templ expression attribute are formatted correctly when multiline",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ x(id string, class string) {
+<button
+id={id}
+name={
+      "name"
+  }
+class={ 
+      "blue",
+    class,
+		map[string]bool{
+		"a": true,
+		},
+}
+></button>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ x(id string, class string) {
+	<button
+ 		id={ id }
+ 		name={ "name" }
+ 		class={
+			"blue",
+			class,
+			map[string]bool{
+				"a": true,
+			},
+		}
+	></button>
+}
+`,
+		},
+		{
 			name: "spacing between string expressions is kept",
 			input: ` // first line removed to make indentation clear
 package main

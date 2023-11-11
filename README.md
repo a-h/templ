@@ -59,7 +59,9 @@ go run ./cmd/templ generate -include-version=false
 Run Go tests.
 
 ```sh
-go run ./cmd/templ generate -include-version=false && go test ./...
+go run ./get-version > .version
+go run ./cmd/templ generate -include-version=false
+go test ./...
 ```
 
 ### test-cover

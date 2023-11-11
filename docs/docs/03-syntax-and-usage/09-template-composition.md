@@ -107,7 +107,7 @@ func main() {
 <div id="heading">
 	<h1>Heading</h1>
 </div>
-<div id="right">
+<div id="contents">
 	<p>Dynamic contents</p>
 </div>
 ```
@@ -156,7 +156,7 @@ func main() {
 <div id="heading">
 	<h1>Heading</h1>
 </div>
-<div id="right">
+<div id="contents">
 	<p>Dynamic contents</p>
 </div>
 ```
