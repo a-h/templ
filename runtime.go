@@ -10,7 +10,6 @@ import (
 	"html"
 	"io"
 	"net/http"
-	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -164,14 +163,14 @@ func (cp *cssProcessor) Add(item any) {
 	switch c := item.(type) {
 	case []string:
 		for _, className := range c {
-			cp.AddUnsanitized(className, true)
+			cp.AddClassName(className, true)
 		}
 	case string:
-		cp.AddUnsanitized(c, true)
+		cp.AddClassName(c, true)
 	case ConstantCSSClass:
-		cp.AddSanitized(c.ClassName(), true)
+		cp.AddClassName(c.ClassName(), true)
 	case ComponentCSSClass:
-		cp.AddSanitized(c.ClassName(), true)
+		cp.AddClassName(c.ClassName(), true)
 	case map[string]bool:
 		// In Go, map keys are iterated in a randomized order.
 		// So the keys in the map must be sorted to produce consistent output.
@@ -183,43 +182,32 @@ func (cp *cssProcessor) Add(item any) {
 		}
 		sort.Strings(keys)
 		for _, className := range keys {
-			cp.AddUnsanitized(className, c[className])
+			cp.AddClassName(className, c[className])
 		}
 	case []KeyValue[string, bool]:
 		for _, kv := range c {
-			cp.AddUnsanitized(kv.Key, kv.Value)
+			cp.AddClassName(kv.Key, kv.Value)
 		}
 	case KeyValue[string, bool]:
-		cp.AddUnsanitized(c.Key, c.Value)
+		cp.AddClassName(c.Key, c.Value)
 	case []KeyValue[CSSClass, bool]:
 		for _, kv := range c {
-			cp.AddSanitized(kv.Key.ClassName(), kv.Value)
+			cp.AddClassName(kv.Key.ClassName(), kv.Value)
 		}
 	case KeyValue[CSSClass, bool]:
-		cp.AddSanitized(c.Key.ClassName(), c.Value)
+		cp.AddClassName(c.Key.ClassName(), c.Value)
 	case CSSClasses:
 		for _, item := range c {
 			cp.Add(item)
 		}
 	case func() CSSClass:
-		cp.AddSanitized(c().ClassName(), true)
+		cp.AddClassName(c().ClassName(), true)
 	default:
-		cp.AddSanitized(unknownTypeClassName, true)
+		cp.AddClassName(unknownTypeClassName, true)
 	}
 }
 
-func (cp *cssProcessor) AddUnsanitized(className string, enabled bool) {
-	for _, className := range strings.Split(className, " ") {
-		className = strings.TrimSpace(className)
-		if isSafe := safeClassName.MatchString(className); !isSafe {
-			className = fallbackClassName
-			enabled = true // Always display the fallback classname.
-		}
-		cp.AddSanitized(className, enabled)
-	}
-}
-
-func (cp *cssProcessor) AddSanitized(className string, enabled bool) {
+func (cp *cssProcessor) AddClassName(className string, enabled bool) {
 	cp.classNameToEnabled[className] = enabled
 	cp.orderedNames = append(cp.orderedNames, className)
 }
@@ -256,20 +244,16 @@ func KV[TKey comparable, TValue any](key TKey, value TValue) KeyValue[TKey, TVal
 	}
 }
 
-var safeClassName = regexp.MustCompile(`^-?[_a-zA-Z]+[-_a-zA-Z0-9]*$`)
-
-const fallbackClassName = "--templ-css-class-safe-name"
 const unknownTypeClassName = "--templ-css-class-unknown-type"
 
-// Class returns a sanitized CSS class name.
+// Class returns a CSS class name.
+// Deprecated: use a string instead.
 func Class(name string) CSSClass {
-	if !safeClassName.MatchString(name) {
-		return SafeClass(fallbackClassName)
-	}
 	return SafeClass(name)
 }
 
 // SafeClass bypasses CSS class name validation.
+// Deprecated: use a string instead.
 func SafeClass(name string) CSSClass {
 	return ConstantCSSClass(name)
 }
@@ -280,6 +264,7 @@ type CSSClass interface {
 }
 
 // ConstantCSSClass is a string constant of a CSS class name.
+// Deprecated: use a string instead.
 type ConstantCSSClass string
 
 // ClassName of the CSS class.

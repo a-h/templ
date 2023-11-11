@@ -2,7 +2,7 @@
 
 ## HTML class attribute
 
-templ supports the HTML `class` attribute.
+The standard HTML `class` attribute can be added to components to set class names.
 
 ```templ
 templ button(text string) {
@@ -38,38 +38,26 @@ templ button(text string, className string) {
 }
 ```
 
-## CSS class name sanitization
-
-CSS class names that are passed to the class expression attribute as variables are sanitized, since the Go string might come from an untrustworthy source such as user input.
-
-If the class name fails the sanitization check, it will be replaced with `--templ-css-class-safe-name`.
-
-If you know that the CSS class name is from a trustworthy source (e.g. a string constant under your control), you can bypass sanitization by marking the class name as safe with the `templ.SafeClass()` function.
-
-```templ title="component.templ"
-package main
-
-templ button(text string) {
-	<button class={ "button", templ.SafeClass("hover:do_not_sanitize") }>{ text }</button>
-}
-```
-
 ### Dynamic class names
 
 Toggle addition of CSS classes to an element based on a boolean value by passing:
 
 * A `templ.KV` value containing the name of the class to add to the element, and a boolean that determines whether the class is added to the attribute at render time.
   * `templ.KV("is-primary", true)`
-  * `templ.KV(templ.SafeClass("hover:do_not_sanitize"), true)`
+  * `templ.KV("hover:red", true)`
 * A map of string class names to a boolean that determines if the class is added to the class attribute value at render time:
   * `map[string]bool`
-	* `map[CSSClass]bool`
+  * `map[CSSClass]bool`
 
 ```templ title="component.templ"
 package main
 
+css red() {
+	background-color: #ff0000;
+}
+
 templ button(text string, isPrimary bool) {
-	<button class={ "button", templ.KV("is-primary", isPrimary), templ.KV(templ.SafeClass("hover:do_not_sanitize", isPrimary) }>{ text }</button>
+	<button class={ "button", templ.KV("is-primary", isPrimary), templ.KV(red(), isPrimary) }>{ text }</button>
 }
 ```
 
