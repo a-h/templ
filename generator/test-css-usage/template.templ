@@ -35,7 +35,7 @@ templ CSSComponentsAndConstantsAreSupported() {
 // Maps can be used to determine if a class should be added or not.
 
 templ MapsCanBeUsedToConditionallySetClasses() {
-	<div class={ map[string]bool{ "a": true, "b": false, "c": true } }>Maps can be used to determine if a class should be added or not.</div>
+	<div class={ map[string]bool{"a": true, "b": false, "c": true} }>Maps can be used to determine if a class should be added or not.</div>
 }
 
 // The templ.KV function can be used to add a class if a condition is true.
@@ -58,6 +58,12 @@ templ PsuedoAttributesAndComplexClassNamesAreSupported() {
 	<div class={ "bg-violet-500", "hover:bg-red-600", "hover:bg-sky-700", "text-[#50d71e]", "w-[calc(100%-4rem)" }>Psuedo attributes and complex class names are supported.</div>
 }
 
+// Class names are HTML escaped.
+
+templ ClassNamesAreHTMLEscaped() {
+	<div class={ "a\" onClick=\"alert('hello')\"" }>Class names are HTML escaped.</div>
+}
+
 // Combine all tests.
 
 templ TestComponent() {
@@ -67,4 +73,5 @@ templ TestComponent() {
 	@MapsCanBeUsedToConditionallySetClasses()
 	@KVCanBeUsedToConditionallySetClasses()
 	@PsuedoAttributesAndComplexClassNamesAreSupported()
+	@ClassNamesAreHTMLEscaped()
 }
