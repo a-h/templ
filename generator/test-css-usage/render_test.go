@@ -11,7 +11,7 @@ import (
 var expected string
 
 func Test(t *testing.T) {
-	component := ThreeButtons()
+	component := TestComponent()
 
 	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
