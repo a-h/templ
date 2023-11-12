@@ -624,22 +624,6 @@ func (p *Server) DocumentColor(ctx context.Context, params *lsp.DocumentColorPar
 func (p *Server) DocumentHighlight(ctx context.Context, params *lsp.DocumentHighlightParams) (result []lsp.DocumentHighlight, err error) {
 	p.Log.Info("client -> server: DocumentHighlight")
 	defer p.Log.Info("client -> server: DocumentHighlight end")
-	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
-	if !isTemplFile {
-		return p.Target.DocumentHighlight(ctx, params)
-	}
-	templURI := params.TextDocument.URI
-	params.TextDocument.URI = goURI
-	result, err = p.Target.DocumentHighlight(ctx, params)
-	if err != nil {
-		return
-	}
-	if result == nil {
-		return
-	}
-	for i := 0; i < len(result); i++ {
-		result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
-	}
 	return
 }
 
