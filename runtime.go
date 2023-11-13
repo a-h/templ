@@ -471,7 +471,7 @@ type SafeURL string
 
 // Script handling.
 
-func safeEncodeScriptParams(escapeHTML bool, params ...any) []string {
+func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
 	encodedParams := make([]string, len(params))
 	for i := 0; i < len(encodedParams); i++ {
 		enc, _ := json.Marshal(params[i])
