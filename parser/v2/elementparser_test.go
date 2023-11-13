@@ -956,13 +956,13 @@ func TestElementParserErrors(t *testing.T) {
 				}),
 		},
 		{
-			name:  "element: names cannot be greater than 64 characters",
-			input: `<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa></aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>`,
-			expected: parse.Error("element names must be < 64 characters long",
+			name:  "element: names cannot be greater than 128 characters",
+			input: `<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa></aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>`,
+			expected: parse.Error("element names must be < 128 characters long",
 				parse.Position{
-					Index: 66,
+					Index: 130,
 					Line:  0,
-					Col:   66,
+					Col:   130,
 				}),
 		},
 	}
