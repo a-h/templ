@@ -11,25 +11,28 @@ import "bytes"
 
 func withParameters(a string, b string, c int) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name:     `__templ_withParameters_1056`,
-		Function: `function __templ_withParameters_1056(a, b, c){console.log(a, b, c);}`,
-		Call:     templ.SafeScript(`__templ_withParameters_1056`, a, b, c),
+		Name:       `__templ_withParameters_1056`,
+		Function:   `function __templ_withParameters_1056(a, b, c){console.log(a, b, c);}`,
+		Call:       templ.SafeScript(`__templ_withParameters_1056`, a, b, c),
+		CallInline: templ.SafeScriptInline(`__templ_withParameters_1056`, a, b, c),
 	}
 }
 
 func withoutParameters() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name:     `__templ_withoutParameters_6bbf`,
-		Function: `function __templ_withoutParameters_6bbf(){alert("hello");}`,
-		Call:     templ.SafeScript(`__templ_withoutParameters_6bbf`),
+		Name:       `__templ_withoutParameters_6bbf`,
+		Function:   `function __templ_withoutParameters_6bbf(){alert("hello");}`,
+		Call:       templ.SafeScript(`__templ_withoutParameters_6bbf`),
+		CallInline: templ.SafeScriptInline(`__templ_withoutParameters_6bbf`),
 	}
 }
 
 func onClick() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name:     `__templ_onClick_657d`,
-		Function: `function __templ_onClick_657d(){alert("clicked");}`,
-		Call:     templ.SafeScript(`__templ_onClick_657d`),
+		Name:       `__templ_onClick_657d`,
+		Function:   `function __templ_onClick_657d(){alert("clicked");}`,
+		Call:       templ.SafeScript(`__templ_onClick_657d`),
+		CallInline: templ.SafeScriptInline(`__templ_onClick_657d`),
 	}
 }
 
@@ -170,9 +173,10 @@ func ThreeButtons() templ.Component {
 
 func conditionalScript() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name:     `__templ_conditionalScript_de41`,
-		Function: `function __templ_conditionalScript_de41(){alert("conditional");}`,
-		Call:     templ.SafeScript(`__templ_conditionalScript_de41`),
+		Name:       `__templ_conditionalScript_de41`,
+		Function:   `function __templ_conditionalScript_de41(){alert("conditional");}`,
+		Call:       templ.SafeScript(`__templ_conditionalScript_de41`),
+		CallInline: templ.SafeScriptInline(`__templ_conditionalScript_de41`),
 	}
 }
 

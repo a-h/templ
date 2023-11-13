@@ -1355,6 +1355,10 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "Call: templ.SafeScript("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
 			return err
 		}
+		// CallInline: templ.SafeScriptInline(scriptName, a, b, c)
+		if _, err = g.w.WriteIndent(indentLevel, "CallInline: templ.SafeScriptInline("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
+			return err
+		}
 		indentLevel--
 	}
 	// }

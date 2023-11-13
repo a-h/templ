@@ -62,7 +62,7 @@ templ page(data []TimeValue) {
 
 The data is loaded by the backend into the template. This example uses a constant, but it could easily have collected the `[]TimeValue` from a database.
 
-```go
+```go title="main.go"
 package main
 
 import (
@@ -102,4 +102,66 @@ func main() {
 		log.Printf("error listening: %v", err)
 	}
 }
+```
+
+`script` elements are templ Components, so you can also directly render the Javascript function, passing in Go data, using the `@` expression:
+
+```templ
+package main
+
+import "fmt"
+
+script printToConsole(content string) {
+	console.log(content)
+}
+
+templ page(content string) {
+	<html>
+		<body>
+		  @printToConsole(content)
+		  @printToConsole(fmt.Sprintf("Again: %s", content))
+		</body>
+	</html>
+}
+```
+
+The data passed into the Javascript funtion will be JSON encoded, which then can be used inside the function.
+
+```go title="main.go"
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+)
+
+func main() {
+	mux := http.NewServeMux()
+
+	// Handle template.
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Format the current time and pass it into our template
+		page(time.Now().String()).Render(r.Context(), w)
+	})
+
+	// Start the server.
+	fmt.Println("listening on :8080")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Printf("error listening: %v", err)
+	}
+}
+```
+
+After building and running the executable, running `curl http://localhost:8080/` would render:
+
+```html title="Output"
+<html>
+	<body>
+		<script type="text/javascript">function __templ_printToConsole_5a85(content){console.log(content)}</script>
+		<script type="text/javascript">__templ_printToConsole_5a85("2023-11-11 01:01:40.983381358 +0000 UTC")</script>
+		<script type="text/javascript">__templ_printToConsole_5a85("Again: 2023-11-11 01:01:40.983381358 +0000 UTC")</script>
+	</body>
+</html>
 ```
