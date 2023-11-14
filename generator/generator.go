@@ -170,7 +170,7 @@ func (g *generator) writeImports() error {
 func (g *generator) writeTemplateNodes() error {
 	for i := 0; i < len(g.tf.Nodes); i++ {
 		switch n := g.tf.Nodes[i].(type) {
-		case parser.GoExpression:
+		case parser.TemplateFileGoExpression:
 			if err := g.writeGoExpression(n); err != nil {
 				return err
 			}
@@ -270,7 +270,7 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	return nil
 }
 
-func (g *generator) writeGoExpression(n parser.GoExpression) (err error) {
+func (g *generator) writeGoExpression(n parser.TemplateFileGoExpression) (err error) {
 	r, err := g.w.Write(n.Expression.Value)
 	if err != nil {
 		return err

@@ -102,7 +102,7 @@ func (p TemplateFileParser) Parse(pi *parse.Input) (tf TemplateFile, ok bool, er
 		}
 		var newLine string
 		newLine, _, _ = parse.NewLine.Parse(pi)
-		tf.Header = append(tf.Header, GoExpression{Expression: NewExpression(line+newLine, from, pi.Position())})
+		tf.Header = append(tf.Header, TemplateFileGoExpression{Expression: NewExpression(line+newLine, from, pi.Position())})
 	}
 
 	// Strip any whitespace between the template declaration and the first template.
@@ -165,7 +165,7 @@ outer:
 				// Take the code so far.
 				if code.Len() > 0 {
 					expr := NewExpression(strings.TrimSpace(code.String()), from, pi.Position())
-					tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
+					tf.Nodes = append(tf.Nodes, TemplateFileGoExpression{Expression: expr})
 				}
 				// Carry on parsing.
 				break inner
@@ -181,7 +181,7 @@ outer:
 			if _, isEOF, _ := parse.EOF[string]().Parse(pi); isEOF {
 				if code.Len() > 0 {
 					expr := NewExpression(strings.TrimSpace(code.String()), from, pi.Position())
-					tf.Nodes = append(tf.Nodes, GoExpression{Expression: expr})
+					tf.Nodes = append(tf.Nodes, TemplateFileGoExpression{Expression: expr})
 				}
 				// Stop parsing.
 				break outer

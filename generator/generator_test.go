@@ -14,7 +14,7 @@ func TestGeneratorSourceMap(t *testing.T) {
 		w:         NewRangeWriter(w),
 		sourceMap: parser.NewSourceMap(),
 	}
-	exp := parser.GoExpression{
+	exp := parser.TemplateFileGoExpression{
 		Expression: parser.Expression{
 			Value: "line1\nline2",
 		},

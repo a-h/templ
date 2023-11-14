@@ -100,7 +100,7 @@ type Expression struct {
 
 type TemplateFile struct {
 	// Header contains comments or whitespace at the top of the file.
-	Header []GoExpression
+	Header []TemplateFileGoExpression
 	// Package expression.
 	Package Package
 	// Nodes in the file.
@@ -144,13 +144,13 @@ type TemplateFileNode interface {
 	Write(w io.Writer, indent int) error
 }
 
-// GoExpression within a TemplateFile
-type GoExpression struct {
+// TemplateFileGoExpression within a TemplateFile
+type TemplateFileGoExpression struct {
 	Expression Expression
 }
 
-func (exp GoExpression) IsTemplateFileNode() bool { return true }
-func (exp GoExpression) Write(w io.Writer, indent int) error {
+func (exp TemplateFileGoExpression) IsTemplateFileNode() bool { return true }
+func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
 	data, err := format.Source([]byte(exp.Expression.Value))
 	if err != nil {
 		return writeIndent(w, indent, exp.Expression.Value)
