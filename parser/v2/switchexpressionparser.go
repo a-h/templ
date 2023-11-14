@@ -6,13 +6,14 @@ import (
 	"github.com/a-h/parse"
 )
 
-var switchExpression = parse.Func(func(pi *parse.Input) (r SwitchExpression, ok bool, err error) {
+var switchExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.String("switch ").Parse(pi); err != nil || !ok {
 		return
 	}
 
 	// Once we've got a prefix, read until {\n.
+	var r SwitchExpression
 	endOfStatementExpression := ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine)))
 	if r.Expression, ok, err = Must(endOfStatementExpression, "switch: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
 		return

@@ -7,8 +7,8 @@ import (
 )
 
 // StripType takes the parser and throws away the return value.
-func StripType[T any](p parse.Parser[T]) parse.Parser[interface{}] {
-	return parse.Func(func(in *parse.Input) (out interface{}, ok bool, err error) {
+func StripType[T any](p parse.Parser[T]) parse.Parser[any] {
+	return parse.Func(func(in *parse.Input) (out any, ok bool, err error) {
 		return p.Parse(in)
 	})
 }
@@ -57,6 +57,10 @@ var openBracket = parse.String("(")
 var closeBracket = parse.String(")")
 var closeBracketWithOptionalPadding = parse.StringFrom(optionalSpaces, closeBracket)
 
+var stringUntilNewLine = parse.StringUntil[string](parse.NewLine)
+var newLineOrEOF = parse.Or(parse.NewLine, parse.EOF[string]())
+var stringUntilNewLineOrEOF = parse.StringUntil(newLineOrEOF)
+
 var exp = expressionParser{
 	startBraceCount: 1,
 }
@@ -70,7 +74,7 @@ func (p expressionParser) Parse(pi *parse.Input) (s Expression, ok bool, err err
 
 	braceCount := p.startBraceCount
 
-	var sb strings.Builder
+	sb := new(strings.Builder)
 loop:
 	for {
 		var result string
@@ -147,7 +151,7 @@ func (p functionArgsParser) Parse(pi *parse.Input) (s Expression, ok bool, err e
 
 	bracketCount := p.startBracketCount
 
-	var sb strings.Builder
+	sb := new(strings.Builder)
 loop:
 	for {
 		var result string

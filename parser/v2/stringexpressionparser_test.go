@@ -62,13 +62,14 @@ func TestStringExpressionParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			actual, ok, err := stringExpression.Parse(input)
+			an, ok, err := stringExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
 			if !ok {
 				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
+			actual := an.(StringExpression)
 			if diff := cmp.Diff(tt.expected, actual); diff != "" {
 				t.Error(diff)
 			}

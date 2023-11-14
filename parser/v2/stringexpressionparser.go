@@ -4,13 +4,14 @@ import (
 	"github.com/a-h/parse"
 )
 
-var stringExpression = parse.Func(func(pi *parse.Input) (r StringExpression, ok bool, err error) {
+var stringExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.Or(parse.String("{ "), parse.String("{")).Parse(pi); err != nil || !ok {
 		return
 	}
 
 	// Once we have a prefix, we must have an expression that returns a string.
+	var r StringExpression
 	if r.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
 		return
 	}

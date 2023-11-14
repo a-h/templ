@@ -12,8 +12,9 @@ type goSingleLineCommentParser struct {
 
 var goSingleLineComment = goSingleLineCommentParser{}
 
-func (p goSingleLineCommentParser) Parse(pi *parse.Input) (c GoComment, ok bool, err error) {
+func (p goSingleLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Comment start.
+	var c GoComment
 	if _, ok, err = goSingleLineCommentStart.Parse(pi); err != nil || !ok {
 		return
 	}
@@ -37,8 +38,9 @@ type goMultiLineCommentParser struct {
 
 var goMultiLineComment = goMultiLineCommentParser{}
 
-func (p goMultiLineCommentParser) Parse(pi *parse.Input) (c GoComment, ok bool, err error) {
+func (p goMultiLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Comment start.
+	var c GoComment
 	if _, ok, err = goMultiLineCommentStart.Parse(pi); err != nil || !ok {
 		return
 	}
@@ -55,4 +57,4 @@ func (p goMultiLineCommentParser) Parse(pi *parse.Input) (c GoComment, ok bool, 
 	return c, true, nil
 }
 
-var goComment = parse.Any[GoComment](goSingleLineComment, goMultiLineComment)
+var goComment = parse.Any[Node](goSingleLineComment, goMultiLineComment)

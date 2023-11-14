@@ -18,7 +18,7 @@ type rawElementParser struct {
 	name string
 }
 
-func (p rawElementParser) Parse(pi *parse.Input) (e RawElement, ok bool, err error) {
+func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	start := pi.Index()
 
 	// <
@@ -27,6 +27,7 @@ func (p rawElementParser) Parse(pi *parse.Input) (e RawElement, ok bool, err err
 	}
 
 	// Element name.
+	var e RawElement
 	if e.Name, ok, err = parse.String(p.name).Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return

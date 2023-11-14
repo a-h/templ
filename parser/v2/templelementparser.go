@@ -27,13 +27,14 @@ var templElementStartExpression = ExpressionOf(parse.StringFrom(
 
 type templElementExpressionParser struct{}
 
-func (p templElementExpressionParser) Parse(pi *parse.Input) (r TemplElementExpression, ok bool, err error) {
+func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.Rune('@').Parse(pi); err != nil || !ok {
 		return
 	}
 
 	// Parse the identifier.
+	var r TemplElementExpression
 	if r.Expression, ok, err = Must(templElementStartExpression, "templ element: found start '@' but expression was not closed").Parse(pi); err != nil || !ok {
 		return
 	}

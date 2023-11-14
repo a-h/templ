@@ -166,10 +166,12 @@ var expressionCSSPropertyParser = parse.Func(func(pi *parse.Input) (r Expression
 	}
 
 	// { string }
-	if r.Value, ok, err = stringExpression.Parse(pi); err != nil || !ok {
+	var se Node
+	if se, ok, err = stringExpression.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
+	r.Value = se.(StringExpression)
 
 	// ;
 	if _, ok, err = Must(parse.String(";"), "missing expected semicolon (;)").Parse(pi); err != nil || !ok {

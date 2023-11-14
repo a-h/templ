@@ -8,7 +8,7 @@ var ifExpression ifExpressionParser
 
 type ifExpressionParser struct{}
 
-func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err error) {
+func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.String("if ").Parse(pi); err != nil || !ok {
 		return
@@ -16,6 +16,7 @@ func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err e
 
 	// Once we've got a prefix, read until {\n.
 	// If there's no match, there's no {\n, which is an error.
+	var r IfExpression
 	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine))), "if: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
 		return
 	}

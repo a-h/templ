@@ -431,9 +431,10 @@ var element elementParser
 
 type elementParser struct{}
 
-func (elementParser) Parse(pi *parse.Input) (r Element, ok bool, err error) {
+func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	start := pi.Position()
 
+	var r Element
 	if r, ok, err = parse.Any[Element](selfClosingElement, elementOpenClose).Parse(pi); err != nil || !ok {
 		return
 	}

@@ -255,7 +255,7 @@ func (c ConstantCSSProperty) Write(w io.Writer, indent int) error {
 	return nil
 }
 func (c ConstantCSSProperty) String(minified bool) string {
-	var sb strings.Builder
+	sb := new(strings.Builder)
 	sb.WriteString(c.Name)
 	if minified {
 		sb.WriteString(":")

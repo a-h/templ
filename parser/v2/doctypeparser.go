@@ -6,7 +6,8 @@ import (
 
 var doctypeStartParser = parse.StringInsensitive("<!doctype ")
 
-var docType = parse.Func(func(pi *parse.Input) (r DocType, ok bool, err error) {
+var docType = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
+	var r DocType
 	if _, ok, err = doctypeStartParser.Parse(pi); err != nil || !ok {
 		return
 	}

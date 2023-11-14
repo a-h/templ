@@ -4,7 +4,7 @@ import (
 	"github.com/a-h/parse"
 )
 
-var forExpression = parse.Func(func(pi *parse.Input) (r ForExpression, ok bool, err error) {
+var forExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.String("for ").Parse(pi); err != nil || !ok {
 		return
@@ -13,6 +13,7 @@ var forExpression = parse.Func(func(pi *parse.Input) (r ForExpression, ok bool, 
 	// Once we've got a prefix, read until {\n.
 	// If there's no match, there's no {\n, which is an error.
 	from := pi.Position()
+	var r ForExpression
 	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
 	var fexp string
 	if fexp, ok, err = Must(parse.StringUntil(until), "for: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {

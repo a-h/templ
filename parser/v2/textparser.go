@@ -8,10 +8,11 @@ import (
 
 var tagTemplOrNewLine = parse.Any(parse.Rune('<'), parse.Rune('{'), parse.Rune('}'), parse.Rune('\n'))
 
-var textParser = parse.Func(func(pi *parse.Input) (t Text, ok bool, err error) {
+var textParser = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	from := pi.Position()
 
 	// Read until a tag or templ expression opens.
+	var t Text
 	if t.Value, ok, err = parse.StringUntil(tagTemplOrNewLine).Parse(pi); err != nil || !ok {
 		return
 	}

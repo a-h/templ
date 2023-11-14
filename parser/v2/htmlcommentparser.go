@@ -12,8 +12,9 @@ type htmlCommentParser struct {
 
 var htmlComment = htmlCommentParser{}
 
-func (p htmlCommentParser) Parse(pi *parse.Input) (c HTMLComment, ok bool, err error) {
+func (p htmlCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Comment start.
+	var c HTMLComment
 	if _, ok, err = htmlCommentStart.Parse(pi); err != nil || !ok {
 		return
 	}

@@ -979,7 +979,7 @@ func TestElementParserErrors(t *testing.T) {
 }
 
 func TestBigElement(t *testing.T) {
-	var sb strings.Builder
+	sb := new(strings.Builder)
 	sb.WriteString("<div>")
 	for i := 0; i < 4096*4; i++ {
 		sb.WriteString("a")
