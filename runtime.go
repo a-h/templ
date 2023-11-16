@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"html"
 	"io"
 	"net/http"
@@ -644,4 +645,9 @@ func GetBuffer() *bytes.Buffer {
 func ReleaseBuffer(b *bytes.Buffer) {
 	b.Reset()
 	bufferPool.Put(b)
+}
+
+// EscapeStringErrs escapes HTML text within templates.
+func EscapeStringErrs(s string, errs ...error) (string, error) {
+	return s, errors.Join(errs...)
 }
