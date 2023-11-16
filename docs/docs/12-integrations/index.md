@@ -2,7 +2,7 @@
 
 Templ is framework agnostic but that does not mean it can not be used with Go frameworks and other tools. 
 
-Below are some examples of how to use Templ Go frameworks and other tools.
+Below are some examples of how to use templ with other Go libraries, frameworks and tools, and links to systems that have built-in templ support.
 
 ## Gin
 
