@@ -1,6 +1,7 @@
 package templ
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -627,6 +628,22 @@ func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScr
 		}
 	}
 	return nil
+}
+
+var bufferedWriterPool = sync.Pool{
+	New: func() any {
+		return new(bufio.Writer)
+	},
+}
+
+func GetBufferedWriter(w io.Writer) *bufio.Writer {
+	bw := bufferedWriterPool.Get().(*bufio.Writer)
+	bw.Reset(w)
+	return bw
+}
+
+func ReleaseBufferedWriter(b *bufio.Writer) {
+	bufferedWriterPool.Put(b)
 }
 
 var bufferPool = sync.Pool{
