@@ -1251,19 +1251,23 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
 		return err
 	}
-	// vn, templ_7745c5c3_Err =
-	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = "); err != nil {
+	// vn, templ_7745c5c3_Err = templ.EscapeStringErrs(
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.EscapeStringErrs("); err != nil {
 		return err
 	}
 	// p.Name()
-	if r, err = g.w.Write("templ.EscapeStringErrs(" + e.Value + ")\n"); err != nil {
+	if r, err = g.w.Write(e.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(e, r)
+	// )
+	if r, err = g.w.Write(")\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
 		return err
 	}
 
-	g.sourceMap.Add(e, r)
 	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
 	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
 		return err
