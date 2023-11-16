@@ -61,20 +61,23 @@ func main() {
 
 ### Functions
 
-Functions that return a string can also be used.
+Functions that return `string` or `(string, error)` can also be used.
 
 ```templ title="component.templ"
 package main
 
 import "strings"
+import "strconv"
 
 templ component() {
   <div>{ strings.ToUpper("abc") }</div>
+  <div>{ strconv.Unquote(`"A double-quoted string"`) }</div>
 }
 ```
 
 ```html title="Output"
 <div>ABC</div>
+<div>A double-quoted string</div>
 ```
 
 ### Escaping
