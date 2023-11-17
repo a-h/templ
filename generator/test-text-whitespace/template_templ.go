@@ -184,7 +184,7 @@ func WhiteSpaceAroundValues() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.EscapeStringErrs("strings")
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs("strings")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -234,7 +234,7 @@ func WhiteSpaceAroundTemplatedValues(prefix, statement string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.EscapeStringErrs(prefix)
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(prefix)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -247,7 +247,7 @@ func WhiteSpaceAroundTemplatedValues(prefix, statement string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.EscapeStringErrs(statement)
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(statement)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -24,7 +24,7 @@ func render(d data) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		if d.IsTrue() {
 			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.EscapeStringErrs("True")
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("True")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -34,7 +34,7 @@ func render(d data) templ.Component {
 			}
 		} else {
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.EscapeStringErrs("False")
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("False")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

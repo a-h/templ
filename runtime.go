@@ -647,7 +647,7 @@ func ReleaseBuffer(b *bytes.Buffer) {
 	bufferPool.Put(b)
 }
 
-// EscapeStringErrs escapes HTML text within templates.
-func EscapeStringErrs(s string, errs ...error) (string, error) {
+// JoinStringErrs escapes HTML text within templates.
+func JoinStringErrs(s string, errs ...error) (string, error) {
 	return s, errors.Join(errs...)
 }

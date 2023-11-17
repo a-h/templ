@@ -31,7 +31,7 @@ func (d Data) Method() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.EscapeStringErrs(d.message)
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(d.message)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

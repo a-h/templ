@@ -31,7 +31,7 @@ func render() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.EscapeStringErrs(ctx.Value(contextKeyName).(string))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(ctx.Value(contextKeyName).(string))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

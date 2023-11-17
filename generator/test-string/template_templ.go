@@ -27,7 +27,7 @@ func render(s string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.EscapeStringErrs(s)
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(s)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -40,7 +40,7 @@ func render(s string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.EscapeStringErrs("Spaces")
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("Spaces")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -53,7 +53,7 @@ func render(s string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.EscapeStringErrs("are")
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("are")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -66,7 +66,7 @@ func render(s string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.EscapeStringErrs("preserved.")
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("preserved.")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

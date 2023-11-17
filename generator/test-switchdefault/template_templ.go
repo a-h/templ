@@ -25,7 +25,7 @@ func template(input string) templ.Component {
 		switch input {
 		case "a":
 			var templ_7745c5c3_Var2 string
-			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.EscapeStringErrs("it was 'a'")
+			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("it was 'a'")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -35,7 +35,7 @@ func template(input string) templ.Component {
 			}
 		default:
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.EscapeStringErrs("it was something else")
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs("it was something else")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

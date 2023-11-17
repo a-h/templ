@@ -1252,7 +1252,7 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 		return err
 	}
 	// vn, templ_7745c5c3_Err = templ.EscapeStringErrs(
-	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.EscapeStringErrs("); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
 		return err
 	}
 	// p.Name()
