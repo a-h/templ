@@ -19,8 +19,12 @@ var template = parse.Func(func(pi *parse.Input) (r HTMLTemplate, ok bool, err er
 
 	// Once we're in a template, we should expect some template whitespace, if/switch/for,
 	// or node string expressions etc.
-	r.Children, ok, err = Must[[]Node](newTemplateNodeParser(closeBraceWithOptionalPadding, "template closing brace"), "templ: expected nodes in templ body, but found none").Parse(pi)
-	if err != nil || !ok {
+	r.Children, ok, err = newTemplateNodeParser(closeBraceWithOptionalPadding, "template closing brace").Parse(pi)
+	if err != nil {
+		return
+	}
+	if !ok {
+		err = parse.Error("templ: expected nodes in templ body, but found none", pi.Position())
 		return
 	}
 
@@ -31,8 +35,8 @@ var template = parse.Func(func(pi *parse.Input) (r HTMLTemplate, ok bool, err er
 	}
 
 	// Try for }
-	_, _, err = Must(closeBraceWithOptionalPadding, "template: missing closing brace").Parse(pi)
-	if err != nil {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("template: missing closing brace", pi.Position())
 		return
 	}
 

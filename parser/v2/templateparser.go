@@ -33,12 +33,14 @@ var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpre
 	// Once we've got a prefix, read until {\n.
 	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
 	msg := "templ: malformed templ expression, expected `templ functionName() {`"
-	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(until)), msg).Parse(pi); err != nil || !ok {
+	if r.Expression, ok, err = ExpressionOf(parse.StringUntil(until)).Parse(pi); err != nil || !ok {
+		err = parse.Error(msg, pi.Position())
 		return
 	}
 
 	// Eat " {\n".
-	if _, ok, err = Must(until, msg).Parse(pi); err != nil || !ok {
+	if _, ok, err = until.Parse(pi); err != nil || !ok {
+		err = parse.Error(msg, pi.Position())
 		return
 	}
 

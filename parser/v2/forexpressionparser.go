@@ -4,7 +4,11 @@ import (
 	"github.com/a-h/parse"
 )
 
-var forExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
+var forExpression parse.Parser[Node] = forExpressionParser{}
+
+type forExpressionParser struct{}
+
+func (_ forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.String("for ").Parse(pi); err != nil || !ok {
 		return
@@ -16,26 +20,30 @@ var forExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error
 	var r ForExpression
 	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
 	var fexp string
-	if fexp, ok, err = Must(parse.StringUntil(until), "for: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
+	if fexp, ok, err = parse.StringUntil(until).Parse(pi); err != nil || !ok {
+		err = parse.Error("for: "+unterminatedMissingCurly, pi.Position())
 		return
 	}
 	r.Expression = NewExpression(fexp, from, pi.Position())
 
 	// Eat " {".
-	if _, ok, err = Must(until, "for: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
+	if _, ok, err = until.Parse(pi); err != nil || !ok {
+		err = parse.Error("for: "+unterminatedMissingCurly, pi.Position())
 		return
 	}
 
 	// Node contents.
 	tnp := newTemplateNodeParser(closeBraceWithOptionalPadding, "for expression closing brace")
-	if r.Children, ok, err = Must[[]Node](tnp, "for: expected nodes, but none were found").Parse(pi); err != nil || !ok {
+	if r.Children, ok, err = tnp.Parse(pi); err != nil || !ok {
+		err = parse.Error("for: expected nodes, but none were found", pi.Position())
 		return
 	}
 
 	// Read the required closing brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "for: "+unterminatedMissingEnd).Parse(pi); err != nil || !ok {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("for: "+unterminatedMissingEnd, pi.Position())
 		return
 	}
 
 	return r, true, nil
-})
+}

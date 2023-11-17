@@ -25,8 +25,8 @@ var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, o
 	r.Value = e.Value
 
 	// Try for }
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "script template: missing closing brace").Parse(pi); err != nil || !ok {
-		pi.Seek(start)
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("script template: missing closing brace", pi.Position())
 		return
 	}
 
@@ -52,28 +52,33 @@ var scriptExpressionParser = parse.Func(func(pi *parse.Input) (r scriptExpressio
 
 	// Once we have the prefix, we must have a name and parameters.
 	// Read the name of the function.
-	if r.Name, ok, err = Must(scriptExpressionNameParser, "script expression: invalid name").Parse(pi); err != nil || !ok {
+	if r.Name, ok, err = scriptExpressionNameParser.Parse(pi); err != nil || !ok {
+		err = parse.Error("script expression: invalid name", pi.Position())
 		return
 	}
 
 	// Eat the open bracket.
-	if _, ok, err = Must(parse.Rune('('), "script expression: parameters missing open bracket").Parse(pi); err != nil || !ok {
+	if _, ok, err = openBracket.Parse(pi); err != nil || !ok {
+		err = parse.Error("script expression: parameters missing open bracket", pi.Position())
 		return
 	}
 
 	// Read the parameters.
 	// p Person, other Other, t thing.Thing)
-	if r.Parameters, ok, err = Must(ExpressionOf(parse.StringUntil(parse.Rune(')'))), "script expression: parameters missing close bracket").Parse(pi); err != nil || !ok {
+	if r.Parameters, ok, err = ExpressionOf(parse.StringUntil(closeBracket)).Parse(pi); err != nil || !ok {
+		err = parse.Error("script expression: parameters missing close bracket", pi.Position())
 		return
 	}
 
 	// Eat ") {".
-	if _, ok, err = Must(expressionFuncEnd, "script expression: unterminated (missing ') {')").Parse(pi); err != nil || !ok {
+	if _, ok, err = expressionFuncEnd.Parse(pi); err != nil || !ok {
+		err = parse.Error("script expression: unterminated (missing ') {')", pi.Position())
 		return
 	}
 
 	// Expect a newline.
-	if _, ok, err = Must(parse.NewLine, "script expression: missing terminating newline").Parse(pi); err != nil || !ok {
+	if _, ok, err = parse.NewLine.Parse(pi); err != nil || !ok {
+		err = parse.Error("script expression: missing terminating newline", pi.Position())
 		return
 	}
 

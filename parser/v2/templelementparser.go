@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"unicode"
 
 	"github.com/a-h/parse"
@@ -35,7 +34,8 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 
 	// Parse the identifier.
 	var r TemplElementExpression
-	if r.Expression, ok, err = Must(templElementStartExpression, "templ element: found start '@' but expression was not closed").Parse(pi); err != nil || !ok {
+	if r.Expression, ok, err = templElementStartExpression.Parse(pi); err != nil || !ok {
+		err = parse.Error("templ element: found start '@' but expression was not closed", pi.Position())
 		return
 	}
 
@@ -53,12 +53,14 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 
 	// Node contents.
 	np := newTemplateNodeParser(closeBraceWithOptionalPadding, "templ element closing brace")
-	if r.Children, ok, err = Must[[]Node](np, fmt.Sprintf("@%s: expected nodes, but none were found", r.Expression.Value)).Parse(pi); err != nil || !ok {
+	if r.Children, ok, err = np.Parse(pi); err != nil || !ok {
+		err = parse.Error("@"+r.Expression.Value+": expected nodes, but none were found", pi.Position())
 		return
 	}
 
 	// Read the required closing brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, fmt.Sprintf("@%s: missing end (expected '}')", r.Expression.Value)).Parse(pi); err != nil || !ok {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("@"+r.Expression.Value+": missing end (expected '}')", pi.Position())
 		return
 	}
 

@@ -21,14 +21,16 @@ func (p htmlCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 
 	// Once we've got the comment start sequence, parse anything until the end
 	// sequence as the comment contents.
-	if c.Contents, ok, err = Must(parse.StringUntil(htmlCommentEnd), "expected end comment literal '-->' not found").Parse(pi); err != nil || !ok {
+	if c.Contents, ok, err = parse.StringUntil(htmlCommentEnd).Parse(pi); err != nil || !ok {
+		err = parse.Error("expected end comment literal '-->' not found", pi.Position())
 		return
 	}
 	// Cut the end element.
 	_, _, _ = htmlCommentEnd.Parse(pi)
 
 	// Cut the gt.
-	if _, ok, err = Must(gt, "comment contains invalid sequence '--'").Parse(pi); err != nil || !ok {
+	if _, ok, err = gt.Parse(pi); err != nil || !ok {
+		err = parse.Error("comment contains invalid sequence '--'", pi.Position())
 		return
 	}
 

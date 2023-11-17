@@ -17,7 +17,8 @@ var stringExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err er
 	}
 
 	// }
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "string expression: missing close brace").Parse(pi); err != nil || !ok {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("string expression: missing close brace", pi.Position())
 		return
 	}
 
