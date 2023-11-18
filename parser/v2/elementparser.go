@@ -37,7 +37,7 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 		return
 	}
 
-	// If any attribute is not on the same line as the elemenet name, indent them.
+	// If any attribute is not on the same line as the element name, indent them.
 	if pi.Position().Line != l {
 		e.IndentAttrs = true
 	}
@@ -142,8 +142,8 @@ var (
 		attr.Value = html.UnescapeString(attr.Value)
 
 		// " - closing quote.
-		if _, ok, err = Must(closeParser, fmt.Sprintf("missing closing quote on attribute %q", attr.Name)).Parse(pi); err != nil || !ok {
-			pi.Seek(start)
+		if _, ok, err = closeParser.Parse(pi); err != nil || !ok {
+			err = parse.Error(fmt.Sprintf("missing closing quote on attribute %q", attr.Name), pi.Position())
 			return
 		}
 
@@ -210,13 +210,14 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r BoolExpr
 	}
 
 	// Once we have a prefix, we must have an expression that returns a template.
-	if r.Expression, ok, err = Must[Expression](exp, "boolean expression: expected Go expression not found").Parse(pi); err != nil || !ok {
-		pi.Seek(start)
+	if r.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
+		err = parse.Error("boolean expression: expected Go expression not found", pi.Position())
 		return
 	}
 
 	// Eat the Final brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "boolean expression: missing closing brace").Parse(pi); err != nil || !ok {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("boolean expression: missing closing brace", pi.Position())
 		pi.Seek(start)
 		return
 	}
@@ -251,8 +252,8 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr Expressio
 	}
 
 	// Eat the final brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "boolean expression: missing closing brace").Parse(pi); err != nil || !ok {
-		pi.Seek(start)
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("boolean expression: missing closing brace", pi.Position())
 		return
 	}
 
@@ -269,7 +270,7 @@ func (attributeParser) Parse(in *parse.Input) (out Attribute, ok bool, err error
 	if out, ok, err = expressionAttributeParser.Parse(in); err != nil || ok {
 		return
 	}
-	if out, ok, err = conditionalAttributeParser.Parse(in); err != nil || ok {
+	if out, ok, err = conditionalAttribute.Parse(in); err != nil || ok {
 		return
 	}
 	if out, ok, err = boolConstantAttributeParser.Parse(in); err != nil || ok {
@@ -281,13 +282,14 @@ func (attributeParser) Parse(in *parse.Input) (out Attribute, ok bool, err error
 	return
 }
 
-// var attributesParser = parse.AtMost[Attribute](255, attributeParser{})
+var attribute attributeParser
+
 type attributesParser struct{}
 
 func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool, err error) {
 	for {
 		var attr Attribute
-		attr, ok, err = attributeParser{}.Parse(in)
+		attr, ok, err = attribute.Parse(in)
 		if err != nil {
 			return
 		}

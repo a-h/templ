@@ -13,19 +13,6 @@ func StripType[T any](p parse.Parser[T]) parse.Parser[any] {
 	})
 }
 
-func Must[T any](p parse.Parser[T], msg string) parse.Parser[T] {
-	return parse.Func(func(in *parse.Input) (out T, ok bool, err error) {
-		out, ok, err = p.Parse(in)
-		if err != nil {
-			return
-		}
-		if !ok {
-			err = parse.Error(msg, in.Position())
-		}
-		return out, ok, err
-	})
-}
-
 func ExpressionOf(p parse.Parser[string]) parse.Parser[Expression] {
 	return parse.Func(func(in *parse.Input) (out Expression, ok bool, err error) {
 		from := in.Position()

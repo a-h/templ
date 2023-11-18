@@ -863,9 +863,9 @@ type TemplElementExpression struct {
 func (tee TemplElementExpression) IsNode() bool { return true }
 func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
 	if len(tee.Children) == 0 {
-		return writeIndent(w, indent, fmt.Sprintf("@%s", tee.Expression.Value))
+		return writeIndent(w, indent, "@", tee.Expression.Value)
 	}
-	if err := writeIndent(w, indent, fmt.Sprintf("@%s {\n", tee.Expression.Value)); err != nil {
+	if err := writeIndent(w, indent, "@", tee.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(w, indent+1, tee.Children); err != nil {

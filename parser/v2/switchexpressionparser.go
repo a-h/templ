@@ -6,7 +6,11 @@ import (
 	"github.com/a-h/parse"
 )
 
-var switchExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
+var switchExpression parse.Parser[Node] = switchExpressionParser{}
+
+type switchExpressionParser struct{}
+
+func (_ switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.String("switch ").Parse(pi); err != nil || !ok {
 		return
@@ -14,13 +18,16 @@ var switchExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err er
 
 	// Once we've got a prefix, read until {\n.
 	var r SwitchExpression
-	endOfStatementExpression := ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine)))
-	if r.Expression, ok, err = Must(endOfStatementExpression, "switch: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
+	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
+	endOfStatementExpression := ExpressionOf(parse.StringUntil(until))
+	if r.Expression, ok, err = endOfStatementExpression.Parse(pi); err != nil || !ok {
+		err = parse.Error("switch: "+unterminatedMissingCurly, pi.Position())
 		return
 	}
 
 	// Eat " {\n".
-	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "switch: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
+	if _, ok, err = until.Parse(pi); err != nil || !ok {
+		err = parse.Error("switch: "+unterminatedMissingCurly, pi.Position())
 		return
 	}
 
@@ -40,12 +47,13 @@ var switchExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err er
 	}
 
 	// Read the required closing brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "switch: "+unterminatedMissingEnd).Parse(pi); err != nil || !ok {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("switch: "+unterminatedMissingEnd, pi.Position())
 		return
 	}
 
 	return r, true, nil
-})
+}
 
 var caseExpressionStartParser = parse.Func(func(in *parse.Input) (e Expression, ok bool, err error) {
 	start := in.Index()
@@ -81,7 +89,8 @@ var caseExpressionParser = parse.Func(func(pi *parse.Input) (r CaseExpression, o
 
 	// Read until the next case statement, default, or end of the block.
 	pr := newTemplateNodeParser(parse.Any(StripType(closeBraceWithOptionalPadding), StripType(caseExpressionStartParser)), "closing brace or case expression")
-	if r.Children, ok, err = Must[[]Node](pr, "case: expected nodes, but none were found").Parse(pi); err != nil || !ok {
+	if r.Children, ok, err = pr.Parse(pi); err != nil || !ok {
+		err = parse.Error("case: expected nodes, but none were found", pi.Position())
 		return
 	}
 

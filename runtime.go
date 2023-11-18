@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"html"
 	"io"
 	"net/http"
@@ -289,7 +288,10 @@ func (css ComponentCSSClass) ClassName() string {
 func CSSID(name string, css string) string {
 	sum := sha256.Sum256([]byte(css))
 	hp := hex.EncodeToString(sum[:])[0:4]
-	return fmt.Sprintf("%s_%s", name, hp)
+	// Benchmarking showed this was fastest, and with fewest allocations (1).
+	// Using strings.Builder (2 allocs).
+	// Using fmt.Sprintf (3 allocs).
+	return name + "_" + hp
 }
 
 // NewCSSMiddleware creates HTTP middleware that renders a global stylesheet of ComponentCSSClass

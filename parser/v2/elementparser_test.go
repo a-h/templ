@@ -90,7 +90,7 @@ func TestAttributeParser(t *testing.T) {
 			class="important"
 		}
 "`,
-			parser: StripType(conditionalAttributeParser),
+			parser: StripType(conditionalAttribute),
 			expected: ConditionalAttribute{
 				Expression: Expression{
 					Value: "p.important",
@@ -124,7 +124,7 @@ if test {
 	name={ "other" }
 }
 "`,
-			parser: StripType(conditionalAttributeParser),
+			parser: StripType(conditionalAttribute),
 			expected: ConditionalAttribute{
 				Expression: Expression{
 					Value: "test",

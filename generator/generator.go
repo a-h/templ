@@ -7,6 +7,7 @@ import (
 	"html"
 	"io"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -93,14 +94,14 @@ func (g *generator) writeCodeGeneratedComment() (err error) {
 
 func (g *generator) writeVersionComment() (err error) {
 	if g.version != "" {
-		_, err = g.w.Write(fmt.Sprintf("// templ: version: %s\n", g.version))
+		_, err = g.w.Write("// templ: version: " + g.version + "\n")
 	}
 	return err
 }
 
 func (g *generator) writeGeneratedDateComment() (err error) {
 	if g.generatedDate != "" {
-		_, err = g.w.Write(fmt.Sprintf("// templ: generated: %s\n", g.generatedDate))
+		_, err = g.w.Write("// templ: generated: " + g.generatedDate + "\n")
 	}
 	return err
 }
@@ -1237,7 +1238,7 @@ func (g *generator) writeComment(indentLevel int, c parser.HTMLComment) (err err
 
 func (g *generator) createVariableName() string {
 	g.variableID++
-	return fmt.Sprintf("templ_7745c5c3_Var%d", g.variableID)
+	return "templ_7745c5c3_Var" + strconv.Itoa(g.variableID)
 }
 
 func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) (err error) {
@@ -1377,7 +1378,7 @@ func functionName(name string, body string) string {
 	h := sha256.New()
 	h.Write([]byte(body))
 	hp := hex.EncodeToString(h.Sum(nil))[0:4]
-	return fmt.Sprintf("__templ_%s_%s", name, hp)
+	return "__templ_" + name + "_" + hp
 }
 
 func stripTypes(parameters string) string {

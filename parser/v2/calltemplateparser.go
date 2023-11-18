@@ -23,7 +23,8 @@ func (p callTemplateExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	}
 
 	// Eat the final brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "call template expression: missing closing brace").Parse(pi); err != nil || !ok {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("call template expression: missing closing brace", pi.Position())
 		return
 	}
 
