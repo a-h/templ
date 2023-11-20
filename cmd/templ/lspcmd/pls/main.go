@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"runtime"
 
 	"go.uber.org/zap"
 )
@@ -31,10 +32,15 @@ func (opts Options) AsArguments() []string {
 }
 
 func findGopls() (location string, err error) {
-	_, err = exec.LookPath("gopls")
+	executableName := "gopls"
+	if runtime.GOOS == "windows" {
+		executableName = "gopls.exe"
+	}
+
+	_, err = exec.LookPath(executableName)
 	if err == nil {
 		// Found on the path.
-		return "gopls", nil
+		return executableName, nil
 	}
 
 	// Unexpected error.
@@ -42,10 +48,15 @@ func findGopls() (location string, err error) {
 		return "", fmt.Errorf("unexpected error looking for gopls: %w", err)
 	}
 
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("unexpected error looking for gopls: %w", err)
+	}
+
 	// Probe standard locations.
 	locations := []string{
-		path.Join(os.Getenv("HOME"), "go", "bin", "gopls"),
-		path.Join(os.Getenv("HOME"), ".local", "bin", "gopls"),
+		path.Join(home, "go", "bin", executableName),
+		path.Join(home, ".local", "bin", executableName),
 	}
 	for _, location := range locations {
 		_, err = os.Stat(location)
