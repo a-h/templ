@@ -149,6 +149,34 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		return
 	}
 	ok = true
+	if len(template.Diagnostics) > 0 {
+		msg := &lsp.PublishDiagnosticsParams{
+			URI: uri,
+		}
+		for _, d := range template.Diagnostics {
+			msg.Diagnostics = append(msg.Diagnostics, lsp.Diagnostic{
+				Severity: lsp.DiagnosticSeverityWarning,
+				Code:     "",
+				Source:   "templ",
+				Message:  d.Message,
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      uint32(d.Range.From.Line),
+						Character: uint32(d.Range.From.Col),
+					},
+					End: lsp.Position{
+						Line:      uint32(d.Range.To.Line),
+						Character: uint32(d.Range.To.Col),
+					},
+				},
+			})
+		}
+		err = p.Client.PublishDiagnostics(ctx, msg)
+		if err != nil {
+			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
+		}
+		return
+	}
 	// Clear diagnostics.
 	err = p.Client.PublishDiagnostics(ctx, &lsp.PublishDiagnosticsParams{
 		URI:         uri,

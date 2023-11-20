@@ -264,7 +264,7 @@ func openURL(w io.Writer, url string) error {
 
 func processSingleFile(ctx context.Context, w io.Writer, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) error {
 	start := time.Now()
-	err := compile(ctx, fileName, generateSourceMapVisualisations, opts)
+	err := compile(ctx, w, fileName, generateSourceMapVisualisations, opts)
 	if err != nil {
 		return err
 	}
@@ -272,7 +272,15 @@ func processSingleFile(ctx context.Context, w io.Writer, fileName string, genera
 	return err
 }
 
-func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (err error) {
+func printDiagnostics(w io.Writer, fileName string, diags []parser.Diagnostic) {
+	fmt.Fprintln(w)
+	for _, d := range diags {
+		fmt.Fprintf(w, "(warning) %s %q row:%d, col:%d\n", fileName, d.Message, d.Range.From.Line, d.Range.From.Col)
+	}
+	fmt.Fprintln(w)
+}
+
+func compile(ctx context.Context, w io.Writer, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
@@ -280,6 +288,9 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 	t, err := parser.Parse(fileName)
 	if err != nil {
 		return fmt.Errorf("%s parsing error: %w", fileName, err)
+	}
+	if len(t.Diagnostics) > 0 {
+		printDiagnostics(w, fileName, t.Diagnostics)
 	}
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 

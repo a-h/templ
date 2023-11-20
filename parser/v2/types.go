@@ -98,6 +98,12 @@ type Expression struct {
 	Range Range
 }
 
+// Diagnostic for template file.
+type Diagnostic struct {
+	Message string
+	Range Range
+}
+
 type TemplateFile struct {
 	// Header contains comments or whitespace at the top of the file.
 	Header []TemplateFileGoExpression
@@ -105,6 +111,8 @@ type TemplateFile struct {
 	Package Package
 	// Nodes in the file.
 	Nodes []TemplateFileNode
+	// Diagnostics contains any errors or warnings.
+	Diagnostics []Diagnostic
 }
 
 func (tf TemplateFile) Write(w io.Writer) error {
@@ -308,6 +316,7 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 //	  }
 //	}
 type HTMLTemplate struct {
+	Diagnostics []Diagnostic
 	Expression Expression
 	Children   []Node
 }
@@ -355,6 +364,11 @@ func NewTrailingSpace(s string) (ts TrailingSpace, err error) {
 	return SpaceNone, nil
 }
 
+type Nodes struct {
+	Diagnostics []Diagnostic
+	Nodes []Node
+}
+
 // A Node appears within a template, e.g. an StringExpression, Element, IfExpression etc.
 type Node interface {
 	IsNode() bool
@@ -395,6 +409,7 @@ type Element struct {
 	Children       []Node
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
+	Diagnostics []Diagnostic
 }
 
 func (e Element) Trailing() TrailingSpace {
@@ -858,6 +873,7 @@ type TemplElementExpression struct {
 	Expression Expression
 	// Children returns the elements in a block element.
 	Children []Node
+	Diagnostics []Diagnostic
 }
 
 func (tee TemplElementExpression) IsNode() bool { return true }
@@ -896,11 +912,13 @@ type IfExpression struct {
 	Then       []Node
 	ElseIfs    []ElseIfExpression
 	Else       []Node
+	Diagnostics []Diagnostic
 }
 
 type ElseIfExpression struct {
 	Expression Expression
 	Then       []Node
+	Diagnostics []Diagnostic
 }
 
 func (n IfExpression) IsNode() bool { return true }
@@ -971,6 +989,7 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 type CaseExpression struct {
 	Expression Expression
 	Children   []Node
+	Diagnostics []Diagnostic
 }
 
 //	for i, v := range p.Addresses {
@@ -979,6 +998,7 @@ type CaseExpression struct {
 type ForExpression struct {
 	Expression Expression
 	Children   []Node
+	Diagnostics []Diagnostic
 }
 
 func (fe ForExpression) IsNode() bool { return true }

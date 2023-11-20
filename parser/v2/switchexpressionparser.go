@@ -89,10 +89,13 @@ var caseExpressionParser = parse.Func(func(pi *parse.Input) (r CaseExpression, o
 
 	// Read until the next case statement, default, or end of the block.
 	pr := newTemplateNodeParser(parse.Any(StripType(closeBraceWithOptionalPadding), StripType(caseExpressionStartParser)), "closing brace or case expression")
-	if r.Children, ok, err = pr.Parse(pi); err != nil || !ok {
+	var nodes Nodes
+	if nodes, ok, err = pr.Parse(pi); err != nil || !ok {
 		err = parse.Error("case: expected nodes, but none were found", pi.Position())
 		return
 	}
+	r.Children = nodes.Nodes
+	r.Diagnostics = nodes.Diagnostics
 
 	// Optional whitespace.
 	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {

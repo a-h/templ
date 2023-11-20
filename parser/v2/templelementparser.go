@@ -53,10 +53,13 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 
 	// Node contents.
 	np := newTemplateNodeParser(closeBraceWithOptionalPadding, "templ element closing brace")
-	if r.Children, ok, err = np.Parse(pi); err != nil || !ok {
+	var nodes Nodes
+	if nodes, ok, err = np.Parse(pi); err != nil || !ok {
 		err = parse.Error("@"+r.Expression.Value+": expected nodes, but none were found", pi.Position())
 		return
 	}
+	r.Children = nodes.Nodes
+	r.Diagnostics = nodes.Diagnostics
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
