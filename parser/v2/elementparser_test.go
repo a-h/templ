@@ -301,6 +301,34 @@ if test {
 			},
 		},
 		{
+			name:   "bool constant attributes can end with a Unix newline",
+			input:  "<input\n\t\trequired\n\t/>",
+			parser: StripType[Node](element),
+			expected: Element{
+				Name:        "input",
+				IndentAttrs: true,
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Name: "required",
+					},
+				},
+			},
+		},
+		{
+			name:   "bool constant attributes can end with a Windows newline",
+			input:  "<input\r\n\t\trequired\r\n\t/>",
+			parser: StripType[Node](element),
+			expected: Element{
+				Name:        "input",
+				IndentAttrs: true,
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Name: "required",
+					},
+				},
+			},
+		},
+		{
 			name:   "attribute containing escaped text",
 			input:  ` href="&lt;&quot;&gt;"`,
 			parser: StripType(constantAttributeParser),
