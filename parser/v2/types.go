@@ -101,7 +101,7 @@ type Expression struct {
 // Diagnostic for template file.
 type Diagnostic struct {
 	Message string
-	Range Range
+	Range   Range
 }
 
 type TemplateFile struct {
@@ -317,8 +317,8 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 //	}
 type HTMLTemplate struct {
 	Diagnostics []Diagnostic
-	Expression Expression
-	Children   []Node
+	Expression  Expression
+	Children    []Node
 }
 
 func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
@@ -366,7 +366,7 @@ func NewTrailingSpace(s string) (ts TrailingSpace, err error) {
 
 type Nodes struct {
 	Diagnostics []Diagnostic
-	Nodes []Node
+	Nodes       []Node
 }
 
 // A Node appears within a template, e.g. an StringExpression, Element, IfExpression etc.
@@ -409,7 +409,7 @@ type Element struct {
 	Children       []Node
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
-	Diagnostics []Diagnostic
+	Diagnostics    []Diagnostic
 }
 
 func (e Element) Trailing() TrailingSpace {
@@ -861,7 +861,8 @@ type CallTemplateExpression struct {
 
 func (cte CallTemplateExpression) IsNode() bool { return true }
 func (cte CallTemplateExpression) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, `{! `, cte.Expression.Value, ` }`)
+	// Rewrite to new call syntax
+	return writeIndent(w, indent, `@`, cte.Expression.Value)
 }
 
 // TemplElementExpression can be used to create and render a template using data.
@@ -872,7 +873,7 @@ type TemplElementExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
 	// Children returns the elements in a block element.
-	Children []Node
+	Children    []Node
 	Diagnostics []Diagnostic
 }
 
@@ -908,16 +909,16 @@ func (ChildrenExpression) Write(w io.Writer, indent int) error {
 // if p.Type == "test" && p.thing {
 // }
 type IfExpression struct {
-	Expression Expression
-	Then       []Node
-	ElseIfs    []ElseIfExpression
-	Else       []Node
+	Expression  Expression
+	Then        []Node
+	ElseIfs     []ElseIfExpression
+	Else        []Node
 	Diagnostics []Diagnostic
 }
 
 type ElseIfExpression struct {
-	Expression Expression
-	Then       []Node
+	Expression  Expression
+	Then        []Node
 	Diagnostics []Diagnostic
 }
 
@@ -987,8 +988,8 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 
 // case "Something":
 type CaseExpression struct {
-	Expression Expression
-	Children   []Node
+	Expression  Expression
+	Children    []Node
 	Diagnostics []Diagnostic
 }
 
@@ -996,8 +997,8 @@ type CaseExpression struct {
 //	  {! Address(v) }
 //	}
 type ForExpression struct {
-	Expression Expression
-	Children   []Node
+	Expression  Expression
+	Children    []Node
 	Diagnostics []Diagnostic
 }
 
