@@ -523,3 +523,45 @@ func TestRenderScriptItems(t *testing.T) {
 		})
 	}
 }
+
+type baseError struct {
+	Value int
+}
+
+func (baseError) Error() string { return "base error" }
+
+type nonMatchedError struct{}
+
+func (nonMatchedError) Error() string { return "non matched error" }
+
+func TestErrorWrapping(t *testing.T) {
+	baseErr := baseError{
+		Value: 1,
+	}
+	wrappedErr := templ.Error{Err: baseErr, Line: 1, Col: 2}
+	t.Run("errors.Is() returns true for the base error", func(t *testing.T) {
+		if !errors.Is(wrappedErr, baseErr) {
+			t.Error("errors.Is() returned false for the base error")
+		}
+	})
+	t.Run("errors.Is() returns false for a different error", func(t *testing.T) {
+		if errors.Is(wrappedErr, errors.New("different error")) {
+			t.Error("errors.Is() returned true for a different error")
+		}
+	})
+	t.Run("errors.As() returns true for the base error", func(t *testing.T) {
+		var err baseError
+		if !errors.As(wrappedErr, &err) {
+			t.Error("errors.As() returned false for the base error")
+		}
+		if err.Value != 1 {
+			t.Errorf("errors.As() returned a different value: %v", err.Value)
+		}
+	})
+	t.Run("errors.As() returns false for a different error", func(t *testing.T) {
+		var err nonMatchedError
+		if errors.As(wrappedErr, &err) {
+			t.Error("errors.As() returned true for a different error")
+		}
+	})
+}

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator/htmldiff"
 )
 
@@ -14,18 +15,40 @@ import (
 var expected string
 
 func Test(t *testing.T) {
-	component := render(false)
+	t.Run("can render without error", func(t *testing.T) {
+		component := render(nil)
 
-	diff, err := htmldiff.Diff(component, expected)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff != "" {
-		t.Error(diff)
-	}
+		_, err := htmldiff.Diff(component, expected)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+	t.Run("string expressions can return errors", func(t *testing.T) {
+		errSomethingBad := errors.New("bad error")
 
-	renderErr := render(true).Render(context.Background(), &bytes.Buffer{})
-	if !errors.Is(renderErr, errSomethingBad) {
-		t.Errorf("expected error: %v, but got %v", errSomethingBad, renderErr)
-	}
+		err := render(errSomethingBad).Render(context.Background(), &bytes.Buffer{})
+		if err == nil {
+			t.Fatalf("expected error, but got nil")
+		}
+
+		t.Run("the errors are templ errors", func(t *testing.T) {
+			var templateErr templ.Error
+			if !errors.As(err, &templateErr) {
+				t.Fatalf("expected error to be templ.Error, but got %T", err)
+			}
+			if templateErr.Line != 17 {
+				t.Errorf("expected error on line 17, but got %v", templateErr.Line)
+			}
+			if templateErr.Col != 26 {
+				t.Errorf("expected error on column 26, but got %v", templateErr.Col)
+			}
+		})
+
+		t.Run("the underlying error can be unwrapped", func(t *testing.T) {
+			if !errors.Is(err, errSomethingBad) {
+				t.Errorf("expected error: %v, but got %v", errSomethingBad, err)
+			}
+		})
+
+	})
 }

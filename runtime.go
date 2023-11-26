@@ -647,7 +647,24 @@ func ReleaseBuffer(b *bytes.Buffer) {
 	bufferPool.Put(b)
 }
 
-// JoinStringErrs escapes HTML text within templates.
+// JoinStringErrs joins an optional list of errors.
 func JoinStringErrs(s string, errs ...error) (string, error) {
 	return s, errors.Join(errs...)
+}
+
+// Error returned during template rendering.
+type Error struct {
+	Err error
+	// Line index of the error.
+	Line int
+	// Col index of the error.
+	Col int
+}
+
+func (e Error) Error() string {
+	return fmt.Sprintf("template error at line %d, col %d: %v", e.Line, e.Col, e.Err)
+}
+
+func (e Error) Unwrap() error {
+	return e.Err
 }

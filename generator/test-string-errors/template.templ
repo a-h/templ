@@ -1,24 +1,20 @@
 package teststringerrs
 
-import "errors"
-
-var errSomethingBad = errors.New("bad error")
-
 func funcWithNoError() (s string) {
 	return "OK"
 }
 
-func funcWithError(bad bool) (s string, err error) {
-	if bad {
-		return "", errSomethingBad
+func funcWithError(in error) (s string, err error) {
+	if in != nil {
+		return "", in
 	}
 	return "OK2", nil
 }
 
-templ render(bad bool) {
+templ render(err error) {
 	<ul>
 		<li>{ "raw" }</li>
 		<li>{ funcWithNoError() }</li>
-		<li>{ funcWithError(bad) }</li>
+		<li>{ funcWithError(err) }</li>
 	</ul>
 }

@@ -1251,7 +1251,7 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
 		return err
 	}
-	// vn, templ_7745c5c3_Err = templ.EscapeStringErrs(
+	// vn, templ_7745c5c3_Err = templ.JoinStringErrs(
 	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
 		return err
 	}
@@ -1261,10 +1261,23 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	}
 	g.sourceMap.Add(e, r)
 	// )
-	if r, err = g.w.Write(")\n"); err != nil {
+	if _, err = g.w.Write(")\n"); err != nil {
 		return err
 	}
-	if err = g.writeErrorHandler(indentLevel); err != nil {
+
+	// String expression error handler.
+	_, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n")
+	if err != nil {
+		return err
+	}
+	indentLevel++
+	_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, Line: "+strconv.Itoa(int(e.Range.To.Line))+", Col: "+strconv.Itoa(int(e.Range.To.Col))+"}\n")
+	if err != nil {
+		return err
+	}
+	indentLevel--
+	_, err = g.w.WriteIndent(indentLevel, "}\n")
+	if err != nil {
 		return err
 	}
 
