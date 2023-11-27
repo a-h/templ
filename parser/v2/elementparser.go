@@ -341,9 +341,12 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 
 	// Once we've got an open tag, the rest must be present.
 	l := pi.Position().Line
-	if r.Children, ok, err = newTemplateNodeParser[any](nil, "").Parse(pi); err != nil || !ok {
+	var nodes Nodes
+	if nodes, ok, err = newTemplateNodeParser[any](nil, "").Parse(pi); err != nil || !ok {
 		return
 	}
+	r.Children = nodes.Nodes
+	r.Diagnostics = nodes.Diagnostics
 	// If the children are not all on the same line, indent them
 	if l != pi.Position().Line {
 		r.IndentChildren = true

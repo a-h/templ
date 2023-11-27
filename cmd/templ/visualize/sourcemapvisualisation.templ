@@ -27,10 +27,10 @@ templ combine(templFileName string, left, right templ.Component) {
 			<h1>{ templFileName }</h1>
 			<div class={ templ.Classes(row()) }>
 				<div class={ templ.Classes(column(), code()) }>
-					{! left }
+					@left
 				</div>
 				<div class={ templ.Classes(column(), code()) }>
-					{! right }
+					@right
 				</div>
 			</div>
 		</body>

@@ -17,15 +17,17 @@ import (
 // file name from `*_templ.go` to `*.templ`, and to remap the char
 // positions where required.
 type Client struct {
-	Log            *zap.Logger
-	Target         lsp.Client
-	SourceMapCache *SourceMapCache
+	Log             *zap.Logger
+	Target          lsp.Client
+	SourceMapCache  *SourceMapCache
+	DiagnosticCache *DiagnosticCache
 }
 
-func NewClient(log *zap.Logger, cache *SourceMapCache) (c *Client, init func(lsp.Client)) {
+func NewClient(log *zap.Logger, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (c *Client, init func(lsp.Client)) {
 	c = &Client{
-		Log:            log,
-		SourceMapCache: cache,
+		Log:             log,
+		SourceMapCache:  cache,
+		DiagnosticCache: diagnosticCache,
 	}
 	return c, func(target lsp.Client) {
 		c.Target = target
@@ -86,6 +88,7 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 		params.Diagnostics[i] = item
 		p.Log.Info(fmt.Sprintf("diagnostic [%d] rewritten", i), zap.Any("diagnostic", item))
 	}
+	params.Diagnostics = p.DiagnosticCache.AddTemplDiagnostics(uri, params.Diagnostics)
 	return p.Target.PublishDiagnostics(ctx, params)
 }
 

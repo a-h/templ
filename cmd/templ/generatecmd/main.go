@@ -30,6 +30,7 @@ import (
 	"github.com/a-h/templ/parser/v2"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cli/browser"
+	"github.com/fatih/color"
 )
 
 type Arguments struct {
@@ -139,10 +140,14 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 			if !args.Watch {
 				return fmt.Errorf("failed to process path: %v", errors.Join(errs...))
 			}
-			fmt.Fprintf(w, "Error processing path: %v\n", errors.Join(errs...))
+			logError(w, "Error processing path: %v\n", errors.Join(errs...))
 		}
 		if changesFound > 0 {
-			fmt.Fprintf(w, "Generated code for %d templates with %d errors in %s\n", changesFound, len(errs), time.Since(start))
+			if len(errs) > 0 {
+				logError(w, "Generated code for %d templates with %d errors in %s\n", changesFound, len(errs), time.Since(start))
+			} else {
+				logSuccess(w, "Generated code for %d templates with %d errors in %s\n", changesFound, len(errs), time.Since(start))
+			}
 			if args.Command != "" {
 				fmt.Fprintf(w, "Executing command: %s\n", args.Command)
 				if _, err := run.Run(ctx, args.Path, args.Command); err != nil {
@@ -264,44 +269,61 @@ func openURL(w io.Writer, url string) error {
 
 func processSingleFile(ctx context.Context, w io.Writer, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) error {
 	start := time.Now()
-	err := compile(ctx, fileName, generateSourceMapVisualisations, opts)
+	diag, err := compile(ctx, fileName, generateSourceMapVisualisations, opts)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "Generated code for %q in %s\n", fileName, time.Since(start))
-	return err
+	var b bytes.Buffer
+	defer func() {
+		_, _ = b.WriteTo(w)
+	}()
+	if len(diag) > 0 {
+		logWarning(&b, "Generated code for %q in %s\n", fileName, time.Since(start))
+		printDiagnostics(&b, fileName, diag)
+		return nil
+	}
+	logSuccess(&b, "Generated code for %q in %s\n", fileName, time.Since(start))
+	return nil
 }
 
-func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (err error) {
+func printDiagnostics(w io.Writer, fileName string, diags []parser.Diagnostic) {
+	for _, d := range diags {
+		fmt.Fprint(w, "\t")
+		logWarning(w, "%s (%d:%d)\n", d.Message, d.Range.From.Line, d.Range.From.Col)
+	}
+	fmt.Fprintln(w)
+}
+
+func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (diagnostics []parser.Diagnostic, err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
 
 	t, err := parser.Parse(fileName)
 	if err != nil {
-		return fmt.Errorf("%s parsing error: %w", fileName, err)
+		return nil, fmt.Errorf("%s parsing error: %w", fileName, err)
 	}
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
 	var b bytes.Buffer
 	sourceMap, err := generator.Generate(t, &b, opts...)
 	if err != nil {
-		return fmt.Errorf("%s generation error: %w", fileName, err)
+		return nil, fmt.Errorf("%s generation error: %w", fileName, err)
 	}
 
 	data, err := format.Source(b.Bytes())
 	if err != nil {
-		return fmt.Errorf("%s source formatting error: %w", fileName, err)
+		return nil, fmt.Errorf("%s source formatting error: %w", fileName, err)
 	}
 
 	if err = os.WriteFile(targetFileName, data, 0644); err != nil {
-		return fmt.Errorf("%s write file error: %w", targetFileName, err)
+		return nil, fmt.Errorf("%s write file error: %w", targetFileName, err)
 	}
 
 	if generateSourceMapVisualisations {
 		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, sourceMap)
 	}
-	return
+	return t.Diagnostics, err
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
@@ -338,4 +360,18 @@ func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileNa
 	defer b.Flush()
 
 	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).Render(ctx, b)
+}
+
+func logError(w io.Writer, format string, a ...any) {
+	logWithDecoration(w, "✗", color.FgRed, format, a...)
+}
+func logWarning(w io.Writer, format string, a ...any) {
+	logWithDecoration(w, "!", color.FgYellow, format, a...)
+}
+func logSuccess(w io.Writer, format string, a ...any) {
+	logWithDecoration(w, "✓", color.FgGreen, format, a...)
+}
+func logWithDecoration(w io.Writer, decoration string, col color.Attribute, format string, a ...any) {
+	color.New(col).Fprintf(w, "(%s) ", decoration)
+	fmt.Fprintf(w, format, a...)
 }
