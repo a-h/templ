@@ -1,13 +1,13 @@
 package proxy
 
 import (
-	"sync"
 	lsp "github.com/a-h/protocol"
+	"sync"
 )
 
 func NewDiagnosticCache() *DiagnosticCache {
 	return &DiagnosticCache{
-		m: &sync.Mutex{},
+		m:     &sync.Mutex{},
 		cache: make(map[string]fileDiagnostic),
 	}
 }
@@ -18,7 +18,7 @@ type fileDiagnostic struct {
 }
 
 type DiagnosticCache struct {
-	m *sync.Mutex
+	m     *sync.Mutex
 	cache map[string]fileDiagnostic
 }
 

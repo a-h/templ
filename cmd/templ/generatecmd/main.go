@@ -274,7 +274,9 @@ func processSingleFile(ctx context.Context, w io.Writer, fileName string, genera
 		return err
 	}
 	var b bytes.Buffer
-	defer b.WriteTo(w)
+	defer func() {
+		_, _ = b.WriteTo(w)
+	}()
 	if len(diag) > 0 {
 		logWarning(&b, "Generated code for %q in %s\n", fileName, time.Since(start))
 		printDiagnostics(&b, fileName, diag)
@@ -321,7 +323,7 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 	if generateSourceMapVisualisations {
 		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, sourceMap)
 	}
-	return t.Diagnostics, nil
+	return t.Diagnostics, err
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
