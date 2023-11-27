@@ -12,6 +12,7 @@ import (
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
 	"github.com/a-h/templ/cmd/templ/migratecmd"
+	"github.com/fatih/color"
 )
 
 func main() {
@@ -139,6 +140,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 		PPROFPort:                       *pprofPortFlag,
 	})
 	if err != nil {
+		color.New(color.FgRed).Fprint(w, "(✗) ")
 		fmt.Fprintln(w, err.Error())
 		return 1
 	}

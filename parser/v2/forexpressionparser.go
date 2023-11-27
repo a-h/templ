@@ -34,10 +34,13 @@ func (_ forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 
 	// Node contents.
 	tnp := newTemplateNodeParser(closeBraceWithOptionalPadding, "for expression closing brace")
-	if r.Children, ok, err = tnp.Parse(pi); err != nil || !ok {
+	var nodes Nodes
+	if nodes, ok, err = tnp.Parse(pi); err != nil || !ok {
 		err = parse.Error("for: expected nodes, but none were found", pi.Position())
 		return
 	}
+	r.Children = nodes.Nodes
+	r.Diagnostics = nodes.Diagnostics
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {

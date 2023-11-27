@@ -29,21 +29,23 @@ import (
 // inverse operation - to put the file names back, and readjust any
 // character positions.
 type Server struct {
-	Log            *zap.Logger
-	Client         lsp.Client
-	Target         lsp.Server
-	SourceMapCache *SourceMapCache
-	TemplSource    *DocumentContents
-	GoSource       map[string]string
+	Log             *zap.Logger
+	Client          lsp.Client
+	Target          lsp.Server
+	SourceMapCache  *SourceMapCache
+	DiagnosticCache *DiagnosticCache
+	TemplSource     *DocumentContents
+	GoSource        map[string]string
 }
 
-func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache) (s *Server, init func(lsp.Client)) {
+func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server, init func(lsp.Client)) {
 	s = &Server{
-		Log:            log,
-		Target:         target,
-		SourceMapCache: cache,
-		TemplSource:    newDocumentContents(log),
-		GoSource:       make(map[string]string),
+		Log:             log,
+		Target:          target,
+		SourceMapCache:  cache,
+		DiagnosticCache: diagnosticCache,
+		TemplSource:     newDocumentContents(log),
+		GoSource:        make(map[string]string),
 	}
 	return s, func(client lsp.Client) {
 		s.Client = client
@@ -142,6 +144,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 				},
 			}
 		}
+		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
 		err = p.Client.PublishDiagnostics(ctx, msg)
 		if err != nil {
 			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
@@ -149,10 +152,39 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		return
 	}
 	ok = true
-	// Clear diagnostics.
+	if len(template.Diagnostics) > 0 {
+		msg := &lsp.PublishDiagnosticsParams{
+			URI: uri,
+		}
+		for _, d := range template.Diagnostics {
+			msg.Diagnostics = append(msg.Diagnostics, lsp.Diagnostic{
+				Severity: lsp.DiagnosticSeverityWarning,
+				Code:     "",
+				Source:   "templ",
+				Message:  d.Message,
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      uint32(d.Range.From.Line),
+						Character: uint32(d.Range.From.Col),
+					},
+					End: lsp.Position{
+						Line:      uint32(d.Range.To.Line),
+						Character: uint32(d.Range.To.Col),
+					},
+				},
+			})
+		}
+		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
+		err = p.Client.PublishDiagnostics(ctx, msg)
+		if err != nil {
+			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
+		}
+		return
+	}
+	// Clear templ diagnostics.
 	err = p.Client.PublishDiagnostics(ctx, &lsp.PublishDiagnosticsParams{
 		URI:         uri,
-		Diagnostics: []lsp.Diagnostic{},
+		Diagnostics: p.DiagnosticCache.AddGoDiagnostics(string(uri), nil),
 	})
 	if err != nil {
 		p.Log.Error("failed to publish diagnostics", zap.Error(err))

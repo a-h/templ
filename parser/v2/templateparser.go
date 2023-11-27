@@ -84,7 +84,7 @@ var templateNodeParsers = []parse.Parser[Node]{
 	textParser,             // anything &amp; everything accepted...
 }
 
-func (p templateNodeParser[T]) Parse(pi *parse.Input) (op []Node, ok bool, err error) {
+func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, ok bool, err error) {
 	for {
 		// Check if we've reached the end.
 		if p.until != nil {
@@ -106,10 +106,16 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op []Node, ok bool, err e
 			var node Node
 			node, matched, err = p.Parse(pi)
 			if err != nil {
-				return nil, false, err
+				return Nodes{}, false, err
+			}
+			if n, ok := node.(CallTemplateExpression); ok {
+				op.Diagnostics = append(op.Diagnostics, Diagnostic{
+					Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
+					Range:   n.Expression.Range,
+				})
 			}
 			if matched {
-				op = append(op, node)
+				op.Nodes = append(op.Nodes, node)
 				break
 			}
 		}

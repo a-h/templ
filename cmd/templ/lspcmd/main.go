@@ -90,15 +90,16 @@ func run(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	}
 
 	cache := proxy.NewSourceMapCache()
+	diagnosticCache := proxy.NewDiagnosticCache()
 
 	log.Info("creating client")
-	clientProxy, clientInit := proxy.NewClient(log, cache)
+	clientProxy, clientInit := proxy.NewClient(log, cache, diagnosticCache)
 	_, goplsConn, goplsServer := protocol.NewClient(context.Background(), clientProxy, jsonrpc2.NewStream(rwc), log)
 	defer goplsConn.Close()
 
 	log.Info("creating proxy")
 	// Create the proxy to sit between.
-	serverProxy, serverInit := proxy.NewServer(log, goplsServer, cache)
+	serverProxy, serverInit := proxy.NewServer(log, goplsServer, cache, diagnosticCache)
 
 	// Create templ server.
 	log.Info("creating templ server")
