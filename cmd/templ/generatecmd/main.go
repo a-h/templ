@@ -296,8 +296,6 @@ func printDiagnostics(w io.Writer, fileName string, diags []parser.Diagnostic) {
 	fmt.Fprintln(w)
 }
 
-// generate Go code for a single template.
-// If a basePath is provided, the filename included in error messages is relative to it.
 func generate(ctx context.Context, basePath, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (diagnostics []parser.Diagnostic, err error) {
 	if err = ctx.Err(); err != nil {
 		return
