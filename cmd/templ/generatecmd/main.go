@@ -129,6 +129,8 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	bo := backoff.NewExponentialBackOff()
 	bo.InitialInterval = time.Millisecond * 500
 	bo.MaxInterval = time.Second * 3
+	bo.MaxElapsedTime = 0
+
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
