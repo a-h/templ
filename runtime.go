@@ -69,10 +69,12 @@ const componentHandlerErrorMessage = "templ: failed to render template"
 
 // ServeHTTP implements the http.Handler interface.
 func (ch ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Set header before writing status, otherwise
+	// this header won't be written to response.
+	w.Header().Add("Content-Type", ch.ContentType)
 	if ch.Status != 0 {
 		w.WriteHeader(ch.Status)
 	}
-	w.Header().Add("Content-Type", ch.ContentType)
 	err := ch.Component.Render(r.Context(), w)
 	if err != nil {
 		if ch.ErrorHandler != nil {
