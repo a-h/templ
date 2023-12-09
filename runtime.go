@@ -69,18 +69,27 @@ const componentHandlerErrorMessage = "templ: failed to render template"
 
 // ServeHTTP implements the http.Handler interface.
 func (ch ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Set header before writing status, otherwise
-	// this header won't be written to response.
-	w.Header().Add("Content-Type", ch.ContentType)
-	if ch.Status != 0 {
-		w.WriteHeader(ch.Status)
-	}
-	err := ch.Component.Render(r.Context(), w)
-	if err != nil {
-		if ch.ErrorHandler != nil {
-			ch.ErrorHandler(r, err).ServeHTTP(w, r)
-			return
+	// There may be error, don't write to response yet.
+	// Component impl will use this buffer directly!
+	buf := GetBuffer()
+	defer ReleaseBuffer(buf)
+	err := ch.Component.Render(r.Context(), buf)
+	if err == nil {
+		// Set header before writing status, otherwise
+		// this header won't be written to response.
+		w.Header().Set("Content-Type", ch.ContentType)
+		if ch.Status != 0 {
+			w.WriteHeader(ch.Status)
 		}
+		// Ignore write error like http.Error() does.
+		// There is no way to recover at this point.
+		_, _ = w.Write(buf.Bytes())
+	} else if ch.ErrorHandler != nil {
+		// Don't write status code, error handler may
+		// want to set its own status code and headers.
+		w.Header().Set("Content-Type", ch.ContentType)
+		ch.ErrorHandler(r, err).ServeHTTP(w, r)
+	} else {
 		http.Error(w, componentHandlerErrorMessage, http.StatusInternalServerError)
 	}
 }
