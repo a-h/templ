@@ -21,7 +21,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
      //TODO: Log error server side.
   }
   m := NewInviteComponentViewModel(invites, err)
-  teamInviteComponentModel(m).Render(r.Context(), w)
+  teamInviteComponent(m).Render(r.Context(), w)
 }
 
 func NewInviteComponentViewModel(invites []models.Invite, err error) (m InviteComponentViewModel) {
