@@ -382,6 +382,9 @@ func TestHandler(t *testing.T) {
 		return nil
 	})
 	errorComponent := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		if _, err := io.WriteString(w, "Hello"); err != nil {
+			t.Fatalf("failed to write string: %v", err)
+		}
 		return errors.New("handler error")
 	})
 
