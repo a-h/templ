@@ -39,11 +39,9 @@
           subPackages = [ "cmd/templ" ];
           vendorHash = "sha256-skftApJDp52ZMFf4+jG0sNWK2jIXi3rDQP199suRgNw=";
           CGO_ENABLED = 0;
-
           flags = [
             "-trimpath"
           ];
-
           ldflags = [
             "-s"
             "-w"
@@ -55,7 +53,6 @@
           name = "templ-docs";
           src = gitignore.lib.gitignoreSource ./docs;
           npmDepsHash = "sha256-i6clvSyHtQEGl2C/wcCXonl1W/Kxq7WPTYH46AhUvDM=";
-
           installPhase = ''
             mkdir -p $out/share
             cp -r build/ $out/share/docs
@@ -76,10 +73,9 @@
         });
 
       # Allows users to install the package on their system in an easy way
-      overlays.default = final: prev:
-        forAllSystems ({ system, ... }: {
-          templ = packages.${system}.templ;
-          templ-docs = packages.${system}.templ-docs;
-        });
+      overlays.default = final: prev: {
+        templ = self.packages.${final.stdenv.system}.templ;
+        templ-docs = self.packages.${final.stdenv.system}.templ-docs;
+      };
     };
 }
