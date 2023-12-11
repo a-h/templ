@@ -59,7 +59,8 @@ This flake exposes an overlay, so you can add it to your own Flake and/or NixOS 
       inherit system;
       pkgs = import nixpkgs { inherit system; };
     });
-    templ = system: inputs.templ.${system}.templ;
+    templ = system: inputs.templ.packages.${system}.templ;
+
   in {
     packages = forAllSystems ({ pkgs, system }): {
       myNewPackage = pkgs.buildGoModule {
