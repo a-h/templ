@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -30,6 +31,18 @@ func WithVersion(v string) GenerateOpt {
 func WithTimestamp(d time.Time) GenerateOpt {
 	return func(g *generator) error {
 		g.generatedDate = d.Format(time.RFC3339)
+		return nil
+	}
+}
+
+// WithFileName sets the filename of the templ file in template rendering error messages.
+func WithFileName(name string) GenerateOpt {
+	return func(g *generator) error {
+		if filepath.IsAbs(name) {
+			_, g.fileName = filepath.Split(name)
+			return nil
+		}
+		g.fileName = name
 		return nil
 	}
 }
@@ -63,6 +76,8 @@ type generator struct {
 	version string
 	// generatedDate to include as a comment.
 	generatedDate string
+	// fileName to include in error messages if string expressions return an error.
+	fileName string
 }
 
 func (g *generator) generate() (err error) {
@@ -1247,15 +1262,40 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	}
 	var r parser.Range
 	vn := g.createVariableName()
-	// var vn string = sExpr
-	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string = "); err != nil {
+	// var vn string
+	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
+		return err
+	}
+	// vn, templ_7745c5c3_Err = templ.JoinStringErrs(
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
 		return err
 	}
 	// p.Name()
-	if r, err = g.w.Write(e.Value + "\n"); err != nil {
+	if r, err = g.w.Write(e.Value); err != nil {
 		return err
 	}
 	g.sourceMap.Add(e, r)
+	// )
+	if _, err = g.w.Write(")\n"); err != nil {
+		return err
+	}
+
+	// String expression error handler.
+	_, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n")
+	if err != nil {
+		return err
+	}
+	indentLevel++
+	_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, FileName: "+createGoString(g.fileName)+", Line: "+strconv.Itoa(int(e.Range.To.Line))+", Col: "+strconv.Itoa(int(e.Range.To.Col))+"}\n")
+	if err != nil {
+		return err
+	}
+	indentLevel--
+	_, err = g.w.WriteIndent(indentLevel, "}\n")
+	if err != nil {
+		return err
+	}
+
 	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
 	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
 		return err

@@ -11,3 +11,5 @@ require (
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/yuin/goldmark v1.5.4
 )
+
+replace github.com/a-h/templ => ../../

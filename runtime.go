@@ -6,6 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"html"
 	"io"
 	"net/http"
@@ -644,4 +646,31 @@ func GetBuffer() *bytes.Buffer {
 func ReleaseBuffer(b *bytes.Buffer) {
 	b.Reset()
 	bufferPool.Put(b)
+}
+
+// JoinStringErrs joins an optional list of errors.
+func JoinStringErrs(s string, errs ...error) (string, error) {
+	return s, errors.Join(errs...)
+}
+
+// Error returned during template rendering.
+type Error struct {
+	Err error
+	// FileName of the template file.
+	FileName string
+	// Line index of the error.
+	Line int
+	// Col index of the error.
+	Col int
+}
+
+func (e Error) Error() string {
+	if e.FileName == "" {
+		e.FileName = "templ"
+	}
+	return fmt.Sprintf("%s: error at line %d, col %d: %v", e.FileName, e.Line, e.Col, e.Err)
+}
+
+func (e Error) Unwrap() error {
+	return e.Err
 }

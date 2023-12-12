@@ -1,0 +1,20 @@
+package teststringerrs
+
+func funcWithNoError() (s string) {
+	return "OK"
+}
+
+func funcWithError(in error) (s string, err error) {
+	if in != nil {
+		return "", in
+	}
+	return "OK2", nil
+}
+
+templ render(err error) {
+	<ul>
+		<li>{ "raw" }</li>
+		<li>{ funcWithNoError() }</li>
+		<li>{ funcWithError(err) }</li>
+	</ul>
+}
