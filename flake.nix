@@ -15,21 +15,18 @@
 
   outputs = { self, nixpkgs, gitignore, xc }:
     let
-      # Systems supported
       allSystems = [
         "x86_64-linux" # 64-bit Intel/AMD Linux
         "aarch64-linux" # 64-bit ARM Linux
         "x86_64-darwin" # 64-bit Intel macOS
         "aarch64-darwin" # 64-bit ARM macOS
       ];
-
-      # Helper to provide system-specific attributes
       forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f {
         inherit system;
         pkgs = import nixpkgs { inherit system; };
       });
     in
-    rec {
+    {
       packages = forAllSystems ({ pkgs, ... }: rec {
         default = templ;
 
@@ -38,12 +35,10 @@
           src = gitignore.lib.gitignoreSource ./.;
           subPackages = [ "cmd/templ" ];
           vendorHash = "sha256-skftApJDp52ZMFf4+jG0sNWK2jIXi3rDQP199suRgNw=";
-          CGO_ENALBED = 0;
-
+          CGO_ENABLED = 0;
           flags = [
             "-trimpath"
           ];
-
           ldflags = [
             "-s"
             "-w"
@@ -55,7 +50,6 @@
           name = "templ-docs";
           src = gitignore.lib.gitignoreSource ./docs;
           npmDepsHash = "sha256-i6clvSyHtQEGl2C/wcCXonl1W/Kxq7WPTYH46AhUvDM=";
-
           installPhase = ''
             mkdir -p $out/share
             cp -r build/ $out/share/docs
@@ -63,7 +57,7 @@
         };
       });
 
-      # `nix develop` provides a shell containing required tools for development
+      # `nix develop` provides a shell containing development tools.
       devShell = forAllSystems ({ system, pkgs }:
         pkgs.mkShell {
           buildInputs = with pkgs; [
@@ -75,11 +69,17 @@
           ];
         });
 
-      # Allows users to install the package on their system in an easy way
-      overlays.default = final: prev:
-        forAllSystems ({ system, ... }: {
-          templ = packages.${system}.templ;
-          templ-docs = packages.${system}.templ-docs;
-        });
+      # This flake outputs an overlay that can be used to add templ and
+      # templ-docs to nixpkgs as per https://templ.guide/quick-start/installation/#nix
+      #
+      # Example usage:
+      #
+      # nixpkgs.overlays = [
+      #   inputs.templ.overlays.default
+      # ];
+      overlays.default = final: prev: {
+        templ = self.packages.${final.stdenv.system}.templ;
+        templ-docs = self.packages.${final.stdenv.system}.templ-docs;
+      };
     };
 }
