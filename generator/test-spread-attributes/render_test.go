@@ -13,8 +13,15 @@ var expected string
 
 func Test(t *testing.T) {
 	component := BasicTemplate(templ.Attributes{
-		"id":     "test",
-		"hx-get": "/page",
+		"id":       "test",
+		"hx-get":   "/page",
+		"nonshade": true,
+		"shade":    false,
+		"text":     templ.KV("lorem", true),
+		"no-text":  templ.KV("empty", false),
+		"bool":     templ.KV(true, true),
+		"no-bool":  templ.KV(false, false),
+		"dateId":   "my-custom-id",
 	})
 
 	diff, err := htmldiff.Diff(component, expected)

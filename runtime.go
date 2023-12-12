@@ -467,10 +467,10 @@ func URL(s string) SafeURL {
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
 
-// Attributes is an alias to map[string]string made for spread attributes
-type Attributes map[string]string
+// Attributes is an alias to map[string]interface{} made for spread attributes
+type Attributes map[string]interface{}
 
-func SortAttributesKey(attributes map[string]string) []string {
+func SortAttributesKey(attributes map[string]interface{}) []string {
 	sortedAttributes := make([]string, 0, len(attributes))
 
 	for k := range attributes {
@@ -480,6 +480,49 @@ func SortAttributesKey(attributes map[string]string) []string {
 	sort.Strings(sortedAttributes)
 
 	return sortedAttributes
+}
+
+type attributeValue struct {
+	Value     string
+	OmitValue bool
+}
+
+func ParseAttributeValue(attribute interface{}) (bool, attributeValue) {
+	stringValue, ok := attribute.(string)
+
+	if ok {
+		return true, attributeValue{
+			Value:     stringValue,
+			OmitValue: false,
+		}
+	}
+
+	boolValue, ok := attribute.(bool)
+
+	if ok {
+		return true, attributeValue{
+			OmitValue: boolValue,
+		}
+	}
+
+	kvStringValue, ok := attribute.(KeyValue[string, bool])
+
+	if ok && kvStringValue.Value {
+		return true, attributeValue{
+			Value:     kvStringValue.Key,
+			OmitValue: false,
+		}
+	}
+
+	kvBoolValue, ok := attribute.(KeyValue[bool, bool])
+
+	if ok && kvBoolValue.Value {
+		return true, attributeValue{
+			OmitValue: kvBoolValue.Key,
+		}
+	}
+
+	return false, attributeValue{}
 }
 
 // Script handling.

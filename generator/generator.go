@@ -1145,6 +1145,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 
 func (g *generator) writeSpreadAttributes(indentLevel int, elementName string, attr parser.SpreadAttributes) (err error) {
 	var_n := g.createVariableName()
+	var_ok := g.createVariableName()
 	var_v := g.createVariableName()
 
 	// for n, v := range
@@ -1167,8 +1168,8 @@ func (g *generator) writeSpreadAttributes(indentLevel int, elementName string, a
 	{
 		indentLevel++
 
-		// v :=
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`%s := `, var_v)); err != nil {
+		// ok, v := templ.ParseAttributeValue(
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`%s, %s := templ.ParseAttributeValue(`, var_ok, var_v)); err != nil {
 			return err
 		}
 
@@ -1179,61 +1180,93 @@ func (g *generator) writeSpreadAttributes(indentLevel int, elementName string, a
 		}
 		g.sourceMap.Add(attr.Expression, r)
 
-		// [n]
-		if _, err = g.w.Write(fmt.Sprintf(`[%s]`+"\n", var_n)); err != nil {
+		// [n])
+		if _, err = g.w.Write(fmt.Sprintf(`[%s])`+"\n", var_n)); err != nil {
 			return err
 		}
 
-		// Name
-		// (space)
-		if _, err = g.w.WriteStringLiteral(indentLevel, " "); err != nil {
-			return err
-		}
-		// templ_7745c5c3_Buffer.WriteString(templ.EscapeString(
-		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("); err != nil {
-			return err
-		}
-		// attribute name
-		if _, err = g.w.Write(var_n); err != nil {
-			return err
-		}
-		// ))
-		if _, err = g.w.Write("))\n"); err != nil {
-			return err
-		}
-		if err = g.writeErrorHandler(indentLevel); err != nil {
+		// if ok {
+		if _, err = g.w.Write(fmt.Sprintf(`if %s {`+"\n", var_ok)); err != nil {
 			return err
 		}
 
-		// =
-		if _, err = g.w.WriteStringLiteral(indentLevel, "= "); err != nil {
-			return err
+		{
+			indentLevel++
+
+			// Name
+			// (space)
+			if _, err = g.w.WriteStringLiteral(indentLevel, " "); err != nil {
+				return err
+			}
+			// templ_7745c5c3_Buffer.WriteString(templ.EscapeString(
+			if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("); err != nil {
+				return err
+			}
+			// attribute name
+			if _, err = g.w.Write(var_n); err != nil {
+				return err
+			}
+			// ))
+			if _, err = g.w.Write("))\n"); err != nil {
+				return err
+			}
+			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+
+			// if !v.OmitValue {
+			if _, err = g.w.Write(fmt.Sprintf(`if !%s.OmitValue {`+"\n", var_v)); err != nil {
+				return err
+			}
+
+			{
+				indentLevel++
+
+				// =
+				if _, err = g.w.WriteStringLiteral(indentLevel, "= "); err != nil {
+					return err
+				}
+
+				// Value.
+				// Open quote.
+				if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
+					return err
+				}
+
+				// templ_7745c5c3_Buffer.WriteString(templ.EscapeString(
+				if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("); err != nil {
+					return err
+				}
+				// attribute value
+				if _, err = g.w.Write(var_v); err != nil {
+					return err
+				}
+				// .Value))
+				if _, err = g.w.Write(".Value))\n"); err != nil {
+					return err
+				}
+				if err = g.writeErrorHandler(indentLevel); err != nil {
+					return err
+				}
+
+				// Close quote.
+				if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
+					return err
+				}
+
+				indentLevel--
+
+				// }
+				if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
+					return err
+				}
+			}
+
+			indentLevel--
 		}
 
-		// Value.
-		// Open quote.
-		if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
-			return err
-		}
-
-		// templ_7745c5c3_Buffer.WriteString(templ.EscapeString(
-		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("); err != nil {
-			return err
-		}
-		// attribute value
-		if _, err = g.w.Write(var_v); err != nil {
-			return err
-		}
-		// ))
-		if _, err = g.w.Write("))\n"); err != nil {
-			return err
-		}
-		if err = g.writeErrorHandler(indentLevel); err != nil {
-			return err
-		}
-
-		// Close quote.
-		if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
+		// }
+		if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
 			return err
 		}
 
