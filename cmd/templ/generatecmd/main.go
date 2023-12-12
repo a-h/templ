@@ -296,7 +296,13 @@ func printDiagnostics(w io.Writer, fileName string, diags []parser.Diagnostic) {
 	fmt.Fprintln(w)
 }
 
+<<<<<<< HEAD
 func generate(ctx context.Context, basePath, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (diagnostics []parser.Diagnostic, err error) {
+=======
+// generate Go code for a single template.
+// If a basePath is provided, the filename included in error messages is relative to it.
+func generate(ctx context.Context, basePath, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (err error) {
+>>>>>>> 95d51c5 (feat: add template filename to error message)
 	if err = ctx.Err(); err != nil {
 		return
 	}
@@ -307,7 +313,10 @@ func generate(ctx context.Context, basePath, fileName string, generateSourceMapV
 	}
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
+<<<<<<< HEAD
 	// Only use relative filenames to the basepath for filenames in runtime error messages.
+=======
+>>>>>>> 95d51c5 (feat: add template filename to error message)
 	errorMessageFileName := fileName
 	if basePath != "" {
 		errorMessageFileName, _ = filepath.Rel(basePath, fileName)
