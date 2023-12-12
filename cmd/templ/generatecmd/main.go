@@ -96,7 +96,7 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 		opts = append(opts, generator.WithTimestamp(time.Now()))
 	}
 	if args.FileName != "" {
-		return processSingleFile(ctx, w, args.FileName, args.GenerateSourceMapVisualisations, opts)
+		return generateSingleFile(ctx, w, "", args.FileName, args.GenerateSourceMapVisualisations, opts)
 	}
 	var target *url.URL
 	if args.Proxy != "" {
@@ -196,31 +196,31 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, w io.Writer, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
-	err := filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
+	err := filepath.WalkDir(path, func(fileName string, info os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if err = ctx.Err(); err != nil {
 			return err
 		}
-		if info.IsDir() && shouldSkipDir(path) {
+		if info.IsDir() && shouldSkipDir(fileName) {
 			return filepath.SkipDir
 		}
 		if info.IsDir() {
 			return nil
 		}
-		if strings.HasSuffix(path, ".templ") {
-			lastModTime := fileNameToLastModTime[path]
+		if strings.HasSuffix(fileName, ".templ") {
+			lastModTime := fileNameToLastModTime[fileName]
 			fileInfo, err := info.Info()
 			if err != nil {
 				return fmt.Errorf("failed to get file info: %w", err)
 			}
 			if fileInfo.ModTime().After(lastModTime) {
-				fileNameToLastModTime[path] = fileInfo.ModTime()
+				fileNameToLastModTime[fileName] = fileInfo.ModTime()
 				changesFound++
 
 				// Start a processor, but limit to maxWorkerCount.
@@ -228,7 +228,7 @@ func processChanges(ctx context.Context, w io.Writer, fileNameToLastModTime map[
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					if err := processSingleFile(ctx, w, path, generateSourceMapVisualisations, opts); err != nil {
+					if err := generateSingleFile(ctx, stdout, path, fileName, generateSourceMapVisualisations, opts); err != nil {
 						errs = append(errs, err)
 					}
 					<-sem
@@ -262,17 +262,20 @@ func openURL(w io.Writer, url string) error {
 	return browser.OpenURL(url)
 }
 
-func processSingleFile(ctx context.Context, w io.Writer, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) error {
+// generateSingleFile generates Go code for a single file, printing output to the stdout parameter.
+func generateSingleFile(ctx context.Context, stdout io.Writer, basePath, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) error {
 	start := time.Now()
-	err := compile(ctx, fileName, generateSourceMapVisualisations, opts)
+	err := generate(ctx, basePath, fileName, generateSourceMapVisualisations, opts)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "Generated code for %q in %s\n", fileName, time.Since(start))
+	fmt.Fprintf(stdout, "Generated code for %q in %s\n", fileName, time.Since(start))
 	return err
 }
 
-func compile(ctx context.Context, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (err error) {
+// generate Go code for a single template.
+// If a basePath is provided, the filename included in error messages is relative to it.
+func generate(ctx context.Context, basePath, fileName string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
@@ -283,8 +286,13 @@ func compile(ctx context.Context, fileName string, generateSourceMapVisualisatio
 	}
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
+	errorMessageFileName := fileName
+	if basePath != "" {
+		errorMessageFileName, _ = filepath.Rel(basePath, fileName)
+	}
+
 	var b bytes.Buffer
-	sourceMap, err := generator.Generate(t, &b, opts...)
+	sourceMap, err := generator.Generate(t, &b, append(opts, generator.WithFileName(errorMessageFileName))...)
 	if err != nil {
 		return fmt.Errorf("%s generation error: %w", fileName, err)
 	}

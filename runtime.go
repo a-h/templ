@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html"
 	"io"
 	"net/http"
@@ -655,6 +656,8 @@ func JoinStringErrs(s string, errs ...error) (string, error) {
 // Error returned during template rendering.
 type Error struct {
 	Err error
+	// FileName of the template file.
+	FileName string
 	// Line index of the error.
 	Line int
 	// Col index of the error.
@@ -662,7 +665,10 @@ type Error struct {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("template error at line %d, col %d: %v", e.Line, e.Col, e.Err)
+	if e.FileName == "" {
+		e.FileName = "templ"
+	}
+	return fmt.Sprintf("%s: error at line %d, col %d: %v", e.FileName, e.Line, e.Col, e.Err)
 }
 
 func (e Error) Unwrap() error {
