@@ -182,9 +182,11 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		return
 	}
 	// Clear templ diagnostics.
+	p.DiagnosticCache.ClearTemplDiagnostics(string(uri))
 	err = p.Client.PublishDiagnostics(ctx, &lsp.PublishDiagnosticsParams{
-		URI:         uri,
-		Diagnostics: p.DiagnosticCache.AddGoDiagnostics(string(uri), nil),
+		URI: uri,
+		// Cannot be nil as per https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
+		Diagnostics: []lsp.Diagnostic{},
 	})
 	if err != nil {
 		p.Log.Error("failed to publish diagnostics", zap.Error(err))
