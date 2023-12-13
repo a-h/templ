@@ -145,11 +145,10 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 					// the .templ file exists, so we don't delete the generated file
 					return nil
 				}
-				logSuccess(w, "Deleted orphaned file %q in %s\n", fileName, time.Since(start))
 				if err = os.Remove(fileName); err != nil {
 					return fmt.Errorf("failed to remove file: %w", err)
 				}
-
+				logSuccess(w, "Deleted orphaned file %q in %s\n", fileName, time.Since(start))
 			}
 			return nil
 		})
