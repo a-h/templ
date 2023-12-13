@@ -88,6 +88,8 @@ Args:
     Number of workers to use when generating code. (default runtime.NumCPUs)
   -pprof
     Port to run the pprof server on.
+  -keep-orphaned-files
+    Keeps orphaned generated templ files. (default false)
   -help
     Print help and exit.
 
