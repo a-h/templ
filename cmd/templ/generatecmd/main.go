@@ -44,8 +44,9 @@ type Arguments struct {
 	GenerateSourceMapVisualisations bool
 	IncludeVersion                  bool
 	IncludeTimestamp                bool
-	PPROFPort                       int // PPROFPort is the port to run the pprof server on.
-	KeepOrphanedFiles               bool
+	// PPROFPort is the port to run the pprof server on.
+	PPROFPort         int
+	KeepOrphanedFiles bool
 }
 
 var defaultWorkerCount = runtime.NumCPU()
@@ -124,39 +125,6 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	if args.Proxy != "" {
 		p = proxy.New(args.ProxyPort, target)
 	}
-
-	if !args.KeepOrphanedFiles {
-		// By default deletes all generated orphaned  _templ.go files
-		err = filepath.WalkDir(args.Path, func(fileName string, info os.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if info.IsDir() && shouldSkipDir(fileName) {
-				return filepath.SkipDir
-			}
-			if info.IsDir() {
-				return nil
-			}
-			if strings.HasSuffix(fileName, "_templ.go") {
-				// lets make sure the generated file is orphaned
-				// by checking if the corresponding .templ file exists
-				templFileName := strings.TrimSuffix(fileName, "_templ.go") + ".templ"
-				if _, err := os.Stat(templFileName); err == nil {
-					// the .templ file exists, so we don't delete the generated file
-					return nil
-				}
-				if err = os.Remove(fileName); err != nil {
-					return fmt.Errorf("failed to remove file: %w", err)
-				}
-				logSuccess(w, "Deleted orphaned file %q in %s\n", fileName, time.Since(start))
-			}
-			return nil
-		})
-		if err != nil {
-			return fmt.Errorf("failed to delete generated files: %w", err)
-		}
-	}
-
 	fmt.Fprintln(w, "Processing path:", args.Path)
 	bo := backoff.NewExponentialBackOff()
 	bo.InitialInterval = time.Millisecond * 500
@@ -166,7 +134,7 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
-		changesFound, errs := processChanges(ctx, w, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, opts, args.WorkerCount)
+		changesFound, errs := processChanges(ctx, w, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, opts, args.WorkerCount, args.KeepOrphanedFiles)
 		if len(errs) > 0 {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
@@ -235,7 +203,7 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int, keepOrphanedFiles bool) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
@@ -250,6 +218,19 @@ func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime
 			return filepath.SkipDir
 		}
 		if info.IsDir() {
+			return nil
+		}
+		if !keepOrphanedFiles && strings.HasSuffix(fileName, "_templ.go") {
+			// lets make sure the generated file is orphaned
+			// by checking if the corresponding .templ file exists
+			if _, err := os.Stat(strings.TrimSuffix(fileName, "_templ.go") + ".templ"); err == nil {
+				// the .templ file exists, so we don't delete the generated file
+				return nil
+			}
+			if err = os.Remove(fileName); err != nil {
+				return fmt.Errorf("failed to remove file: %w", err)
+			}
+			logWarning(stdout, "Deleted orphaned file %q\n", fileName)
 			return nil
 		}
 		if strings.HasSuffix(fileName, ".templ") {
