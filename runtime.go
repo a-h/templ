@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"html/template"
 	"io"
 	"net/http"
 	"sort"
@@ -673,4 +674,25 @@ func (e Error) Error() string {
 
 func (e Error) Unwrap() error {
 	return e.Err
+}
+
+// Raw renders the input HTML to the output without applying HTML escaping.
+//
+// Use of this component presents a security risk - the HTML should come from
+// a trusted source, because it will be included as-is in the output.
+func Raw[T ~string](html T, errs ...error) Component {
+	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		if err = errors.Join(errs...); err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, string(html))
+		return err
+	})
+}
+
+// GoHTMLTemplate renders the Go html/template to the output.
+func GoHTMLTemplate(t *template.Template, data any) Component {
+	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		return t.Execute(w, data)
+	})
 }

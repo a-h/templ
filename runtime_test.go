@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -562,6 +564,90 @@ func TestErrorWrapping(t *testing.T) {
 		var err nonMatchedError
 		if errors.As(wrappedErr, &err) {
 			t.Error("errors.As() returned true for a different error")
+		}
+	})
+}
+
+var goTemplate = template.Must(template.New("example").Parse("<div>{{ . }}</div>"))
+
+func TestRawComponents(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       templ.Component
+		expected    string
+		expectedErr error
+	}{
+		{
+			name:     "Raw content is not escaped",
+			input:    templ.Raw("<div>Test &</div>"),
+			expected: `<div>Test &</div>`,
+		},
+		{
+			name:        "Raw will return errors first",
+			input:       templ.Raw("", nil, errors.New("test error")),
+			expected:    `<div>Test &</div>`,
+			expectedErr: errors.New("test error"),
+		},
+		{
+			name:     "Strings marked as safe are rendered without escaping",
+			input:    templ.Raw(template.HTML("<div>")),
+			expected: `<div>`,
+		},
+		{
+			name:     "Go templates can be included",
+			input:    templ.GoHTMLTemplate(goTemplate, "test &"),
+			expected: `<div>test &amp;</div>`,
+		},
+		{
+			name:     "Go templates don't need to include data",
+			input:    templ.GoHTMLTemplate(goTemplate, nil),
+			expected: `<div></div>`,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			b := new(bytes.Buffer)
+			err := tt.input.Render(context.Background(), b)
+			if tt.expectedErr != nil {
+				expected := tt.expectedErr.Error()
+				actual := fmt.Sprintf("%v", err)
+				if actual != expected {
+					t.Errorf("expected error %q, got %q", expected, actual)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("failed to render content: %v", err)
+			}
+			if diff := cmp.Diff(tt.expected, b.String()); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestAllocs(t *testing.T) {
+	t.Run("Raw does not require allocations", func(t *testing.T) {
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			c := templ.Raw("<div>")
+			if c == nil {
+				t.Fatalf("unexpected nil value")
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+	t.Run("GoHTMLTemplate does not require allocations", func(t *testing.T) {
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			c := templ.GoHTMLTemplate(goTemplate, "test &")
+			if c == nil {
+				t.Fatalf("unexpected nil value")
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
 		}
 	})
 }
