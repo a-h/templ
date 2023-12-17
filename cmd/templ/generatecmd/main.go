@@ -31,6 +31,8 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cli/browser"
 	"github.com/fatih/color"
+	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/semver"
 )
 
 type Arguments struct {
@@ -92,7 +94,7 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	}
 	var opts []generator.GenerateOpt
 	if args.IncludeVersion {
-		opts = append(opts, generator.WithVersion(templ.Version))
+		opts = append(opts, generator.WithVersion(templ.Version()))
 	}
 	if args.IncludeTimestamp {
 		opts = append(opts, generator.WithTimestamp(time.Now()))
@@ -175,6 +177,10 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 					}
 				}()
 			}
+		}
+		if err = checkTemplVersion(args.Path); err != nil {
+			logWarning(w, "templ version check failed: %v\n", err)
+			err = nil
 		}
 		if firstRunComplete {
 			if changesFound > 0 {
@@ -399,4 +405,52 @@ func logSuccess(w io.Writer, format string, a ...any) {
 func logWithDecoration(w io.Writer, decoration string, col color.Attribute, format string, a ...any) {
 	color.New(col).Fprintf(w, "(%s) ", decoration)
 	fmt.Fprintf(w, format, a...)
+}
+
+func checkTemplVersion(dir string) error {
+	// Walk up the directory tree, starting at dir, until we find a go.mod file.
+	// If it contains a go.mod file, parse it and find the templ version.
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+	for {
+		current := filepath.Join(dir, "go.mod")
+		_, err := os.Stat(current)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to stat go.mod file: %w", err)
+		}
+		if os.IsNotExist(err) {
+			// Move up.
+			prev := dir
+			dir = filepath.Dir(dir)
+			if dir == prev {
+				return fmt.Errorf("could not find go.mod file")
+			}
+			continue
+		}
+		// Found a go.mod file.
+		// Read it and find the templ version.
+		m, err := os.ReadFile(current)
+		if err != nil {
+			return fmt.Errorf("failed to read go.mod file: %w", err)
+		}
+		mf, err := modfile.Parse(current, m, nil)
+		if err != nil {
+			return fmt.Errorf("failed to parse go.mod file: %w", err)
+		}
+		if mf.Module.Mod.Path == "github.com/a-h/templ" {
+			// The go.mod file is for templ itself.
+			return nil
+		}
+		for _, r := range mf.Require {
+			if r.Mod.Path == "github.com/a-h/templ" {
+				cmp := semver.Compare(r.Mod.Version, templ.Version())
+				if cmp < 0 {
+					return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get github.com/a-h/templ`", templ.Version(), r.Mod.Version)
+				}
+				return nil
+			}
+		}
+	}
 }
