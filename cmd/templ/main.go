@@ -51,10 +51,10 @@ func run(w io.Writer, args []string) (code int) {
 	case "lsp":
 		return lspCmd(w, args[2:])
 	case "version":
-		fmt.Fprintln(w, templ.Version)
+		fmt.Fprintln(w, templ.Version())
 		return 0
 	case "--version":
-		fmt.Fprintln(w, templ.Version)
+		fmt.Fprintln(w, templ.Version())
 		return 0
 	}
 	fmt.Fprint(w, usageText)
