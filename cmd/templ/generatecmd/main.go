@@ -449,6 +449,9 @@ func checkTemplVersion(dir string) error {
 				if cmp < 0 {
 					return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get github.com/a-h/templ`", templ.Version(), r.Mod.Version)
 				}
+				if cmp > 0 {
+					return fmt.Errorf("generator %v is older than templ version %v found in go.mod file, consider upgrading templ CLI", templ.Version(), r.Mod.Version)
+				}
 				return nil
 			}
 		}
