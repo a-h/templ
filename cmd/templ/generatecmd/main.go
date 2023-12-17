@@ -221,7 +221,7 @@ func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime
 			return nil
 		}
 		if !keepOrphanedFiles && strings.HasSuffix(fileName, "_templ.go") {
-			// lets make sure the generated file is orphaned
+			// Make sure the generated file is orphaned
 			// by checking if the corresponding .templ file exists
 			if _, err := os.Stat(strings.TrimSuffix(fileName, "_templ.go") + ".templ"); err == nil {
 				// the .templ file exists, so we don't delete the generated file
