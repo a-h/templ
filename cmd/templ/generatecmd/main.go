@@ -45,7 +45,8 @@ type Arguments struct {
 	IncludeVersion                  bool
 	IncludeTimestamp                bool
 	// PPROFPort is the port to run the pprof server on.
-	PPROFPort int
+	PPROFPort         int
+	KeepOrphanedFiles bool
 }
 
 var defaultWorkerCount = runtime.NumCPU()
@@ -124,7 +125,6 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	if args.Proxy != "" {
 		p = proxy.New(args.ProxyPort, target)
 	}
-
 	fmt.Fprintln(w, "Processing path:", args.Path)
 	bo := backoff.NewExponentialBackOff()
 	bo.InitialInterval = time.Millisecond * 500
@@ -134,7 +134,7 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
-		changesFound, errs := processChanges(ctx, w, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, opts, args.WorkerCount)
+		changesFound, errs := processChanges(ctx, w, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, opts, args.WorkerCount, args.KeepOrphanedFiles)
 		if len(errs) > 0 {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
@@ -203,7 +203,7 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int, keepOrphanedFiles bool) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
@@ -218,6 +218,19 @@ func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime
 			return filepath.SkipDir
 		}
 		if info.IsDir() {
+			return nil
+		}
+		if !keepOrphanedFiles && strings.HasSuffix(fileName, "_templ.go") {
+			// Make sure the generated file is orphaned
+			// by checking if the corresponding .templ file exists.
+			if _, err := os.Stat(strings.TrimSuffix(fileName, "_templ.go") + ".templ"); err == nil {
+				// The .templ file exists, so we don't delete the generated file.
+				return nil
+			}
+			if err = os.Remove(fileName); err != nil {
+				return fmt.Errorf("failed to remove file: %w", err)
+			}
+			logWarning(stdout, "Deleted orphaned file %q\n", fileName)
 			return nil
 		}
 		if strings.HasSuffix(fileName, ".templ") {

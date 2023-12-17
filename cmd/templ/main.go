@@ -88,6 +88,8 @@ Args:
     Number of workers to use when generating code. (default runtime.NumCPUs)
   -pprof
     Port to run the pprof server on.
+  -keep-orphaned-files
+    Keeps orphaned generated templ files. (default false)
   -help
     Print help and exit.
 
@@ -120,6 +122,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	proxyPortFlag := cmd.Int("proxyport", 7331, "")
 	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
 	pprofPortFlag := cmd.Int("pprof", 0, "")
+	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
@@ -138,6 +141,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 		IncludeVersion:                  *includeVersionFlag,
 		IncludeTimestamp:                *includeTimestampFlag,
 		PPROFPort:                       *pprofPortFlag,
+		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
 	})
 	if err != nil {
 		color.New(color.FgRed).Fprint(w, "(✗) ")
