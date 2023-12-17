@@ -568,9 +568,7 @@ func TestErrorWrapping(t *testing.T) {
 	})
 }
 
-var goTemplate = template.Must(template.New("example").Parse("<div>{{ . }}</div>"))
-
-func TestRawComponents(t *testing.T) {
+func TestRawComponent(t *testing.T) {
 	tests := []struct {
 		name        string
 		input       templ.Component
@@ -592,16 +590,6 @@ func TestRawComponents(t *testing.T) {
 			name:     "Strings marked as safe are rendered without escaping",
 			input:    templ.Raw(template.HTML("<div>")),
 			expected: `<div>`,
-		},
-		{
-			name:     "Go templates can be included",
-			input:    templ.GoHTMLTemplate(goTemplate, "test &"),
-			expected: `<div>test &amp;</div>`,
-		},
-		{
-			name:     "Go templates don't need to include data",
-			input:    templ.GoHTMLTemplate(goTemplate, nil),
-			expected: `<div></div>`,
 		},
 	}
 	for _, tt := range tests {
@@ -625,9 +613,6 @@ func TestRawComponents(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestAllocs(t *testing.T) {
 	t.Run("Raw does not require allocations", func(t *testing.T) {
 		actualAllocs := testing.AllocsPerRun(4, func() {
 			c := templ.Raw("<div>")
@@ -639,15 +624,79 @@ func TestAllocs(t *testing.T) {
 			t.Errorf("expected no allocs, got %v", actualAllocs)
 		}
 	})
-	t.Run("GoHTMLTemplate does not require allocations", func(t *testing.T) {
+}
+
+var goTemplate = template.Must(template.New("example").Parse("<div>{{ . }}</div>"))
+
+func TestGoHTMLComponents(t *testing.T) {
+	t.Run("Go templates can be rendered as templ components", func(t *testing.T) {
+		b := new(bytes.Buffer)
+		err := templ.FromGoHTML(goTemplate, "Test &").Render(context.Background(), b)
+		if err != nil {
+			t.Fatalf("failed to render content: %v", err)
+		}
+		if diff := cmp.Diff("<div>Test &amp;</div>", b.String()); diff != "" {
+			t.Error(diff)
+		}
+	})
+	t.Run("templ components can be rendered in Go templates", func(t *testing.T) {
+		b := new(bytes.Buffer)
+		c := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			_, err = io.WriteString(w, "<div>Unsanitized &</div>")
+			return err
+		})
+		h, err := templ.ToGoHTML(context.Background(), c)
+		if err != nil {
+			t.Fatalf("failed to convert to Go HTML: %v", err)
+		}
+		if err = goTemplate.Execute(b, h); err != nil {
+			t.Fatalf("failed to render content: %v", err)
+		}
+		if diff := cmp.Diff("<div><div>Unsanitized &</div></div>", b.String()); diff != "" {
+			t.Error(diff)
+		}
+	})
+	t.Run("errors in ToGoHTML are returned", func(t *testing.T) {
+		expectedErr := errors.New("test error")
+		c := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			return expectedErr
+		})
+		_, err := templ.ToGoHTML(context.Background(), c)
+		if err == nil {
+			t.Fatalf("expected error, got nil")
+		}
+		if err != expectedErr {
+			t.Fatalf("expected error %q, got %q", expectedErr, err)
+		}
+	})
+	t.Run("FromGoHTML does not require allocations", func(t *testing.T) {
 		actualAllocs := testing.AllocsPerRun(4, func() {
-			c := templ.GoHTMLTemplate(goTemplate, "test &")
+			c := templ.FromGoHTML(goTemplate, "test &")
 			if c == nil {
 				t.Fatalf("unexpected nil value")
 			}
 		})
 		if actualAllocs > 0 {
 			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+	t.Run("ToGoHTML requires one allocation", func(t *testing.T) {
+		expected := "<div>Unsanitized &</div>"
+		c := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			_, err = io.WriteString(w, expected)
+			return err
+		})
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			h, err := templ.ToGoHTML(context.Background(), c)
+			if err != nil {
+				t.Fatalf("failed to convert to Go HTML: %v", err)
+			}
+			if h != template.HTML(expected) {
+				t.Fatalf("unexpected value")
+			}
+		})
+		if actualAllocs > 1 {
+			t.Errorf("expected 1 alloc, got %v", actualAllocs)
 		}
 	})
 }

@@ -690,9 +690,20 @@ func Raw[T ~string](html T, errs ...error) Component {
 	})
 }
 
-// GoHTMLTemplate renders the Go html/template to the output.
-func GoHTMLTemplate(t *template.Template, data any) Component {
+// FromGoHTML creates a templ Component from a Go html/template template.
+func FromGoHTML(t *template.Template, data any) Component {
 	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		return t.Execute(w, data)
 	})
+}
+
+// ToGoHTML renders the component to a Go html/template template.HTML string.
+func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
+	b := GetBuffer()
+	defer ReleaseBuffer(b)
+	if err = c.Render(ctx, b); err != nil {
+		return
+	}
+	s = template.HTML(b.String())
+	return
 }
