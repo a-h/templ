@@ -382,32 +382,46 @@ func TestHandler(t *testing.T) {
 		return nil
 	})
 	errorComponent := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		if _, err := io.WriteString(w, "Hello"); err != nil {
+			t.Fatalf("failed to write string: %v", err)
+		}
 		return errors.New("handler error")
 	})
 
 	tests := []struct {
-		name           string
-		input          *templ.ComponentHandler
-		expectedStatus int
-		expectedBody   string
+		name             string
+		input            *templ.ComponentHandler
+		expectedStatus   int
+		expectedMIMEType string
+		expectedBody     string
 	}{
 		{
-			name:           "handlers return OK by default",
-			input:          templ.Handler(hello),
-			expectedStatus: http.StatusOK,
-			expectedBody:   "Hello",
+			name:             "handlers return OK by default",
+			input:            templ.Handler(hello),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/html",
+			expectedBody:     "Hello",
 		},
 		{
-			name:           "handlers can be configured to return an alternative status code",
-			input:          templ.Handler(hello, templ.WithStatus(http.StatusNotFound)),
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   "Hello",
+			name:             "handlers can be configured to return an alternative status code",
+			input:            templ.Handler(hello, templ.WithStatus(http.StatusNotFound)),
+			expectedStatus:   http.StatusNotFound,
+			expectedMIMEType: "text/html",
+			expectedBody:     "Hello",
 		},
 		{
-			name:           "handlers that fail return a 500 error",
-			input:          templ.Handler(errorComponent),
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   "templ: failed to render template\n",
+			name:             "handlers can be configured to return an alternative status code and content type",
+			input:            templ.Handler(hello, templ.WithStatus(http.StatusOK), templ.WithContentType("text/csv")),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/csv",
+			expectedBody:     "Hello",
+		},
+		{
+			name:             "handlers that fail return a 500 error",
+			input:            templ.Handler(errorComponent),
+			expectedStatus:   http.StatusInternalServerError,
+			expectedMIMEType: "text/plain; charset=utf-8",
+			expectedBody:     "templ: failed to render template\n",
 		},
 		{
 			name: "error handling can be customised",
@@ -421,8 +435,9 @@ func TestHandler(t *testing.T) {
 					}
 				})
 			})),
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   "custom body",
+			expectedStatus:   http.StatusBadRequest,
+			expectedMIMEType: "text/html",
+			expectedBody:     "custom body",
 		},
 	}
 	for _, tt := range tests {
@@ -433,6 +448,9 @@ func TestHandler(t *testing.T) {
 			tt.input.ServeHTTP(w, r)
 			if got := w.Result().StatusCode; tt.expectedStatus != got {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, got)
+			}
+			if mimeType := w.Result().Header.Get("Content-Type"); tt.expectedMIMEType != mimeType {
+				t.Errorf("expected content-type %s, got %s", tt.expectedMIMEType, mimeType)
 			}
 			body, err := io.ReadAll(w.Result().Body)
 			if err != nil {
