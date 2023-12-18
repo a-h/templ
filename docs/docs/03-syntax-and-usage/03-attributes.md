@@ -51,12 +51,9 @@ Use an `if` statement within a templ element to optionally add attributes to ele
 
 ```templ
 templ component(attrs templ.Attributes) {
-  <hr style="padding: 10px" 
+  <hr style="padding: 10px"
     if true {
       class="itIsTrue"
-    }
-    if false {
-      { attrs... }
     }
   />
 }
@@ -74,12 +71,17 @@ Use the `{ attrMap... }` syntax in the open tag of an element to append a dynami
 
 
 ```templ
-templ component(attrs templ.Attributes) {
+templ component(shouldBeUsed bool, attrs templ.Attributes) {
   <p { attrs... }></p>
+  <hr
+    if shouldBeUsed {
+      { attrs... }
+    }
+  />
 }
 
 templ usage() {
-  @component(templ.Attributes{"data-testid": "paragraph"}) 
+  @component(false, templ.Attributes{"data-testid": "paragraph"}) 
 }
 ```
 
