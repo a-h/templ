@@ -260,51 +260,47 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr Expressio
 	return attr, true, nil
 })
 
-var spreadAttributesParser = parse.Func(
-	func(pi *parse.Input) (attr SpreadAttributes, ok bool, err error) {
-		start := pi.Index()
+var spreadAttributesParser = parse.Func(func(pi *parse.Input) (attr SpreadAttributes, ok bool, err error) {
+	start := pi.Index()
 
-		// Optional whitespace leader.
-		if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
-			return
-		}
+	// Optional whitespace leader.
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+		return
+	}
 
-		// Eat the first brace.
-		if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil ||
-			!ok {
-			pi.Seek(start)
-			return
-		}
+	// Eat the first brace.
+	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil ||
+		!ok {
+		pi.Seek(start)
+		return
+	}
 
-		// Expression.
-		if attr.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
-			pi.Seek(start)
-			return
-		}
+	// Expression.
+	if attr.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
 
-		// // Check if end of expression has "..." for spread
-		if !strings.HasSuffix(attr.Expression.Value, "...") {
-			pi.Seek(start)
-			ok = false
-			return
-		}
+	// Check if end of expression has "..." for spread.
+	if !strings.HasSuffix(attr.Expression.Value, "...") {
+		pi.Seek(start)
+		ok = false
+		return
+	}
 
-		// Remove extra spread characters from expression
+	// Remove extra spread characters from expression.
+	attr.Expression.Value = strings.TrimSuffix(attr.Expression.Value, "...")
+	attr.Expression.Range.To.Col -= 3
+	attr.Expression.Range.To.Index -= 3
 
-		attr.Expression.Value = strings.TrimSuffix(attr.Expression.Value, "...")
-		attr.Expression.Range.To.Col -= 3
-		attr.Expression.Range.To.Index -= 3
+	// Eat the final brace.
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("attribute spread expression: missing closing brace", pi.Position())
+		return
+	}
 
-		// Eat the final brace.
-		if _, ok, err = Must(closeBraceWithOptionalPadding, "boolean expression: missing closing brace").Parse(pi); err != nil ||
-			!ok {
-			pi.Seek(start)
-			return
-		}
-
-		return attr, true, nil
-	},
-)
+	return attr, true, nil
+})
 
 // Attributes.
 type attributeParser struct{}
