@@ -37,7 +37,7 @@ Style attributes cannot be expressions, only constants, to avoid escaping vulner
 
 ```html
 templ Example() {
-  <div style={ "will throw an error" }</div>
+  <div style={ "will throw an error" }></div>
 }
 ```
 
