@@ -414,11 +414,11 @@ package test
 
 templ conditionalAttributes(addClass bool) {
 	<div
- 		id="conditional"
- 		if addClass {
+		id="conditional"
+		if addClass {
 			class="itWasTrue"
 		}
- 		width="300"
+		width="300"
 	>Content</div>
 }
 `,
@@ -441,11 +441,11 @@ package test
 
 templ conditionalAttributes(addClass bool) {
 	<div
- 		id="conditional"
- 		if addClass {
+		id="conditional"
+		if addClass {
 			class="itWasTrue"
 		}
- 		width="300"
+		width="300"
 	>Content</div>
 }
 `,
@@ -469,8 +469,8 @@ package test
 
 templ conditionalAttributes(addClass bool) {
 	<div
- 		id="conditional"
- 		if addClass {
+		id="conditional"
+		if addClass {
 			class="itWasTrue"
 		}
 	>
@@ -499,13 +499,13 @@ package test
 
 templ conditionalAttributes(addClass bool) {
 	<div
- 		id="conditional"
- 		if addClass {
+		id="conditional"
+		if addClass {
 			class="itWasTrue"
 		} else {
 			class="itWasNotTrue"
 		}
- 		width="300"
+		width="300"
 	>Content</div>
 }
 `,
@@ -567,9 +567,9 @@ package main
 
 templ x(id string, class string) {
 	<button
- 		id={ id }
- 		name={ "name" }
- 		class={
+		id={ id }
+		name={ "name" }
+		class={
 			"blue",
 			class,
 			map[string]bool{
