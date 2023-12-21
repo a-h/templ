@@ -33,6 +33,10 @@ func Test(t *testing.T) {
 		"shade": false,
 		// Should render text="lorem" as the value is true.
 		"text": templ.KV("lorem", true),
+		// Optional attribute based on result of func() bool.
+		"optional-from-func-false": func() bool { return false },
+		// Optional attribute based on result of func() bool.
+		"optional-from-func-true": func() bool { return true },
 	})
 
 	diff, err := htmldiff.Diff(component, expected)
