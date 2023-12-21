@@ -44,8 +44,6 @@ templ h1() {
 		},
 	}
 	if err := g.writeGoExpression(withCommentExp); err != nil {
-		if err != nil {
-			t.Fatalf("failed to write Go expression: %v", err)
-		}
+		t.Fatalf("failed to write Go expression: %v", err)
 	}
 }
