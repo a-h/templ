@@ -50,7 +50,7 @@ templ component() {
 Use an `if` statement within a templ element to optionally add attributes to elements.
 
 ```templ
-templ component(attrs templ.Attributes) {
+templ component() {
   <hr style="padding: 10px"
     if true {
       class="itIsTrue"
@@ -65,10 +65,14 @@ templ component(attrs templ.Attributes) {
 
 ## Spread attributes
 
-Use the `{ attrMap... }` syntax in the open tag of an element to append a dynamic map of attributes, where `attrMap` is of type `templ.Attributes`.
+Use the `{ attrMap... }` syntax in the open tag of an element to append a dynamic map of attributes to the element's attributes.
 
-`templ.Attributes` is a `map[string]string` type definition.
+It's possible to spread any variable of type `templ.Attributes`. `templ.Attributes` is a `map[string]any` type definition.
 
+* If the value is a `string`, the attribute is added with the string value, e.g. `<div name="value">`.
+* If the value is a `bool`, the attribute is added as a boolean attribute if the value is true, e.g. `<div name>`.
+* If the value is a `templ.KeyValue[string, bool]`, the attribute is added if the boolean is true, e.g. `<div name="value">`.
+* If the value is a `templ.KeyValue[bool, bool]`, the attribute is added if both boolean values are true, as `<div name>`.
 
 ```templ
 templ component(shouldBeUsed bool, attrs templ.Attributes) {
