@@ -38,6 +38,10 @@ go run ./get-version > .version
 cd cmd/templ && go build -o ~/bin/templ
 ```
 
+> **Note:**
+>
+> Make sure you add ```~/bin``` to your PATH 
+
 ### build-snapshot
 
 Use goreleaser to build the command line binary using goreleaser.
