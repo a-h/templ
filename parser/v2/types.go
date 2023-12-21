@@ -137,7 +137,26 @@ func (tf TemplateFile) Write(w io.Writer) error {
 		if i == count-1 {
 			_, err = w.Write([]byte("\n"))
 		} else {
-			_, err = w.Write([]byte("\n\n"))
+			// If current node is `TemplateFileGoExpression`,
+			// if it ends with a comment,
+			// and if the next node is a `HTMLTemplate`,
+			// only insert 1 line break.
+			if _, ok := tf.Nodes[i].(TemplateFileGoExpression); ok {
+				v := tf.Nodes[i].(TemplateFileGoExpression).Expression.Value
+				lineSlice := strings.Split(v, "\n")
+				lastLine := lineSlice[len(lineSlice)-1]
+				if strings.HasPrefix(lastLine, "//") {
+					if _, ok := tf.Nodes[i+1].(HTMLTemplate); ok {
+						_, err = w.Write([]byte("\n"))
+					} else {
+						_, err = w.Write([]byte("\n\n"))
+					}
+				} else {
+					_, err = w.Write([]byte("\n\n"))
+				}
+			} else {
+				_, err = w.Write([]byte("\n\n"))
+			}
 		}
 		if err != nil {
 			return err
