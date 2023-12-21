@@ -240,6 +240,28 @@ if test {
 			},
 		},
 		{
+			name:   "spread attributes",
+			input:  ` { spread... }"`,
+			parser: StripType(spreadAttributesParser),
+			expected: SpreadAttributes{
+				Expression{
+					Value: "spread",
+					Range: Range{
+						From: Position{
+							Index: 3,
+							Line:  0,
+							Col:   3,
+						},
+						To: Position{
+							Index: 9,
+							Line:  0,
+							Col:   9,
+						},
+					},
+				},
+			},
+		},
+		{
 			name:   "constant attribute",
 			input:  ` href="test"`,
 			parser: StripType(constantAttributeParser),
@@ -451,6 +473,49 @@ func TestElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "style",
 						Value: "text-underline: auto",
+					},
+				},
+			},
+		},
+		{
+			name:  "element: self-closing with multiple spreads attributes",
+			input: `<a { firstSpread... } { children... }/>`,
+			expected: Element{
+				Name: "a",
+				Attributes: []Attribute{
+					SpreadAttributes{
+						Expression: Expression{
+							Value: "firstSpread",
+							Range: Range{
+								From: Position{
+									Index: 5,
+									Line:  0,
+									Col:   5,
+								},
+								To: Position{
+									Index: 16,
+									Line:  0,
+									Col:   16,
+								},
+							},
+						},
+					},
+					SpreadAttributes{
+						Expression: Expression{
+							Value: "children",
+							Range: Range{
+								From: Position{
+									Index: 24,
+									Line:  0,
+									Col:   24,
+								},
+								To: Position{
+									Index: 32,
+									Line:  0,
+									Col:   32,
+								},
+							},
+						},
 					},
 				},
 			},

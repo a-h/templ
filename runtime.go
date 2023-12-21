@@ -467,6 +467,67 @@ func URL(s string) SafeURL {
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
 
+// Attributes is an alias to map[string]any made for spread attributes.
+type Attributes map[string]any
+
+// sortedKeys returns the keys of a map in sorted order.
+func sortedKeys(m map[string]any) (keys []string) {
+	keys = make([]string, len(m))
+	var i int
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func writeStrings(w io.Writer, ss ...string) (err error) {
+	for _, s := range ss {
+		if _, err = io.WriteString(w, s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (err error) {
+	for _, key := range sortedKeys(attributes) {
+		value := attributes[key]
+		switch value := value.(type) {
+		case string:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {
+				return err
+			}
+		case bool:
+			if value {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		case KeyValue[string, bool]:
+			if value.Value {
+				if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value.Key), `"`); err != nil {
+					return err
+				}
+			}
+		case KeyValue[bool, bool]:
+			if value.Value && value.Key {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		case func() bool:
+			if value() {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // Script handling.
 
 func safeEncodeScriptParams(escapeHTML bool, params []any) []string {

@@ -1143,6 +1143,27 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	return nil
 }
 
+func (g *generator) writeSpreadAttributes(indentLevel int, attr parser.SpreadAttributes) (err error) {
+	// templ.RenderAttributes(ctx, w, spreadAttrs)
+	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, `); err != nil {
+		return err
+	}
+	// spreadAttrs
+	var r parser.Range
+	if r, err = g.w.Write(attr.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(attr.Expression, r)
+	// )
+	if _, err = g.w.Write(")\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (g *generator) writeConditionalAttribute(indentLevel int, elementName string, attr parser.ConditionalAttribute) (err error) {
 	// if
 	if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
@@ -1196,6 +1217,8 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 			err = g.writeBoolExpressionAttribute(indentLevel, attr)
 		case parser.ExpressionAttribute:
 			err = g.writeExpressionAttribute(indentLevel, name, attr)
+		case parser.SpreadAttributes:
+			err = g.writeSpreadAttributes(indentLevel, attr)
 		case parser.ConditionalAttribute:
 			err = g.writeConditionalAttribute(indentLevel, name, attr)
 		default:
