@@ -73,7 +73,7 @@ func main() {
 Running the code will render the component's HTML to stdout.
 
 ```sh
-go run *.go
+go run .
 ```
 
 ```html title="Output"

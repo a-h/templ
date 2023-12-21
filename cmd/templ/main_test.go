@@ -36,13 +36,13 @@ func TestMain(t *testing.T) {
 		{
 			name:         `"templ version" prints version`,
 			args:         []string{"templ", "version"},
-			expected:     templ.Version + "\n",
+			expected:     templ.Version() + "\n",
 			expectedCode: 0,
 		},
 		{
 			name:         `"templ --version" prints version`,
 			args:         []string{"templ", "--version"},
-			expected:     templ.Version + "\n",
+			expected:     templ.Version() + "\n",
 			expectedCode: 0,
 		},
 		{

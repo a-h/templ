@@ -53,7 +53,7 @@ Layering an application in this way can simplify code structure, since the respo
 
 To ensure that each part of the application is initialized with its dependencies, each struct defines a constructor (the `New` function in this example).
 
-As per https://github.com/golang/go/wiki/CodeReviewComments#interfaces the HTTP handler defines the interface that it's expecting, rather than the service defining its own interface.
+As per https://go.dev/wiki/CodeReviewComments#interfaces the HTTP handler defines the interface that it's expecting, rather than the service defining its own interface.
 
 ```go title="services/count.go"
 type CountService interface {

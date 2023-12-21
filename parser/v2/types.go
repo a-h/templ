@@ -262,6 +262,7 @@ func (c ConstantCSSProperty) Write(w io.Writer, indent int) error {
 	}
 	return nil
 }
+
 func (c ConstantCSSProperty) String(minified bool) string {
 	sb := new(strings.Builder)
 	sb.WriteString(c.Name)
@@ -340,9 +341,11 @@ func (t HTMLTemplate) Write(w io.Writer, indent int) error {
 // text node, or string expression.
 type TrailingSpace string
 
-const SpaceNone TrailingSpace = ""
-const SpaceHorizontal TrailingSpace = " "
-const SpaceVertical TrailingSpace = "\n"
+const (
+	SpaceNone       TrailingSpace = ""
+	SpaceHorizontal TrailingSpace = " "
+	SpaceVertical   TrailingSpace = "\n"
+)
 
 var ErrNonSpaceCharacter = errors.New("non space character found")
 
@@ -380,9 +383,11 @@ type WhitespaceTrailer interface {
 	Trailing() TrailingSpace
 }
 
-var _ WhitespaceTrailer = Element{}
-var _ WhitespaceTrailer = Text{}
-var _ WhitespaceTrailer = StringExpression{}
+var (
+	_ WhitespaceTrailer = Element{}
+	_ WhitespaceTrailer = Text{}
+	_ WhitespaceTrailer = StringExpression{}
+)
 
 // Text node within the document.
 type Text struct {
@@ -494,9 +499,10 @@ func (e Element) Write(w io.Writer, indent int) error {
 				return err
 			}
 			attrIndent = indent + 1
-		}
-		if _, err := w.Write([]byte(" ")); err != nil {
-			return err
+		} else {
+			if _, err := w.Write([]byte(" ")); err != nil {
+				return err
+			}
 		}
 		if err := a.Write(w, attrIndent); err != nil {
 			return err
@@ -756,6 +762,19 @@ func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
 		}
 	}
 	return writeIndent(w, indent, "}")
+}
+
+// <a { spread... } />
+type SpreadAttributes struct {
+	Expression Expression
+}
+
+func (sa SpreadAttributes) String() string {
+	return `{ ` + sa.Expression.Value + `... }`
+}
+
+func (sa SpreadAttributes) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, sa.String())
 }
 
 //	<a href="test" \

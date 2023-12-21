@@ -260,6 +260,48 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr Expressio
 	return attr, true, nil
 })
 
+var spreadAttributesParser = parse.Func(func(pi *parse.Input) (attr SpreadAttributes, ok bool, err error) {
+	start := pi.Index()
+
+	// Optional whitespace leader.
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+		return
+	}
+
+	// Eat the first brace.
+	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil ||
+		!ok {
+		pi.Seek(start)
+		return
+	}
+
+	// Expression.
+	if attr.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	// Check if end of expression has "..." for spread.
+	if !strings.HasSuffix(attr.Expression.Value, "...") {
+		pi.Seek(start)
+		ok = false
+		return
+	}
+
+	// Remove extra spread characters from expression.
+	attr.Expression.Value = strings.TrimSuffix(attr.Expression.Value, "...")
+	attr.Expression.Range.To.Col -= 3
+	attr.Expression.Range.To.Index -= 3
+
+	// Eat the final brace.
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("attribute spread expression: missing closing brace", pi.Position())
+		return
+	}
+
+	return attr, true, nil
+})
+
 // Attributes.
 type attributeParser struct{}
 
@@ -274,6 +316,9 @@ func (attributeParser) Parse(in *parse.Input) (out Attribute, ok bool, err error
 		return
 	}
 	if out, ok, err = boolConstantAttributeParser.Parse(in); err != nil || ok {
+		return
+	}
+	if out, ok, err = spreadAttributesParser.Parse(in); err != nil || ok {
 		return
 	}
 	if out, ok, err = constantAttributeParser.Parse(in); err != nil || ok {

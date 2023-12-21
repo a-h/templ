@@ -31,6 +31,8 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cli/browser"
 	"github.com/fatih/color"
+	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/semver"
 )
 
 type Arguments struct {
@@ -45,7 +47,8 @@ type Arguments struct {
 	IncludeVersion                  bool
 	IncludeTimestamp                bool
 	// PPROFPort is the port to run the pprof server on.
-	PPROFPort int
+	PPROFPort         int
+	KeepOrphanedFiles bool
 }
 
 var defaultWorkerCount = runtime.NumCPU()
@@ -91,7 +94,7 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	}
 	var opts []generator.GenerateOpt
 	if args.IncludeVersion {
-		opts = append(opts, generator.WithVersion(templ.Version))
+		opts = append(opts, generator.WithVersion(templ.Version()))
 	}
 	if args.IncludeTimestamp {
 		opts = append(opts, generator.WithTimestamp(time.Now()))
@@ -124,7 +127,6 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	if args.Proxy != "" {
 		p = proxy.New(args.ProxyPort, target)
 	}
-
 	fmt.Fprintln(w, "Processing path:", args.Path)
 	bo := backoff.NewExponentialBackOff()
 	bo.InitialInterval = time.Millisecond * 500
@@ -134,7 +136,7 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
 	for !firstRunComplete || args.Watch {
-		changesFound, errs := processChanges(ctx, w, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, opts, args.WorkerCount)
+		changesFound, errs := processChanges(ctx, w, fileNameToLastModTime, args.Path, args.GenerateSourceMapVisualisations, opts, args.WorkerCount, args.KeepOrphanedFiles)
 		if len(errs) > 0 {
 			if errors.Is(errs[0], context.Canceled) {
 				return errs[0]
@@ -176,6 +178,10 @@ func runCmd(ctx context.Context, w io.Writer, args Arguments) (err error) {
 				}()
 			}
 		}
+		if err = checkTemplVersion(args.Path); err != nil {
+			logWarning(w, "templ version check failed: %v\n", err)
+			err = nil
+		}
 		if firstRunComplete {
 			if changesFound > 0 {
 				bo.Reset()
@@ -203,7 +209,7 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime map[string]time.Time, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int, keepOrphanedFiles bool) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
@@ -218,6 +224,19 @@ func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime
 			return filepath.SkipDir
 		}
 		if info.IsDir() {
+			return nil
+		}
+		if !keepOrphanedFiles && strings.HasSuffix(fileName, "_templ.go") {
+			// Make sure the generated file is orphaned
+			// by checking if the corresponding .templ file exists.
+			if _, err := os.Stat(strings.TrimSuffix(fileName, "_templ.go") + ".templ"); err == nil {
+				// The .templ file exists, so we don't delete the generated file.
+				return nil
+			}
+			if err = os.Remove(fileName); err != nil {
+				return fmt.Errorf("failed to remove file: %w", err)
+			}
+			logWarning(stdout, "Deleted orphaned file %q\n", fileName)
 			return nil
 		}
 		if strings.HasSuffix(fileName, ".templ") {
@@ -386,4 +405,55 @@ func logSuccess(w io.Writer, format string, a ...any) {
 func logWithDecoration(w io.Writer, decoration string, col color.Attribute, format string, a ...any) {
 	color.New(col).Fprintf(w, "(%s) ", decoration)
 	fmt.Fprintf(w, format, a...)
+}
+
+func checkTemplVersion(dir string) error {
+	// Walk up the directory tree, starting at dir, until we find a go.mod file.
+	// If it contains a go.mod file, parse it and find the templ version.
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+	for {
+		current := filepath.Join(dir, "go.mod")
+		_, err := os.Stat(current)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to stat go.mod file: %w", err)
+		}
+		if os.IsNotExist(err) {
+			// Move up.
+			prev := dir
+			dir = filepath.Dir(dir)
+			if dir == prev {
+				return fmt.Errorf("could not find go.mod file")
+			}
+			continue
+		}
+		// Found a go.mod file.
+		// Read it and find the templ version.
+		m, err := os.ReadFile(current)
+		if err != nil {
+			return fmt.Errorf("failed to read go.mod file: %w", err)
+		}
+		mf, err := modfile.Parse(current, m, nil)
+		if err != nil {
+			return fmt.Errorf("failed to parse go.mod file: %w", err)
+		}
+		if mf.Module.Mod.Path == "github.com/a-h/templ" {
+			// The go.mod file is for templ itself.
+			return nil
+		}
+		for _, r := range mf.Require {
+			if r.Mod.Path == "github.com/a-h/templ" {
+				cmp := semver.Compare(r.Mod.Version, templ.Version())
+				if cmp < 0 {
+					return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get github.com/a-h/templ`", templ.Version(), r.Mod.Version)
+				}
+				if cmp > 0 {
+					return fmt.Errorf("generator %v is older than templ version %v found in go.mod file, consider upgrading templ CLI", templ.Version(), r.Mod.Version)
+				}
+				return nil
+			}
+		}
+	}
 }
