@@ -1,6 +1,6 @@
 # Rendering raw HTML
 
-To render HTML that has come from a trusted source, bypassing all HTML escaping and security mechanisms that templ includes, use use the `templ.Raw` function.
+To render HTML that has come from a trusted source, bypassing all HTML escaping and security mechanisms that templ includes, use the `templ.Raw` function.
 
 :::info
 Only include HTML that comes from a trusted source.
