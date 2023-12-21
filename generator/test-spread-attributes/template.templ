@@ -4,12 +4,12 @@ templ BasicTemplate(spread templ.Attributes) {
 	<div>
 		<a { spread... }>text</a>
 		<div
- 			if true {
+			if true {
 				{ spread... }
 			}
 		>text2</div>
 		<div
- 			if false {
+			if false {
 				{ spread... }
 			}
 		>text3</div>
