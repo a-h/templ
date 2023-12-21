@@ -19,8 +19,7 @@ func TestGeneratorSourceMap(t *testing.T) {
 			Value: "line1\nline2",
 		},
 	}
-	err := g.writeGoExpression(invalidExp)
-	if err != nil {
+	if err := g.writeGoExpression(invalidExp); err != nil {
 		t.Fatalf("failed to write Go expression: %v", err)
 	}
 
