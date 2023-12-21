@@ -130,36 +130,33 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	}
 	count := len(tf.Nodes)
 	for i := 0; i < count; i++ {
-		var err error
-		if err = tf.Nodes[i].Write(w, indent); err != nil {
+		var writeErr error
+		if err := tf.Nodes[i].Write(w, indent); err != nil {
 			return err
 		}
 		if i == count-1 {
-			_, err = w.Write([]byte("\n"))
+			_, writeErr = w.Write([]byte("\n"))
 		} else {
 			// If current node is `TemplateFileGoExpression`,
 			// if it ends with a comment,
 			// and if the next node is a `HTMLTemplate`,
 			// only insert 1 line break.
-			if _, ok := tf.Nodes[i].(TemplateFileGoExpression); ok {
-				v := tf.Nodes[i].(TemplateFileGoExpression).Expression.Value
+			if node, ok := tf.Nodes[i].(TemplateFileGoExpression); ok {
+				v := node.Expression.Value
 				lineSlice := strings.Split(v, "\n")
-				lastLine := lineSlice[len(lineSlice)-1]
-				if strings.HasPrefix(lastLine, "//") {
-					if _, ok := tf.Nodes[i+1].(HTMLTemplate); ok {
-						_, err = w.Write([]byte("\n"))
-					} else {
-						_, err = w.Write([]byte("\n\n"))
+				lastLineIsComment := strings.HasPrefix(lineSlice[len(lineSlice)-1], "//")
+				_, isNextNodeHTMLTemplate := tf.Nodes[i+1].(HTMLTemplate)
+				if lastLineIsComment && isNextNodeHTMLTemplate {
+					if _, err := w.Write([]byte("\n")); err != nil {
+						return err
 					}
-				} else {
-					_, err = w.Write([]byte("\n\n"))
+					continue
 				}
-			} else {
-				_, err = w.Write([]byte("\n\n"))
 			}
+			_, writeErr = w.Write([]byte("\n\n"))
 		}
-		if err != nil {
-			return err
+		if writeErr != nil {
+			return writeErr
 		}
 	}
 	return nil
