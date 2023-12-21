@@ -1,7 +1,6 @@
 package testcssusage
 
 // Constant class.
-
 templ StyleTagsAreSupported() {
 	<style>
 	.test {
@@ -25,7 +24,6 @@ templ CSSComponentsAreSupported() {
 
 // Both CSS components and constants are supported.
 // Only string names are really required. There is no need to use templ.Class or templ.SafeClass.
-
 templ CSSComponentsAndConstantsAreSupported() {
 	<div class={ cssComponentGreen(), "classA", templ.Class("&&&classB"), templ.SafeClass("classC"), "d e" } type="button">Both CSS components and constants are supported</div>
 	// The following is also valid, but not required - you can put the class names in directly.
@@ -33,7 +31,6 @@ templ CSSComponentsAndConstantsAreSupported() {
 }
 
 // Maps can be used to determine if a class should be added or not.
-
 templ MapsCanBeUsedToConditionallySetClasses() {
 	<div class={ map[string]bool{"a": true, "b": false, "c": true} }>Maps can be used to determine if a class should be added or not.</div>
 }
@@ -53,19 +50,16 @@ templ KVCanBeUsedToConditionallySetClasses() {
 }
 
 // Pseudo attributes can be used without any special syntax.
-
 templ PsuedoAttributesAndComplexClassNamesAreSupported() {
 	<div class={ "bg-violet-500", "hover:bg-red-600", "hover:bg-sky-700", "text-[#50d71e]", "w-[calc(100%-4rem)" }>Psuedo attributes and complex class names are supported.</div>
 }
 
 // Class names are HTML escaped.
-
 templ ClassNamesAreHTMLEscaped() {
 	<div class={ "a\" onClick=\"alert('hello')\"" }>Class names are HTML escaped.</div>
 }
 
 // Combine all tests.
-
 templ TestComponent() {
 	@StyleTagsAreSupported()
 	@CSSComponentsAreSupported()
