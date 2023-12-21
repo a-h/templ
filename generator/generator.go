@@ -1143,138 +1143,22 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	return nil
 }
 
-func (g *generator) writeSpreadAttributes(indentLevel int, elementName string, attr parser.SpreadAttributes) (err error) {
-	var_n := g.createVariableName()
-	var_ok := g.createVariableName()
-	var_v := g.createVariableName()
-
-	// for n, v := range
-	if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`for _, %s := range templ.SortAttributesKey(`, var_n)); err != nil {
+func (g *generator) writeSpreadAttributes(indentLevel int, attr parser.SpreadAttributes) (err error) {
+	// templ.RenderAttributes(ctx, w, spreadAttrs)
+	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, `); err != nil {
 		return err
 	}
-
-	// spread map
+	// spreadAttrs
 	var r parser.Range
 	if r, err = g.w.Write(attr.Expression.Value); err != nil {
 		return err
 	}
 	g.sourceMap.Add(attr.Expression, r)
-
-	// ) {
-	if _, err = g.w.Write(`) {` + "\n"); err != nil {
+	// )
+	if _, err = g.w.Write(")\n"); err != nil {
 		return err
 	}
-
-	{
-		indentLevel++
-
-		// ok, v := templ.ParseAttributeValue(
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(`%s, %s := templ.ParseAttributeValue(`, var_ok, var_v)); err != nil {
-			return err
-		}
-
-		// spread map
-		var r parser.Range
-		if r, err = g.w.Write(attr.Expression.Value); err != nil {
-			return err
-		}
-		g.sourceMap.Add(attr.Expression, r)
-
-		// [n])
-		if _, err = g.w.Write(fmt.Sprintf(`[%s])`+"\n", var_n)); err != nil {
-			return err
-		}
-
-		// if ok {
-		if _, err = g.w.Write(fmt.Sprintf(`if %s {`+"\n", var_ok)); err != nil {
-			return err
-		}
-
-		{
-			indentLevel++
-
-			// Name
-			// (space)
-			if _, err = g.w.WriteStringLiteral(indentLevel, " "); err != nil {
-				return err
-			}
-			// templ_7745c5c3_Buffer.WriteString(templ.EscapeString(
-			if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("); err != nil {
-				return err
-			}
-			// attribute name
-			if _, err = g.w.Write(var_n); err != nil {
-				return err
-			}
-			// ))
-			if _, err = g.w.Write("))\n"); err != nil {
-				return err
-			}
-			if err = g.writeErrorHandler(indentLevel); err != nil {
-				return err
-			}
-
-			// if !v.OmitValue {
-			if _, err = g.w.Write(fmt.Sprintf(`if !%s.OmitValue {`+"\n", var_v)); err != nil {
-				return err
-			}
-
-			{
-				indentLevel++
-
-				// =
-				if _, err = g.w.WriteStringLiteral(indentLevel, "= "); err != nil {
-					return err
-				}
-
-				// Value.
-				// Open quote.
-				if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
-					return err
-				}
-
-				// templ_7745c5c3_Buffer.WriteString(templ.EscapeString(
-				if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("); err != nil {
-					return err
-				}
-				// attribute value
-				if _, err = g.w.Write(var_v); err != nil {
-					return err
-				}
-				// .Value))
-				if _, err = g.w.Write(".Value))\n"); err != nil {
-					return err
-				}
-				if err = g.writeErrorHandler(indentLevel); err != nil {
-					return err
-				}
-
-				// Close quote.
-				if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
-					return err
-				}
-
-				indentLevel--
-
-				// }
-				if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
-					return err
-				}
-			}
-
-			indentLevel--
-		}
-
-		// }
-		if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
-			return err
-		}
-
-		indentLevel--
-	}
-
-	// }
-	if _, err = g.w.WriteIndent(indentLevel, `}`+"\n"); err != nil {
+	if err = g.writeErrorHandler(indentLevel); err != nil {
 		return err
 	}
 	return nil
@@ -1334,7 +1218,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 		case parser.ExpressionAttribute:
 			err = g.writeExpressionAttribute(indentLevel, name, attr)
 		case parser.SpreadAttributes:
-			err = g.writeSpreadAttributes(indentLevel, name, attr)
+			err = g.writeSpreadAttributes(indentLevel, attr)
 		case parser.ConditionalAttribute:
 			err = g.writeConditionalAttribute(indentLevel, name, attr)
 		default:

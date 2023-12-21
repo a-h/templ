@@ -467,62 +467,65 @@ func URL(s string) SafeURL {
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
 
-// Attributes is an alias to map[string]interface{} made for spread attributes
-type Attributes map[string]interface{}
+// Attributes is an alias to map[string]any made for spread attributes.
+type Attributes map[string]any
 
-func SortAttributesKey(attributes map[string]interface{}) []string {
-	sortedAttributes := make([]string, 0, len(attributes))
-
-	for k := range attributes {
-		sortedAttributes = append(sortedAttributes, k)
+// sortedKeys returns the keys of a map in sorted order.
+func sortedKeys(m map[string]any) (keys []string) {
+	keys = make([]string, len(m))
+	var i int
+	for k := range m {
+		keys[i] = k
+		i++
 	}
-
-	sort.Strings(sortedAttributes)
-
-	return sortedAttributes
+	sort.Strings(keys)
+	return keys
 }
 
-type attributeValue struct {
-	Value     string
-	OmitValue bool
+func writeStrings(w io.Writer, ss ...string) (err error) {
+	for _, s := range ss {
+		if _, err = io.WriteString(w, s); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func ParseAttributeValue(attribute interface{}) (bool, attributeValue) {
-	stringValue, ok := attribute.(string)
-
-	if ok {
-		return true, attributeValue{
-			Value:     stringValue,
-			OmitValue: false,
+func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (err error) {
+	for _, key := range sortedKeys(attributes) {
+		value := attributes[key]
+		switch value := value.(type) {
+		case string:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {
+				return err
+			}
+		case bool:
+			if value {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		case KeyValue[string, bool]:
+			if value.Value {
+				if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value.Key), `"`); err != nil {
+					return err
+				}
+			}
+		case KeyValue[bool, bool]:
+			if value.Value && value.Key {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		case func() bool:
+			if value() {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
 		}
 	}
-
-	boolValue, ok := attribute.(bool)
-
-	if ok {
-		return true, attributeValue{
-			OmitValue: boolValue,
-		}
-	}
-
-	kvStringValue, ok := attribute.(KeyValue[string, bool])
-
-	if ok && kvStringValue.Value {
-		return true, attributeValue{
-			Value:     kvStringValue.Key,
-			OmitValue: false,
-		}
-	}
-
-	kvBoolValue, ok := attribute.(KeyValue[bool, bool])
-
-	if ok && kvBoolValue.Value {
-		return true, attributeValue{
-			OmitValue: kvBoolValue.Key,
-		}
-	}
-
-	return false, attributeValue{}
+	return nil
 }
 
 // Script handling.

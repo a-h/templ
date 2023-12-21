@@ -13,15 +13,26 @@ var expected string
 
 func Test(t *testing.T) {
 	component := BasicTemplate(templ.Attributes{
-		"id":       "test",
-		"hx-get":   "/page",
+		// Should render as `bool` as the value is true, and the conditional render is also true.
+		"bool": templ.KV(true, true),
+		// Should not render, as the conditional render value is false.
+		"bool-disabled": templ.KV(true, false),
+		// Should render as `dateId="my-custom-id"`.
+		"dateId": "my-custom-id",
+		// Should render as `hx-get="/page"`.
+		"hx-get": "/page",
+		// Should render as `id="test"`.
+		"id": "test",
+		// Should not render, as the attribute value, and the conditional render value is false.
+		"no-bool": templ.KV(false, false),
+		// Should not render, as the conditional render value is false.
+		"no-text": templ.KV("empty", false),
+		// Should render as `nonshare`, as the value is true.
 		"nonshade": true,
-		"shade":    false,
-		"text":     templ.KV("lorem", true),
-		"no-text":  templ.KV("empty", false),
-		"bool":     templ.KV(true, true),
-		"no-bool":  templ.KV(false, false),
-		"dateId":   "my-custom-id",
+		// Should not render, as the value is false.
+		"shade": false,
+		// Should render text="lorem" as the value is true.
+		"text": templ.KV("lorem", true),
 	})
 
 	diff, err := htmldiff.Diff(component, expected)
