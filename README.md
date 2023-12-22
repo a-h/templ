@@ -30,12 +30,18 @@ go build
 
 ### install-snapshot
 
-Build and install to ~/bin
+Build and install current version.
 
 ```sh
-rm cmd/templ/lspcmd/*.txt || true
+# Remove templ from the non-standard ~/bin/templ path
+# that this command previously used.
+rm -f ~/bin/templ
+# Clear LSP logs.
+rm -f cmd/templ/lspcmd/*.txt
+# Update version.
 go run ./get-version > .version
-cd cmd/templ && go build -o ~/bin/templ
+# Install to $GOPATH/bin or $HOME/go/bin
+cd cmd/templ && go install
 ```
 
 ### build-snapshot
