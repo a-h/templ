@@ -15,3 +15,7 @@ https://github.com/a-h/templ/tree/main/examples/integration-gin
 An example of using templ with go-chi v5 can be found here: 
 
 https://github.com/a-h/templ/tree/main/examples/integration-chi
+
+## `template/html`
+
+See [Using with Go templates](../syntax-and-usage/using-with-go-templates)

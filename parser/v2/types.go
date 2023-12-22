@@ -764,6 +764,19 @@ func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
 	return writeIndent(w, indent, "}")
 }
 
+// <a { spread... } />
+type SpreadAttributes struct {
+	Expression Expression
+}
+
+func (sa SpreadAttributes) String() string {
+	return `{ ` + sa.Expression.Value + `... }`
+}
+
+func (sa SpreadAttributes) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, sa.String())
+}
+
 //	<a href="test" \
 //		if active {
 //	   class="isActive"

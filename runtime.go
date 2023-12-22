@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"html/template"
 	"io"
 	"net/http"
 	"sort"
@@ -467,6 +468,67 @@ func URL(s string) SafeURL {
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
 
+// Attributes is an alias to map[string]any made for spread attributes.
+type Attributes map[string]any
+
+// sortedKeys returns the keys of a map in sorted order.
+func sortedKeys(m map[string]any) (keys []string) {
+	keys = make([]string, len(m))
+	var i int
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func writeStrings(w io.Writer, ss ...string) (err error) {
+	for _, s := range ss {
+		if _, err = io.WriteString(w, s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (err error) {
+	for _, key := range sortedKeys(attributes) {
+		value := attributes[key]
+		switch value := value.(type) {
+		case string:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {
+				return err
+			}
+		case bool:
+			if value {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		case KeyValue[string, bool]:
+			if value.Value {
+				if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value.Key), `"`); err != nil {
+					return err
+				}
+			}
+		case KeyValue[bool, bool]:
+			if value.Value && value.Key {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		case func() bool:
+			if value() {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // Script handling.
 
 func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
@@ -682,4 +744,36 @@ func (e Error) Error() string {
 
 func (e Error) Unwrap() error {
 	return e.Err
+}
+
+// Raw renders the input HTML to the output without applying HTML escaping.
+//
+// Use of this component presents a security risk - the HTML should come from
+// a trusted source, because it will be included as-is in the output.
+func Raw[T ~string](html T, errs ...error) Component {
+	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		if err = errors.Join(errs...); err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, string(html))
+		return err
+	})
+}
+
+// FromGoHTML creates a templ Component from a Go html/template template.
+func FromGoHTML(t *template.Template, data any) Component {
+	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		return t.Execute(w, data)
+	})
+}
+
+// ToGoHTML renders the component to a Go html/template template.HTML string.
+func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
+	b := GetBuffer()
+	defer ReleaseBuffer(b)
+	if err = c.Render(ctx, b); err != nil {
+		return
+	}
+	s = template.HTML(b.String())
+	return
 }
