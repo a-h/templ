@@ -1,0 +1,17 @@
+package testspreadattributes
+
+templ BasicTemplate(spread templ.Attributes) {
+	<div>
+		<a { spread... }>text</a>
+		<div
+			if true {
+				{ spread... }
+			}
+		>text2</div>
+		<div
+			if false {
+				{ spread... }
+			}
+		>text3</div>
+	</div>
+}

@@ -1,0 +1,15 @@
+package testgotemplates
+
+import "html/template"
+
+var example = template.Must(template.New("example").Parse(`<!DOCTYPE html>
+<html>
+	<body>
+		{{ . }}
+	</body>
+</html>
+`))
+
+templ greeting() {
+	<div>Hello, World!</div>
+}
