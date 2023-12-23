@@ -147,3 +147,6 @@ Directory: docs
 npm run build
 ```
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=a-h/templ&type=Date)](https://star-history.com/#a-h/templ&Date)
