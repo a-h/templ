@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -407,6 +408,9 @@ func logWithDecoration(w io.Writer, decoration string, col color.Attribute, form
 	fmt.Fprintf(w, format, a...)
 }
 
+// Replace "go 1.21.3" with "go 1.21" until https://github.com/golang/go/issues/61888 is fixed, see templ issue https://github.com/a-h/templ/issues/355
+var goVersionRegepx = regexp.MustCompile(`\ngo (\d+\.\d+)\.\d+\n`)
+
 func checkTemplVersion(dir string) error {
 	// Walk up the directory tree, starting at dir, until we find a go.mod file.
 	// If it contains a go.mod file, parse it and find the templ version.
@@ -435,6 +439,10 @@ func checkTemplVersion(dir string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read go.mod file: %w", err)
 		}
+
+		// Replace "go 1.21.x" with "go 1.21".
+		m = goVersionRegepx.ReplaceAll(m, []byte("\ngo $1\n"))
+
 		mf, err := modfile.Parse(current, m, nil)
 		if err != nil {
 			return fmt.Errorf("failed to parse go.mod file: %w", err)
@@ -447,7 +455,7 @@ func checkTemplVersion(dir string) error {
 			if r.Mod.Path == "github.com/a-h/templ" {
 				cmp := semver.Compare(r.Mod.Version, templ.Version())
 				if cmp < 0 {
-					return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get github.com/a-h/templ`", templ.Version(), r.Mod.Version)
+					return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get -u github.com/a-h/templ` to upgrade", templ.Version(), r.Mod.Version)
 				}
 				if cmp > 0 {
 					return fmt.Errorf("generator %v is older than templ version %v found in go.mod file, consider upgrading templ CLI", templ.Version(), r.Mod.Version)
