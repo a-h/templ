@@ -6,15 +6,21 @@ Below are some examples of how to use templ with other Go libraries, frameworks 
 
 ## Gin
 
-An example of using templ with gin can be found here:
+See example of using https://github.com/gin-gonic/gin with templ at:
 
 https://github.com/a-h/templ/tree/main/examples/integration-gin
 
 ## Chi
 
-An example of using templ with go-chi v5 can be found here: 
+See example of using https://github.com/go-chi/chi with templ at:
 
 https://github.com/a-h/templ/tree/main/examples/integration-chi
+
+## Go Fiber
+
+See example of using https://github.com/gofiber/fiber with templ at:
+
+https://github.com/a-h/templ/tree/main/examples/integration-gofiber
 
 ## `template/html`
 
