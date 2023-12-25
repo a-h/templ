@@ -185,7 +185,7 @@ For example, to stop the `className` CSS class from being added to the output, t
 ```go
 c1 := className()
 handler := NewCSSMiddleware(httpRoutes, c1)
-http.ListenAndServe(":8000:, handler)
+http.ListenAndServe(":8000", handler)
 ```
 
 :::caution
