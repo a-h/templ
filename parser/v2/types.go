@@ -125,41 +125,35 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	if err := tf.Package.Write(w, indent); err != nil {
 		return err
 	}
-	if _, err := w.Write([]byte("\n\n")); err != nil {
+	if _, err := io.WriteString(w, "\n\n"); err != nil {
 		return err
 	}
-	count := len(tf.Nodes)
-	for i := 0; i < count; i++ {
-		var writeErr error
+	for i := 0; i < len(tf.Nodes); i++ {
 		if err := tf.Nodes[i].Write(w, indent); err != nil {
 			return err
 		}
-		if i == count-1 {
-			_, writeErr = w.Write([]byte("\n"))
-		} else {
-			// If current node is `TemplateFileGoExpression`,
-			// if it ends with a comment,
-			// and if the next node is a `HTMLTemplate`,
-			// only insert 1 line break.
-			if node, ok := tf.Nodes[i].(TemplateFileGoExpression); ok {
-				v := node.Expression.Value
-				lineSlice := strings.Split(v, "\n")
-				lastLineIsComment := strings.HasPrefix(lineSlice[len(lineSlice)-1], "//")
-				_, isNextNodeHTMLTemplate := tf.Nodes[i+1].(HTMLTemplate)
-				if lastLineIsComment && isNextNodeHTMLTemplate {
-					if _, err := w.Write([]byte("\n")); err != nil {
-						return err
-					}
-					continue
-				}
-			}
-			_, writeErr = w.Write([]byte("\n\n"))
-		}
-		if writeErr != nil {
-			return writeErr
+		if _, err := io.WriteString(w, getNodeWhitespace(tf.Nodes, i)); err != nil {
+			return err
 		}
 	}
 	return nil
+}
+
+func getNodeWhitespace(nodes []TemplateFileNode, i int) string {
+	if i == len(nodes)-1 {
+		return "\n"
+	}
+	if _, nextIsTemplate := nodes[i+1].(HTMLTemplate); nextIsTemplate {
+		if e, isGo := nodes[i].(TemplateFileGoExpression); isGo && endsWithComment(e.Expression.Value) {
+			return "\n"
+		}
+	}
+	return "\n\n"
+}
+
+func endsWithComment(s string) bool {
+	lineSlice := strings.Split(s, "\n")
+	return strings.HasPrefix(lineSlice[len(lineSlice)-1], "//")
 }
 
 // TemplateFileNode can be a Template, CSS, Script or Go.
