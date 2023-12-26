@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -89,17 +90,33 @@ type roundTripper struct {
 }
 
 func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	var err error
-
-	for retries := 0; retries < rt.maxRetries; retries++ {
-		req := r.Clone(r.Context())
-
-		req.Body, err = r.GetBody()
+	// Read and buffer the body
+	var bodyBytes []byte
+	if r.Body != nil && r.Body != http.NoBody {
+		var err error
+		bodyBytes, err = io.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
 		}
+		r.Body.Close()
+	}
 
-		resp, err := http.DefaultTransport.RoundTrip(req)
+	// Function to create a new request with a buffered body
+	createRequestWithBuffer := func() *http.Request {
+		req := r.Clone(r.Context())
+		if bodyBytes != nil {
+			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		}
+		return req
+	}
+
+	// Retry logic
+	var resp *http.Response
+	var err error
+	for retries := 0; retries < rt.maxRetries; retries++ {
+		req := createRequestWithBuffer()
+
+		resp, err = http.DefaultTransport.RoundTrip(req)
 		if err != nil {
 			time.Sleep(rt.initialDelay * time.Duration(math.Pow(rt.backoffExponent, float64(retries))))
 			continue
