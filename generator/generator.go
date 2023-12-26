@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	_ "embed"
 
@@ -1411,8 +1412,9 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		}
 		// Function: `function scriptName(a, b, c){` + `constantScriptValue` + `}`,
 		prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
+		body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
 		suffix := "}"
-		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+strings.TrimSpace(t.Value)+suffix)+",\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+body+suffix)+",\n"); err != nil {
 			return err
 		}
 		// Call: templ.SafeScript(scriptName, a, b, c)

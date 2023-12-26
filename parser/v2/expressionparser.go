@@ -48,6 +48,9 @@ var stringUntilNewLine = parse.StringUntil[string](parse.NewLine)
 var newLineOrEOF = parse.Or(parse.NewLine, parse.EOF[string]())
 var stringUntilNewLineOrEOF = parse.StringUntil(newLineOrEOF)
 
+var jsOrGoSingleLineComment = parse.StringFrom(parse.String("//"), parse.StringUntil(parse.Any(parse.NewLine, parse.EOF[string]())))
+var jsOrGoMultiLineComment = parse.StringFrom(parse.String("/*"), parse.StringUntil(parse.String("*/")))
+
 var exp = expressionParser{
 	startBraceCount: 1,
 }
@@ -66,7 +69,25 @@ loop:
 	for {
 		var result string
 
-		// Try to read a string literal first.
+		// Try to parse a single line comment.
+		if result, ok, err = jsOrGoSingleLineComment.Parse(pi); err != nil {
+			return
+		}
+		if ok {
+			sb.WriteString(result)
+			continue
+		}
+
+		// Try to parse a multi-line comment.
+		if result, ok, err = jsOrGoMultiLineComment.Parse(pi); err != nil {
+			return
+		}
+		if ok {
+			sb.WriteString(result)
+			continue
+		}
+
+		// Try to read a string literal.
 		if result, ok, err = string_lit.Parse(pi); err != nil {
 			return
 		}
