@@ -778,6 +778,25 @@ templ test() {
 }
 `,
 		},
+		{
+			name: "godoc comments are preserved",
+			input: ` // first line removed to make indentation clear
+package main
+
+// test the comment handling.
+templ test() {
+	Test
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+// test the comment handling.
+templ test() {
+	Test
+}
+`,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

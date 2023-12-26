@@ -125,25 +125,35 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	if err := tf.Package.Write(w, indent); err != nil {
 		return err
 	}
-	if _, err := w.Write([]byte("\n\n")); err != nil {
+	if _, err := io.WriteString(w, "\n\n"); err != nil {
 		return err
 	}
-	count := len(tf.Nodes)
-	for i := 0; i < count; i++ {
-		var err error
-		if err = tf.Nodes[i].Write(w, indent); err != nil {
+	for i := 0; i < len(tf.Nodes); i++ {
+		if err := tf.Nodes[i].Write(w, indent); err != nil {
 			return err
 		}
-		if i == count-1 {
-			_, err = w.Write([]byte("\n"))
-		} else {
-			_, err = w.Write([]byte("\n\n"))
-		}
-		if err != nil {
+		if _, err := io.WriteString(w, getNodeWhitespace(tf.Nodes, i)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func getNodeWhitespace(nodes []TemplateFileNode, i int) string {
+	if i == len(nodes)-1 {
+		return "\n"
+	}
+	if _, nextIsTemplate := nodes[i+1].(HTMLTemplate); nextIsTemplate {
+		if e, isGo := nodes[i].(TemplateFileGoExpression); isGo && endsWithComment(e.Expression.Value) {
+			return "\n"
+		}
+	}
+	return "\n\n"
+}
+
+func endsWithComment(s string) bool {
+	lineSlice := strings.Split(s, "\n")
+	return strings.HasPrefix(lineSlice[len(lineSlice)-1], "//")
 }
 
 // TemplateFileNode can be a Template, CSS, Script or Go.
