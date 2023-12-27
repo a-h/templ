@@ -447,6 +447,7 @@ func generate(ctx context.Context, basePath, fileName string, hashes map[string]
 		return nil, fmt.Errorf("%s source formatting error: %w", fileName, err)
 	}
 
+	// Hash and write the file if the hash has changed
 	hash := md5.Sum(data)
 	if hashes[targetFileName] != hash {
 		if err = os.WriteFile(targetFileName, data, 0o644); err != nil {
@@ -455,6 +456,7 @@ func generate(ctx context.Context, basePath, fileName string, hashes map[string]
 		hashes[targetFileName] = hash
 	}
 
+	// Add the txt file if it has changed
 	if len(literals) > 0 {
 		txtFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.txt"
 		contents := strings.Join(literals, "\n")
