@@ -59,7 +59,7 @@ func (rw *RangeWriter) WriteStringLiteral(level int, s string) (r parser.Range, 
 		}
 
 		if rw.extractStrings {
-			index := len(rw.strings) - 1
+			index := len(rw.strings)
 			if _, err = rw.WriteIndent(level, "templ_7745c5c3_Err = templ.WriteExtractedString(templ_7745c5c3_Buffer, "+strconv.Itoa(index)+")\n"); err != nil {
 				return
 			}

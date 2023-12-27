@@ -782,7 +782,7 @@ func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
 	return
 }
 
-func WriteExtractedString(w *bytes.Buffer, index int) error {
+func WriteExtractedString(w *bytes.Buffer, lineNum int) error {
 	_, path, _, _ := runtime.Caller(1)
 	if !strings.HasSuffix(path, "_templ.go") {
 		return errors.New("templ: WriteExtractedString can only be called from _templ.go")
@@ -795,10 +795,10 @@ func WriteExtractedString(w *bytes.Buffer, index int) error {
 	}
 	defer txtFile.Close()
 
-	lineNum := 0
+	currentLine := 1
 	sc := bufio.NewScanner(txtFile)
 	for sc.Scan() {
-		if index == lineNum {
+		if lineNum == currentLine {
 			unquoted, err := strconv.Unquote(`"` + sc.Text() + `"`)
 			if err != nil {
 				return err
@@ -806,7 +806,7 @@ func WriteExtractedString(w *bytes.Buffer, index int) error {
 			_, err = w.WriteString(unquoted)
 			return err
 		}
-		lineNum++
+		currentLine++
 	}
 
 	return nil
