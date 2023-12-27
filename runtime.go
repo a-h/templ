@@ -1,6 +1,7 @@
 package templ
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -12,7 +13,10 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"os"
+	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -776,4 +780,34 @@ func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
 	}
 	s = template.HTML(b.String())
 	return
+}
+
+func WriteExtractedString(w *bytes.Buffer, index int) error {
+	_, path, _, _ := runtime.Caller(1)
+	if !strings.HasSuffix(path, "_templ.go") {
+		return errors.New("templ: WriteExtractedString can only be called from _templ.go")
+	}
+
+	txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
+	txtFile, err := os.Open(txtFilePath)
+	if err != nil {
+		return fmt.Errorf("templ: failed to open %s: %w", txtFilePath, err)
+	}
+	defer txtFile.Close()
+
+	lineNum := 0
+	sc := bufio.NewScanner(txtFile)
+	for sc.Scan() {
+		if index == lineNum {
+			unquoted, err := strconv.Unquote(`"` + sc.Text() + `"`)
+			if err != nil {
+				return err
+			}
+			_, err = w.WriteString(unquoted)
+			return err
+		}
+		lineNum++
+	}
+
+	return nil
 }

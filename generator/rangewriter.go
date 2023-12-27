@@ -2,6 +2,7 @@ package generator
 
 import (
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/a-h/templ/parser/v2"
@@ -17,13 +18,21 @@ type RangeWriter struct {
 	Current   parser.Position
 	inLiteral bool
 	w         io.Writer
+
+	// Extract strings
+	extractStrings bool
+	strings        []string
 }
 
 func (rw *RangeWriter) closeLiteral(indent int) (r parser.Range, err error) {
 	rw.inLiteral = false
-	_, err = rw.write("\")\n")
-	if err != nil {
-		return
+	if rw.extractStrings {
+		rw.strings = append(rw.strings, "")
+	} else {
+		_, err = rw.write("\")\n")
+		if err != nil {
+			return
+		}
 	}
 	err = rw.writeErrorHandler(indent)
 	return
@@ -48,15 +57,30 @@ func (rw *RangeWriter) WriteStringLiteral(level int, s string) (r parser.Range, 
 		if err != nil {
 			return
 		}
-		if _, err = rw.WriteIndent(level, `_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("`); err != nil {
+
+		if rw.extractStrings {
+			index := len(rw.strings) - 1
+			if _, err = rw.WriteIndent(level, "templ_7745c5c3_Err = templ.WriteExtractedString(templ_7745c5c3_Buffer, "+strconv.Itoa(index)+")\n"); err != nil {
+				return
+			}
+		} else {
+			if _, err = rw.WriteIndent(level, `_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("`); err != nil {
+				return
+			}
+		}
+	}
+
+	if rw.extractStrings {
+		rw.strings[len(rw.strings)-1] += s
+	} else {
+		_, err = rw.write(s)
+		if err != nil {
 			return
 		}
 	}
-	_, err = rw.write(s)
-	if err != nil {
-		return
-	}
+
 	rw.inLiteral = true
+
 	return
 }
 
