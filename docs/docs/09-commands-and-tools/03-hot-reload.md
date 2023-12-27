@@ -16,7 +16,7 @@ templ generate --watch --proxy="http://localhost:8080" --cmd="runtest"
 
 ## Alternative
 
-Air's reload performance is better due to its complex filesystem notification setup, but doens't ship with a proxy to automatically reload pages, and requires a `toml` configuration file for operation.
+Air's reload performance is better due to its complex filesystem notification setup, but doesn't ship with a proxy to automatically reload pages, and requires a `toml` configuration file for operation.
 
 See https://github.com/cosmtrek/air for details.
 
