@@ -113,6 +113,47 @@ require("lspconfig").tailwindcss.setup({
 })
 ```
 
+### Import Tailwind css by adding CDN tag
+
+```html
+pacakge main 
+
+templ index() {
+    <head> 
+        <!-- Add CDN tag to the <head> --->
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+
+    <html>
+        <body> 
+            <!-- Usage of tailwind, styling text --->
+            <h1 class="text-blue-300">Hello!</h1>
+        </body>
+    </html>
+}
+```
+
+#### run http server
+
+```go
+pacakge main
+    
+import "net/http"
+
+func main() {
+    mux := http.NewServeMux()
+
+    mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        index().Render(r.Context(), w)
+    })
+
+    fmt.Println("listening on :8080")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Printf("error listening: %v", err)
+	}
+}
+```
+
 ## Helix
 
 https://helix-editor.com/
