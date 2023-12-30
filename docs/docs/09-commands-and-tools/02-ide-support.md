@@ -107,6 +107,7 @@ lspconfig.tailwindcss.setup({
 ```
 
 Inside of your `tailwind.config.js`, you need to tell tailwind to look inside of .templ files and/or .go files.
+
 ```js
 module.exports = {
     content: [ "./**/*.html", "./**/*.templ", "./**/*.go", ],
