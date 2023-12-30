@@ -86,6 +86,7 @@ lspconfig.html.setup({
 ```
 
 [htmx-lsp](https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#htmx) - First make sure you have it installed `:LspInstall htmx` or find it on the `:Mason` list. Note with this LSP, it activates after you type `hx-` in an html attribute, because that's how all htmx attributes are written.
+
 ```lua
 lspconfig.htmx.setup({
     on_attach = on_attach,
