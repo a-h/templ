@@ -162,6 +162,7 @@ end
 ```
 
 To make this `custom_format` run on save, make the same autocmd from before and replace the callback with `custom_format`. 
+
 ```lua
 vim.api.nvim_create_autocmd({ "BufWritePre" }, { pattern = { "*.templ" }, callback = custom_format })
 ```
