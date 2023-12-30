@@ -127,6 +127,7 @@ vim.api.nvim_create_autocmd({ "BufWritePre" }, { pattern = { "*.templ" }, callba
 `BufWritePre` means that the callback gets ran after you call `:write`.
 
 If you have multiple LSPs attached to the same buffer, and you have issues with `vim.lsp.buf.format`, you can use this snippet to run `templ fmt` in the same way that you might from the command line.
+
 This will get the buffer and its corresponding filename, and refresh the buffer after it has been formatted so you don't get out of sync issues.
 
 ```lua
