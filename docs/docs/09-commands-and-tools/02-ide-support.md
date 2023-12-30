@@ -76,6 +76,7 @@ vim.filetype.add({ extension = { templ = "templ" } })
 These LSPs can be used *in conjunction* with the templ lsp and tree-sitter. Here's how to set them up.
 
 [html-lsp](https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#html) - First make sure you have it installed `:LspInstall html` or find it on the `:Mason` list. 
+
 ```lua
 lspconfig.html.setup({
     on_attach = on_attach,
