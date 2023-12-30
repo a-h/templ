@@ -64,6 +64,7 @@ end
 ```
 
 In Neovim, you can use the `:LspInfo` command to check which Language Servers (if any) are running. If the expected language server has not started, it could be due to the unregistered templ file extension. 
+
 To resolve this issue, add the following code to your configuration. This is also necessary for other LSPs to "pick up" on .templ files.
 
 ```lua
