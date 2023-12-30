@@ -95,6 +95,7 @@ lspconfig.htmx.setup({
 ```
 
 [tailwindcss](https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#tailwindcss) - First make sure you have it installed `:LspInstall tailwindcss` or find it on the `:Mason` list.
+
 ```lua
 lspconfig.tailwindcss.setup({
     on_attach = on_attach,
