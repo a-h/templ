@@ -90,7 +90,7 @@ type roundTripper struct {
 }
 
 func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	// Read and buffer the body
+	// Read and buffer the body.
 	var bodyBytes []byte
 	if r.Body != nil && r.Body != http.NoBody {
 		var err error
@@ -101,21 +101,17 @@ func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		r.Body.Close()
 	}
 
-	// Function to create a new request with a buffered body
-	createRequestWithBuffer := func() *http.Request {
+	// Retry logic.
+	var resp *http.Response
+	var err error
+	for retries := 0; retries < rt.maxRetries; retries++ {
+		// Clone the request and set the body.
 		req := r.Clone(r.Context())
 		if bodyBytes != nil {
 			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		}
-		return req
-	}
 
-	// Retry logic
-	var resp *http.Response
-	var err error
-	for retries := 0; retries < rt.maxRetries; retries++ {
-		req := createRequestWithBuffer()
-
+		// Execute the request.
 		resp, err = http.DefaultTransport.RoundTrip(req)
 		if err != nil {
 			time.Sleep(rt.initialDelay * time.Duration(math.Pow(rt.backoffExponent, float64(retries))))
