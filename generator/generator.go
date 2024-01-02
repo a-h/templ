@@ -293,6 +293,15 @@ func (g *generator) writeGoExpression(n parser.TemplateFileGoExpression) (err er
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
+	v := n.Expression.Value
+	lineSlice := strings.Split(v, "\n")
+	lastLine := lineSlice[len(lineSlice)-1]
+	if strings.HasPrefix(lastLine, "//") {
+		if _, err = g.w.WriteIndent(0, "\n"); err != nil {
+			return err
+		}
+		return err
+	}
 	if _, err = g.w.WriteIndent(0, "\n\n"); err != nil {
 		return err
 	}

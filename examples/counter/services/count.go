@@ -23,7 +23,7 @@ const (
 	IncrementTypeSession
 )
 
-var ErrUnknownIncrementType error = errors.New("unkown increment type")
+var ErrUnknownIncrementType error = errors.New("unknown increment type")
 
 func NewCount(log *slog.Logger, cs *db.CountStore) Count {
 	return Count{
