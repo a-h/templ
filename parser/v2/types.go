@@ -690,12 +690,17 @@ func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
 
 // href=""
 type ConstantAttribute struct {
-	Name  string
-	Value string
+	Name        string
+	Value       string
+	SingleQuote bool
 }
 
 func (ca ConstantAttribute) String() string {
-	return ca.Name + `="` + ca.Value + `"`
+	quote := `"`
+	if ca.SingleQuote {
+		quote = `'`
+	}
+	return ca.Name + `=` + quote + ca.Value + quote
 }
 
 func (ca ConstantAttribute) Write(w io.Writer, indent int) error {

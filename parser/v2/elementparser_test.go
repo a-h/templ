@@ -271,12 +271,23 @@ if test {
 			},
 		},
 		{
-			name:   "single quote constant attribute",
+			name:   "single quote not required constant attribute",
+			input:  ` href='no double quote in value'`,
+			parser: StripType(constantAttributeParser),
+			expected: ConstantAttribute{
+				Name:        "href",
+				Value:       `no double quote in value`,
+				SingleQuote: false,
+			},
+		},
+		{
+			name:   "single quote required constant attribute",
 			input:  ` href='"test"'`,
 			parser: StripType(constantAttributeParser),
 			expected: ConstantAttribute{
-				Name:  "href",
-				Value: `"test"`,
+				Name:        "href",
+				Value:       `"test"`,
+				SingleQuote: true,
 			},
 		},
 		{

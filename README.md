@@ -78,18 +78,20 @@ Run Go tests.
 # Create test profile directories.
 mkdir -p coverage/fmt
 mkdir -p coverage/generate
+mkdir -p coverage/version
 mkdir -p coverage/unit
 # Build the test binary.
 go build -cover -o ./coverage/templ-cover ./cmd/templ
 # Run the covered generate command.
 GOCOVERDIR=coverage/fmt ./coverage/templ-cover fmt .
 GOCOVERDIR=coverage/generate ./coverage/templ-cover generate -include-version=false
+GOCOVERDIR=coverage/version ./coverage/templ-cover version
 # Run the unit tests.
 go test -cover ./... -args -test.gocoverdir="$PWD/coverage/unit"
 # Display the combined percentage.
-go tool covdata percent -i=./coverage/fmt,./coverage/generate,./coverage/unit
+go tool covdata percent -i=./coverage/fmt,./coverage/generate,./coverage/version,./coverage/unit
 # Generate a text coverage profile for tooling to use.
-go tool covdata textfmt -i=./coverage/fmt,./coverage/generate,./coverage/unit -o coverage.out
+go tool covdata textfmt -i=./coverage/fmt,./coverage/generate,./coverage/version,./coverage/unit -o coverage.out
 # Print total
 go tool cover -func coverage.out | grep total
 ```

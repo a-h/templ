@@ -4,4 +4,11 @@ templ BasicTemplate(url string) {
 	<div>
 		<a href={ templ.URL(url) }>text</a>
 	</div>
+	<div>
+		<button
+			hx-post="/click"
+			hx-trigger="click"
+			hx-vals='{"val":"Value"}'
+		>Click</button>
+	</div>
 }

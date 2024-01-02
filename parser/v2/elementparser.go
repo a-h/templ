@@ -131,6 +131,7 @@ var (
 		if result.B.OK {
 			valueParser = attributeConstantValueSingleQuoteParser
 			closeParser = parse.String(`'`)
+			attr.SingleQuote = true
 		}
 
 		// Attribute value.
@@ -140,6 +141,10 @@ var (
 		}
 
 		attr.Value = html.UnescapeString(attr.Value)
+		// Only use single quotes if actually required, due to double quote in the value (prefer double quotes).
+		if attr.SingleQuote && !strings.Contains(attr.Value, "\"") {
+			attr.SingleQuote = false
+		}
 
 		// " - closing quote.
 		if _, ok, err = closeParser.Parse(pi); err != nil || !ok {
