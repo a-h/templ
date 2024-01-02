@@ -14,7 +14,19 @@ If the `--proxy` argument is set, templ will start a HTTP proxy pointed at the g
 templ generate --watch --proxy="http://localhost:8080" --cmd="runtest"
 ```
 
-## Alternative
+## Alternative 1: wgo
+
+[wgo](https://github.com/bokwoon95/wgo):
+
+> Live reload for Go apps. Watch arbitrary files and respond with arbitrary commands. Supports running multiple invocations in parallel.
+
+```
+wgo -file=.go -file=.templ -xfile=_templ.go templ generate :: go run main.go
+```
+
+To avoid a continous reloading files ending with `_templ.go` should be skipped via `-xfile`.
+
+## Alternative 2: air
 
 Air's reload performance is better due to its complex filesystem notification setup, but doesn't ship with a proxy to automatically reload pages, and requires a `toml` configuration file for operation.
 
