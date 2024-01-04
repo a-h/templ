@@ -204,6 +204,10 @@ Helix has built-in templ support in unstable since https://github.com/helix-edit
 
 It will be included in official releases after version 23.05.
 
+## Emacs
+
+[templ-ts-mode](https://github.com/danderson/templ-ts-mode) is a major mode for templ files that provides syntax highlighting, indentation, and the other usual major mode things. It requires the [tree-sitter parser](https://github.com/vrischmann/tree-sitter-templ). If the parser is missing, the mode asks you on first use whether you want to download and build it via `treesit-install-language-grammar` (requires git and a C compiler).
+
 ## Troubleshooting
 
 ### Check that go, gopls and templ are installed and are present in the path
