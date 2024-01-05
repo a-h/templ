@@ -16,6 +16,10 @@ templ Button(text string) {
 	<button onClick={ withParameters("test", text, 123) } onMouseover={ withoutParameters() } type="button">{ text }</button>
 }
 
+script withComment() {
+	//'
+}
+
 templ ThreeButtons() {
 	@Button("A")
 	@Button("B")
