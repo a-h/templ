@@ -782,13 +782,13 @@ func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
 	return
 }
 
-// WriteExtractedString is used when rendering templates in development mode.
+// WriteWatchModeString is used when rendering templates in development mode.
 // the generator would have written non-go code to the _templ.txt file, which
 // is then read by this function and written to the output.
-func WriteExtractedString(w *bytes.Buffer, lineNum int) error {
+func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 	_, path, _, _ := runtime.Caller(1)
 	if !strings.HasSuffix(path, "_templ.go") {
-		return errors.New("templ: WriteExtractedString can only be called from _templ.go")
+		return errors.New("templ: WriteWatchModeString can only be called from _templ.go")
 	}
 
 	txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)

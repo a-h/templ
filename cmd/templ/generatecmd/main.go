@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -169,7 +169,7 @@ func generateWatched(ctx context.Context, w io.Writer, args Arguments, opts []ge
 
 	var firstRunComplete bool
 	fileNameToLastModTime := make(map[string]time.Time)
-	fileNameToHash := make(map[string][md5.Size]byte)
+	fileNameToHash := make(map[string][sha256.Size]byte)
 
 	for !firstRunComplete || args.Watch {
 		changesFound, errs := processChanges(
@@ -263,10 +263,6 @@ func generateProduction(ctx context.Context, w io.Writer, args Arguments, opts [
 				fmt.Fprintf(w, "Error starting command: %v\n", err)
 			}
 		}
-		// Send server-sent event.
-		if p != nil {
-			p.SendSSE("message", "reload")
-		}
 	}
 
 	if err := checkTemplVersion(args.Path); err != nil {
@@ -291,7 +287,7 @@ func shouldSkipDir(dir string) bool {
 	return false
 }
 
-func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime map[string]time.Time, hashes map[string][md5.Size]byte, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int, watching, keepOrphanedFiles bool) (changesFound int, errs []error) {
+func processChanges(ctx context.Context, stdout io.Writer, fileNameToLastModTime map[string]time.Time, hashes map[string][sha256.Size]byte, path string, generateSourceMapVisualisations bool, opts []generator.GenerateOpt, maxWorkerCount int, watching, keepOrphanedFiles bool) (changesFound int, errs []error) {
 	sem := make(chan struct{}, maxWorkerCount)
 	var wg sync.WaitGroup
 
@@ -386,7 +382,7 @@ func openURL(w io.Writer, url string) error {
 
 // processSingleFile generates Go code for a single template.
 // If a basePath is provided, the filename included in error messages is relative to it.
-func processSingleFile(ctx context.Context, stdout io.Writer, basePath, fileName string, hashes map[string][md5.Size]byte, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (err error) {
+func processSingleFile(ctx context.Context, stdout io.Writer, basePath, fileName string, hashes map[string][sha256.Size]byte, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (err error) {
 	start := time.Now()
 	diag, err := generate(ctx, basePath, fileName, hashes, generateSourceMapVisualisations, opts)
 	if err != nil {
@@ -415,13 +411,13 @@ func printDiagnostics(w io.Writer, fileName string, diags []parser.Diagnostic) {
 
 // generate Go code for a single template.
 // If a basePath is provided, the filename included in error messages is relative to it.
-func generate(ctx context.Context, basePath, fileName string, hashes map[string][md5.Size]byte, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (diagnostics []parser.Diagnostic, err error) {
+func generate(ctx context.Context, basePath, fileName string, hashes map[string][sha256.Size]byte, generateSourceMapVisualisations bool, opts []generator.GenerateOpt) (diagnostics []parser.Diagnostic, err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
 
 	if hashes == nil {
-		hashes = make(map[string][md5.Size]byte)
+		hashes = make(map[string][sha256.Size]byte)
 	}
 
 	t, err := parser.Parse(fileName)
@@ -442,27 +438,26 @@ func generate(ctx context.Context, basePath, fileName string, hashes map[string]
 		return nil, fmt.Errorf("%s generation error: %w", fileName, err)
 	}
 
-	data, err := format.Source(b.Bytes())
+	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
 		return nil, fmt.Errorf("%s source formatting error: %w", fileName, err)
 	}
 
-	// Hash output, and write out the file if the hash has changed.
-	hash := md5.Sum(data)
-	if hashes[targetFileName] != hash {
-		if err = os.WriteFile(targetFileName, data, 0o644); err != nil {
+	// Hash output, and write out the file if the goCodeHash has changed.
+	goCodeHash := sha256.Sum256(formattedGoCode)
+	if hashes[targetFileName] != goCodeHash {
+		if err = os.WriteFile(targetFileName, formattedGoCode, 0o644); err != nil {
 			return nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
 		}
-		hashes[targetFileName] = hash
+		hashes[targetFileName] = goCodeHash
 	}
 
 	// Add the txt file if it has changed.
 	if len(literals) > 0 {
 		txtFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.txt"
-		contents := strings.Join(literals, "\n")
-		txtHash := md5.Sum([]byte(contents))
+		txtHash := sha256.Sum256([]byte(literals))
 		if hashes[txtFileName] != txtHash {
-			if err = os.WriteFile(txtFileName, []byte(strings.Join(literals, "\n")), 0o644); err != nil {
+			if err = os.WriteFile(txtFileName, []byte(literals), 0o644); err != nil {
 				return nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
 			}
 			hashes[txtFileName] = txtHash

@@ -49,15 +49,16 @@ func WithFileName(name string) GenerateOpt {
 
 func WithExtractStrings() GenerateOpt {
 	return func(g *generator) error {
-		g.w.extractStrings = true
-		g.w.strings = []string{""}
+		g.w.literalWriter = &watchLiteralWriter{
+			builder: &strings.Builder{},
+		}
 		return nil
 	}
 }
 
 // Generate generates Go code from the input template file to w, and returns a map of the location of Go expressions in the template
 // to the location of the generated Go code in the output.
-func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, literals []string, err error) {
+func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, literals string, err error) {
 	g := &generator{
 		tf:        template,
 		w:         NewRangeWriter(w),
@@ -70,7 +71,7 @@ func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (s
 	}
 	err = g.generate()
 	sm = g.sourceMap
-	literals = g.w.strings
+	literals = g.w.literalWriter.literals()
 	return
 }
 
