@@ -3,77 +3,77 @@ package main
 import "strings"
 
 templ nav(c *pageContext, baseURL string, pages []*Page, depth int) {
-    <nav
-        class={
-            "flex",
-            "flex-col",
-             "space-y-2",
-              templ.KV("pt-2", depth > 0),
-        }>
-        for _, page := range pages {
-            if page.Type() == Section {
-                @section(c, baseURL, page, depth)
-            } else {
-                @link(c, baseURL, page, depth)
-            }
-        }
-    </nav>
+	<nav
+		class={
+			"flex",
+			"flex-col",
+			"space-y-2",
+			templ.KV("pt-2", depth > 0),
+		}
+	>
+		for _, page := range pages {
+			if page.Type() == Section {
+				@section(c, baseURL, page, depth)
+			} else {
+				@link(c, baseURL, page, depth)
+			}
+		}
+	</nav>
 }
 
 templ section(c *pageContext, baseURL string, page *Page, depth int) {
-    <div
-        id={ page.Slug() }
-        class={
-            templ.KV("active", strings.HasPrefix(c.Active, page.Slug())),
-        }>
-        <div
-            class={
-                "flex",
-                "justify-between",
-                "toggle",
-                "block",
-                "p-2",
-                "rounded",
-                "cursor-pointer",
-                "w-full",
-                "hover:bg-gray-200",
-                "dark:hover:bg-gray-700",
-                templ.KV("active", strings.HasPrefix(c.Active, page.Slug())),
-                templ.KV("font-bold", strings.HasPrefix(c.Active, page.Slug())),
-            }>
-            { page.Title() }
-            <svg class="w-6 h-6 chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M6.293 6.293C6.683 5.903 7.316 5.903 7.707 6.293L10 8.586L12.293 6.293C12.683 5.903 13.316 5.903 13.707 6.293C14.098 6.683 14.098 7.316 13.707 7.707L10.707 10.707C10.512 10.902 10.256 11 10 11C9.744 11 9.488 10.902 9.293 10.707L6.293 7.707C5.902 7.316 5.902 6.683 6.293 6.293Z">
-                </path>
-            </svg>
-        </div>
-
-        if len(page.Children()) > 0 {
-            <div class="wrapper">
-                <div class="pl-1 inner">
-                     @nav(c, baseURL, page.Children(), depth + 1)
-                </div>
-            </div>
-        }
-    </div>
+	<div
+		id={ page.Slug() }
+		class={ templ.KV("active", strings.HasPrefix(c.Active, page.Slug())), }
+	>
+		<div
+			class={
+				"flex",
+				"justify-between",
+				"toggle",
+				"block",
+				"p-2",
+				"rounded",
+				"cursor-pointer",
+				"w-full",
+				"hover:bg-gray-200",
+				"dark:hover:bg-gray-700",
+				templ.KV("active", strings.HasPrefix(c.Active, page.Slug())),
+				templ.KV("font-bold", strings.HasPrefix(c.Active, page.Slug())),
+			}
+		>
+			{ page.Title() }
+			<svg class="w-6 h-6 chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+				<path fill-rule="evenodd" clip-rule="evenodd" d="M6.293 6.293C6.683 5.903 7.316 5.903 7.707 6.293L10 8.586L12.293 6.293C12.683 5.903 13.316 5.903 13.707 6.293C14.098 6.683 14.098 7.316 13.707 7.707L10.707 10.707C10.512 10.902 10.256 11 10 11C9.744 11 9.488 10.902 9.293 10.707L6.293 7.707C5.902 7.316 5.902 6.683 6.293 6.293Z"></path>
+			</svg>
+		</div>
+		if len(page.Children()) > 0 {
+			<div class="wrapper">
+				<div class="pl-1 inner">
+					@nav(c, baseURL, page.Children(), depth + 1)
+				</div>
+			</div>
+		}
+	</div>
 }
 
 templ link(c *pageContext, baseURL string, page *Page, depth int) {
-    <a
-        id={ page.Slug() }
-        href={ templ.URL(baseURL + page.Href()) }
-        class={
-            "block",
-            "p-2",
-            "rounded",
-            "w-full",
-            "hover:bg-gray-200",
-            "dark:hover:bg-gray-700",
-            templ.KV("font-bold", strings.HasPrefix(c.Active, page.Slug())),
-            templ.KV("font-normal", !strings.HasPrefix(c.Active, page.Slug())),
-            templ.KV("bg-gray-200", c.Active == page.Slug()),
-            templ.KV("dark:bg-gray-700", c.Active == page.Slug()),
-        }>
-        { page.Title() }
-    </a>
+	<a
+		id={ page.Slug() }
+		href={ templ.URL(baseURL + page.Href()) }
+		class={
+			"block",
+			"p-2",
+			"rounded",
+			"w-full",
+			"hover:bg-gray-200",
+			"dark:hover:bg-gray-700",
+			templ.KV("font-bold", strings.HasPrefix(c.Active, page.Slug())),
+			templ.KV("font-normal", !strings.HasPrefix(c.Active, page.Slug())),
+			templ.KV("bg-gray-200", c.Active == page.Slug()),
+			templ.KV("dark:bg-gray-700", c.Active == page.Slug()),
+		}
+	>
+		{ page.Title() }
+	</a>
 }

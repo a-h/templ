@@ -1,126 +1,121 @@
 package main
 
 templ HTML(c *pageContext, baseURL string, pages []*Page, data string) {
-    <html>
-        <head>
-            <title>{ c.Title }</title>
-            <meta charset="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <link href={ baseURL + "favicon.ico" } rel="icon" />
-            <link href={ baseURL + "style.css" } rel="stylesheet" />
-            <link href={ baseURL + "prism.css" } rel="stylesheet" />
-        </head>
-        <body class="bg-white dark:bg-gray-800 dark:text-gray-100">
-            @frame(header(baseURL), sidebar(c, baseURL, pages), content(data), footer())
-            @script(baseURL)
-            <script src={ baseURL + "prism.js" }></script>
-            <script src={ baseURL + "prism-include-languages.js" }></script>
-            <script src={ baseURL + "main.js" }></script>
-            <script src={ baseURL + "search_content.js" }></script>
-            <script src={ baseURL + "search.js" }></script>
-            <script src={ baseURL + "accordion.js" }></script>
-        </body>
-    </html>
+	<html>
+		<head>
+			<title>{ c.Title }</title>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<link href={ baseURL + "favicon.ico" } rel="icon"/>
+			<link href={ baseURL + "style.css" } rel="stylesheet"/>
+			<link href={ baseURL + "prism.css" } rel="stylesheet"/>
+		</head>
+		<body class="bg-white dark:bg-gray-800 dark:text-gray-100">
+			@frame(header(baseURL), sidebar(c, baseURL, pages), content(data), footer())
+			@script(baseURL)
+			<script src={ baseURL + "prism.js" }></script>
+			<script src={ baseURL + "prism-include-languages.js" }></script>
+			<script src={ baseURL + "main.js" }></script>
+			<script src={ baseURL + "search_content.js" }></script>
+			<script src={ baseURL + "search.js" }></script>
+			<script src={ baseURL + "accordion.js" }></script>
+		</body>
+	</html>
 }
 
 templ frame(headerContent, asideContent, mainContent, footerContent templ.Component) {
-    <div id="frame" class="flex min-h-screen w-full overflow-x-hidden">
-        <aside id="sidebar" class="fixed w-10/12 md:w-64 flex flex-col h-full md:h-screen z-20">
-            <div class="overflow-y-auto w-full h-full">
-                {! asideContent }
-            </div>
-        </aside>
-        <div class="flex flex-col flex-1 md:ml-64 overflow-hidden">
-            <div id="overlay" class="fixed w-full h-full bg-black z-10 transition-opacity opacity-0 hidden cursor-pointer"></div>
-            <header class="sticky top-0 w-full flex flex-row">
-                {! headerContent }
-            </header>
-            <main class="flex-1">
-                {! mainContent }
-            </main>
-            <footer>
-                {! footerContent }
-            </footer>
-        </div>
-    </div>
+	<div id="frame" class="flex min-h-screen w-full overflow-x-hidden">
+		<aside id="sidebar" class="fixed w-10/12 md:w-64 flex flex-col h-full md:h-screen z-20">
+			<div class="overflow-y-auto w-full h-full">
+				@asideContent
+			</div>
+		</aside>
+		<div class="flex flex-col flex-1 md:ml-64 overflow-hidden">
+			<div id="overlay" class="fixed w-full h-full bg-black z-10 transition-opacity opacity-0 hidden cursor-pointer"></div>
+			<header class="sticky top-0 w-full flex flex-row">
+				@headerContent
+			</header>
+			<main class="flex-1">
+				@mainContent
+			</main>
+			<footer>
+				@footerContent
+			</footer>
+		</div>
+	</div>
 }
 
 templ logo(baseURL string) {
-    <a href={ templ.URL(baseURL) }>
-        <h1 class="text-2xl font-bold">
-            <img src={ baseURL + "img/logo.svg" } alt="templ" class="h-12 w-52" />
-        </h1>
-    </a>
+	<a href={ templ.URL(baseURL) }>
+		<h1 class="text-2xl font-bold">
+			<img src={ baseURL + "img/logo.svg" } alt="templ" class="h-12 w-52"/>
+		</h1>
+	</a>
 }
 
 templ header(baseURL string) {
-    <div class="min-h-full min-w-full p-4 flex flex-col md:flex-row bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
-        <div class="flex flex-row w-full sm:w-64 md:hidden">
-            <div class="py-3">
-                @menu_toggle()
-            </div>
-            @logo(baseURL)
-        </div>
-        <div class="flex flex-row flex-1 items-center justify-between space-x-2 mt-2 sm:mt-0">
-            <div class="flex items-center space-x-2 m-0 w-full">
-                <input id="search" type="text" name="q" placeholder="Search" class="p-2 rounded border-2 dark:border-none text-gray-700 dark:bg-gray-700 dark:text-gray-100 w-full md:w-96" />
-                <button id="search-clear" class="hidden p-2 rounded bg-gray-700 text-gray-100">
-                    Clear
-                </button>
-            </div>
-
-
-            <div class="hidden md:flex flex-row">
-                <div>
-                    @dark_mode_toggle()
-                </div>
-
-                <!-- github -->
-                <a href="https://github.com/a-h/templ" class="flex ml-4 hover:text-gray-300 flex-row space-x-2">
-                    <svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.13 11.11 3.57 11.77 3.72 12.01C4.43 13.16 5.55 12.82 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.72 3.23 5.99 3.75 5.43C3.67 5.23 3.39 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.67 3.95 7.34 3.86 8.02 3.86C8.69 3.86 9.36 3.95 10.01 4.13C11.54 3.09 12.21 3.31 12.21 3.31C12.64 4.41 12.36 5.23 12.28 5.43C12.8 5.99 13.11 6.72 13.11 7.58C13.11 10.65 11.24 11.33 9.46 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.11 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C13.71 14.53 16 11.53 16 8C16 3.58 12.42 0 8 0Z">
-                        </path>
-                    </svg>
-                    <span>GitHub</span>
-                </a>
-            </div>
-        </div>
-    </div>
+	<div class="min-h-full min-w-full p-4 flex flex-col md:flex-row bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
+		<div class="flex flex-row w-full sm:w-64 md:hidden">
+			<div class="py-3">
+				@menu_toggle()
+			</div>
+			@logo(baseURL)
+		</div>
+		<div class="flex flex-row flex-1 items-center justify-between space-x-2 mt-2 sm:mt-0">
+			<div class="flex items-center space-x-2 m-0 w-full">
+				<input id="search" type="text" name="q" placeholder="Search" class="p-2 rounded border-2 dark:border-none text-gray-700 dark:bg-gray-700 dark:text-gray-100 w-full md:w-96"/>
+				<button id="search-clear" class="hidden p-2 rounded bg-gray-700 text-gray-100">
+					Clear
+				</button>
+			</div>
+			<div class="hidden md:flex flex-row">
+				<div>
+					@dark_mode_toggle()
+				</div>
+				<!-- github -->
+				<a href="https://github.com/a-h/templ" class="flex ml-4 hover:text-gray-300 flex-row space-x-2">
+					<svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+						<path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.13 11.11 3.57 11.77 3.72 12.01C4.43 13.16 5.55 12.82 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.72 3.23 5.99 3.75 5.43C3.67 5.23 3.39 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.67 3.95 7.34 3.86 8.02 3.86C8.69 3.86 9.36 3.95 10.01 4.13C11.54 3.09 12.21 3.31 12.21 3.31C12.64 4.41 12.36 5.23 12.28 5.43C12.8 5.99 13.11 6.72 13.11 7.58C13.11 10.65 11.24 11.33 9.46 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.11 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C13.71 14.53 16 11.53 16 8C16 3.58 12.42 0 8 0Z"></path>
+					</svg>
+					<span>GitHub</span>
+				</a>
+			</div>
+		</div>
+	</div>
 }
 
 templ sidebar(c *pageContext, baseURL string, pages []*Page) {
-    <div class="min-h-full min-w-full p-4 border-r-2 dark:border-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 space-y-2">
-        @logo(baseURL)
-        @nav(c, baseURL, pages, 0)
-    </div>
+	<div class="min-h-full min-w-full p-4 border-r-2 dark:border-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 space-y-2">
+		@logo(baseURL)
+		@nav(c, baseURL, pages, 0)
+	</div>
 }
 
 templ content(data string) {
-    <section id="search-results" class="hidden flex-1 p-4 max-w-prose">
-        <div class="prose">
-            <h1>
-                Search results
-            </h1>
-        </div>
-        <div id="search-results-list"></div>
-    </section>
-    <main id="main" class="p-4 prose dark:prose-invert">
-        @raw(data)
-    </main>
+	<section id="search-results" class="hidden flex-1 p-4 max-w-prose">
+		<div class="prose">
+			<h1>
+				Search results
+			</h1>
+		</div>
+		<div id="search-results-list"></div>
+	</section>
+	<main id="main" class="p-4 prose dark:prose-invert">
+		@raw(data)
+	</main>
 }
 
 templ footer() {
-    <div class="flex justify-between min-h-full min-w-full p-4 bg-gray-800 text-gray-100 md:hidden">
-        <div>
-            @dark_mode_toggle()
-        </div>
-       <!-- github -->
-       <a href="https://github.com/a-h/templ" class="flex items-center space-x-2 hover:text-gray-300">
-           <svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-               <path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.13 11.11 3.57 11.77 3.72 12.01C4.43 13.16 5.55 12.82 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.72 3.23 5.99 3.75 5.43C3.67 5.23 3.39 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.67 3.95 7.34 3.86 8.02 3.86C8.69 3.86 9.36 3.95 10.01 4.13C11.54 3.09 12.21 3.31 12.21 3.31C12.64 4.41 12.36 5.23 12.28 5.43C12.8 5.99 13.11 6.72 13.11 7.58C13.11 10.65 11.24 11.33 9.46 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.11 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C13.71 14.53 16 11.53 16 8C16 3.58 12.42 0 8 0Z">
-               </path>
-           </svg>
-           <span>GitHub</span>
-       </a>
-    </div>
+	<div class="flex justify-between min-h-full min-w-full p-4 bg-gray-800 text-gray-100 md:hidden">
+		<div>
+			@dark_mode_toggle()
+		</div>
+		<!-- github -->
+		<a href="https://github.com/a-h/templ" class="flex items-center space-x-2 hover:text-gray-300">
+			<svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+				<path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.13 11.11 3.57 11.77 3.72 12.01C4.43 13.16 5.55 12.82 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.72 3.23 5.99 3.75 5.43C3.67 5.23 3.39 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.67 3.95 7.34 3.86 8.02 3.86C8.69 3.86 9.36 3.95 10.01 4.13C11.54 3.09 12.21 3.31 12.21 3.31C12.64 4.41 12.36 5.23 12.28 5.43C12.8 5.99 13.11 6.72 13.11 7.58C13.11 10.65 11.24 11.33 9.46 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.11 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C13.71 14.53 16 11.53 16 8C16 3.58 12.42 0 8 0Z"></path>
+			</svg>
+			<span>GitHub</span>
+		</a>
+	</div>
 }
