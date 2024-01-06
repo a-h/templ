@@ -14,6 +14,12 @@ Download the latest release from https://github.com/a-h/templ/releases/latest
 
 ## Nix
 
+templ is available to install using the nixpkgs-unstable channel.
+
+```sh
+nix-env -f channel:nixpkgs-unstable -iA templ
+```
+
 templ provides a Nix flake with an exported package containing the binary at https://github.com/a-h/templ/blob/main/flake.nix
 
 ```sh
