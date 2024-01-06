@@ -33,7 +33,10 @@ jobs:
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - uses: actions/setup-node@v3
         with:
           node-version: '20'
           cache: npm
