@@ -802,37 +802,63 @@ func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 	}
 	txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
 
-	state, cached := watchModeCache[txtFilePath]
-	if cached && time.Since(state.modTime) < time.Millisecond*100 {
-		return writeQuotedString(w, state.strings[lineNum-1])
+	literals, err := getWatchedStrings(txtFilePath)
+	if err != nil {
+		return fmt.Errorf("templ: failed to cache strings: %w", err)
 	}
 
-	watchStateMutex.Lock()
-	defer watchStateMutex.Unlock()
+	if lineNum > len(literals) {
+		return errors.New("templ: failed to find line " + strconv.Itoa(lineNum) + " in " + txtFilePath)
+	}
+
+	unquoted, err := strconv.Unquote(`"` + literals[lineNum-1] + `"`)
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(io.Writer(w), unquoted)
+	return err
+}
+
+func getWatchedStrings(txtFilePath string) ([]string, error) {
+	state, cached := watchModeCache[txtFilePath]
+	if !cached {
+		return cacheStrings(txtFilePath)
+	}
+
+	if time.Since(state.modTime) < time.Millisecond*100 {
+		return state.strings, nil
+	}
 
 	info, err := os.Stat(txtFilePath)
 	if err != nil {
-		return fmt.Errorf("templ: failed to stat %s: %w", txtFilePath, err)
+		return nil, fmt.Errorf("templ: failed to stat %s: %w", txtFilePath, err)
 	}
 
-	if cached && !info.ModTime().After(state.modTime) {
-		return writeQuotedString(w, state.strings[lineNum-1])
+	if !info.ModTime().After(state.modTime) {
+		return state.strings, nil
 	}
+
+	return cacheStrings(txtFilePath)
+}
+
+func cacheStrings(txtFilePath string) ([]string, error) {
+	watchStateMutex.Lock()
+	defer watchStateMutex.Unlock()
 
 	txtFile, err := os.Open(txtFilePath)
 	if err != nil {
-		return fmt.Errorf("templ: failed to open %s: %w", txtFilePath, err)
+		return nil, fmt.Errorf("templ: failed to open %s: %w", txtFilePath, err)
 	}
 	defer txtFile.Close()
 
-	info, err = txtFile.Stat()
+	info, err := txtFile.Stat()
 	if err != nil {
-		return fmt.Errorf("templ: failed to stat %s: %w", txtFilePath, err)
+		return nil, fmt.Errorf("templ: failed to stat %s: %w", txtFilePath, err)
 	}
 
 	all, err := io.ReadAll(txtFile)
 	if err != nil {
-		return fmt.Errorf("templ: failed to read %s: %w", txtFilePath, err)
+		return nil, fmt.Errorf("templ: failed to read %s: %w", txtFilePath, err)
 	}
 
 	literals := strings.Split(string(all), "\n")
@@ -841,18 +867,5 @@ func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 		strings: literals,
 	}
 
-	if lineNum > len(literals) {
-		return errors.New("templ: failed to find line " + strconv.Itoa(lineNum) + " in " + txtFilePath)
-	}
-
-	return writeQuotedString(w, literals[lineNum-1])
-}
-
-func writeQuotedString(w io.Writer, s string) (err error) {
-	unquoted, err := strconv.Unquote(`"` + s + `"`)
-	if err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, unquoted)
-	return err
+	return literals, nil
 }
