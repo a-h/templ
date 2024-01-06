@@ -11,7 +11,7 @@ templ generate
 Dir: react
 
 ```
-esbuild --bundle index.ts --outdir=../static --minify
+esbuild --bundle index.ts --outdir=../static --minify --global-name=bundle
 ```
 
 ### run
