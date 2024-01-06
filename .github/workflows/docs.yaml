@@ -1,6 +1,9 @@
 name: Deploy Docs
 
 on:
+  push:
+      branches:
+      - main
   release:
     types: [published]
   workflow_dispatch:
@@ -43,6 +46,12 @@ jobs:
         run: |
           cd docs
           npm run build
+      - name: Build new docs
+        run: |
+          cd docgen
+          bash scripts/install.sh
+          bash scripts/generate.sh
+          mv public ../docs/build/new
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
