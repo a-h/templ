@@ -17,7 +17,7 @@ var docGenStaticEmbed embed.FS
 const (
 	outputPath     = "public"
 	contentPath    = "../docs"
-	defaultBaseURL = "https://cugu.github.com/templ/new/"
+	defaultBaseURL = "https://cugu.github.io/templ/new/"
 )
 
 func main() {
