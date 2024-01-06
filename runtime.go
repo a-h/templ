@@ -1,7 +1,6 @@
 package templ
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -19,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/a-h/templ/safehtml"
 )
@@ -782,6 +782,11 @@ func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
 	return
 }
 
+var watchModeCache = map[string]struct {
+	modTime time.Time
+	strings []string
+}{}
+
 // WriteWatchModeString is used when rendering templates in development mode.
 // the generator would have written non-go code to the _templ.txt file, which
 // is then read by this function and written to the output.
@@ -792,24 +797,58 @@ func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 	}
 
 	txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
+
+	info, err := os.Stat(txtFilePath)
+	if err != nil {
+		return fmt.Errorf("templ: failed to stat %s: %w", txtFilePath, err)
+	}
+
+	cached, ok := watchModeCache[txtFilePath]
+	if ok && !info.ModTime().After(cached.modTime) {
+		unquoted, err := strconv.Unquote(`"` + cached.strings[lineNum-1] + `"`)
+		if err != nil {
+			return err
+		}
+		_, err = w.WriteString(unquoted)
+		return err
+	}
+
 	txtFile, err := os.Open(txtFilePath)
 	if err != nil {
 		return fmt.Errorf("templ: failed to open %s: %w", txtFilePath, err)
 	}
 	defer txtFile.Close()
 
-	currentLine := 1
-	sc := bufio.NewScanner(txtFile)
-	for sc.Scan() {
-		if lineNum == currentLine {
-			unquoted, err := strconv.Unquote(`"` + sc.Text() + `"`)
-			if err != nil {
-				return err
-			}
-			_, err = w.WriteString(unquoted)
-			return err
-		}
-		currentLine++
+	info, err = txtFile.Stat()
+	if err != nil {
+		return fmt.Errorf("templ: failed to stat %s: %w", txtFilePath, err)
+	}
+
+	all, err := io.ReadAll(txtFile)
+	if err != nil {
+		return fmt.Errorf("templ: failed to read %s: %w", txtFilePath, err)
+	}
+
+	literals := strings.Split(string(all), "\n")
+	watchModeCache[txtFilePath] = struct {
+		modTime time.Time
+		strings []string
+	}{
+		modTime: info.ModTime(),
+		strings: literals,
+	}
+
+	if lineNum > len(literals) {
+		return errors.New("templ: failed to find line " + strconv.Itoa(lineNum) + " in " + txtFilePath)
+	}
+
+	unquoted, err := strconv.Unquote(`"` + literals[lineNum-1] + `"`)
+	if err != nil {
+		return err
+	}
+	_, err = w.WriteString(unquoted)
+	if err != nil {
+		return err
 	}
 
 	return nil
