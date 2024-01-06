@@ -71,7 +71,6 @@ func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (s
 	err = g.generate()
 	sm = g.sourceMap
 	literals = g.w.strings
-
 	return
 }
 

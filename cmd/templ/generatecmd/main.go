@@ -77,7 +77,7 @@ func Run(w io.Writer, args Arguments) (err error) {
 			select {
 			case <-signalChan: // First signal, cancel context.
 				if watching {
-					fmt.Println("stop watching")
+					fmt.Println("Stopping watch operation...")
 					watchCancel()
 					continue
 				}
@@ -447,23 +447,23 @@ func generate(ctx context.Context, basePath, fileName string, hashes map[string]
 		return nil, fmt.Errorf("%s source formatting error: %w", fileName, err)
 	}
 
-	// Hash and write the file if the hash has changed
+	// Hash output, and write out the file if the hash has changed.
 	hash := md5.Sum(data)
 	if hashes[targetFileName] != hash {
 		if err = os.WriteFile(targetFileName, data, 0o644); err != nil {
-			return nil, fmt.Errorf("%s write file error: %w", targetFileName, err)
+			return nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
 		}
 		hashes[targetFileName] = hash
 	}
 
-	// Add the txt file if it has changed
+	// Add the txt file if it has changed.
 	if len(literals) > 0 {
 		txtFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.txt"
 		contents := strings.Join(literals, "\n")
 		txtHash := md5.Sum([]byte(contents))
 		if hashes[txtFileName] != txtHash {
 			if err = os.WriteFile(txtFileName, []byte(strings.Join(literals, "\n")), 0o644); err != nil {
-				return nil, fmt.Errorf("%s write static text error: %w", txtFileName, err)
+				return nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
 			}
 			hashes[txtFileName] = txtHash
 		}

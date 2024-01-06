@@ -19,7 +19,7 @@ type RangeWriter struct {
 	inLiteral bool
 	w         io.Writer
 
-	// Extract strings
+	// Extract strings.
 	extractStrings bool
 	strings        []string
 }
