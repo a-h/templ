@@ -1,0 +1,36 @@
+package main
+
+import "fmt"
+
+script renderHelloReact(id, name string) {
+	// Use the renderHello function from the React bundle.
+	bundle.renderHello(id, name)
+}
+
+templ Hello(id, name string) {
+	<div id={ id }></div>
+	@renderHelloReact(id, name)
+}
+
+templ page() {
+	<html>
+		<head>
+			<title>React integration</title>
+		</head>
+		<body>
+			<div id="react-header"></div>
+			<div id="react-content"></div>
+			<div>
+				This is server-side content from templ.
+			</div>
+			<!-- Load the React bundle that was created using esbuild -->
+			<!-- Since the bundle was coded to expect the react-header and react-content elements to exist already, in this case, the script has to be loaded after the elements are on the page -->
+			<script src="static/index.js"></script>
+			<!-- Now that the React bundle is loaded, we can use the functions that are in it -->
+			<!-- the renderName function in the bundle can be used, but we want to pass it some server-side data -->
+			for i, name := range []string{"Alice", "Bob", "Charlie"} {
+				@Hello(fmt.Sprintf("react-hello-%d", i), name)
+			}
+		</body>
+	</html>
+}

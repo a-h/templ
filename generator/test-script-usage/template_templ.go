@@ -11,8 +11,9 @@ import "bytes"
 
 func withParameters(a string, b string, c int) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name:       `__templ_withParameters_1056`,
-		Function:   `function __templ_withParameters_1056(a, b, c){console.log(a, b, c);}`,
+		Name: `__templ_withParameters_1056`,
+		Function: `function __templ_withParameters_1056(a, b, c){console.log(a, b, c);
+}`,
 		Call:       templ.SafeScript(`__templ_withParameters_1056`, a, b, c),
 		CallInline: templ.SafeScriptInline(`__templ_withParameters_1056`, a, b, c),
 	}
@@ -20,8 +21,9 @@ func withParameters(a string, b string, c int) templ.ComponentScript {
 
 func withoutParameters() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name:       `__templ_withoutParameters_6bbf`,
-		Function:   `function __templ_withoutParameters_6bbf(){alert("hello");}`,
+		Name: `__templ_withoutParameters_6bbf`,
+		Function: `function __templ_withoutParameters_6bbf(){alert("hello");
+}`,
 		Call:       templ.SafeScript(`__templ_withoutParameters_6bbf`),
 		CallInline: templ.SafeScriptInline(`__templ_withoutParameters_6bbf`),
 	}
@@ -29,8 +31,9 @@ func withoutParameters() templ.ComponentScript {
 
 func onClick() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name:       `__templ_onClick_657d`,
-		Function:   `function __templ_onClick_657d(){alert("clicked");}`,
+		Name: `__templ_onClick_657d`,
+		Function: `function __templ_onClick_657d(){alert("clicked");
+}`,
 		Call:       templ.SafeScript(`__templ_onClick_657d`),
 		CallInline: templ.SafeScriptInline(`__templ_onClick_657d`),
 	}
@@ -95,6 +98,16 @@ func Button(text string) templ.Component {
 	})
 }
 
+func withComment() templ.ComponentScript {
+	return templ.ComponentScript{
+		Name: `__templ_withComment_9cf8`,
+		Function: `function __templ_withComment_9cf8(){//'
+}`,
+		Call:       templ.SafeScript(`__templ_withComment_9cf8`),
+		CallInline: templ.SafeScriptInline(`__templ_withComment_9cf8`),
+	}
+}
+
 func ThreeButtons() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -150,8 +163,9 @@ func ThreeButtons() templ.Component {
 
 func conditionalScript() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name:       `__templ_conditionalScript_de41`,
-		Function:   `function __templ_conditionalScript_de41(){alert("conditional");}`,
+		Name: `__templ_conditionalScript_de41`,
+		Function: `function __templ_conditionalScript_de41(){alert("conditional");
+}`,
 		Call:       templ.SafeScript(`__templ_conditionalScript_de41`),
 		CallInline: templ.SafeScriptInline(`__templ_conditionalScript_de41`),
 	}

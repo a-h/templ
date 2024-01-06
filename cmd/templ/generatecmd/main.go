@@ -524,7 +524,7 @@ func logWithDecoration(w io.Writer, decoration string, col color.Attribute, form
 }
 
 // Replace "go 1.21.3" with "go 1.21" until https://github.com/golang/go/issues/61888 is fixed, see templ issue https://github.com/a-h/templ/issues/355
-var goVersionRegepx = regexp.MustCompile(`\ngo (\d+\.\d+)\.\d+\n`)
+var goVersionRegexp = regexp.MustCompile(`\ngo (\d+\.\d+)\.\d+\n`)
 
 func checkTemplVersion(dir string) error {
 	// Walk up the directory tree, starting at dir, until we find a go.mod file.
@@ -556,7 +556,7 @@ func checkTemplVersion(dir string) error {
 		}
 
 		// Replace "go 1.21.x" with "go 1.21".
-		m = goVersionRegepx.ReplaceAll(m, []byte("\ngo $1\n"))
+		m = goVersionRegexp.ReplaceAll(m, []byte("\ngo $1\n"))
 
 		mf, err := modfile.Parse(current, m, nil)
 		if err != nil {
