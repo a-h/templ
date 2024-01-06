@@ -782,10 +782,15 @@ func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
 	return
 }
 
-var watchModeCache = map[string]struct {
+var (
+	watchModeCache  = map[string]watchState{}
+	watchStateMutex sync.Mutex
+)
+
+type watchState struct {
 	modTime time.Time
 	strings []string
-}{}
+}
 
 // WriteWatchModeString is used when rendering templates in development mode.
 // the generator would have written non-go code to the _templ.txt file, which
@@ -795,22 +800,23 @@ func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 	if !strings.HasSuffix(path, "_templ.go") {
 		return errors.New("templ: WriteWatchModeString can only be called from _templ.go")
 	}
-
 	txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
+
+	state, cached := watchModeCache[txtFilePath]
+	if cached && time.Since(state.modTime) < time.Millisecond*100 {
+		return writeQuotedString(w, state.strings[lineNum-1])
+	}
+
+	watchStateMutex.Lock()
+	defer watchStateMutex.Unlock()
 
 	info, err := os.Stat(txtFilePath)
 	if err != nil {
 		return fmt.Errorf("templ: failed to stat %s: %w", txtFilePath, err)
 	}
 
-	cached, ok := watchModeCache[txtFilePath]
-	if ok && !info.ModTime().After(cached.modTime) {
-		unquoted, err := strconv.Unquote(`"` + cached.strings[lineNum-1] + `"`)
-		if err != nil {
-			return err
-		}
-		_, err = w.WriteString(unquoted)
-		return err
+	if cached && !info.ModTime().After(state.modTime) {
+		return writeQuotedString(w, state.strings[lineNum-1])
 	}
 
 	txtFile, err := os.Open(txtFilePath)
@@ -830,10 +836,7 @@ func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 	}
 
 	literals := strings.Split(string(all), "\n")
-	watchModeCache[txtFilePath] = struct {
-		modTime time.Time
-		strings []string
-	}{
+	watchModeCache[txtFilePath] = watchState{
 		modTime: info.ModTime(),
 		strings: literals,
 	}
@@ -842,14 +845,14 @@ func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 		return errors.New("templ: failed to find line " + strconv.Itoa(lineNum) + " in " + txtFilePath)
 	}
 
-	unquoted, err := strconv.Unquote(`"` + literals[lineNum-1] + `"`)
-	if err != nil {
-		return err
-	}
-	_, err = w.WriteString(unquoted)
-	if err != nil {
-		return err
-	}
+	return writeQuotedString(w, literals[lineNum-1])
+}
 
-	return nil
+func writeQuotedString(w io.Writer, s string) (err error) {
+	unquoted, err := strconv.Unquote(`"` + s + `"`)
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(w, unquoted)
+	return err
 }
