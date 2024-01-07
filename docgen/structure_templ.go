@@ -39,7 +39,7 @@ func HTML(c *pageContext, baseURL string, pages []*Page, data string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(baseURL + "favicon.ico"))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(baseURL + "img/favicon.ico"))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
