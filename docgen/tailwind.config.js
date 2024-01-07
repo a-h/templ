@@ -23,7 +23,13 @@ module.exports = {
         "./*.templ"
     ],
     safelist: [
-        "anchor"
+        "anchor",
+        "note",
+        "tip",
+        "info",
+        "warning",
+        "critical",
+        "caution"
     ],
     theme: {
         extend: {

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -193,9 +194,14 @@ func (p *Page) Markdown() (string, error) {
 		return "", err
 	}
 
+	// remove frontmatter
 	if strings.HasPrefix(string(b), "---") {
 		_, b, _ = bytes.Cut(b[3:], []byte("---\n"))
 	}
+
+	// replace admonitions
+	re := regexp.MustCompile(`:::([a-z]+)`)
+	b = re.ReplaceAll(b, []byte(":::{.$1}"))
 
 	return string(b), nil
 }
