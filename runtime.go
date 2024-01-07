@@ -782,16 +782,6 @@ func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
 	return
 }
 
-var (
-	watchModeCache  = map[string]watchState{}
-	watchStateMutex sync.Mutex
-)
-
-type watchState struct {
-	modTime time.Time
-	strings []string
-}
-
 // WriteWatchModeString is used when rendering templates in development mode.
 // the generator would have written non-go code to the _templ.txt file, which
 // is then read by this function and written to the output.
@@ -819,7 +809,20 @@ func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 	return err
 }
 
+var (
+	watchModeCache  = map[string]watchState{}
+	watchStateMutex sync.Mutex
+)
+
+type watchState struct {
+	modTime time.Time
+	strings []string
+}
+
 func getWatchedStrings(txtFilePath string) ([]string, error) {
+	watchStateMutex.Lock()
+	defer watchStateMutex.Unlock()
+
 	state, cached := watchModeCache[txtFilePath]
 	if !cached {
 		return cacheStrings(txtFilePath)
@@ -842,9 +845,6 @@ func getWatchedStrings(txtFilePath string) ([]string, error) {
 }
 
 func cacheStrings(txtFilePath string) ([]string, error) {
-	watchStateMutex.Lock()
-	defer watchStateMutex.Unlock()
-
 	txtFile, err := os.Open(txtFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("templ: failed to open %s: %w", txtFilePath, err)
