@@ -48,9 +48,18 @@ func WithFileName(name string) GenerateOpt {
 	}
 }
 
+func WithExtractStrings() GenerateOpt {
+	return func(g *generator) error {
+		g.w.literalWriter = &watchLiteralWriter{
+			builder: &strings.Builder{},
+		}
+		return nil
+	}
+}
+
 // Generate generates Go code from the input template file to w, and returns a map of the location of Go expressions in the template
 // to the location of the generated Go code in the output.
-func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, err error) {
+func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, literals string, err error) {
 	g := &generator{
 		tf:        template,
 		w:         NewRangeWriter(w),
@@ -63,6 +72,7 @@ func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (s
 	}
 	err = g.generate()
 	sm = g.sourceMap
+	literals = g.w.literalWriter.literals()
 	return
 }
 
@@ -1351,19 +1361,9 @@ func (g *generator) writeWhitespace(indentLevel int, n parser.Whitespace) (err e
 }
 
 func (g *generator) writeText(indentLevel int, n parser.Text) (err error) {
-	vn := g.createVariableName()
-	// vn := sExpr
-	if _, err = g.w.WriteIndent(indentLevel, vn+" := "+createGoString(n.Value)+"\n"); err != nil {
-		return err
-	}
-	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
-	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+vn+")\n"); err != nil {
-		return err
-	}
-	if err = g.writeErrorHandler(indentLevel); err != nil {
-		return err
-	}
-	return nil
+	quoted := strconv.Quote(n.Value)
+	_, err = g.w.WriteStringLiteral(indentLevel, quoted[1:len(quoted)-1])
+	return err
 }
 
 func createGoString(s string) string {

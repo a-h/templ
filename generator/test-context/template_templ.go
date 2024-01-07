@@ -44,45 +44,18 @@ func render() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if ctx.Value(contextKeyName).(string) == "test" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Var3 := `the if passed`
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</li>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>the if passed</li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if ctx.Value(contextKeyName).(string) != "test" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Var4 := `the else if failed`
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</li>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>the else if failed</li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if ctx.Value(contextKeyName).(string) == "test" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Var5 := `the else if passed`
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</li>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>the else if passed</li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
