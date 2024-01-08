@@ -8,6 +8,7 @@ import (
 
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/protocol"
+	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 	"go.lsp.dev/uri"
@@ -222,6 +223,10 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 		WillSaveWaitUntil: false,
 		Save:              &lsp.SaveOptions{IncludeText: true},
 	}
+
+	result.ServerInfo.Name = "templ-lsp"
+	result.ServerInfo.Version = templ.Version()
+
 	return result, err
 }
 
