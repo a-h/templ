@@ -22,6 +22,12 @@ See an example of using https://github.com/gofiber/fiber with templ at:
 
 https://github.com/a-h/templ/tree/main/examples/integration-gofiber
 
+## Echo
+
+See an example of using https://echo.labstack.com/ with templ at:
+
+https://github.com/a-h/templ/tree/main/examples/integration-echo
+
 ## `template/html`
 
 See [Using with Go templates](../syntax-and-usage/using-with-go-templates)
