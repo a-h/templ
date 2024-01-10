@@ -8,7 +8,7 @@ templ HTML(c *pageContext, baseURL string, pages []*Page, data string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link href={ baseURL + "img/favicon.ico" } rel="icon"/>
 			<link href={ baseURL + "style.css" } rel="stylesheet"/>
-			<link href={ baseURL + "prism.css" } rel="stylesheet"/>
+			<link id="theme" href={ baseURL + "prism-onedark.css" } rel="stylesheet"/>
 		</head>
 		<body class="bg-white dark:bg-gray-800 dark:text-gray-100">
 			@frame(header(baseURL), sidebar(c, baseURL, pages), content(data), footer())
