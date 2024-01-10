@@ -18,8 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // On page load or when changing themes, best to add inline in `head` to avoid FOUC
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark')
+
+        document.getElementById('theme').href = document.getElementById('theme').href.replace('light', 'dark');
     } else {
         document.documentElement.classList.remove('dark')
+
+        document.getElementById('theme').href = document.getElementById('theme').href.replace('dark', 'light');
     }
 
     const dark_mode_toggles = document.querySelectorAll('.dark-mode-toggle');
@@ -32,6 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.theme = 'dark';
             }
             document.documentElement.classList.toggle('dark');
+
+            let theme_link = document.getElementById('theme');
+            theme_link.href = theme_link.href.replace(theme, localStorage.theme);
         });
     });
 });
