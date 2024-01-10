@@ -15,10 +15,15 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/natefinch/atomic v1.0.1
 	github.com/rs/cors v1.8.3
+	github.com/stefanfritsch/goldmark-fences v1.0.0
+	github.com/yuin/goldmark v1.5.3
+	go.abhg.dev/goldmark/anchor v0.1.1
+	go.abhg.dev/goldmark/mermaid v0.5.0
 	go.lsp.dev/jsonrpc2 v0.10.0
 	go.lsp.dev/uri v0.3.0
 	go.uber.org/zap v1.24.0
-	golang.org/x/mod v0.8.0
+	golang.org/x/mod v0.10.0
+	mvdan.cc/xurls/v2 v2.5.0
 )
 
 require (
