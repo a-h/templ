@@ -206,7 +206,9 @@ It will be included in official releases after version 23.05.
 
 ## Emacs
 
-[templ-ts-mode](https://github.com/danderson/templ-ts-mode) is a major mode for templ files that provides syntax highlighting, indentation, and the other usual major mode things. It requires the [tree-sitter parser](https://github.com/vrischmann/tree-sitter-templ). If the parser is missing, the mode asks you on first use whether you want to download and build it via `treesit-install-language-grammar` (requires git and a C compiler).
+[templ-ts-mode](https://github.com/danderson/templ-ts-mode) is a major mode for templ files that provides syntax highlighting, indentation, and the other usual major mode things. It is available on [MELPA](https://melpa.org/#/templ-ts-mode) and can be installed like any other Emacs package.
+
+Templ support requires the [tree-sitter parser for Templ](https://github.com/vrischmann/tree-sitter-templ). If the parser is missing, the mode asks you on first use whether you want to download and build it via `treesit-install-language-grammar` (requires git and a C compiler).
 
 ## Troubleshooting
 
