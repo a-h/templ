@@ -56,7 +56,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "templelement: simple multiline call",
+			name: "templelement: simple multiline call",
 			input: `@Other_Component(
 				p.Test,
 				"something" + "else",
