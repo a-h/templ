@@ -56,6 +56,33 @@ func TestTemplElementExpressionParser(t *testing.T) {
 			},
 		},
 		{
+			name: "templelement: simple multiline call",
+			input: `@Other_Component(
+				p.Test,
+				"something" + "else",
+			)` + "\n",
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `Other_Component(
+				p.Test,
+				"something" + "else",
+			)`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 60,
+							Line:  3,
+							Col:   4,
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "templelement: simple, block with text",
 			input: `@Other(p.Test) {
 	some words
