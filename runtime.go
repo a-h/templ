@@ -103,7 +103,7 @@ func (ch ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func Handler(c Component, options ...func(*ComponentHandler)) *ComponentHandler {
 	ch := &ComponentHandler{
 		Component:   c,
-		ContentType: "text/html",
+		ContentType: "text/html; charset=utf-8",
 	}
 	for _, o := range options {
 		o(ch)
