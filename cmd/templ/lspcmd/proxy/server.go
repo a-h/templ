@@ -632,6 +632,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 func (p *Server) DidSave(ctx context.Context, params *lsp.DidSaveTextDocumentParams) (err error) {
 	p.Log.Info("client -> server: DidSave")
 	defer p.Log.Info("client -> server: DidSave end")
+	format(params.TextDocument.URI.Filename())
 	if isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI); isTemplFile {
 		params.TextDocument.URI = goURI
 	}
