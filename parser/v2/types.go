@@ -177,6 +177,20 @@ func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
 	return err
 }
 
+func writeLinesIndented(w io.Writer, level int, s string) (err error) {
+	indent := strings.Repeat("\t", level)
+	lines := strings.Split(s, "\n")
+	indented := strings.Join(lines, "\n"+indent)
+	if _, err = io.WriteString(w, indent); err != nil {
+		return err
+	}
+	_, err = io.WriteString(w, indented)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func writeIndent(w io.Writer, level int, s ...string) (err error) {
 	indent := strings.Repeat("\t", level)
 	if _, err = io.WriteString(w, indent); err != nil {
@@ -913,10 +927,17 @@ type TemplElementExpression struct {
 
 func (tee TemplElementExpression) IsNode() bool { return true }
 func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
-	if len(tee.Children) == 0 {
-		return writeIndent(w, indent, "@", tee.Expression.Value)
+	source, err := format.Source([]byte(tee.Expression.Value))
+	if err != nil {
+		source = []byte(tee.Expression.Value)
 	}
-	if err := writeIndent(w, indent, "@", tee.Expression.Value, " {\n"); err != nil {
+	if err := writeLinesIndented(w, indent, "@"+string(source)); err != nil {
+		return err
+	}
+	if len(tee.Children) == 0 {
+		return nil
+	}
+	if _, err = io.WriteString(w, " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(w, indent+1, tee.Children); err != nil {
