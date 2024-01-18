@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"golang.org/x/tools/txtar"
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/tools/txtar"
 )
 
 func TestFormat(t *testing.T) {
@@ -31,13 +31,12 @@ func TestFormat(t *testing.T) {
 			if err := tem.Write(&actual); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if diff := cmp.Diff(string(a.Files[1].Data), actual.String()); diff != ""{
+			if diff := cmp.Diff(string(a.Files[1].Data), actual.String()); diff != "" {
 				t.Fatalf("%s:\n%s", file, diff)
 			}
 		})
 	}
 }
-
 
 func clean(b []byte) string {
 	b = bytes.ReplaceAll(b, []byte("$\n"), []byte("\n"))
