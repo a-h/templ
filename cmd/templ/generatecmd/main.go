@@ -148,6 +148,10 @@ func runCmd(ctx, watchCtx context.Context, w io.Writer, args Arguments) error {
 	}
 	fmt.Fprintln(w, "Processing path:", args.Path)
 
+		if err := checkTemplVersion(args.Path); err != nil {
+			logWarning(w, "templ version check failed: %v\n", err)
+		}
+
 	if args.Watch {
 		err = generateWatched(watchCtx, w, args, opts, p)
 		if err != nil && !errors.Is(err, context.Canceled) {
@@ -218,9 +222,6 @@ func generateWatched(ctx context.Context, w io.Writer, args Arguments, opts []ge
 				}()
 			}
 		}
-		if err := checkTemplVersion(args.Path); err != nil {
-			logWarning(w, "templ version check failed: %v\n", err)
-		}
 
 		if firstRunComplete {
 			if changesFound > 0 {
@@ -263,10 +264,6 @@ func generateProduction(ctx context.Context, w io.Writer, args Arguments, opts [
 				fmt.Fprintf(w, "Error starting command: %v\n", err)
 			}
 		}
-	}
-
-	if err := checkTemplVersion(args.Path); err != nil {
-		logWarning(w, "templ version check failed: %v\n", err)
 	}
 
 	return nil
