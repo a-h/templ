@@ -148,9 +148,9 @@ func runCmd(ctx, watchCtx context.Context, w io.Writer, args Arguments) error {
 	}
 	fmt.Fprintln(w, "Processing path:", args.Path)
 
-		if err := checkTemplVersion(args.Path); err != nil {
-			logWarning(w, "templ version check failed: %v\n", err)
-		}
+	if err := checkTemplVersion(args.Path); err != nil {
+		logWarning(w, "templ version check failed: %v\n", err)
+	}
 
 	if args.Watch {
 		err = generateWatched(watchCtx, w, args, opts, p)
