@@ -534,9 +534,10 @@ func checkTemplVersion(dir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
+	var modFile string
 	for {
-		current := filepath.Join(dir, "go.mod")
-		_, err := os.Stat(current)
+		modFile = filepath.Join(dir, "go.mod")
+		_, err := os.Stat(modFile)
 		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to stat go.mod file: %w", err)
 		}
@@ -545,39 +546,47 @@ func checkTemplVersion(dir string) error {
 			prev := dir
 			dir = filepath.Dir(dir)
 			if dir == prev {
-				return fmt.Errorf("could not find go.mod file")
+				break
 			}
 			continue
 		}
-		// Found a go.mod file.
-		// Read it and find the templ version.
-		m, err := os.ReadFile(current)
-		if err != nil {
-			return fmt.Errorf("failed to read go.mod file: %w", err)
-		}
+		break
+	}
 
-		// Replace "go 1.21.x" with "go 1.21".
-		m = patchGoVersion(m)
+	// No modFile found.
+	if modFile == "" {
+		return fmt.Errorf("could not find go.mod file")
+	}
 
-		mf, err := modfile.Parse(current, m, nil)
-		if err != nil {
-			return fmt.Errorf("failed to parse go.mod file: %w", err)
-		}
-		if mf.Module.Mod.Path == "github.com/a-h/templ" {
-			// The go.mod file is for templ itself.
+	// Found a go.mod file.
+	// Read it and find the templ version.
+	m, err := os.ReadFile(modFile)
+	if err != nil {
+		return fmt.Errorf("failed to read go.mod file: %w", err)
+	}
+
+	// Replace "go 1.21.x" with "go 1.21".
+	m = patchGoVersion(m)
+
+	mf, err := modfile.Parse(modFile, m, nil)
+	if err != nil {
+		return fmt.Errorf("failed to parse go.mod file: %w", err)
+	}
+	if mf.Module.Mod.Path == "github.com/a-h/templ" {
+		// The go.mod file is for templ itself.
+		return nil
+	}
+	for _, r := range mf.Require {
+		if r.Mod.Path == "github.com/a-h/templ" {
+			cmp := semver.Compare(r.Mod.Version, templ.Version())
+			if cmp < 0 {
+				return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get -u github.com/a-h/templ` to upgrade", templ.Version(), r.Mod.Version)
+			}
+			if cmp > 0 {
+				return fmt.Errorf("generator %v is older than templ version %v found in go.mod file, consider upgrading templ CLI", templ.Version(), r.Mod.Version)
+			}
 			return nil
 		}
-		for _, r := range mf.Require {
-			if r.Mod.Path == "github.com/a-h/templ" {
-				cmp := semver.Compare(r.Mod.Version, templ.Version())
-				if cmp < 0 {
-					return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get -u github.com/a-h/templ` to upgrade", templ.Version(), r.Mod.Version)
-				}
-				if cmp > 0 {
-					return fmt.Errorf("generator %v is older than templ version %v found in go.mod file, consider upgrading templ CLI", templ.Version(), r.Mod.Version)
-				}
-				return nil
-			}
-		}
 	}
+	return fmt.Errorf("templ not found in go.mod file, run `go get github.com/a-h/templ to install it`")
 }
