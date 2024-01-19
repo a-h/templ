@@ -107,6 +107,18 @@ templ component(p Person) {
 }
 ```
 
+The `templ.URL` function only supports standard HTML elements and attributes (`<a href=""` and `<form action=""`).
+
+For use on non-standard HTML elements (e.g. HTMX's `hx-*` attributes), convert the `templ.URL` to a `string` after sanitization.
+
+```templ
+templ component(contact model.Contact) {
+  <div hx-get={ string(templ.URL(fmt.Sprintf("/contacts/%s/email", contact.ID)))}>
+    { contact.Name }
+  </div>
+}
+```
+
 :::caution
 If you need to bypass this sanitization, you can use `templ.SafeURL(myURL)` to mark that your string is safe to use.
 
