@@ -1,6 +1,7 @@
 package testwatch
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"embed"
@@ -128,6 +129,110 @@ func TestCanAccessViaProxy(t *testing.T) {
 	}
 	if actualCount < 1 {
 		t.Errorf("expected count >= 1, got %d", actualCount)
+	}
+}
+
+type Event struct {
+	Type string
+	Data string
+}
+
+func readSSE(ctx context.Context, url string, sse chan<- Event) (err error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Connection", "keep-alive")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	var e Event
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			sse <- e
+			e = Event{}
+			continue
+		}
+		if strings.HasPrefix(line, "event: ") {
+			e.Type = line[len("event: "):]
+		}
+		if strings.HasPrefix(line, "data: ") {
+			e.Data = line[len("data: "):]
+		}
+	}
+	return scanner.Err()
+}
+
+func TestFileModificationsResultInSSE(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	args, teardown, err := Setup()
+	if err != nil {
+		t.Fatalf("failed to setup test: %v", err)
+	}
+	defer teardown(t)
+
+	// Start the SSE check.
+	events := make(chan Event)
+	var eventsErr error
+	go func() {
+		eventsErr = readSSE(context.Background(), fmt.Sprintf("%s/_templ/reload/events", args.ProxyURL), events)
+	}()
+
+	// Assert data is expected.
+	doc, err := getHTML(args.ProxyURL)
+	if err != nil {
+		t.Fatalf("failed to read HTML: %v", err)
+	}
+	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Original" {
+		t.Errorf("expected %q, got %q", "Original", text)
+	}
+
+	// Change file.
+	templFile := filepath.Join(args.AppDir, "templates.templ")
+	replaceInFile(templFile,
+		`<div data-testid="modification">Original</div>`,
+		`<div data-testid="modification">Updated</div>`)
+
+	// Give the filesystem watcher a few seconds.
+	var reloadCount int
+loop:
+	for {
+		select {
+		case event := <-events:
+			if event.Data == "reload" {
+				reloadCount++
+				break loop
+			}
+		case <-time.After(time.Second * 5):
+			break loop
+		}
+	}
+	if reloadCount == 0 {
+		t.Error("failed to receive SSE about update after 5 seconds")
+	}
+
+	// Check to see if there were any errors.
+	if eventsErr != nil {
+		t.Errorf("error reading events: %v", err)
+	}
+
+	// See results in browser immediately.
+	doc, err = getHTML(args.ProxyURL)
+	if err != nil {
+		t.Fatalf("failed to read HTML: %v", err)
+	}
+	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Updated" {
+		t.Errorf("expected %q, got %q", "Updated", text)
 	}
 }
 
