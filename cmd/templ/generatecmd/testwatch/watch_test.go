@@ -21,21 +21,21 @@ import (
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 )
 
-//go:embed testproject/*
-var testproject embed.FS
+//go:embed testdata/*
+var testdata embed.FS
 
 func createTestProject(moduleRoot string) (dir string, err error) {
 	dir, err = os.MkdirTemp("", "templ_watch_test_*")
 	if err != nil {
 		return dir, fmt.Errorf("failed to make test dir: %w", err)
 	}
-	files, err := testproject.ReadDir("testproject")
+	files, err := testdata.ReadDir("testdata")
 	if err != nil {
 		return dir, fmt.Errorf("failed to read embedded dir: %w", err)
 	}
 	for _, file := range files {
-		src := filepath.Join("testproject", file.Name())
-		data, err := testproject.ReadFile(src)
+		src := filepath.Join("testdata", file.Name())
+		data, err := testdata.ReadFile(src)
 		if err != nil {
 			return dir, fmt.Errorf("failed to read file: %w", err)
 		}
