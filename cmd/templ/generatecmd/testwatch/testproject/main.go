@@ -25,5 +25,9 @@ func main() {
 		c := Page(count)
 		templ.Handler(c).ServeHTTP(w, r)
 	})
-	http.ListenAndServe(fmt.Sprintf("localhost:%d", *flagPort), nil)
+	err := http.ListenAndServe(fmt.Sprintf("localhost:%d", *flagPort), nil)
+	if err != nil {
+		fmt.Printf("Error listening: %v\n", err)
+		os.Exit(1)
+	}
 }
