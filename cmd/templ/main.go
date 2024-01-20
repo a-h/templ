@@ -135,9 +135,9 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	ctx, cancel := context.WithCancel(context.Background())
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
-	defer func() {
-		signal.Stop(signalChan)
-		fmt.Fprintln(w, "\nStopping...")
+	go func() {
+		<-signalChan
+		fmt.Fprintln(w, "Stopping...")
 		cancel()
 	}()
 	err = generatecmd.Run(ctx, w, generatecmd.Arguments{
