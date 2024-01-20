@@ -199,9 +199,12 @@ func TestFileModificationsResultInSSE(t *testing.T) {
 
 	// Change file.
 	templFile := filepath.Join(args.AppDir, "templates.templ")
-	replaceInFile(templFile,
+	err = replaceInFile(templFile,
 		`<div data-testid="modification">Original</div>`,
 		`<div data-testid="modification">Updated</div>`)
+	if err != nil {
+		t.Errorf("failed to replace text in file: %v", err)
+	}
 
 	// Give the filesystem watcher a few seconds.
 	var reloadCount int
