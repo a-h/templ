@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"runtime"
 
 	"github.com/a-h/templ"
@@ -129,7 +131,16 @@ func generateCmd(w io.Writer, args []string) (code int) {
 		fmt.Fprint(w, generateUsageText)
 		return
 	}
-	err = generatecmd.Run(w, generatecmd.Arguments{
+
+	ctx, cancel := context.WithCancel(context.Background())
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		<-signalChan
+		fmt.Fprintln(w, "Stopping...")
+		cancel()
+	}()
+	err = generatecmd.Run(ctx, w, generatecmd.Arguments{
 		FileName:                        *fileNameFlag,
 		Path:                            *pathFlag,
 		Watch:                           *watchFlag,

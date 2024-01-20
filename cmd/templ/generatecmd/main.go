@@ -13,10 +13,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -25,6 +23,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/a-h/templ"
+	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"github.com/a-h/templ/cmd/templ/generatecmd/proxy"
 	"github.com/a-h/templ/cmd/templ/generatecmd/run"
 	"github.com/a-h/templ/cmd/templ/visualize"
@@ -33,8 +32,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cli/browser"
 	"github.com/fatih/color"
-	"golang.org/x/mod/modfile"
-	"golang.org/x/mod/semver"
 )
 
 type Arguments struct {
@@ -55,49 +52,14 @@ type Arguments struct {
 
 var defaultWorkerCount = runtime.NumCPU()
 
-func Run(w io.Writer, args Arguments) (err error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	watchCtx, watchCancel := context.WithCancel(context.Background())
-
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-	defer func() {
-		signal.Stop(signalChan)
-		cancel()
-	}()
+func Run(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	if args.PPROFPort > 0 {
 		go func() {
 			_ = http.ListenAndServe(fmt.Sprintf("localhost:%d", args.PPROFPort), nil)
 		}()
 	}
 
-	go func() {
-		watching := args.Watch
-		for {
-			select {
-			case <-signalChan: // First signal, cancel context.
-				if watching {
-					fmt.Println("Stopping watch operation...")
-					watchCancel()
-					continue
-				}
-
-				if ctx.Err() != nil {
-					fmt.Fprintln(w, "\nHARD EXIT")
-					os.Exit(2) // hard exit
-					continue
-				}
-
-				fmt.Fprintln(w, "\nCancelling...")
-				cancel()
-
-			case <-ctx.Done():
-				break
-			}
-		}
-	}()
-
-	err = runCmd(ctx, watchCtx, w, args)
+	err = runCmd(ctx, w, args)
 	if errors.Is(err, context.Canceled) {
 		return nil
 	}
@@ -105,7 +67,7 @@ func Run(w io.Writer, args Arguments) (err error) {
 	return err
 }
 
-func runCmd(ctx, watchCtx context.Context, w io.Writer, args Arguments) error {
+func runCmd(ctx context.Context, w io.Writer, args Arguments) error {
 	var err error
 
 	if args.Watch && args.FileName != "" {
@@ -148,18 +110,18 @@ func runCmd(ctx, watchCtx context.Context, w io.Writer, args Arguments) error {
 	}
 	fmt.Fprintln(w, "Processing path:", args.Path)
 
-	if err := checkTemplVersion(args.Path); err != nil {
+	if err := modcheck.Check(args.Path); err != nil {
 		logWarning(w, "templ version check failed: %v\n", err)
 	}
 
 	if args.Watch {
-		err = generateWatched(watchCtx, w, args, opts, p)
+		err = generateWatched(ctx, w, args, opts, p)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			return err
 		}
 	}
 
-	return generateProduction(ctx, w, args, opts, p)
+	return generateProduction(context.Background(), w, args, opts, p)
 }
 
 func generateWatched(ctx context.Context, w io.Writer, args Arguments, opts []generator.GenerateOpt, p *proxy.Handler) error {
@@ -518,66 +480,4 @@ func logSuccess(w io.Writer, format string, a ...any) {
 func logWithDecoration(w io.Writer, decoration string, col color.Attribute, format string, a ...any) {
 	color.New(col).Fprintf(w, "(%s) ", decoration)
 	fmt.Fprintf(w, format, a...)
-}
-
-// Replace "go 1.21.3" with "go 1.21" until https://github.com/golang/go/issues/61888 is fixed, see templ issue https://github.com/a-h/templ/issues/355
-var goVersionRegexp = regexp.MustCompile(`\ngo (\d+\.\d+)(?:\D.+)\n`)
-
-func patchGoVersion(moduleFileContents []byte) []byte {
-	return goVersionRegexp.ReplaceAll(moduleFileContents, []byte("\ngo $1\n"))
-}
-
-func checkTemplVersion(dir string) error {
-	// Walk up the directory tree, starting at dir, until we find a go.mod file.
-	// If it contains a go.mod file, parse it and find the templ version.
-	dir, err := filepath.Abs(dir)
-	if err != nil {
-		return fmt.Errorf("failed to get absolute path: %w", err)
-	}
-	for {
-		current := filepath.Join(dir, "go.mod")
-		_, err := os.Stat(current)
-		if err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("failed to stat go.mod file: %w", err)
-		}
-		if os.IsNotExist(err) {
-			// Move up.
-			prev := dir
-			dir = filepath.Dir(dir)
-			if dir == prev {
-				return fmt.Errorf("could not find go.mod file")
-			}
-			continue
-		}
-		// Found a go.mod file.
-		// Read it and find the templ version.
-		m, err := os.ReadFile(current)
-		if err != nil {
-			return fmt.Errorf("failed to read go.mod file: %w", err)
-		}
-
-		// Replace "go 1.21.x" with "go 1.21".
-		m = patchGoVersion(m)
-
-		mf, err := modfile.Parse(current, m, nil)
-		if err != nil {
-			return fmt.Errorf("failed to parse go.mod file: %w", err)
-		}
-		if mf.Module.Mod.Path == "github.com/a-h/templ" {
-			// The go.mod file is for templ itself.
-			return nil
-		}
-		for _, r := range mf.Require {
-			if r.Mod.Path == "github.com/a-h/templ" {
-				cmp := semver.Compare(r.Mod.Version, templ.Version())
-				if cmp < 0 {
-					return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get -u github.com/a-h/templ` to upgrade", templ.Version(), r.Mod.Version)
-				}
-				if cmp > 0 {
-					return fmt.Errorf("generator %v is older than templ version %v found in go.mod file, consider upgrading templ CLI", templ.Version(), r.Mod.Version)
-				}
-				return nil
-			}
-		}
-	}
 }
