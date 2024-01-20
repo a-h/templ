@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"path"
 	"path/filepath"
 	"runtime"
@@ -53,49 +52,14 @@ type Arguments struct {
 
 var defaultWorkerCount = runtime.NumCPU()
 
-func Run(w io.Writer, args Arguments) (err error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	watchCtx, watchCancel := context.WithCancel(context.Background())
-
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
-	defer func() {
-		signal.Stop(signalChan)
-		cancel()
-	}()
+func Run(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	if args.PPROFPort > 0 {
 		go func() {
 			_ = http.ListenAndServe(fmt.Sprintf("localhost:%d", args.PPROFPort), nil)
 		}()
 	}
 
-	go func() {
-		watching := args.Watch
-		for {
-			select {
-			case <-signalChan: // First signal, cancel context.
-				if watching {
-					fmt.Println("Stopping watch operation...")
-					watchCancel()
-					continue
-				}
-
-				if ctx.Err() != nil {
-					fmt.Fprintln(w, "\nHARD EXIT")
-					os.Exit(2) // hard exit
-					continue
-				}
-
-				fmt.Fprintln(w, "\nCancelling...")
-				cancel()
-
-			case <-ctx.Done():
-				break
-			}
-		}
-	}()
-
-	err = runCmd(ctx, watchCtx, w, args)
+	err = runCmd(ctx, w, args)
 	if errors.Is(err, context.Canceled) {
 		return nil
 	}
@@ -103,7 +67,7 @@ func Run(w io.Writer, args Arguments) (err error) {
 	return err
 }
 
-func runCmd(ctx, watchCtx context.Context, w io.Writer, args Arguments) error {
+func runCmd(ctx context.Context, w io.Writer, args Arguments) error {
 	var err error
 
 	if args.Watch && args.FileName != "" {
@@ -151,13 +115,13 @@ func runCmd(ctx, watchCtx context.Context, w io.Writer, args Arguments) error {
 	}
 
 	if args.Watch {
-		err = generateWatched(watchCtx, w, args, opts, p)
+		err = generateWatched(ctx, w, args, opts, p)
 		if err != nil && !errors.Is(err, context.Canceled) {
 			return err
 		}
 	}
 
-	return generateProduction(ctx, w, args, opts, p)
+	return generateProduction(context.Background(), w, args, opts, p)
 }
 
 func generateWatched(ctx context.Context, w io.Writer, args Arguments, opts []generator.GenerateOpt, p *proxy.Handler) error {

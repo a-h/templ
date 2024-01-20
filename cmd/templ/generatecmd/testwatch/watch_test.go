@@ -8,15 +8,16 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
-	"github.com/a-h/templ/cmd/templ/generatecmd/run"
 )
 
 //go:embed testproject/*
@@ -80,56 +81,134 @@ func getHTML(url string) (doc *goquery.Document, err error) {
 	return goquery.NewDocumentFromReader(resp.Body)
 }
 
-func TestWatch(t *testing.T) {
+func TestCanAccessDirect(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	args, teardown, err := Setup()
+	if err != nil {
+		t.Fatalf("failed to setup test: %v", err)
+	}
+	defer teardown(t)
+
+	// Assert.
+	doc, err := getHTML(args.AppURL)
+	if err != nil {
+		t.Fatalf("failed to read HTML: %v", err)
+	}
+	countText := doc.Find(`div[data-testid="count"]`).Text()
+	actualCount, err := strconv.Atoi(countText)
+	if err != nil {
+		t.Fatalf("got count %q instead of integer", countText)
+	}
+	if actualCount < 1 {
+		t.Errorf("expected count >= 1, got %d", actualCount)
+	}
+}
+
+func TestCanAccessViaProxy(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	args, teardown, err := Setup()
+	if err != nil {
+		t.Fatalf("failed to setup test: %v", err)
+	}
+	defer teardown(t)
+
+	// Assert.
+	doc, err := getHTML(args.ProxyURL)
+	if err != nil {
+		t.Fatalf("failed to read HTML: %v", err)
+	}
+	countText := doc.Find(`div[data-testid="count"]`).Text()
+	actualCount, err := strconv.Atoi(countText)
+	if err != nil {
+		t.Fatalf("got count %q instead of integer", countText)
+	}
+	if actualCount < 1 {
+		t.Errorf("expected count >= 1, got %d", actualCount)
+	}
+}
+
+func NewTestArgs(modRoot, appDir string, appPort int, proxyPort int) TestArgs {
+	return TestArgs{
+		ModRoot:   modRoot,
+		AppDir:    appDir,
+		AppPort:   appPort,
+		AppURL:    fmt.Sprintf("http://localhost:%d", appPort),
+		ProxyPort: proxyPort,
+		ProxyURL:  fmt.Sprintf("http://localhost:%d", proxyPort),
+	}
+}
+
+type TestArgs struct {
+	ModRoot   string
+	AppDir    string
+	AppPort   int
+	AppURL    string
+	ProxyPort int
+	ProxyURL  string
+}
+
+func Setup() (args TestArgs, teardown func(t *testing.T), err error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		t.Fatalf("could not find working dir: %v", err)
+		return args, teardown, fmt.Errorf("could not find working dir: %w", err)
 	}
 	moduleRoot, err := modcheck.WalkUp(wd)
 	if err != nil {
-		t.Fatalf("could not find local templ go.mod file: %v", err)
+		return args, teardown, fmt.Errorf("could not find local templ go.mod file: %v", err)
 	}
 
-	dir, err := createTestProject(moduleRoot)
+	appDir, err := createTestProject(moduleRoot)
 	if err != nil {
-		t.Fatalf("failed to create test project: %v", err)
+		return args, teardown, fmt.Errorf("failed to create test project: %v", err)
 	}
-
-	port, err := getPort()
+	appPort, err := getPort()
 	if err != nil {
-		t.Fatalf("failed to get available port: %v", err)
+		return args, teardown, fmt.Errorf("failed to get available port: %v", err)
+	}
+	proxyPort, err := getPort()
+	if err != nil {
+		return args, teardown, fmt.Errorf("failed to get available port: %v", err)
 	}
 
-	ctx := context.Background()
-	t.Run("can start the test app", func(t *testing.T) {
-		cmd, err := run.Run(ctx, dir, fmt.Sprintf("go run . -port %d", port))
-		if err != nil {
-			t.Fatalf("failed to start test app: %v", err)
+	args = NewTestArgs(moduleRoot, appDir, appPort, proxyPort)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	var wg sync.WaitGroup
+	var cmdErr error
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		cmdErr = generatecmd.Run(ctx, os.Stdout, generatecmd.Arguments{
+			Path:              appDir,
+			Watch:             true,
+			Command:           fmt.Sprintf("go run . -port %d", args.AppPort),
+			ProxyPort:         proxyPort,
+			Proxy:             args.AppURL,
+			IncludeVersion:    false,
+			IncludeTimestamp:  false,
+			KeepOrphanedFiles: false,
+		})
+	}()
+
+	// Wait for server to start.
+	time.Sleep(time.Second)
+
+	// Wait for exit.
+	teardown = func(t *testing.T) {
+		cancel()
+		wg.Wait()
+		if cmdErr != nil {
+			t.Errorf("failed to run generate cmd: %v", err)
 		}
 
-		url := fmt.Sprintf("http://localhost:%d", port)
-
-		// Wait for server to start.
-		time.Sleep(time.Second)
-
-		t.Run("can read count", func(t *testing.T) {
-			doc, err := getHTML(url)
-			if err != nil {
-				t.Fatalf("failed to read HTML: %v", err)
-			}
-			if actualCount := doc.Find(`div[data-testid="count"]`).Text(); actualCount != "1" {
-				t.Errorf("expected count 2, got %s", actualCount)
-			}
-		})
-
-		defer func(cmd *exec.Cmd) {
-			if err = run.Stop(cmd); err != nil {
-				t.Errorf("failed to stop test server: %v", err)
-			}
-		}(cmd)
-	})
-
-	if err = os.RemoveAll(dir); err != nil {
-		t.Fatalf("failed to remove test dir %q: %v", dir, err)
+		if err = os.RemoveAll(appDir); err != nil {
+			t.Fatalf("failed to remove test dir %q: %v", appDir, err)
+		}
 	}
+	return args, teardown, err
 }
