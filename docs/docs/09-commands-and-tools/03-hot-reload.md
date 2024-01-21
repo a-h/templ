@@ -5,7 +5,7 @@ To access a Go web application that uses templ in a web browser, a few things mu
 1. `templ generate` must be executed, to create Go code (`*_templ.go` files) from the `*.templ` files.
 2. The Go code must start a web server on a port, e.g. (`http.ListenAndServe("localhost:8080", nil)`.
 3. The Go program must be ran, e.g. by running `go run .`.
-4. The web browser must access or reload the page, e.g. `http://localhost:8080`. 
+4. The web browser must access or reload the page, e.g. `http://localhost:8080`.
 
 If the `*.templ` files change, #1 and #2 must be ran.
 
@@ -23,12 +23,42 @@ To re-run your app, set the `--cmd` argument, and templ will start or restart yo
 
 To trigger your web browser to reload automatically (without pressing F5), set the `--proxy` argument (#4).
 
-The `--proxy` argument starts a HTTP proxy which proxies requests to your app. For example, if your app runs on port 8080, you would use `--proxy="http://localhost:8080"`. The proxy inserts client-side JavaScript before the `</body>` tag that will cause the browser to reload the window when the app is restarted instead of you having to reload the page manually.
+The `--proxy` argument starts a HTTP proxy which proxies requests to your app. For example, if your app runs on port 8080, you would use `--proxy="http://localhost:8080"`. The proxy inserts client-side JavaScript before the `</body>` tag that will cause the browser to reload the window when the app is restarted instead of you having to reload the page manually. Note that the html being served by the webserver MUST have a `<body>` tag, otherwise there will be no javascript injection thus making the browser not reload automatically.
 
 Altogether, to setup hot reload on an app that listens on port 8080, run the following.
 
 ```
 templ generate --watch --proxy="http://localhost:8080" --cmd="go run ."
+```
+
+```go title="main.go"
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/a-h/templ"
+)
+
+func main() {
+	component := hello("World")
+
+	http.Handle("/", templ.Handler(component))
+
+	fmt.Println("Listening on :8080")
+	http.ListenAndServe(":8080", nil)
+}
+```
+
+```templ title="hello.templ"
+package main
+
+templ hello(name string) {
+  <body>
+	    <div>Hello, { name }</div>
+  </body>
+}
 ```
 
 The hot reload process can be shown in the following diagram:
