@@ -98,9 +98,14 @@ func (e IfExtractor) Code(src string, body []ast.Stmt) (start, end, length int, 
 	if !ok {
 		return 0, 0, 0, ErrExpectedNodeNotFound
 	}
-	start = int(stmt.If) + len("if")
-	end = int(stmt.Body.Lbrace) - 1
-	length = int(stmt.Body.Lbrace) - start
+	start = int(stmt.If) + 2
+	if stmt.Init != nil {
+		end = int(stmt.Init.End()) - 1
+	}
+	if stmt.Cond != nil {
+		end = int(stmt.Cond.End()) - 1
+	}
+	length = end
 	return start, end, length, nil
 }
 

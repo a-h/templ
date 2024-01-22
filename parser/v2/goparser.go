@@ -39,13 +39,12 @@ type extractor func(content string) (start, end, length int, err error)
 func parseGo(name string, pi *parse.Input, e extractor) (r Expression, err error) {
 	from := pi.Index()
 	src, _ := pi.Peek(-1)
-	var start, end, length int
-	start, end, length, err = e(src)
+	//TODO: Refactor to remove the length from e.
+	start, end, _, err := e(src)
 	if err != nil {
 		return r, parse.Error(fmt.Sprintf("%s: invalid go expression: %v", name, err.Error()), pi.Position())
 	}
 	expr := src[start:end]
-	pi.Take(length)
-	to := pi.Position()
-	return NewExpression(expr, pi.PositionAt(from+start), to), nil
+	pi.Take(end)
+	return NewExpression(expr, pi.PositionAt(from+start), pi.PositionAt(from+end)), nil
 }

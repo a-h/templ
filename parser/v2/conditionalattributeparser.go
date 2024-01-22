@@ -1,7 +1,10 @@
 package parser
 
 import (
+	"fmt"
+
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
 var conditionalAttribute parse.Parser[ConditionalAttribute] = conditionalAttributeParser{}
@@ -12,22 +15,28 @@ func (_ conditionalAttributeParser) Parse(pi *parse.Input) (r ConditionalAttribu
 	start := pi.Index()
 
 	// Strip leading whitespace and look for `if `.
-	if _, ok, err = parse.All(parse.OptionalWhitespace, parse.String("if ")).Parse(pi); err != nil || !ok {
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		return r, false, err
+	}
+	if !peekPrefix(pi, "if ") {
 		pi.Seek(start)
-		return
+		return r, false, nil
 	}
 
-	// Once we've got a prefix, read until {\n.
-	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
-	if r.Expression, ok, err = ExpressionOf(parse.StringUntil(until)).Parse(pi); err != nil || !ok {
-		err = parse.Error("attribute if: unterminated (missing closing '{\n')", pi.Position())
-		return
+	// Parse the Go if expression.
+	if r.Expression, err = parseGo("if attribute", pi, goexpression.If); err != nil {
+		return r, false, err
 	}
 
 	// Eat " {\n".
-	if _, ok, err = until.Parse(pi); err != nil || !ok {
-		err = parse.Error("attribute if: unterminated (missing closing '{\n')", pi.Position())
+	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		blinder, _ := pi.Peek(-1)
+		fmt.Println("blinder", blinder)
+		err = parse.Error("attribute if: unterminated (missing closing '{\n')", pi.PositionAt(start))
 		return
+	}
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		return r, false, err
 	}
 
 	// Read the 'Then' attributes.

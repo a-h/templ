@@ -11,23 +11,24 @@ func TestIf(t *testing.T) {
 	prefix := "if "
 	suffixes := []string{
 		"{\n<div>\nif true content\n\t</div>}",
+		" {\n<div>\nif true content\n\t</div>}",
 	}
 	tests := []testInput{
 		{
 			name:  "basic if",
-			input: `true `,
+			input: `true`,
 		},
 		{
 			name:  "if function call",
-			input: `pkg.Func() `,
+			input: `pkg.Func()`,
 		},
 		{
 			name:  "compound",
-			input: "x := val(); x > 3 ",
+			input: "x := val(); x > 3",
 		},
 		{
 			name:  "if multiple",
-			input: `x && y && (!z) `,
+			input: `x && y && (!z)`,
 		},
 	}
 	for _, test := range tests {
@@ -63,27 +64,28 @@ func TestElseIf(t *testing.T) {
 	prefix := "else if "
 	suffixes := []string{
 		"{\n<div>\nelse content\n\t</div>}",
+		" {\n<div>\nelse content\n\t</div>}",
 	}
 	tests := []testInput{
 		{
 			name:  "boolean",
-			input: `true `,
+			input: `true`,
 		},
 		{
 			name:  "boolean with spacing",
-			input: `   true `,
+			input: `   true`,
 		},
 		{
 			name:  "func",
-			input: `pkg.Func() `,
+			input: `pkg.Func()`,
 		},
 		{
 			name:  "expression",
-			input: "x > 3 ",
+			input: "x > 3",
 		},
 		{
 			name:  "multiple",
-			input: `x && y && (!z) `,
+			input: `x && y && (!z)`,
 		},
 	}
 	for _, test := range tests {
