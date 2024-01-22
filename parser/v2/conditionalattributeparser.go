@@ -1,8 +1,6 @@
 package parser
 
 import (
-	"fmt"
-
 	"github.com/a-h/parse"
 	"github.com/a-h/templ/parser/v2/goexpression"
 )
@@ -30,8 +28,6 @@ func (_ conditionalAttributeParser) Parse(pi *parse.Input) (r ConditionalAttribu
 
 	// Eat " {\n".
 	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
-		blinder, _ := pi.Peek(-1)
-		fmt.Println("blinder", blinder)
 		err = parse.Error("attribute if: unterminated (missing closing '{\n')", pi.PositionAt(start))
 		return
 	}

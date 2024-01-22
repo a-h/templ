@@ -21,6 +21,18 @@ func parseGoFuncDecl(pi *parse.Input) (r Expression, err error) {
 	return NewExpression(expr, from, to), nil
 }
 
+func parseGoSliceArgs(pi *parse.Input) (r Expression, err error) {
+	from := pi.Position()
+	src, _ := pi.Peek(-1)
+	expr, err := goexpression.SliceArgs(src)
+	if err != nil {
+		return r, err
+	}
+	pi.Take(len(expr))
+	to := pi.Position()
+	return NewExpression(expr, from, to), nil
+}
+
 func peekPrefix(pi *parse.Input, prefixes ...string) bool {
 	for _, prefix := range prefixes {
 		pp, ok := pi.Peek(len(prefix))

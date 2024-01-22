@@ -266,6 +266,63 @@ func TestExpression(t *testing.T) {
 	}
 }
 
+func TestSliceArgs(t *testing.T) {
+	suffixes := []string{
+		"",
+		"}",
+	}
+	tests := []testInput{
+		{
+			name:  "no input",
+			input: ``,
+		},
+		{
+			name:  "single input",
+			input: `nil`,
+		},
+		{
+			name:  "inputs to function call",
+			input: `a, b, "c"`,
+		},
+		{
+			name:  "function call in package",
+			input: `components.Other()`,
+		},
+		{
+			name:  "slice index call",
+			input: `components[0].Other()`,
+		},
+		{
+			name:  "map index function call",
+			input: `components["name"].Other()`,
+		},
+		{
+			name:  "function literal",
+			input: `components["name"].Other(func() bool { return true })`,
+		},
+		{
+			name: "multiline function call",
+			input: `component(map[string]string{
+				"namea": "name_a",
+			  "nameb": "name_b",
+			})`,
+		},
+	}
+	for _, test := range tests {
+		for i, suffix := range suffixes {
+			t.Run(fmt.Sprintf("%s_%d", test.name, i), func(t *testing.T) {
+				expr, err := SliceArgs(test.input + suffix)
+				if err != nil {
+					t.Errorf("failed to parse slice args: %v", err)
+				}
+				if diff := cmp.Diff(test.input, expr); diff != "" {
+					t.Error(diff)
+				}
+			})
+		}
+	}
+}
+
 func TestChildren(t *testing.T) {
 	prefix := ""
 	suffixes := []string{

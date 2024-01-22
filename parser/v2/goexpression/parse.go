@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 var ErrContainerFuncNotFound = errors.New("parser error: templ container function not found")
@@ -174,6 +175,43 @@ func (e ExprExtractor) Code(src string, body []ast.Stmt) (start, end int, err er
 	start = int(stmt.Pos()) - 1
 	end = int(stmt.End()) - 1
 	return start, end, nil
+}
+
+func SliceArgs(content string) (expr string, err error) {
+	prefix := "package main\nvar templ_args = []any{"
+	src := prefix + content + "}"
+
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
+	if node == nil {
+		return expr, parseErr
+	}
+
+	var from, to int
+	ast.Inspect(node, func(n ast.Node) bool {
+		decl, ok := n.(*ast.CompositeLit)
+		if !ok {
+			return true
+		}
+		from = int(decl.Lbrace)
+		to = int(decl.Rbrace) - 1
+		for _, e := range decl.Elts {
+			to = int(e.End()) - 1
+		}
+		betweenEndAndBrace := src[to : decl.Rbrace-1]
+		var hasCodeBetweenEndAndBrace bool
+		for _, r := range betweenEndAndBrace {
+			if !unicode.IsSpace(r) {
+				hasCodeBetweenEndAndBrace = true
+				break
+			}
+		}
+		if hasCodeBetweenEndAndBrace {
+			to = int(decl.Rbrace) - 1
+		}
+		return false
+	})
+
+	return src[from:to], err
 }
 
 // Extract a Go expression from the content.

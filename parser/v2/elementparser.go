@@ -251,14 +251,16 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr Expressio
 	}
 
 	// Expression.
-	if attr.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return
+	if attr.Expression, err = parseGoSliceArgs(pi); err != nil {
+		return attr, false, err
 	}
 
-	// Eat the final brace.
-	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
-		err = parse.Error("boolean expression: missing closing brace", pi.Position())
+	// Eat whitespace, plus the final brace.
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		return attr, false, err
+	}
+	if _, ok, err = closeBrace.Parse(pi); err != nil || !ok {
+		err = parse.Error("string expression attribute: missing closing brace", pi.Position())
 		return
 	}
 
