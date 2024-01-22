@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
 // Element.
@@ -214,10 +215,9 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r BoolExpr
 		return
 	}
 
-	// Once we have a prefix, we must have an expression that returns a template.
-	if r.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
-		err = parse.Error("boolean expression: expected Go expression not found", pi.Position())
-		return
+	// Once we have a prefix, we must have an expression that returns a boolean.
+	if r.Expression, err = parseGo("boolean attribute", pi, goexpression.Expression); err != nil {
+		return r, false, err
 	}
 
 	// Eat the Final brace.
