@@ -12,6 +12,7 @@ type ifExpressionParser struct{}
 
 func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
+	start := pi.Position()
 	if _, ok, err = parse.String("if ").Parse(pi); err != nil || !ok {
 		return
 	}
@@ -21,13 +22,13 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	var r IfExpression
 	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
 	if r.Expression, ok, err = ExpressionOf(parse.StringUntil(until)).Parse(pi); err != nil || !ok {
-		err = parse.Error("if: "+unterminatedMissingCurly, pi.Position())
+		err = parse.Error("if: "+unterminatedMissingCurly, start)
 		return
 	}
 
 	// Eat " {\n".
 	if _, ok, err = until.Parse(pi); err != nil || !ok {
-		err = parse.Error("if: "+unterminatedMissingCurly, pi.Position())
+		err = parse.Error("if: "+unterminatedMissingCurly, start)
 		return
 	}
 

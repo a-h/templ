@@ -41,6 +41,7 @@ var goMultiLineComment = goMultiLineCommentParser{}
 
 func (p goMultiLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Comment start.
+	start := pi.Position()
 	var c GoComment
 	if _, ok, err = goMultiLineCommentStart.Parse(pi); err != nil || !ok {
 		return
@@ -49,7 +50,7 @@ func (p goMultiLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err e
 	// Once we've got the comment start sequence, parse anything until the end
 	// sequence as the comment contents.
 	if c.Contents, ok, err = parse.StringUntil(goMultiLineCommentEnd).Parse(pi); err != nil || !ok {
-		err = parse.Error("expected end comment literal '*/' not found", pi.Position())
+		err = parse.Error("expected end comment literal '*/' not found", start)
 		return
 	}
 	// Move past the end element.

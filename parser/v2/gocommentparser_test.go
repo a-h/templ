@@ -74,12 +74,12 @@ func TestCommentParserErrors(t *testing.T) {
 	}{
 		{
 			name:  "unclosed multi-line Go comments result in an error",
-			input: `/* unclosed HTML comment`,
+			input: `/* unclosed Go comment`,
 			expected: parse.Error("expected end comment literal '*/' not found",
 				parse.Position{
-					Index: 24,
+					Index: 0,
 					Line:  0,
-					Col:   24,
+					Col:   0,
 				}),
 		},
 		{

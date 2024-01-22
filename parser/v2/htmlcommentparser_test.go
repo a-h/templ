@@ -82,9 +82,9 @@ func TestHTMLCommentParserErrors(t *testing.T) {
 			input: `<!-- unclosed HTML comment`,
 			expected: parse.Error("expected end comment literal '-->' not found",
 				parse.Position{
-					Index: 26,
+					Index: 0,
 					Line:  0,
-					Col:   26,
+					Col:   0,
 				}),
 		},
 		{

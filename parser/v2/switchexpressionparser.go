@@ -12,6 +12,7 @@ type switchExpressionParser struct{}
 
 func (_ switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
+	start := pi.Position()
 	if _, ok, err = parse.String("switch ").Parse(pi); err != nil || !ok {
 		return
 	}
@@ -21,13 +22,13 @@ func (_ switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err err
 	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
 	endOfStatementExpression := ExpressionOf(parse.StringUntil(until))
 	if r.Expression, ok, err = endOfStatementExpression.Parse(pi); err != nil || !ok {
-		err = parse.Error("switch: "+unterminatedMissingCurly, pi.Position())
+		err = parse.Error("switch: "+unterminatedMissingCurly, start)
 		return
 	}
 
 	// Eat " {\n".
 	if _, ok, err = until.Parse(pi); err != nil || !ok {
-		err = parse.Error("switch: "+unterminatedMissingCurly, pi.Position())
+		err = parse.Error("switch: "+unterminatedMissingCurly, start)
 		return
 	}
 

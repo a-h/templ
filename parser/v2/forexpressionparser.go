@@ -10,6 +10,7 @@ type forExpressionParser struct{}
 
 func (_ forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
+	start := pi.Position()
 	if _, ok, err = parse.String("for ").Parse(pi); err != nil || !ok {
 		return
 	}
@@ -21,14 +22,14 @@ func (_ forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
 	var fexp string
 	if fexp, ok, err = parse.StringUntil(until).Parse(pi); err != nil || !ok {
-		err = parse.Error("for: "+unterminatedMissingCurly, pi.Position())
+		err = parse.Error("for: "+unterminatedMissingCurly, start)
 		return
 	}
 	r.Expression = NewExpression(fexp, from, pi.Position())
 
 	// Eat " {".
 	if _, ok, err = until.Parse(pi); err != nil || !ok {
-		err = parse.Error("for: "+unterminatedMissingCurly, pi.Position())
+		err = parse.Error("for: "+unterminatedMissingCurly, start)
 		return
 	}
 
