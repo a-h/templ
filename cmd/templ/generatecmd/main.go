@@ -38,6 +38,7 @@ type Arguments struct {
 	FileName                        string
 	Path                            string
 	Watch                           bool
+	OpenBrowser                     bool
 	Command                         string
 	ProxyPort                       int
 	Proxy                           string
@@ -176,12 +177,14 @@ func generateWatched(ctx context.Context, w io.Writer, args Arguments, opts []ge
 						fmt.Fprintf(w, "Error starting proxy: %v\n", err)
 					}
 				}()
-				go func() {
-					fmt.Fprintf(w, "Opening URL: %s\n", p.Target.String())
-					if err := openURL(w, p.URL); err != nil {
-						fmt.Fprintf(w, "Error opening URL: %v\n", err)
-					}
-				}()
+				if args.OpenBrowser {
+					go func() {
+						fmt.Fprintf(w, "Opening URL: %s\n", p.Target.String())
+						if err := openURL(w, p.URL); err != nil {
+							fmt.Fprintf(w, "Error opening URL: %v\n", err)
+						}
+					}()
+				}
 			}
 		}
 
