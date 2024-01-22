@@ -312,12 +312,12 @@ type testInput struct {
 	expectedErr error
 }
 
-type extractor func(content string) (start, end, length int, err error)
+type extractor func(content string) (start, end int, err error)
 
 func run(test testInput, prefix, suffix string, e extractor) func(t *testing.T) {
 	return func(t *testing.T) {
 		src := prefix + test.input + suffix
-		start, end, _, err := e(src)
+		start, end, err := e(src)
 		if test.expectedErr == nil && err != nil {
 			t.Fatalf("expected nil error, got %v, %T", err, err)
 		}

@@ -34,13 +34,12 @@ func peekPrefix(pi *parse.Input, prefixes ...string) bool {
 	return false
 }
 
-type extractor func(content string) (start, end, length int, err error)
+type extractor func(content string) (start, end int, err error)
 
 func parseGo(name string, pi *parse.Input, e extractor) (r Expression, err error) {
 	from := pi.Index()
 	src, _ := pi.Peek(-1)
-	//TODO: Refactor to remove the length from e.
-	start, end, _, err := e(src)
+	start, end, err := e(src)
 	if err != nil {
 		return r, parse.Error(fmt.Sprintf("%s: invalid go expression: %v", name, err.Error()), pi.Position())
 	}
