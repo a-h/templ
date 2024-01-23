@@ -283,8 +283,7 @@ var spreadAttributesParser = parse.Func(func(pi *parse.Input) (attr SpreadAttrib
 	}
 
 	// Expression.
-	if attr.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
+	if attr.Expression, err = parseGo("spread attributes", pi, goexpression.Expression); err != nil {
 		return
 	}
 
