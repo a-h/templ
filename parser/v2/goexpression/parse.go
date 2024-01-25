@@ -23,24 +23,6 @@ func Else(content string) (start, end int, err error) {
 	return len("else "), len("else ") + len(groups[2]), nil
 }
 
-var elseIfRegex = regexp.MustCompile(`^(else\s+)if\s+`)
-
-func ElseIf(content string) (start, end int, err error) {
-	groups := elseIfRegex.FindStringSubmatch(content)
-	if len(groups) == 0 {
-		return 0, 0, ErrExpectedNodeNotFound
-	}
-	elsePrefix := groups[1]
-	start, end, err = extract(content[len(elsePrefix):], IfExtractor{})
-	if err != nil {
-		return 0, 0, err
-	}
-	// Since we trimmed the `else ` prefix, we need to add it back on.
-	start += len(elsePrefix)
-	end += len(elsePrefix)
-	return start, end, nil
-}
-
 func Case(content string) (start, end int, err error) {
 	if !(strings.HasPrefix(content, "case") || strings.HasPrefix(content, "default")) {
 		return 0, 0, ErrExpectedNodeNotFound
@@ -140,11 +122,11 @@ func (e SwitchExtractor) Code(src string, body []ast.Stmt) (start, end int, err 
 	switch stmt := stmt.(type) {
 	case *ast.SwitchStmt:
 		start = int(stmt.Switch) + len("switch")
-		end = int(stmt.Body.Lbrace) - 1
+		end = latestEnd(start, stmt.Init, stmt.Tag)
 		return start, end, nil
 	case *ast.TypeSwitchStmt:
 		start = int(stmt.Switch) + len("switch")
-		end = int(stmt.Body.Lbrace) - 1
+		end = latestEnd(start, stmt.Init, stmt.Assign)
 		return start, end, nil
 	}
 	return 0, 0, ErrExpectedNodeNotFound
@@ -163,13 +145,13 @@ func (e CaseExtractor) Code(src string, body []ast.Stmt) (start, end int, err er
 	}
 	if stmt.List == nil {
 		// Default case.
-		start = int(stmt.Case) + len("default")
+		start = int(stmt.Case) - 1
 		end = int(stmt.Colon)
 		return start, end, nil
 	}
 	// Standard case.
-	start = int(stmt.Case) + len("case")
-	end = int(stmt.Colon) - 1
+	start = int(stmt.Case) - 1
+	end = int(stmt.Colon)
 	return start, end, nil
 }
 
