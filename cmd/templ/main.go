@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"runtime"
 
 	"github.com/a-h/templ"
@@ -113,10 +115,11 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	cmd.SetOutput(w)
 	fileNameFlag := cmd.String("f", "", "")
 	pathFlag := cmd.String("path", ".", "")
-	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "")
+	sourceMapVisualisationsFlag := cmd.Bool("source-map-visualisations", false, "")
 	includeVersionFlag := cmd.Bool("include-version", true, "")
 	includeTimestampFlag := cmd.Bool("include-timestamp", false, "")
 	watchFlag := cmd.Bool("watch", false, "")
+	openBrowserFlag := cmd.Bool("open-browser", true, "")
 	cmdFlag := cmd.String("cmd", "", "")
 	proxyFlag := cmd.String("proxy", "", "")
 	proxyPortFlag := cmd.Int("proxyport", 7331, "")
@@ -129,15 +132,25 @@ func generateCmd(w io.Writer, args []string) (code int) {
 		fmt.Fprint(w, generateUsageText)
 		return
 	}
-	err = generatecmd.Run(w, generatecmd.Arguments{
+
+	ctx, cancel := context.WithCancel(context.Background())
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		<-signalChan
+		fmt.Fprintln(w, "Stopping...")
+		cancel()
+	}()
+	err = generatecmd.Run(ctx, w, generatecmd.Arguments{
 		FileName:                        *fileNameFlag,
 		Path:                            *pathFlag,
 		Watch:                           *watchFlag,
+		OpenBrowser:                     *openBrowserFlag,
 		Command:                         *cmdFlag,
 		Proxy:                           *proxyFlag,
 		ProxyPort:                       *proxyPortFlag,
 		WorkerCount:                     *workerCountFlag,
-		GenerateSourceMapVisualisations: *sourceMapVisualisations,
+		GenerateSourceMapVisualisations: *sourceMapVisualisationsFlag,
 		IncludeVersion:                  *includeVersionFlag,
 		IncludeTimestamp:                *includeTimestampFlag,
 		PPROFPort:                       *pprofPortFlag,

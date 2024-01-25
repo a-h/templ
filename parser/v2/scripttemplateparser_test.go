@@ -165,6 +165,45 @@ console.log(value);
 				Value: `console.log(value);` + "\n",
 			},
 		},
+		{
+			name: "script: comment with single quote",
+			input: `script Name() {
+	//'
+} Trailing '`, // Without a single quote later, issue #360 isn't triggered.
+			expected: ScriptTemplate{
+				Name: Expression{
+					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 7,
+							Line:  0,
+							Col:   7,
+						},
+						To: Position{
+							Index: 11,
+							Line:  0,
+							Col:   11,
+						},
+					},
+				},
+				Parameters: Expression{
+					Value: "",
+					Range: Range{
+						From: Position{
+							Index: 12,
+							Line:  0,
+							Col:   12,
+						},
+						To: Position{
+							Index: 12,
+							Line:  0,
+							Col:   12,
+						},
+					},
+				},
+				Value: `	//'` + "\n",
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

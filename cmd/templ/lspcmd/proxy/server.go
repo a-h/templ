@@ -8,6 +8,7 @@ import (
 
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/protocol"
+	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 	"go.lsp.dev/uri"
@@ -222,6 +223,10 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 		WillSaveWaitUntil: false,
 		Save:              &lsp.SaveOptions{IncludeText: true},
 	}
+
+	result.ServerInfo.Name = "templ-lsp"
+	result.ServerInfo.Version = templ.Version()
+
 	return result, err
 }
 
@@ -537,7 +542,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		return
 	}
 	w := new(strings.Builder)
-	sm, err := generator.Generate(template, w)
+	sm, _, err := generator.Generate(template, w)
 	if err != nil {
 		p.Log.Error("generate failure", zap.Error(err))
 		return
@@ -610,7 +615,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	// Generate the output code and cache the source map and Go contents to use during completion
 	// requests.
 	w := new(strings.Builder)
-	sm, err := generator.Generate(template, w)
+	sm, _, err := generator.Generate(template, w)
 	if err != nil {
 		return
 	}
@@ -693,8 +698,8 @@ func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLi
 func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolParams) (result []interface{} /* []SymbolInformation | []DocumentSymbol */, err error) {
 	p.Log.Info("client -> server: DocumentSymbol")
 	defer p.Log.Info("client -> server: DocumentSymbol end")
-	//TODO: Rewrite the request and response, but for now, ignore it.
-	//return p.Target.DocumentSymbol(ctx params)
+	// TODO: Rewrite the request and response, but for now, ignore it.
+	// return p.Target.DocumentSymbol(ctx params)
 	return
 }
 

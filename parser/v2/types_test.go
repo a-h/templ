@@ -239,6 +239,28 @@ templ nested() {
 `,
 		},
 		{
+			name: "constant attributes prerfer double quotes, but use single quotes if required",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ nested() {
+	<div class="double">double</div>
+	<div class='single-not-required'>single-not-required</div>
+	<div data-value='{"data":"value"}'>single-required</div>
+}
+
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ nested() {
+	<div class="double">double</div>
+	<div class="single-not-required">single-not-required</div>
+	<div data-value='{"data":"value"}'>single-required</div>
+}
+`,
+		},
+		{
 			name: "for loops are placed on a new line",
 			input: ` // first line removed to make indentation clear in Go code
 package test

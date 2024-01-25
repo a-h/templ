@@ -401,14 +401,21 @@ func TestHandler(t *testing.T) {
 			name:             "handlers return OK by default",
 			input:            templ.Handler(hello),
 			expectedStatus:   http.StatusOK,
-			expectedMIMEType: "text/html",
+			expectedMIMEType: "text/html; charset=utf-8",
 			expectedBody:     "Hello",
+		},
+		{
+			name:             "handlers return OK by default",
+			input:            templ.Handler(templ.Raw(`♠ ‘ &spades; &#8216;`)),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/html; charset=utf-8",
+			expectedBody:     "♠ ‘ &spades; &#8216;",
 		},
 		{
 			name:             "handlers can be configured to return an alternative status code",
 			input:            templ.Handler(hello, templ.WithStatus(http.StatusNotFound)),
 			expectedStatus:   http.StatusNotFound,
-			expectedMIMEType: "text/html",
+			expectedMIMEType: "text/html; charset=utf-8",
 			expectedBody:     "Hello",
 		},
 		{
@@ -438,7 +445,7 @@ func TestHandler(t *testing.T) {
 				})
 			})),
 			expectedStatus:   http.StatusBadRequest,
-			expectedMIMEType: "text/html",
+			expectedMIMEType: "text/html; charset=utf-8",
 			expectedBody:     "custom body",
 		},
 	}

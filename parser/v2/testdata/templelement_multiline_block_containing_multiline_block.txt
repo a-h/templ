@@ -1,0 +1,34 @@
+-- in --
+package p
+
+templ f() {
+@Other(
+			p.Test,
+"s",
+){
+	@another.Component(
+			p.Test,
+			3,
+"s",
+){
+	<p>hello</p>
+}
+	}
+}
+-- out --
+package p
+
+templ f() {
+	@Other(
+		p.Test,
+		"s",
+	) {
+		@another.Component(
+			p.Test,
+			3,
+			"s",
+		) {
+			<p>hello</p>
+		}
+	}
+}

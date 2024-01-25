@@ -35,7 +35,7 @@ The command provides additional options:
         Set the URL to proxy after generating code and executing the command.
   -proxyport int
         The port the proxy will listen on. (default 7331)
-  -sourceMapVisualisations
+  -source-map-visualisations
         Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
   -w int
         Number of workers to run in parallel. (default 4)
