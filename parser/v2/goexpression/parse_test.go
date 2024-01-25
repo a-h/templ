@@ -38,28 +38,6 @@ func TestIf(t *testing.T) {
 	}
 }
 
-func TestElse(t *testing.T) {
-	prefix := "else "
-	suffixes := []string{
-		"{\n<div>\nelse content\n\t</div>}",
-	}
-	tests := []testInput{
-		{
-			name:  "else",
-			input: ``,
-		},
-		{
-			name:  "else with spacing",
-			input: `    `,
-		},
-	}
-	for _, test := range tests {
-		for i, suffix := range suffixes {
-			t.Run(fmt.Sprintf("%s_%d", test.name, i), run(test, prefix, suffix, Else))
-		}
-	}
-}
-
 func TestFor(t *testing.T) {
 	prefix := "for "
 	suffixes := []string{

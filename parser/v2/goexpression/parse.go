@@ -5,23 +5,12 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"regexp"
 	"strings"
 	"unicode"
 )
 
 var ErrContainerFuncNotFound = errors.New("parser error: templ container function not found")
 var ErrExpectedNodeNotFound = errors.New("parser error: expected node not found")
-
-var elseRegex = regexp.MustCompile(`^(else )(\s*){`)
-
-func Else(content string) (start, end int, err error) {
-	groups := elseRegex.FindStringSubmatch(content)
-	if len(groups) == 0 {
-		return 0, 0, ErrExpectedNodeNotFound
-	}
-	return len("else "), len("else ") + len(groups[2]), nil
-}
 
 func Case(content string) (start, end int, err error) {
 	if !(strings.HasPrefix(content, "case") || strings.HasPrefix(content, "default")) {
