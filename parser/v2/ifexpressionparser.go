@@ -15,7 +15,6 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	var r IfExpression
 	start := pi.Index()
 
-	// Strip leading whitespace and look for `if `.
 	if !peekPrefix(pi, "if ") {
 		return r, false, nil
 	}

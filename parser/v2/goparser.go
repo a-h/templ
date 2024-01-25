@@ -9,16 +9,16 @@ import (
 )
 
 func parseGoFuncDecl(pi *parse.Input) (r Expression, err error) {
-	from := pi.Position()
+	from := pi.Index()
 	src, _ := pi.Peek(-1)
 	src = strings.TrimPrefix(src, "templ ")
 	expr, err := goexpression.Func("func " + src)
 	if err != nil {
 		return r, parse.Error(fmt.Sprintf("invalid template declaration: %v", err.Error()), pi.Position())
 	}
-	pi.Take(len(expr))
+	pi.Take(len("templ ") + len(expr))
 	to := pi.Position()
-	return NewExpression(expr, from, to), nil
+	return NewExpression(expr, pi.PositionAt(from+len("templ ")), to), nil
 }
 
 func parseGoSliceArgs(pi *parse.Input) (r Expression, err error) {

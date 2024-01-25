@@ -228,7 +228,9 @@ func Func(content string) (expr string, err error) {
 		if !ok {
 			return true
 		}
-		expr, err = src[fn.Pos():fn.Body.Lbrace-1], nil
+		start := int(fn.Pos()) + len("func")
+		end := fn.Type.Params.End() - 1
+		expr = src[start:end]
 		return false
 	})
 
