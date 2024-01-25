@@ -16,8 +16,6 @@ type templateExpression struct {
 	Expression Expression
 }
 
-var templateExpressionStartParser = parse.String("templ ")
-
 var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpression, ok bool, err error) {
 	start := pi.Index()
 
