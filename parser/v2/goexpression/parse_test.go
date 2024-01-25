@@ -98,20 +98,20 @@ func TestElseIf(t *testing.T) {
 func TestFor(t *testing.T) {
 	prefix := "for "
 	suffixes := []string{
-		"{\n<div>\nloop content\n\t</div>}",
+		" {\n<div>\nloop content\n\t</div>}",
 	}
 	tests := []testInput{
 		{
 			name:  "three component",
-			input: `i := 0; i < 100; i++ `,
+			input: `i := 0; i < 100; i++`,
 		},
 		{
 			name:  "three component, empty",
-			input: `; ; i++ `,
+			input: `; ; i++`,
 		},
 		{
 			name:  "while",
-			input: `n < 5 `,
+			input: `n < 5`,
 		},
 		{
 			name:  "infinite",
@@ -119,15 +119,15 @@ func TestFor(t *testing.T) {
 		},
 		{
 			name:  "range with index",
-			input: `k, v := range m `,
+			input: `k, v := range m`,
 		},
 		{
 			name:  "range with key only",
-			input: `k := range m `,
+			input: `k := range m`,
 		},
 		{
 			name:  "channel receive",
-			input: `x := range channel `,
+			input: `x := range channel`,
 		},
 	}
 	for _, test := range tests {

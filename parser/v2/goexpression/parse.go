@@ -99,27 +99,35 @@ func (e IfExtractor) Code(src string, body []ast.Stmt) (start, end int, err erro
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	start = int(stmt.If) + 2
-	if stmt.Init != nil {
-		end = int(stmt.Init.End()) - 1
-	}
-	if stmt.Cond != nil {
-		end = int(stmt.Cond.End()) - 1
-	}
+	end = latestEnd(start, stmt.Init, stmt.Cond)
 	return start, end, nil
 }
 
 type ForExtractor struct{}
+
+func latestEnd(start int, nodes ...ast.Node) (end int) {
+	end = start
+	for _, n := range nodes {
+		if n == nil {
+			continue
+		}
+		if int(n.End()) > end {
+			end = int(n.End()) - 1
+		}
+	}
+	return end
+}
 
 func (e ForExtractor) Code(src string, body []ast.Stmt) (start, end int, err error) {
 	stmt := body[0]
 	switch stmt := stmt.(type) {
 	case *ast.ForStmt:
 		start = int(stmt.For) + len("for")
-		end = int(stmt.Body.Lbrace) - 1
+		end = latestEnd(start, stmt.Init, stmt.Cond, stmt.Post)
 		return start, end, nil
 	case *ast.RangeStmt:
 		start = int(stmt.For) + len("for")
-		end = int(stmt.Body.Lbrace) - 1
+		end = latestEnd(start, stmt.Key, stmt.Value, stmt.X)
 		return start, end, nil
 	}
 	return 0, 0, ErrExpectedNodeNotFound

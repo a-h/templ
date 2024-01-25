@@ -2,6 +2,7 @@ package parser
 
 import (
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
 var forExpression parse.Parser[Node] = forExpressionParser{}
@@ -9,27 +10,26 @@ var forExpression parse.Parser[Node] = forExpressionParser{}
 type forExpressionParser struct{}
 
 func (_ forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	// Check the prefix first.
-	start := pi.Position()
-	if _, ok, err = parse.String("for ").Parse(pi); err != nil || !ok {
-		return
-	}
-
-	// Once we've got a prefix, read until {\n.
-	// If there's no match, there's no {\n, which is an error.
-	from := pi.Position()
 	var r ForExpression
-	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
-	var fexp string
-	if fexp, ok, err = parse.StringUntil(until).Parse(pi); err != nil || !ok {
-		err = parse.Error("for: "+unterminatedMissingCurly, start)
-		return
-	}
-	r.Expression = NewExpression(fexp, from, pi.Position())
+	start := pi.Index()
 
-	// Eat " {".
-	if _, ok, err = until.Parse(pi); err != nil || !ok {
-		err = parse.Error("for: "+unterminatedMissingCurly, start)
+	// Strip leading whitespace and look for `for `.
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		return r, false, err
+	}
+	if !peekPrefix(pi, "for ") {
+		pi.Seek(start)
+		return r, false, nil
+	}
+
+	// Parse the Go for expression.
+	if r.Expression, err = parseGo("for", pi, goexpression.For); err != nil {
+		return r, false, err
+	}
+
+	// Eat " {\n".
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+		err = parse.Error("for: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements", pi.PositionAt(start))
 		return
 	}
 
