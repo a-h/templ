@@ -29,7 +29,7 @@ func (_ forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 
 	// Eat " {\n".
 	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
-		err = parse.Error("for: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements", pi.PositionAt(start))
+		err = parse.Error("for: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return
 	}
 

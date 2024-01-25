@@ -2,6 +2,7 @@ package parser
 
 import (
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
 var ifExpression ifExpressionParser
@@ -11,24 +12,22 @@ var untilElseIfElseOrEnd = parse.Any(StripType(elseIfExpression), StripType(else
 type ifExpressionParser struct{}
 
 func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	// Check the prefix first.
-	start := pi.Position()
-	if _, ok, err = parse.String("if ").Parse(pi); err != nil || !ok {
-		return
+	var r IfExpression
+	start := pi.Index()
+
+	// Strip leading whitespace and look for `if `.
+	if !peekPrefix(pi, "if ") {
+		return r, false, nil
 	}
 
-	// Once we've got a prefix, read until {\n.
-	// If there's no match, there's no {\n, which is an error.
-	var r IfExpression
-	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
-	if r.Expression, ok, err = ExpressionOf(parse.StringUntil(until)).Parse(pi); err != nil || !ok {
-		err = parse.Error("if: "+unterminatedMissingCurly, start)
-		return
+	// Parse the Go if expresion.
+	if r.Expression, err = parseGo("if", pi, goexpression.If); err != nil {
+		return r, false, err
 	}
 
 	// Eat " {\n".
-	if _, ok, err = until.Parse(pi); err != nil || !ok {
-		err = parse.Error("if: "+unterminatedMissingCurly, start)
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+		err = parse.Error("if: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return
 	}
 
