@@ -212,15 +212,15 @@ vim.api.nvim_create_autocmd("BufEnter", { pattern = "*.templ", callback = functi
 ### Minimal Config
 
 Minimal config with the following features (useful for debugging):
-- (lazy-vim)[https://github.com/folke/lazy.nvim]: neovim package manager
-- (lsp config)[https://github.com/neovim/nvim-lspconfig]
+- [lazy-vim](https://github.com/folke/lazy.nvim): neovim package manager
+- [lsp config](https://github.com/neovim/nvim-lspconfig)
     - templ-lsp
     - htmp-lsp
     - htmx-lsp
     - tailwind-lsp
-- (cmp)[https://github.com/hrsh7th/nvim-cmp]: for autocompletion
-- (tree-sitter)[https://github.com/nvim-treesitter/nvim-treesitter]: for synx highlighting
-    - (tree sitter templ)[https://github.com/vrischmann/tree-sitter-templ]
+- [cmp](https://github.com/hrsh7th/nvim-cmp): for autocompletion
+- [tree-sitter](https://github.com/nvim-treesitter/nvim-treesitter): for synx highlighting
+    - [tree sitter templ](https://github.com/vrischmann/tree-sitter-templ)
 
 ```lua
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
