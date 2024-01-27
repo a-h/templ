@@ -11,13 +11,14 @@ import (
 type TemplRender struct {
 	Code int
 	Data templ.Component
+	Ctx  context.Context
 }
 
 func (t TemplRender) Render(w http.ResponseWriter) error {
 	t.WriteContentType(w)
 	w.WriteHeader(t.Code)
 	if t.Data != nil {
-		return t.Data.Render(context.Background(), w)
+		return t.Data.Render(t.Ctx, w)
 	}
 	return nil
 }
@@ -31,6 +32,7 @@ func (t *TemplRender) Instance(name string, data interface{}) render.Render {
 		return &TemplRender{
 			Code: http.StatusOK,
 			Data: templData,
+			Ctx:  context.Background(),
 		}
 	}
 	return nil
