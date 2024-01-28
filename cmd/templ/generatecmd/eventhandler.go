@@ -27,15 +27,17 @@ func NewFSEventHandler(log *slog.Logger, dir string, devMode bool, genOpts []gen
 		dir, _ = filepath.Abs(dir)
 	}
 	fseh := &FSEventHandler{
-		Log:                   log,
-		dir:                   dir,
-		stdout:                os.Stdout,
-		fileNameToLastModTime: make(map[string]time.Time),
-		hashes:                make(map[string][sha256.Size]byte),
-		genOpts:               genOpts,
-		genSourceMapVis:       genSourceMapVis,
-		DevMode:               devMode,
-		keepOrphanedFiles:     keepOrphanedFiles,
+		Log:                        log,
+		dir:                        dir,
+		stdout:                     os.Stdout,
+		fileNameToLastModTime:      make(map[string]time.Time),
+		fileNameToLastModTimeMutex: &sync.Mutex{},
+		hashes:                     make(map[string][sha256.Size]byte),
+		hashesMutex:                &sync.Mutex{},
+		genOpts:                    genOpts,
+		genSourceMapVis:            genSourceMapVis,
+		DevMode:                    devMode,
+		keepOrphanedFiles:          keepOrphanedFiles,
 	}
 	if devMode {
 		fseh.genOpts = append(fseh.genOpts, generator.WithExtractStrings())
@@ -46,15 +48,17 @@ func NewFSEventHandler(log *slog.Logger, dir string, devMode bool, genOpts []gen
 type FSEventHandler struct {
 	Log *slog.Logger
 	// dir is the root directory being processed.
-	dir                   string
-	stdout                io.Writer
-	stderr                io.Writer
-	fileNameToLastModTime map[string]time.Time
-	hashes                map[string][sha256.Size]byte
-	genOpts               []generator.GenerateOpt
-	genSourceMapVis       bool
-	DevMode               bool
-	keepOrphanedFiles     bool
+	dir                        string
+	stdout                     io.Writer
+	stderr                     io.Writer
+	fileNameToLastModTime      map[string]time.Time
+	fileNameToLastModTimeMutex *sync.Mutex
+	hashes                     map[string][sha256.Size]byte
+	hashesMutex                *sync.Mutex
+	genOpts                    []generator.GenerateOpt
+	genSourceMapVis            bool
+	DevMode                    bool
+	keepOrphanedFiles          bool
 }
 
 func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (generated bool, err error) {
@@ -93,18 +97,11 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	}
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
-	lastModTime := h.fileNameToLastModTime[event.Name]
-	fileInfo, err := os.Stat(event.Name)
-	if err != nil {
-		return false, fmt.Errorf("failed to get file info: %w", err)
-	}
-	if fileInfo.ModTime().Before(lastModTime) {
+	if !h.UpsertLastModTime(event.Name) {
 		return false, nil
 	}
 
 	// Start a processor.
-	h.fileNameToLastModTime[event.Name] = fileInfo.ModTime()
-
 	start := time.Now()
 	diag, err := h.generate(ctx, event.Name)
 	if err != nil {
@@ -120,6 +117,32 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	h.Log.Debug("Generated code", slog.String("file", event.Name), slog.Duration("in", time.Since(start)))
 
 	return true, nil
+}
+
+func (h *FSEventHandler) UpsertLastModTime(fileName string) (updated bool) {
+	fileInfo, err := os.Stat(fileName)
+	if err != nil {
+		return false
+	}
+	h.fileNameToLastModTimeMutex.Lock()
+	defer h.fileNameToLastModTimeMutex.Unlock()
+	lastModTime := h.fileNameToLastModTime[fileName]
+	if !fileInfo.ModTime().After(lastModTime) {
+		return false
+	}
+	h.fileNameToLastModTime[fileName] = fileInfo.ModTime()
+	return true
+}
+
+func (h *FSEventHandler) UpsertHash(fileName string, hash [sha256.Size]byte) (updated bool) {
+	h.hashesMutex.Lock()
+	defer h.hashesMutex.Unlock()
+	lastHash := h.hashes[fileName]
+	if lastHash == hash {
+		return false
+	}
+	h.hashes[fileName] = hash
+	return true
 }
 
 // generate Go code for a single template.
@@ -150,22 +173,20 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (diagnos
 
 	// Hash output, and write out the file if the goCodeHash has changed.
 	goCodeHash := sha256.Sum256(formattedGoCode)
-	if h.hashes[targetFileName] != goCodeHash {
+	if h.UpsertHash(targetFileName, goCodeHash) {
 		if err = os.WriteFile(targetFileName, formattedGoCode, 0o644); err != nil {
 			return nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
 		}
-		h.hashes[targetFileName] = goCodeHash
 	}
 
 	// Add the txt file if it has changed.
 	if len(literals) > 0 {
 		txtFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.txt"
 		txtHash := sha256.Sum256([]byte(literals))
-		if h.hashes[txtFileName] != txtHash {
+		if h.UpsertHash(txtFileName, txtHash) {
 			if err = os.WriteFile(txtFileName, []byte(literals), 0o644); err != nil {
 				return nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
 			}
-			h.hashes[txtFileName] = txtHash
 		}
 	}
 
