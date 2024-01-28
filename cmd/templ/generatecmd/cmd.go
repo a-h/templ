@@ -115,8 +115,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		defer close(events)
 		defer close(errs)
 		cmd.Log.Debug("Walking directory", slog.String("path", cmd.Args.Path), slog.Bool("devMode", cmd.Args.Watch))
-		err = watcher.WalkFiles(ctx, cmd.Args.Path, events)
-		if err != nil {
+		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {
 			cmd.Log.Error("WalkFiles failed, exiting", slog.Any("error", err))
 			errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
 			return
@@ -135,9 +134,8 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		cmd.Log.Debug("Waiting for context to be cancelled to stop watching files")
 		<-ctx.Done()
 		cmd.Log.Debug("Context cancelled, closing watcher")
-		if err = rw.Close(); err != nil {
+		if err := rw.Close(); err != nil {
 			cmd.Log.Error("Failed to close watcher", slog.Any("error", err))
-			err = nil
 		}
 		cmd.Log.Debug("Waiting for events to be processed")
 		eventsWG.Wait()
@@ -145,8 +143,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		postGenerationEventsWG.Wait()
 		cmd.Log.Debug("All post-generation events processed, running walk again, but in production mode")
 		fseh.DevMode = false
-		err = watcher.WalkFiles(ctx, cmd.Args.Path, events)
-		if err != nil {
+		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {
 			cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
 			errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
 			return

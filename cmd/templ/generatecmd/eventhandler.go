@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"go/format"
-	"io"
 	"log/slog"
 	"os"
 	"path"
@@ -29,7 +28,6 @@ func NewFSEventHandler(log *slog.Logger, dir string, devMode bool, genOpts []gen
 	fseh := &FSEventHandler{
 		Log:                        log,
 		dir:                        dir,
-		stdout:                     os.Stdout,
 		fileNameToLastModTime:      make(map[string]time.Time),
 		fileNameToLastModTimeMutex: &sync.Mutex{},
 		hashes:                     make(map[string][sha256.Size]byte),
@@ -49,8 +47,6 @@ type FSEventHandler struct {
 	Log *slog.Logger
 	// dir is the root directory being processed.
 	dir                        string
-	stdout                     io.Writer
-	stderr                     io.Writer
 	fileNameToLastModTime      map[string]time.Time
 	fileNameToLastModTimeMutex *sync.Mutex
 	hashes                     map[string][sha256.Size]byte

@@ -70,17 +70,19 @@ func (w *RecursiveWatcher) Close() error {
 	return w.w.Close()
 }
 
-func (w *RecursiveWatcher) loop() error {
+func (w *RecursiveWatcher) loop() {
 	for {
 		select {
 		case <-w.ctx.Done():
-			return context.Canceled
+			return
 		case event, ok := <-w.w.Events:
 			if !ok {
-				return nil
+				return
 			}
 			if event.Has(fsnotify.Create) {
-				w.Add(event.Name)
+				if err := w.Add(event.Name); err != nil {
+					w.Errors <- err
+				}
 			}
 			// Only notify on templ related files.
 			if !shouldIncludeFile(event.Name) {
@@ -89,7 +91,7 @@ func (w *RecursiveWatcher) loop() error {
 			w.Events <- event
 		case err, ok := <-w.w.Errors:
 			if !ok {
-				return nil
+				return
 			}
 			w.Errors <- err
 		}
