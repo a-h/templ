@@ -89,7 +89,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	// For errs from the watcher.
 	errs := make(chan error)
 	// For triggering actions after generation has completed.
-	postGeneration := make(chan struct{}, 256)
+	postGeneration := make(chan *fsnotify.Event, 256)
 	// Used to check that the post-generation handler has completed.
 	var postGenerationWG sync.WaitGroup
 
@@ -161,7 +161,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 					errs <- err
 				}
 				if generated {
-					postGeneration <- struct{}{}
+					postGeneration <- &event
 				}
 			}(event)
 		}
@@ -176,9 +176,13 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		cmd.Log.Debug("Starting post-generation handler")
 		timeout := time.NewTimer(time.Hour * 24 * 365)
 		var p *proxy.Handler
+	loop:
 		for range postGeneration {
 			select {
-			case <-postGeneration:
+			case v := <-postGeneration:
+				if v == nil {
+					break loop
+				}
 				if !timeout.Stop() {
 					<-timeout.C
 				}
