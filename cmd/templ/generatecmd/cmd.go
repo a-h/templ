@@ -229,7 +229,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 					}
 				}
 				// Send server-sent event.
-				if p != nil && textUpdated || goUpdated {
+				if p != nil && (textUpdated || goUpdated) {
 					cmd.Log.Debug("Sending reload event")
 					p.SendSSE("message", "reload")
 				}
