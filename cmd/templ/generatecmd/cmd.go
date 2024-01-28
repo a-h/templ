@@ -89,7 +89,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	// For errs from the watcher.
 	errs := make(chan error)
 	// For triggering actions after generation has completed.
-	postGeneration := make(chan struct{})
+	postGeneration := make(chan struct{}, 256)
 	// Used to check that the post-generation handler has completed.
 	var postGenerationWG sync.WaitGroup
 
@@ -152,17 +152,18 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			cmd.Log.Debug("Event received, waiting for queue slot", slog.Any("event", event))
 			eventsWG.Add(1)
 			sem <- struct{}{}
-			generated, err := fseh.HandleEvent(ctx, event)
-			if err != nil {
-				cmd.Log.Error("Event handler failed", slog.Any("error", err))
-				errs <- err
-			}
-			<-sem
-			eventsWG.Done()
-			cmd.Log.Debug("Event handler completed", slog.Any("event", event), slog.Bool("generated", generated))
-			if generated {
-				postGeneration <- struct{}{}
-			}
+			go func(event fsnotify.Event) {
+				defer eventsWG.Done()
+				defer func() { <-sem }()
+				generated, err := fseh.HandleEvent(ctx, event)
+				if err != nil {
+					cmd.Log.Error("Event handler failed", slog.Any("error", err))
+					errs <- err
+				}
+				if generated {
+					postGeneration <- struct{}{}
+				}
+			}(event)
 		}
 	}()
 
@@ -207,17 +208,18 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 
 	// Read errors.
 	for err := range errs {
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				cmd.Log.Debug("Context cancelled, exiting")
-				return nil
-			}
-			if errors.Is(err, FatalError{}) {
-				cmd.Log.Debug("Fatal error, exiting")
-				return err
-			}
-			cmd.Log.Error("Error received", slog.Any("error", err))
+		if err == nil {
+			continue
 		}
+		if errors.Is(err, context.Canceled) {
+			cmd.Log.Debug("Context cancelled, exiting")
+			return nil
+		}
+		if errors.Is(err, FatalError{}) {
+			cmd.Log.Debug("Fatal error, exiting")
+			return err
+		}
+		cmd.Log.Error("Error received", slog.Any("error", err))
 	}
 
 	// Wait for everything to complete.
