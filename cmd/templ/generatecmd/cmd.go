@@ -165,6 +165,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				}
 			}(event)
 		}
+		eventsWG.Wait()
 	}()
 
 	// Start process to handle post-generation events.
