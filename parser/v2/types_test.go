@@ -14,6 +14,27 @@ func TestFormatting(t *testing.T) {
 		expected string
 	}{
 		{
+			name: "html attributes are alphabetically sorted",
+			input: `
+package main
+
+templ test() {
+	<input type="text" class="mycls" name="weo" value="myvalue"/>
+	<input name="wuw" value="thing" class="input" type="text"/>
+	<input name="weow" type="text" class="input input-bordered"/>
+}
+`,
+			expected: `
+package main
+
+templ test() {
+	<input class="mycls" name="weo" type="text" value="myvalue"/>
+	<input class="input" name="wuw" type="text" value="thing"/>
+	<input class="input input-bordered" name="weow" type="text"/>
+}
+`,
+		},
+		{
 			name: "void elements are converted to self-closing elements",
 			input: ` // first line removed to make indentation clear in Go code
 package test
@@ -437,10 +458,10 @@ package test
 templ conditionalAttributes(addClass bool) {
 	<div
 		id="conditional"
+		width="300"
 		if addClass {
 			class="itWasTrue"
 		}
-		width="300"
 	>Content</div>
 }
 `,
@@ -464,10 +485,10 @@ package test
 templ conditionalAttributes(addClass bool) {
 	<div
 		id="conditional"
+		width="300"
 		if addClass {
 			class="itWasTrue"
 		}
-		width="300"
 	>Content</div>
 }
 `,
@@ -522,12 +543,12 @@ package test
 templ conditionalAttributes(addClass bool) {
 	<div
 		id="conditional"
+		width="300"
 		if addClass {
 			class="itWasTrue"
 		} else {
 			class="itWasNotTrue"
 		}
-		width="300"
 	>Content</div>
 }
 `,
@@ -589,8 +610,6 @@ package main
 
 templ x(id string, class string) {
 	<button
-		id={ id }
-		name={ "name" }
 		class={
 			"blue",
 			class,
@@ -598,6 +617,8 @@ templ x(id string, class string) {
 				"a": true,
 			},
 		}
+		id={ id }
+		name={ "name" }
 	></button>
 }
 `,

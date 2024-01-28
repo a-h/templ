@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"go/format"
 	"io"
+	"reflect"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -514,6 +516,46 @@ func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<", e.Name); err != nil {
 		return err
 	}
+	sortedAttributes := make([]Attribute, len(e.Attributes))
+	copy(sortedAttributes, e.Attributes)
+	sort.SliceStable(sortedAttributes, func(i, j int) bool {
+		// Sort the attributes alphabetically.
+		// If the attribute doesn't have a "name", put it at the end.
+
+		// This could be done in many ways. It should probably be done without reflection.
+		// Either by adding a "Name()" attribute to the Attribute interface,
+		// or by just iterating through and trying to cast to the different types (like ConstantAttribute etc).
+		// Check if the element has a "Name" field
+
+		getName := func(item Attribute) (string, bool) {
+			v := reflect.ValueOf(item)
+			if v.Kind() == reflect.Struct {
+				field := v.FieldByName("Name")
+				if field.IsValid() && field.Kind() == reflect.String {
+					return field.String(), true
+				}
+			}
+			return "", false
+		}
+
+		nameI, okI := getName(sortedAttributes[i])
+		nameJ, okJ := getName(sortedAttributes[j])
+
+		if !okI && !okJ {
+			return false // Both don't have Name, keep original order
+		}
+		if !okI {
+			return false // i doesn't have Name, move it towards the end
+		}
+		if !okJ {
+			return true // j doesn't have Name, keep i before j
+		}
+
+		return nameI < nameJ // Both have Name, sort alphabetically
+	})
+
+	e.Attributes = sortedAttributes
+
 	for i := 0; i < len(e.Attributes); i++ {
 		a := e.Attributes[i]
 		// Only the conditional attributes get indented.
