@@ -93,7 +93,7 @@ Args:
   -keep-orphaned-files
     Keeps orphaned generated templ files. (default false)
 	-level
-    Log verbosity level. (default "warn")
+    Log verbosity level. (default "info")
   -help
     Print help and exit.
 
@@ -128,7 +128,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
 	pprofPortFlag := cmd.Int("pprof", 0, "")
 	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
-	levelFlag := cmd.String("level", "warn", "")
+	levelFlag := cmd.String("level", "info", "")
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {

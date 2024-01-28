@@ -181,6 +181,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	}()
 
 	// Start process to handle post-generation events.
+	var updates int
 	postGenerationWG.Add(1)
 	var firstPostGenerationExecuted bool
 	go func() {
@@ -198,6 +199,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				}
 				goUpdated = goUpdated || ge.GoUpdated
 				textUpdated = textUpdated || ge.TextUpdated
+				if goUpdated || textUpdated {
+					updates++
+				}
 				// Reset timer.
 				if !timeout.Stop() {
 					<-timeout.C
@@ -261,6 +265,13 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	eventHandlerWG.Wait()
 	cmd.Log.Debug("Waiting for post-generation handler to complete")
 	postGenerationWG.Wait()
+	if cmd.Args.Command != "" {
+		cmd.Log.Debug("Killing command", slog.String("command", cmd.Args.Command))
+		if err := run.KillAll(); err != nil {
+			cmd.Log.Error("Error killing command", slog.Any("error", err))
+		}
+	}
+	cmd.Log.Info("Complete", slog.Int("updates", updates))
 
 	return nil
 }

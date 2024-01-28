@@ -33,12 +33,14 @@ type Arguments struct {
 var defaultWorkerCount = runtime.NumCPU()
 
 func Run(ctx context.Context, stderr io.Writer, args Arguments) (err error) {
-	level := slog.LevelWarn.Level()
-	if args.Level == "debug" {
+	level := slog.LevelInfo.Level()
+	switch args.Level {
+	case "debug":
 		level = slog.LevelDebug.Level()
-	}
-	if args.Level == "info" {
-		level = slog.LevelInfo.Level()
+	case "warn":
+		level = slog.LevelWarn.Level()
+	case "error":
+		level = slog.LevelError.Level()
 	}
 	// The built-in attributes with keys "time", "level", "source", and "msg"
 	// are passed to this function, except that time is omitted
