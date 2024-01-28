@@ -12,6 +12,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cli/browser v1.2.0
 	github.com/fatih/color v1.16.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/google/go-cmp v0.6.0
 	github.com/natefinch/atomic v1.0.1
 	github.com/rs/cors v1.8.3
