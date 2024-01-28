@@ -117,7 +117,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		}
 		return
 	}
-	h.Log.Debug("Generated code for %q in %s\n", event.Name, time.Since(start))
+	h.Log.Debug("Generated code", slog.String("file", event.Name), slog.Duration("in", time.Since(start)))
 
 	return true, nil
 }
