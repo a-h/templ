@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
@@ -23,11 +24,15 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func NewGenerate(log *slog.Logger, args Arguments) *Generate {
-	return &Generate{
+func NewGenerate(log *slog.Logger, args Arguments) (g *Generate) {
+	g = &Generate{
 		Log:  log,
 		Args: &args,
 	}
+	if g.Args.WorkerCount == 0 {
+		g.Args.WorkerCount = runtime.NumCPU()
+	}
+	return g
 }
 
 type Generate struct {

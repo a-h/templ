@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"io"
 	"log/slog"
-	"runtime"
 
 	_ "net/http/pprof"
 
@@ -29,8 +28,6 @@ type Arguments struct {
 	PPROFPort         int
 	KeepOrphanedFiles bool
 }
-
-var defaultWorkerCount = runtime.NumCPU()
 
 func Run(ctx context.Context, stderr io.Writer, args Arguments) (err error) {
 	level := slog.LevelInfo.Level()
