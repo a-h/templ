@@ -35,6 +35,12 @@ type Generate struct {
 	Args *Arguments
 }
 
+type GenerationEvent struct {
+	Event       fsnotify.Event
+	GoUpdated   bool
+	TextUpdated bool
+}
+
 func (cmd Generate) Run(ctx context.Context) (err error) {
 	if cmd.Args.Watch && cmd.Args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
@@ -65,14 +71,14 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 
 	// Check the version of the templ module.
 	if err := modcheck.Check(cmd.Args.Path); err != nil {
-		cmd.Log.Warn("templ version check failed", slog.Any("error", err))
+		cmd.Log.Warn("templ version check: " + err.Error())
 	}
 
 	fseh := NewFSEventHandler(cmd.Log, cmd.Args.Path, cmd.Args.Watch, opts, cmd.Args.GenerateSourceMapVisualisations, cmd.Args.KeepOrphanedFiles)
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
 	if cmd.Args.FileName != "" {
-		_, err = fseh.HandleEvent(ctx, fsnotify.Event{
+		_, _, err = fseh.HandleEvent(ctx, fsnotify.Event{
 			Name: cmd.Args.FileName,
 			Op:   fsnotify.Create,
 		})
@@ -89,9 +95,10 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	// For errs from the watcher.
 	errs := make(chan error)
 	// For triggering actions after generation has completed.
-	postGeneration := make(chan *fsnotify.Event, 256)
+	postGeneration := make(chan *GenerationEvent, 256)
 	// Used to check that the post-generation handler has completed.
 	var postGenerationWG sync.WaitGroup
+	var postGenerationEventsWG sync.WaitGroup
 
 	// Waitgroup for the push process.
 	var pushHandlerWG sync.WaitGroup
@@ -129,8 +136,8 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		}
 		cmd.Log.Debug("Waiting for events to be processed")
 		eventsWG.Wait()
-		cmd.Log.Debug("All pending events processed, waitinf for post-generation to complete")
-		postGenerationWG.Wait()
+		cmd.Log.Debug("All pending events processed, waiting for pending post-generation events to complete")
+		postGenerationEventsWG.Wait()
 		cmd.Log.Debug("All post-generation events processed, running walk again, but in production mode")
 		fseh.DevMode = false
 		err = watcher.WalkFiles(ctx, cmd.Args.Path, events)
@@ -155,13 +162,17 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				cmd.Log.Debug("Processing file", slog.String("file", event.Name))
 				defer eventsWG.Done()
 				defer func() { <-sem }()
-				generated, err := fseh.HandleEvent(ctx, event)
+				goUpdated, textUpdated, err := fseh.HandleEvent(ctx, event)
 				if err != nil {
 					cmd.Log.Error("Event handler failed", slog.Any("error", err))
 					errs <- err
 				}
-				if generated {
-					postGeneration <- &event
+				if goUpdated || textUpdated {
+					postGeneration <- &GenerationEvent{
+						Event:       event,
+						GoUpdated:   goUpdated,
+						TextUpdated: textUpdated,
+					}
 				}
 			}(event)
 		}
@@ -176,22 +187,30 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		defer postGenerationWG.Done()
 		cmd.Log.Debug("Starting post-generation handler")
 		timeout := time.NewTimer(time.Hour * 24 * 365)
+		var goUpdated, textUpdated bool
 		var p *proxy.Handler
 		for {
 			select {
-			case v := <-postGeneration:
-				if v == nil {
+			case ge := <-postGeneration:
+				if ge == nil {
 					cmd.Log.Debug("Post-generation event channel closed, exiting")
 					return
 				}
+				goUpdated = goUpdated || ge.GoUpdated
+				textUpdated = textUpdated || ge.TextUpdated
 				// Reset timer.
 				if !timeout.Stop() {
 					<-timeout.C
 				}
 				timeout.Reset(time.Millisecond * 100)
 			case <-timeout.C:
-				cmd.Log.Debug("No more post-generation events received for at least 100ms")
-				if cmd.Args.Command != "" {
+				if !goUpdated && !textUpdated {
+					// Nothing to process, reset timer and wait again.
+					timeout.Reset(time.Hour * 24 * 365)
+					break
+				}
+				postGenerationEventsWG.Add(1)
+				if cmd.Args.Command != "" && goUpdated {
 					cmd.Log.Debug("Executing command", slog.String("command", cmd.Args.Command))
 					if _, err := run.Run(ctx, cmd.Args.Path, cmd.Args.Command); err != nil {
 						cmd.Log.Error("Error executing command", slog.Any("error", err))
@@ -206,12 +225,15 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 					}
 				}
 				// Send server-sent event.
-				if p != nil {
+				if p != nil && textUpdated || goUpdated {
 					cmd.Log.Debug("Sending reload event")
 					p.SendSSE("message", "reload")
 				}
+				postGenerationEventsWG.Done()
 				// Reset timer.
 				timeout.Reset(time.Millisecond * 100)
+				textUpdated = false
+				goUpdated = false
 			}
 		}
 	}()

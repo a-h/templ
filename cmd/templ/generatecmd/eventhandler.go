@@ -61,53 +61,53 @@ type FSEventHandler struct {
 	keepOrphanedFiles          bool
 }
 
-func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (generated bool, err error) {
+func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (goUpdated, textUpdated bool, err error) {
 	// Handle _templ.go files.
 	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.go") {
 		_, err = os.Stat(strings.TrimSuffix(event.Name, "_templ.go") + ".templ")
 		if !os.IsNotExist(err) {
-			return false, err
+			return false, false, err
 		}
 		// File is orphaned.
 		if h.keepOrphanedFiles {
-			return false, nil
+			return false, false, nil
 		}
 		h.Log.Debug("Deleting orphaned Go file", slog.String("file", event.Name))
 		if err = os.Remove(event.Name); err != nil {
 			h.Log.Warn("Failed to remove orphaned file", slog.Any("error", err))
 		}
-		return true, nil
+		return true, false, nil
 	}
 	// Handle _templ.txt files.
 	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.txt") {
 		if h.DevMode {
-			// Don't do anything in watch mode.
-			return false, nil
+			// Don't delete the file if we're in dev mode, but mark that text was updated.
+			return false, true, nil
 		}
 		h.Log.Debug("Deleting watch mode file", slog.String("file", event.Name))
 		if err = os.Remove(event.Name); err != nil {
 			h.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
-			return false, nil
+			return false, false, nil
 		}
-		return false, nil
+		return false, false, nil
 	}
 
 	// Handle .templ files.
 	if !strings.HasSuffix(event.Name, ".templ") {
-		return false, nil
+		return false, false, nil
 	}
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
 	if !h.UpsertLastModTime(event.Name) {
-		return false, nil
+		return false, false, nil
 	}
 
 	// Start a processor.
 	start := time.Now()
-	diag, err := h.generate(ctx, event.Name)
+	goUpdated, textUpdated, diag, err := h.generate(ctx, event.Name)
 	if err != nil {
 		h.Log.Error("Error generating code", slog.String("file", event.Name), slog.Any("error", err))
-		return false, fmt.Errorf("failed to generate code for %q: %w", event.Name, err)
+		return goUpdated, textUpdated, fmt.Errorf("failed to generate code for %q: %w", event.Name, err)
 	}
 	if len(diag) > 0 {
 		for _, d := range diag {
@@ -117,7 +117,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	}
 	h.Log.Debug("Generated code", slog.String("file", event.Name), slog.Duration("in", time.Since(start)))
 
-	return true, nil
+	return goUpdated, textUpdated, nil
 }
 
 func (h *FSEventHandler) UpsertLastModTime(fileName string) (updated bool) {
@@ -148,35 +148,36 @@ func (h *FSEventHandler) UpsertHash(fileName string, hash [sha256.Size]byte) (up
 
 // generate Go code for a single template.
 // If a basePath is provided, the filename included in error messages is relative to it.
-func (h *FSEventHandler) generate(ctx context.Context, fileName string) (diagnostics []parser.Diagnostic, err error) {
+func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdated, textUpdated bool, diagnostics []parser.Diagnostic, err error) {
 	t, err := parser.Parse(fileName)
 	if err != nil {
-		return nil, fmt.Errorf("%s parsing error: %w", fileName, err)
+		return false, false, nil, fmt.Errorf("%s parsing error: %w", fileName, err)
 	}
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
 	// Only use relative filenames to the basepath for filenames in runtime error messages.
 	relFilePath, err := filepath.Rel(h.dir, fileName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get relative path for %q: %w", fileName, err)
+		return false, false, nil, fmt.Errorf("failed to get relative path for %q: %w", fileName, err)
 	}
 
 	var b bytes.Buffer
 	sourceMap, literals, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath))...)
 	if err != nil {
-		return nil, fmt.Errorf("%s generation error: %w", fileName, err)
+		return false, false, nil, fmt.Errorf("%s generation error: %w", fileName, err)
 	}
 
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
-		return nil, fmt.Errorf("%s source formatting error: %w", fileName, err)
+		return false, false, nil, fmt.Errorf("%s source formatting error: %w", fileName, err)
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
 	goCodeHash := sha256.Sum256(formattedGoCode)
 	if h.UpsertHash(targetFileName, goCodeHash) {
+		goUpdated = true
 		if err = os.WriteFile(targetFileName, formattedGoCode, 0o644); err != nil {
-			return nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
+			return false, false, nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
 		}
 	}
 
@@ -185,8 +186,9 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (diagnos
 		txtFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.txt"
 		txtHash := sha256.Sum256([]byte(literals))
 		if h.UpsertHash(txtFileName, txtHash) {
+			textUpdated = true
 			if err = os.WriteFile(txtFileName, []byte(literals), 0o644); err != nil {
-				return nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
+				return false, false, nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
 			}
 		}
 	}
@@ -194,7 +196,8 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (diagnos
 	if h.genSourceMapVis {
 		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, sourceMap)
 	}
-	return t.Diagnostics, err
+
+	return goUpdated, textUpdated, t.Diagnostics, err
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
