@@ -8,6 +8,8 @@ import (
 	"runtime"
 
 	_ "net/http/pprof"
+
+	"github.com/a-h/templ/cmd/templ/sloghandler"
 )
 
 type Arguments struct {
@@ -32,14 +34,17 @@ var defaultWorkerCount = runtime.NumCPU()
 
 func Run(ctx context.Context, stderr io.Writer, args Arguments) (err error) {
 	level := slog.LevelWarn.Level()
-	if args.Level == "debug" || args.Level == "verbose" {
+	if args.Level == "debug" {
 		level = slog.LevelDebug.Level()
 	}
 	if args.Level == "info" {
 		level = slog.LevelInfo.Level()
 	}
-	log := slog.New(slog.NewTextHandler(stderr, &slog.HandlerOptions{
-		AddSource: true,
+	// The built-in attributes with keys "time", "level", "source", and "msg"
+	// are passed to this function, except that time is omitted
+	// if zero, and source is omitted if AddSource is false.
+	log := slog.New(sloghandler.NewHandler(stderr, &slog.HandlerOptions{
+		AddSource: args.Level == "debug",
 		Level:     level,
 	}))
 	return NewGenerate(log, args).Run(ctx)

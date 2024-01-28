@@ -35,12 +35,28 @@ func WalkFiles(ctx context.Context, path string, out chan fsnotify.Event) (err e
 		if info.IsDir() && shouldSkipDir(path) {
 			return filepath.SkipDir
 		}
+		if !shouldIncludeFile(path) {
+			return nil
+		}
 		out <- fsnotify.Event{
 			Name: path,
 			Op:   fsnotify.Create,
 		}
 		return nil
 	})
+}
+
+func shouldIncludeFile(name string) bool {
+	if strings.HasSuffix(name, ".templ") {
+		return true
+	}
+	if strings.HasSuffix(name, "_templ.go") {
+		return true
+	}
+	if strings.HasSuffix(name, "_templ.txt") {
+		return true
+	}
+	return false
 }
 
 type RecursiveWatcher struct {
@@ -65,6 +81,10 @@ func (w *RecursiveWatcher) loop() error {
 			}
 			if event.Has(fsnotify.Create) {
 				w.Add(event.Name)
+			}
+			// Only notify on templ related files.
+			if !shouldIncludeFile(event.Name) {
+				continue
 			}
 			w.Events <- event
 		case err, ok := <-w.w.Errors:

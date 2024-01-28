@@ -65,13 +65,14 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	// Handle _templ.go files.
 	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.go") {
 		_, err = os.Stat(strings.TrimSuffix(event.Name, "_templ.go") + ".templ")
-		if err != nil {
-			return false, nil
+		if !os.IsNotExist(err) {
+			return false, err
 		}
 		// File is orphaned.
 		if h.keepOrphanedFiles {
 			return false, nil
 		}
+		h.Log.Debug("Deleting orphaned Go file", slog.String("file", event.Name))
 		if err = os.Remove(event.Name); err != nil {
 			h.Log.Warn("Failed to remove orphaned file", slog.Any("error", err))
 		}
@@ -83,11 +84,11 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 			// Don't do anything in watch mode.
 			return false, nil
 		}
+		h.Log.Debug("Deleting watch mode file", slog.String("file", event.Name))
 		if err = os.Remove(event.Name); err != nil {
 			h.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
 			return false, nil
 		}
-		h.Log.Debug("Deleted watch mode file", slog.String("file", event.Name))
 		return false, nil
 	}
 

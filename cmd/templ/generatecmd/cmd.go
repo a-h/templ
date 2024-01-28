@@ -102,7 +102,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		defer pushHandlerWG.Done()
 		defer close(events)
 		defer close(errs)
-		cmd.Log.Info("Walking directory", slog.String("path", cmd.Args.Path), slog.Bool("devMode", cmd.Args.Watch))
+		cmd.Log.Debug("Walking directory", slog.String("path", cmd.Args.Path), slog.Bool("devMode", cmd.Args.Watch))
 		err = watcher.WalkFiles(ctx, cmd.Args.Path, events)
 		if err != nil {
 			cmd.Log.Error("WalkFiles failed, exiting", slog.Any("error", err))
@@ -149,10 +149,10 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		defer close(postGeneration)
 		cmd.Log.Debug("Starting event handler")
 		for event := range events {
-			cmd.Log.Debug("Event received, waiting for queue slot", slog.Any("event", event))
 			eventsWG.Add(1)
 			sem <- struct{}{}
 			go func(event fsnotify.Event) {
+				cmd.Log.Debug("Processing file", slog.String("file", event.Name))
 				defer eventsWG.Done()
 				defer func() { <-sem }()
 				generated, err := fseh.HandleEvent(ctx, event)
@@ -165,24 +165,26 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				}
 			}(event)
 		}
+		// Wait for all events to be processed before closing.
 		eventsWG.Wait()
 	}()
 
 	// Start process to handle post-generation events.
 	postGenerationWG.Add(1)
-	var firstPostGeneration bool
+	var firstPostGenerationExecuted bool
 	go func() {
 		defer postGenerationWG.Done()
 		cmd.Log.Debug("Starting post-generation handler")
 		timeout := time.NewTimer(time.Hour * 24 * 365)
 		var p *proxy.Handler
-	loop:
-		for range postGeneration {
+		for {
 			select {
 			case v := <-postGeneration:
 				if v == nil {
-					break loop
+					cmd.Log.Debug("Post-generation event channel closed, exiting")
+					return
 				}
+				// Reset timer.
 				if !timeout.Stop() {
 					<-timeout.C
 				}
@@ -195,9 +197,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 						cmd.Log.Error("Error executing command", slog.Any("error", err))
 					}
 				}
-				if firstPostGeneration {
+				if !firstPostGenerationExecuted {
 					cmd.Log.Debug("First post-generation event received, starting proxy")
-					firstPostGeneration = false
+					firstPostGenerationExecuted = true
 					p, err = cmd.StartProxy(ctx)
 					if err != nil {
 						cmd.Log.Error("Failed to start proxy", slog.Any("error", err))
@@ -205,8 +207,11 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				}
 				// Send server-sent event.
 				if p != nil {
+					cmd.Log.Debug("Sending reload event")
 					p.SendSSE("message", "reload")
 				}
+				// Reset timer.
+				timeout.Reset(time.Millisecond * 100)
 			}
 		}
 	}()
