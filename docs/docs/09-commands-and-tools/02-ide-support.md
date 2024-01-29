@@ -225,6 +225,12 @@ Minimal config with the following features (useful for debugging):
 - [tree-sitter](https://github.com/nvim-treesitter/nvim-treesitter): for synx highlighting
     - [tree sitter templ](https://github.com/vrischmann/tree-sitter-templ)
 
+
+To use this config, either just create/replace `init.lua` in your config folder (`~/.config/nvim/`) or for a temporary setup create
+a new folder in your `.config` (e.g.`~/.config/nvim_test`) and tell neovim to start up with that as the nvim appname `NVIM_APPNAME=nvim_test nvim`.   
+For reference: [neovim docs](https://neovim.io/doc/user/starting.html#%24NVIM_APPNAME). 
+
+
 ```lua
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
