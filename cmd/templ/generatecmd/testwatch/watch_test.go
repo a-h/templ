@@ -25,6 +25,7 @@ import (
 var testdata embed.FS
 
 func createTestProject(moduleRoot string) (dir string, err error) {
+	fmt.Printf("creating test project\n")
 	dir, err = os.MkdirTemp("", "templ_watch_test_*")
 	if err != nil {
 		return dir, fmt.Errorf("failed to make test dir: %w", err)
@@ -45,7 +46,7 @@ func createTestProject(moduleRoot string) (dir string, err error) {
 			data = bytes.ReplaceAll(data, []byte("{moduleRoot}"), []byte(moduleRoot))
 			target = filepath.Join(dir, "go.mod")
 		}
-		err = os.WriteFile(target, data, 0660)
+		err = os.WriteFile(target, data, 0o660)
 		if err != nil {
 			return dir, fmt.Errorf("failed to copy file: %w", err)
 		}
@@ -59,7 +60,7 @@ func replaceInFile(name, src, tgt string) error {
 		return err
 	}
 	updated := strings.Replace(string(data), src, tgt, -1)
-	return os.WriteFile(name, []byte(updated), 0660)
+	return os.WriteFile(name, []byte(updated), 0o660)
 }
 
 func getPort() (port int, err error) {
