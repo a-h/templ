@@ -119,7 +119,10 @@ lspconfig.tailwindcss.setup({
 ```
 
 Inside of your `tailwind.config.js`, you need to tell tailwind to look inside of .templ files and/or .go files.
-Note, if you're using tailwind from the cdn and do not have `tailwind.config.js` the lsp will not work as its looking for that file in the `root_dir` by default. 
+
+:::tip
+If you don't have a `tailwind.config.js` in the root directory of your project, the Tailwind LSP won't activate, and you won't see autocompletion results.
+:::
 
 ```js
 module.exports = {
