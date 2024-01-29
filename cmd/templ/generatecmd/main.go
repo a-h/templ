@@ -386,6 +386,7 @@ func generate(ctx context.Context, basePath, fileName string, hashes map[string]
 	if err != nil {
 		return nil, fmt.Errorf("%s parsing error: %w", fileName, err)
 	}
+	_, t.FileName = path.Split(fileName)
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
 	// Only use relative filenames to the basepath for filenames in runtime error messages.

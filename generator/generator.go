@@ -225,6 +225,10 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	var err error
 	var indentLevel int
 
+	//line SomeFilename.templ:20
+	if _, err = g.w.Write(fmt.Sprintf("//line %s:%d\n", g.tf.FileName, n.Name.Range.From.Line+1)); err != nil {
+		return err
+	}
 	// func
 	if _, err = g.w.Write("func "); err != nil {
 		return err
@@ -348,6 +352,11 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 	var r parser.Range
 	var err error
 	var indentLevel int
+
+	//line SomeFilename.templ:20
+	if _, err = g.w.Write(fmt.Sprintf("//line %s:%d\n", g.tf.FileName, t.Expression.Range.From.Line+1)); err != nil {
+		return err
+	}
 
 	// func
 	if _, err = g.w.Write("func "); err != nil {
@@ -1388,6 +1397,10 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 	var err error
 	var indentLevel int
 
+	//line SomeFilename.templ:20
+	if _, err = g.w.Write(fmt.Sprintf("//line %s:%d\n", g.tf.FileName, t.Parameters.Range.From.Line+1)); err != nil {
+		return err
+	}
 	// func
 	if _, err = g.w.Write("func "); err != nil {
 		return err
