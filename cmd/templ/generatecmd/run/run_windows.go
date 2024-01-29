@@ -47,7 +47,7 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 		kill.Stdout = os.Stdout
 		err := kill.Run()
 		if err != nil {
-			return err
+			return cmd, err
 		}
 		delete(running, input)
 	}

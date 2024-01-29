@@ -1,0 +1,66 @@
+package testwhitespacearoundgokeywords 
+
+import "fmt"
+
+templ WhitespaceIsConsistentInIf(firstIf, secondIf bool) {
+	<button>Start</button>
+	if firstIf {
+		<button>If</button>
+	} else if secondIf {
+		<button>ElseIf</button>
+	} else {
+		<button>Else</button>
+	}
+	<button>End</button>
+}
+
+const WhitespaceIsConsistentInTrueIfExpected = `<button>Start</button> <button>If</button> <button>End</button>`
+const WhitespaceIsConsistentInTrueElseIfExpected = `<button>Start</button> <button>ElseIf</button> <button>End</button>`
+const WhitespaceIsConsistentInTrueElseExpected = `<button>Start</button> <button>Else</button> <button>End</button>`
+
+templ WhitespaceIsConsistentInFalseIf() {
+	<button>Start</button>
+	if false {
+		<button>Will Not Render</button>
+	}
+	<button>End</button>
+}
+
+const WhitespaceIsConsistentInFalseIfExpected = `<button>Start</button> <button>End</button>`
+
+templ WhitespaceIsConsistentInSwitch(i int) {
+	<button>Start</button>
+	switch i {
+		case 1:
+			<button>1</button>
+		default:
+			<button>default</button>
+	}
+	<button>End</button>
+}
+
+const WhitespaceIsConsistentInOneSwitchExpected = `<button>Start</button> <button>1</button> <button>End</button>`
+const WhitespaceIsConsistentInDefaultSwitchExpected = `<button>Start</button> <button>default</button> <button>End</button>`
+
+templ WhitespaceIsConsistentInSwitchNoDefault() {
+	<button>Start</button>
+	switch false {
+		case true:
+			<button>Will Not Render</button>
+	}
+	<button>End</button>
+}
+
+const WhitespaceIsConsistentInSwitchNoDefaultExpected = `<button>Start</button> <button>End</button>`
+
+templ WhitespaceIsConsistentInFor(i int) {
+	<button>Start</button>
+	for j := 0; j < i; j++ {
+		<button>{ fmt.Sprint(j) }</button>
+	}
+	<button>End</button>
+}
+
+const WhitespaceIsConsistentInForZeroExpected = `<button>Start</button> <button>End</button>`
+const WhitespaceIsConsistentInForOneExpected = `<button>Start</button> <button>0</button> <button>End</button>`
+const WhitespaceIsConsistentInForThreeExpected = `<button>Start</button> <button>0</button> <button>1</button> <button>2</button> <button>End</button>`
