@@ -224,9 +224,15 @@ Format stdin to stdout:
 
   templ fmt < header.templ
 
+Format file or directory to stdout:
+
+  templ fmt -stdout FILE
+
 Args:
   -help
     Print help and exit.
+  -stdout
+    Prints to stdout instead of in-place format
 `
 
 func fmtCmd(w io.Writer, args []string) (code int) {
@@ -236,12 +242,14 @@ func fmtCmd(w io.Writer, args []string) (code int) {
 		fmt.Fprint(w, fmtUsageText)
 	}
 	helpFlag := cmd.Bool("help", false, "")
+	stdout := cmd.Bool("stdout", false, "")
+
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
 		cmd.Usage()
 		return
 	}
-	err = fmtcmd.Run(w, args)
+	err = fmtcmd.Run(w, fmtcmd.Arguments{*stdout, cmd.Args()})
 	if err != nil {
 		fmt.Fprintln(w, err.Error())
 		return 1
