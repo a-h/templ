@@ -14,16 +14,16 @@ func (_ conditionalAttributeParser) Parse(pi *parse.Input) (r ConditionalAttribu
 
 	// Strip leading whitespace and look for `if `.
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
-		return r, false, err
+		return
 	}
 	if !peekPrefix(pi, "if ") {
 		pi.Seek(start)
-		return r, false, nil
+		return
 	}
 
 	// Parse the Go if expression.
 	if r.Expression, err = parseGo("if attribute", pi, goexpression.If); err != nil {
-		return r, false, err
+		return
 	}
 
 	// Eat " {\n".
@@ -32,7 +32,7 @@ func (_ conditionalAttributeParser) Parse(pi *parse.Input) (r ConditionalAttribu
 		return
 	}
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
-		return r, false, err
+		return
 	}
 
 	// Read the 'Then' attributes.
