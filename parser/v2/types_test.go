@@ -564,7 +564,7 @@ templ x() {
 `,
 		},
 		{
-			name: "templ expression attribute are formatted correctly when multiline",
+			name: "templ expression attributes are formatted correctly when multiline",
 			input: ` // first line removed to make indentation clear
 package main
 

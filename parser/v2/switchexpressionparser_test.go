@@ -314,7 +314,7 @@ func TestIncompleteSwitch(t *testing.T) {
 	t.Run("no opening brace", func(t *testing.T) {
 		input := parse.NewInput(`switch with no brace`)
 		_, _, err := switchExpression.Parse(input)
-		if err.Error() != "switch: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements: line 0, col 20" {
+		if err.Error() != "switch: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements: line 0, col 0" {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})

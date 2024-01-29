@@ -245,6 +245,69 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "templelement: supports a slice of functions",
+			input: `@templates[0]()`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates[0]()`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 15,
+							Line:  0,
+							Col:   15,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: supports a map of functions",
+			input: `@templates["key"]()`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates["key"]()`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 19,
+							Line:  0,
+							Col:   19,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: supports a slice of structs/interfaces",
+			input: `@templates[0].CreateTemplate()`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates[0].CreateTemplate()`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 30,
+							Line:  0,
+							Col:   30,
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

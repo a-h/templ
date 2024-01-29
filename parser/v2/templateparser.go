@@ -16,31 +16,25 @@ type templateExpression struct {
 	Expression Expression
 }
 
-var templateExpressionStartParser = parse.String("templ ")
-
 var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpression, ok bool, err error) {
-	// Check the prefix first.
-	if _, ok, err = templateExpressionStartParser.Parse(pi); err != nil || !ok {
-		return
+	start := pi.Index()
+
+	if !peekPrefix(pi, "templ ") {
+		return r, false, nil
 	}
 
-	// Once we have the prefix, everything to the brace at the end of the line is Go.
+	// Once we have the prefix, everything to the brace is Go.
 	// e.g.
 	// templ (x []string) Test() {
 	// becomes:
 	// func (x []string) Test() templ.Component {
-
-	// Once we've got a prefix, read until {\n.
-	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
-	msg := "templ: malformed templ expression, expected `templ functionName() {`"
-	if r.Expression, ok, err = ExpressionOf(parse.StringUntil(until)).Parse(pi); err != nil || !ok {
-		err = parse.Error(msg, pi.Position())
-		return
+	if r.Expression, err = parseGoFuncDecl(pi); err != nil {
+		return r, false, err
 	}
 
 	// Eat " {\n".
-	if _, ok, err = until.Parse(pi); err != nil || !ok {
-		err = parse.Error(msg, pi.Position())
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+		err = parse.Error("templ: malformed templ expression, expected `templ functionName() {`", pi.PositionAt(start))
 		return
 	}
 

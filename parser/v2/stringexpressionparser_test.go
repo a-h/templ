@@ -57,6 +57,30 @@ func TestStringExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "multiple lines",
+			input: `{ test{}.Call(a,
+		b,
+	  c) }`,
+			expected: StringExpression{
+				Expression: Expression{
+					Value: "test{}.Call(a,\n\t\tb,\n\t  c)",
+					Range: Range{
+						From: Position{
+							Index: 2,
+							Line:  0,
+							Col:   2,
+						},
+						To: Position{
+
+							Index: 27,
+							Line:  2,
+							Col:   5,
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
