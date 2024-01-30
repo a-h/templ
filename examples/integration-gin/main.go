@@ -3,24 +3,25 @@ package main
 import (
 	"net/http"
 
+	"github.com/a-h/templ/examples/integration-gin/gintemplrenderer"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	r := gin.Default()
-	r.HTMLRender = &TemplRender{}
+	engine := gin.Default()
+	engine.HTMLRender = gintemplrenderer.Default
 
-	r.GET("/", func(c *gin.Context) {
+	// Disable trusted proxy warning.
+	engine.SetTrustedProxies(nil)
+
+	engine.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "", Home())
 	})
 
-	r.GET("/with-ctx", func(c *gin.Context) {
-		c.Render(http.StatusOK, &TemplRender{
-			Code: http.StatusOK,
-			Data: Home(),
-			Ctx:  c.Request.Context(),
-		})
+	engine.GET("/with-ctx", func(c *gin.Context) {
+		r := gintemplrenderer.New(c.Request.Context(), http.StatusOK, Home())
+		c.Render(http.StatusOK, r)
 	})
 
-	r.Run(":8080")
+	engine.Run(":8080")
 }
