@@ -92,8 +92,10 @@ Args:
     Port to run the pprof server on.
   -keep-orphaned-files
     Keeps orphaned generated templ files. (default false)
-	-level
-    Log verbosity level. (default "info")
+  -v
+    Set log verbosity level to "debug". (default "info")
+  -log-level
+    Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
   -help
     Print help and exit.
 
@@ -128,12 +130,18 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
 	pprofPortFlag := cmd.Int("pprof", 0, "")
 	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
-	levelFlag := cmd.String("level", "info", "")
+	verboseFlag := cmd.Bool("v", false, "")
+	logLevelFlag := cmd.String("log-level", "info", "")
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
 		fmt.Fprint(w, generateUsageText)
 		return
+	}
+
+	logLevel := *logLevelFlag
+	if *verboseFlag {
+		logLevel = "debug"
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -156,7 +164,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 		GenerateSourceMapVisualisations: *sourceMapVisualisationsFlag,
 		IncludeVersion:                  *includeVersionFlag,
 		IncludeTimestamp:                *includeTimestampFlag,
-		Level:                           *levelFlag,
+		LogLevel:                        logLevel,
 		PPROFPort:                       *pprofPortFlag,
 		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
 	})

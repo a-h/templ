@@ -13,15 +13,13 @@ If the `*.go` files change, #3 and #4 must be ran.
 
 ## Built-in
 
-templ ships with hot reload that carries out these operations.
+`templ generate --watch` watches the current directory for changes and generates Go code if changes are detected.
 
-templ uses a basic `os.WalkDir` function to iterate through `*.templ` files on disk, with a backoff strategy to prevent excessive disk thrashing and reduce CPU usage.
+`templ generate --watch` generates Go code that loads strings from a `_templ.txt` file on disk to reduce the number of times that Go code needs to be re-generated, and therefore reduces the number of time your app needs to be recompiled and restarted.
 
-`templ generate --watch` watches the current directory for changes and will run `templ generate` if changes are detected (#1 and #2).
+To re-run your app automatical, add the `--cmd` argument to `templ generate`, and templ will start or restart your app using the command provided once template code generation is complete (#3).
 
-To re-run your app, set the `--cmd` argument, and templ will start or restart your app using the command provided once template code generation is complete (#3).
-
-To trigger your web browser to reload automatically (without pressing F5), set the `--proxy` argument (#4).
+Finally, to trigger your web browser to reload automatically (without pressing F5), set the `--proxy` argument (#4).
 
 The `--proxy` argument starts a HTTP proxy which proxies requests to your app. For example, if your app runs on port 8080, you would use `--proxy="http://localhost:8080"`. The proxy inserts client-side JavaScript before the `</body>` tag that will cause the browser to reload the window when the app is restarted instead of you having to reload the page manually. Note that the html being served by the webserver MUST have a `<body>` tag, otherwise there will be no javascript injection thus making the browser not reload automatically.
 

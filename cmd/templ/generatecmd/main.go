@@ -23,15 +23,15 @@ type Arguments struct {
 	GenerateSourceMapVisualisations bool
 	IncludeVersion                  bool
 	IncludeTimestamp                bool
-	Level                           string
+	LogLevel                        string
 	// PPROFPort is the port to run the pprof server on.
 	PPROFPort         int
 	KeepOrphanedFiles bool
 }
 
-func Run(ctx context.Context, stderr io.Writer, args Arguments) (err error) {
+func Run(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	level := slog.LevelInfo.Level()
-	switch args.Level {
+	switch args.LogLevel {
 	case "debug":
 		level = slog.LevelDebug.Level()
 	case "warn":
@@ -42,8 +42,8 @@ func Run(ctx context.Context, stderr io.Writer, args Arguments) (err error) {
 	// The built-in attributes with keys "time", "level", "source", and "msg"
 	// are passed to this function, except that time is omitted
 	// if zero, and source is omitted if AddSource is false.
-	log := slog.New(sloghandler.NewHandler(stderr, &slog.HandlerOptions{
-		AddSource: args.Level == "debug",
+	log := slog.New(sloghandler.NewHandler(w, &slog.HandlerOptions{
+		AddSource: args.LogLevel == "debug",
 		Level:     level,
 	}))
 	return NewGenerate(log, args).Run(ctx)
