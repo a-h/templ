@@ -91,6 +91,7 @@ templ usage() {
 
 ```html title="Output"
 <p data-testid="paragraph">Text</p>
+<hr>
 ```
 
 ## URL attributes
