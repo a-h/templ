@@ -304,7 +304,21 @@ func Setup() (args TestArgs, teardown func(t *testing.T), err error) {
 	}()
 
 	// Wait for server to start.
-	time.Sleep(time.Second)
+	var tries int
+	for {
+		if tries > 5 {
+			cancel()
+			wg.Wait()
+			return args, teardown, fmt.Errorf("failed to start server after 5 tries")
+		}
+		tries++
+		_, err = getHTML(args.ProxyURL)
+		if err != nil {
+			time.Sleep(time.Second)
+			continue
+		}
+		break
+	}
 
 	// Wait for exit.
 	teardown = func(t *testing.T) {
