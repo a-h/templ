@@ -103,6 +103,30 @@ func TestTemplateParser(t *testing.T) {
 			},
 		},
 		{
+			name: "template: can have multiline params",
+			input: `templ Multiline(
+	params expense,
+) {
+}`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "Multiline(\n\tparams expense,\n)",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  0,
+							Col:   6,
+						},
+						To: Position{
+							Index: 35,
+							Line:  2,
+							Col:   1,
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "template: containing element",
 			input: `templ Name(p Parameter) {
 <span>{ "span content" }</span>

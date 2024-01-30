@@ -1,9 +1,8 @@
 package parser
 
 import (
-	"strings"
-
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
 var switchExpression parse.Parser[Node] = switchExpressionParser{}
@@ -11,23 +10,23 @@ var switchExpression parse.Parser[Node] = switchExpressionParser{}
 type switchExpressionParser struct{}
 
 func (_ switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+	var r SwitchExpression
+	start := pi.Index()
+
 	// Check the prefix first.
-	if _, ok, err = parse.String("switch ").Parse(pi); err != nil || !ok {
+	if !peekPrefix(pi, "switch ") {
+		pi.Seek(start)
 		return
 	}
 
-	// Once we've got a prefix, read until {\n.
-	var r SwitchExpression
-	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
-	endOfStatementExpression := ExpressionOf(parse.StringUntil(until))
-	if r.Expression, ok, err = endOfStatementExpression.Parse(pi); err != nil || !ok {
-		err = parse.Error("switch: "+unterminatedMissingCurly, pi.Position())
-		return
+	// Parse the Go switch expresion.
+	if r.Expression, err = parseGo("switch", pi, goexpression.Switch); err != nil {
+		return r, false, err
 	}
 
 	// Eat " {\n".
-	if _, ok, err = until.Parse(pi); err != nil || !ok {
-		err = parse.Error("switch: "+unterminatedMissingCurly, pi.Position())
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+		err = parse.Error("switch: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return
 	}
 
@@ -55,31 +54,29 @@ func (_ switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err err
 	return r, true, nil
 }
 
-var caseExpressionStartParser = parse.Func(func(in *parse.Input) (e Expression, ok bool, err error) {
-	start := in.Index()
+var caseExpressionStartParser = parse.Func(func(pi *parse.Input) (r Expression, ok bool, err error) {
+	start := pi.Index()
 
 	// Optional whitespace.
-	if _, _, err = parse.OptionalWhitespace.Parse(in); err != nil {
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
 		return
 	}
 
-	// Read the line.
-	if e, ok, err = ExpressionOf(parse.StringUntil(parse.String("\n"))).Parse(in); err != nil || !ok {
-		in.Seek(start)
-		return
+	// Strip leading whitespace and look for `case ` or `default`.
+	if !peekPrefix(pi, "case ", "default") {
+		pi.Seek(start)
+		return r, false, nil
 	}
-
-	// Check the expected results.
-	ok = (strings.HasPrefix(e.Value, "case ") || strings.HasPrefix(e.Value, "default"))
-	if !ok {
-		in.Seek(start)
-		return
+	// Parse the Go expresion.
+	if r, err = parseGo("case", pi, goexpression.Case); err != nil {
+		return r, false, err
 	}
 
 	// Eat terminating newline.
-	_, _, _ = parse.String("\n").Parse(in)
+	_, _, _ = parse.ZeroOrMore(parse.String(" ")).Parse(pi)
+	_, _, _ = parse.NewLine.Parse(pi)
 
-	return
+	return r, true, nil
 })
 
 var caseExpressionParser = parse.Func(func(pi *parse.Input) (r CaseExpression, ok bool, err error) {
