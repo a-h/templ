@@ -90,6 +90,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		return err
 	}
 
+	// Start timer.
+	start := time.Now()
+
 	// Create channels:
 	// For the initial filesystem walk and subsequent (optional) fsnotify events.
 	events := make(chan fsnotify.Event)
@@ -249,10 +252,6 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		if err == nil {
 			continue
 		}
-		if errors.Is(err, context.Canceled) {
-			cmd.Log.Debug("Context cancelled, exiting")
-			return nil
-		}
 		if errors.Is(err, FatalError{}) {
 			cmd.Log.Debug("Fatal error, exiting")
 			return err
@@ -273,7 +272,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			cmd.Log.Error("Error killing command", slog.Any("error", err))
 		}
 	}
-	cmd.Log.Info("Complete", slog.Int("updates", updates))
+	cmd.Log.Info("Complete", slog.Int("updates", updates), slog.Duration("duration", time.Since(start)))
 
 	return nil
 }

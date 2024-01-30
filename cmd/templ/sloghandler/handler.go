@@ -12,10 +12,6 @@ import (
 
 var _ slog.Handler = &Handler{}
 
-type Options struct {
-	slog.HandlerOptions
-}
-
 type Handler struct {
 	h slog.Handler
 	m *sync.Mutex
