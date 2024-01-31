@@ -304,20 +304,15 @@ func Setup() (args TestArgs, teardown func(t *testing.T), err error) {
 	}()
 
 	// Wait for server to start.
-	var tries int
-	for {
-		if tries > 5 {
-			cancel()
-			wg.Wait()
-			return args, teardown, fmt.Errorf("failed to start server after 5 tries")
-		}
-		tries++
-		_, err = getHTML(args.ProxyURL)
-		if err != nil {
-			time.Sleep(time.Second)
-			continue
-		}
-		break
+	if err = waitForUrl(args.AppURL); err != nil {
+		cancel()
+		wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start app server: %v", err)
+	}
+	if err = waitForUrl(args.ProxyURL); err != nil {
+		cancel()
+		wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start proxy server: %v", err)
 	}
 
 	// Wait for exit.
@@ -333,4 +328,26 @@ func Setup() (args TestArgs, teardown func(t *testing.T), err error) {
 		}
 	}
 	return args, teardown, err
+}
+
+func waitForUrl(url string) (err error) {
+	var tries int
+	for {
+		time.Sleep(time.Second)
+		if tries > 5 {
+			return err
+		}
+		tries++
+		resp, err := http.Get(url)
+		if err != nil {
+			fmt.Printf("failed to get %q: %v\n", url, err)
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			fmt.Printf("failed to get %q: %v\n", url, err)
+			err = fmt.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+			continue
+		}
+		return nil
+	}
 }
