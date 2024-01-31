@@ -338,7 +338,8 @@ func waitForUrl(url string) (err error) {
 			return err
 		}
 		tries++
-		resp, err := http.Get(url)
+		var resp *http.Response
+		resp, err = http.Get(url)
 		if err != nil {
 			fmt.Printf("failed to get %q: %v\n", url, err)
 			continue
