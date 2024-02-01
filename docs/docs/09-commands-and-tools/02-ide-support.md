@@ -34,6 +34,9 @@ Include the following to the settings.json in order to enable autocompletion for
   }
 }
 ```
+:::note 
+TailwindCSS language server looks for a tailwind.config.js file, make sure to include it at the root of your project. A sample file can be found [here](#neovim--050).
+:::
 
 ### Emmet HTML completion
 
