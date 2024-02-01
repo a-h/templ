@@ -334,7 +334,7 @@ func waitForUrl(url string) (err error) {
 	var tries int
 	for {
 		time.Sleep(time.Second)
-		if tries > 5 {
+		if tries > 20 {
 			return err
 		}
 		tries++

@@ -8,17 +8,26 @@ import (
 	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
-func parseGoFuncDecl(pi *parse.Input) (r Expression, err error) {
+func parseGoFuncDecl(prefix string, pi *parse.Input) (name string, expression Expression, err error) {
+	prefix = prefix + " "
 	from := pi.Index()
 	src, _ := pi.Peek(-1)
-	src = strings.TrimPrefix(src, "templ ")
-	expr, err := goexpression.Func("func " + src)
+	src = strings.TrimPrefix(src, prefix)
+	name, expr, err := goexpression.Func("func " + src)
 	if err != nil {
-		return r, parse.Error(fmt.Sprintf("invalid template declaration: %v", err.Error()), pi.Position())
+		return name, expression, parse.Error(fmt.Sprintf("invalid %s declaration: %v", prefix, err.Error()), pi.Position())
 	}
-	pi.Take(len("templ ") + len(expr))
+	pi.Take(len(prefix) + len(expr))
 	to := pi.Position()
-	return NewExpression(expr, pi.PositionAt(from+len("templ ")), to), nil
+	return name, NewExpression(expr, pi.PositionAt(from+len(prefix)), to), nil
+}
+
+func parseTemplFuncDecl(pi *parse.Input) (name string, expression Expression, err error) {
+	return parseGoFuncDecl("templ", pi)
+}
+
+func parseCSSFuncDecl(pi *parse.Input) (name string, expression Expression, err error) {
+	return parseGoFuncDecl("css", pi)
 }
 
 func parseGoSliceArgs(pi *parse.Input) (r Expression, err error) {
