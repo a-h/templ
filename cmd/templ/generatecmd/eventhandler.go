@@ -149,6 +149,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	if err != nil {
 		return false, false, nil, fmt.Errorf("%s parsing error: %w", fileName, err)
 	}
+	_, t.FileName = path.Split(fileName)
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
 	// Only use relative filenames to the basepath for filenames in runtime error messages.

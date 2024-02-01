@@ -7,7 +7,7 @@ package testcssexpression
 import "github.com/a-h/templ"
 import "strings"
 
-//line :3
+//line template.templ:3
 func className() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder
 	templ_7745c5c3_CSSBuilder.WriteString(`background-color:#ffffff;`)

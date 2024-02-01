@@ -11,7 +11,7 @@ import "bytes"
 
 import "fmt"
 
-//line :5
+//line components.templ:5
 func renderHelloReact(id, name string) templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_renderHelloReact_7494`,
@@ -23,7 +23,7 @@ func renderHelloReact(id, name string) templ.ComponentScript {
 	}
 }
 
-//line :10
+//line components.templ:10
 func Hello(id, name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -60,7 +60,7 @@ func Hello(id, name string) templ.Component {
 	})
 }
 
-//line :15
+//line components.templ:15
 func page() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

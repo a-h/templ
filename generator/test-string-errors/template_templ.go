@@ -20,7 +20,7 @@ func funcWithError(in error) (s string, err error) {
 	return "OK2", nil
 }
 
-//line :14
+//line template.templ:14
 func render(err error) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

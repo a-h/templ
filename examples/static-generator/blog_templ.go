@@ -12,7 +12,7 @@ import "bytes"
 import "path"
 import "github.com/gosimple/slug"
 
-//line :6
+//line blog.templ:6
 func headerComponent(title string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -50,7 +50,7 @@ func headerComponent(title string) templ.Component {
 	})
 }
 
-//line :10
+//line blog.templ:10
 func contentComponent(title string, body templ.Component) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -96,7 +96,7 @@ func contentComponent(title string, body templ.Component) templ.Component {
 	})
 }
 
-//line :19
+//line blog.templ:19
 func contentPage(title string, body templ.Component) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -133,7 +133,7 @@ func contentPage(title string, body templ.Component) templ.Component {
 	})
 }
 
-//line :26
+//line blog.templ:26
 func indexPage(posts []Post) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

@@ -11,7 +11,7 @@ import "bytes"
 
 import "fmt"
 
-//line :5
+//line template.templ:5
 func wrapper(index int) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -52,7 +52,7 @@ func wrapper(index int) templ.Component {
 	})
 }
 
-//line :11
+//line template.templ:11
 func template() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

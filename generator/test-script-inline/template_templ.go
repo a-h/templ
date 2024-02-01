@@ -9,7 +9,7 @@ import "context"
 import "io"
 import "bytes"
 
-//line :3
+//line template.templ:3
 func withParameters(a string, b string, c int) templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_withParameters_1056`,
@@ -20,7 +20,7 @@ func withParameters(a string, b string, c int) templ.ComponentScript {
 	}
 }
 
-//line :7
+//line template.templ:7
 func withoutParameters() templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_withoutParameters_6bbf`,
@@ -31,7 +31,7 @@ func withoutParameters() templ.ComponentScript {
 	}
 }
 
-//line :11
+//line template.templ:11
 func InlineJavascript(a string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
