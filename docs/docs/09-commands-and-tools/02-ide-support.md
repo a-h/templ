@@ -34,6 +34,9 @@ Include the following to the settings.json in order to enable autocompletion for
   }
 }
 ```
+:::note 
+Tailwind language servers require a tailwind.config.js file to be present in the root of your project. You can create a new config file with `npx tailwindcss init`, or use samples available at https://tailwindcss.com/docs/configuration
+:::
 
 ### Emmet HTML completion
 
