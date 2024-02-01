@@ -1,5 +1,7 @@
 package testcssusage
 
+import "fmt"
+
 // Constant class.
 templ StyleTagsAreSupported() {
 	<style>
@@ -59,6 +61,17 @@ templ ClassNamesAreHTMLEscaped() {
 	<div class={ "a\" onClick=\"alert('hello')\"" }>Class names are HTML escaped.</div>
 }
 
+// CSS components can be used with arguments.
+
+css loading(percent int) {
+	width: { fmt.Sprintf("%d%%", percent) };
+}
+
+templ CSSComponentsCanBeUsedWithArguments() {
+	<div class={ loading(50) }>CSS components can be used with arguments.</div>
+	<div class={ loading(100) }>CSS components can be used with arguments.</div>
+}
+
 // Combine all tests.
 templ TestComponent() {
 	@StyleTagsAreSupported()
@@ -68,4 +81,5 @@ templ TestComponent() {
 	@KVCanBeUsedToConditionallySetClasses()
 	@PsuedoAttributesAndComplexClassNamesAreSupported()
 	@ClassNamesAreHTMLEscaped()
+	@CSSComponentsCanBeUsedWithArguments()
 }

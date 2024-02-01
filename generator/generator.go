@@ -229,12 +229,12 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	if _, err = g.w.Write("func "); err != nil {
 		return err
 	}
-	if r, err = g.w.Write(n.Name.Value); err != nil {
+	if r, err = g.w.Write(n.Expression.Value); err != nil {
 		return err
 	}
-	g.sourceMap.Add(n.Name, r)
-	// () templ.CSSClass {
-	if _, err = g.w.Write("() templ.CSSClass {\n"); err != nil {
+	g.sourceMap.Add(n.Expression, r)
+	// templ.CSSClass {
+	if _, err = g.w.Write(" templ.CSSClass {\n"); err != nil {
 		return err
 	}
 	{
@@ -266,7 +266,7 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 				return fmt.Errorf("unknown CSS property type: %v", reflect.TypeOf(p))
 			}
 		}
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templ_7745c5c3_CSSID := templ.CSSID(`%s`, templ_7745c5c3_CSSBuilder.String())\n", n.Name.Value)); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templ_7745c5c3_CSSID := templ.CSSID(`%s`, templ_7745c5c3_CSSBuilder.String())\n", n.Name)); err != nil {
 			return err
 		}
 		// return templ.CSS {

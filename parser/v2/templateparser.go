@@ -28,7 +28,7 @@ var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpre
 	// templ (x []string) Test() {
 	// becomes:
 	// func (x []string) Test() templ.Component {
-	if r.Expression, err = parseGoFuncDecl(pi); err != nil {
+	if _, r.Expression, err = parseTemplFuncDecl(pi); err != nil {
 		return r, false, err
 	}
 

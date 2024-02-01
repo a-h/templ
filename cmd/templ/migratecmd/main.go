@@ -134,7 +134,7 @@ func migrateV1TemplateFileNodeToV2TemplateFileNode(in v1.TemplateFileNode) (out 
 		}, nil
 	case v1.CSSTemplate:
 		var t v2.CSSTemplate
-		t.Name.Value = n.Name.Value
+		t.Expression.Value = n.Name.Value
 		t.Properties = make([]v2.CSSProperty, len(n.Properties))
 		for i, p := range n.Properties {
 			t.Properties[i], err = migrateV1CSSPropertyToV2CSSProperty(p)

@@ -247,13 +247,14 @@ func (ws Whitespace) Write(w io.Writer, indent int) error {
 //	  background-image: url('./somewhere.png');
 //	}
 type CSSTemplate struct {
-	Name       Expression
+	Name       string
+	Expression Expression
 	Properties []CSSProperty
 }
 
 func (css CSSTemplate) IsTemplateFileNode() bool { return true }
 func (css CSSTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "css ", css.Name.Value, "() {\n"); err != nil {
+	if err := writeIndent(w, indent, "css ", css.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	for _, p := range css.Properties {
