@@ -16,29 +16,25 @@ type templateExpression struct {
 	Expression Expression
 }
 
-var templateExpressionStartParser = parse.String("templ ")
-
 var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpression, ok bool, err error) {
-	// Check the prefix first.
-	if _, ok, err = templateExpressionStartParser.Parse(pi); err != nil || !ok {
-		return
+	start := pi.Index()
+
+	if !peekPrefix(pi, "templ ") {
+		return r, false, nil
 	}
 
-	// Once we have the prefix, everything to the brace at the end of the line is Go.
+	// Once we have the prefix, everything to the brace is Go.
 	// e.g.
 	// templ (x []string) Test() {
 	// becomes:
 	// func (x []string) Test() templ.Component {
-
-	// Once we've got a prefix, read until {\n.
-	until := parse.All(openBraceWithOptionalPadding, parse.NewLine)
-	msg := "templ: malformed templ expression, expected `templ functionName() {`"
-	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(until)), msg).Parse(pi); err != nil || !ok {
-		return
+	if r.Expression, err = parseGoFuncDecl(pi); err != nil {
+		return r, false, err
 	}
 
 	// Eat " {\n".
-	if _, ok, err = Must(until, msg).Parse(pi); err != nil || !ok {
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+		err = parse.Error("templ: malformed templ expression, expected `templ functionName() {`", pi.PositionAt(start))
 		return
 	}
 
@@ -63,9 +59,26 @@ type templateNodeParser[TUntil any] struct {
 	untilName string
 }
 
-var rawElements = parse.Any[RawElement](styleElement, scriptElement)
+var rawElements = parse.Any[Node](styleElement, scriptElement)
 
-func (p templateNodeParser[T]) Parse(pi *parse.Input) (op []Node, ok bool, err error) {
+var templateNodeParsers = []parse.Parser[Node]{
+	docType,                // <!DOCTYPE html>
+	htmlComment,            // <!--
+	goComment,              // // or /*
+	rawElements,            // <text>, <>, or <style> element (special behaviour - contents are not parsed).
+	element,                // <a>, <br/> etc.
+	ifExpression,           // if {}
+	forExpression,          // for {}
+	switchExpression,       // switch {}
+	callTemplateExpression, // {! TemplateName(a, b, c) }
+	templElementExpression, // @TemplateName(a, b, c) { <div>Children</div> }
+	childrenExpression,     // { children... }
+	stringExpression,       // { "abc" }
+	whitespaceExpression,   // { " " }
+	textParser,             // anything &amp; everything accepted...
+}
+
+func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, ok bool, err error) {
 	for {
 		// Check if we've reached the end.
 		if p.until != nil {
@@ -80,169 +93,27 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op []Node, ok bool, err e
 			}
 		}
 
-		// Try for valid nodes.
-		// Try for a doctype.
-		// <!DOCTYPE html>
-		var docTypeNode DocType
-		docTypeNode, ok, err = docType.Parse(pi)
-		if err != nil {
-			return
+		// Attempt to parse a node.
+		// Loop through the parsers and try to parse a node.
+		var matched bool
+		for _, p := range templateNodeParsers {
+			var node Node
+			node, matched, err = p.Parse(pi)
+			if err != nil {
+				return Nodes{}, false, err
+			}
+			if n, ok := node.(CallTemplateExpression); ok {
+				op.Diagnostics = append(op.Diagnostics, Diagnostic{
+					Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
+					Range:   n.Expression.Range,
+				})
+			}
+			if matched {
+				op.Nodes = append(op.Nodes, node)
+				break
+			}
 		}
-		if ok {
-			op = append(op, docTypeNode)
-			continue
-		}
-
-		// Try for a HTML comment.
-		// <!--
-		var htmlCommentNode HTMLComment
-		htmlCommentNode, ok, err = htmlComment.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, htmlCommentNode)
-			continue
-		}
-
-		// Try for a Go comment.
-		// // or /*
-		var goCommentNode GoComment
-		goCommentNode, ok, err = goComment.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, goCommentNode)
-			continue
-		}
-
-		// Try for a raw <text>, <>, or <style> element (special behaviour - contents are not parsed).
-		var rawElementNode RawElement
-		rawElementNode, ok, err = rawElements.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, rawElementNode)
-			continue
-		}
-
-		// Try for an element.
-		// <a>, <br/> etc.
-		var elementNode Element
-		elementNode, ok, err = element.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, elementNode)
-			continue
-		}
-
-		// Try for an if expression.
-		// if {}
-		var ifNode IfExpression
-		ifNode, ok, err = ifExpression.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, ifNode)
-			continue
-		}
-
-		// Try for a for expression.
-		// for {}
-		var forNode ForExpression
-		forNode, ok, err = forExpression.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, forNode)
-			continue
-		}
-
-		// Try for a switch expression.
-		// switch {}
-		var switchNode SwitchExpression
-		switchNode, ok, err = switchExpression.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, switchNode)
-			continue
-		}
-
-		// Try for a call template expression.
-		// {! TemplateName(a, b, c) }
-		var cteNode CallTemplateExpression
-		cteNode, ok, err = callTemplateExpression.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, cteNode)
-			continue
-		}
-
-		// Try for a templ element expression.
-		// <!TemplateName(a, b, c) />
-		var templElementNode TemplElementExpression
-		templElementNode, ok, err = templElementExpression.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, templElementNode)
-			continue
-		}
-
-		// Try for a children element expression.
-		// { children... }
-		var childrenExpressionNode ChildrenExpression
-		childrenExpressionNode, ok, err = childrenExpression.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, childrenExpressionNode)
-			continue
-		}
-
-		// Try for a string expression.
-		// { "abc" }
-		// { strings.ToUpper("abc") }
-		var stringExpressionNode StringExpression
-		stringExpressionNode, ok, err = stringExpression.Parse(pi)
-		if err != nil {
-			return
-		}
-		if ok {
-			op = append(op, stringExpressionNode)
-			continue
-		}
-
-		// Eat any whitespace.
-		var ws string
-		if ws, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
-			return
-		}
-		if ok && len(ws) > 0 {
-			op = append(op, Whitespace{Value: ws})
-			continue
-		}
-
-		// Try for text.
-		// anything &amp; everything accepted...
-		var text Text
-		if text, ok, err = textParser.Parse(pi); err != nil {
-			return
-		}
-		if ok && len(text.Value) > 0 {
-			op = append(op, text)
+		if matched {
 			continue
 		}
 

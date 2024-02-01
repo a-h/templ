@@ -15,6 +15,7 @@ Initialize a new Go project within it.
 ```sh
 cd hello-world
 go mod init github.com/a-h/templ-examples/hello-world
+go get github.com/a-h/templ
 ```
 
 ## Create a templ file
@@ -72,7 +73,7 @@ func main() {
 Running the code will render the component's HTML to stdout.
 
 ```sh
-go run *.go
+go run .
 ```
 
 ```html title="Output"

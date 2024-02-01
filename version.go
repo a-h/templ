@@ -3,4 +3,8 @@ package templ
 import _ "embed"
 
 //go:embed .version
-var Version string
+var version string
+
+func Version() string {
+	return "v" + version
+}

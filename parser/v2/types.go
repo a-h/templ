@@ -1,10 +1,10 @@
 package parser
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/format"
-	"html"
 	"io"
 	"strings"
 	"unicode"
@@ -98,13 +98,21 @@ type Expression struct {
 	Range Range
 }
 
+// Diagnostic for template file.
+type Diagnostic struct {
+	Message string
+	Range   Range
+}
+
 type TemplateFile struct {
 	// Header contains comments or whitespace at the top of the file.
-	Header []GoExpression
+	Header []TemplateFileGoExpression
 	// Package expression.
 	Package Package
 	// Nodes in the file.
 	Nodes []TemplateFileNode
+	// Diagnostics contains any errors or warnings.
+	Diagnostics []Diagnostic
 }
 
 func (tf TemplateFile) Write(w io.Writer) error {
@@ -117,25 +125,35 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	if err := tf.Package.Write(w, indent); err != nil {
 		return err
 	}
-	if _, err := w.Write([]byte("\n\n")); err != nil {
+	if _, err := io.WriteString(w, "\n\n"); err != nil {
 		return err
 	}
-	count := len(tf.Nodes)
-	for i := 0; i < count; i++ {
-		var err error
-		if err = tf.Nodes[i].Write(w, indent); err != nil {
+	for i := 0; i < len(tf.Nodes); i++ {
+		if err := tf.Nodes[i].Write(w, indent); err != nil {
 			return err
 		}
-		if i == count-1 {
-			_, err = w.Write([]byte("\n"))
-		} else {
-			_, err = w.Write([]byte("\n\n"))
-		}
-		if err != nil {
+		if _, err := io.WriteString(w, getNodeWhitespace(tf.Nodes, i)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func getNodeWhitespace(nodes []TemplateFileNode, i int) string {
+	if i == len(nodes)-1 {
+		return "\n"
+	}
+	if _, nextIsTemplate := nodes[i+1].(HTMLTemplate); nextIsTemplate {
+		if e, isGo := nodes[i].(TemplateFileGoExpression); isGo && endsWithComment(e.Expression.Value) {
+			return "\n"
+		}
+	}
+	return "\n\n"
+}
+
+func endsWithComment(s string) bool {
+	lineSlice := strings.Split(s, "\n")
+	return strings.HasPrefix(lineSlice[len(lineSlice)-1], "//")
 }
 
 // TemplateFileNode can be a Template, CSS, Script or Go.
@@ -144,27 +162,46 @@ type TemplateFileNode interface {
 	Write(w io.Writer, indent int) error
 }
 
-// GoExpression within a TemplateFile
-type GoExpression struct {
+// TemplateFileGoExpression within a TemplateFile
+type TemplateFileGoExpression struct {
 	Expression Expression
 }
 
-func (exp GoExpression) IsTemplateFileNode() bool { return true }
-func (exp GoExpression) Write(w io.Writer, indent int) error {
+func (exp TemplateFileGoExpression) IsTemplateFileNode() bool { return true }
+func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
 	data, err := format.Source([]byte(exp.Expression.Value))
 	if err != nil {
 		return writeIndent(w, indent, exp.Expression.Value)
 	}
-
 	_, err = w.Write(data)
 	return err
 }
 
-func writeIndent(w io.Writer, level int, s string) (err error) {
-	if _, err = w.Write([]byte(strings.Repeat("\t", level))); err != nil {
+func writeLinesIndented(w io.Writer, level int, s string) (err error) {
+	indent := strings.Repeat("\t", level)
+	lines := strings.Split(s, "\n")
+	indented := strings.Join(lines, "\n"+indent)
+	if _, err = io.WriteString(w, indent); err != nil {
+		return err
+	}
+	_, err = io.WriteString(w, indented)
+	if err != nil {
 		return
 	}
-	_, err = w.Write([]byte(s))
+	return
+}
+
+func writeIndent(w io.Writer, level int, s ...string) (err error) {
+	indent := strings.Repeat("\t", level)
+	if _, err = io.WriteString(w, indent); err != nil {
+		return err
+	}
+	for _, ss := range s {
+		_, err = io.WriteString(w, ss)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -216,7 +253,7 @@ type CSSTemplate struct {
 
 func (css CSSTemplate) IsTemplateFileNode() bool { return true }
 func (css CSSTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "css "+css.Name.Value+"() {\n"); err != nil {
+	if err := writeIndent(w, indent, "css ", css.Name.Value, "() {\n"); err != nil {
 		return err
 	}
 	for _, p := range css.Properties {
@@ -249,8 +286,9 @@ func (c ConstantCSSProperty) Write(w io.Writer, indent int) error {
 	}
 	return nil
 }
+
 func (c ConstantCSSProperty) String(minified bool) string {
-	var sb strings.Builder
+	sb := new(strings.Builder)
 	sb.WriteString(c.Name)
 	if minified {
 		sb.WriteString(":")
@@ -273,7 +311,7 @@ type ExpressionCSSProperty struct {
 
 func (c ExpressionCSSProperty) IsCSSProperty() bool { return true }
 func (c ExpressionCSSProperty) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, c.Name+": "); err != nil {
+	if err := writeIndent(w, indent, c.Name, ": "); err != nil {
 		return err
 	}
 	if err := c.Value.Write(w, 0); err != nil {
@@ -292,7 +330,7 @@ type DocType struct {
 
 func (dt DocType) IsNode() bool { return true }
 func (dt DocType) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, "<!DOCTYPE "+dt.Value+">")
+	return writeIndent(w, indent, "<!DOCTYPE ", dt.Value, ">")
 }
 
 // HTMLTemplate definition.
@@ -303,14 +341,15 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 //	  }
 //	}
 type HTMLTemplate struct {
-	Expression Expression
-	Children   []Node
+	Diagnostics []Diagnostic
+	Expression  Expression
+	Children    []Node
 }
 
 func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
 
 func (t HTMLTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "templ "+t.Expression.Value+" {\n"); err != nil {
+	if err := writeIndent(w, indent, "templ ", t.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(w, indent+1, t.Children); err != nil {
@@ -326,9 +365,11 @@ func (t HTMLTemplate) Write(w io.Writer, indent int) error {
 // text node, or string expression.
 type TrailingSpace string
 
-const SpaceNone TrailingSpace = ""
-const SpaceHorizontal TrailingSpace = " "
-const SpaceVertical TrailingSpace = "\n"
+const (
+	SpaceNone       TrailingSpace = ""
+	SpaceHorizontal TrailingSpace = " "
+	SpaceVertical   TrailingSpace = "\n"
+)
 
 var ErrNonSpaceCharacter = errors.New("non space character found")
 
@@ -350,6 +391,11 @@ func NewTrailingSpace(s string) (ts TrailingSpace, err error) {
 	return SpaceNone, nil
 }
 
+type Nodes struct {
+	Diagnostics []Diagnostic
+	Nodes       []Node
+}
+
 // A Node appears within a template, e.g. an StringExpression, Element, IfExpression etc.
 type Node interface {
 	IsNode() bool
@@ -361,9 +407,11 @@ type WhitespaceTrailer interface {
 	Trailing() TrailingSpace
 }
 
-var _ WhitespaceTrailer = Element{}
-var _ WhitespaceTrailer = Text{}
-var _ WhitespaceTrailer = StringExpression{}
+var (
+	_ WhitespaceTrailer = Element{}
+	_ WhitespaceTrailer = Text{}
+	_ WhitespaceTrailer = StringExpression{}
+)
 
 // Text node within the document.
 type Text struct {
@@ -390,6 +438,7 @@ type Element struct {
 	Children       []Node
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
+	Diagnostics    []Diagnostic
 }
 
 func (e Element) Trailing() TrailingSpace {
@@ -462,7 +511,7 @@ func containsNonTextNodes(nodes []Node) bool {
 
 func (e Element) IsNode() bool { return true }
 func (e Element) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "<"+e.Name); err != nil {
+	if err := writeIndent(w, indent, "<", e.Name); err != nil {
 		return err
 	}
 	for i := 0; i < len(e.Attributes); i++ {
@@ -474,9 +523,10 @@ func (e Element) Write(w io.Writer, indent int) error {
 				return err
 			}
 			attrIndent = indent + 1
-		}
-		if _, err := w.Write([]byte(" ")); err != nil {
-			return err
+		} else {
+			if _, err := w.Write([]byte(" ")); err != nil {
+				return err
+			}
 		}
 		if err := a.Write(w, attrIndent); err != nil {
 			return err
@@ -497,7 +547,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 			if err := writeNodesIndented(w, indent+1, e.Children); err != nil {
 				return err
 			}
-			if err := writeIndent(w, indent, "</"+e.Name+">"); err != nil {
+			if err := writeIndent(w, indent, "</", e.Name, ">"); err != nil {
 				return err
 			}
 			return nil
@@ -519,7 +569,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 		}
 		return nil
 	}
-	if err := writeIndent(w, closeAngleBracketIndent, "></"+e.Name+">"); err != nil {
+	if err := writeIndent(w, closeAngleBracketIndent, "></", e.Name, ">"); err != nil {
 		return err
 	}
 	return nil
@@ -607,7 +657,7 @@ type RawElement struct {
 func (e RawElement) IsNode() bool { return true }
 func (e RawElement) Write(w io.Writer, indent int) error {
 	// Start.
-	if err := writeIndent(w, indent, "<"+e.Name); err != nil {
+	if err := writeIndent(w, indent, "<", e.Name); err != nil {
 		return err
 	}
 	for i := 0; i < len(e.Attributes); i++ {
@@ -654,12 +704,17 @@ func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
 
 // href=""
 type ConstantAttribute struct {
-	Name  string
-	Value string
+	Name        string
+	Value       string
+	SingleQuote bool
 }
 
 func (ca ConstantAttribute) String() string {
-	return ca.Name + `="` + html.EscapeString(ca.Value) + `"`
+	quote := `"`
+	if ca.SingleQuote {
+		quote = `'`
+	}
+	return ca.Name + `=` + quote + ca.Value + quote
 }
 
 func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
@@ -687,11 +742,68 @@ type ExpressionAttribute struct {
 }
 
 func (ea ExpressionAttribute) String() string {
-	return ea.Name + `={ ` + ea.Expression.Value + ` }`
+	sb := new(strings.Builder)
+	_ = ea.Write(sb, 0)
+	return sb.String()
 }
 
-func (ea ExpressionAttribute) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, ea.String())
+func (ea ExpressionAttribute) formatExpression() (exp []string) {
+	trimmed := strings.TrimSpace(ea.Expression.Value)
+	if !strings.Contains(trimmed, "\n") {
+		formatted, err := format.Source([]byte(trimmed))
+		if err != nil {
+			return []string{trimmed}
+		}
+		return []string{string(formatted)}
+	}
+
+	buf := bytes.NewBufferString("[]any{\n")
+	buf.WriteString(trimmed)
+	buf.WriteString("\n}")
+
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return []string{trimmed}
+	}
+
+	// Trim prefix and suffix.
+	lines := strings.Split(string(formatted), "\n")
+	if len(lines) < 3 {
+		return []string{trimmed}
+	}
+
+	// Return.
+	return lines[1 : len(lines)-1]
+}
+
+func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
+	lines := ea.formatExpression()
+	if len(lines) == 1 {
+		return writeIndent(w, indent, ea.Name, `={ `, lines[0], ` }`)
+	}
+
+	if err = writeIndent(w, indent, ea.Name, "={\n"); err != nil {
+		return err
+	}
+	for _, line := range lines {
+		if err = writeIndent(w, indent, line, "\n"); err != nil {
+			return err
+		}
+	}
+	return writeIndent(w, indent, "}")
+}
+
+// <a { spread... } />
+type SpreadAttributes struct {
+	Expression Expression
+}
+
+func (sa SpreadAttributes) String() string {
+	return `{ ` + sa.Expression.Value + `... }`
+}
+
+func (sa SpreadAttributes) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, sa.String())
 }
 
 //	<a href="test" \
@@ -769,9 +881,9 @@ type GoComment struct {
 func (c GoComment) IsNode() bool { return true }
 func (c GoComment) Write(w io.Writer, indent int) error {
 	if c.Multiline {
-		return writeIndent(w, indent, "/*"+c.Contents+"*/")
+		return writeIndent(w, indent, "/*", c.Contents, "*/")
 	}
-	return writeIndent(w, indent, "//"+c.Contents)
+	return writeIndent(w, indent, "//", c.Contents)
 }
 
 // HTMLComment.
@@ -781,7 +893,7 @@ type HTMLComment struct {
 
 func (c HTMLComment) IsNode() bool { return true }
 func (c HTMLComment) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, "<!--"+c.Contents+"-->")
+	return writeIndent(w, indent, "<!--", c.Contents, "-->")
 }
 
 // Nodes.
@@ -797,7 +909,8 @@ type CallTemplateExpression struct {
 
 func (cte CallTemplateExpression) IsNode() bool { return true }
 func (cte CallTemplateExpression) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, `{! `+cte.Expression.Value+` }`)
+	// Rewrite to new call syntax
+	return writeIndent(w, indent, `@`, cte.Expression.Value)
 }
 
 // TemplElementExpression can be used to create and render a template using data.
@@ -808,15 +921,23 @@ type TemplElementExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
 	// Children returns the elements in a block element.
-	Children []Node
+	Children    []Node
+	Diagnostics []Diagnostic
 }
 
 func (tee TemplElementExpression) IsNode() bool { return true }
 func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
-	if len(tee.Children) == 0 {
-		return writeIndent(w, indent, fmt.Sprintf("@%s", tee.Expression.Value))
+	source, err := format.Source([]byte(tee.Expression.Value))
+	if err != nil {
+		source = []byte(tee.Expression.Value)
 	}
-	if err := writeIndent(w, indent, fmt.Sprintf("@%s {\n", tee.Expression.Value)); err != nil {
+	if err := writeLinesIndented(w, indent, "@"+string(source)); err != nil {
+		return err
+	}
+	if len(tee.Children) == 0 {
+		return nil
+	}
+	if _, err = io.WriteString(w, " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(w, indent+1, tee.Children); err != nil {
@@ -843,20 +964,22 @@ func (ChildrenExpression) Write(w io.Writer, indent int) error {
 // if p.Type == "test" && p.thing {
 // }
 type IfExpression struct {
-	Expression Expression
-	Then       []Node
-	ElseIfs    []ElseIfExpression
-	Else       []Node
+	Expression  Expression
+	Then        []Node
+	ElseIfs     []ElseIfExpression
+	Else        []Node
+	Diagnostics []Diagnostic
 }
 
 type ElseIfExpression struct {
-	Expression Expression
-	Then       []Node
+	Expression  Expression
+	Then        []Node
+	Diagnostics []Diagnostic
 }
 
 func (n IfExpression) IsNode() bool { return true }
 func (n IfExpression) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "if "+n.Expression.Value+" {\n"); err != nil {
+	if err := writeIndent(w, indent, "if ", n.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	indent++
@@ -865,7 +988,7 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 	}
 	indent--
 	for _, elseIf := range n.ElseIfs {
-		if err := writeIndent(w, indent, "} else if "+elseIf.Expression.Value+" {\n"); err != nil {
+		if err := writeIndent(w, indent, "} else if ", elseIf.Expression.Value, " {\n"); err != nil {
 			return err
 		}
 		indent++
@@ -898,13 +1021,13 @@ type SwitchExpression struct {
 
 func (se SwitchExpression) IsNode() bool { return true }
 func (se SwitchExpression) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "switch "+se.Expression.Value+" {\n"); err != nil {
+	if err := writeIndent(w, indent, "switch ", se.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	indent++
 	for i := 0; i < len(se.Cases); i++ {
 		c := se.Cases[i]
-		if err := writeIndent(w, indent, c.Expression.Value+"\n"); err != nil {
+		if err := writeIndent(w, indent, c.Expression.Value, "\n"); err != nil {
 			return err
 		}
 		if err := writeNodesIndented(w, indent+1, c.Children); err != nil {
@@ -920,21 +1043,23 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 
 // case "Something":
 type CaseExpression struct {
-	Expression Expression
-	Children   []Node
+	Expression  Expression
+	Children    []Node
+	Diagnostics []Diagnostic
 }
 
 //	for i, v := range p.Addresses {
 //	  {! Address(v) }
 //	}
 type ForExpression struct {
-	Expression Expression
-	Children   []Node
+	Expression  Expression
+	Children    []Node
+	Diagnostics []Diagnostic
 }
 
 func (fe ForExpression) IsNode() bool { return true }
 func (fe ForExpression) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "for "+fe.Expression.Value+" {\n"); err != nil {
+	if err := writeIndent(w, indent, "for ", fe.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(w, indent+1, fe.Children); err != nil {
@@ -961,7 +1086,10 @@ func (se StringExpression) Trailing() TrailingSpace {
 func (se StringExpression) IsNode() bool                  { return true }
 func (se StringExpression) IsStyleDeclarationValue() bool { return true }
 func (se StringExpression) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, `{ `+se.Expression.Value+` }`)
+	if isWhitespace(se.Expression.Value) {
+		se.Expression.Value = ""
+	}
+	return writeIndent(w, indent, `{ `, se.Expression.Value, ` }`)
 }
 
 // ScriptTemplate is a script block.
@@ -973,7 +1101,7 @@ type ScriptTemplate struct {
 
 func (s ScriptTemplate) IsTemplateFileNode() bool { return true }
 func (s ScriptTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "script "+s.Name.Value+"("+s.Parameters.Value+") {\n"); err != nil {
+	if err := writeIndent(w, indent, "script ", s.Name.Value, "(", s.Parameters.Value, ") {\n"); err != nil {
 		return err
 	}
 	if _, err := io.WriteString(w, s.Value); err != nil {

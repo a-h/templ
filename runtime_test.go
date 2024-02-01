@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -244,43 +246,6 @@ func TestRenderCSS(t *testing.T) {
 	}
 }
 
-func TestClassSanitization(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{
-			input:    `safe`,
-			expected: `safe`,
-		},
-		{
-			input:    `safe-name`,
-			expected: "safe-name",
-		},
-		{
-			input:    `safe_name`,
-			expected: "safe_name",
-		},
-		{
-			input:    `!unsafe`,
-			expected: "--templ-css-class-safe-name",
-		},
-		{
-			input:    `</style>`,
-			expected: "--templ-css-class-safe-name",
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.input, func(t *testing.T) {
-			actual := templ.Class(tt.input)
-			if actual.ClassName() != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, actual.ClassName())
-			}
-		})
-	}
-}
-
 func TestClassesFunction(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -288,14 +253,9 @@ func TestClassesFunction(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "safe constants are allowed",
-			input:    []any{"a", "b", "c"},
-			expected: "a b c",
-		},
-		{
-			name:     "unsafe constants are filtered",
-			input:    []any{"</style>", "b", "</style>"},
-			expected: "--templ-css-class-safe-name b",
+			name:     "constants are allowed",
+			input:    []any{"a", "b", "c", "</style>"},
+			expected: "a b c </style>",
 		},
 		{
 			name:     "legacy CSS types are supported",
@@ -341,25 +301,17 @@ func TestClassesFunction(t *testing.T) {
 		{
 			name: "string arrays are supported",
 			input: []any{
-				[]string{"a", "b", "c"},
+				[]string{"a", "b", "c", "</style>"},
 				"d",
 			},
-			expected: "a b c d",
-		},
-		{
-			name: "string arrays are checked for unsafe class names",
-			input: []any{
-				[]string{"a", "b", "c </style>"},
-				"d",
-			},
-			expected: "a b c --templ-css-class-safe-name d",
+			expected: "a b c </style> d",
 		},
 		{
 			name: "strings are broken up",
 			input: []any{
 				"a </style>",
 			},
-			expected: "a --templ-css-class-safe-name",
+			expected: "a </style>",
 		},
 		{
 			name: "if a templ.CSSClasses is passed in, the nested CSSClasses are extracted",
@@ -432,32 +384,53 @@ func TestHandler(t *testing.T) {
 		return nil
 	})
 	errorComponent := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		if _, err := io.WriteString(w, "Hello"); err != nil {
+			t.Fatalf("failed to write string: %v", err)
+		}
 		return errors.New("handler error")
 	})
 
 	tests := []struct {
-		name           string
-		input          *templ.ComponentHandler
-		expectedStatus int
-		expectedBody   string
+		name             string
+		input            *templ.ComponentHandler
+		expectedStatus   int
+		expectedMIMEType string
+		expectedBody     string
 	}{
 		{
-			name:           "handlers return OK by default",
-			input:          templ.Handler(hello),
-			expectedStatus: http.StatusOK,
-			expectedBody:   "Hello",
+			name:             "handlers return OK by default",
+			input:            templ.Handler(hello),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/html; charset=utf-8",
+			expectedBody:     "Hello",
 		},
 		{
-			name:           "handlers can be configured to return an alternative status code",
-			input:          templ.Handler(hello, templ.WithStatus(http.StatusNotFound)),
-			expectedStatus: http.StatusNotFound,
-			expectedBody:   "Hello",
+			name:             "handlers return OK by default",
+			input:            templ.Handler(templ.Raw(`♠ ‘ &spades; &#8216;`)),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/html; charset=utf-8",
+			expectedBody:     "♠ ‘ &spades; &#8216;",
 		},
 		{
-			name:           "handlers that fail return a 500 error",
-			input:          templ.Handler(errorComponent),
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   "templ: failed to render template\n",
+			name:             "handlers can be configured to return an alternative status code",
+			input:            templ.Handler(hello, templ.WithStatus(http.StatusNotFound)),
+			expectedStatus:   http.StatusNotFound,
+			expectedMIMEType: "text/html; charset=utf-8",
+			expectedBody:     "Hello",
+		},
+		{
+			name:             "handlers can be configured to return an alternative status code and content type",
+			input:            templ.Handler(hello, templ.WithStatus(http.StatusOK), templ.WithContentType("text/csv")),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/csv",
+			expectedBody:     "Hello",
+		},
+		{
+			name:             "handlers that fail return a 500 error",
+			input:            templ.Handler(errorComponent),
+			expectedStatus:   http.StatusInternalServerError,
+			expectedMIMEType: "text/plain; charset=utf-8",
+			expectedBody:     "templ: failed to render template\n",
 		},
 		{
 			name: "error handling can be customised",
@@ -471,8 +444,9 @@ func TestHandler(t *testing.T) {
 					}
 				})
 			})),
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   "custom body",
+			expectedStatus:   http.StatusBadRequest,
+			expectedMIMEType: "text/html; charset=utf-8",
+			expectedBody:     "custom body",
 		},
 	}
 	for _, tt := range tests {
@@ -483,6 +457,9 @@ func TestHandler(t *testing.T) {
 			tt.input.ServeHTTP(w, r)
 			if got := w.Result().StatusCode; tt.expectedStatus != got {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, got)
+			}
+			if mimeType := w.Result().Header.Get("Content-Type"); tt.expectedMIMEType != mimeType {
+				t.Errorf("expected content-type %s, got %s", tt.expectedMIMEType, mimeType)
 			}
 			body, err := io.ReadAll(w.Result().Body)
 			if err != nil {
@@ -572,4 +549,179 @@ func TestRenderScriptItems(t *testing.T) {
 			}
 		})
 	}
+}
+
+type baseError struct {
+	Value int
+}
+
+func (baseError) Error() string { return "base error" }
+
+type nonMatchedError struct{}
+
+func (nonMatchedError) Error() string { return "non matched error" }
+
+func TestErrorWrapping(t *testing.T) {
+	baseErr := baseError{
+		Value: 1,
+	}
+	wrappedErr := templ.Error{Err: baseErr, Line: 1, Col: 2}
+	t.Run("errors.Is() returns true for the base error", func(t *testing.T) {
+		if !errors.Is(wrappedErr, baseErr) {
+			t.Error("errors.Is() returned false for the base error")
+		}
+	})
+	t.Run("errors.Is() returns false for a different error", func(t *testing.T) {
+		if errors.Is(wrappedErr, errors.New("different error")) {
+			t.Error("errors.Is() returned true for a different error")
+		}
+	})
+	t.Run("errors.As() returns true for the base error", func(t *testing.T) {
+		var err baseError
+		if !errors.As(wrappedErr, &err) {
+			t.Error("errors.As() returned false for the base error")
+		}
+		if err.Value != 1 {
+			t.Errorf("errors.As() returned a different value: %v", err.Value)
+		}
+	})
+	t.Run("errors.As() returns false for a different error", func(t *testing.T) {
+		var err nonMatchedError
+		if errors.As(wrappedErr, &err) {
+			t.Error("errors.As() returned true for a different error")
+		}
+	})
+}
+
+func TestRawComponent(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       templ.Component
+		expected    string
+		expectedErr error
+	}{
+		{
+			name:     "Raw content is not escaped",
+			input:    templ.Raw("<div>Test &</div>"),
+			expected: `<div>Test &</div>`,
+		},
+		{
+			name:        "Raw will return errors first",
+			input:       templ.Raw("", nil, errors.New("test error")),
+			expected:    `<div>Test &</div>`,
+			expectedErr: errors.New("test error"),
+		},
+		{
+			name:     "Strings marked as safe are rendered without escaping",
+			input:    templ.Raw(template.HTML("<div>")),
+			expected: `<div>`,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			b := new(bytes.Buffer)
+			err := tt.input.Render(context.Background(), b)
+			if tt.expectedErr != nil {
+				expected := tt.expectedErr.Error()
+				actual := fmt.Sprintf("%v", err)
+				if actual != expected {
+					t.Errorf("expected error %q, got %q", expected, actual)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("failed to render content: %v", err)
+			}
+			if diff := cmp.Diff(tt.expected, b.String()); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+	t.Run("Raw does not require allocations", func(t *testing.T) {
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			c := templ.Raw("<div>")
+			if c == nil {
+				t.Fatalf("unexpected nil value")
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+}
+
+var goTemplate = template.Must(template.New("example").Parse("<div>{{ . }}</div>"))
+
+func TestGoHTMLComponents(t *testing.T) {
+	t.Run("Go templates can be rendered as templ components", func(t *testing.T) {
+		b := new(bytes.Buffer)
+		err := templ.FromGoHTML(goTemplate, "Test &").Render(context.Background(), b)
+		if err != nil {
+			t.Fatalf("failed to render content: %v", err)
+		}
+		if diff := cmp.Diff("<div>Test &amp;</div>", b.String()); diff != "" {
+			t.Error(diff)
+		}
+	})
+	t.Run("templ components can be rendered in Go templates", func(t *testing.T) {
+		b := new(bytes.Buffer)
+		c := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			_, err = io.WriteString(w, "<div>Unsanitized &</div>")
+			return err
+		})
+		h, err := templ.ToGoHTML(context.Background(), c)
+		if err != nil {
+			t.Fatalf("failed to convert to Go HTML: %v", err)
+		}
+		if err = goTemplate.Execute(b, h); err != nil {
+			t.Fatalf("failed to render content: %v", err)
+		}
+		if diff := cmp.Diff("<div><div>Unsanitized &</div></div>", b.String()); diff != "" {
+			t.Error(diff)
+		}
+	})
+	t.Run("errors in ToGoHTML are returned", func(t *testing.T) {
+		expectedErr := errors.New("test error")
+		c := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			return expectedErr
+		})
+		_, err := templ.ToGoHTML(context.Background(), c)
+		if err == nil {
+			t.Fatalf("expected error, got nil")
+		}
+		if err != expectedErr {
+			t.Fatalf("expected error %q, got %q", expectedErr, err)
+		}
+	})
+	t.Run("FromGoHTML does not require allocations", func(t *testing.T) {
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			c := templ.FromGoHTML(goTemplate, "test &")
+			if c == nil {
+				t.Fatalf("unexpected nil value")
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+	t.Run("ToGoHTML requires one allocation", func(t *testing.T) {
+		expected := "<div>Unsanitized &</div>"
+		c := templ.ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+			_, err = io.WriteString(w, expected)
+			return err
+		})
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			h, err := templ.ToGoHTML(context.Background(), c)
+			if err != nil {
+				t.Fatalf("failed to convert to Go HTML: %v", err)
+			}
+			if h != template.HTML(expected) {
+				t.Fatalf("unexpected value")
+			}
+		})
+		if actualAllocs > 1 {
+			t.Errorf("expected 1 alloc, got %v", actualAllocs)
+		}
+	})
 }

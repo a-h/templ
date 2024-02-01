@@ -8,6 +8,7 @@ import (
 
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/protocol"
+	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 	"go.lsp.dev/uri"
@@ -29,21 +30,23 @@ import (
 // inverse operation - to put the file names back, and readjust any
 // character positions.
 type Server struct {
-	Log            *zap.Logger
-	Client         lsp.Client
-	Target         lsp.Server
-	SourceMapCache *SourceMapCache
-	TemplSource    *DocumentContents
-	GoSource       map[string]string
+	Log             *zap.Logger
+	Client          lsp.Client
+	Target          lsp.Server
+	SourceMapCache  *SourceMapCache
+	DiagnosticCache *DiagnosticCache
+	TemplSource     *DocumentContents
+	GoSource        map[string]string
 }
 
-func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache) (s *Server, init func(lsp.Client)) {
+func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server, init func(lsp.Client)) {
 	s = &Server{
-		Log:            log,
-		Target:         target,
-		SourceMapCache: cache,
-		TemplSource:    newDocumentContents(log),
-		GoSource:       make(map[string]string),
+		Log:             log,
+		Target:          target,
+		SourceMapCache:  cache,
+		DiagnosticCache: diagnosticCache,
+		TemplSource:     newDocumentContents(log),
+		GoSource:        make(map[string]string),
 	}
 	return s, func(client lsp.Client) {
 		s.Client = client
@@ -142,6 +145,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 				},
 			}
 		}
+		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
 		err = p.Client.PublishDiagnostics(ctx, msg)
 		if err != nil {
 			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
@@ -149,9 +153,40 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		return
 	}
 	ok = true
-	// Clear diagnostics.
+	if len(template.Diagnostics) > 0 {
+		msg := &lsp.PublishDiagnosticsParams{
+			URI: uri,
+		}
+		for _, d := range template.Diagnostics {
+			msg.Diagnostics = append(msg.Diagnostics, lsp.Diagnostic{
+				Severity: lsp.DiagnosticSeverityWarning,
+				Code:     "",
+				Source:   "templ",
+				Message:  d.Message,
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      uint32(d.Range.From.Line),
+						Character: uint32(d.Range.From.Col),
+					},
+					End: lsp.Position{
+						Line:      uint32(d.Range.To.Line),
+						Character: uint32(d.Range.To.Col),
+					},
+				},
+			})
+		}
+		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
+		err = p.Client.PublishDiagnostics(ctx, msg)
+		if err != nil {
+			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
+		}
+		return
+	}
+	// Clear templ diagnostics.
+	p.DiagnosticCache.ClearTemplDiagnostics(string(uri))
 	err = p.Client.PublishDiagnostics(ctx, &lsp.PublishDiagnosticsParams{
-		URI:         uri,
+		URI: uri,
+		// Cannot be nil as per https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
 		Diagnostics: []lsp.Diagnostic{},
 	})
 	if err != nil {
@@ -188,6 +223,10 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 		WillSaveWaitUntil: false,
 		Save:              &lsp.SaveOptions{IncludeText: true},
 	}
+
+	result.ServerInfo.Name = "templ-lsp"
+	result.ServerInfo.Version = templ.Version()
+
 	return result, err
 }
 
@@ -503,7 +542,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		return
 	}
 	w := new(strings.Builder)
-	sm, err := generator.Generate(template, w)
+	sm, _, err := generator.Generate(template, w)
 	if err != nil {
 		p.Log.Error("generate failure", zap.Error(err))
 		return
@@ -576,7 +615,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	// Generate the output code and cache the source map and Go contents to use during completion
 	// requests.
 	w := new(strings.Builder)
-	sm, err := generator.Generate(template, w)
+	sm, _, err := generator.Generate(template, w)
 	if err != nil {
 		return
 	}
@@ -624,22 +663,6 @@ func (p *Server) DocumentColor(ctx context.Context, params *lsp.DocumentColorPar
 func (p *Server) DocumentHighlight(ctx context.Context, params *lsp.DocumentHighlightParams) (result []lsp.DocumentHighlight, err error) {
 	p.Log.Info("client -> server: DocumentHighlight")
 	defer p.Log.Info("client -> server: DocumentHighlight end")
-	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
-	if !isTemplFile {
-		return p.Target.DocumentHighlight(ctx, params)
-	}
-	templURI := params.TextDocument.URI
-	params.TextDocument.URI = goURI
-	result, err = p.Target.DocumentHighlight(ctx, params)
-	if err != nil {
-		return
-	}
-	if result == nil {
-		return
-	}
-	for i := 0; i < len(result); i++ {
-		result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
-	}
 	return
 }
 
@@ -675,8 +698,8 @@ func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLi
 func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolParams) (result []interface{} /* []SymbolInformation | []DocumentSymbol */, err error) {
 	p.Log.Info("client -> server: DocumentSymbol")
 	defer p.Log.Info("client -> server: DocumentSymbol end")
-	//TODO: Rewrite the request and response, but for now, ignore it.
-	//return p.Target.DocumentSymbol(ctx params)
+	// TODO: Rewrite the request and response, but for now, ignore it.
+	// return p.Target.DocumentSymbol(ctx params)
 	return
 }
 

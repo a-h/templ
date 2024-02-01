@@ -94,3 +94,11 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 		})
 	}
 }
+
+func TestCallTemplateParserAllocsSuccess(t *testing.T) {
+	RunParserAllocTest[Node](t, callTemplateExpression, true, 52, `{! Other(p.Test) }`)
+}
+
+func TestCallTemplateParserAllocsSkip(t *testing.T) {
+	RunParserAllocTest[Node](t, callTemplateExpression, false, 0, ``)
+}

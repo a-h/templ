@@ -2,30 +2,43 @@ package parser
 
 import (
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
-var conditionalAttributeParser = parse.Func(func(pi *parse.Input) (r ConditionalAttribute, ok bool, err error) {
+var conditionalAttribute parse.Parser[ConditionalAttribute] = conditionalAttributeParser{}
+
+type conditionalAttributeParser struct{}
+
+func (_ conditionalAttributeParser) Parse(pi *parse.Input) (r ConditionalAttribute, ok bool, err error) {
 	start := pi.Index()
 
 	// Strip leading whitespace and look for `if `.
-	if _, ok, err = parse.All(parse.OptionalWhitespace, parse.String("if ")).Parse(pi); err != nil || !ok {
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		return
+	}
+	if !peekPrefix(pi, "if ") {
 		pi.Seek(start)
 		return
 	}
 
-	// Once we've got a prefix, read until {\n.
-	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine))), "attribute if: unterminated (missing closing '{\n')").Parse(pi); err != nil || !ok {
+	// Parse the Go if expression.
+	if r.Expression, err = parseGo("if attribute", pi, goexpression.If); err != nil {
 		return
 	}
 
 	// Eat " {\n".
-	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "attribute if: unterminated (missing closing '{')").Parse(pi); err != nil || !ok {
+	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("attribute if: unterminated (missing closing '{\n')", pi.PositionAt(start))
+		return
+	}
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
 		return
 	}
 
 	// Read the 'Then' attributes.
 	// If there's no match, there's a problem reading the attributes.
-	if r.Then, ok, err = Must[[]Attribute](attributesParser{}, "attribute if: expected attributes in block, but none were found").Parse(pi); err != nil || !ok {
+	if r.Then, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
+		err = parse.Error("attribute if: expected attributes in block, but none were found", pi.Position())
 		return
 	}
 
@@ -47,12 +60,13 @@ var conditionalAttributeParser = parse.Func(func(pi *parse.Input) (r Conditional
 	_, _, _ = parse.OptionalWhitespace.Parse(pi)
 
 	// Read the required closing brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "attribute if: missing end (expected '}')").Parse(pi); err != nil || !ok {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("attribute if: missing end (expected '}')", pi.Position())
 		return
 	}
 
 	return r, true, nil
-})
+}
 
 var attributeElseExpression parse.Parser[[]Attribute] = attributeElseExpressionParser{}
 
@@ -77,8 +91,8 @@ func (attributeElseExpressionParser) Parse(in *parse.Input) (r []Attribute, ok b
 	}
 
 	// Else contents
-	if r, ok, err = Must[[]Attribute](attributesParser{}, "attribute if: expected attributes in else block, but none were found").Parse(in); err != nil || !ok {
-		in.Seek(start)
+	if r, ok, err = (attributesParser{}).Parse(in); err != nil || !ok {
+		err = parse.Error("attribute if: expected attributes in else block, but none were found", in.Position())
 		return
 	}
 

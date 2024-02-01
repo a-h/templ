@@ -2,26 +2,31 @@ package parser
 
 import (
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
 var ifExpression ifExpressionParser
 
+var untilElseIfElseOrEnd = parse.Any(StripType(elseIfExpression), StripType(elseExpression), StripType(closeBraceWithOptionalPadding))
+
 type ifExpressionParser struct{}
 
-func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err error) {
-	// Check the prefix first.
-	if _, ok, err = parse.String("if ").Parse(pi); err != nil || !ok {
-		return
+func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+	var r IfExpression
+	start := pi.Index()
+
+	if !peekPrefix(pi, "if ") {
+		return r, false, nil
 	}
 
-	// Once we've got a prefix, read until {\n.
-	// If there's no match, there's no {\n, which is an error.
-	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine))), "if: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
-		return
+	// Parse the Go if expresion.
+	if r.Expression, err = parseGo("if", pi, goexpression.If); err != nil {
+		return r, false, err
 	}
 
 	// Eat " {\n".
-	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "if: "+unterminatedMissingCurly).Parse(pi); err != nil || !ok {
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+		err = parse.Error("if: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return
 	}
 
@@ -29,10 +34,14 @@ func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err e
 
 	// Read the 'Then' nodes.
 	// If there's no match, there's a problem in the template nodes.
-	np := newTemplateNodeParser(parse.Any(StripType(elseIfExpression), StripType(elseExpression), StripType(closeBraceWithOptionalPadding)), "else expression or closing brace")
-	if r.Then, ok, err = Must[[]Node](np, "if: expected nodes, but none were found").Parse(pi); err != nil || !ok {
+	np := newTemplateNodeParser(untilElseIfElseOrEnd, "else expression or closing brace")
+	var thenNodes Nodes
+	if thenNodes, ok, err = np.Parse(pi); err != nil || !ok {
+		err = parse.Error("if: expected nodes, but none were found", pi.Position())
 		return
 	}
+	r.Then = thenNodes.Nodes
+	r.Diagnostics = append(r.Diagnostics, thenNodes.Diagnostics...)
 
 	// Read the optional 'ElseIf' Nodes.
 	if r.ElseIfs, _, err = parse.ZeroOrMore(elseIfExpression).Parse(pi); err != nil {
@@ -40,12 +49,16 @@ func (ifExpressionParser) Parse(pi *parse.Input) (r IfExpression, ok bool, err e
 	}
 
 	// Read the optional 'Else' Nodes.
-	if r.Else, _, err = elseExpression.Parse(pi); err != nil {
+	var elseNodes Nodes
+	if elseNodes, _, err = elseExpression.Parse(pi); err != nil {
 		return
 	}
+	r.Else = elseNodes.Nodes
+	r.Diagnostics = append(r.Diagnostics, elseNodes.Diagnostics...)
 
 	// Read the required closing brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, "if: "+unterminatedMissingEnd).Parse(pi); err != nil || !ok {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("if: "+unterminatedMissingEnd, pi.Position())
 		return
 	}
 
@@ -57,24 +70,24 @@ var elseIfExpression parse.Parser[ElseIfExpression] = elseIfExpressionParser{}
 type elseIfExpressionParser struct{}
 
 func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, ok bool, err error) {
+	start := pi.Index()
+
 	// Check the prefix first.
-	if _, ok, err = parse.All(
-		parse.OptionalWhitespace,
-		parse.Rune('}'),
-		parse.OptionalWhitespace,
-		parse.String("else if"),
-		parse.Whitespace).Parse(pi); err != nil || !ok {
+	if _, ok, err = parse.All(parse.OptionalWhitespace, closeBrace, parse.OptionalWhitespace, parse.String("else if")).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
 		return
 	}
 
-	// Once we've got a prefix, read until {\n.
-	// If there's no match, there's no {\n, which is an error.
-	if r.Expression, ok, err = Must(ExpressionOf(parse.StringUntil(parse.All(openBraceWithOptionalPadding, parse.NewLine))), "if: unterminated else if (missing closing '{\n')").Parse(pi); err != nil || !ok {
-		return
+	// Rewind to the start of the `if` statement.
+	pi.Seek(pi.Index() - 2)
+	// Parse the Go if expresion.
+	if r.Expression, err = parseGo("else if", pi, goexpression.If); err != nil {
+		return r, false, err
 	}
 
 	// Eat " {\n".
-	if _, ok, err = Must(parse.All(openBraceWithOptionalPadding, parse.NewLine), "if: unterminated (missing closing '{')").Parse(pi); err != nil || !ok {
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+		err = parse.Error("else if: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return
 	}
 
@@ -82,10 +95,14 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, ok boo
 
 	// Read the 'Then' nodes.
 	// If there's no match, there's a problem in the template nodes.
-	np := newTemplateNodeParser(parse.Any(StripType(elseIfExpression), StripType(elseExpression), StripType(closeBraceWithOptionalPadding)), "else expression or closing brace")
-	if r.Then, ok, err = Must[[]Node](np, "if: expected nodes, but none were found").Parse(pi); err != nil || !ok {
+	np := newTemplateNodeParser(untilElseIfElseOrEnd, "else expression or closing brace")
+	var thenNodes Nodes
+	if thenNodes, ok, err = np.Parse(pi); err != nil || !ok {
+		err = parse.Error("if: expected nodes, but none were found", pi.Position())
 		return
 	}
+	r.Then = thenNodes.Nodes
+	r.Diagnostics = append(r.Diagnostics, thenNodes.Diagnostics...)
 
 	return r, true, nil
 }
@@ -98,11 +115,11 @@ var endElseParser = parse.All(
 	parse.Rune('{'),
 	parse.OptionalWhitespace)
 
-var elseExpression parse.Parser[[]Node] = elseExpressionParser{}
+var elseExpression parse.Parser[Nodes] = elseExpressionParser{}
 
 type elseExpressionParser struct{}
 
-func (elseExpressionParser) Parse(in *parse.Input) (r []Node, ok bool, err error) {
+func (elseExpressionParser) Parse(in *parse.Input) (r Nodes, ok bool, err error) {
 	start := in.Index()
 
 	// } else {

@@ -7,22 +7,9 @@ import (
 )
 
 // StripType takes the parser and throws away the return value.
-func StripType[T any](p parse.Parser[T]) parse.Parser[interface{}] {
-	return parse.Func(func(in *parse.Input) (out interface{}, ok bool, err error) {
+func StripType[T any](p parse.Parser[T]) parse.Parser[any] {
+	return parse.Func(func(in *parse.Input) (out any, ok bool, err error) {
 		return p.Parse(in)
-	})
-}
-
-func Must[T any](p parse.Parser[T], msg string) parse.Parser[T] {
-	return parse.Func(func(in *parse.Input) (out T, ok bool, err error) {
-		out, ok, err = p.Parse(in)
-		if err != nil {
-			return
-		}
-		if !ok {
-			err = parse.Error(msg, in.Position())
-		}
-		return out, ok, err
 	})
 }
 
@@ -55,7 +42,13 @@ var closeBraceWithOptionalPadding = parse.Any(closeBraceWithPadding, closeBrace)
 
 var openBracket = parse.String("(")
 var closeBracket = parse.String(")")
-var closeBracketWithOptionalPadding = parse.StringFrom(optionalSpaces, closeBracket)
+
+var stringUntilNewLine = parse.StringUntil[string](parse.NewLine)
+var newLineOrEOF = parse.Or(parse.NewLine, parse.EOF[string]())
+var stringUntilNewLineOrEOF = parse.StringUntil(newLineOrEOF)
+
+var jsOrGoSingleLineComment = parse.StringFrom(parse.String("//"), parse.StringUntil(parse.Any(parse.NewLine, parse.EOF[string]())))
+var jsOrGoMultiLineComment = parse.StringFrom(parse.String("/*"), parse.StringUntil(parse.String("*/")))
 
 var exp = expressionParser{
 	startBraceCount: 1,
@@ -70,12 +63,30 @@ func (p expressionParser) Parse(pi *parse.Input) (s Expression, ok bool, err err
 
 	braceCount := p.startBraceCount
 
-	var sb strings.Builder
+	sb := new(strings.Builder)
 loop:
 	for {
 		var result string
 
-		// Try to read a string literal first.
+		// Try to parse a single line comment.
+		if result, ok, err = jsOrGoSingleLineComment.Parse(pi); err != nil {
+			return
+		}
+		if ok {
+			sb.WriteString(result)
+			continue
+		}
+
+		// Try to parse a multi-line comment.
+		if result, ok, err = jsOrGoMultiLineComment.Parse(pi); err != nil {
+			return
+		}
+		if ok {
+			sb.WriteString(result)
+			continue
+		}
+
+		// Try to read a string literal.
 		if result, ok, err = string_lit.Parse(pi); err != nil {
 			return
 		}
@@ -132,83 +143,6 @@ loop:
 	}
 	if braceCount != 0 {
 		err = parse.Error("expression: unexpected brace count", pi.Position())
-		return
-	}
-
-	return NewExpression(sb.String(), from, pi.Position()), true, nil
-}
-
-type functionArgsParser struct {
-	startBracketCount int
-}
-
-func (p functionArgsParser) Parse(pi *parse.Input) (s Expression, ok bool, err error) {
-	from := pi.Position()
-
-	bracketCount := p.startBracketCount
-
-	var sb strings.Builder
-loop:
-	for {
-		var result string
-
-		// Try to read a string literal first.
-		if result, ok, err = string_lit.Parse(pi); err != nil {
-			return
-		}
-		if ok {
-			sb.WriteString(result)
-			continue
-		}
-		// Also try for a rune literal.
-		if result, ok, err = rune_lit.Parse(pi); err != nil {
-			return
-		}
-		if ok {
-			sb.WriteString(result)
-			continue
-		}
-		// Try opener.
-		if result, ok, err = openBracket.Parse(pi); err != nil {
-			return
-		}
-		if ok {
-			bracketCount++
-			sb.WriteString(result)
-			continue
-		}
-		// Try closer.
-		startOfCloseBracket := pi.Index()
-		if result, ok, err = closeBracketWithOptionalPadding.Parse(pi); err != nil {
-			return
-		}
-		if ok {
-			bracketCount--
-			if bracketCount < 0 {
-				err = parse.Error("expression: too many closing brackets", pi.Position())
-				return
-			}
-			if bracketCount == 0 {
-				pi.Seek(startOfCloseBracket)
-				break loop
-			}
-			sb.WriteString(result)
-			continue
-		}
-
-		// Read anything else.
-		var c string
-		c, ok = pi.Take(1)
-		if !ok {
-			break loop
-		}
-		if rune(c[0]) == 65533 { // Invalid Unicode.
-			break loop
-		}
-		sb.WriteString(c)
-	}
-	if bracketCount != 0 {
-		err = parse.Error("expression: unexpected bracket count", pi.Position())
 		return
 	}
 

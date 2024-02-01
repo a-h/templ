@@ -239,6 +239,28 @@ templ nested() {
 `,
 		},
 		{
+			name: "constant attributes prerfer double quotes, but use single quotes if required",
+			input: ` // first line removed to make indentation clear in Go code
+package test
+
+templ nested() {
+	<div class="double">double</div>
+	<div class='single-not-required'>single-not-required</div>
+	<div data-value='{"data":"value"}'>single-required</div>
+}
+
+`,
+			expected: `// first line removed to make indentation clear in Go code
+package test
+
+templ nested() {
+	<div class="double">double</div>
+	<div class="single-not-required">single-not-required</div>
+	<div data-value='{"data":"value"}'>single-required</div>
+}
+`,
+		},
+		{
 			name: "for loops are placed on a new line",
 			input: ` // first line removed to make indentation clear in Go code
 package test
@@ -414,11 +436,11 @@ package test
 
 templ conditionalAttributes(addClass bool) {
 	<div
- 		id="conditional"
- 		if addClass {
+		id="conditional"
+		if addClass {
 			class="itWasTrue"
 		}
- 		width="300"
+		width="300"
 	>Content</div>
 }
 `,
@@ -441,11 +463,11 @@ package test
 
 templ conditionalAttributes(addClass bool) {
 	<div
- 		id="conditional"
- 		if addClass {
+		id="conditional"
+		if addClass {
 			class="itWasTrue"
 		}
- 		width="300"
+		width="300"
 	>Content</div>
 }
 `,
@@ -469,8 +491,8 @@ package test
 
 templ conditionalAttributes(addClass bool) {
 	<div
- 		id="conditional"
- 		if addClass {
+		id="conditional"
+		if addClass {
 			class="itWasTrue"
 		}
 	>
@@ -499,13 +521,13 @@ package test
 
 templ conditionalAttributes(addClass bool) {
 	<div
- 		id="conditional"
- 		if addClass {
+		id="conditional"
+		if addClass {
 			class="itWasTrue"
 		} else {
 			class="itWasNotTrue"
 		}
- 		width="300"
+		width="300"
 	>Content</div>
 }
 `,
@@ -542,6 +564,45 @@ templ x() {
 `,
 		},
 		{
+			name: "templ expression attributes are formatted correctly when multiline",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ x(id string, class string) {
+<button
+id={id}
+name={
+      "name"
+  }
+class={ 
+      "blue",
+    class,
+		map[string]bool{
+		"a": true,
+		},
+}
+></button>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ x(id string, class string) {
+	<button
+		id={ id }
+		name={ "name" }
+		class={
+			"blue",
+			class,
+			map[string]bool{
+				"a": true,
+			},
+		}
+	></button>
+}
+`,
+		},
+		{
 			name: "spacing between string expressions is kept",
 			input: ` // first line removed to make indentation clear
 package main
@@ -572,6 +633,23 @@ package main
 
 templ x() {
 	<div>{ pt1 }{ pt2 }</div>
+}
+`,
+		},
+		{
+			name: "spacing between string spreads attributes is kept",
+			input: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+    <div>{firstName...} {lastName...}</div>
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+templ x() {
+	<div>{ firstName... } { lastName... }</div>
 }
 `,
 		},
@@ -719,6 +797,25 @@ templ test() {
 	/*
 		Leave this alone.
 	*/
+}
+`,
+		},
+		{
+			name: "godoc comments are preserved",
+			input: ` // first line removed to make indentation clear
+package main
+
+// test the comment handling.
+templ test() {
+	Test
+}
+`,
+			expected: ` // first line removed to make indentation clear
+package main
+
+// test the comment handling.
+templ test() {
+	Test
 }
 `,
 		},

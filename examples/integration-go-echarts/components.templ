@@ -1,0 +1,14 @@
+package main
+
+import "github.com/go-echarts/go-echarts/v2/charts"
+
+templ Home(chart *charts.Bar) {
+	<html>
+		<head>
+			<title>Bar chart</title>
+		</head>
+		<body>
+			@ConvertChartToTemplComponent(chart)
+		</body>
+	</html>
+}

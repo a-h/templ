@@ -66,17 +66,21 @@ The use of the `{ children... }` expression in the child component.
 
 # Components as parameters
 
-Components can also be passed as parameters and rendered using the `{! component }` expression.
+Components can also be passed as parameters and rendered using the `@component` expression.
 
 ```templ
 package main
 
-templ layout(l, r templ.Component) {
-	<div id="left">
-		{! l }
+templ heading() {
+    <h1>Heading</h1>
+}
+
+templ layout(contents templ.Component) {
+	<div id="heading">
+		@heading()
 	</div>
-	<div id="right">
-		{! r }
+	<div id="contents">
+		@contents
 	</div>
 }
 
@@ -94,17 +98,65 @@ import (
 )
 
 func main() {
-	l := paragraph("Left contents")
-	r := paragraph("Right contents")
-	layout(l, r).Render(context.Background(), os.Stdout)
+	c := paragraph("Dynamic contents")
+	layout(c).Render(context.Background(), os.Stdout)
 }
 ```
 
 ```html title="output"
-<div id="left">
-	<p>Left contents</p>
+<div id="heading">
+	<h1>Heading</h1>
 </div>
-<div id="right">
-	<p>Right contents</p>
+<div id="contents">
+	<p>Dynamic contents</p>
+</div>
+```
+
+You can pass `templ` components as parameters to other components within templates using standard Go function call syntax.
+
+```templ
+package main
+
+templ heading() {
+    <h1>Heading</h1>
+}
+
+templ layout(contents templ.Component) {
+	<div id="heading">
+		@heading()
+	</div>
+	<div id="contents">
+		@contents
+	</div>
+}
+
+templ paragraph(contents string) {
+	<p>{ contents }</p>
+}
+
+templ root() {
+	@layout(paragraph("Dynamic contents"))
+}
+```
+
+```go title="main.go"
+package main
+
+import (
+	"context"
+	"os"
+)
+
+func main() {
+	root().Render(context.Background(), os.Stdout)
+}
+```
+
+```html title="output"
+<div id="heading">
+	<h1>Heading</h1>
+</div>
+<div id="contents">
+	<p>Dynamic contents</p>
 </div>
 ```

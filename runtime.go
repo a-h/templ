@@ -6,14 +6,19 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
+	"html/template"
 	"io"
 	"net/http"
-	"regexp"
+	"os"
+	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/a-h/templ/safehtml"
 )
@@ -71,25 +76,34 @@ const componentHandlerErrorMessage = "templ: failed to render template"
 
 // ServeHTTP implements the http.Handler interface.
 func (ch ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if ch.Status != 0 {
-		w.WriteHeader(ch.Status)
-	}
-	w.Header().Add("Content-Type", ch.ContentType)
-	err := ch.Component.Render(r.Context(), w)
+	// Since the component may error, write to a buffer first.
+	// This prevents partial responses from being written to the client.
+	buf := GetBuffer()
+	defer ReleaseBuffer(buf)
+	err := ch.Component.Render(r.Context(), buf)
 	if err != nil {
 		if ch.ErrorHandler != nil {
+			w.Header().Set("Content-Type", ch.ContentType)
 			ch.ErrorHandler(r, err).ServeHTTP(w, r)
 			return
 		}
 		http.Error(w, componentHandlerErrorMessage, http.StatusInternalServerError)
+		return
 	}
+	w.Header().Set("Content-Type", ch.ContentType)
+	if ch.Status != 0 {
+		w.WriteHeader(ch.Status)
+	}
+	// Ignore write error like http.Error() does, because there is
+	// no way to recover at this point.
+	_, _ = w.Write(buf.Bytes())
 }
 
 // Handler creates a http.Handler that renders the template.
 func Handler(c Component, options ...func(*ComponentHandler)) *ComponentHandler {
 	ch := &ComponentHandler{
 		Component:   c,
-		ContentType: "text/html",
+		ContentType: "text/html; charset=utf-8",
 	}
 	for _, o := range options {
 		o(ch)
@@ -164,14 +178,14 @@ func (cp *cssProcessor) Add(item any) {
 	switch c := item.(type) {
 	case []string:
 		for _, className := range c {
-			cp.AddUnsanitized(className, true)
+			cp.AddClassName(className, true)
 		}
 	case string:
-		cp.AddUnsanitized(c, true)
+		cp.AddClassName(c, true)
 	case ConstantCSSClass:
-		cp.AddSanitized(c.ClassName(), true)
+		cp.AddClassName(c.ClassName(), true)
 	case ComponentCSSClass:
-		cp.AddSanitized(c.ClassName(), true)
+		cp.AddClassName(c.ClassName(), true)
 	case map[string]bool:
 		// In Go, map keys are iterated in a randomized order.
 		// So the keys in the map must be sorted to produce consistent output.
@@ -183,43 +197,32 @@ func (cp *cssProcessor) Add(item any) {
 		}
 		sort.Strings(keys)
 		for _, className := range keys {
-			cp.AddUnsanitized(className, c[className])
+			cp.AddClassName(className, c[className])
 		}
 	case []KeyValue[string, bool]:
 		for _, kv := range c {
-			cp.AddUnsanitized(kv.Key, kv.Value)
+			cp.AddClassName(kv.Key, kv.Value)
 		}
 	case KeyValue[string, bool]:
-		cp.AddUnsanitized(c.Key, c.Value)
+		cp.AddClassName(c.Key, c.Value)
 	case []KeyValue[CSSClass, bool]:
 		for _, kv := range c {
-			cp.AddSanitized(kv.Key.ClassName(), kv.Value)
+			cp.AddClassName(kv.Key.ClassName(), kv.Value)
 		}
 	case KeyValue[CSSClass, bool]:
-		cp.AddSanitized(c.Key.ClassName(), c.Value)
+		cp.AddClassName(c.Key.ClassName(), c.Value)
 	case CSSClasses:
 		for _, item := range c {
 			cp.Add(item)
 		}
 	case func() CSSClass:
-		cp.AddSanitized(c().ClassName(), true)
+		cp.AddClassName(c().ClassName(), true)
 	default:
-		cp.AddSanitized(unknownTypeClassName, true)
+		cp.AddClassName(unknownTypeClassName, true)
 	}
 }
 
-func (cp *cssProcessor) AddUnsanitized(className string, enabled bool) {
-	for _, className := range strings.Split(className, " ") {
-		className = strings.TrimSpace(className)
-		if isSafe := safeClassName.MatchString(className); !isSafe {
-			className = fallbackClassName
-			enabled = true // Always display the fallback classname.
-		}
-		cp.AddSanitized(className, enabled)
-	}
-}
-
-func (cp *cssProcessor) AddSanitized(className string, enabled bool) {
+func (cp *cssProcessor) AddClassName(className string, enabled bool) {
 	cp.classNameToEnabled[className] = enabled
 	cp.orderedNames = append(cp.orderedNames, className)
 }
@@ -256,20 +259,16 @@ func KV[TKey comparable, TValue any](key TKey, value TValue) KeyValue[TKey, TVal
 	}
 }
 
-var safeClassName = regexp.MustCompile(`^-?[_a-zA-Z]+[-_a-zA-Z0-9]*$`)
-
-const fallbackClassName = "--templ-css-class-safe-name"
 const unknownTypeClassName = "--templ-css-class-unknown-type"
 
-// Class returns a sanitized CSS class name.
+// Class returns a CSS class name.
+// Deprecated: use a string instead.
 func Class(name string) CSSClass {
-	if !safeClassName.MatchString(name) {
-		return SafeClass(fallbackClassName)
-	}
 	return SafeClass(name)
 }
 
 // SafeClass bypasses CSS class name validation.
+// Deprecated: use a string instead.
 func SafeClass(name string) CSSClass {
 	return ConstantCSSClass(name)
 }
@@ -280,6 +279,7 @@ type CSSClass interface {
 }
 
 // ConstantCSSClass is a string constant of a CSS class name.
+// Deprecated: use a string instead.
 type ConstantCSSClass string
 
 // ClassName of the CSS class.
@@ -304,7 +304,10 @@ func (css ComponentCSSClass) ClassName() string {
 func CSSID(name string, css string) string {
 	sum := sha256.Sum256([]byte(css))
 	hp := hex.EncodeToString(sum[:])[0:4]
-	return fmt.Sprintf("%s_%s", name, hp)
+	// Benchmarking showed this was fastest, and with fewest allocations (1).
+	// Using strings.Builder (2 allocs).
+	// Using fmt.Sprintf (3 allocs).
+	return name + "_" + hp
 }
 
 // NewCSSMiddleware creates HTTP middleware that renders a global stylesheet of ComponentCSSClass
@@ -469,15 +472,96 @@ func URL(s string) SafeURL {
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
 
+// Attributes is an alias to map[string]any made for spread attributes.
+type Attributes map[string]any
+
+// sortedKeys returns the keys of a map in sorted order.
+func sortedKeys(m map[string]any) (keys []string) {
+	keys = make([]string, len(m))
+	var i int
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func writeStrings(w io.Writer, ss ...string) (err error) {
+	for _, s := range ss {
+		if _, err = io.WriteString(w, s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (err error) {
+	for _, key := range sortedKeys(attributes) {
+		value := attributes[key]
+		switch value := value.(type) {
+		case string:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {
+				return err
+			}
+		case bool:
+			if value {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		case KeyValue[string, bool]:
+			if value.Value {
+				if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value.Key), `"`); err != nil {
+					return err
+				}
+			}
+		case KeyValue[bool, bool]:
+			if value.Value && value.Key {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		case func() bool:
+			if value() {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // Script handling.
 
-// SafeScript encodes unknown parameters for safety.
-func SafeScript(functionName string, params ...interface{}) string {
+func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
 	encodedParams := make([]string, len(params))
 	for i := 0; i < len(encodedParams); i++ {
 		enc, _ := json.Marshal(params[i])
+		if !escapeHTML {
+			encodedParams[i] = string(enc)
+			continue
+		}
 		encodedParams[i] = EscapeString(string(enc))
 	}
+	return encodedParams
+}
+
+// SafeScript encodes unknown parameters for safety for inside HTML attributes.
+func SafeScript(functionName string, params ...any) string {
+	encodedParams := safeEncodeScriptParams(true, params)
+	sb := new(strings.Builder)
+	sb.WriteString(functionName)
+	sb.WriteRune('(')
+	sb.WriteString(strings.Join(encodedParams, ","))
+	sb.WriteRune(')')
+	return sb.String()
+}
+
+// SafeScript encodes unknown parameters for safety for inline scripts.
+func SafeScriptInline(functionName string, params ...any) string {
+	encodedParams := safeEncodeScriptParams(false, params)
 	sb := new(strings.Builder)
 	sb.WriteString(functionName)
 	sb.WriteRune('(')
@@ -550,9 +634,51 @@ type ComponentScript struct {
 	Name string
 	// Function to render.
 	Function string
-	// Call of the function in JavaScript syntax, including parameters.
-	// e.g. print({ x: 1 })
+	// Call of the function in JavaScript syntax, including parameters, and
+	// ensures parameters are HTML escaped; useful for injecting into HTML
+	// attributes like onclick, onhover, etc.
+	//
+	// Given:
+	//    functionName("some string",12345)
+	// It would render:
+	//    __templ_functionName_sha(&#34;some string&#34;,12345))
+	//
+	// This is can be injected into HTML attributes:
+	//    <button onClick="__templ_functionName_sha(&#34;some string&#34;,12345))">Click Me</button>
 	Call string
+	// Call of the function in JavaScript syntax, including parameters. It
+	// does not HTML escape parameters; useful for directly calling in script
+	// elements.
+	//
+	// Given:
+	//    functionName("some string",12345)
+	// It would render:
+	//    __templ_functionName_sha("some string",12345))
+	//
+	// This is can be used to call the function inside a script tag:
+	//    <script>__templ_functionName_sha("some string",12345))</script>
+	CallInline string
+}
+
+var _ Component = ComponentScript{}
+
+func (c ComponentScript) Render(ctx context.Context, w io.Writer) error {
+	err := RenderScriptItems(ctx, w, c)
+	if err != nil {
+		return err
+	}
+	if len(c.Call) > 0 {
+		if _, err = io.WriteString(w, `<script type="text/javascript">`); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, c.CallInline); err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, `</script>`); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // RenderScriptItems renders a <script> element, if the script has not already been rendered.
@@ -595,4 +721,151 @@ func GetBuffer() *bytes.Buffer {
 func ReleaseBuffer(b *bytes.Buffer) {
 	b.Reset()
 	bufferPool.Put(b)
+}
+
+// JoinStringErrs joins an optional list of errors.
+func JoinStringErrs(s string, errs ...error) (string, error) {
+	return s, errors.Join(errs...)
+}
+
+// Error returned during template rendering.
+type Error struct {
+	Err error
+	// FileName of the template file.
+	FileName string
+	// Line index of the error.
+	Line int
+	// Col index of the error.
+	Col int
+}
+
+func (e Error) Error() string {
+	if e.FileName == "" {
+		e.FileName = "templ"
+	}
+	return fmt.Sprintf("%s: error at line %d, col %d: %v", e.FileName, e.Line, e.Col, e.Err)
+}
+
+func (e Error) Unwrap() error {
+	return e.Err
+}
+
+// Raw renders the input HTML to the output without applying HTML escaping.
+//
+// Use of this component presents a security risk - the HTML should come from
+// a trusted source, because it will be included as-is in the output.
+func Raw[T ~string](html T, errs ...error) Component {
+	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		if err = errors.Join(errs...); err != nil {
+			return err
+		}
+		_, err = io.WriteString(w, string(html))
+		return err
+	})
+}
+
+// FromGoHTML creates a templ Component from a Go html/template template.
+func FromGoHTML(t *template.Template, data any) Component {
+	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
+		return t.Execute(w, data)
+	})
+}
+
+// ToGoHTML renders the component to a Go html/template template.HTML string.
+func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
+	b := GetBuffer()
+	defer ReleaseBuffer(b)
+	if err = c.Render(ctx, b); err != nil {
+		return
+	}
+	s = template.HTML(b.String())
+	return
+}
+
+// WriteWatchModeString is used when rendering templates in development mode.
+// the generator would have written non-go code to the _templ.txt file, which
+// is then read by this function and written to the output.
+func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
+	_, path, _, _ := runtime.Caller(1)
+	if !strings.HasSuffix(path, "_templ.go") {
+		return errors.New("templ: WriteWatchModeString can only be called from _templ.go")
+	}
+	txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
+
+	literals, err := getWatchedStrings(txtFilePath)
+	if err != nil {
+		return fmt.Errorf("templ: failed to cache strings: %w", err)
+	}
+
+	if lineNum > len(literals) {
+		return errors.New("templ: failed to find line " + strconv.Itoa(lineNum) + " in " + txtFilePath)
+	}
+
+	unquoted, err := strconv.Unquote(`"` + literals[lineNum-1] + `"`)
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(io.Writer(w), unquoted)
+	return err
+}
+
+var (
+	watchModeCache  = map[string]watchState{}
+	watchStateMutex sync.Mutex
+)
+
+type watchState struct {
+	modTime time.Time
+	strings []string
+}
+
+func getWatchedStrings(txtFilePath string) ([]string, error) {
+	watchStateMutex.Lock()
+	defer watchStateMutex.Unlock()
+
+	state, cached := watchModeCache[txtFilePath]
+	if !cached {
+		return cacheStrings(txtFilePath)
+	}
+
+	if time.Since(state.modTime) < time.Millisecond*100 {
+		return state.strings, nil
+	}
+
+	info, err := os.Stat(txtFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("templ: failed to stat %s: %w", txtFilePath, err)
+	}
+
+	if !info.ModTime().After(state.modTime) {
+		return state.strings, nil
+	}
+
+	return cacheStrings(txtFilePath)
+}
+
+func cacheStrings(txtFilePath string) ([]string, error) {
+	txtFile, err := os.Open(txtFilePath)
+	if err != nil {
+		return nil, fmt.Errorf("templ: failed to open %s: %w", txtFilePath, err)
+	}
+	defer txtFile.Close()
+
+	info, err := txtFile.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("templ: failed to stat %s: %w", txtFilePath, err)
+	}
+
+	all, err := io.ReadAll(txtFile)
+	if err != nil {
+		return nil, fmt.Errorf("templ: failed to read %s: %w", txtFilePath, err)
+	}
+
+	literals := strings.Split(string(all), "\n")
+	watchModeCache[txtFilePath] = watchState{
+		modTime: info.ModTime(),
+		strings: literals,
+	}
+
+	return literals, nil
 }

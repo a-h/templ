@@ -103,6 +103,30 @@ func TestTemplateParser(t *testing.T) {
 			},
 		},
 		{
+			name: "template: can have multiline params",
+			input: `templ Multiline(
+	params expense,
+) {
+}`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "Multiline(\n\tparams expense,\n)",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  0,
+							Col:   6,
+						},
+						To: Position{
+							Index: 35,
+							Line:  2,
+							Col:   1,
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "template: containing element",
 			input: `templ Name(p Parameter) {
 <span>{ "span content" }</span>
@@ -536,6 +560,61 @@ func TestTemplateParser(t *testing.T) {
 					Whitespace{Value: "\n\t"},
 					HTMLComment{Contents: " \n\t\tMultiline\n\t"},
 					Whitespace{Value: "\n"},
+				},
+			},
+		},
+		{
+			name: "template: containing spread attributes and children expression",
+			input: `templ Name(children templ.Attributes) {
+		<span { children... }>
+			{ children... }
+		</span>
+}`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "Name(children templ.Attributes)",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  0,
+							Col:   6,
+						},
+						To: Position{
+							Index: 37,
+							Line:  0,
+							Col:   37,
+						},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\t\t"},
+					Element{
+						Name: "span",
+						Attributes: []Attribute{SpreadAttributes{
+							Expression{
+								Value: "children",
+								Range: Range{
+									From: Position{
+										Index: 50,
+										Line:  1,
+										Col:   10,
+									},
+									To: Position{
+										Index: 58,
+										Line:  1,
+										Col:   18,
+									},
+								},
+							},
+						}},
+						Children: []Node{
+							Whitespace{"\n\t\t\t"},
+							ChildrenExpression{},
+							Whitespace{Value: "\n\t\t"},
+						},
+						IndentChildren: true,
+						TrailingSpace:  SpaceVertical,
+					},
 				},
 			},
 		},

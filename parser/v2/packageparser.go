@@ -15,7 +15,8 @@ var pkg = parse.Func(func(pi *parse.Input) (pkg Package, ok bool, err error) {
 
 	// Once we have the prefix, it's an expression until the end of the line.
 	var exp string
-	if exp, ok, err = Must(parse.StringUntil(parse.NewLine), "package literal not terminated").Parse(pi); err != nil || !ok {
+	if exp, ok, err = stringUntilNewLine.Parse(pi); err != nil || !ok {
+		err = parse.Error("package literal not terminated", pi.Position())
 		return
 	}
 	if len(exp) == 0 {

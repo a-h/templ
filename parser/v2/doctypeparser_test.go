@@ -71,9 +71,9 @@ func TestDocTypeParserErrors(t *testing.T) {
 			input: `<!DOCTYPE html`,
 			expected: parse.Error("unclosed DOCTYPE",
 				parse.Position{
-					Index: 14,
+					Index: 0,
 					Line:  0,
-					Col:   14,
+					Col:   0,
 				}),
 		},
 		{
@@ -82,9 +82,9 @@ func TestDocTypeParserErrors(t *testing.T) {
 		<div>`,
 			expected: parse.Error("unclosed DOCTYPE",
 				parse.Position{
-					Index: 17,
-					Line:  1,
-					Col:   2,
+					Index: 0,
+					Line:  0,
+					Col:   0,
 				}),
 		},
 	}

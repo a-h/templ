@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	_ "embed"
 
@@ -33,9 +36,30 @@ func WithTimestamp(d time.Time) GenerateOpt {
 	}
 }
 
+// WithFileName sets the filename of the templ file in template rendering error messages.
+func WithFileName(name string) GenerateOpt {
+	return func(g *generator) error {
+		if filepath.IsAbs(name) {
+			_, g.fileName = filepath.Split(name)
+			return nil
+		}
+		g.fileName = name
+		return nil
+	}
+}
+
+func WithExtractStrings() GenerateOpt {
+	return func(g *generator) error {
+		g.w.literalWriter = &watchLiteralWriter{
+			builder: &strings.Builder{},
+		}
+		return nil
+	}
+}
+
 // Generate generates Go code from the input template file to w, and returns a map of the location of Go expressions in the template
 // to the location of the generated Go code in the output.
-func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, err error) {
+func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, literals string, err error) {
 	g := &generator{
 		tf:        template,
 		w:         NewRangeWriter(w),
@@ -48,6 +72,7 @@ func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (s
 	}
 	err = g.generate()
 	sm = g.sourceMap
+	literals = g.w.literalWriter.literals()
 	return
 }
 
@@ -62,6 +87,8 @@ type generator struct {
 	version string
 	// generatedDate to include as a comment.
 	generatedDate string
+	// fileName to include in error messages if string expressions return an error.
+	fileName string
 }
 
 func (g *generator) generate() (err error) {
@@ -93,14 +120,14 @@ func (g *generator) writeCodeGeneratedComment() (err error) {
 
 func (g *generator) writeVersionComment() (err error) {
 	if g.version != "" {
-		_, err = g.w.Write(fmt.Sprintf("// templ: version: %s\n", g.version))
+		_, err = g.w.Write("// templ: version: " + g.version + "\n")
 	}
 	return err
 }
 
 func (g *generator) writeGeneratedDateComment() (err error) {
 	if g.generatedDate != "" {
-		_, err = g.w.Write(fmt.Sprintf("// templ: generated: %s\n", g.generatedDate))
+		_, err = g.w.Write("// templ: generated: " + g.generatedDate + "\n")
 	}
 	return err
 }
@@ -170,7 +197,7 @@ func (g *generator) writeImports() error {
 func (g *generator) writeTemplateNodes() error {
 	for i := 0; i < len(g.tf.Nodes); i++ {
 		switch n := g.tf.Nodes[i].(type) {
-		case parser.GoExpression:
+		case parser.TemplateFileGoExpression:
 			if err := g.writeGoExpression(n); err != nil {
 				return err
 			}
@@ -270,12 +297,21 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	return nil
 }
 
-func (g *generator) writeGoExpression(n parser.GoExpression) (err error) {
+func (g *generator) writeGoExpression(n parser.TemplateFileGoExpression) (err error) {
 	r, err := g.w.Write(n.Expression.Value)
 	if err != nil {
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
+	v := n.Expression.Value
+	lineSlice := strings.Split(v, "\n")
+	lastLine := lineSlice[len(lineSlice)-1]
+	if strings.HasPrefix(lastLine, "//") {
+		if _, err = g.w.WriteIndent(0, "\n"); err != nil {
+			return err
+		}
+		return err
+	}
 	if _, err = g.w.WriteIndent(0, "\n\n"); err != nil {
 		return err
 	}
@@ -366,7 +402,7 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 			return err
 		}
 		// Nodes.
-		if err = g.writeNodes(indentLevel, stripWhitespace(t.Children)); err != nil {
+		if err = g.writeNodes(indentLevel, stripWhitespace(t.Children), nil); err != nil {
 			return err
 		}
 		// Return the buffer.
@@ -443,13 +479,16 @@ func stripLeadingAndTrailingWhitespace(nodes []parser.Node) []parser.Node {
 	return stripTrailingWhitespace(stripLeadingWhitespace(nodes))
 }
 
-func (g *generator) writeNodes(indentLevel int, nodes []parser.Node) error {
+func (g *generator) writeNodes(indentLevel int, nodes []parser.Node, next parser.Node) error {
 	for i, curr := range nodes {
-		var next parser.Node
+		var nextNode parser.Node
 		if i+1 < len(nodes) {
-			next = nodes[i+1]
+			nextNode = nodes[i+1]
 		}
-		if err := g.writeNode(indentLevel, curr, next); err != nil {
+		if nextNode == nil {
+			nextNode = next
+		}
+		if err := g.writeNode(indentLevel, curr, nextNode); err != nil {
 			return err
 		}
 	}
@@ -469,15 +508,15 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 	case parser.RawElement:
 		err = g.writeRawElement(indentLevel, n)
 	case parser.ForExpression:
-		err = g.writeForExpression(indentLevel, n)
+		err = g.writeForExpression(indentLevel, n, next)
 	case parser.CallTemplateExpression:
 		err = g.writeCallTemplateExpression(indentLevel, n)
 	case parser.TemplElementExpression:
 		err = g.writeTemplElementExpression(indentLevel, n)
 	case parser.IfExpression:
-		err = g.writeIfExpression(indentLevel, n)
+		err = g.writeIfExpression(indentLevel, n, next)
 	case parser.SwitchExpression:
-		err = g.writeSwitchExpression(indentLevel, n)
+		err = g.writeSwitchExpression(indentLevel, n, next)
 	case parser.StringExpression:
 		err = g.writeStringExpression(indentLevel, n.Expression)
 	case parser.Whitespace:
@@ -547,7 +586,7 @@ func (g *generator) writeDocType(indentLevel int, n parser.DocType) (err error) 
 	return nil
 }
 
-func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (err error) {
+func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression, nextNode parser.Node) (err error) {
 	var r parser.Range
 	// if
 	if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
@@ -564,7 +603,7 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 	}
 	{
 		indentLevel++
-		if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Then)); err != nil {
+		if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Then), nextNode); err != nil {
 			return err
 		}
 		indentLevel--
@@ -585,7 +624,7 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 		}
 		{
 			indentLevel++
-			if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(elseIf.Then)); err != nil {
+			if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(elseIf.Then), nextNode); err != nil {
 				return err
 			}
 			indentLevel--
@@ -598,7 +637,7 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 		}
 		{
 			indentLevel++
-			if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Else)); err != nil {
+			if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Else), nextNode); err != nil {
 				return err
 			}
 			indentLevel--
@@ -611,7 +650,7 @@ func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression) (e
 	return nil
 }
 
-func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpression) (err error) {
+func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpression, next parser.Node) (err error) {
 	var r parser.Range
 	// switch
 	if _, err = g.w.WriteIndent(indentLevel, `switch `); err != nil {
@@ -636,7 +675,7 @@ func (g *generator) writeSwitchExpression(indentLevel int, n parser.SwitchExpres
 			}
 			g.sourceMap.Add(c.Expression, r)
 			indentLevel++
-			if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(c.Children)); err != nil {
+			if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(c.Children), next); err != nil {
 				return err
 			}
 			indentLevel--
@@ -676,7 +715,7 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 	if err := g.writeTemplBuffer(indentLevel); err != nil {
 		return err
 	}
-	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Children)); err != nil {
+	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Children), nil); err != nil {
 		return err
 	}
 	// Return the buffer.
@@ -759,7 +798,7 @@ func (g *generator) writeCallTemplateExpression(indentLevel int, n parser.CallTe
 	return nil
 }
 
-func (g *generator) writeForExpression(indentLevel int, n parser.ForExpression) (err error) {
+func (g *generator) writeForExpression(indentLevel int, n parser.ForExpression, next parser.Node) (err error) {
 	var r parser.Range
 	// for
 	if _, err = g.w.WriteIndent(indentLevel, `for `); err != nil {
@@ -776,7 +815,7 @@ func (g *generator) writeForExpression(indentLevel int, n parser.ForExpression) 
 	}
 	// Children.
 	indentLevel++
-	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Children)); err != nil {
+	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Children), next); err != nil {
 		return err
 	}
 	indentLevel--
@@ -873,7 +912,7 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 		}
 	}
 	// Children.
-	if err = g.writeNodes(indentLevel, stripWhitespace(n.Children)); err != nil {
+	if err = g.writeNodes(indentLevel, stripWhitespace(n.Children), nil); err != nil {
 		return err
 	}
 	// </div>
@@ -1127,6 +1166,27 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	return nil
 }
 
+func (g *generator) writeSpreadAttributes(indentLevel int, attr parser.SpreadAttributes) (err error) {
+	// templ.RenderAttributes(ctx, w, spreadAttrs)
+	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = templ.RenderAttributes(ctx, templ_7745c5c3_Buffer, `); err != nil {
+		return err
+	}
+	// spreadAttrs
+	var r parser.Range
+	if r, err = g.w.Write(attr.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(attr.Expression, r)
+	// )
+	if _, err = g.w.Write(")\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (g *generator) writeConditionalAttribute(indentLevel int, elementName string, attr parser.ConditionalAttribute) (err error) {
 	// if
 	if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
@@ -1180,6 +1240,8 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 			err = g.writeBoolExpressionAttribute(indentLevel, attr)
 		case parser.ExpressionAttribute:
 			err = g.writeExpressionAttribute(indentLevel, name, attr)
+		case parser.SpreadAttributes:
+			err = g.writeSpreadAttributes(indentLevel, attr)
 		case parser.ConditionalAttribute:
 			err = g.writeConditionalAttribute(indentLevel, name, attr)
 		default:
@@ -1237,7 +1299,7 @@ func (g *generator) writeComment(indentLevel int, c parser.HTMLComment) (err err
 
 func (g *generator) createVariableName() string {
 	g.variableID++
-	return fmt.Sprintf("templ_7745c5c3_Var%d", g.variableID)
+	return "templ_7745c5c3_Var" + strconv.Itoa(g.variableID)
 }
 
 func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) (err error) {
@@ -1246,15 +1308,40 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	}
 	var r parser.Range
 	vn := g.createVariableName()
-	// var vn string = sExpr
-	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string = "); err != nil {
+	// var vn string
+	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
+		return err
+	}
+	// vn, templ_7745c5c3_Err = templ.JoinStringErrs(
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
 		return err
 	}
 	// p.Name()
-	if r, err = g.w.Write(e.Value + "\n"); err != nil {
+	if r, err = g.w.Write(e.Value); err != nil {
 		return err
 	}
 	g.sourceMap.Add(e, r)
+	// )
+	if _, err = g.w.Write(")\n"); err != nil {
+		return err
+	}
+
+	// String expression error handler.
+	_, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n")
+	if err != nil {
+		return err
+	}
+	indentLevel++
+	_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, FileName: "+createGoString(g.fileName)+", Line: "+strconv.Itoa(int(e.Range.To.Line))+", Col: "+strconv.Itoa(int(e.Range.To.Col))+"}\n")
+	if err != nil {
+		return err
+	}
+	indentLevel--
+	_, err = g.w.WriteIndent(indentLevel, "}\n")
+	if err != nil {
+		return err
+	}
+
 	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
 	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
 		return err
@@ -1277,19 +1364,9 @@ func (g *generator) writeWhitespace(indentLevel int, n parser.Whitespace) (err e
 }
 
 func (g *generator) writeText(indentLevel int, n parser.Text) (err error) {
-	vn := g.createVariableName()
-	// vn := sExpr
-	if _, err = g.w.WriteIndent(indentLevel, vn+" := "+createGoString(n.Value)+"\n"); err != nil {
-		return err
-	}
-	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
-	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+vn+")\n"); err != nil {
-		return err
-	}
-	if err = g.writeErrorHandler(indentLevel); err != nil {
-		return err
-	}
-	return nil
+	quoted := strconv.Quote(n.Value)
+	_, err = g.w.WriteStringLiteral(indentLevel, quoted[1:len(quoted)-1])
+	return err
 }
 
 func createGoString(s string) string {
@@ -1347,12 +1424,17 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		}
 		// Function: `function scriptName(a, b, c){` + `constantScriptValue` + `}`,
 		prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
+		body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
 		suffix := "}"
-		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+strings.TrimSpace(t.Value)+suffix)+",\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+body+suffix)+",\n"); err != nil {
 			return err
 		}
 		// Call: templ.SafeScript(scriptName, a, b, c)
 		if _, err = g.w.WriteIndent(indentLevel, "Call: templ.SafeScript("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
+			return err
+		}
+		// CallInline: templ.SafeScriptInline(scriptName, a, b, c)
+		if _, err = g.w.WriteIndent(indentLevel, "CallInline: templ.SafeScriptInline("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
 			return err
 		}
 		indentLevel--
@@ -1373,7 +1455,7 @@ func functionName(name string, body string) string {
 	h := sha256.New()
 	h.Write([]byte(body))
 	hp := hex.EncodeToString(h.Sum(nil))[0:4]
-	return fmt.Sprintf("__templ_%s_%s", name, hp)
+	return "__templ_" + name + "_" + hp
 }
 
 func stripTypes(parameters string) string {

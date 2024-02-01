@@ -30,12 +30,18 @@ go build
 
 ### install-snapshot
 
-Build and install to ~/bin
+Build and install current version.
 
 ```sh
-rm cmd/templ/lspcmd/*.txt || true
+# Remove templ from the non-standard ~/bin/templ path
+# that this command previously used.
+rm -f ~/bin/templ
+# Clear LSP logs.
+rm -f cmd/templ/lspcmd/*.txt
+# Update version.
 go run ./get-version > .version
-cd cmd/templ && go build -o ~/bin/templ
+# Install to $GOPATH/bin or $HOME/go/bin
+cd cmd/templ && go install
 ```
 
 ### build-snapshot
@@ -59,7 +65,9 @@ go run ./cmd/templ generate -include-version=false
 Run Go tests.
 
 ```sh
-go run ./cmd/templ generate -include-version=false && go test ./...
+go run ./get-version > .version
+go run ./cmd/templ generate -include-version=false
+go test ./...
 ```
 
 ### test-cover
@@ -70,18 +78,20 @@ Run Go tests.
 # Create test profile directories.
 mkdir -p coverage/fmt
 mkdir -p coverage/generate
+mkdir -p coverage/version
 mkdir -p coverage/unit
 # Build the test binary.
 go build -cover -o ./coverage/templ-cover ./cmd/templ
 # Run the covered generate command.
 GOCOVERDIR=coverage/fmt ./coverage/templ-cover fmt .
 GOCOVERDIR=coverage/generate ./coverage/templ-cover generate -include-version=false
+GOCOVERDIR=coverage/version ./coverage/templ-cover version
 # Run the unit tests.
 go test -cover ./... -args -test.gocoverdir="$PWD/coverage/unit"
 # Display the combined percentage.
-go tool covdata percent -i=./coverage/fmt,./coverage/generate,./coverage/unit
+go tool covdata percent -i=./coverage/fmt,./coverage/generate,./coverage/version,./coverage/unit
 # Generate a text coverage profile for tooling to use.
-go tool covdata textfmt -i=./coverage/fmt,./coverage/generate,./coverage/unit -o coverage.out
+go tool covdata textfmt -i=./coverage/fmt,./coverage/generate,./coverage/version,./coverage/unit -o coverage.out
 # Print total
 go tool cover -func coverage.out | grep total
 ```
@@ -96,16 +106,17 @@ go run ./cmd/templ generate -include-version=false && go test ./... -bench=. -be
 
 ### fmt
 
-Format all Go code.
+Format all Go and templ code.
 
-```
+```sh
 gofmt -s -w .
+go run ./cmd/templ fmt .
 ```
 
 ### lint
 
 ```sh
-docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.54 golangci-lint run -v
+golangci-lint run --verbose
 ```
 
 ### release
@@ -124,7 +135,7 @@ Run the development server.
 
 Directory: docs
 
-```
+```sh
 npm run start
 ```
 
@@ -134,23 +145,7 @@ Build production docs site.
 
 Directory: docs
 
-```
+```sh
 npm run build
-```
-
-### docker-build
-
-Build a Docker container with a full development environment and Neovim setup for testing the LSP.
-
-```
-docker build -t templ:latest .
-```
-
-### docker-run
-
-Run a Docker development container in the current directory.
-
-```
-docker run -p 7474:7474 -v `pwd`:/templ -it --rm templ:latest
 ```
 

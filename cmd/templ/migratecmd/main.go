@@ -72,7 +72,7 @@ func migrate(fileName string) (err error) {
 	var v2Template v2.TemplateFile
 
 	// Copy the package and any imports.
-	var sb strings.Builder
+	sb := new(strings.Builder)
 	sb.WriteString("package " + v1Template.Package.Expression.Value)
 	sb.WriteString("\n")
 	if len(v1Template.Imports) > 0 {

@@ -1,18 +1,17 @@
 <style>
-		.test {
-			color: #ff0000;
-		}
-</style>
-<style type="text/css">
-.className_f179{background-color:#ffffff;color:#ff0000;}
-</style>
-<button class="className_f179 --templ-css-class-safe-name safe safe2" type="button">A</button>
-<button class="className_f179 --templ-css-class-safe-name safe safe2" type="button">B</button>
-<style type="text/css">.green_58d2{color:#00ff00;}</style>
-<button class="green_58d2" type="button">Green</button>
-<div class="a c"></div>
-<div class="a"></div>
+	.test {
+		color: #ff0000;
+	}
+	</style>
+<div class="test">Style tags are supported</div>
+<style type="text/css">.cssComponentGreen_58d2{color:#00ff00;}</style>
+<div class="cssComponentGreen_58d2">CSS components are supported</div>
+<div class="cssComponentGreen_58d2 classA &amp;&amp;&amp;classB classC d e" type="button">Both CSS components and constants are supported</div>
+<div class="cssComponentGreen_58d2 classA &amp;&amp;&amp;classB classC d e" type="button">Both CSS components and constants are supported</div>
+<div class="a c">Maps can be used to determine if a class should be added or not.</div>
 <style type="text/css">.e_739d{font-size:14pt;}</style>
-<input type="email" id="email" name="email" class="a b e_739d" placeholder="your@email.com" autocomplete="off"/>
-<button class="bg-violet-500 hover:bg-violet-600">Save changes</button>
-
+<div class="a c e_739d">KV can be used to conditionally set classes.</div>
+<div class="bg-violet-500 hover:bg-red-600 hover:bg-sky-700 text-[#50d71e] w-[calc(100%-4rem)">Psuedo attributes and complex class names are supported.</div>
+<div class="a&#34; onClick=&#34;alert(&#39;hello&#39;)&#34;">
+	Class names are HTML escaped.
+</div>

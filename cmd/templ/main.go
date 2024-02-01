@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"runtime"
 
 	"github.com/a-h/templ"
@@ -12,10 +14,14 @@ import (
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
 	"github.com/a-h/templ/cmd/templ/migratecmd"
+	"github.com/fatih/color"
 )
 
 func main() {
-	run(os.Stdout, os.Args)
+	code := run(os.Stdout, os.Args)
+	if code != 0 {
+		os.Exit(code)
+	}
 }
 
 const usageText = `usage: templ <command> [<args>...]
@@ -39,23 +45,19 @@ func run(w io.Writer, args []string) (code int) {
 	}
 	switch args[1] {
 	case "generate":
-		generateCmd(w, args[2:])
-		return
+		return generateCmd(w, args[2:])
 	case "migrate":
-		migrateCmd(w, args[2:])
-		return
+		return migrateCmd(w, args[2:])
 	case "fmt":
-		fmtCmd(w, args[2:])
-		return
+		return fmtCmd(w, args[2:])
 	case "lsp":
-		lspCmd(w, args[2:])
-		return
+		return lspCmd(w, args[2:])
 	case "version":
-		fmt.Fprintln(w, templ.Version)
-		return
+		fmt.Fprintln(w, templ.Version())
+		return 0
 	case "--version":
-		fmt.Fprintln(w, templ.Version)
-		return
+		fmt.Fprintln(w, templ.Version())
+		return 0
 	}
 	fmt.Fprint(w, usageText)
 	return 0
@@ -88,6 +90,12 @@ Args:
     Number of workers to use when generating code. (default runtime.NumCPUs)
   -pprof
     Port to run the pprof server on.
+  -keep-orphaned-files
+    Keeps orphaned generated templ files. (default false)
+  -v
+    Set log verbosity level to "debug". (default "info")
+  -log-level
+    Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
   -help
     Print help and exit.
 
@@ -111,35 +119,57 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	cmd.SetOutput(w)
 	fileNameFlag := cmd.String("f", "", "")
 	pathFlag := cmd.String("path", ".", "")
-	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "")
+	sourceMapVisualisationsFlag := cmd.Bool("source-map-visualisations", false, "")
 	includeVersionFlag := cmd.Bool("include-version", true, "")
 	includeTimestampFlag := cmd.Bool("include-timestamp", false, "")
 	watchFlag := cmd.Bool("watch", false, "")
+	openBrowserFlag := cmd.Bool("open-browser", true, "")
 	cmdFlag := cmd.String("cmd", "", "")
 	proxyFlag := cmd.String("proxy", "", "")
 	proxyPortFlag := cmd.Int("proxyport", 7331, "")
 	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
 	pprofPortFlag := cmd.Int("pprof", 0, "")
+	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
+	verboseFlag := cmd.Bool("v", false, "")
+	logLevelFlag := cmd.String("log-level", "info", "")
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
 		fmt.Fprint(w, generateUsageText)
 		return
 	}
-	err = generatecmd.Run(w, generatecmd.Arguments{
+
+	logLevel := *logLevelFlag
+	if *verboseFlag {
+		logLevel = "debug"
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		<-signalChan
+		fmt.Fprintln(w, "Stopping...")
+		cancel()
+	}()
+	err = generatecmd.Run(ctx, w, generatecmd.Arguments{
 		FileName:                        *fileNameFlag,
 		Path:                            *pathFlag,
 		Watch:                           *watchFlag,
+		OpenBrowser:                     *openBrowserFlag,
 		Command:                         *cmdFlag,
 		Proxy:                           *proxyFlag,
 		ProxyPort:                       *proxyPortFlag,
 		WorkerCount:                     *workerCountFlag,
-		GenerateSourceMapVisualisations: *sourceMapVisualisations,
+		GenerateSourceMapVisualisations: *sourceMapVisualisationsFlag,
 		IncludeVersion:                  *includeVersionFlag,
 		IncludeTimestamp:                *includeTimestampFlag,
+		LogLevel:                        logLevel,
 		PPROFPort:                       *pprofPortFlag,
+		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
 	})
 	if err != nil {
+		color.New(color.FgRed).Fprint(w, "(✗) ")
 		fmt.Fprintln(w, err.Error())
 		return 1
 	}

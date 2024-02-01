@@ -63,7 +63,7 @@ templ components can be returned from methods (functions attached to types).
 
 Go code:
 
-```
+```templ
 package main
 
 type Data struct {

@@ -1,22 +1,100 @@
 # Hot reload
 
+To access a Go web application that uses templ in a web browser, a few things must happen:
+
+1. `templ generate` must be executed, to create Go code (`*_templ.go` files) from the `*.templ` files.
+2. The Go code must start a web server on a port, e.g. (`http.ListenAndServe("localhost:8080", nil)`.
+3. The Go program must be ran, e.g. by running `go run .`.
+4. The web browser must access or reload the page, e.g. `http://localhost:8080`.
+
+If the `*.templ` files change, #1 and #2 must be ran.
+
+If the `*.go` files change, #3 and #4 must be ran.
+
 ## Built-in
 
-templ ships with hot reload. Since `fsnotify` and `rjeczalik/notify` filesystem watchers struggle to provide a working cross-platform behaviour, templ uses a basic `os.WalkDir` function to iterate through `*.templ` files on disk, and uses a backoff strategy to prevent excessive disk thrashing and reduce CPU usage.
+`templ generate --watch` watches the current directory for changes and generates Go code if changes are detected.
 
-`templ generate --watch` will watch the current directory and will templ files if changes are detected.
+`templ generate --watch` generates Go code that loads strings from a `_templ.txt` file on disk to reduce the number of times that Go code needs to be re-generated, and therefore reduces the number of time your app needs to be recompiled and restarted.
 
-If the `--cmd` argument is set, templ start or restart the command once template code generation is complete.
+To re-run your app automatical, add the `--cmd` argument to `templ generate`, and templ will start or restart your app using the command provided once template code generation is complete (#3).
 
-If the `--proxy` argument is set, templ will start a HTTP proxy pointed at the given address. The proxy rewrites HTML received from the given address and adds a script just before the `</body>` tag that will reload the window with JavaScript once the changes are complete and the command has been executed.
+Finally, to trigger your web browser to reload automatically (without pressing F5), set the `--proxy` argument (#4).
+
+The `--proxy` argument starts a HTTP proxy which proxies requests to your app. For example, if your app runs on port 8080, you would use `--proxy="http://localhost:8080"`. The proxy inserts client-side JavaScript before the `</body>` tag that will cause the browser to reload the window when the app is restarted instead of you having to reload the page manually. Note that the html being served by the webserver MUST have a `<body>` tag, otherwise there will be no javascript injection thus making the browser not reload automatically.
+
+Altogether, to setup hot reload on an app that listens on port 8080, run the following.
 
 ```
-templ generate --watch --proxy="http://localhost:8080" --cmd="runtest"
+templ generate --watch --proxy="http://localhost:8080" --cmd="go run ."
 ```
 
-## Alternative
+```go title="main.go"
+package main
 
-Air's reload performance is better due to its complex filesystem notification setup, but doens't ship with a proxy to automatically reload pages, and requires a `toml` configuration file for operation.
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/a-h/templ"
+)
+
+func main() {
+	component := hello("World")
+
+	http.Handle("/", templ.Handler(component))
+
+	fmt.Println("Listening on :8080")
+	http.ListenAndServe(":8080", nil)
+}
+```
+
+```templ title="hello.templ"
+package main
+
+templ hello(name string) {
+  <body>
+	    <div>Hello, { name }</div>
+  </body>
+}
+```
+
+The hot reload process can be shown in the following diagram:
+
+```mermaid
+sequenceDiagram
+    browser->>templ_proxy: HTTP
+    activate templ_proxy
+    templ_proxy->>app: HTTP
+    activate app
+    app->>templ_proxy: HTML
+    deactivate app
+    templ_proxy->>templ_proxy: add reload script
+    templ_proxy->>browser: HTML
+    deactivate templ_proxy
+    browser->>templ_proxy: SSE request to /_templ/reload/events
+    activate templ_proxy
+    templ_proxy->>generate: run templ generate if *.templ files have changed
+    templ_proxy->>app: restart app if *.go files have changed
+    templ_proxy->>browser: notify browser to reload page
+    deactivate templ_proxy
+```
+
+## Alternative 1: wgo
+
+[wgo](https://github.com/bokwoon95/wgo):
+
+> Live reload for Go apps. Watch arbitrary files and respond with arbitrary commands. Supports running multiple invocations in parallel.
+
+```
+wgo -file=.go -file=.templ -xfile=_templ.go templ generate :: go run main.go
+```
+
+To avoid a continous reloading files ending with `_templ.go` should be skipped via `-xfile`.
+
+## Alternative 2: air
+
+Air's reload performance is better than templ's built-in feature due to its complex filesystem notification setup, but doesn't ship with a proxy to automatically reload pages, and requires a `toml` configuration file for operation.
 
 See https://github.com/cosmtrek/air for details.
 

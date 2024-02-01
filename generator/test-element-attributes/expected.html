@@ -18,3 +18,13 @@
              end">
 </div>
 
+<h2>HTMX Wildcard attribute</h2>
+
+<form
+ 	hx-post="/api/secret/unlock"
+ 	hx-target="#secret"
+ 	hx-target-*="#errors"
+ 	hx-indicator="#loading-indicator"
+>
+  <input type="button" value="Unlock"/>
+</form>

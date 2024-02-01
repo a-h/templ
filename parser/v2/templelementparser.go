@@ -1,41 +1,22 @@
 package parser
 
 import (
-	"fmt"
-	"unicode"
-
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
-
-var templElementStartExpressionParams = parse.StringFrom(
-	parse.String("("),
-	parse.StringFrom[Expression](functionArgsParser{
-		startBracketCount: 1,
-	}),
-	parse.String(")"),
-)
-
-var templElementStartExpression = ExpressionOf(parse.StringFrom(
-	parse.AtLeast(1, parse.StringFrom(
-		parse.StringFrom(parse.Optional(parse.String("."))),
-		parse.StringFrom(parse.Optional(parse.String("_"))),
-		parse.RuneInRanges(unicode.Letter),
-		parse.StringFrom(parse.AtMost(255, parse.RuneInRanges(unicode.Letter, unicode.Number))),
-		parse.StringFrom(parse.Optional(templElementStartExpressionParams)),
-	)),
-))
 
 type templElementExpressionParser struct{}
 
-func (p templElementExpressionParser) Parse(pi *parse.Input) (r TemplElementExpression, ok bool, err error) {
+func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.Rune('@').Parse(pi); err != nil || !ok {
 		return
 	}
 
-	// Parse the identifier.
-	if r.Expression, ok, err = Must(templElementStartExpression, "templ element: found start '@' but expression was not closed").Parse(pi); err != nil || !ok {
-		return
+	var r TemplElementExpression
+	// Parse the Go expresion.
+	if r.Expression, err = parseGo("templ element", pi, goexpression.Expression); err != nil {
+		return r, false, err
 	}
 
 	// Once we've got a start expression, check to see if there's an open brace for children. {\n.
@@ -52,12 +33,17 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (r TemplElementExpr
 
 	// Node contents.
 	np := newTemplateNodeParser(closeBraceWithOptionalPadding, "templ element closing brace")
-	if r.Children, ok, err = Must[[]Node](np, fmt.Sprintf("@%s: expected nodes, but none were found", r.Expression.Value)).Parse(pi); err != nil || !ok {
+	var nodes Nodes
+	if nodes, ok, err = np.Parse(pi); err != nil || !ok {
+		err = parse.Error("@"+r.Expression.Value+": expected nodes, but none were found", pi.Position())
 		return
 	}
+	r.Children = nodes.Nodes
+	r.Diagnostics = nodes.Diagnostics
 
 	// Read the required closing brace.
-	if _, ok, err = Must(closeBraceWithOptionalPadding, fmt.Sprintf("@%s: missing end (expected '}')", r.Expression.Value)).Parse(pi); err != nil || !ok {
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("@"+r.Expression.Value+": missing end (expected '}')", pi.Position())
 		return
 	}
 

@@ -90,7 +90,7 @@ func TestAttributeParser(t *testing.T) {
 			class="important"
 		}
 "`,
-			parser: StripType(conditionalAttributeParser),
+			parser: StripType(conditionalAttribute),
 			expected: ConditionalAttribute{
 				Expression: Expression{
 					Value: "p.important",
@@ -124,7 +124,7 @@ if test {
 	name={ "other" }
 }
 "`,
-			parser: StripType(conditionalAttributeParser),
+			parser: StripType(conditionalAttribute),
 			expected: ConditionalAttribute{
 				Expression: Expression{
 					Value: "test",
@@ -240,6 +240,28 @@ if test {
 			},
 		},
 		{
+			name:   "spread attributes",
+			input:  ` { spread... }"`,
+			parser: StripType(spreadAttributesParser),
+			expected: SpreadAttributes{
+				Expression{
+					Value: "spread",
+					Range: Range{
+						From: Position{
+							Index: 3,
+							Line:  0,
+							Col:   3,
+						},
+						To: Position{
+							Index: 9,
+							Line:  0,
+							Col:   9,
+						},
+					},
+				},
+			},
+		},
+		{
 			name:   "constant attribute",
 			input:  ` href="test"`,
 			parser: StripType(constantAttributeParser),
@@ -249,12 +271,23 @@ if test {
 			},
 		},
 		{
-			name:   "single quote constant attribute",
+			name:   "single quote not required constant attribute",
+			input:  ` href='no double quote in value'`,
+			parser: StripType(constantAttributeParser),
+			expected: ConstantAttribute{
+				Name:        "href",
+				Value:       `no double quote in value`,
+				SingleQuote: false,
+			},
+		},
+		{
+			name:   "single quote required constant attribute",
 			input:  ` href='"test"'`,
 			parser: StripType(constantAttributeParser),
 			expected: ConstantAttribute{
-				Name:  "href",
-				Value: `"test"`,
+				Name:        "href",
+				Value:       `"test"`,
+				SingleQuote: true,
 			},
 		},
 		{
@@ -301,12 +334,49 @@ if test {
 			},
 		},
 		{
+			name:   "bool constant attributes can end with a Unix newline",
+			input:  "<input\n\t\trequired\n\t/>",
+			parser: StripType[Node](element),
+			expected: Element{
+				Name:        "input",
+				IndentAttrs: true,
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Name: "required",
+					},
+				},
+			},
+		},
+		{
+			name:   "bool constant attributes can end with a Windows newline",
+			input:  "<input\r\n\t\trequired\r\n\t/>",
+			parser: StripType[Node](element),
+			expected: Element{
+				Name:        "input",
+				IndentAttrs: true,
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Name: "required",
+					},
+				},
+			},
+		},
+		{
 			name:   "attribute containing escaped text",
 			input:  ` href="&lt;&quot;&gt;"`,
 			parser: StripType(constantAttributeParser),
 			expected: ConstantAttribute{
 				Name:  "href",
 				Value: `<">`,
+			},
+		},
+		{
+			name:   "HTMX wildcard attribute names are supported",
+			input:  ` hx-target-*="#errors"`,
+			parser: StripType(constantAttributeParser),
+			expected: ConstantAttribute{
+				Name:  "hx-target-*",
+				Value: `#errors`,
 			},
 		},
 	}
@@ -414,6 +484,49 @@ func TestElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "style",
 						Value: "text-underline: auto",
+					},
+				},
+			},
+		},
+		{
+			name:  "element: self-closing with multiple spreads attributes",
+			input: `<a { firstSpread... } { children... }/>`,
+			expected: Element{
+				Name: "a",
+				Attributes: []Attribute{
+					SpreadAttributes{
+						Expression: Expression{
+							Value: "firstSpread",
+							Range: Range{
+								From: Position{
+									Index: 5,
+									Line:  0,
+									Col:   5,
+								},
+								To: Position{
+									Index: 16,
+									Line:  0,
+									Col:   16,
+								},
+							},
+						},
+					},
+					SpreadAttributes{
+						Expression: Expression{
+							Value: "children",
+							Range: Range{
+								From: Position{
+									Index: 24,
+									Line:  0,
+									Col:   24,
+								},
+								To: Position{
+									Index: 32,
+									Line:  0,
+									Col:   32,
+								},
+							},
+						},
 					},
 				},
 			},
@@ -947,13 +1060,13 @@ func TestElementParserErrors(t *testing.T) {
 				}),
 		},
 		{
-			name:  "element: names cannot be greater than 32 characters",
-			input: `<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa></aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>`,
-			expected: parse.Error("element names must be < 32 characters long",
+			name:  "element: names cannot be greater than 128 characters",
+			input: `<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa></aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>`,
+			expected: parse.Error("element names must be < 128 characters long",
 				parse.Position{
-					Index: 34,
+					Index: 130,
 					Line:  0,
-					Col:   34,
+					Col:   130,
 				}),
 		},
 	}
@@ -970,7 +1083,7 @@ func TestElementParserErrors(t *testing.T) {
 }
 
 func TestBigElement(t *testing.T) {
-	var sb strings.Builder
+	sb := new(strings.Builder)
 	sb.WriteString("<div>")
 	for i := 0; i < 4096*4; i++ {
 		sb.WriteString("a")

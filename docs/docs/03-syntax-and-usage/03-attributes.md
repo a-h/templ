@@ -51,7 +51,7 @@ Use an `if` statement within a templ element to optionally add attributes to ele
 
 ```templ
 templ component() {
-  <hr style="padding: 10px" 
+  <hr style="padding: 10px"
     if true {
       class="itIsTrue"
     }
@@ -61,6 +61,37 @@ templ component() {
 
 ```html title="Output"
 <hr style="padding: 10px" class="itIsTrue" />
+```
+
+## Spread attributes
+
+Use the `{ attrMap... }` syntax in the open tag of an element to append a dynamic map of attributes to the element's attributes.
+
+It's possible to spread any variable of type `templ.Attributes`. `templ.Attributes` is a `map[string]any` type definition.
+
+* If the value is a `string`, the attribute is added with the string value, e.g. `<div name="value">`.
+* If the value is a `bool`, the attribute is added as a boolean attribute if the value is true, e.g. `<div name>`.
+* If the value is a `templ.KeyValue[string, bool]`, the attribute is added if the boolean is true, e.g. `<div name="value">`.
+* If the value is a `templ.KeyValue[bool, bool]`, the attribute is added if both boolean values are true, as `<div name>`.
+
+```templ
+templ component(shouldBeUsed bool, attrs templ.Attributes) {
+  <p { attrs... }></p>
+  <hr
+    if shouldBeUsed {
+      { attrs... }
+    }
+  />
+}
+
+templ usage() {
+  @component(false, templ.Attributes{"data-testid": "paragraph"}) 
+}
+```
+
+```html title="Output"
+<p data-testid="paragraph">Text</p>
+<hr>
 ```
 
 ## URL attributes
@@ -74,6 +105,18 @@ The `templ.URL` function sanitizes input URLs and checks that the protocol is `h
 ```templ
 templ component(p Person) {
   <a href={ templ.URL(p.URL) }>{ strings.ToUpper(p.Name) }</a>
+}
+```
+
+The `templ.URL` function only supports standard HTML elements and attributes (`<a href=""` and `<form action=""`).
+
+For use on non-standard HTML elements (e.g. HTMX's `hx-*` attributes), convert the `templ.URL` to a `string` after sanitization.
+
+```templ
+templ component(contact model.Contact) {
+  <div hx-get={ string(templ.URL(fmt.Sprintf("/contacts/%s/email", contact.ID)))}>
+    { contact.Name }
+  </div>
 }
 ```
 

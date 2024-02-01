@@ -50,8 +50,10 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 
 	id := atomic.AddInt64(&s.counter, 1)
+	s.m.Lock()
 	events := make(chan event)
 	s.requests[id] = events
+	s.m.Unlock()
 	defer func() {
 		s.m.Lock()
 		defer s.m.Unlock()
@@ -70,7 +72,6 @@ loop:
 			}
 			timer.Reset(time.Second * 5)
 		case e := <-events:
-			fmt.Println("Sending reload event...")
 			if _, err := fmt.Fprintf(w, "event: %s\ndata: %s\n\n", e.Type, e.Data); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return

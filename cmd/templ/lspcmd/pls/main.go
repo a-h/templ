@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
+	"runtime"
 
 	"go.uber.org/zap"
 )
@@ -29,17 +31,52 @@ func (opts Options) AsArguments() []string {
 	return args
 }
 
+func findGopls() (location string, err error) {
+	executableName := "gopls"
+	if runtime.GOOS == "windows" {
+		executableName = "gopls.exe"
+	}
+
+	_, err = exec.LookPath(executableName)
+	if err == nil {
+		// Found on the path.
+		return executableName, nil
+	}
+
+	// Unexpected error.
+	if !errors.Is(err, exec.ErrNotFound) {
+		return "", fmt.Errorf("unexpected error looking for gopls: %w", err)
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("unexpected error looking for gopls: %w", err)
+	}
+
+	// Probe standard locations.
+	locations := []string{
+		path.Join(home, "go", "bin", executableName),
+		path.Join(home, ".local", "bin", executableName),
+	}
+	for _, location := range locations {
+		_, err = os.Stat(location)
+		if err != nil {
+			continue
+		}
+		// Found in a standard location.
+		return location, nil
+	}
+
+	return "", fmt.Errorf("cannot find gopls on the path (%q), in $HOME/go/bin or $HOME/.local/bin/gopls. You can install gopls with `go install golang.org/x/tools/gopls@latest`", os.Getenv("PATH"))
+}
+
 // NewGopls starts gopls and opens up a jsonrpc2 connection to it.
 func NewGopls(ctx context.Context, log *zap.Logger, opts Options) (rwc io.ReadWriteCloser, err error) {
-	_, err = exec.LookPath("gopls")
-	if errors.Is(err, exec.ErrNotFound) {
-		err = fmt.Errorf("cannot find gopls on the path (%q), you can install it with `go install golang.org/x/tools/gopls@latest`", os.Getenv("PATH"))
-		return
-	}
+	location, err := findGopls()
 	if err != nil {
-		return
+		return nil, err
 	}
-	cmd := exec.Command("gopls", opts.AsArguments()...)
+	cmd := exec.Command(location, opts.AsArguments()...)
 	return newProcessReadWriteCloser(log, cmd)
 }
 

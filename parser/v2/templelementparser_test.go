@@ -56,6 +56,33 @@ func TestTemplElementExpressionParser(t *testing.T) {
 			},
 		},
 		{
+			name: "templelement: simple multiline call",
+			input: `@Other_Component(
+				p.Test,
+				"something" + "else",
+			)` + "\n",
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `Other_Component(
+				p.Test,
+				"something" + "else",
+			)`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 60,
+							Line:  3,
+							Col:   4,
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "templelement: simple, block with text",
 			input: `@Other(p.Test) {
 	some words
@@ -108,7 +135,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				Children: []Node{
 					Whitespace{Value: "\n\t\t\t"},
 					Element{Name: "a", Attributes: []Attribute{
-						ConstantAttribute{"href", "someurl"},
+						ConstantAttribute{
+							Name:  "href",
+							Value: "someurl",
+						},
 					},
 						TrailingSpace: SpaceVertical,
 					},
@@ -210,6 +240,69 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							Index: 31,
 							Line:  0,
 							Col:   31,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: supports a slice of functions",
+			input: `@templates[0]()`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates[0]()`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 15,
+							Line:  0,
+							Col:   15,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: supports a map of functions",
+			input: `@templates["key"]()`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates["key"]()`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 19,
+							Line:  0,
+							Col:   19,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: supports a slice of structs/interfaces",
+			input: `@templates[0].CreateTemplate()`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates[0].CreateTemplate()`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 30,
+							Line:  0,
+							Col:   30,
 						},
 					},
 				},

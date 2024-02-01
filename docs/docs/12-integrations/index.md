@@ -1,27 +1,45 @@
 # Integrations
 
-Templ is framework agnostic but that does not mean it can not be used with Go frameworks and other tools. 
+Templ is framework agnostic but that does not mean it can not be used with Go frameworks and other tools.
 
-Below are some examples of how to use Templ Go frameworks and other tools.
-
-## Gin
-
-An example of using templ with gin can be found here:
-
-https://github.com/a-h/templ/tree/main/examples/integration-gin
+Below are some examples of how to use templ with other Go libraries, frameworks and tools, and links to systems that have built-in templ support.
 
 ## Chi
 
-An example of using templ with go-chi v5 can be found here: 
+See an example of using https://github.com/go-chi/chi with templ at:
 
 https://github.com/a-h/templ/tree/main/examples/integration-chi
 
-## Gowebly
+## Echo
 
-A next-generation CLI tool for easily build amazing web applications with Go on the backend, using htmx & hyperscript, and the most popular atomic/utility-first CSS frameworks on the frontend. 
+See an example of using https://echo.labstack.com/ with templ at:
 
-Gowebly CLI supports creating ready-made projects using Templ for the built-in **net/http** and Go web frameworks: **Fiber**, **Chi**, **Echo**, **HttpRouter**.
+https://github.com/a-h/templ/tree/main/examples/integration-echo
+
+## Gin
+
+See an example of using https://github.com/gin-gonic/gin with templ at:
+
+https://github.com/a-h/templ/tree/main/examples/integration-gin
+
+## Go Fiber
+
+See an example of using https://github.com/gofiber/fiber with templ at:
+
+https://github.com/a-h/templ/tree/main/examples/integration-gofiber
+
+## `template/html`
+
+See [Using with Go templates](../syntax-and-usage/using-with-go-templates)
+
+https://github.com/a-h/templ/tree/main/examples/integration-chi
+
+## Gowebly CLI
+
+A next-generation CLI tool for easily build amazing web applications with Go on the backend, using **htmx**, **hyperscript** or **Alpine.js**, and the most popular CSS frameworks on the frontend. 
+
+Gowebly CLI supports creating ready-made projects using Templ for the built-in **net/http** and Go web frameworks: **Fiber**, **Gin**, **Echo**, **Chi**, **HttpRouter**.
 
 Follow the instructions in the Complete User Guide:
 
-https://github.com/gowebly/gowebly
+https://gowebly.org

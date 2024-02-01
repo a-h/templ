@@ -46,3 +46,11 @@ func TestChildrenExpressionParser(t *testing.T) {
 		})
 	}
 }
+
+func TestChildrenExpressionParserAllocsOK(t *testing.T) {
+	RunParserAllocTest[Node](t, childrenExpression, true, 2, `{ children... }`)
+}
+
+func TestChildrenExpressionParserAllocsSkip(t *testing.T) {
+	RunParserAllocTest[Node](t, childrenExpression, false, 2, ``)
+}
