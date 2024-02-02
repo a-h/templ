@@ -226,7 +226,7 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	var indentLevel int
 
 	//line SomeFilename.templ:20
-	if _, err = g.w.Write(fmt.Sprintf("//line %s:%d\n", g.tf.FileName, n.Name.Range.From.Line+1)); err != nil {
+	if _, err = g.w.Write(fmt.Sprintf("//line %s:%d\n", g.tf.FileName, n.Expression.Range.From.Line+1)); err != nil {
 		return err
 	}
 	// func
