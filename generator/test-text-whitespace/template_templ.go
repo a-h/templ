@@ -9,6 +9,7 @@ import "context"
 import "io"
 import "bytes"
 
+//line :3
 func WhitespaceIsAddedWithinTemplStatements() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -45,6 +46,7 @@ func WhitespaceIsAddedWithinTemplStatements() templ.Component {
 
 const WhitespaceIsAddedWithinTemplStatementsExpected = `<p>This is some text. So is this.</p>`
 
+//line :14
 func InlineElementsAreNotPadded() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -71,6 +73,7 @@ func InlineElementsAreNotPadded() templ.Component {
 
 const InlineElementsAreNotPaddedExpected = `<p>Inline text <b>is spaced properly</b> without adding extra spaces.</p>`
 
+//line :20
 func WhiteSpaceInHTMLIsNormalised() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -97,6 +100,7 @@ func WhiteSpaceInHTMLIsNormalised() templ.Component {
 
 const WhiteSpaceInHTMLIsNormalisedExpected = `<p>newlines and other whitespace are stripped but it is normalised like HTML.</p>`
 
+//line :30
 func WhiteSpaceAroundValues() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -138,6 +142,7 @@ const WhiteSpaceAroundValuesExpected = `<p>templ allows strings to be included i
 
 const WhiteSpaceAroundTemplatedValuesExpected = `<div>templ allows whitespace around templated values.</div>`
 
+//line :38
 func WhiteSpaceAroundTemplatedValues(prefix, statement string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

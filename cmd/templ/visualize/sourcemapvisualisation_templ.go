@@ -10,6 +10,7 @@ import "io"
 import "bytes"
 import "strings"
 
+//line :3
 func row() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder
 	templ_7745c5c3_CSSBuilder.WriteString(`display:flex;`)
@@ -20,6 +21,7 @@ func row() templ.CSSClass {
 	}
 }
 
+//line :7
 func column() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder
 	templ_7745c5c3_CSSBuilder.WriteString(`flex:50%;`)
@@ -32,6 +34,7 @@ func column() templ.CSSClass {
 	}
 }
 
+//line :13
 func code() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder
 	templ_7745c5c3_CSSBuilder.WriteString(`font-family:monospace;`)
@@ -42,6 +45,7 @@ func code() templ.CSSClass {
 	}
 }
 
+//line :17
 func combine(templFileName string, left, right templ.Component) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -159,6 +163,7 @@ func combine(templFileName string, left, right templ.Component) templ.Component 
 	})
 }
 
+//line :40
 func highlight(sourceId, targetId string) templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_highlight_ae80`,
@@ -176,6 +181,7 @@ func highlight(sourceId, targetId string) templ.ComponentScript {
 	}
 }
 
+//line :51
 func removeHighlight(sourceId, targetId string) templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_removeHighlight_58f2`,
@@ -193,6 +199,7 @@ func removeHighlight(sourceId, targetId string) templ.ComponentScript {
 	}
 }
 
+//line :62
 func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

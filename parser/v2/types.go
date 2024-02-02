@@ -113,6 +113,8 @@ type TemplateFile struct {
 	Nodes []TemplateFileNode
 	// Diagnostics contains any errors or warnings.
 	Diagnostics []Diagnostic
+	// add a field and the filename to it, wherever this is being created
+	FileName string
 }
 
 func (tf TemplateFile) Write(w io.Writer) error {

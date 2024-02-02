@@ -11,6 +11,7 @@ import "bytes"
 
 import "fmt"
 
+//line :5
 func WhitespaceIsConsistentInIf(firstIf, secondIf bool) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -59,6 +60,7 @@ const WhitespaceIsConsistentInTrueIfExpected = `<button>Start</button> <button>I
 const WhitespaceIsConsistentInTrueElseIfExpected = `<button>Start</button> <button>ElseIf</button> <button>End</button>`
 const WhitespaceIsConsistentInTrueElseExpected = `<button>Start</button> <button>Else</button> <button>End</button>`
 
+//line :21
 func WhitespaceIsConsistentInFalseIf() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -95,6 +97,7 @@ func WhitespaceIsConsistentInFalseIf() templ.Component {
 
 const WhitespaceIsConsistentInFalseIfExpected = `<button>Start</button> <button>End</button>`
 
+//line :31
 func WhitespaceIsConsistentInSwitch(i int) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -138,6 +141,7 @@ func WhitespaceIsConsistentInSwitch(i int) templ.Component {
 const WhitespaceIsConsistentInOneSwitchExpected = `<button>Start</button> <button>1</button> <button>End</button>`
 const WhitespaceIsConsistentInDefaultSwitchExpected = `<button>Start</button> <button>default</button> <button>End</button>`
 
+//line :45
 func WhitespaceIsConsistentInSwitchNoDefault() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -175,6 +179,7 @@ func WhitespaceIsConsistentInSwitchNoDefault() templ.Component {
 
 const WhitespaceIsConsistentInSwitchNoDefaultExpected = `<button>Start</button> <button>End</button>`
 
+//line :56
 func WhitespaceIsConsistentInFor(i int) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

@@ -12,6 +12,7 @@ import "strings"
 
 import "strconv"
 
+//line :5
 func border() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder
 	templ_7745c5c3_CSSBuilder.WriteString(`border:1px solid #eeeeee;`)
@@ -26,6 +27,7 @@ func border() templ.CSSClass {
 	}
 }
 
+//line :13
 func counts(global, session int) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -110,6 +112,7 @@ func counts(global, session int) templ.Component {
 	})
 }
 
+//line :30
 func Page(global, session int) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

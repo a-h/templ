@@ -13,6 +13,8 @@ import "strings"
 import "fmt"
 
 // Constant class.
+//
+//line :4
 func StyleTagsAreSupported() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -41,6 +43,7 @@ func StyleTagsAreSupported() templ.Component {
 
 const red = "#00ff00"
 
+//line :17
 func cssComponentGreen() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder
 	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
@@ -51,6 +54,7 @@ func cssComponentGreen() templ.CSSClass {
 	}
 }
 
+//line :21
 func CSSComponentsAreSupported() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -90,6 +94,8 @@ func CSSComponentsAreSupported() templ.Component {
 
 // Both CSS components and constants are supported.
 // Only string names are really required. There is no need to use templ.Class or templ.SafeClass.
+//
+//line :27
 func CSSComponentsAndConstantsAreSupported() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -145,6 +151,8 @@ func CSSComponentsAndConstantsAreSupported() templ.Component {
 }
 
 // Maps can be used to determine if a class should be added or not.
+//
+//line :34
 func MapsCanBeUsedToConditionallySetClasses() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -183,6 +191,8 @@ func MapsCanBeUsedToConditionallySetClasses() templ.Component {
 }
 
 // The templ.KV function can be used to add a class if a condition is true.
+//
+//line :40
 func d() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder
 	templ_7745c5c3_CSSBuilder.WriteString(`font-size:12pt;`)
@@ -193,6 +203,7 @@ func d() templ.CSSClass {
 	}
 }
 
+//line :44
 func e() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder
 	templ_7745c5c3_CSSBuilder.WriteString(`font-size:14pt;`)
@@ -203,6 +214,7 @@ func e() templ.CSSClass {
 	}
 }
 
+//line :48
 func KVCanBeUsedToConditionallySetClasses() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -241,6 +253,8 @@ func KVCanBeUsedToConditionallySetClasses() templ.Component {
 }
 
 // Pseudo attributes can be used without any special syntax.
+//
+//line :53
 func PsuedoAttributesAndComplexClassNamesAreSupported() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -279,6 +293,8 @@ func PsuedoAttributesAndComplexClassNamesAreSupported() templ.Component {
 }
 
 // Class names are HTML escaped.
+//
+//line :58
 func ClassNamesAreHTMLEscaped() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

@@ -9,6 +9,7 @@ import "context"
 import "io"
 import "bytes"
 
+//line :3
 func graph(data []TimeValue) templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_graph_c2ba`,
@@ -21,6 +22,7 @@ func graph(data []TimeValue) templ.ComponentScript {
 	}
 }
 
+//line :9
 func page(data []TimeValue) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
