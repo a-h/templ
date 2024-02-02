@@ -511,13 +511,58 @@ func containsNonTextNodes(nodes []Node) bool {
 	return false
 }
 
-func (e Element) IsNode() bool { return true }
-func (e Element) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "<", e.Name); err != nil {
-		return err
+// using algorithm from https://codeguide.co/#attribute-order
+func orderCategory(name string) int {
+	if name == "class" {
+		return 0
+	} else if name == "id" {
+		return 1
+	} else if name == "name" {
+		return 2
+	} else if strings.HasPrefix(name, "data-") {
+		return 3
+	} else if name == "src" {
+		return 4
+	} else if name == "for" {
+		return 5
+	} else if name == "type" {
+		return 6
+	} else if name == "href" {
+		return 7
+	} else if name == "value" {
+		return 8
+	} else if name == "title" {
+		return 9
+	} else if name == "alt" {
+		return 10
+	} else if name == "role" {
+		return 11
+	} else if strings.HasPrefix(name, "aria-") {
+		return 12
+	} else if name == "tabindex" {
+		return 13
+	} else if name == "style" {
+		return 14
 	}
-	sortedAttributes := make([]Attribute, len(e.Attributes))
-	copy(sortedAttributes, e.Attributes)
+	return -1
+}
+
+func compareAttributeNames(a, b string) bool {
+	aOrder := orderCategory(a)
+	bOrder := orderCategory(b)
+	if aOrder == -1 && bOrder == -1 {
+		return a < b
+	}
+	if aOrder == -1 {
+		return false
+	}
+	if bOrder == -1 {
+		return true
+	}
+	return aOrder < bOrder
+}
+
+func sortAttributesInPlace(sortedAttributes []Attribute) {
 	sort.SliceStable(sortedAttributes, func(i, j int) bool {
 		// Sort the attributes alphabetically.
 		// If the attribute doesn't have a "name", put it at the end.
@@ -551,8 +596,18 @@ func (e Element) Write(w io.Writer, indent int) error {
 			return true // j doesn't have Name, keep i before j
 		}
 
-		return nameI < nameJ // Both have Name, sort alphabetically
+		return compareAttributeNames(nameI, nameJ) // Both have Name, sort alphabetically
 	})
+}
+
+func (e Element) IsNode() bool { return true }
+func (e Element) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "<", e.Name); err != nil {
+		return err
+	}
+	sortedAttributes := make([]Attribute, len(e.Attributes))
+	copy(sortedAttributes, e.Attributes)
+	sortAttributesInPlace(sortedAttributes)
 
 	e.Attributes = sortedAttributes
 
