@@ -39,9 +39,6 @@ func Run(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	case "error":
 		level = slog.LevelError.Level()
 	}
-	// The built-in attributes with keys "time", "level", "source", and "msg"
-	// are passed to this function, except that time is omitted
-	// if zero, and source is omitted if AddSource is false.
 	log := slog.New(sloghandler.NewHandler(w, &slog.HandlerOptions{
 		AddSource: args.LogLevel == "debug",
 		Level:     level,
