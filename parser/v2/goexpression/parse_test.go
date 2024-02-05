@@ -248,6 +248,10 @@ func TestSliceArgs(t *testing.T) {
 			  "nameb": "name_b",
 			})`,
 		},
+		{
+			name:  "package name, but no variable or function",
+			input: `fmt.`,
+		},
 	}
 	for _, test := range tests {
 		for i, suffix := range suffixes {

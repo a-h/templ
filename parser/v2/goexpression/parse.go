@@ -141,6 +141,9 @@ func SliceArgs(content string) (expr string, err error) {
 		for _, e := range decl.Elts {
 			to = int(e.End()) - 1
 		}
+		if to > int(decl.Rbrace)-1 {
+			to = int(decl.Rbrace) - 1
+		}
 		betweenEndAndBrace := src[to : decl.Rbrace-1]
 		var hasCodeBetweenEndAndBrace bool
 		for _, r := range betweenEndAndBrace {
