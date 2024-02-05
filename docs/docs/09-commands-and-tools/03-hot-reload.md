@@ -17,7 +17,7 @@ If the `*.go` files change, #3 and #4 must be ran.
 
 `templ generate --watch` generates Go code that loads strings from a `_templ.txt` file on disk to reduce the number of times that Go code needs to be re-generated, and therefore reduces the number of time your app needs to be recompiled and restarted.
 
-To re-run your app automatical, add the `--cmd` argument to `templ generate`, and templ will start or restart your app using the command provided once template code generation is complete (#3).
+To re-run your app automatically, add the `--cmd` argument to `templ generate`, and templ will start or restart your app using the command provided once template code generation is complete (#3).
 
 Finally, to trigger your web browser to reload automatically (without pressing F5), set the `--proxy` argument (#4).
 
