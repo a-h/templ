@@ -108,6 +108,9 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, ok bool, err er
 					Range:   n.Expression.Range,
 				})
 			}
+			if n, ok := node.(DiagnosticNode); ok {
+				op.Diagnostics = append(op.Diagnostics, n.GetDiagnostics()...)
+			}
 			if matched {
 				op.Nodes = append(op.Nodes, node)
 				break

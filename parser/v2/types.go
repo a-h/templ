@@ -347,6 +347,10 @@ type HTMLTemplate struct {
 	Children    []Node
 }
 
+func (t HTMLTemplate) GetDiagnostics() []Diagnostic {
+	return t.Diagnostics
+}
+
 func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
 
 func (t HTMLTemplate) Write(w io.Writer, indent int) error {
@@ -404,6 +408,10 @@ type Node interface {
 	Write(w io.Writer, indent int) error
 }
 
+type DiagnosticNode interface {
+	GetDiagnostics() []Diagnostic
+}
+
 type WhitespaceTrailer interface {
 	Trailing() TrailingSpace
 }
@@ -440,6 +448,10 @@ type Element struct {
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
 	Diagnostics    []Diagnostic
+}
+
+func (e Element) GetDiagnostics() []Diagnostic {
+	return e.Diagnostics
 }
 
 func (e Element) Trailing() TrailingSpace {
@@ -926,6 +938,10 @@ type TemplElementExpression struct {
 	Diagnostics []Diagnostic
 }
 
+func (tee TemplElementExpression) GetDiagnostics() []Diagnostic {
+	return tee.Diagnostics
+}
+
 func (tee TemplElementExpression) IsNode() bool { return true }
 func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
 	source, err := format.Source([]byte(tee.Expression.Value))
@@ -978,6 +994,12 @@ type ElseIfExpression struct {
 	Diagnostics []Diagnostic
 }
 
+func (ie IfExpression) GetDiagnostics() []Diagnostic {
+	return ie.Diagnostics
+}
+func (ie ElseIfExpression) GetDiagnostics() []Diagnostic {
+	return ie.Diagnostics
+}
 func (n IfExpression) IsNode() bool { return true }
 func (n IfExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "if ", n.Expression.Value, " {\n"); err != nil {
@@ -1049,6 +1071,10 @@ type CaseExpression struct {
 	Diagnostics []Diagnostic
 }
 
+func (ce CaseExpression) GetDiagnostics() []Diagnostic {
+	return ce.Diagnostics
+}
+
 //	for i, v := range p.Addresses {
 //	  {! Address(v) }
 //	}
@@ -1056,6 +1082,10 @@ type ForExpression struct {
 	Expression  Expression
 	Children    []Node
 	Diagnostics []Diagnostic
+}
+
+func (fe ForExpression) GetDiagnostics() []Diagnostic {
+	return fe.Diagnostics
 }
 
 func (fe ForExpression) IsNode() bool { return true }
