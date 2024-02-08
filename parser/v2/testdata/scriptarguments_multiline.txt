@@ -1,0 +1,20 @@
+-- in --
+package p
+
+script Style(
+a string,
+b string,
+c string,
+) {
+	console.log(a, b, c);
+}
+-- out --
+package p
+
+script Style(
+	a string,
+	b string,
+	c string,
+) {
+	console.log(a, b, c);
+}
