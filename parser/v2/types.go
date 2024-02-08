@@ -254,7 +254,8 @@ type CSSTemplate struct {
 
 func (css CSSTemplate) IsTemplateFileNode() bool { return true }
 func (css CSSTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "css ", css.Expression.Value, " {\n"); err != nil {
+	source := formatFunctionArguments(css.Expression.Value)
+	if err := writeIndent(w, indent, "css ", string(source), " {\n"); err != nil {
 		return err
 	}
 	for _, p := range css.Properties {
@@ -350,7 +351,8 @@ type HTMLTemplate struct {
 func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
 
 func (t HTMLTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "templ ", t.Expression.Value, " {\n"); err != nil {
+	source := formatFunctionArguments(t.Expression.Value)
+	if err := writeIndent(w, indent, "templ ", string(source), " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(w, indent+1, t.Children); err != nil {
@@ -1102,7 +1104,8 @@ type ScriptTemplate struct {
 
 func (s ScriptTemplate) IsTemplateFileNode() bool { return true }
 func (s ScriptTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "script ", s.Name.Value, "(", s.Parameters.Value, ") {\n"); err != nil {
+	source := formatFunctionArguments(s.Name.Value + "(" + s.Parameters.Value + ")")
+	if err := writeIndent(w, indent, "script ", string(source), " {\n"); err != nil {
 		return err
 	}
 	if _, err := io.WriteString(w, s.Value); err != nil {
@@ -1112,4 +1115,15 @@ func (s ScriptTemplate) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+
+// formatFunctionArguments formats the function arguments, if possible.
+func formatFunctionArguments(expression string) string {
+	source := []byte(expression)
+	formatted, err := format.Source([]byte("func " + expression))
+	if err == nil {
+		formatted = bytes.TrimPrefix(formatted, []byte("func "))
+		source = formatted
+	}
+	return string(source)
 }
