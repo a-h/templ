@@ -160,7 +160,7 @@ outer:
 				return
 			}
 			hasTemplatePrefix := strings.HasPrefix(l, "templ ") || strings.HasPrefix(l, "css ") || strings.HasPrefix(l, "script ")
-			if hasTemplatePrefix && strings.HasSuffix(l, "{") {
+			if hasTemplatePrefix && strings.Contains(l, "(") {
 				// Unread the line.
 				pi.Seek(last)
 				// Take the code so far.
