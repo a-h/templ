@@ -131,11 +131,16 @@ func SliceArgs(content string) (expr string, err error) {
 	}
 
 	var from, to int
+	var stop bool
 	ast.Inspect(node, func(n ast.Node) bool {
+		if stop {
+			return false
+		}
 		decl, ok := n.(*ast.CompositeLit)
 		if !ok {
 			return true
 		}
+		stop = true
 		from = int(decl.Lbrace)
 		to = int(decl.Rbrace) - 1
 		for _, e := range decl.Elts {
