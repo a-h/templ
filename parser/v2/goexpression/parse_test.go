@@ -211,6 +211,7 @@ func TestSliceArgs(t *testing.T) {
 	suffixes := []string{
 		"",
 		"}",
+		"}</a>\n}\nvar x = []struct {}{}",
 	}
 	tests := []testInput{
 		{
