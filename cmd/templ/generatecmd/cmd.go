@@ -116,7 +116,6 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	go func() {
 		defer pushHandlerWG.Done()
 		defer close(events)
-		defer close(errs)
 		cmd.Log.Debug("Walking directory", slog.String("path", cmd.Args.Path), slog.Bool("devMode", cmd.Args.Watch))
 		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {
 			cmd.Log.Error("WalkFiles failed, exiting", slog.Any("error", err))
@@ -190,6 +189,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	postGenerationWG.Add(1)
 	var firstPostGenerationExecuted bool
 	go func() {
+		defer close(errs)
 		defer postGenerationWG.Done()
 		cmd.Log.Debug("Starting post-generation handler")
 		timeout := time.NewTimer(time.Hour * 24 * 365)
