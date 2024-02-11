@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/a-h/templ"
@@ -102,6 +103,8 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	var eventHandlerWG sync.WaitGroup
 	// For errs from the watcher.
 	errs := make(chan error)
+	// Tracks whether errors occurred during the generation process.
+	var errorCount atomic.Int64
 	// For triggering actions after generation has completed.
 	postGeneration := make(chan *GenerationEvent, 256)
 	// Used to check that the post-generation handler has completed.
@@ -143,8 +146,10 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		eventsWG.Wait()
 		cmd.Log.Debug("All pending events processed, waiting for pending post-generation events to complete")
 		postGenerationEventsWG.Wait()
-		cmd.Log.Debug("All post-generation events processed, running walk again, but in production mode")
-		fseh.DevMode = false
+		cmd.Log.Debug("All post-generation events processed, running walk again, but in production mode", slog.Int64("errorCount", errorCount.Load()))
+		// Reset to reprocess all files in production mode.
+		fseh = NewFSEventHandler(cmd.Log, cmd.Args.Path, cmd.Args.Watch, opts, cmd.Args.GenerateSourceMapVisualisations, cmd.Args.KeepOrphanedFiles)
+		errorCount.Store(0)
 		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {
 			cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
 			errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
@@ -257,6 +262,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			return err
 		}
 		cmd.Log.Error("Error received", slog.Any("error", err))
+		errorCount.Add(1)
 	}
 
 	// Wait for everything to complete.
@@ -272,8 +278,13 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			cmd.Log.Error("Error killing command", slog.Any("error", err))
 		}
 	}
-	cmd.Log.Info("Complete", slog.Int("updates", updates), slog.Duration("duration", time.Since(start)))
 
+	// Check for errors after everything has completed.
+	if errorCount.Load() > 0 {
+		return fmt.Errorf("generation completed with %d errors", errorCount.Load())
+	}
+
+	cmd.Log.Info("Complete", slog.Int("updates", updates), slog.Duration("duration", time.Since(start)))
 	return nil
 }
 

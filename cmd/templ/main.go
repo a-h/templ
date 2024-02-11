@@ -170,7 +170,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	})
 	if err != nil {
 		color.New(color.FgRed).Fprint(w, "(✗) ")
-		fmt.Fprintln(w, err.Error())
+		fmt.Fprintln(w, "Command failed: "+err.Error())
 		return 1
 	}
 	return 0

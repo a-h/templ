@@ -54,6 +54,7 @@ type FSEventHandler struct {
 	genOpts                    []generator.GenerateOpt
 	genSourceMapVis            bool
 	DevMode                    bool
+	Errors                     []error
 	keepOrphanedFiles          bool
 }
 
@@ -95,6 +96,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
 	if !h.UpsertLastModTime(event.Name) {
+		h.Log.Debug("Skipping file because it wasn't updated", slog.String("file", event.Name))
 		return false, false, nil
 	}
 
