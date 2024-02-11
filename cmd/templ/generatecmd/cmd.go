@@ -261,7 +261,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			cmd.Log.Debug("Fatal error, exiting")
 			return err
 		}
-		cmd.Log.Error("Error received", slog.Any("error", err))
+		cmd.Log.Error("Error", slog.Any("error", err))
 		errorCount.Add(1)
 	}
 

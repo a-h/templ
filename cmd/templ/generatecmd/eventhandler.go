@@ -30,6 +30,8 @@ func NewFSEventHandler(log *slog.Logger, dir string, devMode bool, genOpts []gen
 		dir:                        dir,
 		fileNameToLastModTime:      make(map[string]time.Time),
 		fileNameToLastModTimeMutex: &sync.Mutex{},
+		fileNameToError:            make(map[string]struct{}),
+		fileNameToErrorMutex:       &sync.Mutex{},
 		hashes:                     make(map[string][sha256.Size]byte),
 		hashesMutex:                &sync.Mutex{},
 		genOpts:                    genOpts,
@@ -49,6 +51,8 @@ type FSEventHandler struct {
 	dir                        string
 	fileNameToLastModTime      map[string]time.Time
 	fileNameToLastModTimeMutex *sync.Mutex
+	fileNameToError            map[string]struct{}
+	fileNameToErrorMutex       *sync.Mutex
 	hashes                     map[string][sha256.Size]byte
 	hashesMutex                *sync.Mutex
 	genOpts                    []generator.GenerateOpt
@@ -105,6 +109,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	goUpdated, textUpdated, diag, err := h.generate(ctx, event.Name)
 	if err != nil {
 		h.Log.Error("Error generating code", slog.String("file", event.Name), slog.Any("error", err))
+		h.SetError(event.Name, true)
 		return goUpdated, textUpdated, fmt.Errorf("failed to generate code for %q: %w", event.Name, err)
 	}
 	if len(diag) > 0 {
@@ -113,9 +118,23 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		}
 		return
 	}
+	if errorCleared, errorCount := h.SetError(event.Name, false); errorCleared {
+		h.Log.Info("Error cleared", slog.String("file", event.Name), slog.Int("errors", errorCount))
+	}
 	h.Log.Debug("Generated code", slog.String("file", event.Name), slog.Duration("in", time.Since(start)))
 
 	return goUpdated, textUpdated, nil
+}
+
+func (h *FSEventHandler) SetError(fileName string, hasError bool) (previouslyHadError bool, errorCount int) {
+	h.fileNameToErrorMutex.Lock()
+	defer h.fileNameToErrorMutex.Unlock()
+	_, previouslyHadError = h.fileNameToError[fileName]
+	delete(h.fileNameToError, fileName)
+	if hasError {
+		h.fileNameToError[fileName] = struct{}{}
+	}
+	return previouslyHadError, len(h.fileNameToError)
 }
 
 func (h *FSEventHandler) UpsertLastModTime(fileName string) (updated bool) {
