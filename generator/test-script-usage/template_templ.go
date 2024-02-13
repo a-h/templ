@@ -9,6 +9,7 @@ import "context"
 import "io"
 import "bytes"
 
+//line template.templ:3
 func withParameters(a string, b string, c int) templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_withParameters_1056`,
@@ -19,6 +20,7 @@ func withParameters(a string, b string, c int) templ.ComponentScript {
 	}
 }
 
+//line template.templ:7
 func withoutParameters() templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_withoutParameters_6bbf`,
@@ -29,6 +31,7 @@ func withoutParameters() templ.ComponentScript {
 	}
 }
 
+//line template.templ:11
 func onClick() templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_onClick_657d`,
@@ -39,6 +42,7 @@ func onClick() templ.ComponentScript {
 	}
 }
 
+//line template.templ:15
 func Button(text string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -98,6 +102,7 @@ func Button(text string) templ.Component {
 	})
 }
 
+//line template.templ:19
 func withComment() templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_withComment_9cf8`,
@@ -108,6 +113,7 @@ func withComment() templ.ComponentScript {
 	}
 }
 
+//line template.templ:23
 func ThreeButtons() templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
@@ -161,6 +167,7 @@ func ThreeButtons() templ.Component {
 	})
 }
 
+//line template.templ:32
 func conditionalScript() templ.ComponentScript {
 	return templ.ComponentScript{
 		Name: `__templ_conditionalScript_de41`,
@@ -171,6 +178,7 @@ func conditionalScript() templ.ComponentScript {
 	}
 }
 
+//line template.templ:36
 func Conditional(show bool) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)

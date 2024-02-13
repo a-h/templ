@@ -787,10 +787,12 @@ func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
 // is then read by this function and written to the output.
 func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 	_, path, _, _ := runtime.Caller(1)
-	if !strings.HasSuffix(path, "_templ.go") {
-		return errors.New("templ: WriteWatchModeString can only be called from _templ.go")
+	// Runtime path of the calling file should be a .templ file due to the //line directives declared in each template.
+	if !strings.HasSuffix(path, "_templ.go") && !strings.HasSuffix(path, ".templ") {
+		return errors.New("templ: WriteWatchModeString can only be called from templ templates")
 	}
 	txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
+	txtFilePath = strings.Replace(txtFilePath, ".templ", "_templ.txt", 1)
 
 	literals, err := getWatchedStrings(txtFilePath)
 	if err != nil {
