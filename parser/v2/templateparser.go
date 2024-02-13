@@ -102,12 +102,6 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, ok bool, err er
 			if err != nil {
 				return Nodes{}, false, err
 			}
-			if n, ok := node.(CallTemplateExpression); ok {
-				op.Diagnostics = append(op.Diagnostics, Diagnostic{
-					Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
-					Range:   n.Expression.Range,
-				})
-			}
 			if matched {
 				op.Nodes = append(op.Nodes, node)
 				break

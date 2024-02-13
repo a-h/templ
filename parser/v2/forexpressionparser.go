@@ -41,7 +41,6 @@ func (_ forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 		return
 	}
 	r.Children = nodes.Nodes
-	r.Diagnostics = nodes.Diagnostics
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {

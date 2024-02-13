@@ -152,12 +152,16 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		}
 		return
 	}
+	parsedDiagnostics, err := parser.Diagnose(template)
+	if err != nil {
+		return
+	}
 	ok = true
-	if len(template.Diagnostics) > 0 {
+	if len(parsedDiagnostics) > 0 {
 		msg := &lsp.PublishDiagnosticsParams{
 			URI: uri,
 		}
-		for _, d := range template.Diagnostics {
+		for _, d := range parsedDiagnostics {
 			msg.Diagnostics = append(msg.Diagnostics, lsp.Diagnostic{
 				Severity: lsp.DiagnosticSeverityWarning,
 				Code:     "",
