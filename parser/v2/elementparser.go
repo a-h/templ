@@ -397,7 +397,6 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 		return
 	}
 	r.Children = nodes.Nodes
-	r.Diagnostics = nodes.Diagnostics
 	// If the children are not all on the same line, indent them
 	if l != pi.Position().Line {
 		r.IndentChildren = true
