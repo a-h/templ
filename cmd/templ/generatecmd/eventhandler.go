@@ -210,13 +210,13 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 		}
 	}
 
-	if h.genSourceMapVis {
-		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, sourceMap)
-	}
-
 	parsedDiagnostics, err := parser.Diagnose(t)
 	if err != nil {
 		return goUpdated, textUpdated, nil, fmt.Errorf("%s diagnostics error: %w", fileName, err)
+	}
+
+	if h.genSourceMapVis {
+		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, sourceMap)
 	}
 
 	return goUpdated, textUpdated, parsedDiagnostics, err
