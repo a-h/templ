@@ -3,38 +3,100 @@ package render
 import (
 	"bytes"
 	"io/fs"
+	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
-
-	fences "github.com/stefanfritsch/goldmark-fences"
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/extension"
-	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer/html"
-	"go.abhg.dev/goldmark/anchor"
-	"go.abhg.dev/goldmark/mermaid"
-	"mvdan.cc/xurls/v2"
 )
 
-type MarkdownPage struct {
-	Fsys fs.FS
-	Path string
+type MarkdownPage Page
+
+func NewMarkdownPage(file string, inputFsys fs.FS) (*Page, error) {
+	p := MarkdownPage{}
+	title, err := p.renderTitle(file, inputFsys)
+	if err != nil {
+		return nil, err
+	}
+	order, err := p.renderOrder(file)
+	if err != nil {
+		return nil, err
+	}
+
+	slug := p.renderSlug(file, inputFsys)
+
+	html, err := p.renderHtml(file, inputFsys)
+	if err != nil {
+		return nil, err
+	}
+
+	page := Page{
+		Path:     file,
+		Type:     PageMarkdown,
+		Title:    title,
+		Slug:     slug,
+		Href:     slug + ".html",
+		Children: nil,
+		Order:    order,
+		Html:     html,
+	}
+
+	return &page, nil
 }
 
-func (p MarkdownPage) GetPath() string {
-	return p.Path
+func (p MarkdownPage) renderTitle(file string, inputFsys fs.FS) (string, error) {
+	b, err := fs.ReadFile(inputFsys, file)
+	if err != nil {
+		return "", err
+	}
+
+	for _, line := range bytes.Split(b, []byte("\n")) {
+		if !bytes.HasPrefix(line, []byte("# ")) {
+			continue
+		}
+
+		return string(bytes.TrimPrefix(line, []byte("# "))), nil
+	}
+
+	return titleFromPath(file), nil
+
 }
 
-func (p MarkdownPage) Title() string {
-	return "asdf"
+func (p MarkdownPage) renderSlug(file string, inputFsys fs.FS) string {
+	if file == "index.md" {
+		return "index"
+	}
+
+	noExt := strings.TrimSuffix(file, filepath.Ext(file))
+
+	htmlPath := ""
+
+	for _, r := range strings.Split(noExt, "/") {
+		name, _ := baseParts(r)
+		htmlPath = path.Join(htmlPath, name)
+	}
+
+	for _, r := range []string{"\\", " ", ".", "_"} {
+		htmlPath = strings.ReplaceAll(htmlPath, r, "-")
+	}
+
+	htmlPath = strings.ToLower(htmlPath)
+	htmlPath = strings.Trim(htmlPath, "-")
+
+	return htmlPath
 }
 
-func (p MarkdownPage) Href() string {
-	return "asdf"
+func (p MarkdownPage) renderOrder(file string) (int, error) {
+	base := filepath.Base(file)
+	if base == "index.md" {
+		return 0, nil
+	}
+
+	_, o := baseParts(file)
+	return o, nil
 }
 
-func (p MarkdownPage) Render() (string, error) {
-	b, err := fs.ReadFile(p.Fsys, p.Path)
+func (p MarkdownPage) renderHtml(file string, inputFsys fs.FS) (string, error) {
+	b, err := fs.ReadFile(inputFsys, file)
 	if err != nil {
 		return "", err
 	}
@@ -49,36 +111,10 @@ func (p MarkdownPage) Render() (string, error) {
 	b = re.ReplaceAll(b, []byte(":::{.$1}"))
 
 	var htmlBuffer bytes.Buffer
-
-	markdown := goldmark.New(
-		goldmark.WithParserOptions(
-			parser.WithAutoHeadingID(),
-		),
-		goldmark.WithRendererOptions(
-			html.WithXHTML(),
-			html.WithUnsafe(),
-		),
-		goldmark.WithExtensions(
-			&anchor.Extender{
-				Texter: anchor.Text("#"),
-			},
-			extension.NewLinkify(
-				extension.WithLinkifyAllowedProtocols([][]byte{
-					[]byte("http:"),
-					[]byte("https:"),
-				}),
-				extension.WithLinkifyURLRegexp(
-					xurls.Strict(),
-				),
-			),
-			&mermaid.Extender{},
-			&fences.Extender{},
-		),
-	)
-
-	if err := markdown.Convert([]byte(b), &htmlBuffer); err != nil {
+	err = GoldmarkDefinition.Convert([]byte(b), &htmlBuffer)
+	if err != nil {
 		return "", err
 	}
-
 	return htmlBuffer.String(), nil
+
 }

@@ -8,20 +8,37 @@ import (
 	"strings"
 )
 
-type SectionPage struct {
-	Fsys     fs.FS
-	Path     string
-	Children []MarkdownPage
-}
+type SectionPage Page
 
-func (p SectionPage) GetPath() string {
-	return p.Path
-}
-
-func (p SectionPage) Title() string {
-	b, err := fs.ReadFile(p.Fsys, filepath.Join(p.Path, "_category_.json"))
+func NewSectionPage(folder string, inputFsys fs.FS) (*Page, error) {
+	p := SectionPage{}
+	order, err := p.renderOrder(folder, inputFsys)
 	if err != nil {
-		return titleFromPath(p.Path)
+		return nil, err
+	}
+
+	children, err := p.renderChildren(folder, inputFsys)
+	if err != nil {
+		return nil, err
+	}
+
+	page := Page{
+		Path:     folder,
+		Type:     PageSection,
+		Title:    p.renderTitle(folder, inputFsys),
+		Slug:     p.renderSlug(folder),
+		Href:     p.renderSlug(folder) + ".html",
+		Order:    order,
+		Children: children,
+	}
+	return &page, nil
+
+}
+
+func (p SectionPage) renderTitle(folder string, inputFsys fs.FS) string {
+	b, err := fs.ReadFile(inputFsys, filepath.Join(folder, "_category_.json"))
+	if err != nil {
+		return titleFromPath(folder)
 	}
 
 	var category struct {
@@ -29,26 +46,20 @@ func (p SectionPage) Title() string {
 	}
 
 	if err := json.Unmarshal(b, &category); err != nil {
-		return titleFromPath(p.Path)
+		return titleFromPath(folder)
 	}
 
 	if category.Label != "" {
 		return category.Label
 	}
 
-	return titleFromPath(p.Path)
+	return titleFromPath(folder)
 }
 
-func (p SectionPage) Href() string {
-	if p.Path == "index.md" {
-		return "index"
-	}
-
-	noExt := strings.TrimSuffix(p.Path, filepath.Ext(p.Path))
-
+func (p SectionPage) renderSlug(folder string) string {
 	htmlPath := ""
 
-	for _, r := range strings.Split(noExt, "/") {
+	for _, r := range strings.Split(htmlPath, "/") {
 		name, _ := baseParts(r)
 		htmlPath = path.Join(htmlPath, name)
 	}
@@ -61,4 +72,47 @@ func (p SectionPage) Href() string {
 	htmlPath = strings.Trim(htmlPath, "-")
 
 	return htmlPath
+
+}
+
+func (p SectionPage) renderOrder(folder string, inputFsys fs.FS) (int, error) {
+	b, err := fs.ReadFile(inputFsys, filepath.Join(folder, "_category_.json"))
+	if err != nil {
+		return -1, err
+	}
+
+	var category struct {
+		Position int `json:"position"`
+	}
+
+	if err := json.Unmarshal(b, &category); err != nil {
+		_, o := baseParts(folder)
+		return o, nil
+	}
+
+	return category.Position, nil
+}
+
+func (p SectionPage) renderChildren(folder string, inputFsys fs.FS) ([]*Page, error) {
+	var pages []*Page
+	entries, err := fs.ReadDir(inputFsys, folder)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		if !(entry.IsDir() || filepath.Ext(entry.Name()) == ".md") {
+			continue
+		}
+
+		file := filepath.Join(folder, entry.Name())
+		newMarkdownPage, err := NewMarkdownPage(file, inputFsys)
+
+		if err != nil {
+			return nil, err
+		}
+		pages = append(pages, newMarkdownPage)
+	}
+	return pages, nil
 }

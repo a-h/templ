@@ -1,8 +1,9 @@
-package main
+package components
 
 import "strings"
+import r "github.com/a-h/templ/docgen-2/render"
 
-templ nav(c *pageContext, baseURL string, pages []*Page, depth int) {
+templ nav(c *r.PageContext, pages []r.Renderer, depth int) {
 	<nav
 		class={
 			"flex",
@@ -12,18 +13,18 @@ templ nav(c *pageContext, baseURL string, pages []*Page, depth int) {
 		}
 	>
 		for _, page := range pages {
-			if page.Type() == Section {
-				@section(c, baseURL, page, depth)
-			} else {
-				@link(c, baseURL, page, depth)
+			if page.Type() == r.PageSection {
+				@section(c, r.BaseUrl, (page).(r.SectionPage), depth)
+			}
+			if page.Type() == r.PageMarkdown {
+				@link(c, page, depth)
 			}
 		}
 	</nav>
 }
 
-templ section(c *pageContext, baseURL string, page *Page, depth int) {
+templ section(c *r.PageContext, page r.SectionPage, depth int) {
 	<div
-		id={ page.Slug() }
 		class={ templ.KV("active", strings.HasPrefix(c.Active, page.Slug())), }
 	>
 		<div
@@ -50,17 +51,17 @@ templ section(c *pageContext, baseURL string, page *Page, depth int) {
 		if len(page.Children()) > 0 {
 			<div class="wrapper">
 				<div class="pl-1 inner">
-					@nav(c, baseURL, page.Children(), depth + 1)
+					@nav(c, page.Children(), depth + 1)
 				</div>
 			</div>
 		}
 	</div>
 }
 
-templ link(c *pageContext, baseURL string, page *Page, depth int) {
+templ link(c *r.PageContext, page r.Renderer, depth int) {
 	<a
 		id={ page.Slug() }
-		href={ templ.URL(baseURL + page.Href()) }
+		href={ templ.URL(r.BaseUrl + page.Href()) }
 		class={
 			"block",
 			"p-2",

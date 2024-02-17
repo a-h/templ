@@ -1,26 +1,26 @@
-package main
+package components
 
-import "github.com/a-h/templ/docgen-2/render"
+import r "github.com/a-h/templ/docgen-2/render"
 
-templ HTML(c *render.PageContext, baseURL string, pages []*Page, data string) {
+templ HTML(c *r.PageContext, pages []*r.Renderer, data string) {
 	<html>
 		<head>
 			<title>{ c.Title }</title>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<link href={ baseURL + "img/favicon.ico" } rel="icon"/>
-			<link href={ baseURL + "style.css" } rel="stylesheet"/>
-			<link id="theme" href={ baseURL + "prism-onedark.css" } rel="stylesheet"/>
+			<link href={ r.BaseUrl + "img/favicon.ico" } rel="icon"/>
+			<link href={ r.BaseUrl + "style.css" } rel="stylesheet"/>
+			<link id="theme" href={ r.BaseUrl + "prism-onedark.css" } rel="stylesheet"/>
 		</head>
 		<body class="bg-white dark:bg-gray-800 dark:text-gray-100">
-			@frame(header(baseURL), sidebar(c, baseURL, pages), content(data), footer())
-			@script(baseURL)
-			<script src={ baseURL + "prism.js" }></script>
-			<script src={ baseURL + "prism-include-languages.js" }></script>
-			<script src={ baseURL + "main.js" }></script>
-			<script src={ baseURL + "search_content.js" }></script>
-			<script src={ baseURL + "search.js" }></script>
-			<script src={ baseURL + "accordion.js" }></script>
+			@frame(header(r.BaseUrl), sidebar(c, r.BaseUrl, pages), content(data), footer())
+			@script(r.BaseUrl)
+			<script src={ r.BaseUrl + "prism.js" }></script>
+			<script src={ r.BaseUrl + "prism-include-languages.js" }></script>
+			<script src={ r.BaseUrl + "main.js" }></script>
+			<script src={ r.BaseUrl + "search_content.js" }></script>
+			<script src={ r.BaseUrl + "search.js" }></script>
+			<script src={ r.BaseUrl + "accordion.js" }></script>
 		</body>
 	</html>
 }
@@ -47,21 +47,21 @@ templ frame(headerContent, asideContent, mainContent, footerContent templ.Compon
 	</div>
 }
 
-templ logo(baseURL string) {
-	<a href={ templ.URL(baseURL) }>
+templ logo() {
+	<a href={ templ.URL(r.BaseUrl) }>
 		<h1 class="text-2xl font-bold">
-			<img src={ baseURL + "img/logo.svg" } alt="templ" class="h-12 w-52"/>
+			<img src={ r.BaseUrl + "img/logo.svg" } alt="templ" class="h-12 w-52"/>
 		</h1>
 	</a>
 }
 
-templ header(baseURL string) {
+templ header() {
 	<div class="min-h-full min-w-full p-4 flex flex-col md:flex-row bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
 		<div class="flex flex-row w-full sm:w-64 md:hidden">
 			<div class="py-3">
 				@menu_toggle()
 			</div>
-			@logo(baseURL)
+			@logo(r.BaseUrl)
 		</div>
 		<div class="flex flex-row flex-1 items-center justify-between space-x-2 mt-2 sm:mt-0">
 			<div class="flex items-center space-x-2 m-0 w-full">
@@ -86,10 +86,10 @@ templ header(baseURL string) {
 	</div>
 }
 
-templ sidebar(c *pageContext, baseURL string, pages []*Page) {
+templ sidebar(c *r.PageContext, pages []*r.Renderer) {
 	<div class="min-h-full min-w-full p-4 border-r-2 dark:border-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 space-y-2">
-		@logo(baseURL)
-		@nav(c, baseURL, pages, 0)
+		@logo()
+		@nav(c, pages, 0)
 	</div>
 }
 

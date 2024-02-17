@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -9,89 +10,79 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/a-h/templ/docgen-2/components"
 	"github.com/a-h/templ/docgen-2/render"
 )
 
 const (
-	outputPath     = "public"
-	contentPath    = "./docs"
-	defaultBaseURL = "https://cugu.github.io/templ/new/"
+	outputPath = "public"
+	inputPath  = "./docs"
 )
+
+var inputFsys = os.DirFS(inputPath)
 
 func main() {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
-	baseURL := cmd.String("url", defaultBaseURL, "The base URL for the site.")
+	cmd.StringVar(&render.BaseUrl, "url", "https://cugu.github.io/templ/new/", "The base URL for the site.")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
-
 	if cmd.Parse(os.Args[1:]) != nil || *helpFlag {
 		cmd.PrintDefaults()
-
 		return
 	}
 
-	if err := generate(context.Background(), *baseURL); err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-}
+	var pages []*render.Page
 
-func generate(ctx context.Context, baseURL string) error {
-	sections := []render.SectionPage{}
-	mdPages := []render.MarkdownPage{}
-
-	fsys, err := fs.Sub(os.DirFS(contentPath), "docs")
-	if err != nil {
-		return err
-	}
-
-	err = filepath.Walk(
-		contentPath,
-		func(path string, info os.FileInfo, err error) error {
-			if info.IsDir() {
-				sections = append(sections, render.SectionPage{Path: path, Fsys: fsys})
+	err := filepath.Walk(inputPath, func(path string, info fs.FileInfo, err error) error {
+		var newPage *render.Page
+		if info.IsDir() {
+			newPage, err = render.NewSectionPage(path, inputFsys)
+			if err != nil {
+				return err
 			}
-			if filepath.Ext(info.Name()) == ".md" {
-				mdPages = append(mdPages, render.MarkdownPage{Path: path, Fsys: fsys})
+		}
+		if filepath.Ext(info.Name()) == ".md" {
+			newPage, err = render.NewMarkdownPage(path, inputFsys)
+			if err != nil {
+				return err
 			}
-			return nil
-		})
+		}
+		pages = append(pages, newPage)
+		return nil
+	})
+
 	if err != nil {
-		return err
+		panic(err)
 	}
 
-	for _, v := range sections {
-		writeToDisk(v)
-	}
-	for _, v := range mdPages {
+
+
+	for _, v := range pages {
 		writeToDisk(v)
 	}
 
-	return nil
 }
 
 func resetOutputPath() error {
-	if err :=			os.RemoveAll(filepath.Join(outputPath, entry.Name())); err != nil {
+	if err := os.RemoveAll(outputPath); err != nil {
 		return err
 	}
-
-	if err = os.MkdirAll(outputPath, 0o755); err != nil {
+	if err := os.MkdirAll(outputPath, 0755); err != nil {
 		return err
 	}
 }
 
-func writeToDisk(r render.Renderer) {
+func writeToDisk(r []*render.Page) error {
 
-
-		_ = os.MkdirAll(filepath.Dir(filepath.Join(outputPath, path)), 0o755)
-
-		out, err := os.Create(filepath.Join(outputPath, path))
-		if err != nil {
-			return err
-		}
-		defer out.Close()
-		_, err = io.Copy(out, f)
-
+	err := os.MkdirAll(filepath.Dir(filepath.Join(outputPath, r.File)), 0o755)
+	if err != nil {
 		return err
+	}
+
+	out, err := os.Create(filepath.Join(outputPath, r.File))
+	defer out.Close()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
