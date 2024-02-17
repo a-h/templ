@@ -1,6 +1,7 @@
 package render
 
 import (
+	"io/fs"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,6 +17,27 @@ import (
 )
 
 var BaseUrl string
+
+func NewPage(path string, info fs.FileInfo, inputFsys fs.FS) (*Page, error) {
+	var p *Page
+
+	if info.IsDir() {
+		newPage, err := NewSectionPage(path, inputFsys)
+		if err != nil {
+			return nil, err
+		}
+		p = newPage
+	}
+	if filepath.Ext(info.Name()) == ".md" {
+		newPage, err := NewMarkdownPage(path, inputFsys)
+		if err != nil {
+			return nil, err
+		}
+		p = newPage
+	}
+	return p, nil
+
+}
 
 func titleFromPath(path string) string {
 	filename, _ := baseParts(path)

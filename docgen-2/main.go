@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"flag"
-	"fmt"
-	"io"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
+	"testing/fstest"
 
 	"github.com/a-h/templ/docgen-2/components"
 	"github.com/a-h/templ/docgen-2/render"
@@ -33,20 +33,11 @@ func main() {
 	var pages []*render.Page
 
 	err := filepath.Walk(inputPath, func(path string, info fs.FileInfo, err error) error {
-		var newPage *render.Page
-		if info.IsDir() {
-			newPage, err = render.NewSectionPage(path, inputFsys)
-			if err != nil {
-				return err
-			}
+		page, err := render.NewPage(path, info, inputFsys)
+		if err != nil {
+			return err
 		}
-		if filepath.Ext(info.Name()) == ".md" {
-			newPage, err = render.NewMarkdownPage(path, inputFsys)
-			if err != nil {
-				return err
-			}
-		}
-		pages = append(pages, newPage)
+		pages = append(pages, page)
 		return nil
 	})
 
@@ -54,11 +45,38 @@ func main() {
 		panic(err)
 	}
 
+}
 
+func createMemoryFs(ctx context.Context, pages, children []*render.Page) (fstest.MapFS, error) {
+	files := fstest.MapFS{}
 
-	for _, v := range pages {
-		writeToDisk(v)
+	for _, p := range children {
+		switch p.Type {
+		case render.PageSection:
+			subFiles, err := createMemoryFs(ctx, pages, p.Children)
+			if err != nil {
+				return nil, err
+			}
+
+			maps.Copy(files, subFiles)
+		case render.PageMarkdown:
+			mainContent := p.Html
+
+			pc := &render.PageContext{
+				Title:  p.Title,
+				Active: p.Slug,
+			}
+
+			var htmlBuffer bytes.Buffer
+			if err := components.HTML(pc, pages, mainContent).Render(ctx, &htmlBuffer); err != nil {
+				return nil, err
+			}
+
+			files[p.Href] = &fstest.MapFile{Data: htmlBuffer.Bytes()}
+		}
 	}
+
+	return files, nil
 
 }
 
@@ -69,6 +87,7 @@ func resetOutputPath() error {
 	if err := os.MkdirAll(outputPath, 0755); err != nil {
 		return err
 	}
+	return nil
 }
 
 func writeToDisk(r []*render.Page) error {

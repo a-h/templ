@@ -102,17 +102,16 @@ func (p SectionPage) renderChildren(folder string, inputFsys fs.FS) ([]*Page, er
 	}
 
 	for _, entry := range entries {
-		if !(entry.IsDir() || filepath.Ext(entry.Name()) == ".md") {
-			continue
-		}
-
-		file := filepath.Join(folder, entry.Name())
-		newMarkdownPage, err := NewMarkdownPage(file, inputFsys)
-
+		info, err := entry.Info()
 		if err != nil {
 			return nil, err
 		}
-		pages = append(pages, newMarkdownPage)
+
+		p, err := NewPage(folder, info, inputFsys)
+		if err != nil {
+			return nil, err
+		}
+		pages = append(pages, p)
 	}
 	return pages, nil
 }
