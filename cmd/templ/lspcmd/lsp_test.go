@@ -5,6 +5,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/a-h/protocol"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"go.lsp.dev/jsonrpc2"
+	"go.lsp.dev/uri"
 	"go.uber.org/zap"
 )
 
@@ -62,43 +64,83 @@ func TestLSP(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	ctx := context.Background()
 
-	_, server, teardown, err := Setup(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
+	log, _ := zap.NewProduction()
+
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 	}
 	defer teardown(t)
 
-	initializeResult, err := server.Initialize(ctx, &protocol.InitializeParams{})
+	templFile, err := os.ReadFile(appDir + "/templates.templ")
 	if err != nil {
-		t.Fatalf("failed to initialize: %v", err)
+		t.Fatalf("failed to read file %q: %v", appDir+"/templates.templ", err)
 	}
-	if initializeResult.Capabilities.HoverProvider == nil {
-		t.Errorf("expected hover capabilities, got nil")
+	err = server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        uri.URI("file://" + appDir + "/templates.templ"),
+			LanguageID: "templ",
+			Version:    1,
+			Text:       string(templFile),
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to register open file: %v", err)
+	}
+	log.Info("Calling hover")
+	hr, err := server.Hover(ctx, &protocol.HoverParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{
+				URI: uri.URI("file://" + appDir + "/templates.templ"),
+			},
+			Position: protocol.Position{
+				Line:      12,
+				Character: 34,
+			},
+		},
+	})
+	if err != nil {
+		t.Errorf("failed to get hover: %v", err)
+	}
+	log.Info("Got hover response", zap.Any("hover", hr))
+
+	cancel()
+}
+
+func NewTestClient(log *zap.Logger) TestClient {
+	return TestClient{
+		log: log,
 	}
 }
 
 type TestClient struct {
+	log *zap.Logger
 }
 
 func (tc TestClient) Progress(ctx context.Context, params *protocol.ProgressParams) (err error) {
+	tc.log.Info("client: Received Progress", zap.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) WorkDoneProgressCreate(ctx context.Context, params *protocol.WorkDoneProgressCreateParams) (err error) {
+	tc.log.Info("client: Received WorkDoneProgressCreate", zap.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) LogMessage(ctx context.Context, params *protocol.LogMessageParams) (err error) {
+	tc.log.Info("client: Received LogMessage", zap.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) PublishDiagnostics(ctx context.Context, params *protocol.PublishDiagnosticsParams) (err error) {
+	tc.log.Info("client: Received PublishDiagnostics", zap.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) ShowMessage(ctx context.Context, params *protocol.ShowMessageParams) (err error) {
+	tc.log.Info("client: Received ShowMessage", zap.Any("params", params))
 	return nil
 }
 
@@ -107,72 +149,155 @@ func (tc TestClient) ShowMessageRequest(ctx context.Context, params *protocol.Sh
 }
 
 func (tc TestClient) Telemetry(ctx context.Context, params interface{}) (err error) {
+	tc.log.Info("client: Received Telemetry", zap.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) RegisterCapability(ctx context.Context, params *protocol.RegistrationParams) (err error) {
+	tc.log.Info("client: Received RegisterCapability", zap.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) UnregisterCapability(ctx context.Context, params *protocol.UnregistrationParams) (err error) {
+	tc.log.Info("client: Received UnregisterCapability", zap.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) ApplyEdit(ctx context.Context, params *protocol.ApplyWorkspaceEditParams) (result *protocol.ApplyWorkspaceEditResponse, err error) {
+	tc.log.Info("client: Received ApplyEdit", zap.Any("params", params))
 	return nil, nil
 }
 
 func (tc TestClient) Configuration(ctx context.Context, params *protocol.ConfigurationParams) (result []interface{}, err error) {
+	tc.log.Info("client: Received Configuration", zap.Any("params", params))
 	return nil, nil
 }
 
 func (tc TestClient) WorkspaceFolders(ctx context.Context) (result []protocol.WorkspaceFolder, err error) {
+	tc.log.Info("client: Received WorkspaceFolders")
 	return nil, nil
 }
 
-func Setup(ctx context.Context) (client protocol.Client, server protocol.Server, teardown func(t *testing.T), err error) {
+func Setup(ctx context.Context, log *zap.Logger) (clientCtx context.Context, appDir string, client protocol.Client, server protocol.Server, teardown func(t *testing.T), err error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return client, server, teardown, fmt.Errorf("could not find working dir: %w", err)
+		return ctx, appDir, client, server, teardown, fmt.Errorf("could not find working dir: %w", err)
 	}
 	moduleRoot, err := modcheck.WalkUp(wd)
 	if err != nil {
-		return client, server, teardown, fmt.Errorf("could not find local templ go.mod file: %v", err)
+		return ctx, appDir, client, server, teardown, fmt.Errorf("could not find local templ go.mod file: %v", err)
 	}
 
-	appDir, err := createTestProject(moduleRoot)
+	appDir, err = createTestProject(moduleRoot)
 	if err != nil {
-		return client, server, teardown, fmt.Errorf("failed to create test project: %v", err)
+		return ctx, appDir, client, server, teardown, fmt.Errorf("failed to create test project: %v", err)
 	}
 
 	var wg sync.WaitGroup
 	var cmdErr error
 
-	log, _ := zap.NewProduction()
-
 	// Copy from the LSP to the CLient, and vice versa.
-	toLSP := new(bytes.Buffer)
-	fromLSP := new(bytes.Buffer)
-	serverStream := jsonrpc2.NewStream(newStdRwc(log, "templStream", fromLSP, toLSP))
+	fromClient, toLSP := io.Pipe()
+	fromLSP, toClient := io.Pipe()
+	clientStream := jsonrpc2.NewStream(newStdRwc(log, "clientStream", toLSP, fromLSP))
+	serverStream := jsonrpc2.NewStream(newStdRwc(log, "serverStream", toClient, fromClient))
+
+	// Create the client that the server needs.
+	client = NewTestClient(log)
+	ctx, _, server = protocol.NewClient(ctx, client, clientStream, log)
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		log.Info("Running")
+		// Create the server that the client needs.
 		cmdErr = run(ctx, log, serverStream, Arguments{})
+		if cmdErr != nil {
+			log.Error("Failed to run", zap.Error(cmdErr))
+		}
 		log.Info("Stopped")
 	}()
 
-	_, _, templServer := protocol.NewClient(context.Background(), client, serverStream, log)
-
-	_, err = templServer.Initialize(context.Background(), &protocol.InitializeParams{})
+	// Initialize.
+	ir, err := server.Initialize(ctx, &protocol.InitializeParams{
+		ClientInfo: &protocol.ClientInfo{},
+		Capabilities: protocol.ClientCapabilities{
+			Workspace: &protocol.WorkspaceClientCapabilities{
+				ApplyEdit: true,
+				WorkspaceEdit: &protocol.WorkspaceClientCapabilitiesWorkspaceEdit{
+					DocumentChanges: true,
+				},
+				WorkspaceFolders: true,
+				FileOperations: &protocol.WorkspaceClientCapabilitiesFileOperations{
+					DidCreate:  true,
+					WillCreate: true,
+					DidRename:  true,
+					WillRename: true,
+					DidDelete:  true,
+					WillDelete: true,
+				},
+			},
+			TextDocument: &protocol.TextDocumentClientCapabilities{
+				Synchronization: &protocol.TextDocumentSyncClientCapabilities{
+					DidSave: true,
+				},
+				Completion: &protocol.CompletionTextDocumentClientCapabilities{
+					CompletionItem: &protocol.CompletionTextDocumentClientCapabilitiesItem{
+						SnippetSupport:       true,
+						DeprecatedSupport:    true,
+						InsertReplaceSupport: true,
+					},
+				},
+				Hover:              &protocol.HoverTextDocumentClientCapabilities{},
+				SignatureHelp:      &protocol.SignatureHelpTextDocumentClientCapabilities{},
+				Declaration:        &protocol.DeclarationTextDocumentClientCapabilities{},
+				Definition:         &protocol.DefinitionTextDocumentClientCapabilities{},
+				TypeDefinition:     &protocol.TypeDefinitionTextDocumentClientCapabilities{},
+				Implementation:     &protocol.ImplementationTextDocumentClientCapabilities{},
+				References:         &protocol.ReferencesTextDocumentClientCapabilities{},
+				DocumentHighlight:  &protocol.DocumentHighlightClientCapabilities{},
+				DocumentSymbol:     &protocol.DocumentSymbolClientCapabilities{},
+				CodeAction:         &protocol.CodeActionClientCapabilities{},
+				CodeLens:           &protocol.CodeLensClientCapabilities{},
+				Formatting:         &protocol.DocumentFormattingClientCapabilities{},
+				RangeFormatting:    &protocol.DocumentRangeFormattingClientCapabilities{},
+				OnTypeFormatting:   &protocol.DocumentOnTypeFormattingClientCapabilities{},
+				PublishDiagnostics: &protocol.PublishDiagnosticsClientCapabilities{},
+				Rename:             &protocol.RenameClientCapabilities{},
+				FoldingRange:       &protocol.FoldingRangeClientCapabilities{},
+				SelectionRange:     &protocol.SelectionRangeClientCapabilities{},
+				CallHierarchy:      &protocol.CallHierarchyClientCapabilities{},
+				SemanticTokens:     &protocol.SemanticTokensClientCapabilities{},
+				LinkedEditingRange: &protocol.LinkedEditingRangeClientCapabilities{},
+			},
+			Window:       &protocol.WindowClientCapabilities{},
+			General:      &protocol.GeneralClientCapabilities{},
+			Experimental: nil,
+		},
+		WorkspaceFolders: []protocol.WorkspaceFolder{
+			{
+				URI:  "file://" + appDir,
+				Name: "templ-test",
+			},
+		},
+	})
 	if err != nil {
 		log.Error("Failed to init", zap.Error(err))
 	}
-	log.Info("Initialized...")
+	if ir.ServerInfo.Name != "templ-lsp" {
+		return ctx, appDir, client, server, teardown, fmt.Errorf("expected server name to be templ-lsp, got %q", ir.ServerInfo.Name)
+	}
+
+	// Confirm initialization.
+	log.Info("Confirming initialization...")
+	if err = server.Initialized(ctx, &protocol.InitializedParams{}); err != nil {
+		return ctx, appDir, client, server, teardown, fmt.Errorf("failed to confirm initialization: %v", err)
+	}
+	log.Info("Initialized")
 
 	// Wait for exit.
 	teardown = func(t *testing.T) {
+		log.Info("Tearing down LSP")
 		wg.Wait()
 		if cmdErr != nil {
 			t.Errorf("failed to run lsp cmd: %v", err)
@@ -182,5 +307,5 @@ func Setup(ctx context.Context) (client protocol.Client, server protocol.Server,
 			t.Errorf("failed to remove test dir %q: %v", appDir, err)
 		}
 	}
-	return client, server, teardown, err
+	return ctx, appDir, client, server, teardown, err
 }
