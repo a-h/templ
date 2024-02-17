@@ -29,7 +29,7 @@ type Arguments struct {
 	HTTPDebug string
 }
 
-func Run(w io.Writer, args Arguments) error {
+func Run(w io.Writer, args Arguments) (err error) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	signalChan := make(chan os.Signal, 1)
@@ -52,10 +52,6 @@ func Run(w io.Writer, args Arguments) error {
 		<-signalChan // Second signal, hard exit.
 		os.Exit(2)
 	}()
-	return run(ctx, w, args)
-}
-
-func run(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	log := zap.NewNop()
 	if args.Log != "" {
 		cfg := zap.NewProductionConfig()
@@ -72,6 +68,11 @@ func run(ctx context.Context, w io.Writer, args Arguments) (err error) {
 	defer func() {
 		_ = log.Sync()
 	}()
+	templStream := jsonrpc2.NewStream(newStdRwc(log, "templStream", w, os.Stdin))
+	return run(ctx, log, templStream, args)
+}
+
+func run(ctx context.Context, log *zap.Logger, templStream jsonrpc2.Stream, args Arguments) (err error) {
 	log.Info("lsp: starting up...")
 	defer func() {
 		if r := recover(); r != nil {
@@ -103,7 +104,6 @@ func run(ctx context.Context, w io.Writer, args Arguments) (err error) {
 
 	// Create templ server.
 	log.Info("creating templ server")
-	templStream := jsonrpc2.NewStream(stdrwc{log: log})
 	_, templConn, templClient := protocol.NewServer(context.Background(), serverProxy, templStream, log)
 	defer templConn.Close()
 
