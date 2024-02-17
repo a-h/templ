@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"testing"
 
@@ -49,15 +48,6 @@ func createTestProject(moduleRoot string) (dir string, err error) {
 		}
 	}
 	return dir, nil
-}
-
-func replaceInFile(name, src, tgt string) error {
-	data, err := os.ReadFile(name)
-	if err != nil {
-		return err
-	}
-	updated := strings.Replace(string(data), src, tgt, -1)
-	return os.WriteFile(name, []byte(updated), 0660)
 }
 
 func TestLSP(t *testing.T) {
