@@ -13,6 +13,7 @@ import (
 
 	"github.com/a-h/protocol"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
+	"github.com/a-h/templ/cmd/templ/lspcmd/lspdiff"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/uri"
 	"go.uber.org/zap"
@@ -50,7 +51,7 @@ func createTestProject(moduleRoot string) (dir string, err error) {
 	return dir, nil
 }
 
-func TestLSP(t *testing.T) {
+func TestHover(t *testing.T) {
 	if testing.Short() {
 		return
 	}
@@ -94,7 +95,15 @@ func TestLSP(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to get hover: %v", err)
 	}
-	log.Info("Got hover response", zap.Any("hover", hr))
+	expectedHover := protocol.Hover{
+		Contents: protocol.MarkupContent{
+			Kind:  "markdown",
+			Value: "```go\nfunc fmt.Sprintf(format string, a ...any) string\n```\n\nSprintf formats according to a format specifier and returns the resulting string.\n\n\n[`fmt.Sprintf` on pkg.go.dev](https://pkg.go.dev/fmt#Sprintf)",
+		},
+	}
+	if diff := lspdiff.Hover(expectedHover, *hr); diff != "" {
+		t.Errorf("unexpected hover: %v", diff)
+	}
 
 	cancel()
 }
