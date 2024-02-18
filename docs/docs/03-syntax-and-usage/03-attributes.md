@@ -160,3 +160,20 @@ templ Button(text string) {
 ## CSS attributes
 
 CSS handling is discussed in detail in [CSS style management](css-style-management).
+
+## JSON attributes
+
+If you want to pass any JSON object as an attribute value, you need to serialize it into a string.
+
+```go
+func countriesJSON() string {
+	countries := []string{"Czech Republic", "Slovakia", "United Kingdom", "Germany", "Austria", "Slovenia"}
+	bytes, _ := json.Marshal(countries)
+	return string(bytes)
+}
+```
+```templ
+templ SearchBox() {
+	<search-webcomponent suggestions={ countriesJSON() } />
+}
+```
