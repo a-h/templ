@@ -1,6 +1,7 @@
 package render
 
 import (
+	"fmt"
 	"io/fs"
 	"path/filepath"
 	"strconv"
@@ -22,6 +23,7 @@ func NewPage(path string, info fs.FileInfo, inputFsys fs.FS) (*Page, error) {
 	var p *Page
 
 	if info.IsDir() {
+		fmt.Printf("Reading from folder: %v\n", info.Name())
 		newPage, err := NewSectionPage(path, inputFsys)
 		if err != nil {
 			return nil, err
@@ -29,6 +31,7 @@ func NewPage(path string, info fs.FileInfo, inputFsys fs.FS) (*Page, error) {
 		p = newPage
 	}
 	if filepath.Ext(info.Name()) == ".md" {
+		fmt.Printf("Reading from file: %v\n", info.Name())
 		newPage, err := NewMarkdownPage(path, inputFsys)
 		if err != nil {
 			return nil, err

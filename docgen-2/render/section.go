@@ -78,7 +78,8 @@ func (p SectionPage) renderSlug(folder string) string {
 func (p SectionPage) renderOrder(folder string, inputFsys fs.FS) (int, error) {
 	b, err := fs.ReadFile(inputFsys, filepath.Join(folder, "_category_.json"))
 	if err != nil {
-		return -1, err
+		_, o := baseParts(folder)
+		return o, nil
 	}
 
 	var category struct {
@@ -107,7 +108,7 @@ func (p SectionPage) renderChildren(folder string, inputFsys fs.FS) ([]*Page, er
 			return nil, err
 		}
 
-		p, err := NewPage(folder, info, inputFsys)
+		p, err := NewPage(folder+"/"+entry.Name(), info, inputFsys)
 		if err != nil {
 			return nil, err
 		}

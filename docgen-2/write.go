@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/fs"
 	"maps"
@@ -16,9 +17,11 @@ import (
 )
 
 func resetOutputPath() error {
+	fmt.Printf("Deleteing folder %v\n", outputPath)
 	if err := os.RemoveAll(outputPath); err != nil {
 		return err
 	}
+	fmt.Printf("Creating folder %v\n", outputPath)
 	if err := os.MkdirAll(outputPath, 0755); err != nil {
 		return err
 	}
@@ -31,18 +34,9 @@ func writeToDisk(fsyss []fs.FS) error {
 		return err
 	}
 
-	entries, err := os.ReadDir(outputPath)
-	if err == nil {
-		for _, entry := range entries {
-			os.RemoveAll(filepath.Join(outputPath, entry.Name()))
-		}
-	}
-
-	if err := os.MkdirAll(outputPath, 0o755); err != nil {
-		return err
-	}
-
 	for _, fsys := range fsyss {
+
+		fmt.Printf("Opening in-memory filesystem %#v\n", fsys)
 		if err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -52,6 +46,7 @@ func writeToDisk(fsyss []fs.FS) error {
 				return nil
 			}
 
+			fmt.Printf("Opening %v within fsys %#v\n", path, fsys)
 			f, err := fsys.Open(path)
 			if err != nil {
 				return err

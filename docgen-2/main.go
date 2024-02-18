@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"flag"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -16,7 +17,7 @@ var docGenStaticEmbed embed.FS
 
 const (
 	outputPath = "public"
-	inputPath  = "/tmp"
+	inputPath  = "../docs/docs"
 )
 
 var inputFsys = os.DirFS(inputPath)
@@ -44,6 +45,7 @@ func generate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf("Reading from %v\n", files)
 
 	for _, file := range files {
 		info, err := file.Info()
@@ -60,10 +62,12 @@ func generate(ctx context.Context) error {
 		pages = append(pages, newPage)
 	}
 
-	docsFs, err := createMemoryFs(context.Background(), pages, pages)
-	if err != nil {
-		return err
-	}
+	fmt.Printf("Created %v page structs\n", len(pages))
+
+	// docsFs, err := createMemoryFs(context.Background(), pages, pages)
+	// if err != nil {
+	// 	return err
+	// }
 
 	static, err := fs.Sub(inputFsys, "static")
 	if err != nil {
@@ -75,7 +79,7 @@ func generate(ctx context.Context) error {
 		return err
 	}
 
-	err = writeToDisk([]fs.FS{docsFs, static, docGenStatic})
+	err = writeToDisk([]fs.FS{static, docGenStatic})
 	if err != nil {
 		return err
 	}
