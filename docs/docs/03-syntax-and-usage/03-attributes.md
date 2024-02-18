@@ -163,7 +163,7 @@ CSS handling is discussed in detail in [CSS style management](css-style-manageme
 
 ## JSON attributes
 
-If you want to pass any JSON object as an attribute value, you need to serialize it into a string.
+To set an attribute's value to a JSON string (e.g. for HTMX's [hx-vals](https://htmx.org/attributes/hx-vals) or Alpine's [x-data](https://alpinejs.dev/directives/data)), serialize the value to a string using a function.
 
 ```go
 func countriesJSON() string {
