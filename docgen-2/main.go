@@ -1,22 +1,22 @@
 package main
 
 import (
-	"bytes"
 	"context"
+	"embed"
 	"flag"
 	"io/fs"
-	"maps"
 	"os"
 	"path/filepath"
-	"testing/fstest"
 
-	"github.com/a-h/templ/docgen-2/components"
 	"github.com/a-h/templ/docgen-2/render"
 )
 
+//go:embed static
+var docGenStaticEmbed embed.FS
+
 const (
 	outputPath = "public"
-	inputPath  = "./docs"
+	inputPath  = "/tmp"
 )
 
 var inputFsys = os.DirFS(inputPath)
@@ -30,75 +30,52 @@ func main() {
 		return
 	}
 
-	var pages []*render.Page
-
-	err := filepath.Walk(inputPath, func(path string, info fs.FileInfo, err error) error {
-		page, err := render.NewPage(path, info, inputFsys)
-		if err != nil {
-			return err
-		}
-		pages = append(pages, page)
-		return nil
-	})
-
+	err := generate(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
 }
+func generate(ctx context.Context) error {
 
-func createMemoryFs(ctx context.Context, pages, children []*render.Page) (fstest.MapFS, error) {
-	files := fstest.MapFS{}
+	var pages []*render.Page
 
-	for _, p := range children {
-		switch p.Type {
-		case render.PageSection:
-			subFiles, err := createMemoryFs(ctx, pages, p.Children)
-			if err != nil {
-				return nil, err
-			}
-
-			maps.Copy(files, subFiles)
-		case render.PageMarkdown:
-			mainContent := p.Html
-
-			pc := &render.PageContext{
-				Title:  p.Title,
-				Active: p.Slug,
-			}
-
-			var htmlBuffer bytes.Buffer
-			if err := components.HTML(pc, pages, mainContent).Render(ctx, &htmlBuffer); err != nil {
-				return nil, err
-			}
-
-			files[p.Href] = &fstest.MapFile{Data: htmlBuffer.Bytes()}
-		}
-	}
-
-	return files, nil
-
-}
-
-func resetOutputPath() error {
-	if err := os.RemoveAll(outputPath); err != nil {
-		return err
-	}
-	if err := os.MkdirAll(outputPath, 0755); err != nil {
-		return err
-	}
-	return nil
-}
-
-func writeToDisk(r []*render.Page) error {
-
-	err := os.MkdirAll(filepath.Dir(filepath.Join(outputPath, r.File)), 0o755)
+	files, err := fs.ReadDir(inputFsys, ".")
 	if err != nil {
 		return err
 	}
 
-	out, err := os.Create(filepath.Join(outputPath, r.File))
-	defer out.Close()
+	for _, file := range files {
+		info, err := file.Info()
+		if err != nil {
+			return err
+		}
+
+		path := filepath.Join(".", file.Name())
+
+		newPage, err := render.NewPage(path, info, inputFsys)
+		if err != nil {
+			return err
+		}
+		pages = append(pages, newPage)
+	}
+
+	docsFs, err := createMemoryFs(context.Background(), pages, pages)
+	if err != nil {
+		return err
+	}
+
+	static, err := fs.Sub(inputFsys, "static")
+	if err != nil {
+		return err
+	}
+
+	docGenStatic, err := fs.Sub(docGenStaticEmbed, "static")
+	if err != nil {
+		return err
+	}
+
+	err = writeToDisk([]fs.FS{docsFs, static, docGenStatic})
 	if err != nil {
 		return err
 	}

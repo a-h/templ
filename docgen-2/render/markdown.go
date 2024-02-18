@@ -22,22 +22,28 @@ func NewMarkdownPage(file string, inputFsys fs.FS) (*Page, error) {
 		return nil, err
 	}
 
-	slug := p.renderSlug(file, inputFsys)
-
-	html, err := p.renderHtml(file, inputFsys)
+	md, err := p.readMarkdownFromFile(file, inputFsys)
 	if err != nil {
 		return nil, err
 	}
 
+	html, err := p.renderHtml(md)
+	if err != nil {
+		return nil, err
+	}
+
+	slug := p.renderSlug(file, inputFsys)
+
 	page := Page{
-		Path:     file,
-		Type:     PageMarkdown,
-		Title:    title,
-		Slug:     slug,
-		Href:     slug + ".html",
-		Children: nil,
-		Order:    order,
-		Html:     html,
+		Path:            file,
+		Type:            PageMarkdown,
+		Title:           title,
+		Slug:            slug,
+		Href:            slug + ".html",
+		Children:        nil,
+		Order:           order,
+		RawContent:      string(md),
+		RenderedContent: html,
 	}
 
 	return &page, nil
@@ -95,10 +101,10 @@ func (p MarkdownPage) renderOrder(file string) (int, error) {
 	return o, nil
 }
 
-func (p MarkdownPage) renderHtml(file string, inputFsys fs.FS) (string, error) {
+func (p MarkdownPage) readMarkdownFromFile(file string, inputFsys fs.FS) ([]byte, error) {
 	b, err := fs.ReadFile(inputFsys, file)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// remove frontmatter
@@ -110,8 +116,12 @@ func (p MarkdownPage) renderHtml(file string, inputFsys fs.FS) (string, error) {
 	re := regexp.MustCompile(`:::([a-z]+)`)
 	b = re.ReplaceAll(b, []byte(":::{.$1}"))
 
+	return b, nil
+}
+
+func (p MarkdownPage) renderHtml(raw []byte) (string, error) {
 	var htmlBuffer bytes.Buffer
-	err = GoldmarkDefinition.Convert([]byte(b), &htmlBuffer)
+	err := GoldmarkDefinition.Convert(raw, &htmlBuffer)
 	if err != nil {
 		return "", err
 	}
