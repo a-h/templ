@@ -2,7 +2,7 @@ package components
 
 import r "github.com/a-h/templ/docgen-2/render"
 
-templ HTML(c *r.PageContext, pages []*r.Renderer, data string) {
+templ HTML(c *r.PageContext, pages []*r.Page, data string) {
 	<html>
 		<head>
 			<title>{ c.Title }</title>
@@ -13,7 +13,7 @@ templ HTML(c *r.PageContext, pages []*r.Renderer, data string) {
 			<link id="theme" href={ r.BaseUrl + "prism-onedark.css" } rel="stylesheet"/>
 		</head>
 		<body class="bg-white dark:bg-gray-800 dark:text-gray-100">
-			@frame(header(r.BaseUrl), sidebar(c, r.BaseUrl, pages), content(data), footer())
+			@frame(header(), sidebar(c, pages), content(data), footer())
 			@script(r.BaseUrl)
 			<script src={ r.BaseUrl + "prism.js" }></script>
 			<script src={ r.BaseUrl + "prism-include-languages.js" }></script>
@@ -59,9 +59,9 @@ templ header() {
 	<div class="min-h-full min-w-full p-4 flex flex-col md:flex-row bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
 		<div class="flex flex-row w-full sm:w-64 md:hidden">
 			<div class="py-3">
-				@menu_toggle()
+				@toggleMenu()
 			</div>
-			@logo(r.BaseUrl)
+			@logo()
 		</div>
 		<div class="flex flex-row flex-1 items-center justify-between space-x-2 mt-2 sm:mt-0">
 			<div class="flex items-center space-x-2 m-0 w-full">
@@ -72,7 +72,7 @@ templ header() {
 			</div>
 			<div class="hidden md:flex flex-row">
 				<div>
-					@dark_mode_toggle()
+					@toggleDarkMode()
 				</div>
 				<!-- github -->
 				<a href="https://github.com/a-h/templ" class="flex ml-4 hover:text-gray-300 flex-row space-x-2">
@@ -86,7 +86,7 @@ templ header() {
 	</div>
 }
 
-templ sidebar(c *r.PageContext, pages []*r.Renderer) {
+templ sidebar(c *r.PageContext, pages []*r.Page) {
 	<div class="min-h-full min-w-full p-4 border-r-2 dark:border-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 space-y-2">
 		@logo()
 		@nav(c, pages, 0)
@@ -110,7 +110,7 @@ templ content(data string) {
 templ footer() {
 	<div class="flex justify-between min-h-full min-w-full p-4 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100 md:hidden">
 		<div>
-			@dark_mode_toggle()
+			@toggleDarkMode()
 		</div>
 		<!-- github -->
 		<a href="https://github.com/a-h/templ" class="flex items-center space-x-2 hover:text-gray-700 dark:hover:text-gray-300">
