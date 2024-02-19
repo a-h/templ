@@ -60,7 +60,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if render.BaseUrl != defaultUrl {
+	if *localFlag {
 		err := startLocalHttp()
 		if err != nil {
 			log.Fatal(err)
