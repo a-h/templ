@@ -16,17 +16,17 @@ import (
 
 const (
 	outputPath = "./public"
-	inputPath  = "./docs"
+	docsPath   = "./docs"
 	staticPath = "./static"
 	defaultUrl = "https://cugu.github.io/templ/new/"
 )
 
-var inputFsys = os.DirFS(inputPath)
+var docsFsys = os.DirFS(docsPath)
 var staticFsys = os.DirFS(staticPath)
 
 func main() {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
-	localFlag := cmd.Bool("local", false, "Set urls to point to localhost:8080 and start an http server on http://localhost:8080")
+	localFlag := cmd.Bool("local", false, "Hosts public/ directory on http://localhost:8080")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
 	if cmd.Parse(os.Args[1:]) != nil || *helpFlag {
 		cmd.PrintDefaults()
@@ -69,7 +69,7 @@ func main() {
 func buildPages() ([]*render.Page, error) {
 	var pages []*render.Page
 
-	files, err := fs.ReadDir(inputFsys, ".")
+	files, err := fs.ReadDir(docsFsys, ".")
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func buildPages() ([]*render.Page, error) {
 
 		path := filepath.Join(".", info.Name())
 
-		newPage, err := render.NewPage(path, info, inputFsys)
+		newPage, err := render.NewPage(path, info, docsFsys)
 		if err != nil {
 			return nil, err
 		}

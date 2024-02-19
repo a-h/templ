@@ -2,7 +2,7 @@ package render
 
 type Page struct {
 	Path            string
-	Type            int
+	Type            PageType
 	Title           string
 	Slug            string
 	Href            string
@@ -12,9 +12,11 @@ type Page struct {
 	Children        []*Page
 }
 
+type PageType int
+
 const (
-	PageMarkdown = iota
-	PageSection
+	PageMarkdown PageType = iota
+	PageSection  PageType = iota
 )
 
 type PageContext struct {

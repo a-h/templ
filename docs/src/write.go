@@ -19,24 +19,24 @@ import (
 
 func WriteToDisk(fsyss []fs.FS, outputPath string) error {
 	for _, fsys := range fsyss {
-		// fmt.Printf("Opening in-memory filesystem %#v\n", fsys)
 		err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
-
 			if d.IsDir() {
 				return nil
 			}
 
-			// fmt.Printf("Opening %v within fsys %#v\n", path, fsys)
 			f, err := fsys.Open(path)
 			if err != nil {
 				return err
 			}
 			defer f.Close()
 
-			_ = os.MkdirAll(filepath.Dir(filepath.Join(outputPath, path)), 0o755)
+			err = os.MkdirAll(filepath.Dir(filepath.Join(outputPath, path)), 0o755)
+			if err != nil {
+				return err
+			}
 
 			out, err := os.Create(filepath.Join(outputPath, path))
 			if err != nil {
@@ -61,7 +61,6 @@ func CreateMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page)
 
 	for _, page := range pagesToRender {
 		if page.Type == render.PageSection {
-			// fmt.Printf("Creating section slug: %v \n", page.Slug)
 			subFiles, err := CreateMemoryFs(ctx, allPages, page.Children)
 			if err != nil {
 				return nil, err
