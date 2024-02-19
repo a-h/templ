@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type SectionPage Page
+type SectionPage struct{}
 
 func NewSectionPage(folder string, inputFsys fs.FS) (*Page, error) {
 	p := SectionPage{}

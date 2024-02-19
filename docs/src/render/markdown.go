@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type MarkdownPage Page
+type MarkdownPage struct{}
 
 func NewMarkdownPage(relativePath string, file []byte) (*Page, error) {
 	p := MarkdownPage{}
