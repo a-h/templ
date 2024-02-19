@@ -10,7 +10,7 @@ import "context"
 import "io"
 import "bytes"
 
-import r "github.com/a-h/templ/docgen-2/render"
+import r "github.com/a-h/templ/docgen-2/src/render"
 
 func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
@@ -32,7 +32,7 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(c.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `components/structure.templ`, Line: 7, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `src/components/structure.templ`, Line: 7, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing/fstest"
 
-	"github.com/a-h/templ/docgen-2/components"
-	"github.com/a-h/templ/docgen-2/render"
+	"github.com/a-h/templ/docgen-2/src/components"
+	"github.com/a-h/templ/docgen-2/src/render"
 )
 
 func resetOutputPath() error {

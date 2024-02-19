@@ -2,25 +2,22 @@ package main
 
 import (
 	"context"
-	"embed"
 	"flag"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 
-	"github.com/a-h/templ/docgen-2/render"
+	"github.com/a-h/templ/docgen-2/src/render"
 )
 
 const (
-	outputPath = "public"
-	inputPath  = "../docs"
+	outputPath = "../public"
+	inputPath  = "../../docs"
 )
 
 var inputFsys = os.DirFS(inputPath)
-
-//go:embed static
-var staticEmbed embed.FS
+var staticFsys = os.DirFS("../static")
 
 func main() {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
@@ -73,12 +70,7 @@ func generate(ctx context.Context) error {
 		return err
 	}
 
-	staticFs, err := fs.Sub(staticEmbed, "static")
-	if err != nil {
-		return err
-	}
-
-	err = writeToDisk([]fs.FS{docsFs, staticFs})
+	err = writeToDisk([]fs.FS{docsFs, staticFsys})
 	if err != nil {
 		return err
 	}
