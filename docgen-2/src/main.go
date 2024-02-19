@@ -13,11 +13,12 @@ import (
 
 const (
 	outputPath = "../public"
-	inputPath  = "../../docs"
+	inputPath  = "../docs"
+	staticPath = "../static"
 )
 
 var inputFsys = os.DirFS(inputPath)
-var staticFsys = os.DirFS("../static")
+var staticFsys = os.DirFS(staticPath)
 
 func main() {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
