@@ -50,6 +50,7 @@ jobs:
           go run ./get-version > .version
           cd cmd/templ
           go build
+          mv templ $GOPATH/bin/templ
       - name: Build
         run: |
           cd docs
