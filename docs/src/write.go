@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"bytes"
@@ -17,26 +17,8 @@ import (
 	"github.com/a-h/templ/docs/src/render"
 )
 
-func resetOutputPath() error {
-	fmt.Printf("Deleteing folder %v\n", outputPath)
-	if err := os.RemoveAll(outputPath); err != nil {
-		return err
-	}
-	fmt.Printf("Creating folder %v\n", outputPath)
-	if err := os.MkdirAll(outputPath, 0755); err != nil {
-		return err
-	}
-	return nil
-}
-
-func writeToDisk(fsyss []fs.FS) error {
-	err := resetOutputPath()
-	if err != nil {
-		return err
-	}
-
+func WriteToDisk(fsyss []fs.FS, outputPath string) error {
 	for _, fsys := range fsyss {
-
 		// fmt.Printf("Opening in-memory filesystem %#v\n", fsys)
 		err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -74,13 +56,13 @@ func writeToDisk(fsyss []fs.FS) error {
 	return nil
 }
 
-func createMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page) (fstest.MapFS, error) {
+func CreateMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page) (fstest.MapFS, error) {
 	files := fstest.MapFS{}
 
 	for _, page := range pagesToRender {
 		if page.Type == render.PageSection {
-			fmt.Printf("Creating section slug: %v \n", page.Slug)
-			subFiles, err := createMemoryFs(ctx, allPages, page.Children)
+			// fmt.Printf("Creating section slug: %v \n", page.Slug)
+			subFiles, err := CreateMemoryFs(ctx, allPages, page.Children)
 			if err != nil {
 				return nil, err
 			}

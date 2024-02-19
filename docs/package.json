@@ -1,9 +1,10 @@
 {
   "scripts": {
-    "build": "tailwindcss -i ./static/in.css -o ./static/style.css && cd ./src && templ generate ./components && go run ."
+    "tw-build": "tailwindcss -i ./static/in.css -o ./static/style.css",
+    "build": "tailwindcss -i ./static/in.css -o ./static/style.css && templ generate ./src/components && go run ."
   },
   "dependencies": {
-    "@tailwindcss/typography": "github:tailwindcss/typography",
+    "@tailwindcss/typography": "^0.5.10",
     "tailwindcss": "^3.4.1"
   }
 }

@@ -8,13 +8,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/a-h/templ/docs/src"
 	"github.com/a-h/templ/docs/src/render"
 )
 
 const (
-	outputPath = "../public"
-	inputPath  = "../docs"
-	staticPath = "../static"
+	outputPath = "./public"
+	inputPath  = "./docs"
+	staticPath = "./static"
 )
 
 var inputFsys = os.DirFS(inputPath)
@@ -29,12 +30,18 @@ func main() {
 		return
 	}
 
-	err := generate(context.Background())
+	err := resetOutputFolder()
+	if err != nil {
+		panic(err)
+	}
+
+	err = generate(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
 }
+
 func generate(ctx context.Context) error {
 
 	var pages []*render.Page
@@ -43,6 +50,7 @@ func generate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	fmt.Printf("Reading from %v\n", files)
 
 	for _, file := range files {
@@ -66,15 +74,27 @@ func generate(ctx context.Context) error {
 	}
 
 	fmt.Printf("Created %v page structs\n", len(pages))
-	docsFs, err := createMemoryFs(ctx, pages, pages)
+	docsFs, err := src.CreateMemoryFs(ctx, pages, pages)
 	if err != nil {
 		return err
 	}
 
-	err = writeToDisk([]fs.FS{docsFs, staticFsys})
+	err = src.WriteToDisk([]fs.FS{docsFs, staticFsys}, outputPath)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func resetOutputFolder() error {
+	fmt.Printf("Deleteing folder %v\n", outputPath)
+	if err := os.RemoveAll(outputPath); err != nil {
+		return err
+	}
+	fmt.Printf("Creating folder %v\n", outputPath)
+	if err := os.MkdirAll(outputPath, 0755); err != nil {
+		return err
+	}
 	return nil
 }
