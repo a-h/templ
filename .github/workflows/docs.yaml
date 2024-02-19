@@ -55,11 +55,10 @@ jobs:
         run: |
           cd docs
           npm run build
-          mv public ../docs/build/new
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
-          path: ./docs/build
+          path: ./docs/public
 
   deploy-docs:
     environment:
