@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/a-h/templ/docgen-2/src/render"
+	"github.com/a-h/templ/docs/src/render"
 )
 
 const (

@@ -10,7 +10,7 @@ import "context"
 import "io"
 import "bytes"
 
-import r "github.com/a-h/templ/docgen-2/src/render"
+import r "github.com/a-h/templ/docs/src/render"
 
 func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {

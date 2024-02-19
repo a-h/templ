@@ -11,7 +11,7 @@ import "io"
 import "bytes"
 
 import "strings"
-import r "github.com/a-h/templ/docgen-2/src/render"
+import r "github.com/a-h/templ/docs/src/render"
 
 func nav(c *r.PageContext, pages []*r.Page, depth int) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
