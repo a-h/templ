@@ -2,36 +2,32 @@ package render
 
 import (
 	"bytes"
-	"path"
-	"path/filepath"
+	"fmt"
 	"regexp"
 	"strings"
 )
 
-type MarkdownPage struct{}
-
 func NewMarkdownPage(relativePath string, file []byte) (*Page, error) {
-	p := MarkdownPage{}
-	title, err := p.renderTitle(relativePath, file)
-	if err != nil {
-		return nil, err
-	}
-	order, err := p.renderOrder(relativePath)
+	order, err := getOrderFromPath(relativePath)
 	if err != nil {
 		return nil, err
 	}
 
-	md, err := p.parseMarkdown(relativePath, file)
+	md, err := parseMarkdown(relativePath, file)
 	if err != nil {
 		return nil, err
 	}
 
-	html, err := p.renderHtml(md)
+	html, err := renderHtml(md)
 	if err != nil {
 		return nil, err
 	}
 
-	slug := p.renderSlug(relativePath)
+	slug := renderSlug(relativePath)
+	title, err := renderTitleFromFileContent(relativePath, file)
+	if err != nil {
+		return nil, err
+	}
 
 	page := Page{
 		Path:            relativePath,
@@ -48,54 +44,23 @@ func NewMarkdownPage(relativePath string, file []byte) (*Page, error) {
 	return &page, nil
 }
 
-func (p MarkdownPage) renderTitle(relativePath string, file []byte) (string, error) {
+func renderTitleFromFileContent(relativePath string, file []byte) (string, error) {
+	var title string
 	for _, line := range bytes.Split(file, []byte("\n")) {
 		if !bytes.HasPrefix(line, []byte("# ")) {
 			continue
 		}
 
-		return string(bytes.TrimPrefix(line, []byte("# "))), nil
+		title = string(bytes.TrimPrefix(line, []byte("# ")))
+		if title != "" {
+			return title, nil
+		}
 	}
-
-	return titleFromPath(relativePath), nil
+	return "", fmt.Errorf("couldn't find a # heading in %s", relativePath)
 
 }
 
-func (p MarkdownPage) renderSlug(relativePath string) string {
-	if relativePath == "index.md" {
-		return "index"
-	}
-
-	noExt := strings.TrimSuffix(relativePath, filepath.Ext(relativePath))
-
-	htmlPath := ""
-
-	for _, r := range strings.Split(noExt, "/") {
-		name, _ := baseParts(r)
-		htmlPath = path.Join(htmlPath, name)
-	}
-
-	for _, r := range []string{"\\", " ", ".", "_"} {
-		htmlPath = strings.ReplaceAll(htmlPath, r, "-")
-	}
-
-	htmlPath = strings.ToLower(htmlPath)
-	htmlPath = strings.Trim(htmlPath, "-")
-
-	return htmlPath
-}
-
-func (p MarkdownPage) renderOrder(relativePath string) (int, error) {
-	base := filepath.Base(relativePath)
-	if base == "index.md" {
-		return 0, nil
-	}
-
-	_, o := baseParts(relativePath)
-	return o, nil
-}
-
-func (p MarkdownPage) parseMarkdown(relativePath string, file []byte) ([]byte, error) {
+func parseMarkdown(relativePath string, file []byte) ([]byte, error) {
 	// remove frontmatter
 	if strings.HasPrefix(string(file), "---") {
 		_, file, _ = bytes.Cut(file[3:], []byte("---\n"))
@@ -108,7 +73,7 @@ func (p MarkdownPage) parseMarkdown(relativePath string, file []byte) ([]byte, e
 	return file, nil
 }
 
-func (p MarkdownPage) renderHtml(raw []byte) (string, error) {
+func renderHtml(raw []byte) (string, error) {
 	var htmlBuffer bytes.Buffer
 	err := GoldmarkDefinition.Convert(raw, &htmlBuffer)
 	if err != nil {

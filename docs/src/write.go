@@ -10,7 +10,6 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing/fstest"
 
 	"github.com/a-h/templ/docs/src/components"
@@ -68,7 +67,7 @@ func CreateMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page)
 			maps.Copy(files, subFiles)
 		}
 		if page.Type == render.PageMarkdown {
-			fmt.Printf("Creating page slug: %v \n", page.Slug)
+			fmt.Printf("Creating page: %v \n", page.Href)
 			pc := &render.PageContext{
 				Title:  page.Title,
 				Active: page.Slug,
@@ -80,40 +79,44 @@ func CreateMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page)
 				return nil, err
 			}
 
-			memoryFile := &fstest.MapFile{Data: htmlBuffer.Bytes()}
-			location := strings.TrimPrefix(page.Href, "docs/")
-			files[location] = memoryFile
+			files[page.Href] = &fstest.MapFile{Data: htmlBuffer.Bytes()}
 		}
 
 	}
 
-	files["search_content.js"] = &fstest.MapFile{Data: searchJS(allPages)}
+	search, err := searchJS(allPages)
+	if err != nil {
+		return nil, err
+	}
+
+	files["search_content.js"] = &fstest.MapFile{Data: search}
 
 	return files, nil
 }
 
-func searchJS(pages []*render.Page) []byte {
+func searchJS(pages []*render.Page) ([]byte, error) {
 	data := searchIndex(pages)
 
-	b, _ := json.Marshal(data)
+	b, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
 
-	return []byte("var index = " + string(b) + ";")
+	return []byte("var index = " + string(b) + ";"), nil
 }
 
 func searchIndex(pages []*render.Page) []map[string]string {
 	var data []map[string]string
-
 	for _, p := range pages {
+		if p.Type == render.PageSection {
+			data = append(data, searchIndex(p.Children)...)
+		}
 		if p.Type == render.PageMarkdown {
 			data = append(data, map[string]string{
 				"title": p.Title,
 				"href":  p.Href,
 				"body":  p.RawContent,
 			})
-		}
-
-		if p.Type == render.PageSection {
-			data = append(data, searchIndex(p.Children)...)
 		}
 	}
 

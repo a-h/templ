@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 	"io/fs"
+	"path"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -55,34 +56,67 @@ func NewPage(path string, info fs.FileInfo, inputFsys fs.FS) (*Page, error) {
 
 }
 
-func titleFromPath(path string) string {
-	filename, _ := baseParts(path)
+func getOrderFromPath(path string) (int, error) {
+	base := filepath.Base(path)
 
-	filename = strings.ReplaceAll(filename, "-", " ")
-
-	if len(filename) > 0 {
-		filename = strings.ToUpper(filename[:1]) + filename[1:]
+	if base == "index.md" {
+		return 1, nil
 	}
 
-	return filename
+	index := strings.Split(base, "-")[0]
+
+	order, err := strconv.Atoi(index)
+	if err != nil {
+		return -1, fmt.Errorf("%v is not a valid file or folder, it must follow convention: 01-folder/ or 01-file-name.md or be index.md", path)
+	}
+	return order, nil
 }
 
-func baseParts(path string) (string, int) {
-	base := filepath.Base(path)
-	filename := base[:len(base)-len(filepath.Ext(base))]
-	prefix, suffix, hasSpace := strings.Cut(filename, "-")
-
-	if hasSpace {
-		prefix := strings.TrimPrefix(prefix, "0")
-		o, err := strconv.Atoi(prefix)
-		if err != nil {
-			return suffix, -1
-		}
-
-		return suffix, o
+func renderSlug(relativePath string) string {
+	if relativePath == "index.md" {
+		return "index"
 	}
 
-	return filename, -1
+	noExt := strings.TrimSuffix(relativePath, filepath.Ext(relativePath))
+
+	htmlPath := ""
+
+	for _, r := range strings.Split(noExt, "/") {
+		base := filepath.Base(r)
+		filename := base[:len(base)-len(filepath.Ext(base))]
+		_, partialSlug, _ := strings.Cut(filename, "-")
+		htmlPath = path.Join(htmlPath, partialSlug)
+	}
+
+	for _, r := range []string{"\\", " ", ".", "_"} {
+		htmlPath = strings.ReplaceAll(htmlPath, r, "-")
+	}
+
+	htmlPath = strings.ToLower(htmlPath)
+	htmlPath = strings.Trim(htmlPath, "-")
+
+	return htmlPath
+}
+
+func getTitleFromSlug(slug string) string {
+	base := strings.LastIndex(slug, "/")
+	if base > 0 {
+		slug = slug[base+1:]
+	}
+
+	title := strings.ReplaceAll(slug, "-", " ")
+	words := strings.Fields(title)
+	for i, word := range words {
+		if len(word) > 1 {
+			words[i] = strings.ToUpper(string(word[0])) + strings.ToLower(string(word[1:]))
+		} else {
+			words[i] = strings.ToUpper(word)
+		}
+	}
+
+	title = strings.Join(words, " ")
+	return title
+
 }
 
 var GoldmarkDefinition = goldmark.New(

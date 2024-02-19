@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/a-h/templ/docs/src"
 	"github.com/a-h/templ/docs/src/render"
@@ -93,6 +95,15 @@ func buildPages() ([]*render.Page, error) {
 		pages = append(pages, newPage)
 
 	}
+
+	slices.SortFunc(pages, func(a, b *render.Page) int {
+		if a.Order == b.Order {
+			return strings.Compare(a.Title, b.Title)
+		}
+
+		return a.Order - b.Order
+	})
+
 	return pages, nil
 
 }

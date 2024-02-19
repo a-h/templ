@@ -14,7 +14,7 @@ templ generate ./src/components
 go run main.go
 ```
 
-`npm run dev` is a shortcut for the following three commands:
+`npm run start` is a shortcut for the following three commands:
 ```sh
 tailwindcss -i ./static/in.css -o ./static/style.css
 templ generate ./src/components
