@@ -60,7 +60,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if *localFlag {
+	if strings.HasPrefix(render.BaseUrl, "http://localhost") {
 		err := startLocalHttp()
 		if err != nil {
 			log.Fatal(err)
