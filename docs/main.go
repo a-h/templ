@@ -18,7 +18,7 @@ const (
 	outputPath = "./public"
 	docsPath   = "./docs"
 	staticPath = "./static"
-	defaultUrl = "https://cugu.github.io/templ/new/"
+	defaultUrl = "https://nathan-hello.github.io/templ-pr-401/"
 )
 
 var docsFsys = os.DirFS(docsPath)
