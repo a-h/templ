@@ -12,15 +12,15 @@ import (
 	"github.com/a-h/templ/docgen-2/render"
 )
 
-//go:embed static
-var docGenStaticEmbed embed.FS
-
 const (
 	outputPath = "public"
-	inputPath  = "../docs/docs"
+	inputPath  = "../docs"
 )
 
 var inputFsys = os.DirFS(inputPath)
+
+//go:embed static
+var staticEmbed embed.FS
 
 func main() {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
@@ -59,27 +59,26 @@ func generate(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+
+		if newPage == nil {
+			continue
+		}
 		pages = append(pages, newPage)
+
 	}
 
 	fmt.Printf("Created %v page structs\n", len(pages))
-
-	// docsFs, err := createMemoryFs(context.Background(), pages, pages)
-	// if err != nil {
-	// 	return err
-	// }
-
-	static, err := fs.Sub(inputFsys, "static")
+	docsFs, err := createMemoryFs(ctx, pages, pages)
 	if err != nil {
 		return err
 	}
 
-	docGenStatic, err := fs.Sub(docGenStaticEmbed, "static")
+	staticFs, err := fs.Sub(staticEmbed, "static")
 	if err != nil {
 		return err
 	}
 
-	err = writeToDisk([]fs.FS{static, docGenStatic})
+	err = writeToDisk([]fs.FS{docsFs, staticFs})
 	if err != nil {
 		return err
 	}

@@ -112,6 +112,9 @@ func (p SectionPage) renderChildren(folder string, inputFsys fs.FS) ([]*Page, er
 		if err != nil {
 			return nil, err
 		}
+		if p == nil {
+			continue
+		}
 		pages = append(pages, p)
 	}
 	return pages, nil

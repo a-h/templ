@@ -10,6 +10,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing/fstest"
 
 	"github.com/a-h/templ/docgen-2/components"
@@ -36,8 +37,8 @@ func writeToDisk(fsyss []fs.FS) error {
 
 	for _, fsys := range fsyss {
 
-		fmt.Printf("Opening in-memory filesystem %#v\n", fsys)
-		if err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		// fmt.Printf("Opening in-memory filesystem %#v\n", fsys)
+		err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -46,7 +47,7 @@ func writeToDisk(fsyss []fs.FS) error {
 				return nil
 			}
 
-			fmt.Printf("Opening %v within fsys %#v\n", path, fsys)
+			// fmt.Printf("Opening %v within fsys %#v\n", path, fsys)
 			f, err := fsys.Open(path)
 			if err != nil {
 				return err
@@ -63,7 +64,9 @@ func writeToDisk(fsyss []fs.FS) error {
 			_, err = io.Copy(out, f)
 
 			return err
-		}); err != nil {
+		})
+
+		if err != nil {
 			return err
 		}
 	}
@@ -71,35 +74,39 @@ func writeToDisk(fsyss []fs.FS) error {
 	return nil
 }
 
-func createMemoryFs(ctx context.Context, pages, childPages []*render.Page) (fstest.MapFS, error) {
+func createMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page) (fstest.MapFS, error) {
 	files := fstest.MapFS{}
 
-	for _, page := range pages {
-		switch page.Type {
-		case render.PageSection:
-			subFiles, err := createMemoryFs(ctx, pages, page.Children)
+	for _, page := range pagesToRender {
+		if page.Type == render.PageSection {
+			fmt.Printf("Creating section slug: %v \n", page.Slug)
+			subFiles, err := createMemoryFs(ctx, allPages, page.Children)
 			if err != nil {
 				return nil, err
 			}
 			maps.Copy(files, subFiles)
-		case render.PageMarkdown:
+		}
+		if page.Type == render.PageMarkdown {
+			fmt.Printf("Creating page slug: %v \n", page.Slug)
 			pc := &render.PageContext{
 				Title:  page.Title,
 				Active: page.Slug,
 			}
 
 			var htmlBuffer bytes.Buffer
-			err := components.HTML(pc, pages, page.RenderedContent).Render(ctx, &htmlBuffer)
+			err := components.HTML(pc, allPages, page.RenderedContent).Render(ctx, &htmlBuffer)
 			if err != nil {
 				return nil, err
 			}
 
 			memoryFile := &fstest.MapFile{Data: htmlBuffer.Bytes()}
-			files[page.Href] = memoryFile
+			location := strings.TrimPrefix(page.Href, "docs/")
+			files[location] = memoryFile
 		}
+
 	}
 
-	files["search_content.js"] = &fstest.MapFile{Data: searchJS(pages)}
+	files["search_content.js"] = &fstest.MapFile{Data: searchJS(allPages)}
 
 	return files, nil
 }

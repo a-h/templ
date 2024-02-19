@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -18,8 +19,14 @@ import (
 )
 
 var BaseUrl string
+var bannedFiles = []string{"readme.md"}
 
 func NewPage(path string, info fs.FileInfo, inputFsys fs.FS) (*Page, error) {
+
+	if slices.Contains[[]string](bannedFiles, strings.ToLower(info.Name())) {
+		return nil, nil
+	}
+
 	var p *Page
 
 	if info.IsDir() {
@@ -30,14 +37,20 @@ func NewPage(path string, info fs.FileInfo, inputFsys fs.FS) (*Page, error) {
 		}
 		p = newPage
 	}
+
 	if filepath.Ext(info.Name()) == ".md" {
 		fmt.Printf("Reading from file: %v\n", info.Name())
-		newPage, err := NewMarkdownPage(path, inputFsys)
+		file, err := fs.ReadFile(inputFsys, path)
+		if err != nil {
+			return nil, err
+		}
+		newPage, err := NewMarkdownPage(path, file)
 		if err != nil {
 			return nil, err
 		}
 		p = newPage
 	}
+
 	return p, nil
 
 }

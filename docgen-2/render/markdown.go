@@ -2,7 +2,6 @@ package render
 
 import (
 	"bytes"
-	"io/fs"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -11,18 +10,18 @@ import (
 
 type MarkdownPage Page
 
-func NewMarkdownPage(file string, inputFsys fs.FS) (*Page, error) {
+func NewMarkdownPage(relativePath string, file []byte) (*Page, error) {
 	p := MarkdownPage{}
-	title, err := p.renderTitle(file, inputFsys)
+	title, err := p.renderTitle(relativePath, file)
 	if err != nil {
 		return nil, err
 	}
-	order, err := p.renderOrder(file)
+	order, err := p.renderOrder(relativePath)
 	if err != nil {
 		return nil, err
 	}
 
-	md, err := p.readMarkdownFromFile(file, inputFsys)
+	md, err := p.parseMarkdown(relativePath, file)
 	if err != nil {
 		return nil, err
 	}
@@ -32,10 +31,10 @@ func NewMarkdownPage(file string, inputFsys fs.FS) (*Page, error) {
 		return nil, err
 	}
 
-	slug := p.renderSlug(file, inputFsys)
+	slug := p.renderSlug(relativePath)
 
 	page := Page{
-		Path:            file,
+		Path:            relativePath,
 		Type:            PageMarkdown,
 		Title:           title,
 		Slug:            slug,
@@ -49,13 +48,8 @@ func NewMarkdownPage(file string, inputFsys fs.FS) (*Page, error) {
 	return &page, nil
 }
 
-func (p MarkdownPage) renderTitle(file string, inputFsys fs.FS) (string, error) {
-	b, err := fs.ReadFile(inputFsys, file)
-	if err != nil {
-		return "", err
-	}
-
-	for _, line := range bytes.Split(b, []byte("\n")) {
+func (p MarkdownPage) renderTitle(relativePath string, file []byte) (string, error) {
+	for _, line := range bytes.Split(file, []byte("\n")) {
 		if !bytes.HasPrefix(line, []byte("# ")) {
 			continue
 		}
@@ -63,16 +57,16 @@ func (p MarkdownPage) renderTitle(file string, inputFsys fs.FS) (string, error) 
 		return string(bytes.TrimPrefix(line, []byte("# "))), nil
 	}
 
-	return titleFromPath(file), nil
+	return titleFromPath(relativePath), nil
 
 }
 
-func (p MarkdownPage) renderSlug(file string, inputFsys fs.FS) string {
-	if file == "index.md" {
+func (p MarkdownPage) renderSlug(relativePath string) string {
+	if relativePath == "index.md" {
 		return "index"
 	}
 
-	noExt := strings.TrimSuffix(file, filepath.Ext(file))
+	noExt := strings.TrimSuffix(relativePath, filepath.Ext(relativePath))
 
 	htmlPath := ""
 
@@ -91,32 +85,27 @@ func (p MarkdownPage) renderSlug(file string, inputFsys fs.FS) string {
 	return htmlPath
 }
 
-func (p MarkdownPage) renderOrder(file string) (int, error) {
-	base := filepath.Base(file)
+func (p MarkdownPage) renderOrder(relativePath string) (int, error) {
+	base := filepath.Base(relativePath)
 	if base == "index.md" {
 		return 0, nil
 	}
 
-	_, o := baseParts(file)
+	_, o := baseParts(relativePath)
 	return o, nil
 }
 
-func (p MarkdownPage) readMarkdownFromFile(file string, inputFsys fs.FS) ([]byte, error) {
-	b, err := fs.ReadFile(inputFsys, file)
-	if err != nil {
-		return nil, err
-	}
-
+func (p MarkdownPage) parseMarkdown(relativePath string, file []byte) ([]byte, error) {
 	// remove frontmatter
-	if strings.HasPrefix(string(b), "---") {
-		_, b, _ = bytes.Cut(b[3:], []byte("---\n"))
+	if strings.HasPrefix(string(file), "---") {
+		_, file, _ = bytes.Cut(file[3:], []byte("---\n"))
 	}
 
 	// replace admonitions
 	re := regexp.MustCompile(`:::([a-z]+)`)
-	b = re.ReplaceAll(b, []byte(":::{.$1}"))
+	file = re.ReplaceAll(file, []byte(":::{.$1}"))
 
-	return b, nil
+	return file, nil
 }
 
 func (p MarkdownPage) renderHtml(raw []byte) (string, error) {
