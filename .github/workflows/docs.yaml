@@ -45,6 +45,11 @@ jobs:
         run: |
           cd docs
           npm ci
+      - name: Install templ
+        run: |
+          go run ./get-version > .version
+          cd cmd/templ
+          go build
       - name: Build
         run: |
           cd docs
