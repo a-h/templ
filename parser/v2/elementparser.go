@@ -120,6 +120,8 @@ var (
 			return
 		}
 
+		attr.AttributeExpression = NewExpression(attr.Name, pi.Position(), pi.PositionAt(pi.Index()+len(attr.Name)))
+
 		// ="
 		result, ok, err := parse.Or(parse.String(`="`), parse.String(`='`)).Parse(pi)
 		if err != nil || !ok {

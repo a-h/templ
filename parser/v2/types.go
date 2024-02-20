@@ -405,6 +405,17 @@ type WhitespaceTrailer interface {
 	Trailing() TrailingSpace
 }
 
+type HTMLExpression interface {
+	HTMLExpression() Expression
+}
+
+var (
+	_ HTMLExpression = Element{}
+	_ HTMLExpression = BoolConstantAttribute{}
+	_ HTMLExpression = BoolExpressionAttribute{}
+	_ HTMLExpression = ConstantAttribute{}
+)
+
 var (
 	_ WhitespaceTrailer = Element{}
 	_ WhitespaceTrailer = Text{}
@@ -430,16 +441,21 @@ func (t Text) Write(w io.Writer, indent int) error {
 
 // <a .../> or <div ...>...</div>
 type Element struct {
-	Name           string
-	Attributes     []Attribute
-	IndentAttrs    bool
-	Children       []Node
-	IndentChildren bool
-	TrailingSpace  TrailingSpace
+	Name              string
+	Attributes        []Attribute
+	IndentAttrs       bool
+	Children          []Node
+	IndentChildren    bool
+	TrailingSpace     TrailingSpace
+	ElementExpression Expression
 }
 
 func (e Element) Trailing() TrailingSpace {
 	return e.TrailingSpace
+}
+
+func (e Element) HTMLExpression() Expression {
+	return e.ElementExpression
 }
 
 var voidElements = map[string]struct{}{
@@ -691,7 +707,8 @@ type Attribute interface {
 
 // <hr noshade/>
 type BoolConstantAttribute struct {
-	Name string
+	Name                string
+	AttributeExpression Expression
 }
 
 func (bca BoolConstantAttribute) String() string {
@@ -702,11 +719,16 @@ func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, bca.String())
 }
 
+func (bca BoolConstantAttribute) HTMLExpression() Expression {
+	return bca.AttributeExpression
+}
+
 // href=""
 type ConstantAttribute struct {
-	Name        string
-	Value       string
-	SingleQuote bool
+	Name                string
+	Value               string
+	SingleQuote         bool
+	AttributeExpression Expression
 }
 
 func (ca ConstantAttribute) String() string {
@@ -721,24 +743,34 @@ func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, ca.String())
 }
 
+func (ca ConstantAttribute) HTMLExpression() Expression {
+	return ca.AttributeExpression
+}
+
 // noshade={ templ.Bool(...) }
 type BoolExpressionAttribute struct {
-	Name       string
-	Expression Expression
+	Name                string
+	Expression          Expression
+	AttributeExpression Expression
 }
 
-func (ea BoolExpressionAttribute) String() string {
-	return ea.Name + `?={ ` + ea.Expression.Value + ` }`
+func (bea BoolExpressionAttribute) String() string {
+	return bea.Name + `?={ ` + bea.Expression.Value + ` }`
 }
 
-func (ea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, ea.String())
+func (bea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, bea.String())
+}
+
+func (bea BoolExpressionAttribute) HTMLExpression() Expression {
+	return bea.AttributeExpression
 }
 
 // href={ ... }
 type ExpressionAttribute struct {
-	Name       string
-	Expression Expression
+	Name                string
+	Expression          Expression
+	AttributeExpression Expression
 }
 
 func (ea ExpressionAttribute) String() string {
@@ -791,6 +823,10 @@ func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
 		}
 	}
 	return writeIndent(w, indent, "}")
+}
+
+func (ea ExpressionAttribute) HTMLExpression() Expression {
+	return ea.AttributeExpression
 }
 
 // <a { spread... } />
