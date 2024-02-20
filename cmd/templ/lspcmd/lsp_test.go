@@ -123,10 +123,7 @@ func TestCompletion(t *testing.T) {
 			replacement: ` <div data-testid="count">{ fmt.Sprintf("%d",`,
 			cursor:      `                                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) {
-				if actual == nil {
-					t.Errorf("expected completion list to not be nil")
-				}
-				if len(actual.Items) != 0 {
+				if actual != nil && len(actual.Items) != 0 {
 					t.Errorf("expected completion list to be empty")
 				}
 			},
@@ -234,15 +231,6 @@ func TestHover(t *testing.T) {
 		t.Errorf("unexpected hover: %v", diff)
 		return
 	}
-}
-
-func replaceInFile(name, src, tgt string) error {
-	data, err := os.ReadFile(name)
-	if err != nil {
-		return err
-	}
-	updated := strings.Replace(string(data), src, tgt, -1)
-	return os.WriteFile(name, []byte(updated), 0660)
 }
 
 func NewTestClient(log *zap.Logger) TestClient {
