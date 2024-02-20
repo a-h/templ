@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -51,7 +52,7 @@ func createTestProject(moduleRoot string) (dir string, err error) {
 	return dir, nil
 }
 
-func TestHover(t *testing.T) {
+func TestCompletion(t *testing.T) {
 	if testing.Short() {
 		return
 	}
@@ -64,6 +65,133 @@ func TestHover(t *testing.T) {
 		t.Fatalf("failed to setup test: %v", err)
 	}
 	defer teardown(t)
+	defer cancel()
+
+	templFile, err := os.ReadFile(appDir + "/templates.templ")
+	if err != nil {
+		t.Errorf("failed to read file %q: %v", appDir+"/templates.templ", err)
+		return
+	}
+	err = server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        uri.URI("file://" + appDir + "/templates.templ"),
+			LanguageID: "templ",
+			Version:    1,
+			Text:       string(templFile),
+		},
+	})
+
+	if err != nil {
+		t.Errorf("failed to register open file: %v", err)
+		return
+	}
+	log.Info("Calling completion")
+
+	// Edit the file.
+	// Replace:
+	// <div data-testid="count">{ fmt.Sprintf("%d", count) }</div>
+	// With various tests:
+	// <div data-testid="count">{ f
+	tests := []struct {
+		line        int
+		replacement string
+		cursor      string
+		assert      func(t *testing.T, cl *protocol.CompletionList)
+	}{
+		{
+			line:        13,
+			replacement: ` <div data-testid="count">{  `,
+			cursor:      `                            ^`,
+			assert: func(t *testing.T, actual *protocol.CompletionList) {
+				if diff := lspdiff.CompletionList(nil, actual); diff != "" {
+					t.Errorf("unexpected completion: %v", diff)
+				}
+			},
+		},
+		{
+			line:        13,
+			replacement: ` <div data-testid="count">{ fmt.`,
+			cursor:      `                               ^`,
+			assert: func(t *testing.T, actual *protocol.CompletionList) {
+				if !lspdiff.CompletionListContainsText(actual, "fmt.Sprintf") {
+					t.Errorf("expected fmt.Sprintf to be in the completion list")
+				}
+			},
+		},
+		{
+			line:        13,
+			replacement: ` <div data-testid="count">{ fmt.Sprintf("%d",`,
+			cursor:      `                                            ^`,
+			assert: func(t *testing.T, actual *protocol.CompletionList) {
+				if actual == nil {
+					t.Errorf("expected completion list to not be nil")
+				}
+				if len(actual.Items) != 0 {
+					t.Errorf("expected completion list to be empty")
+				}
+			},
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
+			// Edit the file.
+			updated := strings.ReplaceAll(string(templFile), `<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`, test.replacement)
+			err = server.DidChange(ctx, &protocol.DidChangeTextDocumentParams{
+				TextDocument: protocol.VersionedTextDocumentIdentifier{
+					TextDocumentIdentifier: protocol.TextDocumentIdentifier{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+					},
+					Version: int32(i + 2),
+				},
+				ContentChanges: []protocol.TextDocumentContentChangeEvent{
+					{
+						Range: nil,
+						Text:  updated,
+					},
+				},
+			})
+			if err != nil {
+				t.Errorf("failed to change file: %v", err)
+				return
+			}
+
+			actual, err := server.Completion(ctx, &protocol.CompletionParams{
+				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+					},
+					// Positions are zero indexed.
+					Position: protocol.Position{
+						Line:      uint32(test.line - 1),
+						Character: uint32(len(test.replacement) - 1),
+					},
+				},
+			})
+			if err != nil {
+				t.Errorf("failed to get completion: %v", err)
+				return
+			}
+			test.assert(t, actual)
+		})
+	}
+	log.Info("Completed test")
+}
+
+func TestHover(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	log := zap.NewNop()
+
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	if err != nil {
+		t.Fatalf("failed to setup test: %v", err)
+	}
+	defer teardown(t)
+	defer cancel()
 
 	templFile, err := os.ReadFile(appDir + "/templates.templ")
 	if err != nil {
@@ -78,7 +206,8 @@ func TestHover(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Fatalf("failed to register open file: %v", err)
+		t.Errorf("failed to register open file: %v", err)
+		return
 	}
 	log.Info("Calling hover")
 	hr, err := server.Hover(ctx, &protocol.HoverParams{
@@ -103,9 +232,17 @@ func TestHover(t *testing.T) {
 	}
 	if diff := lspdiff.Hover(expectedHover, *hr); diff != "" {
 		t.Errorf("unexpected hover: %v", diff)
+		return
 	}
+}
 
-	cancel()
+func replaceInFile(name, src, tgt string) error {
+	data, err := os.ReadFile(name)
+	if err != nil {
+		return err
+	}
+	updated := strings.Replace(string(data), src, tgt, -1)
+	return os.WriteFile(name, []byte(updated), 0660)
 }
 
 func NewTestClient(log *zap.Logger) TestClient {

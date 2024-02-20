@@ -51,7 +51,7 @@ func (p Client) LogMessage(ctx context.Context, params *lsp.LogMessageParams) (e
 func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagnosticsParams) (err error) {
 	p.Log.Info("client <- server: PublishDiagnostics")
 	if strings.HasSuffix(string(params.URI), "go.mod") {
-		p.Log.Debug("client <- server: PublishDiagnostics: skipping go.mod diagnostics")
+		p.Log.Info("client <- server: PublishDiagnostics: skipping go.mod diagnostics")
 		return nil
 	}
 	// Log diagnostics.

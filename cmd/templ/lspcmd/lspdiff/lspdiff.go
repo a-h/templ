@@ -14,3 +14,21 @@ func Hover(expected, actual protocol.Hover) string {
 		cmpopts.IgnoreFields(protocol.MarkupContent{}, "Kind"),
 	)
 }
+
+func CompletionList(expected, actual *protocol.CompletionList) string {
+	return cmp.Diff(expected, actual,
+		cmpopts.IgnoreFields(protocol.CompletionList{}, "IsIncomplete"),
+	)
+}
+
+func CompletionListContainsText(cl *protocol.CompletionList, text string) bool {
+	if cl == nil {
+		return false
+	}
+	for _, item := range cl.Items {
+		if item.Label == text {
+			return true
+		}
+	}
+	return false
+}
