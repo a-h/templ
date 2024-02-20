@@ -34,7 +34,7 @@
           name = "templ";
           src = gitignore.lib.gitignoreSource ./.;
           subPackages = [ "cmd/templ" ];
-          vendorHash = "sha256-4tHofTnSNI/MBmrGdGsLNoXjxUC0+Gwp3PzzUwfUkQU=";
+          vendorHash = "sha256-U/KFUGi47dSE1YxKWOUlxvUR1BKI1snRjZlXZ8hY24c=";
           CGO_ENABLED = 0;
           flags = [
             "-trimpath"
@@ -63,6 +63,7 @@
           buildInputs = with pkgs; [
             (golangci-lint.override { buildGoModule = buildGo121Module; })
             go_1_21
+            gopls
             goreleaser
             nodejs
             xc.packages.${system}.xc

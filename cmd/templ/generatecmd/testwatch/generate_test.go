@@ -304,7 +304,16 @@ func Setup() (args TestArgs, teardown func(t *testing.T), err error) {
 	}()
 
 	// Wait for server to start.
-	time.Sleep(time.Second)
+	if err = waitForURL(args.AppURL); err != nil {
+		cancel()
+		wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start app server: %v", err)
+	}
+	if err = waitForURL(args.ProxyURL); err != nil {
+		cancel()
+		wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start proxy server: %v", err)
+	}
 
 	// Wait for exit.
 	teardown = func(t *testing.T) {
@@ -319,4 +328,69 @@ func Setup() (args TestArgs, teardown func(t *testing.T), err error) {
 		}
 	}
 	return args, teardown, err
+}
+
+func waitForURL(url string) (err error) {
+	var tries int
+	for {
+		time.Sleep(time.Second)
+		if tries > 20 {
+			return err
+		}
+		tries++
+		var resp *http.Response
+		resp, err = http.Get(url)
+		if err != nil {
+			fmt.Printf("failed to get %q: %v\n", url, err)
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			fmt.Printf("failed to get %q: %v\n", url, err)
+			err = fmt.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+			continue
+		}
+		return nil
+	}
+}
+
+func TestGenerateReturnsErrors(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not find working dir: %v", err)
+	}
+	moduleRoot, err := modcheck.WalkUp(wd)
+	if err != nil {
+		t.Fatalf("could not find local templ go.mod file: %v", err)
+	}
+
+	appDir, err := createTestProject(moduleRoot)
+	if err != nil {
+		t.Fatalf("failed to create test project: %v", err)
+	}
+	defer func() {
+		if err = os.RemoveAll(appDir); err != nil {
+			t.Fatalf("failed to remove test dir %q: %v", appDir, err)
+		}
+	}()
+
+	// Break the HTML.
+	templFile := filepath.Join(appDir, "templates.templ")
+	err = replaceInFile(templFile,
+		`<div data-testid="modification">Original</div>`,
+		`<div data-testid="modification" -unclosed div-</div>`)
+	if err != nil {
+		t.Errorf("failed to replace text in file: %v", err)
+	}
+
+	// Run.
+	err = generatecmd.Run(context.Background(), os.Stdout, generatecmd.Arguments{
+		Path:              appDir,
+		Watch:             false,
+		IncludeVersion:    false,
+		IncludeTimestamp:  false,
+		KeepOrphanedFiles: false,
+	})
+	if err == nil {
+		t.Errorf("expected generation error, got %v", err)
+	}
 }

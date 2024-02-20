@@ -2,81 +2,150 @@ package fmtcmd
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/processor"
+	"github.com/a-h/templ/cmd/templ/sloghandler"
 	parser "github.com/a-h/templ/parser/v2"
 	"github.com/natefinch/atomic"
 )
 
-const workerCount = 4
-
-func Run(w io.Writer, args []string) (err error) {
-	if len(args) > 0 {
-		return formatDir(w, args[0])
-	}
-	return formatReader(w, os.Stdin)
+type Arguments struct {
+	ToStdout    bool
+	Files       []string
+	LogLevel    string
+	WorkerCount int
 }
 
-func formatReader(w io.Writer, r io.Reader) (err error) {
-	var bytes []byte
-	bytes, err = io.ReadAll(r)
-	if err != nil {
-		return
+func Run(w io.Writer, args Arguments) (err error) {
+	// If no files are provided, read from stdin and write to stdout.
+	if len(args.Files) == 0 {
+		return format(writeToStdout, readFromStdin)
 	}
-	t, err := parser.ParseString(string(bytes))
-	if err != nil {
-		return fmt.Errorf("parsing error: %w", err)
+
+	level := slog.LevelInfo.Level()
+	switch args.LogLevel {
+	case "debug":
+		level = slog.LevelDebug.Level()
+	case "warn":
+		level = slog.LevelWarn.Level()
+	case "error":
+		level = slog.LevelError.Level()
 	}
-	err = t.Write(w)
-	if err != nil {
-		return fmt.Errorf("formatting error: %w", err)
+	log := slog.New(sloghandler.NewHandler(w, &slog.HandlerOptions{
+		AddSource: args.LogLevel == "debug",
+		Level:     level,
+	}))
+	if args.ToStdout {
+		log = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	}
-	return nil
+	process := func(fileName string) error {
+		read := readFromFile(fileName)
+		write := writeToFile
+		if args.ToStdout {
+			write = writeToStdout
+		}
+		return format(write, read)
+	}
+	dir := args.Files[0]
+	return NewFormatter(log, dir, process, args.WorkerCount).Run()
 }
 
-func formatDir(w io.Writer, dir string) (err error) {
+type Formatter struct {
+	Log         *slog.Logger
+	Dir         string
+	Process     func(fileName string) error
+	WorkerCount int
+}
+
+func NewFormatter(log *slog.Logger, dir string, process func(fileName string) error, workerCount int) *Formatter {
+	f := &Formatter{
+		Log:         log,
+		Dir:         dir,
+		Process:     process,
+		WorkerCount: workerCount,
+	}
+	if f.WorkerCount == 0 {
+		f.WorkerCount = runtime.NumCPU()
+	}
+	return f
+}
+
+func (f *Formatter) Run() (err error) {
 	start := time.Now()
 	results := make(chan processor.Result)
-	go processor.Process(dir, format, workerCount, results)
+	f.Log.Debug("Walking directory", slog.String("path", f.Dir))
+	go processor.Process(f.Dir, f.Process, f.WorkerCount, results)
 	var successCount, errorCount int
 	for r := range results {
 		if r.Error != nil {
-			err = errors.Join(err, fmt.Errorf("%s: %w", r.FileName, r.Error))
+			f.Log.Error(r.FileName, slog.Any("error", r.Error))
 			errorCount++
 			continue
 		}
-		fmt.Printf("%s complete in %v\n", r.FileName, r.Duration)
+		f.Log.Debug(r.FileName, slog.Duration("duration", r.Duration))
 		successCount++
 	}
-	fmt.Printf("Formatted %d templates with %d errors in %s\n", successCount+errorCount, errorCount, time.Since(start))
+	f.Log.Info("Format complete", slog.Int("count", successCount+errorCount), slog.Int("errors", errorCount), slog.Duration("duration", time.Since(start)))
+	if errorCount > 0 {
+		return fmt.Errorf("formatting failed")
+	}
 	return
 }
 
-func format(fileName string) (err error) {
-	contents, err := os.ReadFile(fileName)
+type reader func() (fileName, src string, err error)
+
+func readFromStdin() (fileName, src string, err error) {
+	b, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		return fmt.Errorf("failed to read file %q: %w", fileName, err)
+		return "", "", fmt.Errorf("failed to read stdin: %w", err)
 	}
-	t, err := parser.ParseString(string(contents))
+	return "stdin.templ", string(b), nil
+}
+
+func readFromFile(name string) reader {
+	return func() (fileName, src string, err error) {
+		b, err := os.ReadFile(name)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to read file %q: %w", fileName, err)
+		}
+		return name, string(b), nil
+	}
+}
+
+type writer func(fileName, tgt string) error
+
+var mu sync.Mutex
+
+func writeToStdout(fileName, tgt string) error {
+	mu.Lock()
+	defer mu.Unlock()
+	_, err := os.Stdout.Write([]byte(tgt))
+	return err
+}
+
+func writeToFile(fileName, tgt string) error {
+	return atomic.WriteFile(fileName, bytes.NewBufferString(tgt))
+}
+
+func format(write writer, read reader) (err error) {
+	fileName, src, err := read()
 	if err != nil {
-		return fmt.Errorf("%s parsing error: %w", fileName, err)
+		return err
+	}
+	t, err := parser.ParseString(src)
+	if err != nil {
+		return err
 	}
 	w := new(bytes.Buffer)
-	err = t.Write(w)
-	if err != nil {
-		return fmt.Errorf("%s formatting error: %w", fileName, err)
+	if err = t.Write(w); err != nil {
+		return fmt.Errorf("formatting error: %w", err)
 	}
-	if string(contents) == w.String() {
-		return nil
-	}
-	err = atomic.WriteFile(fileName, w)
-	if err != nil {
-		return fmt.Errorf("%s file write error: %w", fileName, err)
-	}
-	return
+	return write(fileName, w.String())
 }

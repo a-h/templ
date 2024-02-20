@@ -23,7 +23,7 @@ func main() {
 	cs := services.NewCount(log, s)
 	h := handlers.New(log, cs)
 
-	var secureFlag bool
+	var secureFlag = true
 	if os.Getenv("SECURE_FLAG") == "false" {
 		secureFlag = false
 	}

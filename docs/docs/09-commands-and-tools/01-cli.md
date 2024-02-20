@@ -21,26 +21,41 @@ The `templ generate` command generates Go code from `*.templ` files in the curre
 The command provides additional options:
 
 ```
-  -cmd string
-        Set the command to run after generating code.
-  -f string
-        Optionally generates code for a single file, e.g. -f header.templ
-  -help
-        Print help and exit.
-  -path string
-        Generates code for all files in path. (default ".")
-  -pprof int
-        Port to start pprof web server on.
-  -proxy string
-        Set the URL to proxy after generating code and executing the command.
-  -proxyport int
-        The port the proxy will listen on. (default 7331)
-  -source-map-visualisations
-        Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
-  -w int
-        Number of workers to run in parallel. (default 4)
+usage: templ generate [<args>...]
+
+Generates Go code from templ files.
+
+Args:
+  -path <path>
+    Generates code for all files in path. (default .)
+  -f <file>
+    Optionally generates code for a single file, e.g. -f header.templ
+  -sourceMapVisualisations
+    Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
+  -include-version
+    Set to false to skip inclusion of the templ version in the generated code. (default true)
+  -include-timestamp
+    Set to true to include the current time in the generated code.
   -watch
-        Set to true to watch the path for changes and regenerate code.
+    Set to true to watch the path for changes and regenerate code.
+  -cmd <cmd>
+    Set the command to run after generating code.
+  -proxy
+    Set the URL to proxy after generating code and executing the command.
+  -proxyport
+    The port the proxy will listen on. (default 7331)
+  -w
+    Number of workers to use when generating code. (default runtime.NumCPUs)
+  -pprof
+    Port to run the pprof server on.
+  -keep-orphaned-files
+    Keeps orphaned generated templ files. (default false)
+  -v
+    Set log verbosity level to "debug". (default "info")
+  -log-level
+    Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
+  -help
+    Print help and exit.
 ```
 
 For example, to generate code for a single file:
