@@ -144,7 +144,7 @@ By inserting HTTP middleware, you can set values in the context that can be read
 
 ```templ title="component.templ"
 type contextKey string
-type contextClass = contextKey("class")
+var contextClass = contextKey("class")
 
 func Middleware(next http.Handler) http.Handler {
   return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request ) {
