@@ -1,6 +1,6 @@
 # GitHub Action for `templ`
 
-For teams looking to automate their Go code generation from `.templ` files, there is a GitHub Action for that: `templ-generator-action`. This action integrates seamlessly with your CI/CD pipeline, ensuring that your Go code is always synchronized with your templates.
+For teams looking to automate their Go code generation from `.templ` files, there is a GitHub Action for that: [templ-generator-action](https://github.com/marketplace/actions/templ-generator-action). This action integrates seamlessly with your CI/CD pipeline, ensuring that your Go code is always synchronized with your templates.
 
 ## Features
 
@@ -17,6 +17,4 @@ To add the `templ-generator-action` to your workflow, just include it as a step 
   uses: capthiron/templ-generator-action@v1
 ```
 
-For detailed usage and configuration options, please refer to [templ-generator-action](https://github.com/capthiron/templ-generator-action).
-
-You can find and install the templ-generator-action from the [GitHub Marketplace](https://github.com/marketplace/actions/templ-generator-action).
+For detailed usage and configuration options, please refer to the [GitHub repository](https://github.com/capthiron/templ-generator-action).
