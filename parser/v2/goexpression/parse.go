@@ -2,7 +2,6 @@ package goexpression
 
 import (
 	"errors"
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -18,7 +17,7 @@ func Case(content string) (start, end int, err error) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	prefix := "switch {\n"
-	src := prefix + content + "\n}"
+	src := prefix + content
 	start, end, err = extract(src, func(src string, body []ast.Stmt) (start, end int, err error) {
 		sw, ok := body[0].(*ast.SwitchStmt)
 		if !ok {
@@ -33,8 +32,6 @@ func Case(content string) (start, end int, err error) {
 		}
 		start = int(stmt.Case) - 1
 		end = int(stmt.Colon)
-		fmt.Printf("stuff: %q\n", src[start:end])
-		fmt.Printf("full: %q\n", src)
 		return start, end, nil
 	})
 	if err != nil {
@@ -43,7 +40,6 @@ func Case(content string) (start, end int, err error) {
 	// Since we added a `switch {` prefix, we need to remove it.
 	start -= len(prefix)
 	end -= len(prefix)
-	fmt.Printf("final: %q\n", src[start:end])
 	return start, end, nil
 }
 
@@ -109,7 +105,7 @@ func Expression(content string) (start, end int, err error) {
 			return 0, 0, ErrExpectedNodeNotFound
 		}
 		start = int(stmt.Pos()) - 1
-		end = int(stmt.End()) - 1
+		end = int(stmt.End())
 		return start, end, nil
 	})
 	if err != nil {
@@ -221,6 +217,7 @@ func extract(content string, extractor Extractor) (start, end int, err error) {
 		return 0, 0, parseErr
 	}
 
+	var found bool
 	ast.Inspect(node, func(n ast.Node) bool {
 		// Find the "templ_container" function.
 		fn, ok := n.(*ast.FuncDecl)
@@ -234,11 +231,15 @@ func extract(content string, extractor Extractor) (start, end int, err error) {
 		if fn.Body.List == nil || len(fn.Body.List) == 0 {
 			return false
 		}
+		found = true
 		start, end, err = extractor(src, fn.Body.List)
 		start -= len(prefix)
 		end -= len(prefix)
 		return false
 	})
+	if !found {
+		return 0, 0, ErrExpectedNodeNotFound
+	}
 
 	if start > len(content)-1 {
 		start = len(content) - 1

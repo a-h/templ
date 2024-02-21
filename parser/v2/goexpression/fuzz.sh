@@ -1,14 +1,14 @@
-#echo If
-#go test -fuzz=FuzzIf -fuzztime=60s
-#echo For
-#go test -fuzz=FuzzFor -fuzztime=60s
-#echo Switch
-#go test -fuzz=FuzzSwitch -fuzztime=60s
-#echo Case
-#go test -fuzz=FuzzCase -fuzztime=60s
+echo If
+go test -fuzz=FuzzIf -fuzztime=120s
+echo For
+go test -fuzz=FuzzFor -fuzztime=120s
+echo Switch
+go test -fuzz=FuzzSwitch -fuzztime=120s
+echo Case
+go test -fuzz=FuzzCaseStandard -fuzztime=120s
 echo Default
-go test -fuzz=FuzzCaseDefault -fuzztime=60s
+go test -fuzz=FuzzCaseDefault -fuzztime=120s
 echo Expression
-go test -fuzz=FuzzExpression -fuzztime=60s
+go test -fuzz=FuzzExpression -fuzztime=120s
 echo SliceArgs
-go test -fuzz=FuzzSliceArgs -fuzztime=60s
+go test -fuzz=FuzzSliceArgs -fuzztime=120s

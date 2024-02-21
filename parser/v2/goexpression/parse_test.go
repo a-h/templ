@@ -60,8 +60,11 @@ func FuzzIf(f *testing.F) {
 }
 
 func panicIfInvalid(src string, start, end int) {
-	if start < 0 || end < 0 {
-		panic("negative start or end")
+	if start < 0 {
+		panic(fmt.Sprintf("start %d < 0: %q", start, src))
+	}
+	if end < 0 {
+		panic(fmt.Sprintf("end %d < 0", end))
 	}
 	if start > len(src)-1 {
 		panic(fmt.Sprintf("start %d > %d", start, len(src)-1))
@@ -235,7 +238,7 @@ func TestCase(t *testing.T) {
 	}
 }
 
-func FuzzCase(f *testing.F) {
+func FuzzCaseStandard(f *testing.F) {
 	suffixes := []string{
 		"",
 		"\n<div>\ncase 1 content\n\t</div>\n\tcase 3:",
@@ -321,11 +324,16 @@ var expressionTests = []testInput{
 			  "nameb": "name_b",
 			})`,
 	},
+	{
+		name:  "call with braces and brackets",
+		input: `templates.New(test{}, other())`,
+	},
 }
 
 func TestExpression(t *testing.T) {
 	prefix := ""
 	suffixes := []string{
+		"",
 		"}",
 	}
 	for _, test := range expressionTests {
