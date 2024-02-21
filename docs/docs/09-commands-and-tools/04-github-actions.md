@@ -1,6 +1,6 @@
 # GitHub Action for `templ`
 
-For teams looking to automate their Go code generation from `.templ` files, we provide a GitHub Action: `templ-generator-action`. This action integrates seamlessly with your CI/CD pipeline, ensuring that your Go code is always synchronized with your templates.
+For teams looking to automate their Go code generation from `.templ` files, there is a GitHub Action for that: `templ-generator-action`. This action integrates seamlessly with your CI/CD pipeline, ensuring that your Go code is always synchronized with your templates.
 
 ## Features
 
