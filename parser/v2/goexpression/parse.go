@@ -2,6 +2,7 @@ package goexpression
 
 import (
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -13,28 +14,27 @@ var ErrContainerFuncNotFound = errors.New("parser error: templ container functio
 var ErrExpectedNodeNotFound = errors.New("parser error: expected node not found")
 
 func Case(content string) (start, end int, err error) {
-	if !(strings.HasPrefix(content, "case") || strings.HasPrefix(content, "default")) {
+	if !(strings.HasPrefix(content, "case ") || strings.HasPrefix(content, "default:")) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	prefix := "switch {\n"
-	start, end, err = extract(prefix+content+"\n}", func(src string, body []ast.Stmt) (start, end int, err error) {
+	src := prefix + content + "\n}"
+	start, end, err = extract(src, func(src string, body []ast.Stmt) (start, end int, err error) {
 		sw, ok := body[0].(*ast.SwitchStmt)
 		if !ok {
+			return 0, 0, ErrExpectedNodeNotFound
+		}
+		if sw.Body == nil || len(sw.Body.List) == 0 {
 			return 0, 0, ErrExpectedNodeNotFound
 		}
 		stmt, ok := sw.Body.List[0].(*ast.CaseClause)
 		if !ok {
 			return 0, 0, ErrExpectedNodeNotFound
 		}
-		if stmt.List == nil {
-			// Default case.
-			start = int(stmt.Case) - 1
-			end = int(stmt.Colon)
-			return start, end, nil
-		}
-		// Standard case.
 		start = int(stmt.Case) - 1
 		end = int(stmt.Colon)
+		fmt.Printf("stuff: %q\n", src[start:end])
+		fmt.Printf("full: %q\n", src)
 		return start, end, nil
 	})
 	if err != nil {
@@ -43,6 +43,7 @@ func Case(content string) (start, end int, err error) {
 	// Since we added a `switch {` prefix, we need to remove it.
 	start -= len(prefix)
 	end -= len(prefix)
+	fmt.Printf("final: %q\n", src[start:end])
 	return start, end, nil
 }
 
@@ -55,7 +56,7 @@ func If(content string) (start, end int, err error) {
 		if !ok {
 			return 0, 0, ErrExpectedNodeNotFound
 		}
-		start = int(stmt.If) + 2
+		start = int(stmt.If) + len("if")
 		end = latestEnd(start, stmt.Init, stmt.Cond)
 		return start, end, nil
 	})
@@ -238,5 +239,13 @@ func extract(content string, extractor Extractor) (start, end int, err error) {
 		end -= len(prefix)
 		return false
 	})
+
+	if start > len(content)-1 {
+		start = len(content) - 1
+	}
+	if end > len(content)-1 {
+		end = len(content) - 1
+	}
+
 	return start, end, err
 }
