@@ -87,7 +87,7 @@ GOCOVERDIR=coverage/fmt ./coverage/templ-cover fmt .
 GOCOVERDIR=coverage/generate ./coverage/templ-cover generate -include-version=false
 GOCOVERDIR=coverage/version ./coverage/templ-cover version
 # Run the unit tests.
-go test -cover ./... -args -test.gocoverdir="$PWD/coverage/unit"
+go test -cover ./... -coverpkg ./... -args -test.gocoverdir="$PWD/coverage/unit"
 # Display the combined percentage.
 go tool covdata percent -i=./coverage/fmt,./coverage/generate,./coverage/version,./coverage/unit
 # Generate a text coverage profile for tooling to use.
