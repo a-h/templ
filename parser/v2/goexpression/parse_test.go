@@ -60,21 +60,7 @@ func FuzzIf(f *testing.F) {
 }
 
 func panicIfInvalid(src string, start, end int) {
-	if start < 0 {
-		panic(fmt.Sprintf("start %d < 0: %q", start, src))
-	}
-	if end < 0 {
-		panic(fmt.Sprintf("end %d < 0", end))
-	}
-	if start > len(src)-1 {
-		panic(fmt.Sprintf("start %d > %d", start, len(src)-1))
-	}
-	if end > len(src)-1 {
-		panic(fmt.Sprintf("end %d > %d", end, len(src)-1))
-	}
-	if start > end {
-		panic(fmt.Sprintf("start %d > end %d", start, end))
-	}
+	_ = src[start:end]
 }
 
 var forTests = []testInput{
