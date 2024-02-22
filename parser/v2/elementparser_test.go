@@ -43,6 +43,13 @@ func TestAttributeParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "_",
 						Value: "show = true",
+						AttributeExpression: Expression{
+							Value: "_",
+							Range: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 6, Line: 0, Col: 6},
+							},
+						},
 					},
 				},
 			},
@@ -57,10 +64,24 @@ func TestAttributeParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "@click",
 						Value: "show = true",
+						AttributeExpression: Expression{
+							Value: "@click",
+							Range: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 11, Line: 0, Col: 11},
+							},
+						},
 					},
 					ConstantAttribute{
 						Name:  ":class",
 						Value: "{'foo': true}",
+						AttributeExpression: Expression{
+							Value: ":class",
+							Range: Range{
+								From: Position{Index: 26, Line: 0, Col: 26},
+								To:   Position{Index: 32, Line: 0, Col: 32},
+							},
+						},
 					},
 				},
 			},
@@ -75,10 +96,24 @@ func TestAttributeParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "id",
 						Value: "123",
+						AttributeExpression: Expression{
+							Value: "id",
+							Range: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 7, Line: 0, Col: 7},
+							},
+						},
 					},
 					ConstantAttribute{
 						Name:  "style",
 						Value: "padding: 10px",
+						AttributeExpression: Expression{
+							Value: "style",
+							Range: Range{
+								From: Position{Index: 14, Line: 0, Col: 14},
+								To:   Position{Index: 19, Line: 0, Col: 19},
+							},
+						},
 					},
 				},
 			},
@@ -111,6 +146,13 @@ func TestAttributeParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "class",
 						Value: "important",
+						AttributeExpression: Expression{
+							Value: "class",
+							Range: Range{
+								From: Position{Index: 23, Line: 2, Col: 3},
+								To:   Position{Index: 28, Line: 2, Col: 8},
+							},
+						},
 					},
 				},
 			},
@@ -145,12 +187,33 @@ if test {
 					ConstantAttribute{
 						Name:  "class",
 						Value: "itIsTrue",
+						AttributeExpression: Expression{
+							Value: "class",
+							Range: Range{
+								From: Position{Index: 13, Line: 2, Col: 1},
+								To:   Position{Index: 18, Line: 2, Col: 6},
+							},
+						},
 					},
 					BoolConstantAttribute{
 						Name: "noshade",
+						AttributeExpression: Expression{
+							Value: "noshade",
+							Range: Range{
+								From: Position{Index: 31, Line: 3, Col: 1},
+								To:   Position{Index: 38, Line: 3, Col: 8},
+							},
+						},
 					},
 					ExpressionAttribute{
 						Name: "name",
+						AttributeExpression: Expression{
+							Value: "name",
+							Range: Range{
+								From: Position{Index: 40, Line: 4, Col: 1},
+								To:   Position{Index: 44, Line: 4, Col: 5},
+							},
+						},
 						Expression: Expression{
 							Value: `"other"`,
 							Range: Range{
@@ -176,6 +239,13 @@ if test {
 			parser: StripType(boolExpressionAttributeParser),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
+				AttributeExpression: Expression{
+					Value: "noshade",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 8, Line: 0, Col: 8},
+					},
+				},
 				Expression: Expression{
 					Value: "true",
 					Range: Range{
@@ -199,6 +269,13 @@ if test {
 			parser: StripType(boolExpressionAttributeParser),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
+				AttributeExpression: Expression{
+					Value: "noshade",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 8, Line: 0, Col: 8},
+					},
+				},
 				Expression: Expression{
 					Value: "true",
 					Range: Range{
@@ -222,6 +299,13 @@ if test {
 			parser: StripType[Attribute](attributeParser{}),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
+				AttributeExpression: Expression{
+					Value: "noshade",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 8, Line: 0, Col: 8},
+					},
+				},
 				Expression: Expression{
 					Value: "true",
 					Range: Range{
@@ -268,6 +352,13 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "href",
 				Value: "test",
+				AttributeExpression: Expression{
+					Value: "href",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 5, Line: 0, Col: 5},
+					},
+				},
 			},
 		},
 		{
@@ -278,6 +369,13 @@ if test {
 				Name:        "href",
 				Value:       `no double quote in value`,
 				SingleQuote: false,
+				AttributeExpression: Expression{
+					Value: "href",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 5, Line: 0, Col: 5},
+					},
+				},
 			},
 		},
 		{
@@ -288,6 +386,13 @@ if test {
 				Name:        "href",
 				Value:       `"test"`,
 				SingleQuote: true,
+				AttributeExpression: Expression{
+					Value: "href",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 5, Line: 0, Col: 5},
+					},
+				},
 			},
 		},
 		{
@@ -297,6 +402,13 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "data-turbo-permanent",
 				Value: "value",
+				AttributeExpression: Expression{
+					Value: "data-turbo-permanent",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 21, Line: 0, Col: 21},
+					},
+				},
 			},
 		},
 		{
@@ -306,6 +418,13 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "data",
 				Value: "",
+				AttributeExpression: Expression{
+					Value: "data",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 5, Line: 0, Col: 5},
+					},
+				},
 			},
 		},
 		{
@@ -318,6 +437,13 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "data-script",
 				Value: "on click\n                do something\n             end",
+				AttributeExpression: Expression{
+					Value: "data-script",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 12, Line: 0, Col: 12},
+					},
+				},
 			},
 		},
 		{
@@ -329,6 +455,13 @@ if test {
 				Attributes: []Attribute{
 					BoolConstantAttribute{
 						Name: "data",
+						AttributeExpression: Expression{
+							Value: "data",
+							Range: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 9, Line: 0, Col: 9},
+							},
+						},
 					},
 				},
 			},
@@ -340,9 +473,23 @@ if test {
 			expected: Element{
 				Name:        "input",
 				IndentAttrs: true,
+				ElementExpression: Expression{
+					Value: "input",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 6, Line: 0, Col: 6},
+					},
+				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
 						Name: "required",
+						AttributeExpression: Expression{
+							Value: "required",
+							Range: Range{
+								From: Position{Index: 9, Line: 1, Col: 2},
+								To:   Position{Index: 17, Line: 1, Col: 10},
+							},
+						},
 					},
 				},
 			},
@@ -354,9 +501,23 @@ if test {
 			expected: Element{
 				Name:        "input",
 				IndentAttrs: true,
+				ElementExpression: Expression{
+					Value: "input",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 6, Line: 0, Col: 6},
+					},
+				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
 						Name: "required",
+						AttributeExpression: Expression{
+							Value: "required",
+							Range: Range{
+								From: Position{Index: 10, Line: 1, Col: 2},
+								To:   Position{Index: 18, Line: 1, Col: 10},
+							},
+						},
 					},
 				},
 			},
@@ -368,6 +529,13 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "href",
 				Value: `<">`,
+				AttributeExpression: Expression{
+					Value: "href",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 5, Line: 0, Col: 5},
+					},
+				},
 			},
 		},
 		{
@@ -377,6 +545,13 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "hx-target-*",
 				Value: `#errors`,
+				AttributeExpression: Expression{
+					Value: `hx-target-*`,
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 12, Line: 0, Col: 12},
+					},
+				},
 			},
 		},
 	}

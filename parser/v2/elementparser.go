@@ -119,8 +119,7 @@ var (
 			pi.Seek(start)
 			return
 		}
-
-		attr.AttributeExpression = NewExpression(attr.Name, pi.Position(), pi.PositionAt(pi.Index()+len(attr.Name)))
+		attr.AttributeExpression = NewExpression(attr.Name, pi.PositionAt(pi.Index()-len(attr.Name)), pi.Position())
 
 		// ="
 		result, ok, err := parse.Or(parse.String(`="`), parse.String(`='`)).Parse(pi)
@@ -173,6 +172,7 @@ var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr BoolCon
 		pi.Seek(start)
 		return
 	}
+	attr.AttributeExpression = NewExpression(attr.Name, pi.PositionAt(pi.Index()-len(attr.Name)), pi.Position())
 
 	// We have a name, but if we have an equals sign, it's not a constant boolean attribute.
 	next, ok := pi.Peek(1)
@@ -210,6 +210,7 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r BoolExpr
 		pi.Seek(start)
 		return
 	}
+	r.AttributeExpression = NewExpression(r.Name, pi.PositionAt(pi.Index()-len(r.Name)), pi.Position())
 
 	// Check whether this is a boolean expression attribute.
 	if _, ok, err = boolExpressionStart.Parse(pi); err != nil || !ok {
@@ -245,6 +246,7 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr Expressio
 		pi.Seek(start)
 		return
 	}
+	attr.AttributeExpression = NewExpression(attr.Name, pi.PositionAt(pi.Index()-len(attr.Name)), pi.Position())
 
 	// ={
 	if _, ok, err = parse.Or(parse.String("={ "), parse.String("={")).Parse(pi); err != nil || !ok {
@@ -391,6 +393,7 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 	r.Name = ot.Name
 	r.Attributes = ot.Attributes
 	r.IndentAttrs = ot.IndentAttrs
+	r.ElementExpression = NewExpression(r.Name, pi.PositionAt(pi.Index()-len(r.Name)), pi.Position())
 
 	// Once we've got an open tag, the rest must be present.
 	l := pi.Position().Line
@@ -448,6 +451,7 @@ var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, e
 		pi.Seek(start)
 		return
 	}
+	e.ElementExpression = NewExpression(e.Name, pi.PositionAt(pi.Index()-len(e.Name)), pi.Position())
 
 	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
 		pi.Seek(start)
