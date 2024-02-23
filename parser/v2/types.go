@@ -98,12 +98,6 @@ type Expression struct {
 	Range Range
 }
 
-// Diagnostic for template file.
-type Diagnostic struct {
-	Message string
-	Range   Range
-}
-
 type TemplateFile struct {
 	// Header contains comments or whitespace at the top of the file.
 	Header []TemplateFileGoExpression
@@ -111,8 +105,6 @@ type TemplateFile struct {
 	Package Package
 	// Nodes in the file.
 	Nodes []TemplateFileNode
-	// Diagnostics contains any errors or warnings.
-	Diagnostics []Diagnostic
 }
 
 func (tf TemplateFile) Write(w io.Writer) error {
@@ -177,6 +169,20 @@ func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
 	return err
 }
 
+func writeLinesIndented(w io.Writer, level int, s string) (err error) {
+	indent := strings.Repeat("\t", level)
+	lines := strings.Split(s, "\n")
+	indented := strings.Join(lines, "\n"+indent)
+	if _, err = io.WriteString(w, indent); err != nil {
+		return err
+	}
+	_, err = io.WriteString(w, indented)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func writeIndent(w io.Writer, level int, s ...string) (err error) {
 	indent := strings.Repeat("\t", level)
 	if _, err = io.WriteString(w, indent); err != nil {
@@ -233,13 +239,15 @@ func (ws Whitespace) Write(w io.Writer, indent int) error {
 //	  background-image: url('./somewhere.png');
 //	}
 type CSSTemplate struct {
-	Name       Expression
+	Name       string
+	Expression Expression
 	Properties []CSSProperty
 }
 
 func (css CSSTemplate) IsTemplateFileNode() bool { return true }
 func (css CSSTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "css ", css.Name.Value, "() {\n"); err != nil {
+	source := formatFunctionArguments(css.Expression.Value)
+	if err := writeIndent(w, indent, "css ", string(source), " {\n"); err != nil {
 		return err
 	}
 	for _, p := range css.Properties {
@@ -327,15 +335,15 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 //	  }
 //	}
 type HTMLTemplate struct {
-	Diagnostics []Diagnostic
-	Expression  Expression
-	Children    []Node
+	Expression Expression
+	Children   []Node
 }
 
 func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
 
 func (t HTMLTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "templ ", t.Expression.Value, " {\n"); err != nil {
+	source := formatFunctionArguments(t.Expression.Value)
+	if err := writeIndent(w, indent, "templ ", string(source), " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(w, indent+1, t.Children); err != nil {
@@ -378,8 +386,7 @@ func NewTrailingSpace(s string) (ts TrailingSpace, err error) {
 }
 
 type Nodes struct {
-	Diagnostics []Diagnostic
-	Nodes       []Node
+	Nodes []Node
 }
 
 // A Node appears within a template, e.g. an StringExpression, Element, IfExpression etc.
@@ -387,6 +394,11 @@ type Node interface {
 	IsNode() bool
 	// Write out the string.
 	Write(w io.Writer, indent int) error
+}
+
+type CompositeNode interface {
+	Node
+	ChildNodes() []Node
 }
 
 type WhitespaceTrailer interface {
@@ -424,7 +436,6 @@ type Element struct {
 	Children       []Node
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
-	Diagnostics    []Diagnostic
 }
 
 func (e Element) Trailing() TrailingSpace {
@@ -495,6 +506,9 @@ func containsNonTextNodes(nodes []Node) bool {
 	return false
 }
 
+func (e Element) ChildNodes() []Node {
+	return e.Children
+}
 func (e Element) IsNode() bool { return true }
 func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<", e.Name); err != nil {
@@ -907,16 +921,25 @@ type TemplElementExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
 	// Children returns the elements in a block element.
-	Children    []Node
-	Diagnostics []Diagnostic
+	Children []Node
 }
 
+func (tee TemplElementExpression) ChildNodes() []Node {
+	return tee.Children
+}
 func (tee TemplElementExpression) IsNode() bool { return true }
 func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
-	if len(tee.Children) == 0 {
-		return writeIndent(w, indent, "@", tee.Expression.Value)
+	source, err := format.Source([]byte(tee.Expression.Value))
+	if err != nil {
+		source = []byte(tee.Expression.Value)
 	}
-	if err := writeIndent(w, indent, "@", tee.Expression.Value, " {\n"); err != nil {
+	if err := writeLinesIndented(w, indent, "@"+string(source)); err != nil {
+		return err
+	}
+	if len(tee.Children) == 0 {
+		return nil
+	}
+	if _, err = io.WriteString(w, " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(w, indent+1, tee.Children); err != nil {
@@ -943,19 +966,26 @@ func (ChildrenExpression) Write(w io.Writer, indent int) error {
 // if p.Type == "test" && p.thing {
 // }
 type IfExpression struct {
-	Expression  Expression
-	Then        []Node
-	ElseIfs     []ElseIfExpression
-	Else        []Node
-	Diagnostics []Diagnostic
+	Expression Expression
+	Then       []Node
+	ElseIfs    []ElseIfExpression
+	Else       []Node
 }
 
 type ElseIfExpression struct {
-	Expression  Expression
-	Then        []Node
-	Diagnostics []Diagnostic
+	Expression Expression
+	Then       []Node
 }
 
+func (n IfExpression) ChildNodes() []Node {
+	var nodes []Node
+	nodes = append(nodes, n.Then...)
+	nodes = append(nodes, n.Else...)
+	for _, elseIf := range n.ElseIfs {
+		nodes = append(nodes, elseIf.Then...)
+	}
+	return nodes
+}
 func (n IfExpression) IsNode() bool { return true }
 func (n IfExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "if ", n.Expression.Value, " {\n"); err != nil {
@@ -998,6 +1028,13 @@ type SwitchExpression struct {
 	Cases      []CaseExpression
 }
 
+func (se SwitchExpression) ChildNodes() []Node {
+	var nodes []Node
+	for _, c := range se.Cases {
+		nodes = append(nodes, c.Children...)
+	}
+	return nodes
+}
 func (se SwitchExpression) IsNode() bool { return true }
 func (se SwitchExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "switch ", se.Expression.Value, " {\n"); err != nil {
@@ -1022,20 +1059,21 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 
 // case "Something":
 type CaseExpression struct {
-	Expression  Expression
-	Children    []Node
-	Diagnostics []Diagnostic
+	Expression Expression
+	Children   []Node
 }
 
 //	for i, v := range p.Addresses {
 //	  {! Address(v) }
 //	}
 type ForExpression struct {
-	Expression  Expression
-	Children    []Node
-	Diagnostics []Diagnostic
+	Expression Expression
+	Children   []Node
 }
 
+func (fe ForExpression) ChildNodes() []Node {
+	return fe.Children
+}
 func (fe ForExpression) IsNode() bool { return true }
 func (fe ForExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "for ", fe.Expression.Value, " {\n"); err != nil {
@@ -1065,6 +1103,9 @@ func (se StringExpression) Trailing() TrailingSpace {
 func (se StringExpression) IsNode() bool                  { return true }
 func (se StringExpression) IsStyleDeclarationValue() bool { return true }
 func (se StringExpression) Write(w io.Writer, indent int) error {
+	if isWhitespace(se.Expression.Value) {
+		se.Expression.Value = ""
+	}
 	return writeIndent(w, indent, `{ `, se.Expression.Value, ` }`)
 }
 
@@ -1077,7 +1118,8 @@ type ScriptTemplate struct {
 
 func (s ScriptTemplate) IsTemplateFileNode() bool { return true }
 func (s ScriptTemplate) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "script ", s.Name.Value, "(", s.Parameters.Value, ") {\n"); err != nil {
+	source := formatFunctionArguments(s.Name.Value + "(" + s.Parameters.Value + ")")
+	if err := writeIndent(w, indent, "script ", string(source), " {\n"); err != nil {
 		return err
 	}
 	if _, err := io.WriteString(w, s.Value); err != nil {
@@ -1087,4 +1129,15 @@ func (s ScriptTemplate) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+
+// formatFunctionArguments formats the function arguments, if possible.
+func formatFunctionArguments(expression string) string {
+	source := []byte(expression)
+	formatted, err := format.Source([]byte("func " + expression))
+	if err == nil {
+		formatted = bytes.TrimPrefix(formatted, []byte("func "))
+		source = formatted
+	}
+	return string(source)
 }

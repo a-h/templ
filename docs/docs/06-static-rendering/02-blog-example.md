@@ -20,7 +20,7 @@ templ contentComponent(title string, body templ.Component) {
 	<body>
 		<h1>{ title }</h1>
 		<div class="content">
-			{! body }
+			@body
 		</div>
 	</body>
 }

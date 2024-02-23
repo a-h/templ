@@ -91,6 +91,7 @@ templ usage() {
 
 ```html title="Output"
 <p data-testid="paragraph">Text</p>
+<hr>
 ```
 
 ## URL attributes
@@ -104,6 +105,18 @@ The `templ.URL` function sanitizes input URLs and checks that the protocol is `h
 ```templ
 templ component(p Person) {
   <a href={ templ.URL(p.URL) }>{ strings.ToUpper(p.Name) }</a>
+}
+```
+
+The `templ.URL` function only supports standard HTML elements and attributes (`<a href=""` and `<form action=""`).
+
+For use on non-standard HTML elements (e.g. HTMX's `hx-*` attributes), convert the `templ.URL` to a `string` after sanitization.
+
+```templ
+templ component(contact model.Contact) {
+  <div hx-get={ string(templ.URL(fmt.Sprintf("/contacts/%s/email", contact.ID)))}>
+    { contact.Name }
+  </div>
 }
 ```
 
@@ -147,3 +160,19 @@ templ Button(text string) {
 ## CSS attributes
 
 CSS handling is discussed in detail in [CSS style management](css-style-management).
+
+## JSON attributes
+
+To set an attribute's value to a JSON string (e.g. for HTMX's [hx-vals](https://htmx.org/attributes/hx-vals) or Alpine's [x-data](https://alpinejs.dev/directives/data)), serialize the value to a string using a function.
+
+```go
+func countriesJSON() string {
+	countries := []string{"Czech Republic", "Slovakia", "United Kingdom", "Germany", "Austria", "Slovenia"}
+	bytes, _ := json.Marshal(countries)
+	return string(bytes)
+}
+```templ
+templ SearchBox() {
+	<search-webcomponent suggestions={ countriesJSON() } />
+}
+```

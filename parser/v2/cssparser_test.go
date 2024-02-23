@@ -132,8 +132,9 @@ func TestCSSParser(t *testing.T) {
 			input: `css Name() {
 }`,
 			expected: CSSTemplate{
-				Name: Expression{
-					Value: "Name",
+				Name: "Name",
+				Expression: Expression{
+					Value: "Name()",
 					Range: Range{
 						From: Position{
 							Index: 4,
@@ -141,9 +142,9 @@ func TestCSSParser(t *testing.T) {
 							Col:   4,
 						},
 						To: Position{
-							Index: 8,
+							Index: 10,
 							Line:  0,
-							Col:   8,
+							Col:   10,
 						},
 					},
 				},
@@ -155,8 +156,9 @@ func TestCSSParser(t *testing.T) {
 			input: `css Name() {
 }`,
 			expected: CSSTemplate{
-				Name: Expression{
-					Value: "Name",
+				Name: "Name",
+				Expression: Expression{
+					Value: "Name()",
 					Range: Range{
 						From: Position{
 							Index: 4,
@@ -164,9 +166,9 @@ func TestCSSParser(t *testing.T) {
 							Col:   4,
 						},
 						To: Position{
-							Index: 8,
+							Index: 10,
 							Line:  0,
-							Col:   8,
+							Col:   10,
 						},
 					},
 				},
@@ -179,8 +181,9 @@ func TestCSSParser(t *testing.T) {
 background-color: #ffffff;
 }`,
 			expected: CSSTemplate{
-				Name: Expression{
-					Value: "Name",
+				Name: "Name",
+				Expression: Expression{
+					Value: "Name()",
 					Range: Range{
 						From: Position{
 							Index: 4,
@@ -188,9 +191,9 @@ background-color: #ffffff;
 							Col:   4,
 						},
 						To: Position{
-							Index: 8,
+							Index: 10,
 							Line:  0,
-							Col:   8,
+							Col:   10,
 						},
 					},
 				},
@@ -208,8 +211,9 @@ background-color: #ffffff;
 background-color: { constants.BackgroundColor };
 }`,
 			expected: CSSTemplate{
-				Name: Expression{
-					Value: "Name",
+				Name: "Name",
+				Expression: Expression{
+					Value: "Name()",
 					Range: Range{
 						From: Position{
 							Index: 4,
@@ -217,9 +221,9 @@ background-color: { constants.BackgroundColor };
 							Col:   4,
 						},
 						To: Position{
-							Index: 8,
+							Index: 10,
 							Line:  0,
-							Col:   8,
+							Col:   10,
 						},
 					},
 				},
@@ -239,6 +243,52 @@ background-color: { constants.BackgroundColor };
 										Index: 58,
 										Line:  1,
 										Col:   45,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "css: single expression with parameter",
+			input: `css Name(prop string) {
+background-color: { prop };
+}`,
+			expected: CSSTemplate{
+				Name: "Name",
+				Expression: Expression{
+					Value: "Name(prop string)",
+					Range: Range{
+						From: Position{
+							Index: 4,
+							Line:  0,
+							Col:   4,
+						},
+						To: Position{
+							Index: 21,
+							Line:  0,
+							Col:   21,
+						},
+					},
+				},
+				Properties: []CSSProperty{
+					ExpressionCSSProperty{
+						Name: "background-color",
+						Value: StringExpression{
+							Expression: Expression{
+								Value: "prop",
+								Range: Range{
+									From: Position{
+										Index: 44,
+										Line:  1,
+										Col:   20,
+									},
+									To: Position{
+										Index: 48,
+										Line:  1,
+										Col:   24,
 									},
 								},
 							},

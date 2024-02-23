@@ -119,7 +119,6 @@ outer:
 		}
 		if ok {
 			tf.Nodes = append(tf.Nodes, tn)
-			tf.Diagnostics = append(tf.Diagnostics, tn.Diagnostics...)
 			_, _, _ = parse.OptionalWhitespace.Parse(pi)
 			continue
 		}
@@ -160,7 +159,7 @@ outer:
 				return
 			}
 			hasTemplatePrefix := strings.HasPrefix(l, "templ ") || strings.HasPrefix(l, "css ") || strings.HasPrefix(l, "script ")
-			if hasTemplatePrefix && strings.HasSuffix(l, "{") {
+			if hasTemplatePrefix && strings.Contains(l, "(") {
 				// Unread the line.
 				pi.Seek(last)
 				// Take the code so far.

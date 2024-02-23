@@ -1,9 +1,6 @@
 package parser
 
 import (
-	"strings"
-	"unicode"
-
 	"github.com/a-h/parse"
 )
 
@@ -21,6 +18,7 @@ var cssParser = parse.Func(func(pi *parse.Input) (r CSSTemplate, ok bool, err er
 		return
 	}
 	r.Name = exp.Name
+	r.Expression = exp.Expression
 
 	for {
 		var cssProperty CSSProperty
@@ -64,66 +62,29 @@ var cssParser = parse.Func(func(pi *parse.Input) (r CSSTemplate, ok bool, err er
 
 // css Func() {
 type cssExpression struct {
-	Name Expression
+	Expression Expression
+	Name       string
 }
 
-var cssExpressionStartParser = parse.String("css ")
-
-var cssExpressionNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
-	var c string
-	if c, ok = in.Peek(1); !ok || !unicode.IsLetter(rune(c[0])) {
-		return
-	}
-	prefix, _, _ := parse.Letter.Parse(in)
-	suffix, _, _ := parse.AtMost(1000, parse.Any(parse.Letter, parse.ZeroToNine)).Parse(in)
-	return prefix + strings.Join(suffix, ""), true, nil
-})
-
 var cssExpressionParser = parse.Func(func(pi *parse.Input) (r cssExpression, ok bool, err error) {
-	// Check the prefix first.
-	if _, ok, err = cssExpressionStartParser.Parse(pi); err != nil || !ok {
-		return
+	start := pi.Index()
+
+	if !peekPrefix(pi, "css ") {
+		return r, false, nil
 	}
 
-	// Once we have the prefix, we must have a name and parameters.
-	// Read the name of the function.
-	from := pi.Position()
-	// If there's no match, the name wasn't correctly terminated.
-	var name string
-	if name, ok, err = cssExpressionNameParser.Parse(pi); err != nil || !ok {
-		err = parse.Error("css expression: invalid name", pi.Position())
-		return
-	}
-	r.Name = NewExpression(name, from, pi.Position())
-
-	// Eat the open bracket.
-	if _, ok, err = openBracket.Parse(pi); err != nil || !ok {
-		err = parse.Error("css expression: parameters missing open bracket", pi.Position())
-		return
+	// Once we have the prefix, everything to the brace is Go.
+	// e.g.
+	// css (x []string) Test() {
+	// becomes:
+	// func (x []string) Test() templ.CSSComponent {
+	if r.Name, r.Expression, err = parseCSSFuncDecl(pi); err != nil {
+		return r, false, err
 	}
 
-	// Check there's no parameters.
-	from = pi.Position()
-	if _, ok, err = parse.StringUntil(closeBracket).Parse(pi); err != nil {
-		return
-	}
-	// If there's no match, the name wasn't correctly terminated.
-	if !ok {
-		return r, ok, parse.Error("css expression: parameters missing close bracket", pi.Position())
-	}
-	if pi.Index()-int(from.Index) > 0 {
-		return r, ok, parse.Error("css expression: found unexpected parameters", pi.Position())
-	}
-
-	// Eat ") {".
-	if _, ok, err = expressionFuncEnd.Parse(pi); err != nil || !ok {
-		err = parse.Error("css expression: unterminated (missing ') {')", pi.Position())
-		return
-	}
-
-	// Expect a newline.
-	if _, ok, err = parse.NewLine.Parse(pi); err != nil || !ok {
-		err = parse.Error("css expression: missing terminating newline", pi.Position())
+	// Eat " {\n".
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+		err = parse.Error("css expression: parameters missing open bracket", pi.PositionAt(start))
 		return
 	}
 

@@ -1,0 +1,24 @@
+-- in --
+package p
+
+css Style(
+a string,
+b string,
+c string,
+) {
+	color: {a};
+	background-color: {b};
+	border-color: {c};
+}
+-- out --
+package p
+
+css Style(
+	a string,
+	b string,
+	c string,
+) {
+	color: { a };
+	background-color: { b };
+	border-color: { c };
+}

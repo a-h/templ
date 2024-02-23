@@ -27,29 +27,20 @@ func KillAll() (err error) {
 	return
 }
 
-func Stop() (err error) {
-	m.Lock()
-	defer m.Unlock()
-	for _, cmd := range running {
-		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
-		if err != nil {
-			return err
-		}
-	}
-	running = map[string]*exec.Cmd{}
-	return
+func Stop(cmd *exec.Cmd) (err error) {
+	return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 }
 
 func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err error) {
+	m.Lock()
+	defer m.Unlock()
 	cmd, ok := running[input]
 	if ok {
-		if err = Stop(); err != nil {
-			return
+		if err = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+			return cmd, err
 		}
 		delete(running, input)
 	}
-	m.Lock()
-	defer m.Unlock()
 	parts := strings.Fields(input)
 	executable := parts[0]
 	args := []string{}
