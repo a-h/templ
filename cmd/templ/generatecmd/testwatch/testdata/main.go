@@ -13,11 +13,11 @@ import (
 )
 
 type GzipResponseWriter struct {
-	http.ResponseWriter
+	w http.ResponseWriter
 }
 
-func (w *GzipResponseWriter) Header() Header {
-	return w.Header()
+func (w *GzipResponseWriter) Header() http.Header {
+	return w.w.Header()
 }
 
 func (w *GzipResponseWriter) Write(b []byte) (int, error) {
@@ -25,21 +25,22 @@ func (w *GzipResponseWriter) Write(b []byte) (int, error) {
 	gzw := gzip.NewWriter(&buf)
 	defer gzw.Close()
 
-	_, err = gzw.Write(b)
+	_, err := gzw.Write(b)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	err = gzw.Close()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
-	return w.Write(gzw)
+	w.w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+
+	return w.w.Write(buf.Bytes())
 }
 
-func (w *GzipResponseWriter) WriteHeader(statusCode int) (int, error) {
-	return w.Write(statusCode)
+func (w *GzipResponseWriter) WriteHeader(statusCode int) {
+	w.w.WriteHeader(statusCode)
 }
 
 var flagPort = flag.Int("port", 0, "Set the HTTP listen port")
@@ -55,9 +56,9 @@ func main() {
 
 	var count int
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if useGzip {
+		if useGzip != nil && *useGzip {
 			w.Header().Set("Content-Encoding", "gzip")
-			w = GzipResponseWriter{w}
+			w = &GzipResponseWriter{w: w}
 		}
 
 		count++
