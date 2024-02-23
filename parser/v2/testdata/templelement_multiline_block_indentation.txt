@@ -1,0 +1,22 @@
+-- in --
+package p
+
+templ f() {
+	@Other(
+			p.Test,
+"s",
+){
+	<p>hello</p>
+	}
+}
+-- out --
+package p
+
+templ f() {
+	@Other(
+		p.Test,
+		"s",
+	) {
+		<p>hello</p>
+	}
+}

@@ -125,6 +125,39 @@ const y = ` + "`456`"
 			t.Errorf("2: unexpected expression: %q", expr.Expression.Value)
 		}
 	})
+	// https://github.com/a-h/templ/issues/505
+	t.Run("template files can contain go expressions followed by multiline templates", func(t *testing.T) {
+		input := `package goof
+
+var a = "a"
+
+templ template(
+	a string,
+) {
+}`
+		tf, err := ParseString(input)
+		if err != nil {
+			t.Fatalf("failed to parse template, with t.Fatalf(parser %v", err)
+		}
+		if len(tf.Nodes) != 2 {
+			var nodeTypes []string
+			for _, n := range tf.Nodes {
+				nodeTypes = append(nodeTypes, reflect.TypeOf(n).Name())
+			}
+			t.Fatalf("expected 2 nodes, got %d nodes, %v\n%#v", len(tf.Nodes), nodeTypes, tf)
+		}
+		expr, isGoExpression := tf.Nodes[0].(TemplateFileGoExpression)
+		if !isGoExpression {
+			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
+		}
+		if expr.Expression.Value != `var a = "a"` {
+			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
+		}
+		_, isGoExpression = tf.Nodes[1].(HTMLTemplate)
+		if !isGoExpression {
+			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
+		}
+	})
 }
 
 func TestTemplateFileRoundTrip(t *testing.T) {

@@ -10,11 +10,14 @@ var stringExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err er
 		return
 	}
 
-	// Once we have a prefix, we must have an expression that returns a string.
+	// Once we have a prefix, we must have an expression that returns a string, with optional err.
 	var r StringExpression
-	if r.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
-		return
+	if r.Expression, err = parseGoSliceArgs(pi); err != nil {
+		return r, false, err
 	}
+
+	// Clear any optional whitespace.
+	_, _, _ = parse.OptionalWhitespace.Parse(pi)
 
 	// }
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {

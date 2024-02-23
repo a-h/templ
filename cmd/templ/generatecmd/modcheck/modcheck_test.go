@@ -1,4 +1,4 @@
-package generatecmd
+package modcheck
 
 import (
 	"testing"

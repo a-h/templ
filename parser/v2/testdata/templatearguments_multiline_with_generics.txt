@@ -1,0 +1,20 @@
+-- in --
+package p
+
+templ List(
+list1 list[item],
+list2 list[item],
+list3 list[item],
+) {
+	<div></div>
+}
+-- out --
+package p
+
+templ List(
+	list1 list[item],
+	list2 list[item],
+	list3 list[item],
+) {
+	<div></div>
+}

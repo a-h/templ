@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"runtime"
 
 	"github.com/a-h/templ"
@@ -90,6 +92,10 @@ Args:
     Port to run the pprof server on.
   -keep-orphaned-files
     Keeps orphaned generated templ files. (default false)
+  -v
+    Set log verbosity level to "debug". (default "info")
+  -log-level
+    Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
   -help
     Print help and exit.
 
@@ -113,39 +119,58 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	cmd.SetOutput(w)
 	fileNameFlag := cmd.String("f", "", "")
 	pathFlag := cmd.String("path", ".", "")
-	sourceMapVisualisations := cmd.Bool("sourceMapVisualisations", false, "")
+	sourceMapVisualisationsFlag := cmd.Bool("source-map-visualisations", false, "")
 	includeVersionFlag := cmd.Bool("include-version", true, "")
 	includeTimestampFlag := cmd.Bool("include-timestamp", false, "")
 	watchFlag := cmd.Bool("watch", false, "")
+	openBrowserFlag := cmd.Bool("open-browser", true, "")
 	cmdFlag := cmd.String("cmd", "", "")
 	proxyFlag := cmd.String("proxy", "", "")
 	proxyPortFlag := cmd.Int("proxyport", 7331, "")
 	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
 	pprofPortFlag := cmd.Int("pprof", 0, "")
 	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
+	verboseFlag := cmd.Bool("v", false, "")
+	logLevelFlag := cmd.String("log-level", "info", "")
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
 		fmt.Fprint(w, generateUsageText)
 		return
 	}
-	err = generatecmd.Run(w, generatecmd.Arguments{
+
+	logLevel := *logLevelFlag
+	if *verboseFlag {
+		logLevel = "debug"
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		<-signalChan
+		fmt.Fprintln(w, "Stopping...")
+		cancel()
+	}()
+	err = generatecmd.Run(ctx, w, generatecmd.Arguments{
 		FileName:                        *fileNameFlag,
 		Path:                            *pathFlag,
 		Watch:                           *watchFlag,
+		OpenBrowser:                     *openBrowserFlag,
 		Command:                         *cmdFlag,
 		Proxy:                           *proxyFlag,
 		ProxyPort:                       *proxyPortFlag,
 		WorkerCount:                     *workerCountFlag,
-		GenerateSourceMapVisualisations: *sourceMapVisualisations,
+		GenerateSourceMapVisualisations: *sourceMapVisualisationsFlag,
 		IncludeVersion:                  *includeVersionFlag,
 		IncludeTimestamp:                *includeTimestampFlag,
+		LogLevel:                        logLevel,
 		PPROFPort:                       *pprofPortFlag,
 		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
 	})
 	if err != nil {
 		color.New(color.FgRed).Fprint(w, "(✗) ")
-		fmt.Fprintln(w, err.Error())
+		fmt.Fprintln(w, "Command failed: "+err.Error())
 		return 1
 	}
 	return 0
@@ -199,7 +224,19 @@ Format stdin to stdout:
 
   templ fmt < header.templ
 
+Format file or directory to stdout:
+
+  templ fmt -stdout FILE
+
 Args:
+  -stdout
+    Prints to stdout instead of in-place format
+  -v
+    Set log verbosity level to "debug". (default "info")
+  -log-level
+    Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
+  -w
+    Number of workers to use when formatting code. (default runtime.NumCPUs).
   -help
     Print help and exit.
 `
@@ -211,14 +248,29 @@ func fmtCmd(w io.Writer, args []string) (code int) {
 		fmt.Fprint(w, fmtUsageText)
 	}
 	helpFlag := cmd.Bool("help", false, "")
+	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
+	verboseFlag := cmd.Bool("v", false, "")
+	logLevelFlag := cmd.String("log-level", "info", "")
+	stdout := cmd.Bool("stdout", false, "")
+
 	err := cmd.Parse(args)
 	if err != nil || *helpFlag {
 		cmd.Usage()
 		return
 	}
-	err = fmtcmd.Run(w, args)
+
+	logLevel := *logLevelFlag
+	if *verboseFlag {
+		logLevel = "debug"
+	}
+
+	err = fmtcmd.Run(w, fmtcmd.Arguments{
+		ToStdout:    *stdout,
+		Files:       cmd.Args(),
+		LogLevel:    logLevel,
+		WorkerCount: *workerCountFlag,
+	})
 	if err != nil {
-		fmt.Fprintln(w, err.Error())
 		return 1
 	}
 	return 0

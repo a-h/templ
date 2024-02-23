@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
 // Element.
@@ -214,10 +215,9 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r BoolExpr
 		return
 	}
 
-	// Once we have a prefix, we must have an expression that returns a template.
-	if r.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
-		err = parse.Error("boolean expression: expected Go expression not found", pi.Position())
-		return
+	// Once we have a prefix, we must have an expression that returns a boolean.
+	if r.Expression, err = parseGo("boolean attribute", pi, goexpression.Expression); err != nil {
+		return r, false, err
 	}
 
 	// Eat the Final brace.
@@ -251,14 +251,16 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr Expressio
 	}
 
 	// Expression.
-	if attr.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return
+	if attr.Expression, err = parseGoSliceArgs(pi); err != nil {
+		return attr, false, err
 	}
 
-	// Eat the final brace.
-	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
-		err = parse.Error("boolean expression: missing closing brace", pi.Position())
+	// Eat whitespace, plus the final brace.
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		return attr, false, err
+	}
+	if _, ok, err = closeBrace.Parse(pi); err != nil || !ok {
+		err = parse.Error("string expression attribute: missing closing brace", pi.Position())
 		return
 	}
 
@@ -281,8 +283,7 @@ var spreadAttributesParser = parse.Func(func(pi *parse.Input) (attr SpreadAttrib
 	}
 
 	// Expression.
-	if attr.Expression, ok, err = exp.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
+	if attr.Expression, err = parseGo("spread attributes", pi, goexpression.Expression); err != nil {
 		return
 	}
 
@@ -396,7 +397,6 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 		return
 	}
 	r.Children = nodes.Nodes
-	r.Diagnostics = nodes.Diagnostics
 	// If the children are not all on the same line, indent them
 	if l != pi.Position().Line {
 		r.IndentChildren = true

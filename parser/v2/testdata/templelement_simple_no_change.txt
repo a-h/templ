@@ -1,0 +1,12 @@
+-- in --
+package p
+
+templ f() {
+	@Other(p.Test)
+}
+-- out --
+package p
+
+templ f() {
+	@Other(p.Test)
+}

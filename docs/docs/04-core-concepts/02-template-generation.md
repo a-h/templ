@@ -34,7 +34,7 @@ templ generate --help
         Print help and exit.
   -path string
         Generates code for all files in path. (default ".")
-  -sourceMapVisualisations
+  -source-map-visualisations
         Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
   -w int
         Number of workers to run in parallel. (default runtime.NumCPU())

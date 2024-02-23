@@ -30,32 +30,27 @@ func KillAll() (err error) {
 	return
 }
 
-func Stop() (err error) {
+func Stop(cmd *exec.Cmd) (err error) {
+	kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
+	kill.Stderr = os.Stderr
+	kill.Stdout = os.Stdout
+	return kill.Run()
+}
+
+func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err error) {
 	m.Lock()
 	defer m.Unlock()
-	for _, cmd := range running {
+	cmd, ok := running[input]
+	if ok {
 		kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
 		kill.Stderr = os.Stderr
 		kill.Stdout = os.Stdout
 		err := kill.Run()
 		if err != nil {
-			return err
-		}
-	}
-	running = map[string]*exec.Cmd{}
-	return
-}
-
-func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err error) {
-	cmd, ok := running[input]
-	if ok {
-		if err = Stop(); err != nil {
-			return
+			return cmd, err
 		}
 		delete(running, input)
 	}
-	m.Lock()
-	defer m.Unlock()
 	parts := strings.Fields(input)
 	executable := parts[0]
 	args := []string{}
