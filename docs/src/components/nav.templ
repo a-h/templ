@@ -51,7 +51,7 @@ templ section(c *r.PageContext, page *r.Page, depth int) {
 		if len(page.Children) > 0 {
 			<div class="wrapper">
 				<div class="pl-1 inner">
-					@nav(c, page.Children, depth + 1)
+					@nav(c, page.Children, depth+1)
 				</div>
 			</div>
 		}
