@@ -1,41 +1,22 @@
-# Website
+# # Templ docs generator
 
-This website is built using [Docusaurus 2](https://docusaurus.io/), a modern static website generator.
+To edit docs, edit the relevant markdown files in `docs/`.
 
-### Installation
+To build the docs for production, `cd` into this directory, run `npm install` then `npm run build`.
 
-```
-$ yarn
-```
+To run the docs in localhost, run `npm run dev`. This will not watch for file changes, 
+>so when you make changes you will need to stop the server and run `npm run build` again
 
-### Local Development
-
-```
-$ yarn start
-```
-
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
-
-### Build
-
-```
-$ yarn build
+`npm run build` is a shortcut for the following three commands:
+```sh
+tailwindcss -i ./static/in.css -o ./static/style.css
+templ generate ./src/components
+go run main.go
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
-
-### Deployment
-
-Using SSH:
-
+`npm run start` is a shortcut for the following three commands:
+```sh
+tailwindcss -i ./static/in.css -o ./static/style.css
+templ generate ./src/components
+go run main.go --local
 ```
-$ USE_SSH=true yarn deploy
-```
-
-Not using SSH:
-
-```
-$ GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
