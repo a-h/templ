@@ -3,45 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "build": "docusaurus build",
-    "swizzle": "docusaurus swizzle",
-    "deploy": "docusaurus deploy",
-    "clear": "docusaurus clear",
-    "serve": "docusaurus serve",
-    "write-translations": "docusaurus write-translations",
-    "write-heading-ids": "docusaurus write-heading-ids"
+    "start": "tailwindcss -i ./static/in.css -o ./static/style.css && templ generate ./src/components && go run main.go --local",
+    "build": "tailwindcss -i ./static/in.css -o ./static/style.css && templ generate ./src/components && go run main.go"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.3.2",
-    "@docusaurus/preset-classic": "^3.3.2",
-    "@docusaurus/theme-mermaid": "^3.3.2",
-    "@mdx-js/react": "^3.0.1",
-    "clsx": "2.0.0",
-    "prism-react-renderer": "^2.3.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.3.2",
-    "@docusaurus/tsconfig": "^3.3.0",
-    "@types/react": "^18.2.58",
-    "typescript": "~5.2.2"
-  },
-  "browserslist": {
-    "production": [
-      ">0.5%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "engines": {
-    "node": ">=18.2"
+    "@tailwindcss/typography": "^0.5.10",
+    "tailwindcss": "^3.4.1"
   }
 }
