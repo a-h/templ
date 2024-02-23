@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "start": "tailwindcss -i ./static/in.css -o ./static/style.css && templ generate ./src/components && go run main.go --local",
+    "build": "tailwindcss -i ./static/in.css -o ./static/style.css && templ generate ./src/components && go run main.go"
+  },
+  "dependencies": {
+    "@tailwindcss/typography": "^0.5.10",
+    "tailwindcss": "^3.4.1"
+  }
+}
