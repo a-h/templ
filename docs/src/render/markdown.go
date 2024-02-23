@@ -5,6 +5,15 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	fences "github.com/stefanfritsch/goldmark-fences"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
+	"go.abhg.dev/goldmark/anchor"
+	"go.abhg.dev/goldmark/mermaid"
+	"mvdan.cc/xurls/v2"
 )
 
 func NewMarkdownPage(relativePath string, file []byte) (*Page, error) {
@@ -43,6 +52,32 @@ func NewMarkdownPage(relativePath string, file []byte) (*Page, error) {
 
 	return &page, nil
 }
+
+var GoldmarkDefinition = goldmark.New(
+	goldmark.WithParserOptions(
+		parser.WithAutoHeadingID(),
+	),
+	goldmark.WithRendererOptions(
+		html.WithXHTML(),
+		html.WithUnsafe(),
+	),
+	goldmark.WithExtensions(
+		&anchor.Extender{
+			Texter: anchor.Text("#"),
+		},
+		extension.NewLinkify(
+			extension.WithLinkifyAllowedProtocols([][]byte{
+				[]byte("http:"),
+				[]byte("https:"),
+			}),
+			extension.WithLinkifyURLRegexp(
+				xurls.Strict(),
+			),
+		),
+		&mermaid.Extender{},
+		&fences.Extender{},
+	),
+)
 
 func renderTitleFromFileContent(relativePath string, file []byte) (string, error) {
 	var title string

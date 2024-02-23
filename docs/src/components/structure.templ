@@ -14,7 +14,7 @@ templ HTML(c *r.PageContext, pages []*r.Page, data string) {
 		</head>
 		<body class="bg-white dark:bg-gray-800 dark:text-gray-100">
 			@frame(header(), sidebar(c, pages), content(data), footer())
-			@script(r.BaseUrl)
+			@insertUrlInJs(r.BaseUrl)
 			<script src={ r.BaseUrl + "prism.js" }></script>
 			<script src={ r.BaseUrl + "prism-include-languages.js" }></script>
 			<script src={ r.BaseUrl + "main.js" }></script>
@@ -103,7 +103,7 @@ templ content(data string) {
 		<div id="search-results-list"></div>
 	</section>
 	<main id="main" class="p-4 prose dark:prose-invert">
-		@raw(data)
+		@templ.Raw(data)
 	</main>
 }
 
