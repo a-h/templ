@@ -1,1 +1,0 @@
-npm install tailwindcss@latest @tailwindcss/typography
