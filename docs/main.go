@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	outputPath = "./public"
+	outputPath = "./build"
 	docsPath   = "./docs"
 	staticPath = "./static"
-	defaultUrl = "https://nathan-hello.github.io/templ-pr-401/"
+	defaultUrl = "https://templ.guide/"
 )
 
 var docsFsys = os.DirFS(docsPath)
