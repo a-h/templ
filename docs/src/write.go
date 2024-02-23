@@ -67,7 +67,7 @@ func CreateMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page)
 			maps.Copy(files, subFiles)
 		}
 		if page.Type == render.PageMarkdown {
-			fmt.Printf("Creating page: %v \n", page.Href)
+			fmt.Printf("Writing file: %v\n", page.Href)
 			pc := &render.PageContext{
 				Title:  page.Title,
 				Active: page.Slug,

@@ -63,7 +63,7 @@ func main() {
 	if *localFlag {
 		fs := http.FileServer(http.Dir(outputPath))
 		http.Handle("/", fs)
-		fmt.Println("Listening on :8080...")
+		fmt.Printf("Starting server at %s\n", render.BaseUrl)
 		err := http.ListenAndServe(":8080", nil)
 		if err != nil {
 			log.Fatal(err)
