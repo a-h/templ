@@ -122,3 +122,15 @@ func searchIndex(pages []*render.Page) []map[string]string {
 
 	return data
 }
+
+func ResetOutputFolder(outputPath string) error {
+	fmt.Printf("Deleteing folder %v\n", outputPath)
+	if err := os.RemoveAll(outputPath); err != nil {
+		return err
+	}
+	fmt.Printf("Creating folder %v\n", outputPath)
+	if err := os.MkdirAll(outputPath, 0755); err != nil {
+		return err
+	}
+	return nil
+}

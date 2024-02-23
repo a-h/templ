@@ -40,7 +40,7 @@ func main() {
 		render.BaseUrl = defaultUrl
 	}
 
-	err := resetOutputFolder()
+	err := src.ResetOutputFolder(outputPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,8 +60,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if strings.HasPrefix(render.BaseUrl, "http://localhost") {
-		err := startLocalHttp()
+	if *localFlag {
+		fs := http.FileServer(http.Dir(outputPath))
+		http.Handle("/", fs)
+		fmt.Println("Listening on :8080...")
+		err := http.ListenAndServe(":8080", nil)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -106,27 +109,4 @@ func buildPages() ([]*render.Page, error) {
 
 	return pages, nil
 
-}
-
-func resetOutputFolder() error {
-	fmt.Printf("Deleteing folder %v\n", outputPath)
-	if err := os.RemoveAll(outputPath); err != nil {
-		return err
-	}
-	fmt.Printf("Creating folder %v\n", outputPath)
-	if err := os.MkdirAll(outputPath, 0755); err != nil {
-		return err
-	}
-	return nil
-}
-
-func startLocalHttp() error {
-	fs := http.FileServer(http.Dir(outputPath))
-	http.Handle("/", fs)
-	fmt.Println("Listening on :8080...")
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		return err
-	}
-	return nil
 }
