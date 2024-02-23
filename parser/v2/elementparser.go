@@ -13,9 +13,10 @@ import (
 
 // Element open tag.
 type elementOpenTag struct {
-	Name        string
-	Attributes  []Attribute
-	IndentAttrs bool
+	Name              string
+	Attributes        []Attribute
+	IndentAttrs       bool
+	ElementExpression Expression
 }
 
 var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, ok bool, err error) {
@@ -32,6 +33,7 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 		pi.Seek(start)
 		return
 	}
+	e.ElementExpression = NewExpression(e.Name, pi.PositionAt(pi.Index()-len(e.Name)), pi.Position())
 
 	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
 		pi.Seek(start)
@@ -393,7 +395,7 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 	r.Name = ot.Name
 	r.Attributes = ot.Attributes
 	r.IndentAttrs = ot.IndentAttrs
-	r.ElementExpression = NewExpression(r.Name, pi.PositionAt(pi.Index()-len(r.Name)), pi.Position())
+	r.ElementExpression = ot.ElementExpression
 
 	// Once we've got an open tag, the rest must be present.
 	l := pi.Position().Line

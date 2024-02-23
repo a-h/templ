@@ -944,10 +944,24 @@ func TestElementParser(t *testing.T) {
 >Test</p>`,
 			expected: Element{
 				Name: "p",
+				ElementExpression: Expression{
+					Value: "p",
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 3, Line: 0, Col: 3},
+					},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "style",
 						Value: "padding: 10px",
+						AttributeExpression: Expression{
+							Value: "style",
+							Range: Range{
+								From: Position{Index: 3, Line: 0, Col: 3},
+								To:   Position{Index: 8, Line: 0, Col: 8},
+							},
+						},
 					},
 					ConditionalAttribute{
 						Expression: Expression{
@@ -969,6 +983,13 @@ func TestElementParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "class",
 								Value: "itIsTrue",
+								AttributeExpression: Expression{
+									Value: "class",
+									Range: Range{
+										From: Position{Index: 43, Line: 2, Col: 4},
+										To:   Position{Index: 48, Line: 2, Col: 9},
+									},
+								},
 							},
 						},
 					},
@@ -984,6 +1005,13 @@ func TestElementParser(t *testing.T) {
 			input: `<a></a>`,
 			expected: Element{
 				Name: "a",
+				ElementExpression: Expression{
+					Value: "a",
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 3, Line: 0, Col: 3},
+					},
+				},
 			},
 		},
 		{
@@ -991,6 +1019,13 @@ func TestElementParser(t *testing.T) {
 			input: `<a>The text</a>`,
 			expected: Element{
 				Name: "a",
+				ElementExpression: Expression{
+					Value: "a",
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 3, Line: 0, Col: 3},
+					},
+				},
 				Children: []Node{
 					Text{
 						Value: "The text",
@@ -1003,9 +1038,23 @@ func TestElementParser(t *testing.T) {
 			input: `<a><b/></a>`,
 			expected: Element{
 				Name: "a",
+				ElementExpression: Expression{
+					Value: "a",
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 3, Line: 0, Col: 3},
+					},
+				},
 				Children: []Node{
 					Element{
 						Name: "b",
+						ElementExpression: Expression{
+							Value: "b",
+							Range: Range{
+								From: Position{Index: 4, Line: 0, Col: 4},
+								To:   Position{Index: 5, Line: 0, Col: 5},
+							},
+						},
 					},
 				},
 			},
@@ -1015,9 +1064,23 @@ func TestElementParser(t *testing.T) {
 			input: `<a><b></b></a>`,
 			expected: Element{
 				Name: "a",
+				ElementExpression: Expression{
+					Value: "a",
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 3, Line: 0, Col: 3},
+					},
+				},
 				Children: []Node{
 					Element{
 						Name: "b",
+						ElementExpression: Expression{
+							Value: "b",
+							Range: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 6, Line: 0, Col: 6},
+							},
+						},
 					},
 				},
 			},
@@ -1027,10 +1090,24 @@ func TestElementParser(t *testing.T) {
 			input: `<a> <b> </b> </a>`,
 			expected: Element{
 				Name: "a",
+				ElementExpression: Expression{
+					Value: "a",
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 3, Line: 0, Col: 3},
+					},
+				},
 				Children: []Node{
 					Whitespace{Value: " "},
 					Element{
 						Name: "b",
+						ElementExpression: Expression{
+							Value: "b",
+							Range: Range{
+								From: Position{Index: 6, Line: 0, Col: 6},
+								To:   Position{Index: 7, Line: 0, Col: 7},
+							},
+						},
 						Children: []Node{
 							Whitespace{Value: " "},
 						},
@@ -1044,15 +1121,43 @@ func TestElementParser(t *testing.T) {
 			input: `<a><b></b><c><d/></c></a>`,
 			expected: Element{
 				Name: "a",
+				ElementExpression: Expression{
+					Value: "a",
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 3, Line: 0, Col: 3},
+					},
+				},
 				Children: []Node{
 					Element{
 						Name: "b",
+						ElementExpression: Expression{
+							Value: "b",
+							Range: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 6, Line: 0, Col: 6},
+							},
+						},
 					},
 					Element{
 						Name: "c",
+						ElementExpression: Expression{
+							Value: "c",
+							Range: Range{
+								From: Position{Index: 12, Line: 0, Col: 12},
+								To:   Position{Index: 13, Line: 0, Col: 13},
+							},
+						},
 						Children: []Node{
 							Element{
 								Name: "d",
+								ElementExpression: Expression{
+									Value: "d",
+									Range: Range{
+										From: Position{Index: 14, Line: 0, Col: 14},
+										To:   Position{Index: 15, Line: 0, Col: 15},
+									},
+								},
 							},
 						},
 					},
@@ -1064,6 +1169,13 @@ func TestElementParser(t *testing.T) {
 			input: `<div></div>`,
 			expected: Element{
 				Name: "div",
+				ElementExpression: Expression{
+					Value: "div",
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 5, Line: 0, Col: 5},
+					},
+				},
 			},
 		},
 		{
@@ -1071,6 +1183,13 @@ func TestElementParser(t *testing.T) {
 			input: `<div>{ "test" }</div>`,
 			expected: Element{
 				Name: "div",
+				ElementExpression: Expression{
+					Value: "div",
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 5, Line: 0, Col: 5},
+					},
+				},
 				Children: []Node{
 					StringExpression{
 						Expression: Expression{
@@ -1097,21 +1216,56 @@ func TestElementParser(t *testing.T) {
 			input: `<input  type="email" id="email" name="email" class={ "a", "b", "c",  templ.KV("c", false)}	placeholder="your@email.com" autocomplete="off"/>`,
 			expected: Element{
 				Name: "input",
+				ElementExpression: Expression{
+					Value: "input",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 6, Line: 0, Col: 6},
+					},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "type",
 						Value: "email",
+						AttributeExpression: Expression{
+							Value: "type",
+							Range: Range{
+								From: Position{Index: 8, Line: 0, Col: 8},
+								To:   Position{Index: 12, Line: 0, Col: 12},
+							},
+						},
 					},
 					ConstantAttribute{
 						Name:  "id",
 						Value: "email",
+						AttributeExpression: Expression{
+							Value: "id",
+							Range: Range{
+								From: Position{Index: 21, Line: 0, Col: 21},
+								To:   Position{Index: 23, Line: 0, Col: 23},
+							},
+						},
 					},
 					ConstantAttribute{
 						Name:  "name",
 						Value: "email",
+						AttributeExpression: Expression{
+							Value: "name",
+							Range: Range{
+								From: Position{Index: 32, Line: 0, Col: 32},
+								To:   Position{Index: 36, Line: 0, Col: 36},
+							},
+						},
 					},
 					ExpressionAttribute{
 						Name: "class",
+						AttributeExpression: Expression{
+							Value: "class",
+							Range: Range{
+								From: Position{Index: 45, Line: 0, Col: 45},
+								To:   Position{Index: 50, Line: 0, Col: 50},
+							},
+						},
 						Expression: Expression{
 							Value: `"a", "b", "c",  templ.KV("c", false)`,
 							Range: Range{
@@ -1131,10 +1285,78 @@ func TestElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "placeholder",
 						Value: "your@email.com",
+						AttributeExpression: Expression{
+							Value: "placeholder",
+							Range: Range{
+								From: Position{Index: 91, Line: 0, Col: 91},
+								To:   Position{Index: 102, Line: 0, Col: 102},
+							},
+						},
 					},
 					ConstantAttribute{
 						Name:  "autocomplete",
 						Value: "off",
+						AttributeExpression: Expression{
+							Value: "autocomplete",
+							Range: Range{
+								From: Position{Index: 120, Line: 0, Col: 120},
+								To:   Position{Index: 132, Line: 0, Col: 132},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "element: with multi-line attributes",
+			input: `<input
+	type="email" 
+	id="email" 
+	name="email"
+></input>`,
+			expected: Element{
+				Name:        "input",
+				IndentAttrs: true,
+				ElementExpression: Expression{
+					Value: "input",
+					Range: Range{
+						From: Position{Index: 1, Line: 0, Col: 1},
+						To:   Position{Index: 6, Line: 0, Col: 6},
+					},
+				},
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "type",
+						Value: "email",
+						AttributeExpression: Expression{
+							Value: "type",
+							Range: Range{
+								From: Position{Index: 8, Line: 1, Col: 1},
+								To:   Position{Index: 12, Line: 1, Col: 5},
+							},
+						},
+					},
+					ConstantAttribute{
+						Name:  "id",
+						Value: "email",
+						AttributeExpression: Expression{
+							Value: "id",
+							Range: Range{
+								From: Position{Index: 23, Line: 2, Col: 1},
+								To:   Position{Index: 25, Line: 2, Col: 3},
+							},
+						},
+					},
+					ConstantAttribute{
+						Name:  "name",
+						Value: "email",
+						AttributeExpression: Expression{
+							Value: "name",
+							Range: Range{
+								From: Position{Index: 36, Line: 3, Col: 1},
+								To:   Position{Index: 40, Line: 3, Col: 5},
+							},
+						},
 					},
 				},
 			},

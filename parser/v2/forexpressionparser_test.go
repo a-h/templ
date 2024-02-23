@@ -38,6 +38,13 @@ func TestForExpressionParser(t *testing.T) {
 					Whitespace{Value: "\t\t\t\t\t"},
 					Element{
 						Name: "div",
+						ElementExpression: Expression{
+							Value: "div",
+							Range: Range{
+								From: Position{Index: 38, Line: 1, Col: 7},
+								To:   Position{Index: 41, Line: 1, Col: 10},
+							},
+						},
 						Children: []Node{
 							StringExpression{
 								Expression: Expression{
@@ -87,6 +94,13 @@ func TestForExpressionParser(t *testing.T) {
 					Whitespace{Value: "\t\t\t\t\t"},
 					Element{
 						Name: "div",
+						ElementExpression: Expression{
+							Value: "div",
+							Range: Range{
+								From: Position{Index: 37, Line: 1, Col: 7},
+								To:   Position{Index: 40, Line: 1, Col: 10},
+							},
+						},
 						Children: []Node{
 							StringExpression{
 								Expression: Expression{

@@ -40,6 +40,13 @@ func TestIfExpression(t *testing.T) {
 				Then: []Node{
 					Element{
 						Name: "span",
+						ElementExpression: Expression{
+							Value: "span",
+							Range: Range{
+								From: Position{Index: 14, Line: 1, Col: 2},
+								To:   Position{Index: 18, Line: 1, Col: 6},
+							},
+						},
 						Children: []Node{
 							Whitespace{Value: "\n  "},
 							StringExpression{
@@ -188,6 +195,13 @@ func TestIfExpression(t *testing.T) {
 				Then: []Node{
 					Element{
 						Name: "span",
+						ElementExpression: Expression{
+							Value: "span",
+							Range: Range{
+								From: Position{Index: 14, Line: 1, Col: 2},
+								To:   Position{Index: 18, Line: 1, Col: 6},
+							},
+						},
 						Children: []Node{
 							Whitespace{Value: "\n  "},
 							StringExpression{
@@ -326,6 +340,13 @@ func TestIfExpression(t *testing.T) {
 							Whitespace{Value: "\t\t\t\t\t\t"},
 							Element{
 								Name: "div",
+								ElementExpression: Expression{
+									Value: "div",
+									Range: Range{
+										From: Position{Index: 31, Line: 2, Col: 8},
+										To:   Position{Index: 34, Line: 2, Col: 11},
+									},
+								},
 								Children: []Node{
 									StringExpression{
 										Expression: Expression{
