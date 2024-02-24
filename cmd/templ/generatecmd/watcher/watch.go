@@ -6,11 +6,18 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 )
 
-func Recursive(ctx context.Context, path string, out chan fsnotify.Event, errors chan error) (w *RecursiveWatcher, err error) {
+func Recursive(
+	ctx context.Context,
+	path string,
+	out chan fsnotify.Event,
+	errors chan error,
+) (w *RecursiveWatcher, err error) {
 	fsnw, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -20,6 +27,7 @@ func Recursive(ctx context.Context, path string, out chan fsnotify.Event, errors
 		w:      fsnw,
 		Events: out,
 		Errors: errors,
+		timers: make(map[string]*time.Timer),
 	}
 	go w.loop()
 	return w, w.Add(path)
@@ -60,10 +68,12 @@ func shouldIncludeFile(name string) bool {
 }
 
 type RecursiveWatcher struct {
-	ctx    context.Context
-	w      *fsnotify.Watcher
-	Events chan fsnotify.Event
-	Errors chan error
+	ctx     context.Context
+	w       *fsnotify.Watcher
+	Events  chan fsnotify.Event
+	Errors  chan error
+	timers  map[string]*time.Timer
+	timerMu sync.Mutex
 }
 
 func (w *RecursiveWatcher) Close() error {
@@ -88,7 +98,23 @@ func (w *RecursiveWatcher) loop() {
 			if !shouldIncludeFile(event.Name) {
 				continue
 			}
-			w.Events <- event
+			w.timerMu.Lock()
+			t, ok := w.timers[event.Name]
+			w.timerMu.Unlock()
+			if !ok {
+
+				t = time.AfterFunc(100*time.Millisecond, func() {
+					w.timerMu.Lock()
+					delete(w.timers, event.Name)
+					w.timerMu.Unlock()
+					w.Events <- event
+				})
+				w.timerMu.Lock()
+				w.timers[event.Name] = t
+				w.timerMu.Unlock()
+				continue
+			}
+			t.Reset(100 * time.Millisecond)
 		case err, ok := <-w.w.Errors:
 			if !ok {
 				return
