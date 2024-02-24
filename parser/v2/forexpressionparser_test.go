@@ -41,8 +41,8 @@ func TestForExpressionParser(t *testing.T) {
 						ElementExpression: Expression{
 							Value: "div",
 							Range: Range{
-								From: Position{Index: 38, Line: 1, Col: 7},
-								To:   Position{Index: 41, Line: 1, Col: 10},
+								From: Position{Index: 37, Line: 1, Col: 6},
+								To:   Position{Index: 40, Line: 1, Col: 9},
 							},
 						},
 						Children: []Node{
@@ -97,8 +97,8 @@ func TestForExpressionParser(t *testing.T) {
 						ElementExpression: Expression{
 							Value: "div",
 							Range: Range{
-								From: Position{Index: 37, Line: 1, Col: 7},
-								To:   Position{Index: 40, Line: 1, Col: 10},
+								From: Position{Index: 36, Line: 1, Col: 6},
+								To:   Position{Index: 39, Line: 1, Col: 9},
 							},
 						},
 						Children: []Node{

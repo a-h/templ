@@ -153,8 +153,8 @@ func TestTemplateParser(t *testing.T) {
 						ElementExpression: Expression{
 							Value: "span",
 							Range: Range{
-								From: Position{Index: 28, Line: 1, Col: 2},
-								To:   Position{Index: 32, Line: 1, Col: 6},
+								From: Position{Index: 27, Line: 1, Col: 1},
+								To:   Position{Index: 31, Line: 1, Col: 5},
 							},
 						},
 						Children: []Node{
@@ -213,8 +213,8 @@ func TestTemplateParser(t *testing.T) {
 						ElementExpression: Expression{
 							Value: "div",
 							Range: Range{
-								From: Position{Index: 28, Line: 1, Col: 2},
-								To:   Position{Index: 31, Line: 1, Col: 5},
+								From: Position{Index: 27, Line: 1, Col: 1},
+								To:   Position{Index: 30, Line: 1, Col: 4},
 							},
 						},
 						Children: []Node{
@@ -242,8 +242,8 @@ func TestTemplateParser(t *testing.T) {
 								ElementExpression: Expression{
 									Value: "span",
 									Range: Range{
-										From: Position{Index: 56, Line: 3, Col: 4},
-										To:   Position{Index: 60, Line: 3, Col: 8},
+										From: Position{Index: 55, Line: 3, Col: 3},
+										To:   Position{Index: 59, Line: 3, Col: 7},
 									},
 								},
 								Children: []Node{
@@ -327,8 +327,8 @@ func TestTemplateParser(t *testing.T) {
 								ElementExpression: Expression{
 									Value: "span",
 									Range: Range{
-										From: Position{Index: 43, Line: 2, Col: 4},
-										To:   Position{Index: 47, Line: 2, Col: 8},
+										From: Position{Index: 42, Line: 2, Col: 3},
+										To:   Position{Index: 46, Line: 2, Col: 7},
 									},
 								},
 								Children: []Node{
@@ -529,8 +529,8 @@ func TestTemplateParser(t *testing.T) {
 						ElementExpression: Expression{
 							Value: "a",
 							Range: Range{
-								From: Position{Index: 24, Line: 1, Col: 12},
-								To:   Position{Index: 25, Line: 1, Col: 13},
+								From: Position{Index: 14, Line: 1, Col: 2},
+								To:   Position{Index: 15, Line: 1, Col: 3},
 							},
 						},
 						Attributes: []Attribute{
@@ -689,8 +689,8 @@ func TestTemplateParser(t *testing.T) {
 						ElementExpression: Expression{
 							Value: "span",
 							Range: Range{
-								From: Position{Index: 60, Line: 1, Col: 20},
-								To:   Position{Index: 64, Line: 1, Col: 24},
+								From: Position{Index: 43, Line: 1, Col: 3},
+								To:   Position{Index: 47, Line: 1, Col: 7},
 							},
 						},
 						Attributes: []Attribute{SpreadAttributes{

@@ -83,8 +83,8 @@ default:
 								ElementExpression: Expression{
 									Value: "span",
 									Range: Range{
-										From: Position{Index: 31, Line: 2, Col: 3},
-										To:   Position{Index: 35, Line: 2, Col: 7},
+										From: Position{Index: 30, Line: 2, Col: 2},
+										To:   Position{Index: 34, Line: 2, Col: 6},
 									},
 								},
 								Children: []Node{
@@ -163,8 +163,8 @@ default:
 								ElementExpression: Expression{
 									Value: "span",
 									Range: Range{
-										From: Position{Index: 38, Line: 2, Col: 2},
-										To:   Position{Index: 42, Line: 2, Col: 6},
+										From: Position{Index: 37, Line: 2, Col: 1},
+										To:   Position{Index: 41, Line: 2, Col: 5},
 									},
 								},
 								Children: []Node{

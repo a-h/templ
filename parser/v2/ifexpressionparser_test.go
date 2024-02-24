@@ -43,8 +43,8 @@ func TestIfExpression(t *testing.T) {
 						ElementExpression: Expression{
 							Value: "span",
 							Range: Range{
-								From: Position{Index: 14, Line: 1, Col: 2},
-								To:   Position{Index: 18, Line: 1, Col: 6},
+								From: Position{Index: 13, Line: 1, Col: 1},
+								To:   Position{Index: 17, Line: 1, Col: 5},
 							},
 						},
 						Children: []Node{
@@ -198,8 +198,8 @@ func TestIfExpression(t *testing.T) {
 						ElementExpression: Expression{
 							Value: "span",
 							Range: Range{
-								From: Position{Index: 14, Line: 1, Col: 2},
-								To:   Position{Index: 18, Line: 1, Col: 6},
+								From: Position{Index: 13, Line: 1, Col: 1},
+								To:   Position{Index: 17, Line: 1, Col: 5},
 							},
 						},
 						Children: []Node{
@@ -343,8 +343,8 @@ func TestIfExpression(t *testing.T) {
 								ElementExpression: Expression{
 									Value: "div",
 									Range: Range{
-										From: Position{Index: 31, Line: 2, Col: 8},
-										To:   Position{Index: 34, Line: 2, Col: 11},
+										From: Position{Index: 30, Line: 2, Col: 7},
+										To:   Position{Index: 33, Line: 2, Col: 10},
 									},
 								},
 								Children: []Node{
