@@ -65,7 +65,7 @@ func TestWatchDoesNotDebounceDifferentEvents(t *testing.T) {
 			count++
 		case <-exp:
 			if count != 2 {
-				t.Errorf("expected 1 event, got %d", count)
+				t.Errorf("expected 2 event, got %d", count)
 			}
 			return
 		}
@@ -85,7 +85,7 @@ func TestWatchDoesNotDebounceSeparateEvents(t *testing.T) {
 	go func() {
 		rw.w.Events <- fsnotify.Event{Name: "test.templ"}
 		<-time.After(200 * time.Millisecond)
-		rw.w.Events <- fsnotify.Event{Name: "test2.templ"}
+		rw.w.Events <- fsnotify.Event{Name: "test.templ"}
 		cancel()
 		close(rw.w.Events)
 	}()
@@ -98,7 +98,7 @@ func TestWatchDoesNotDebounceSeparateEvents(t *testing.T) {
 			count++
 		case <-exp:
 			if count != 2 {
-				t.Errorf("expected 1 event, got %d", count)
+				t.Errorf("expected 2 event, got %d", count)
 			}
 			return
 		}

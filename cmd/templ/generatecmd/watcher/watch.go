@@ -72,8 +72,8 @@ type RecursiveWatcher struct {
 	w       *fsnotify.Watcher
 	Events  chan fsnotify.Event
 	Errors  chan error
-	timers  map[string]*time.Timer
 	timerMu sync.Mutex
+	timers  map[string]*time.Timer
 }
 
 func (w *RecursiveWatcher) Close() error {
