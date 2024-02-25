@@ -104,9 +104,6 @@ func (w *RecursiveWatcher) loop() {
 			if !ok {
 
 				t = time.AfterFunc(100*time.Millisecond, func() {
-					w.timerMu.Lock()
-					delete(w.timers, event.Name)
-					w.timerMu.Unlock()
 					w.Events <- event
 				})
 				w.timerMu.Lock()
