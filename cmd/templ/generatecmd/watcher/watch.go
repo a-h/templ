@@ -27,7 +27,7 @@ func Recursive(
 		w:      fsnw,
 		Events: out,
 		Errors: errors,
-		timers: make(map[string]*time.Timer),
+		timers: make(map[timerKey]*time.Timer),
 	}
 	go w.loop()
 	return w, w.Add(path)
@@ -73,7 +73,19 @@ type RecursiveWatcher struct {
 	Events  chan fsnotify.Event
 	Errors  chan error
 	timerMu sync.Mutex
-	timers  map[string]*time.Timer
+	timers  map[timerKey]*time.Timer
+}
+
+type timerKey struct {
+	name string
+	op   fsnotify.Op
+}
+
+func timerKeyFromEvent(event fsnotify.Event) timerKey {
+	return timerKey{
+		name: event.Name,
+		op:   event.Op,
+	}
 }
 
 func (w *RecursiveWatcher) Close() error {
@@ -98,8 +110,9 @@ func (w *RecursiveWatcher) loop() {
 			if !shouldIncludeFile(event.Name) {
 				continue
 			}
+			tk := timerKeyFromEvent(event)
 			w.timerMu.Lock()
-			t, ok := w.timers[event.Name]
+			t, ok := w.timers[tk]
 			w.timerMu.Unlock()
 			if !ok {
 
@@ -107,7 +120,7 @@ func (w *RecursiveWatcher) loop() {
 					w.Events <- event
 				})
 				w.timerMu.Lock()
-				w.timers[event.Name] = t
+				w.timers[tk] = t
 				w.timerMu.Unlock()
 				continue
 			}
