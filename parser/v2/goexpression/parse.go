@@ -9,8 +9,10 @@ import (
 	"unicode"
 )
 
-var ErrContainerFuncNotFound = errors.New("parser error: templ container function not found")
-var ErrExpectedNodeNotFound = errors.New("parser error: expected node not found")
+var (
+	ErrContainerFuncNotFound = errors.New("parser error: templ container function not found")
+	ErrExpectedNodeNotFound  = errors.New("parser error: expected node not found")
+)
 
 func Case(content string) (start, end int, err error) {
 	if !(strings.HasPrefix(content, "case ") || strings.HasPrefix(content, "default:")) {
@@ -130,16 +132,11 @@ func SliceArgs(content string) (expr string, err error) {
 	}
 
 	var from, to int
-	var stop bool
-	ast.Inspect(node, func(n ast.Node) bool {
-		if stop {
-			return false
-		}
+	inspectFirstNode(node, func(n ast.Node) bool {
 		decl, ok := n.(*ast.CompositeLit)
 		if !ok {
 			return true
 		}
-		stop = true
 		from = int(decl.Lbrace)
 		to = int(decl.Rbrace) - 1
 		for _, e := range decl.Elts {
@@ -175,7 +172,7 @@ func Func(content string) (name, expr string, err error) {
 		return name, expr, parseErr
 	}
 
-	ast.Inspect(node, func(n ast.Node) bool {
+	inspectFirstNode(node, func(n ast.Node) bool {
 		// Find the first function declaration.
 		fn, ok := n.(*ast.FuncDecl)
 		if !ok {
@@ -204,6 +201,20 @@ func latestEnd(start int, nodes ...ast.Node) (end int) {
 	return end
 }
 
+func inspectFirstNode(node ast.Node, f func(ast.Node) bool) {
+	var stop bool
+	ast.Inspect(node, func(n ast.Node) bool {
+		if stop {
+			return true
+		}
+		if f(n) {
+			return true
+		}
+		stop = true
+		return false
+	})
+}
+
 // Extract a Go expression from the content.
 // The Go expression starts at "start" and ends at "end".
 // The reader should skip until "length" to pass over the expression and into the next
@@ -220,7 +231,7 @@ func extract(content string, extractor Extractor) (start, end int, err error) {
 	}
 
 	var found bool
-	ast.Inspect(node, func(n ast.Node) bool {
+	inspectFirstNode(node, func(n ast.Node) bool {
 		// Find the "templ_container" function.
 		fn, ok := n.(*ast.FuncDecl)
 		if !ok {

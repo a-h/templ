@@ -476,6 +476,42 @@ func TestChildren(t *testing.T) {
 	}
 }
 
+func TestFunc(t *testing.T) {
+	prefix := "func "
+	suffixes := []string{
+		"",
+		"}",
+		"}\nvar x = []struct {}{}",
+		"}\nfunc secondFunc() {}",
+	}
+	tests := []testInput{
+		{
+			name:  "void func",
+			input: `myfunc()`,
+		},
+		{
+			name:  "receiver func",
+			input: `(r recv) myfunc()`,
+		},
+	}
+	for _, test := range tests {
+		for i, suffix := range suffixes {
+			t.Run(fmt.Sprintf("%s_%d", test.name, i), func(t *testing.T) {
+				name, expr, err := Func(prefix + test.input + suffix)
+				if err != nil {
+					t.Errorf("failed to parse slice args: %v", err)
+				}
+				if diff := cmp.Diff(test.input, expr); diff != "" {
+					t.Error(diff)
+				}
+				if diff := cmp.Diff("myfunc", name); diff != "" {
+					t.Error(diff)
+				}
+			})
+		}
+	}
+}
+
 type testInput struct {
 	name        string
 	input       string
