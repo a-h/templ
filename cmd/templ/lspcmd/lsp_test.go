@@ -155,7 +155,7 @@ func TestCompletion(t *testing.T) {
 			}
 
 			// Give CI/CD pipeline executors some time.
-			time.Sleep(time.Millisecond * 100)
+			time.Sleep(time.Millisecond * 200)
 
 			actual, err := server.Completion(ctx, &protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
