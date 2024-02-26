@@ -115,7 +115,7 @@ func TestCompletion(t *testing.T) {
 			cursor:      `                               ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) {
 				if !lspdiff.CompletionListContainsText(actual, "fmt.Sprintf") {
-					t.Errorf("expected fmt.Sprintf to be in the completion list, but got %+v", actual)
+					t.Errorf("expected fmt.Sprintf to be in the completion list, but got %#v", actual)
 				}
 			},
 		},
@@ -155,7 +155,7 @@ func TestCompletion(t *testing.T) {
 			}
 
 			// Give CI/CD pipeline executors some time.
-			time.Sleep(time.Millisecond * 200)
+			time.Sleep(time.Millisecond * 300)
 
 			actual, err := server.Completion(ctx, &protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
