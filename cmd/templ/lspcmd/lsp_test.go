@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/a-h/protocol"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
@@ -152,6 +153,9 @@ func TestCompletion(t *testing.T) {
 				t.Errorf("failed to change file: %v", err)
 				return
 			}
+
+			// Give CI/CD pipeline executors some time.
+			time.Sleep(time.Millisecond * 100)
 
 			actual, err := server.Completion(ctx, &protocol.CompletionParams{
 				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
