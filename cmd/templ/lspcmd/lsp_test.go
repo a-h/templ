@@ -114,7 +114,7 @@ func TestCompletion(t *testing.T) {
 			cursor:      `                               ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) {
 				if !lspdiff.CompletionListContainsText(actual, "fmt.Sprintf") {
-					t.Errorf("expected fmt.Sprintf to be in the completion list")
+					t.Errorf("expected fmt.Sprintf to be in the completion list, but got %+v", actual)
 				}
 			},
 		},
