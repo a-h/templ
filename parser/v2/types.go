@@ -405,17 +405,6 @@ type WhitespaceTrailer interface {
 	Trailing() TrailingSpace
 }
 
-type HTMLExpression interface {
-	HTMLExpression() Expression
-}
-
-var (
-	_ HTMLExpression = Element{}
-	_ HTMLExpression = BoolConstantAttribute{}
-	_ HTMLExpression = BoolExpressionAttribute{}
-	_ HTMLExpression = ConstantAttribute{}
-)
-
 var (
 	_ WhitespaceTrailer = Element{}
 	_ WhitespaceTrailer = Text{}
@@ -452,10 +441,6 @@ type Element struct {
 
 func (e Element) Trailing() TrailingSpace {
 	return e.TrailingSpace
-}
-
-func (e Element) HTMLExpression() Expression {
-	return e.ElementExpression
 }
 
 var voidElements = map[string]struct{}{
@@ -719,10 +704,6 @@ func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, bca.String())
 }
 
-func (bca BoolConstantAttribute) HTMLExpression() Expression {
-	return bca.AttributeExpression
-}
-
 // href=""
 type ConstantAttribute struct {
 	Name                string
@@ -743,10 +724,6 @@ func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, ca.String())
 }
 
-func (ca ConstantAttribute) HTMLExpression() Expression {
-	return ca.AttributeExpression
-}
-
 // noshade={ templ.Bool(...) }
 type BoolExpressionAttribute struct {
 	Name                string
@@ -760,10 +737,6 @@ func (bea BoolExpressionAttribute) String() string {
 
 func (bea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, bea.String())
-}
-
-func (bea BoolExpressionAttribute) HTMLExpression() Expression {
-	return bea.AttributeExpression
 }
 
 // href={ ... }
@@ -823,10 +796,6 @@ func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
 		}
 	}
 	return writeIndent(w, indent, "}")
-}
-
-func (ea ExpressionAttribute) HTMLExpression() Expression {
-	return ea.AttributeExpression
 }
 
 // <a { spread... } />
