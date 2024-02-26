@@ -28,6 +28,12 @@ cd cmd/templ
 go build
 ```
 
+### nix-update-gomod2nix
+
+```sh
+gomod2nix
+```
+
 ### install-snapshot
 
 Build and install current version.

@@ -8,7 +8,7 @@ import (
 )
 
 func TestCallTemplateExpressionParser(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected CallTemplateExpression
@@ -96,7 +96,7 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 }
 
 func TestCallTemplateParserAllocsSuccess(t *testing.T) {
-	RunParserAllocTest[Node](t, callTemplateExpression, true, 52, `{! Other(p.Test) }`)
+	RunParserAllocTest[Node](t, callTemplateExpression, true, 54, `{! Other(p.Test) }`)
 }
 
 func TestCallTemplateParserAllocsSkip(t *testing.T) {
