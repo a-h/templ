@@ -97,36 +97,39 @@ func TestCompletion(t *testing.T) {
 		line        int
 		replacement string
 		cursor      string
-		assert      func(t *testing.T, cl *protocol.CompletionList)
+		assert      func(t *testing.T, cl *protocol.CompletionList) (msg string, ok bool)
 	}{
 		{
 			line:        13,
 			replacement: ` <div data-testid="count">{  `,
 			cursor:      `                            ^`,
-			assert: func(t *testing.T, actual *protocol.CompletionList) {
+			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
 				if diff := lspdiff.CompletionList(nil, actual); diff != "" {
-					t.Errorf("unexpected completion: %v", diff)
+					return fmt.Sprintf("unexpected completion: %v", diff), false
 				}
+				return "", true
 			},
 		},
 		{
 			line:        13,
 			replacement: ` <div data-testid="count">{ fmt.`,
 			cursor:      `                               ^`,
-			assert: func(t *testing.T, actual *protocol.CompletionList) {
+			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
 				if !lspdiff.CompletionListContainsText(actual, "fmt.Sprintf") {
-					t.Errorf("expected fmt.Sprintf to be in the completion list, but got %#v", actual)
+					return fmt.Sprintf("expected fmt.Sprintf to be in the completion list, but got %#v", actual), false
 				}
+				return "", true
 			},
 		},
 		{
 			line:        13,
 			replacement: ` <div data-testid="count">{ fmt.Sprintf("%d",`,
 			cursor:      `                                            ^`,
-			assert: func(t *testing.T, actual *protocol.CompletionList) {
+			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
 				if actual != nil && len(actual.Items) != 0 {
-					t.Errorf("expected completion list to be empty")
+					return "expected completion list to be empty", false
 				}
+				return "", true
 			},
 		},
 	}
@@ -154,26 +157,39 @@ func TestCompletion(t *testing.T) {
 				return
 			}
 
-			// Give CI/CD pipeline executors some time.
-			time.Sleep(time.Millisecond * 300)
-
-			actual, err := server.Completion(ctx, &protocol.CompletionParams{
-				TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-					TextDocument: protocol.TextDocumentIdentifier{
-						URI: uri.URI("file://" + appDir + "/templates.templ"),
+			// Give CI/CD pipeline executors some time because they're often quite slow.
+			var ok bool
+			var msg string
+			for i := 0; i < 3; i++ {
+				actual, err := server.Completion(ctx, &protocol.CompletionParams{
+					Context: &protocol.CompletionContext{
+						TriggerCharacter: ".",
+						TriggerKind:      protocol.CompletionTriggerKindTriggerCharacter,
 					},
-					// Positions are zero indexed.
-					Position: protocol.Position{
-						Line:      uint32(test.line - 1),
-						Character: uint32(len(test.replacement) - 1),
+					TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+						TextDocument: protocol.TextDocumentIdentifier{
+							URI: uri.URI("file://" + appDir + "/templates.templ"),
+						},
+						// Positions are zero indexed.
+						Position: protocol.Position{
+							Line:      uint32(test.line - 1),
+							Character: uint32(len(test.replacement) - 1),
+						},
 					},
-				},
-			})
-			if err != nil {
-				t.Errorf("failed to get completion: %v", err)
-				return
+				})
+				if err != nil {
+					t.Errorf("failed to get completion: %v", err)
+					return
+				}
+				msg, ok = test.assert(t, actual)
+				if !ok {
+					break
+				}
+				time.Sleep(time.Millisecond * 500)
 			}
-			test.assert(t, actual)
+			if !ok {
+				t.Error(msg)
+			}
 		})
 	}
 	log.Info("Completed test")
