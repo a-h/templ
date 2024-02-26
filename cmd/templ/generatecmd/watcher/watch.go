@@ -115,7 +115,6 @@ func (w *RecursiveWatcher) loop() {
 			t, ok := w.timers[tk]
 			w.timerMu.Unlock()
 			if !ok {
-
 				t = time.AfterFunc(100*time.Millisecond, func() {
 					w.Events <- event
 				})
