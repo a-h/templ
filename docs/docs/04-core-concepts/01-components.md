@@ -66,6 +66,8 @@ Go code:
 ```templ
 package main
 
+import "os"
+
 type Data struct {
 	message string
 }
@@ -82,6 +84,25 @@ func main() {
 }
 ```
 
+It is also possible to initlize a struct and call it's component method inline.
 
+```templ
+package main
 
+import "os"
+
+type Data struct {
+	message string
+}
+
+templ (d Data) Method() {
+	<div>{ d.message }</div>
+}
+
+templ Message() {
+	@Data{
+		message: "You can implement methods on a type.",
+	}.Method()
+}
+```
 
