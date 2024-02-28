@@ -180,6 +180,10 @@ func Func(content string) (name, expr string, err error) {
 		}
 		start := int(fn.Pos()) + len("func")
 		end := fn.Type.Params.End() - 1
+		if len(src) < int(end) {
+			err = errors.New("parser error: function identifier")
+			return false
+		}
 		expr = src[start:end]
 		name = fn.Name.Name
 		return false
