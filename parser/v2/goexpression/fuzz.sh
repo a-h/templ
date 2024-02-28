@@ -12,3 +12,5 @@ echo Expression
 go test -fuzz=FuzzExpression -fuzztime=120s
 echo SliceArgs
 go test -fuzz=FuzzSliceArgs -fuzztime=120s
+echo Funcs
+go test -fuzz=FuzzFuncs -fuzztime=120s
