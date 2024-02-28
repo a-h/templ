@@ -476,6 +476,39 @@ func TestChildren(t *testing.T) {
 	}
 }
 
+var funcTests = []testInput{
+	{
+		name:  "void func",
+		input: `myfunc()`,
+	},
+	{
+		name:  "receiver func",
+		input: `(r recv) myfunc()`,
+	},
+}
+
+func FuzzFuncs(f *testing.F) {
+	prefix := "func "
+	suffixes := []string{
+		"",
+		"}",
+		" }",
+		"}</a>\n}\nvar x = []struct {}{}",
+	}
+	for _, test := range funcTests {
+		for _, suffix := range suffixes {
+			f.Add(prefix + test.input + suffix)
+		}
+	}
+	f.Fuzz(func(t *testing.T, s string) {
+		_, _, err := Func(s)
+		if err != nil {
+			t.Skip()
+			return
+		}
+	})
+}
+
 func TestFunc(t *testing.T) {
 	prefix := "func "
 	suffixes := []string{
@@ -484,17 +517,7 @@ func TestFunc(t *testing.T) {
 		"}\nvar x = []struct {}{}",
 		"}\nfunc secondFunc() {}",
 	}
-	tests := []testInput{
-		{
-			name:  "void func",
-			input: `myfunc()`,
-		},
-		{
-			name:  "receiver func",
-			input: `(r recv) myfunc()`,
-		},
-	}
-	for _, test := range tests {
+	for _, test := range funcTests {
 		for i, suffix := range suffixes {
 			t.Run(fmt.Sprintf("%s_%d", test.name, i), func(t *testing.T) {
 				name, expr, err := Func(prefix + test.input + suffix)
