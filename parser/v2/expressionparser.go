@@ -37,8 +37,7 @@ var openBraceWithPadding = parse.StringFrom(optionalSpaces,
 var openBraceWithOptionalPadding = parse.Any(openBraceWithPadding, openBrace)
 
 var closeBrace = parse.String("}")
-var closeBraceWithPadding = parse.String(" }")
-var closeBraceWithOptionalPadding = parse.Any(closeBraceWithPadding, closeBrace)
+var closeBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, closeBrace)
 
 var openBracket = parse.String("(")
 var closeBracket = parse.String(")")

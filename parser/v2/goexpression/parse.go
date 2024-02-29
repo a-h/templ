@@ -4,8 +4,9 @@ import (
 	"errors"
 	"go/ast"
 	"go/parser"
-	"go/scanner"
 	"go/token"
+	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -15,8 +16,10 @@ var (
 	ErrExpectedNodeNotFound  = errors.New("parser error: expected node not found")
 )
 
+var defaultRegexp = regexp.MustCompile(`^default\s*:`)
+
 func Case(content string) (start, end int, err error) {
-	if !(strings.HasPrefix(content, "case ") || strings.HasPrefix(content, "default:")) {
+	if !(strings.HasPrefix(content, "case ") || defaultRegexp.MatchString(content)) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	prefix := "switch {\n"
@@ -101,46 +104,56 @@ func Switch(content string) (start, end int, err error) {
 	})
 }
 
-func isExpectedEOF(err error) bool {
-	errList, ok := err.(scanner.ErrorList)
-	if !ok {
-		return false
+var boundaryTokens = map[rune]any{
+	')':  nil,
+	'}':  nil,
+	']':  nil,
+	' ':  nil,
+	'\t': nil,
+	'\n': nil,
+	'@':  nil,
+	'<':  nil,
+	'+':  nil,
+	'.':  nil,
+}
+
+func allBoundaries(content string) (boundaries []int) {
+	for i, r := range content {
+		if _, ok := boundaryTokens[r]; ok {
+			boundaries = append(boundaries, i)
+			boundaries = append(boundaries, i+1)
+		}
 	}
-	if len(errList) == 0 {
-		return false
-	}
-	return errList[0].Msg == `expected 'EOF', found '}'`
+	boundaries = append(boundaries, len(content))
+	return
 }
 
 func Expression(content string) (start, end int, err error) {
-	expr, err := parser.ParseExpr(content)
-	if expr == nil {
+	var candidates []int
+	for _, to := range allBoundaries(content) {
+		expr, err := parser.ParseExpr(content[:to])
+		if err != nil {
+			continue
+		}
+		switch expr := expr.(type) {
+		case *ast.CallExpr:
+			end = int(expr.Rparen)
+		default:
+			end = int(expr.End()) - 1
+		}
+		// If the expression ends with `...` then it's a child spread expression.
+		if end < len(content) {
+			if strings.HasPrefix(content[end:], "...") {
+				end += len("...")
+			}
+		}
+		candidates = append(candidates, end)
+	}
+	if len(candidates) == 0 {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
-	switch expr := expr.(type) {
-	case *ast.BinaryExpr:
-		end = int(expr.End()) - 1
-		if err != nil && !isExpectedEOF(err) {
-			// An expression might be followed by a `</div>`.
-			// Go interprets `<` as an (invalid) binary expression, so read up to the first binary operator.
-			end = int(expr.OpPos) - 1
-		}
-	case *ast.BadExpr:
-		end = int(expr.End()) - 1
-	case *ast.CallExpr:
-		end = int(expr.Rparen)
-	case *ast.Ident:
-		end = int(expr.NamePos) + len(expr.Name) - 1
-	default:
-		end = int(expr.End()) - 1
-	}
-	// If the expression ends with `...` then it's a child spread expression.
-	if end < len(content) {
-		if strings.HasPrefix(content[end:], "...") {
-			end += len("...")
-		}
-	}
-	return start, end, nil
+	slices.Sort(candidates)
+	return 0, candidates[len(candidates)-1], nil
 }
 
 func SliceArgs(content string) (expr string, err error) {

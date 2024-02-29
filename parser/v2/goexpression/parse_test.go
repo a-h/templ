@@ -257,6 +257,14 @@ func TestCaseDefault(t *testing.T) {
 			name:  "default",
 			input: `default:`,
 		},
+		{
+			name:  "default with padding",
+			input: `default :`,
+		},
+		{
+			name:  "default with padding",
+			input: `default   :`,
+		},
 	}
 	for _, test := range tests {
 		for i, suffix := range suffixes {
@@ -323,6 +331,10 @@ var expressionTests = []testInput{
 		input: `direction == "newest"`,
 	},
 	{
+		name:  "boolean expression with parens",
+		input: `len(data.previousPageUrl) == 0`,
+	},
+	{
 		name:  "string concat",
 		input: `direction + "newest"`,
 	},
@@ -333,7 +345,10 @@ func TestExpression(t *testing.T) {
 	suffixes := []string{
 		"",
 		"}",
+		"\t}",
+		"  }",
 		"</div>",
+		"<p>/</p>",
 	}
 	for _, test := range expressionTests {
 		for i, suffix := range suffixes {
