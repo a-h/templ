@@ -314,6 +314,10 @@ var expressionTests = []testInput{
 		name:  "call with braces and brackets",
 		input: `templates.New(test{}, other())`,
 	},
+	{
+		name:  "bare variable",
+		input: `component`,
+	},
 }
 
 func TestExpression(t *testing.T) {
@@ -321,6 +325,7 @@ func TestExpression(t *testing.T) {
 	suffixes := []string{
 		"",
 		"}",
+		"</div>",
 	}
 	for _, test := range expressionTests {
 		for i, suffix := range suffixes {
@@ -548,7 +553,7 @@ func run(test testInput, prefix, suffix string, e extractor) func(t *testing.T) 
 		src := prefix + test.input + suffix
 		start, end, err := e(src)
 		if test.expectedErr == nil && err != nil {
-			t.Fatalf("expected nil error, got %v, %T", err, err)
+			t.Fatalf("expected nil error got error type %T: %v", err, err)
 		}
 		if test.expectedErr != nil && err == nil {
 			t.Fatalf("expected err %q, got %v", test.expectedErr.Error(), err)

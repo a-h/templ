@@ -308,6 +308,48 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "templelement: supports a slice of structs/interfaces",
+			input: `@templates[0].CreateTemplate()`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates[0].CreateTemplate()`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 30,
+							Line:  0,
+							Col:   30,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: bare variables are read until the end of the token",
+			input: `@template</div>`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `template`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 9,
+							Line:  0,
+							Col:   9,
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
