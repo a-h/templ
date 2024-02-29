@@ -101,17 +101,25 @@ func Switch(content string) (start, end int, err error) {
 }
 
 func Expression(content string) (start, end int, err error) {
-	start, end, err = extract(content, func(body []ast.Stmt) (start, end int, err error) {
-		stmt, ok := body[0].(*ast.ExprStmt)
-		if !ok {
-			return 0, 0, ErrExpectedNodeNotFound
+	expr, err := parser.ParseExpr(content)
+	if expr == nil {
+		return 0, 0, ErrExpectedNodeNotFound
+	}
+	switch expr := expr.(type) {
+	case *ast.BinaryExpr:
+		// An expression might be followed by a `</div>`.
+		// Go interprets `<` as an (invalid) binary expression, so read up to the first binary operator.
+		if err != nil {
+			end = int(expr.OpPos) - 1
 		}
-		start = int(stmt.Pos()) - 1
-		end = latestEnd(start, stmt)
-		return start, end, nil
-	})
-	if err != nil {
-		return 0, 0, err
+	case *ast.BadExpr:
+		end = int(expr.End()) - 1
+	case *ast.CallExpr:
+		end = int(expr.Rparen)
+	case *ast.Ident:
+		end = int(expr.NamePos) + len(expr.Name) - 1
+	default:
+		end = int(expr.End()) - 1
 	}
 	// If the expression ends with `...` then it's a child spread expression.
 	if end < len(content) {
