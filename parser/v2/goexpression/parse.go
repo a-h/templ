@@ -4,6 +4,7 @@ import (
 	"errors"
 	"go/ast"
 	"go/parser"
+	"go/scanner"
 	"go/token"
 	"strings"
 	"unicode"
@@ -100,6 +101,17 @@ func Switch(content string) (start, end int, err error) {
 	})
 }
 
+func isExpectedEOF(err error) bool {
+	errList, ok := err.(scanner.ErrorList)
+	if !ok {
+		return false
+	}
+	if len(errList) == 0 {
+		return false
+	}
+	return errList[0].Msg == `expected 'EOF', found '}'`
+}
+
 func Expression(content string) (start, end int, err error) {
 	expr, err := parser.ParseExpr(content)
 	if expr == nil {
@@ -107,9 +119,10 @@ func Expression(content string) (start, end int, err error) {
 	}
 	switch expr := expr.(type) {
 	case *ast.BinaryExpr:
-		// An expression might be followed by a `</div>`.
-		// Go interprets `<` as an (invalid) binary expression, so read up to the first binary operator.
-		if err != nil {
+		end = int(expr.End()) - 1
+		if err != nil && !isExpectedEOF(err) {
+			// An expression might be followed by a `</div>`.
+			// Go interprets `<` as an (invalid) binary expression, so read up to the first binary operator.
 			end = int(expr.OpPos) - 1
 		}
 	case *ast.BadExpr:

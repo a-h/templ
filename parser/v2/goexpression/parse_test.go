@@ -318,6 +318,14 @@ var expressionTests = []testInput{
 		name:  "bare variable",
 		input: `component`,
 	},
+	{
+		name:  "boolean expression",
+		input: `direction == "newest"`,
+	},
+	{
+		name:  "string concat",
+		input: `direction + "newest"`,
+	},
 }
 
 func TestExpression(t *testing.T) {
