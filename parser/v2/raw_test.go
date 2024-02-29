@@ -27,12 +27,9 @@ func TestRawElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "type",
 						Value: "text/css",
-						AttributeExpression: Expression{
-							Value: "type",
-							Range: Range{
-								From: Position{Index: 7, Line: 0, Col: 7},
-								To:   Position{Index: 11, Line: 0, Col: 11},
-							},
+						Range: Range{
+							From: Position{Index: 7, Line: 0, Col: 7},
+							To:   Position{Index: 11, Line: 0, Col: 11},
 						},
 					},
 				},
@@ -48,12 +45,9 @@ func TestRawElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "type",
 						Value: "text/css",
-						AttributeExpression: Expression{
-							Value: "type",
-							Range: Range{
-								From: Position{Index: 7, Line: 0, Col: 7},
-								To:   Position{Index: 11, Line: 0, Col: 11},
-							},
+						Range: Range{
+							From: Position{Index: 7, Line: 0, Col: 7},
+							To:   Position{Index: 11, Line: 0, Col: 11},
 						},
 					},
 				},
@@ -69,12 +63,9 @@ func TestRawElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "type",
 						Value: "vbscript",
-						AttributeExpression: Expression{
-							Value: "type",
-							Range: Range{
-								From: Position{Index: 8, Line: 0, Col: 8},
-								To:   Position{Index: 12, Line: 0, Col: 12},
-							},
+						Range: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
 					},
 				},

@@ -150,12 +150,9 @@ func TestTemplateParser(t *testing.T) {
 				Children: []Node{
 					Element{
 						Name: "span",
-						ElementExpression: Expression{
-							Value: "span",
-							Range: Range{
-								From: Position{Index: 27, Line: 1, Col: 1},
-								To:   Position{Index: 31, Line: 1, Col: 5},
-							},
+						Range: Range{
+							From: Position{Index: 27, Line: 1, Col: 1},
+							To:   Position{Index: 31, Line: 1, Col: 5},
 						},
 						Children: []Node{
 							StringExpression{
@@ -210,12 +207,9 @@ func TestTemplateParser(t *testing.T) {
 				Children: []Node{
 					Element{
 						Name: "div",
-						ElementExpression: Expression{
-							Value: "div",
-							Range: Range{
-								From: Position{Index: 27, Line: 1, Col: 1},
-								To:   Position{Index: 30, Line: 1, Col: 4},
-							},
+						Range: Range{
+							From: Position{Index: 27, Line: 1, Col: 1},
+							To:   Position{Index: 30, Line: 1, Col: 4},
 						},
 						Children: []Node{
 							Whitespace{Value: "\n  "},
@@ -239,12 +233,9 @@ func TestTemplateParser(t *testing.T) {
 							},
 							Element{
 								Name: "span",
-								ElementExpression: Expression{
-									Value: "span",
-									Range: Range{
-										From: Position{Index: 55, Line: 3, Col: 3},
-										To:   Position{Index: 59, Line: 3, Col: 7},
-									},
+								Range: Range{
+									From: Position{Index: 55, Line: 3, Col: 3},
+									To:   Position{Index: 59, Line: 3, Col: 7},
 								},
 								Children: []Node{
 									Whitespace{Value: "\n\t"},
@@ -324,12 +315,9 @@ func TestTemplateParser(t *testing.T) {
 							Whitespace{Value: "\t\t"},
 							Element{
 								Name: "span",
-								ElementExpression: Expression{
-									Value: "span",
-									Range: Range{
-										From: Position{Index: 42, Line: 2, Col: 3},
-										To:   Position{Index: 46, Line: 2, Col: 7},
-									},
+								Range: Range{
+									From: Position{Index: 42, Line: 2, Col: 3},
+									To:   Position{Index: 46, Line: 2, Col: 7},
 								},
 								Children: []Node{
 									Whitespace{"\n\t\t\t"},
@@ -389,34 +377,25 @@ func TestTemplateParser(t *testing.T) {
 					Whitespace{Value: "\t"},
 					Element{
 						Name: "input",
-						ElementExpression: Expression{
-							Value: "input",
-							Range: Range{
-								From: Position{Index: 28, Line: 1, Col: 2},
-								To:   Position{Index: 33, Line: 1, Col: 7},
-							},
+						Range: Range{
+							From: Position{Index: 28, Line: 1, Col: 2},
+							To:   Position{Index: 33, Line: 1, Col: 7},
 						},
 						Attributes: []Attribute{
 							ConstantAttribute{
 								Name:  "type",
 								Value: "text",
-								AttributeExpression: Expression{
-									Value: "type",
-									Range: Range{
-										From: Position{Index: 34, Line: 1, Col: 8},
-										To:   Position{Index: 38, Line: 1, Col: 12},
-									},
+								Range: Range{
+									From: Position{Index: 34, Line: 1, Col: 8},
+									To:   Position{Index: 38, Line: 1, Col: 12},
 								},
 							},
 							ConstantAttribute{
 								Name:  "value",
 								Value: "a",
-								AttributeExpression: Expression{
-									Value: "value",
-									Range: Range{
-										From: Position{Index: 46, Line: 1, Col: 20},
-										To:   Position{Index: 51, Line: 1, Col: 25},
-									},
+								Range: Range{
+									From: Position{Index: 46, Line: 1, Col: 20},
+									To:   Position{Index: 51, Line: 1, Col: 25},
 								},
 							},
 						},
@@ -424,34 +403,25 @@ func TestTemplateParser(t *testing.T) {
 					},
 					Element{
 						Name: "input",
-						ElementExpression: Expression{
-							Value: "input",
-							Range: Range{
-								From: Position{Index: 61, Line: 2, Col: 2},
-								To:   Position{Index: 66, Line: 2, Col: 7},
-							},
+						Range: Range{
+							From: Position{Index: 61, Line: 2, Col: 2},
+							To:   Position{Index: 66, Line: 2, Col: 7},
 						},
 						Attributes: []Attribute{
 							ConstantAttribute{
 								Name:  "type",
 								Value: "text",
-								AttributeExpression: Expression{
-									Value: "type",
-									Range: Range{
-										From: Position{Index: 67, Line: 2, Col: 8},
-										To:   Position{Index: 71, Line: 2, Col: 12},
-									},
+								Range: Range{
+									From: Position{Index: 67, Line: 2, Col: 8},
+									To:   Position{Index: 71, Line: 2, Col: 12},
 								},
 							},
 							ConstantAttribute{
 								Name:  "value",
 								Value: "b",
-								AttributeExpression: Expression{
-									Value: "value",
-									Range: Range{
-										From: Position{Index: 79, Line: 2, Col: 20},
-										To:   Position{Index: 84, Line: 2, Col: 25},
-									},
+								Range: Range{
+									From: Position{Index: 79, Line: 2, Col: 20},
+									To:   Position{Index: 84, Line: 2, Col: 25},
 								},
 							},
 						},
@@ -526,23 +496,17 @@ func TestTemplateParser(t *testing.T) {
 					},
 					Element{
 						Name: "a",
-						ElementExpression: Expression{
-							Value: "a",
-							Range: Range{
-								From: Position{Index: 14, Line: 1, Col: 2},
-								To:   Position{Index: 15, Line: 1, Col: 3},
-							},
+						Range: Range{
+							From: Position{Index: 14, Line: 1, Col: 2},
+							To:   Position{Index: 15, Line: 1, Col: 3},
 						},
 						Attributes: []Attribute{
 							ConstantAttribute{
 								Name:  "href",
 								Value: "/",
-								AttributeExpression: Expression{
-									Value: "href",
-									Range: Range{
-										From: Position{Index: 16, Line: 1, Col: 4},
-										To:   Position{Index: 20, Line: 1, Col: 8},
-									},
+								Range: Range{
+									From: Position{Index: 16, Line: 1, Col: 4},
+									To:   Position{Index: 20, Line: 1, Col: 8},
 								},
 							},
 						},
@@ -686,12 +650,9 @@ func TestTemplateParser(t *testing.T) {
 					Whitespace{Value: "\t\t"},
 					Element{
 						Name: "span",
-						ElementExpression: Expression{
-							Value: "span",
-							Range: Range{
-								From: Position{Index: 43, Line: 1, Col: 3},
-								To:   Position{Index: 47, Line: 1, Col: 7},
-							},
+						Range: Range{
+							From: Position{Index: 43, Line: 1, Col: 3},
+							To:   Position{Index: 47, Line: 1, Col: 7},
 						},
 						Attributes: []Attribute{SpreadAttributes{
 							Expression{

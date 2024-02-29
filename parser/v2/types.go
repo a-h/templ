@@ -86,6 +86,22 @@ func NewExpression(value string, from, to parse.Position) Expression {
 	}
 }
 
+// NewRange creates a Range expression.
+func NewRange(from, to parse.Position) Range {
+	return Range{
+		From: Position{
+			Index: int64(from.Index),
+			Line:  uint32(from.Line),
+			Col:   uint32(from.Col),
+		},
+		To: Position{
+			Index: int64(to.Index),
+			Line:  uint32(to.Line),
+			Col:   uint32(to.Col),
+		},
+	}
+}
+
 // Range of text within a file.
 type Range struct {
 	From Position
@@ -430,13 +446,13 @@ func (t Text) Write(w io.Writer, indent int) error {
 
 // <a .../> or <div ...>...</div>
 type Element struct {
-	Name              string
-	Attributes        []Attribute
-	IndentAttrs       bool
-	Children          []Node
-	IndentChildren    bool
-	TrailingSpace     TrailingSpace
-	ElementExpression Expression
+	Name           string
+	Attributes     []Attribute
+	IndentAttrs    bool
+	Children       []Node
+	IndentChildren bool
+	TrailingSpace  TrailingSpace
+	Range          Range
 }
 
 func (e Element) Trailing() TrailingSpace {
@@ -692,8 +708,8 @@ type Attribute interface {
 
 // <hr noshade/>
 type BoolConstantAttribute struct {
-	Name                string
-	AttributeExpression Expression
+	Name  string
+	Range Range
 }
 
 func (bca BoolConstantAttribute) String() string {
@@ -706,10 +722,10 @@ func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
 
 // href=""
 type ConstantAttribute struct {
-	Name                string
-	Value               string
-	SingleQuote         bool
-	AttributeExpression Expression
+	Name        string
+	Value       string
+	SingleQuote bool
+	Range       Range
 }
 
 func (ca ConstantAttribute) String() string {
@@ -726,9 +742,9 @@ func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
 
 // noshade={ templ.Bool(...) }
 type BoolExpressionAttribute struct {
-	Name                string
-	Expression          Expression
-	AttributeExpression Expression
+	Name       string
+	Expression Expression
+	Range      Range
 }
 
 func (bea BoolExpressionAttribute) String() string {
@@ -741,9 +757,9 @@ func (bea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
 
 // href={ ... }
 type ExpressionAttribute struct {
-	Name                string
-	Expression          Expression
-	AttributeExpression Expression
+	Name       string
+	Expression Expression
+	Range      Range
 }
 
 func (ea ExpressionAttribute) String() string {
