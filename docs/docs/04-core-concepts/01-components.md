@@ -84,7 +84,7 @@ func main() {
 }
 ```
 
-It is also possible to initlize a struct and call it's component method inline.
+It is also possible to initialize a struct and call it's component method inline.
 
 ```templ
 package main
@@ -100,9 +100,15 @@ templ (d Data) Method() {
 }
 
 templ Message() {
-	@Data{
-		message: "You can implement methods on a type.",
-	}.Method()
+    <div>
+        @Data{
+            message: "You can implement methods on a type.",
+        }.Method()
+    </div>
+}
+
+func main() {
+	Message().Render(context.Background(), os.Stdout)
 }
 ```
 
