@@ -84,7 +84,7 @@ func main() {
 }
 ```
 
-It is also possible to initialize a struct and call it's component method inline.
+It is also possible to initialize a struct and call its component method inline.
 
 ```templ
 package main
