@@ -62,17 +62,35 @@ var cssPropertyNameToValueSanitizer = map[string]func(string) string{
 	"z-index":             sanitizeRegular,
 }
 
+var validURLPrefixes = []string{
+	`url("`,
+	`url('`,
+	`url(`,
+}
+
+var validURLSuffixes = []string{
+	`")`,
+	`')`,
+	`)`,
+}
+
 func sanitizeBackgroundImage(v string) string {
+	// Check for <> as per https://github.com/google/safehtml/blob/be23134998433fcf0135dda53593fc8f8bf4df7c/style.go#L87C2-L89C3
+	if strings.ContainsAny(v, "<>") {
+		return InnocuousPropertyValue
+	}
 	for _, u := range strings.Split(v, ",") {
 		u = strings.TrimSpace(u)
-		if !strings.HasPrefix(u, `url("`) {
-			return InnocuousPropertyValue
+		var found bool
+		for i, prefix := range validURLPrefixes {
+			if strings.HasPrefix(u, prefix) && strings.HasSuffix(u, validURLSuffixes[i]) {
+				found = true
+				u = strings.TrimPrefix(u, validURLPrefixes[i])
+				u = strings.TrimSuffix(u, validURLSuffixes[i])
+				break
+			}
 		}
-		if !strings.HasSuffix(u, `")`) {
-			return InnocuousPropertyValue
-		}
-		u := u[5 : len(u)-2]
-		if !urlIsSafe(u) {
+		if !found || !urlIsSafe(u) {
 			return InnocuousPropertyValue
 		}
 	}
