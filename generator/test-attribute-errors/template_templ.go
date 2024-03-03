@@ -20,7 +20,7 @@ func funcWithError(in error) (s string, err error) {
 	return "OK2", nil
 }
 
-func render(err error) templ.Component {
+func TestComponent(err error) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -40,7 +40,7 @@ func render(err error) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs("raw")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-attribute-errors/template.templ`, Line: 15, Col: 23}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-attribute-errors/template.templ`, Line: 16, Col: 23}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -53,7 +53,7 @@ func render(err error) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(funcWithNoError())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-attribute-errors/template.templ`, Line: 16, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-attribute-errors/template.templ`, Line: 17, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -66,7 +66,7 @@ func render(err error) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(funcWithError(err))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-attribute-errors/template.templ`, Line: 17, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-attribute-errors/template.templ`, Line: 18, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {

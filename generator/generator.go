@@ -844,6 +844,26 @@ func (g *generator) writeErrorHandler(indentLevel int) (err error) {
 	return err
 }
 
+func (g *generator) writeExpressionErrorHandler(indentLevel int, expression parser.Expression) (err error) {
+	_, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n")
+	if err != nil {
+		return err
+	}
+	indentLevel++
+	line := int(expression.Range.To.Line + 1)
+	col := int(expression.Range.To.Col)
+	_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, FileName: "+createGoString(g.fileName)+", Line: "+strconv.Itoa(line)+", Col: "+strconv.Itoa(col)+"}\n")
+	if err != nil {
+		return err
+	}
+	indentLevel--
+	_, err = g.w.WriteIndent(indentLevel, "}\n")
+	if err != nil {
+		return err
+	}
+	return err
+}
+
 func (g *generator) writeElement(indentLevel int, n parser.Element) (err error) {
 	if n.IsVoidElement() {
 		return g.writeVoidElement(indentLevel, n)
@@ -1160,17 +1180,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 				return err
 			}
 			// Attribute expression error handler.
-			_, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n")
-			if err != nil {
-				return err
-			}
-			indentLevel++
-			_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, FileName: "+createGoString(g.fileName)+", Line: "+strconv.Itoa(int(attr.Expression.Range.To.Line))+", Col: "+strconv.Itoa(int(attr.Expression.Range.To.Col))+"}\n")
-			if err != nil {
-				return err
-			}
-			indentLevel--
-			_, err = g.w.WriteIndent(indentLevel, "}\n")
+			err = g.writeExpressionErrorHandler(indentLevel, attr.Expression)
 			if err != nil {
 				return err
 			}
@@ -1352,17 +1362,7 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	}
 
 	// String expression error handler.
-	_, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n")
-	if err != nil {
-		return err
-	}
-	indentLevel++
-	_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, FileName: "+createGoString(g.fileName)+", Line: "+strconv.Itoa(int(e.Range.To.Line))+", Col: "+strconv.Itoa(int(e.Range.To.Col))+"}\n")
-	if err != nil {
-		return err
-	}
-	indentLevel--
-	_, err = g.w.WriteIndent(indentLevel, "}\n")
+	err = g.writeExpressionErrorHandler(indentLevel, e)
 	if err != nil {
 		return err
 	}

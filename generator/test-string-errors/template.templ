@@ -11,7 +11,7 @@ func funcWithError(in error) (s string, err error) {
 	return "OK2", nil
 }
 
-templ render(err error) {
+templ TestComponent(err error) {
 	<ul>
 		<li>{ "raw" }</li>
 		<li>{ funcWithNoError() }</li>

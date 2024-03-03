@@ -29,7 +29,7 @@ func Render(p Person) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `benchmarks/templ/template.templ`, Line: 4, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `benchmarks/templ/template.templ`, Line: 5, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -42,7 +42,7 @@ func Render(p Person) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(`something with "quotes" and a <tag>`)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `benchmarks/templ/template.templ`, Line: 5, Col: 104}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `benchmarks/templ/template.templ`, Line: 6, Col: 104}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -64,7 +64,7 @@ func Render(p Person) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(p.Email)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `benchmarks/templ/template.templ`, Line: 6, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `benchmarks/templ/template.templ`, Line: 7, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
