@@ -16,7 +16,7 @@ var expected string
 
 func Test(t *testing.T) {
 	t.Run("can render without error", func(t *testing.T) {
-		component := render(nil)
+		component := TestComponent(nil)
 
 		_, err := htmldiff.Diff(component, expected)
 		if err != nil {
@@ -26,7 +26,7 @@ func Test(t *testing.T) {
 	t.Run("attribute expressions can return errors", func(t *testing.T) {
 		errSomethingBad := errors.New("bad error")
 
-		err := render(errSomethingBad).Render(context.Background(), &bytes.Buffer{})
+		err := TestComponent(errSomethingBad).Render(context.Background(), &bytes.Buffer{})
 		if err == nil {
 			t.Fatalf("expected error, but got nil")
 		}
@@ -39,8 +39,8 @@ func Test(t *testing.T) {
 			if templateErr.FileName != `generator/test-attribute-errors/template.templ` {
 				t.Errorf("expected error in `generator/test-attribute-errors/template.templ`, but got %v", templateErr.FileName)
 			}
-			if templateErr.Line != 17 {
-				t.Errorf("expected error on line 17, but got %v", templateErr.Line)
+			if templateErr.Line != 18 {
+				t.Errorf("expected error on line 18, but got %v", templateErr.Line)
 			}
 			if templateErr.Col != 36 {
 				t.Errorf("expected error on column 26, but got %v", templateErr.Col)
