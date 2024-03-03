@@ -9,6 +9,7 @@
 package safehtml
 
 import (
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -63,6 +64,10 @@ var validURLSuffixes = []string{
 }
 
 func sanitizeBackgroundImage(v string) string {
+	// Check for <> as per https://github.com/google/safehtml/blob/be23134998433fcf0135dda53593fc8f8bf4df7c/style.go#L87C2-L89C3
+	if strings.ContainsAny(v, "<>") {
+		return InnocuousPropertyValue
+	}
 	for _, u := range strings.Split(v, ",") {
 		u = strings.TrimSpace(u)
 		var found bool
@@ -74,31 +79,25 @@ func sanitizeBackgroundImage(v string) string {
 				break
 			}
 		}
-		if !found || !isSafeURL(u) {
+		if !found || !urlIsSafe(u) {
 			return InnocuousPropertyValue
 		}
 	}
 	return v
 }
 
-// https://github.com/google/safehtml/blob/be23134998433fcf0135dda53593fc8f8bf4df7c/url.go#L101C1-L101C87
-// templ: customised to block < and >.
-var safeURLPattern = regexp.MustCompile(`^(?:([a-z0-9+.-]+):|[^\<\>&:\/?#]*(?:[\<\>\/?#]|$))`)
-
-func isSafeURL(url string) bool {
-	// Ignore case.
-	url = strings.ToLower(url)
-	submatches := safeURLPattern.FindStringSubmatch(url)
-	if submatches == nil {
-		// No match
+func urlIsSafe(s string) bool {
+	u, err := url.Parse(s)
+	if err != nil {
 		return false
 	}
-	if len(submatches) == 0 {
-		// Implicit URL scheme. This is safe
-		return true
+	if u.IsAbs() {
+		if strings.EqualFold(u.Scheme, "http") || strings.EqualFold(u.Scheme, "https") || strings.EqualFold(u.Scheme, "mailto") {
+			return true
+		}
+		return false
 	}
-	// templ: Customised to only support http, https, and mailto.
-	return len(submatches) == 2 && (submatches[0] == "/" || submatches[1] == "http" || submatches[1] == "https" || submatches[1] == "mailto")
+	return true
 }
 
 var genericFontFamilyName = regexp.MustCompile(`^[a-zA-Z][- a-zA-Z]+$`)
