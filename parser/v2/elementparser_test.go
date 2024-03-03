@@ -240,6 +240,29 @@ if test {
 			},
 		},
 		{
+			name:   "boolean expression with excess spaces",
+			input:  ` noshade?={ true   }"`,
+			parser: StripType(boolExpressionAttributeParser),
+			expected: BoolExpressionAttribute{
+				Name: "noshade",
+				Expression: Expression{
+					Value: "true",
+					Range: Range{
+						From: Position{
+							Index: 12,
+							Line:  0,
+							Col:   12,
+						},
+						To: Position{
+							Index: 16,
+							Line:  0,
+							Col:   16,
+						},
+					},
+				},
+			},
+		},
+		{
 			name:   "spread attributes",
 			input:  ` { spread... }"`,
 			parser: StripType(spreadAttributesParser),

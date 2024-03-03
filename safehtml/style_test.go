@@ -123,6 +123,13 @@ func TestSanitizeCSS(t *testing.T) {
 			expectedValue:    InnocuousPropertyValue,
 		},
 		{
+			name:             "angle brackets in quoted property value",
+			inputProperty:    "background-image",
+			expectedProperty: "background-image",
+			inputValue:       `url("/img?name=O'Reilly Animal(1)<2>.png")`,
+			expectedValue:    InnocuousPropertyValue,
+		},
+		{
 			name:             "background",
 			inputProperty:    "background",
 			expectedProperty: "background",
@@ -177,6 +184,13 @@ func TestSanitizeCSS(t *testing.T) {
 			expectedProperty: "background-image",
 			inputValue:       `url("/img.png")`,
 			expectedValue:    `url("/img.png")`,
+		},
+		{
+			name:             "background-image safe URL - two slashes",
+			inputProperty:    "background-image",
+			expectedProperty: "background-image",
+			inputValue:       `url("//img.png")`,
+			expectedValue:    `url("//img.png")`,
 		},
 		{
 			name:             "background-image safe HTTP URL",

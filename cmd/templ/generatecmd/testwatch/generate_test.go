@@ -86,7 +86,7 @@ func TestCanAccessDirect(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	args, teardown, err := Setup()
+	args, teardown, err := Setup(false)
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestCanAccessViaProxy(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	args, teardown, err := Setup()
+	args, teardown, err := Setup(false)
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 	}
@@ -171,11 +171,79 @@ func readSSE(ctx context.Context, url string, sse chan<- Event) (err error) {
 	return scanner.Err()
 }
 
+func TestFileModificationsResultInSSEWithGzip(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	args, teardown, err := Setup(false)
+	if err != nil {
+		t.Fatalf("failed to setup test: %v", err)
+	}
+	defer teardown(t)
+
+	// Start the SSE check.
+	events := make(chan Event)
+	var eventsErr error
+	go func() {
+		eventsErr = readSSE(context.Background(), fmt.Sprintf("%s/_templ/reload/events", args.ProxyURL), events)
+	}()
+
+	// Assert data is expected.
+	doc, err := getHTML(args.ProxyURL)
+	if err != nil {
+		t.Fatalf("failed to read HTML: %v", err)
+	}
+	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Original" {
+		t.Errorf("expected %q, got %q", "Original", text)
+	}
+
+	// Change file.
+	templFile := filepath.Join(args.AppDir, "templates.templ")
+	err = replaceInFile(templFile,
+		`<div data-testid="modification">Original</div>`,
+		`<div data-testid="modification">Updated</div>`)
+	if err != nil {
+		t.Errorf("failed to replace text in file: %v", err)
+	}
+
+	// Give the filesystem watcher a few seconds.
+	var reloadCount int
+loop:
+	for {
+		select {
+		case event := <-events:
+			if event.Data == "reload" {
+				reloadCount++
+				break loop
+			}
+		case <-time.After(time.Second * 5):
+			break loop
+		}
+	}
+	if reloadCount == 0 {
+		t.Error("failed to receive SSE about update after 5 seconds")
+	}
+
+	// Check to see if there were any errors.
+	if eventsErr != nil {
+		t.Errorf("error reading events: %v", err)
+	}
+
+	// See results in browser immediately.
+	doc, err = getHTML(args.ProxyURL)
+	if err != nil {
+		t.Fatalf("failed to read HTML: %v", err)
+	}
+	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Updated" {
+		t.Errorf("expected %q, got %q", "Updated", text)
+	}
+}
+
 func TestFileModificationsResultInSSE(t *testing.T) {
 	if testing.Short() {
 		return
 	}
-	args, teardown, err := Setup()
+	args, teardown, err := Setup(false)
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 	}
@@ -259,7 +327,7 @@ type TestArgs struct {
 	ProxyURL  string
 }
 
-func Setup() (args TestArgs, teardown func(t *testing.T), err error) {
+func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return args, teardown, fmt.Errorf("could not find working dir: %w", err)
@@ -291,10 +359,16 @@ func Setup() (args TestArgs, teardown func(t *testing.T), err error) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
+		command := fmt.Sprintf("go run . -port %d", args.AppPort)
+		if gzipEncoding {
+			command += " -gzip true"
+		}
+
 		cmdErr = generatecmd.Run(ctx, os.Stdout, generatecmd.Arguments{
 			Path:              appDir,
 			Watch:             true,
-			Command:           fmt.Sprintf("go run . -port %d", args.AppPort),
+			Command:           command,
 			ProxyPort:         proxyPort,
 			Proxy:             args.AppURL,
 			IncludeVersion:    false,

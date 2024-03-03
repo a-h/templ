@@ -1,8 +1,23 @@
 # Using JavaScript with templ
 
-## Script tags
+## Scripts
 
-You can use standard script tags to load JavaScript from a URL.
+Use standard `<script>` tags, and standard HTML attributes.
+
+```templ
+templ body() {
+  <script type="text/javascript">
+    function handleClick(event) {
+      alert(event + ' clicked');
+    }
+  </script>
+  <button onclick="handleClick(this)">Click me</button>
+}
+```
+
+## Importing scripts
+
+You can also use standard `<script>` tags to load JavaScript from a URL.
 
 ```templ
 templ head() {
@@ -37,7 +52,7 @@ templ body() {
 
 ## Script templates
 
-To pass Go data to scripts, you can use a script template.
+If you need to pass Go data to scripts, you can use a script template.
 
 Here, the `page` HTML template includes a `script` element that loads a charting library, which is then used by the `body` element to render some data.
 
