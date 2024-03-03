@@ -14,6 +14,30 @@ templ component() {
 <p data-testid="paragraph">Text</p>
 ```
 
+## String expression attributes
+
+Element attributes can be set to Go strings.
+
+```templ
+templ component(testID string) {
+  <p data-testid={ testID }>Text</p>
+}
+
+templ page() {
+  @component("testid-123")
+}
+```
+
+Rendering the `page` component results in:
+
+```html title="Output"
+<p data-testid="testid-123">Text</p>
+```
+
+:::note
+String values are automatically HTML attribute encoded. This is a security measure, but may make the values (especially JSON appear) look strange to you, since some characters may be converted into HTML entities. However, it is correct HTML and won't affect the behavior. 
+:::
+
 ## Boolean attributes
 
 Boolean attributes (see https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#boolean-attributes) where the presence of an attribute name without a value means true, and the attribute name not being present means false are supported.
@@ -160,3 +184,19 @@ templ Button(text string) {
 ## CSS attributes
 
 CSS handling is discussed in detail in [CSS style management](css-style-management).
+
+## JSON attributes
+
+To set an attribute's value to a JSON string (e.g. for HTMX's [hx-vals](https://htmx.org/attributes/hx-vals) or Alpine's [x-data](https://alpinejs.dev/directives/data)), serialize the value to a string using a function.
+
+```go
+func countriesJSON() string {
+	countries := []string{"Czech Republic", "Slovakia", "United Kingdom", "Germany", "Austria", "Slovenia"}
+	bytes, _ := json.Marshal(countries)
+	return string(bytes)
+}
+```templ
+templ SearchBox() {
+	<search-webcomponent suggestions={ countriesJSON() } />
+}
+```

@@ -29,7 +29,6 @@ var template = parse.Func(func(pi *parse.Input) (r HTMLTemplate, ok bool, err er
 		return
 	}
 	r.Children = nodes.Nodes
-	r.Diagnostics = nodes.Diagnostics
 
 	// Eat any whitespace.
 	_, _, err = parse.OptionalWhitespace.Parse(pi)

@@ -37,8 +37,7 @@ var openBraceWithPadding = parse.StringFrom(optionalSpaces,
 var openBraceWithOptionalPadding = parse.Any(openBraceWithPadding, openBrace)
 
 var closeBrace = parse.String("}")
-var closeBraceWithPadding = parse.String(" }")
-var closeBraceWithOptionalPadding = parse.Any(closeBraceWithPadding, closeBrace)
+var closeBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, closeBrace)
 
 var openBracket = parse.String("(")
 var closeBracket = parse.String(")")
@@ -214,7 +213,7 @@ var escaped_char = parse.StringFrom(
 
 // https://go.dev/ref/spec#String_literals
 
-var string_lit = parse.Any(interpreted_string_lit, raw_string_lit)
+var string_lit = parse.Any(parse.String(`""`), parse.String(`''`), interpreted_string_lit, raw_string_lit)
 
 var interpreted_string_lit = parse.StringFrom(
 	parse.Rune('"'),

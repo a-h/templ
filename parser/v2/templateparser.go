@@ -33,7 +33,7 @@ var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpre
 	}
 
 	// Eat " {\n".
-	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.StringFrom(parse.Optional(parse.NewLine))).Parse(pi); err != nil || !ok {
 		err = parse.Error("templ: malformed templ expression, expected `templ functionName() {`", pi.PositionAt(start))
 		return
 	}
@@ -101,12 +101,6 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, ok bool, err er
 			node, matched, err = p.Parse(pi)
 			if err != nil {
 				return Nodes{}, false, err
-			}
-			if n, ok := node.(CallTemplateExpression); ok {
-				op.Diagnostics = append(op.Diagnostics, Diagnostic{
-					Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
-					Range:   n.Expression.Range,
-				})
 			}
 			if matched {
 				op.Nodes = append(op.Nodes, node)

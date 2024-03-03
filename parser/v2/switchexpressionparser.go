@@ -92,7 +92,6 @@ var caseExpressionParser = parse.Func(func(pi *parse.Input) (r CaseExpression, o
 		return
 	}
 	r.Children = nodes.Nodes
-	r.Diagnostics = nodes.Diagnostics
 
 	// Optional whitespace.
 	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {

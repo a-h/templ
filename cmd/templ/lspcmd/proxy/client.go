@@ -50,6 +50,11 @@ func (p Client) LogMessage(ctx context.Context, params *lsp.LogMessageParams) (e
 
 func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagnosticsParams) (err error) {
 	p.Log.Info("client <- server: PublishDiagnostics")
+	if strings.HasSuffix(string(params.URI), "go.mod") {
+		p.Log.Info("client <- server: PublishDiagnostics: skipping go.mod diagnostics")
+		return nil
+	}
+	// Log diagnostics.
 	for i, diagnostic := range params.Diagnostics {
 		p.Log.Info(fmt.Sprintf("client <- server: PublishDiagnostics: [%d]", i), zap.Any("diagnostic", diagnostic))
 	}
@@ -57,6 +62,7 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 	uri := strings.TrimSuffix(string(params.URI), "_templ.go") + ".templ"
 	sourceMap, ok := p.SourceMapCache.Get(uri)
 	if !ok {
+		p.Log.Error("unable to complete because the sourcemap for the URI doesn't exist in the cache", zap.String("uri", uri))
 		return fmt.Errorf("unable to complete because the sourcemap for %q doesn't exist in the cache, has the didOpen notification been sent yet?", uri)
 	}
 	params.URI = lsp.DocumentURI(uri)
@@ -89,7 +95,8 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 		p.Log.Info(fmt.Sprintf("diagnostic [%d] rewritten", i), zap.Any("diagnostic", item))
 	}
 	params.Diagnostics = p.DiagnosticCache.AddTemplDiagnostics(uri, params.Diagnostics)
-	return p.Target.PublishDiagnostics(ctx, params)
+	err = p.Target.PublishDiagnostics(ctx, params)
+	return err
 }
 
 func (p Client) ShowMessage(ctx context.Context, params *lsp.ShowMessageParams) (err error) {

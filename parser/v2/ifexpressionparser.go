@@ -41,7 +41,6 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 	r.Then = thenNodes.Nodes
-	r.Diagnostics = append(r.Diagnostics, thenNodes.Diagnostics...)
 
 	// Read the optional 'ElseIf' Nodes.
 	if r.ElseIfs, _, err = parse.ZeroOrMore(elseIfExpression).Parse(pi); err != nil {
@@ -54,7 +53,6 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 	r.Else = elseNodes.Nodes
-	r.Diagnostics = append(r.Diagnostics, elseNodes.Diagnostics...)
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
@@ -102,7 +100,6 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, ok boo
 		return
 	}
 	r.Then = thenNodes.Nodes
-	r.Diagnostics = append(r.Diagnostics, thenNodes.Diagnostics...)
 
 	return r, true, nil
 }

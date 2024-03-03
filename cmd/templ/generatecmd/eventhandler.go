@@ -173,7 +173,11 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
 	// Only use relative filenames to the basepath for filenames in runtime error messages.
-	relFilePath, err := filepath.Rel(h.dir, fileName)
+	absFilePath, err := filepath.Abs(fileName)
+	if err != nil {
+		return false, false, nil, fmt.Errorf("failed to get absolute path for %q: %w", fileName, err)
+	}
+	relFilePath, err := filepath.Rel(h.dir, absFilePath)
 	if err != nil {
 		return false, false, nil, fmt.Errorf("failed to get relative path for %q: %w", fileName, err)
 	}
@@ -210,11 +214,16 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 		}
 	}
 
+	parsedDiagnostics, err := parser.Diagnose(t)
+	if err != nil {
+		return goUpdated, textUpdated, nil, fmt.Errorf("%s diagnostics error: %w", fileName, err)
+	}
+
 	if h.genSourceMapVis {
 		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, sourceMap)
 	}
 
-	return goUpdated, textUpdated, t.Diagnostics, err
+	return goUpdated, textUpdated, parsedDiagnostics, err
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {

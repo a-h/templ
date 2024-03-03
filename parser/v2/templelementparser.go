@@ -14,7 +14,7 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	}
 
 	var r TemplElementExpression
-	// Parse the Go expresion.
+	// Parse the Go expression.
 	if r.Expression, err = parseGo("templ element", pi, goexpression.Expression); err != nil {
 		return r, false, err
 	}
@@ -39,7 +39,6 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 		return
 	}
 	r.Children = nodes.Nodes
-	r.Diagnostics = nodes.Diagnostics
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
