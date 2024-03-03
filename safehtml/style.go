@@ -16,14 +16,25 @@ import (
 
 // SanitizeCSS attempts to sanitize CSS properties.
 func SanitizeCSS(property, value string) (string, string) {
-	if !identifierPattern.MatchString(property) {
+	property = SanitizeCSSProperty(property)
+	if property == InnocuousPropertyName {
 		return InnocuousPropertyName, InnocuousPropertyValue
 	}
-	property = strings.ToLower(property)
+	return property, SanitizeCSSValue(property, value)
+}
+
+func SanitizeCSSValue(property, value string) string {
 	if sanitizer, ok := cssPropertyNameToValueSanitizer[property]; ok {
-		return property, sanitizer(value)
+		return sanitizer(value)
 	}
-	return property, sanitizeRegular(value)
+	return sanitizeRegular(value)
+}
+
+func SanitizeCSSProperty(property string) string {
+	if !identifierPattern.MatchString(property) {
+		return InnocuousPropertyName
+	}
+	return strings.ToLower(property)
 }
 
 // identifierPattern matches a subset of valid <ident-token> values defined in

@@ -1,6 +1,7 @@
 package testcssusage
 
 import "fmt"
+import "math"
 
 // Constant class.
 templ StyleTagsAreSupported() {
@@ -72,6 +73,14 @@ templ CSSComponentsCanBeUsedWithArguments() {
 	<div class={ loading(100) }>CSS components can be used with arguments.</div>
 }
 
+css windVaneRotation(degrees float64) {
+	transform: { templ.SafeCSSProperty(fmt.Sprintf("rotate(%ddeg)", int(math.Round(degrees)))) };
+}
+
+templ Rotate(degrees float64) {
+	<div class={ windVaneRotation(degrees) }>Rotate</div>
+}
+
 // Combine all tests.
 templ TestComponent() {
 	@StyleTagsAreSupported()
@@ -82,4 +91,5 @@ templ TestComponent() {
 	@PsuedoAttributesAndComplexClassNamesAreSupported()
 	@ClassNamesAreHTMLEscaped()
 	@CSSComponentsCanBeUsedWithArguments()
+	@Rotate(45)
 }
