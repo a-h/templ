@@ -87,6 +87,16 @@ func TestStringLiterals(t *testing.T) {
 			input:    "`\\n` ",
 			expected: "`\\n`",
 		},
+		{
+			name:     "empty single quote string",
+			input:    `'' `,
+			expected: `''`,
+		},
+		{
+			name:     "empty double quote string",
+			input:    `"" `,
+			expected: `""`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
