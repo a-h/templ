@@ -350,6 +350,44 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "templelement: struct literal method calls are supported",
+			input: `@layout.DefaultLayout{}.Compile()<div>`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `layout.DefaultLayout{}.Compile()`,
+					Range: Range{
+						From: Position{1, 0, 1},
+						To:   Position{33, 0, 33},
+					},
+				},
+			},
+		},
+		{
+			name: "templelement: struct literal method calls are supported, with child elements",
+			input: `@layout.DefaultLayout{}.Compile() {
+  <div>hello</div>
+}`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `layout.DefaultLayout{}.Compile()`,
+					Range: Range{
+						From: Position{1, 0, 1},
+						To:   Position{33, 0, 33},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\n  "},
+					Element{
+						Name: "div",
+						Children: []Node{
+							Text{Value: "hello"},
+						},
+						TrailingSpace: SpaceVertical,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
