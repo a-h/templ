@@ -9,7 +9,6 @@
 package safehtml
 
 import (
-	"net/url"
 	"regexp"
 	"strings"
 )
@@ -51,35 +50,55 @@ var cssPropertyNameToValueSanitizer = map[string]func(string) string{
 	"z-index":             sanitizeRegular,
 }
 
+var validURLPrefixes = []string{
+	`url("`,
+	`url('`,
+	`url(`,
+}
+
+var validURLSuffixes = []string{
+	`")`,
+	`')`,
+	`)`,
+}
+
 func sanitizeBackgroundImage(v string) string {
 	for _, u := range strings.Split(v, ",") {
 		u = strings.TrimSpace(u)
-		if !strings.HasPrefix(u, `url("`) {
-			return InnocuousPropertyValue
+		var found bool
+		for i, prefix := range validURLPrefixes {
+			if strings.HasPrefix(u, prefix) && strings.HasSuffix(u, validURLSuffixes[i]) {
+				found = true
+				u = strings.TrimPrefix(u, validURLPrefixes[i])
+				u = strings.TrimSuffix(u, validURLSuffixes[i])
+				break
+			}
 		}
-		if !strings.HasSuffix(u, `")`) {
-			return InnocuousPropertyValue
-		}
-		u := u[5 : len(u)-2]
-		if !urlIsSafe(u) {
+		if !found || !isSafeURL(u) {
 			return InnocuousPropertyValue
 		}
 	}
 	return v
 }
 
-func urlIsSafe(s string) bool {
-	u, err := url.Parse(s)
-	if err != nil {
+// https://github.com/google/safehtml/blob/be23134998433fcf0135dda53593fc8f8bf4df7c/url.go#L101C1-L101C87
+// templ: customised to block < and >.
+var safeURLPattern = regexp.MustCompile(`^(?:([a-z0-9+.-]+):|[^\<\>&:\/?#]*(?:[\<\>\/?#]|$))`)
+
+func isSafeURL(url string) bool {
+	// Ignore case.
+	url = strings.ToLower(url)
+	submatches := safeURLPattern.FindStringSubmatch(url)
+	if submatches == nil {
+		// No match
 		return false
 	}
-	if u.IsAbs() {
-		if strings.EqualFold(u.Scheme, "http") || strings.EqualFold(u.Scheme, "https") || strings.EqualFold(u.Scheme, "mailto") {
-			return true
-		}
-		return false
+	if len(submatches) == 0 {
+		// Implicit URL scheme. This is safe
+		return true
 	}
-	return true
+	// templ: Customised to only support http, https, and mailto.
+	return len(submatches) == 2 && (submatches[0] == "/" || submatches[1] == "http" || submatches[1] == "https" || submatches[1] == "mailto")
 }
 
 var genericFontFamilyName = regexp.MustCompile(`^[a-zA-Z][- a-zA-Z]+$`)
