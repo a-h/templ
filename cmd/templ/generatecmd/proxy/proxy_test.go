@@ -107,14 +107,20 @@ func TestProxy(t *testing.T) {
 		body := `<html><body></body></html>`
 		var buf bytes.Buffer
 		gzw := gzip.NewWriter(&buf)
-		gzw.Write([]byte(body))
+		_, err := gzw.Write([]byte(body))
+		if err != nil {
+			t.Fatalf("unexpected error writing gzip: %v", err)
+		}
 		gzw.Close()
 
 		expectedString := insertScriptTagIntoBody(body)
 
 		var expectedBytes bytes.Buffer
 		gzw = gzip.NewWriter(&expectedBytes)
-		gzw.Write([]byte(expectedString))
+		_, err = gzw.Write([]byte(expectedString))
+		if err != nil {
+			t.Fatalf("unexpected error writing gzip: %v", err)
+		}
 		gzw.Close()
 		expectedLength := len(expectedBytes.Bytes())
 
@@ -127,8 +133,7 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Length", fmt.Sprintf("%d", expectedLength))
 
 		// Act
-		err := modifyResponse(r)
-		if err != nil {
+		if err = modifyResponse(r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
