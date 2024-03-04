@@ -1,4 +1,4 @@
-package teststringerrs
+package testattrerrs
 
 func funcWithNoError() (s string) {
 	return "OK"
@@ -13,8 +13,8 @@ func funcWithError(in error) (s string, err error) {
 
 templ TestComponent(err error) {
 	<ul>
-		<li>{ "raw" }</li>
-		<li>{ funcWithNoError() }</li>
-		<li>{ funcWithError(err) }</li>
+		<li data-attr={ "raw" }></li>
+		<li data-attr={ funcWithNoError() }></li>
+		<li data-attr={ funcWithError(err) }></li>
 	</ul>
 }
