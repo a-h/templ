@@ -38,6 +38,44 @@ Rendering the `page` component results in:
 String values are automatically HTML attribute encoded. This is a security measure, but may make the values (especially JSON appear) look strange to you, since some characters may be converted into HTML entities. However, it is correct HTML and won't affect the behavior. 
 :::
 
+It's also possible to use function calls in string attribute expressions.
+
+Here's a function that returns a string based on a boolean input.
+
+```go
+func testID(isTrue bool) string {
+    if isTrue {
+        return "testid-123"
+    }
+    return "testid-456"
+}
+```
+
+```templ
+templ component() {
+  <p data-testid={ testID(true) }>Text</p>
+}
+```
+
+The result:
+
+```html title="Output"
+<p data-testid="testid-123">Text</p>
+```
+
+Functions in string attribute expressions can also return errors.
+
+```go
+func testID(isTrue bool) (string, error) {
+    if isTrue {
+        return "testid-123", nil
+    }
+    return "", fmt.Errorf("isTrue is false")
+}
+```
+
+If the function returns an error, the `Render` method will return the error along with its location.
+
 ## Boolean attributes
 
 Boolean attributes (see https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#boolean-attributes) where the presence of an attribute name without a value means true, and the attribute name not being present means false are supported.
