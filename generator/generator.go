@@ -1021,15 +1021,18 @@ func isScriptAttribute(name string) bool {
 
 func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err error) {
 	var scriptExpressions []string
+	var spreadAttributes []string
 	for _, attr := range n.Attributes {
-		scriptExpressions = append(scriptExpressions, getAttributeScripts(attr)...)
+		scripts, spreads := getAttributeScripts(attr)
+		scriptExpressions = append(scriptExpressions, scripts...)
+		spreadAttributes = append(spreadAttributes, spreads...)
 	}
-	if len(scriptExpressions) == 0 {
+	if len(scriptExpressions) == 0 && len(spreadAttributes) == 0 {
 		return
 	}
 	// Render the scripts before the element if required.
-	// templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, a, b, c)
-	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
+	// templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, []Attributes, a, b, c)
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, []templ.Attributes{"+strings.Join(spreadAttributes, ", ")+"}, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
@@ -1038,13 +1041,17 @@ func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err e
 	return err
 }
 
-func getAttributeScripts(attr parser.Attribute) (scripts []string) {
+func getAttributeScripts(attr parser.Attribute) (scripts []string, spreads []string) {
 	if attr, ok := attr.(parser.ConditionalAttribute); ok {
 		for _, attr := range attr.Then {
-			scripts = append(scripts, getAttributeScripts(attr)...)
+			thenScripts, thenSpreads := getAttributeScripts(attr)
+			scripts = append(scripts, thenScripts...)
+			spreads = append(spreads, thenSpreads...)
 		}
 		for _, attr := range attr.Else {
-			scripts = append(scripts, getAttributeScripts(attr)...)
+			elseScripts, elseSpreads := getAttributeScripts(attr)
+			scripts = append(scripts, elseScripts...)
+			spreads = append(spreads, elseSpreads...)
 		}
 	}
 	if attr, ok := attr.(parser.ExpressionAttribute); ok {
@@ -1053,7 +1060,10 @@ func getAttributeScripts(attr parser.Attribute) (scripts []string) {
 			scripts = append(scripts, attr.Expression.Value)
 		}
 	}
-	return scripts
+	if attr, ok := attr.(parser.SpreadAttributes); ok {
+		spreads = append(spreads, attr.Expression.Value)
+	}
+	return
 }
 
 func (g *generator) writeBoolConstantAttribute(indentLevel int, attr parser.BoolConstantAttribute) (err error) {

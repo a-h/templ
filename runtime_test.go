@@ -532,14 +532,14 @@ func TestRenderScriptItems(t *testing.T) {
 
 			// Render twice, reusing the same context so that there's a memory of which classes have been rendered.
 			ctx = templ.InitializeContext(ctx)
-			err := templ.RenderScriptItems(ctx, b, tt.toIgnore...)
+			err := templ.RenderScriptItems(ctx, b, []templ.Attributes{}, tt.toIgnore...)
 			if err != nil {
 				t.Fatalf("failed to render initial scripts: %v", err)
 			}
 
 			// Now render again to check that only the expected classes were rendered.
 			b.Reset()
-			err = templ.RenderScriptItems(ctx, b, tt.toRender...)
+			err = templ.RenderScriptItems(ctx, b, []templ.Attributes{}, tt.toRender...)
 			if err != nil {
 				t.Fatalf("failed to render scripts: %v", err)
 			}
