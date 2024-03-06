@@ -226,7 +226,7 @@ func mappedCharacter(s string, sourceID, targetID string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, []templ.Attributes{}, highlight(sourceID, targetID), removeHighlight(sourceID, targetID))
+		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, highlight(sourceID, targetID), removeHighlight(sourceID, targetID))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

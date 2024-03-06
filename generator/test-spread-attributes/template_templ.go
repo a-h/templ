@@ -26,7 +26,7 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, []templ.Attributes{spread})
+		templ_7745c5c3_Err = templ.RenderScriptItemsWithSpread(ctx, templ_7745c5c3_Buffer, []templ.Attributes{spread})
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -42,7 +42,7 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, []templ.Attributes{spread})
+		templ_7745c5c3_Err = templ.RenderScriptItemsWithSpread(ctx, templ_7745c5c3_Buffer, []templ.Attributes{spread})
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -60,7 +60,7 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, []templ.Attributes{spread})
+		templ_7745c5c3_Err = templ.RenderScriptItemsWithSpread(ctx, templ_7745c5c3_Buffer, []templ.Attributes{spread})
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

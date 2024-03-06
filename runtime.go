@@ -675,7 +675,7 @@ type ComponentScript struct {
 var _ Component = ComponentScript{}
 
 func (c ComponentScript) Render(ctx context.Context, w io.Writer) error {
-	err := RenderScriptItems(ctx, w, nil, c)
+	err := RenderScriptItems(ctx, w, c)
 	if err != nil {
 		return err
 	}
@@ -694,7 +694,13 @@ func (c ComponentScript) Render(ctx context.Context, w io.Writer) error {
 }
 
 // RenderScriptItems renders a <script> element, if the script has not already been rendered.
-func RenderScriptItems(ctx context.Context, w io.Writer, attrSlice []Attributes, scripts ...ComponentScript) (err error) {
+func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScript) (err error) {
+	return RenderScriptItemsWithSpread(ctx, w, nil, scripts...)
+}
+
+// RenderScriptItemsWithSpread renders a <script> element, if the script has not already been rendered.
+// Includes support for scripts passed from spread attributes { attrs... }.
+func RenderScriptItemsWithSpread(ctx context.Context, w io.Writer, attrSlice []Attributes, scripts ...ComponentScript) (err error) {
 	for _, attrs := range attrSlice {
 		for _, attr := range attrs {
 			if script, ok := attr.(ComponentScript); ok {

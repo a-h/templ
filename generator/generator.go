@@ -1030,9 +1030,16 @@ func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err e
 	if len(scriptExpressions) == 0 && len(spreadAttributes) == 0 {
 		return
 	}
+
+	renderFuncString := "RenderScriptItems"
+	spreadParamString := ""
+	if len(spreadAttributes) > 0 {
+		renderFuncString = "RenderScriptItemsWithSpread"
+		spreadParamString = "[]templ.Attributes{" + strings.Join(spreadAttributes, ", ") + "}, "
+	}
 	// Render the scripts before the element if required.
 	// templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, []Attributes, a, b, c)
-	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, []templ.Attributes{"+strings.Join(spreadAttributes, ", ")+"}, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ."+renderFuncString+"(ctx, templ_7745c5c3_Buffer, "+spreadParamString+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
