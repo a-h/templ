@@ -452,7 +452,7 @@ type Element struct {
 	Children       []Node
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
-	Range          Range
+	NameRange      Range
 }
 
 func (e Element) Trailing() TrailingSpace {
@@ -708,8 +708,8 @@ type Attribute interface {
 
 // <hr noshade/>
 type BoolConstantAttribute struct {
-	Name  string
-	Range Range
+	Name      string
+	NameRange Range
 }
 
 func (bca BoolConstantAttribute) String() string {
@@ -725,7 +725,7 @@ type ConstantAttribute struct {
 	Name        string
 	Value       string
 	SingleQuote bool
-	Range       Range
+	NameRange   Range
 }
 
 func (ca ConstantAttribute) String() string {
@@ -744,7 +744,7 @@ func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
 type BoolExpressionAttribute struct {
 	Name       string
 	Expression Expression
-	Range      Range
+	NameRange  Range
 }
 
 func (bea BoolExpressionAttribute) String() string {
@@ -759,7 +759,7 @@ func (bea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
 type ExpressionAttribute struct {
 	Name       string
 	Expression Expression
-	Range      Range
+	NameRange  Range
 }
 
 func (ea ExpressionAttribute) String() string {

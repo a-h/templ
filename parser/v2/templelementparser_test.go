@@ -135,7 +135,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				Children: []Node{
 					Whitespace{Value: "\n\t\t\t"},
 					Element{Name: "a",
-						Range: Range{
+						NameRange: Range{
 							From: Position{Index: 20, Line: 1, Col: 4},
 							To:   Position{Index: 21, Line: 1, Col: 5},
 						},
@@ -143,7 +143,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "href",
 								Value: "someurl",
-								Range: Range{
+								NameRange: Range{
 									From: Position{Index: 22, Line: 1, Col: 6},
 									To:   Position{Index: 26, Line: 1, Col: 10},
 								},
@@ -389,6 +389,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 					Whitespace{Value: "\n  "},
 					Element{
 						Name: "div",
+						NameRange: Range{
+							From: Position{Index: 39, Line: 1, Col: 3},
+							To:   Position{Index: 42, Line: 1, Col: 6},
+						},
 						Children: []Node{
 							Text{Value: "hello"},
 						},

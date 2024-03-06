@@ -150,7 +150,7 @@ func TestTemplateParser(t *testing.T) {
 				Children: []Node{
 					Element{
 						Name: "span",
-						Range: Range{
+						NameRange: Range{
 							From: Position{Index: 27, Line: 1, Col: 1},
 							To:   Position{Index: 31, Line: 1, Col: 5},
 						},
@@ -200,6 +200,10 @@ func TestTemplateParser(t *testing.T) {
 				Children: []Node{
 					Element{
 						Name: "span",
+						NameRange: Range{
+							From: Position{Index: 27, Line: 0, Col: 27},
+							To:   Position{Index: 31, Line: 0, Col: 31},
+						},
 						Children: []Node{
 							StringExpression{
 								Expression: Expression{
@@ -253,7 +257,7 @@ func TestTemplateParser(t *testing.T) {
 				Children: []Node{
 					Element{
 						Name: "div",
-						Range: Range{
+						NameRange: Range{
 							From: Position{Index: 27, Line: 1, Col: 1},
 							To:   Position{Index: 30, Line: 1, Col: 4},
 						},
@@ -279,7 +283,7 @@ func TestTemplateParser(t *testing.T) {
 							},
 							Element{
 								Name: "span",
-								Range: Range{
+								NameRange: Range{
 									From: Position{Index: 55, Line: 3, Col: 3},
 									To:   Position{Index: 59, Line: 3, Col: 7},
 								},
@@ -361,7 +365,7 @@ func TestTemplateParser(t *testing.T) {
 							Whitespace{Value: "\t\t"},
 							Element{
 								Name: "span",
-								Range: Range{
+								NameRange: Range{
 									From: Position{Index: 42, Line: 2, Col: 3},
 									To:   Position{Index: 46, Line: 2, Col: 7},
 								},
@@ -423,7 +427,7 @@ func TestTemplateParser(t *testing.T) {
 					Whitespace{Value: "\t"},
 					Element{
 						Name: "input",
-						Range: Range{
+						NameRange: Range{
 							From: Position{Index: 28, Line: 1, Col: 2},
 							To:   Position{Index: 33, Line: 1, Col: 7},
 						},
@@ -431,7 +435,7 @@ func TestTemplateParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "type",
 								Value: "text",
-								Range: Range{
+								NameRange: Range{
 									From: Position{Index: 34, Line: 1, Col: 8},
 									To:   Position{Index: 38, Line: 1, Col: 12},
 								},
@@ -439,7 +443,7 @@ func TestTemplateParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "value",
 								Value: "a",
-								Range: Range{
+								NameRange: Range{
 									From: Position{Index: 46, Line: 1, Col: 20},
 									To:   Position{Index: 51, Line: 1, Col: 25},
 								},
@@ -449,7 +453,7 @@ func TestTemplateParser(t *testing.T) {
 					},
 					Element{
 						Name: "input",
-						Range: Range{
+						NameRange: Range{
 							From: Position{Index: 61, Line: 2, Col: 2},
 							To:   Position{Index: 66, Line: 2, Col: 7},
 						},
@@ -457,7 +461,7 @@ func TestTemplateParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "type",
 								Value: "text",
-								Range: Range{
+								NameRange: Range{
 									From: Position{Index: 67, Line: 2, Col: 8},
 									To:   Position{Index: 71, Line: 2, Col: 12},
 								},
@@ -465,7 +469,7 @@ func TestTemplateParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "value",
 								Value: "b",
-								Range: Range{
+								NameRange: Range{
 									From: Position{Index: 79, Line: 2, Col: 20},
 									To:   Position{Index: 84, Line: 2, Col: 25},
 								},
@@ -542,7 +546,7 @@ func TestTemplateParser(t *testing.T) {
 					},
 					Element{
 						Name: "a",
-						Range: Range{
+						NameRange: Range{
 							From: Position{Index: 14, Line: 1, Col: 2},
 							To:   Position{Index: 15, Line: 1, Col: 3},
 						},
@@ -550,7 +554,7 @@ func TestTemplateParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "href",
 								Value: "/",
-								Range: Range{
+								NameRange: Range{
 									From: Position{Index: 16, Line: 1, Col: 4},
 									To:   Position{Index: 20, Line: 1, Col: 8},
 								},
@@ -696,7 +700,7 @@ func TestTemplateParser(t *testing.T) {
 					Whitespace{Value: "\t\t"},
 					Element{
 						Name: "span",
-						Range: Range{
+						NameRange: Range{
 							From: Position{Index: 43, Line: 1, Col: 3},
 							To:   Position{Index: 47, Line: 1, Col: 7},
 						},
