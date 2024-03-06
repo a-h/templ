@@ -1,4 +1,4 @@
-package teststringerrs
+package testattrerrs
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ func Test(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
-	t.Run("string expressions can return errors", func(t *testing.T) {
+	t.Run("attribute expressions can return errors", func(t *testing.T) {
 		errSomethingBad := errors.New("bad error")
 
 		err := TestComponent(errSomethingBad).Render(context.Background(), &bytes.Buffer{})
@@ -36,13 +36,13 @@ func Test(t *testing.T) {
 			if !errors.As(err, &templateErr) {
 				t.Fatalf("expected error to be templ.Error, but got %T", err)
 			}
-			if templateErr.FileName != `generator/test-string-errors/template.templ` {
-				t.Errorf("expected error in `generator/test-string-errors/template.templ`, but got %v", templateErr.FileName)
+			if templateErr.FileName != `generator/test-attribute-errors/template.templ` {
+				t.Errorf("expected error in `generator/test-attribute-errors/template.templ`, but got %v", templateErr.FileName)
 			}
 			if templateErr.Line != 18 {
 				t.Errorf("expected error on line 18, but got %v", templateErr.Line)
 			}
-			if templateErr.Col != 26 {
+			if templateErr.Col != 36 {
 				t.Errorf("expected error on column 26, but got %v", templateErr.Col)
 			}
 		})

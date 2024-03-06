@@ -317,6 +317,86 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "templelement: supports a slice of structs/interfaces",
+			input: `@templates[0].CreateTemplate()`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `templates[0].CreateTemplate()`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 30,
+							Line:  0,
+							Col:   30,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: bare variables are read until the end of the token",
+			input: `@template</div>`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `template`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 9,
+							Line:  0,
+							Col:   9,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "templelement: struct literal method calls are supported",
+			input: `@layout.DefaultLayout{}.Compile()<div>`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `layout.DefaultLayout{}.Compile()`,
+					Range: Range{
+						From: Position{1, 0, 1},
+						To:   Position{33, 0, 33},
+					},
+				},
+			},
+		},
+		{
+			name: "templelement: struct literal method calls are supported, with child elements",
+			input: `@layout.DefaultLayout{}.Compile() {
+  <div>hello</div>
+}`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `layout.DefaultLayout{}.Compile()`,
+					Range: Range{
+						From: Position{1, 0, 1},
+						To:   Position{33, 0, 33},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\n  "},
+					Element{
+						Name: "div",
+						Children: []Node{
+							Text{Value: "hello"},
+						},
+						TrailingSpace: SpaceVertical,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

@@ -173,7 +173,11 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
 	// Only use relative filenames to the basepath for filenames in runtime error messages.
-	relFilePath, err := filepath.Rel(h.dir, fileName)
+	absFilePath, err := filepath.Abs(fileName)
+	if err != nil {
+		return false, false, nil, fmt.Errorf("failed to get absolute path for %q: %w", fileName, err)
+	}
+	relFilePath, err := filepath.Rel(h.dir, absFilePath)
 	if err != nil {
 		return false, false, nil, fmt.Errorf("failed to get relative path for %q: %w", fileName, err)
 	}

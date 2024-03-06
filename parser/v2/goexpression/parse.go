@@ -5,6 +5,8 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -14,8 +16,10 @@ var (
 	ErrExpectedNodeNotFound  = errors.New("parser error: expected node not found")
 )
 
+var defaultRegexp = regexp.MustCompile(`^default\s*:`)
+
 func Case(content string) (start, end int, err error) {
-	if !(strings.HasPrefix(content, "case ") || strings.HasPrefix(content, "default:")) {
+	if !(strings.HasPrefix(content, "case ") || defaultRegexp.MatchString(content)) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	prefix := "switch {\n"
@@ -100,26 +104,56 @@ func Switch(content string) (start, end int, err error) {
 	})
 }
 
+var boundaryTokens = map[rune]any{
+	')':  nil,
+	'}':  nil,
+	']':  nil,
+	' ':  nil,
+	'\t': nil,
+	'\n': nil,
+	'@':  nil,
+	'<':  nil,
+	'+':  nil,
+	'.':  nil,
+}
+
+func allBoundaries(content string) (boundaries []int) {
+	for i, r := range content {
+		if _, ok := boundaryTokens[r]; ok {
+			boundaries = append(boundaries, i)
+			boundaries = append(boundaries, i+1)
+		}
+	}
+	boundaries = append(boundaries, len(content))
+	return
+}
+
 func Expression(content string) (start, end int, err error) {
-	start, end, err = extract(content, func(body []ast.Stmt) (start, end int, err error) {
-		stmt, ok := body[0].(*ast.ExprStmt)
-		if !ok {
-			return 0, 0, ErrExpectedNodeNotFound
+	var candidates []int
+	for _, to := range allBoundaries(content) {
+		expr, err := parser.ParseExpr(content[:to])
+		if err != nil {
+			continue
 		}
-		start = int(stmt.Pos()) - 1
-		end = latestEnd(start, stmt)
-		return start, end, nil
-	})
-	if err != nil {
-		return 0, 0, err
-	}
-	// If the expression ends with `...` then it's a child spread expression.
-	if end < len(content) {
-		if strings.HasPrefix(content[end:], "...") {
-			end += len("...")
+		switch expr := expr.(type) {
+		case *ast.CallExpr:
+			end = int(expr.Rparen)
+		default:
+			end = int(expr.End()) - 1
 		}
+		// If the expression ends with `...` then it's a child spread expression.
+		if end < len(content) {
+			if strings.HasPrefix(content[end:], "...") {
+				end += len("...")
+			}
+		}
+		candidates = append(candidates, end)
 	}
-	return start, end, nil
+	if len(candidates) == 0 {
+		return 0, 0, ErrExpectedNodeNotFound
+	}
+	slices.Sort(candidates)
+	return 0, candidates[len(candidates)-1], nil
 }
 
 func SliceArgs(content string) (expr string, err error) {
@@ -180,6 +214,10 @@ func Func(content string) (name, expr string, err error) {
 		}
 		start := int(fn.Pos()) + len("func")
 		end := fn.Type.Params.End() - 1
+		if len(src) < int(end) {
+			err = errors.New("parser error: function identifier")
+			return false
+		}
 		expr = src[start:end]
 		name = fn.Name.Name
 		return false

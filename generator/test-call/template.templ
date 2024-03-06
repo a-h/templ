@@ -4,6 +4,7 @@ templ showAll() {
 	@a()
 	@b(c("C"))
 	@d()
+	@showOne(e())
 	@wrapChildren() {
 		<div>Child content</div>
 	}
@@ -24,6 +25,16 @@ templ c(text string) {
 
 templ d() {
 	<div>Legacy call style</div>
+}
+
+templ e() {
+	e
+}
+
+templ showOne(component templ.Component) {
+	<div>
+		@component
+	</div>
 }
 
 templ wrapChildren() {

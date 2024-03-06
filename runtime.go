@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"runtime"
 	"sort"
 	"strconv"
@@ -447,9 +448,16 @@ func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...an
 // SafeCSS is CSS that has been sanitized.
 type SafeCSS string
 
+type SafeCSSProperty string
+
+var safeCSSPropertyType = reflect.TypeOf(SafeCSSProperty(""))
+
 // SanitizeCSS sanitizes CSS properties to ensure that they are safe.
-func SanitizeCSS(property, value string) SafeCSS {
-	p, v := safehtml.SanitizeCSS(property, value)
+func SanitizeCSS[T ~string](property string, value T) SafeCSS {
+	if reflect.TypeOf(value) == safeCSSPropertyType {
+		return SafeCSS(safehtml.SanitizeCSSProperty(property) + ":" + string(value) + ";")
+	}
+	p, v := safehtml.SanitizeCSS(property, string(value))
 	return SafeCSS(p + ":" + v + ";")
 }
 

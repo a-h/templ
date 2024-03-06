@@ -179,6 +179,52 @@ func TestTemplateParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "template: containing element - no spacing",
+			input: `templ Name(p Parameter) { <span>{ "span content" }</span> }`,
+			expected: HTMLTemplate{
+				Expression: Expression{
+					Value: "Name(p Parameter)",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  0,
+							Col:   6,
+						},
+						To: Position{
+							Index: 23,
+							Line:  0,
+							Col:   23,
+						},
+					},
+				},
+				Children: []Node{
+					Element{
+						Name: "span",
+						Children: []Node{
+							StringExpression{
+								Expression: Expression{
+									Value: `"span content"`,
+									Range: Range{
+										From: Position{
+											Index: 34,
+											Line:  0,
+											Col:   34,
+										},
+										To: Position{
+											Index: 48,
+											Line:  0,
+											Col:   48,
+										},
+									},
+								},
+							},
+						},
+						TrailingSpace: SpaceHorizontal,
+					},
+				},
+			},
+		},
+		{
 			name: "template: containing nested elements",
 			input: `templ Name(p Parameter) {
 <div>

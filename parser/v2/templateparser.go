@@ -33,7 +33,7 @@ var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpre
 	}
 
 	// Eat " {\n".
-	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.StringFrom(parse.Optional(parse.NewLine))).Parse(pi); err != nil || !ok {
 		err = parse.Error("templ: malformed templ expression, expected `templ functionName() {`", pi.PositionAt(start))
 		return
 	}

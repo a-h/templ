@@ -257,6 +257,14 @@ func TestCaseDefault(t *testing.T) {
 			name:  "default",
 			input: `default:`,
 		},
+		{
+			name:  "default with padding",
+			input: `default :`,
+		},
+		{
+			name:  "default with padding",
+			input: `default   :`,
+		},
 	}
 	for _, test := range tests {
 		for i, suffix := range suffixes {
@@ -314,6 +322,22 @@ var expressionTests = []testInput{
 		name:  "call with braces and brackets",
 		input: `templates.New(test{}, other())`,
 	},
+	{
+		name:  "bare variable",
+		input: `component`,
+	},
+	{
+		name:  "boolean expression",
+		input: `direction == "newest"`,
+	},
+	{
+		name:  "boolean expression with parens",
+		input: `len(data.previousPageUrl) == 0`,
+	},
+	{
+		name:  "string concat",
+		input: `direction + "newest"`,
+	},
 }
 
 func TestExpression(t *testing.T) {
@@ -321,6 +345,10 @@ func TestExpression(t *testing.T) {
 	suffixes := []string{
 		"",
 		"}",
+		"\t}",
+		"  }",
+		"</div>",
+		"<p>/</p>",
 	}
 	for _, test := range expressionTests {
 		for i, suffix := range suffixes {
@@ -476,6 +504,39 @@ func TestChildren(t *testing.T) {
 	}
 }
 
+var funcTests = []testInput{
+	{
+		name:  "void func",
+		input: `myfunc()`,
+	},
+	{
+		name:  "receiver func",
+		input: `(r recv) myfunc()`,
+	},
+}
+
+func FuzzFuncs(f *testing.F) {
+	prefix := "func "
+	suffixes := []string{
+		"",
+		"}",
+		" }",
+		"}</a>\n}\nvar x = []struct {}{}",
+	}
+	for _, test := range funcTests {
+		for _, suffix := range suffixes {
+			f.Add(prefix + test.input + suffix)
+		}
+	}
+	f.Fuzz(func(t *testing.T, s string) {
+		_, _, err := Func(s)
+		if err != nil {
+			t.Skip()
+			return
+		}
+	})
+}
+
 func TestFunc(t *testing.T) {
 	prefix := "func "
 	suffixes := []string{
@@ -484,17 +545,7 @@ func TestFunc(t *testing.T) {
 		"}\nvar x = []struct {}{}",
 		"}\nfunc secondFunc() {}",
 	}
-	tests := []testInput{
-		{
-			name:  "void func",
-			input: `myfunc()`,
-		},
-		{
-			name:  "receiver func",
-			input: `(r recv) myfunc()`,
-		},
-	}
-	for _, test := range tests {
+	for _, test := range funcTests {
 		for i, suffix := range suffixes {
 			t.Run(fmt.Sprintf("%s_%d", test.name, i), func(t *testing.T) {
 				name, expr, err := Func(prefix + test.input + suffix)
@@ -525,7 +576,7 @@ func run(test testInput, prefix, suffix string, e extractor) func(t *testing.T) 
 		src := prefix + test.input + suffix
 		start, end, err := e(src)
 		if test.expectedErr == nil && err != nil {
-			t.Fatalf("expected nil error, got %v, %T", err, err)
+			t.Fatalf("expected nil error got error type %T: %v", err, err)
 		}
 		if test.expectedErr != nil && err == nil {
 			t.Fatalf("expected err %q, got %v", test.expectedErr.Error(), err)
