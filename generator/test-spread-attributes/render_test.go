@@ -37,6 +37,8 @@ func Test(t *testing.T) {
 		"optional-from-func-false": func() bool { return false },
 		// Optional attribute based on result of func() bool.
 		"optional-from-func-true": func() bool { return true },
+		// Should render a <script> element before the element and include a call to the JS function as an attribute
+		"onclick": BasicScript("hello, world"),
 	})
 
 	diff, err := htmldiff.Diff(component, expected)

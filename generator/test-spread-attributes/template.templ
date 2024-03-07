@@ -1,5 +1,9 @@
 package testspreadattributes
 
+script BasicScript(message string) {
+	alert(message);
+}
+
 templ BasicTemplate(spread templ.Attributes) {
 	<div>
 		<a { spread... }>text</a>
@@ -8,7 +12,7 @@ templ BasicTemplate(spread templ.Attributes) {
 				{ spread... }
 			}
 		>text2</div>
-		<div
+		<div onfocus={BasicScript("you focused on me")}
 			if false {
 				{ spread... }
 			}

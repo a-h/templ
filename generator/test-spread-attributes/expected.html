@@ -1,11 +1,15 @@
 <div>
-<a bool dateid="my-custom-id" hx-get="/page" id="test" nonshade optional-from-func-true text="lorem">
+<script type="text/javascript">
+function __templ_BasicScript_97f1(message){alert(message);
+}
+</script>
+<a bool dateid="my-custom-id" hx-get="/page" id="test" nonshade onclick="__templ_BasicScript_97f1(&#34;hello, world&#34;)" optional-from-func-true text="lorem">
   text
 </a>
-<div bool dateid="my-custom-id" hx-get="/page" id="test" nonshade optional-from-func-true text="lorem">
+<div bool dateid="my-custom-id" hx-get="/page" id="test" nonshade onclick="__templ_BasicScript_97f1(&#34;hello, world&#34;)" optional-from-func-true text="lorem">
   text2
 </div>
-<div>
+<div onfocus="__templ_BasicScript_97f1(&#34;you focused on me&#34;)">
   text3
 </div>
 </div>
