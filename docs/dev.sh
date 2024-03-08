@@ -5,14 +5,7 @@ set -euo pipefail
 
 dir=${0%/*}
 cd "$dir"
-
-echo $dir
-
 mkdir tmp -p
-
-PID_TEMPL=""
-PID_AIR=""
-PID_TW=""
 
 cleanup() {
     echo -e "\nStopping tailwind, air, and templ "
