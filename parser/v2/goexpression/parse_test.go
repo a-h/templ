@@ -347,12 +347,71 @@ func TestExpression(t *testing.T) {
 		"}",
 		"\t}",
 		"  }",
-		"</div>",
-		"<p>/</p>",
 	}
 	for _, test := range expressionTests {
 		for i, suffix := range suffixes {
 			t.Run(fmt.Sprintf("%s_%d", test.name, i), run(test, prefix, suffix, Expression))
+		}
+	}
+}
+
+var templExpressionTests = []testInput{
+	{
+		name:  "function call in package",
+		input: `components.Other()`,
+	},
+	{
+		name:  "slice index call",
+		input: `components[0].Other()`,
+	},
+	{
+		name:  "map index function call",
+		input: `components["name"].Other()`,
+	},
+	{
+		name:  "function literal",
+		input: `components["name"].Other(func() bool { return true })`,
+	},
+	{
+		name: "multiline function call",
+		input: `component(map[string]string{
+				"namea": "name_a",
+			  "nameb": "name_b",
+			})`,
+	},
+	{
+		name:  "call with braces and brackets",
+		input: `templates.New(test{}, other())`,
+	},
+	{
+		name:  "struct method call",
+		input: `typeName{}.Method()`,
+	},
+	{
+		name:  "struct method call in other package",
+		input: "layout.DefaultLayout{}.Compile()",
+	},
+	{
+		name:  "bare variable",
+		input: `component`,
+	},
+}
+
+func TestTemplExpression(t *testing.T) {
+	prefix := ""
+	suffixes := []string{
+		"",
+		"}",
+		"\t}",
+		"  }",
+		"</div>",
+		"<p>/</p>",
+		" just some text",
+		" { <div>Child content</div> }",
+	}
+	for _, test := range templExpressionTests {
+		for i, suffix := range suffixes {
+			t.Run(fmt.Sprintf("%s_%d", test.name, i), run(test, prefix, suffix, TemplExpression))
 		}
 	}
 }
