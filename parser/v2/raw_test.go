@@ -27,6 +27,10 @@ func TestRawElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "type",
 						Value: "text/css",
+						NameRange: Range{
+							From: Position{Index: 7, Line: 0, Col: 7},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
 					},
 				},
 				Contents: "contents",
@@ -41,6 +45,10 @@ func TestRawElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "type",
 						Value: "text/css",
+						NameRange: Range{
+							From: Position{Index: 7, Line: 0, Col: 7},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
 					},
 				},
 				Contents: ignoredContent,
@@ -55,6 +63,10 @@ func TestRawElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "type",
 						Value: "vbscript",
+						NameRange: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
 					},
 				},
 				Contents: "dim x = 1",

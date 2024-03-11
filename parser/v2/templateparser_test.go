@@ -150,6 +150,10 @@ func TestTemplateParser(t *testing.T) {
 				Children: []Node{
 					Element{
 						Name: "span",
+						NameRange: Range{
+							From: Position{Index: 27, Line: 1, Col: 1},
+							To:   Position{Index: 31, Line: 1, Col: 5},
+						},
 						Children: []Node{
 							StringExpression{
 								Expression: Expression{
@@ -196,6 +200,10 @@ func TestTemplateParser(t *testing.T) {
 				Children: []Node{
 					Element{
 						Name: "span",
+						NameRange: Range{
+							From: Position{Index: 27, Line: 0, Col: 27},
+							To:   Position{Index: 31, Line: 0, Col: 31},
+						},
 						Children: []Node{
 							StringExpression{
 								Expression: Expression{
@@ -249,6 +257,10 @@ func TestTemplateParser(t *testing.T) {
 				Children: []Node{
 					Element{
 						Name: "div",
+						NameRange: Range{
+							From: Position{Index: 27, Line: 1, Col: 1},
+							To:   Position{Index: 30, Line: 1, Col: 4},
+						},
 						Children: []Node{
 							Whitespace{Value: "\n  "},
 							StringExpression{
@@ -271,6 +283,10 @@ func TestTemplateParser(t *testing.T) {
 							},
 							Element{
 								Name: "span",
+								NameRange: Range{
+									From: Position{Index: 55, Line: 3, Col: 3},
+									To:   Position{Index: 59, Line: 3, Col: 7},
+								},
 								Children: []Node{
 									Whitespace{Value: "\n\t"},
 									StringExpression{
@@ -349,6 +365,10 @@ func TestTemplateParser(t *testing.T) {
 							Whitespace{Value: "\t\t"},
 							Element{
 								Name: "span",
+								NameRange: Range{
+									From: Position{Index: 42, Line: 2, Col: 3},
+									To:   Position{Index: 46, Line: 2, Col: 7},
+								},
 								Children: []Node{
 									Whitespace{"\n\t\t\t"},
 									StringExpression{
@@ -407,17 +427,53 @@ func TestTemplateParser(t *testing.T) {
 					Whitespace{Value: "\t"},
 					Element{
 						Name: "input",
+						NameRange: Range{
+							From: Position{Index: 28, Line: 1, Col: 2},
+							To:   Position{Index: 33, Line: 1, Col: 7},
+						},
 						Attributes: []Attribute{
-							ConstantAttribute{Name: "type", Value: "text"},
-							ConstantAttribute{Name: "value", Value: "a"},
+							ConstantAttribute{
+								Name:  "type",
+								Value: "text",
+								NameRange: Range{
+									From: Position{Index: 34, Line: 1, Col: 8},
+									To:   Position{Index: 38, Line: 1, Col: 12},
+								},
+							},
+							ConstantAttribute{
+								Name:  "value",
+								Value: "a",
+								NameRange: Range{
+									From: Position{Index: 46, Line: 1, Col: 20},
+									To:   Position{Index: 51, Line: 1, Col: 25},
+								},
+							},
 						},
 						TrailingSpace: SpaceVertical,
 					},
 					Element{
 						Name: "input",
+						NameRange: Range{
+							From: Position{Index: 61, Line: 2, Col: 2},
+							To:   Position{Index: 66, Line: 2, Col: 7},
+						},
 						Attributes: []Attribute{
-							ConstantAttribute{Name: "type", Value: "text"},
-							ConstantAttribute{Name: "value", Value: "b"},
+							ConstantAttribute{
+								Name:  "type",
+								Value: "text",
+								NameRange: Range{
+									From: Position{Index: 67, Line: 2, Col: 8},
+									To:   Position{Index: 71, Line: 2, Col: 12},
+								},
+							},
+							ConstantAttribute{
+								Name:  "value",
+								Value: "b",
+								NameRange: Range{
+									From: Position{Index: 79, Line: 2, Col: 20},
+									To:   Position{Index: 84, Line: 2, Col: 25},
+								},
+							},
 						},
 						TrailingSpace: SpaceVertical,
 					},
@@ -490,10 +546,18 @@ func TestTemplateParser(t *testing.T) {
 					},
 					Element{
 						Name: "a",
+						NameRange: Range{
+							From: Position{Index: 14, Line: 1, Col: 2},
+							To:   Position{Index: 15, Line: 1, Col: 3},
+						},
 						Attributes: []Attribute{
 							ConstantAttribute{
 								Name:  "href",
 								Value: "/",
+								NameRange: Range{
+									From: Position{Index: 16, Line: 1, Col: 4},
+									To:   Position{Index: 20, Line: 1, Col: 8},
+								},
 							},
 						},
 						Children: []Node{
@@ -636,6 +700,10 @@ func TestTemplateParser(t *testing.T) {
 					Whitespace{Value: "\t\t"},
 					Element{
 						Name: "span",
+						NameRange: Range{
+							From: Position{Index: 43, Line: 1, Col: 3},
+							To:   Position{Index: 47, Line: 1, Col: 7},
+						},
 						Attributes: []Attribute{SpreadAttributes{
 							Expression{
 								Value: "children",

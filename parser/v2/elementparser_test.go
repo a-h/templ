@@ -23,6 +23,10 @@ func TestAttributeParser(t *testing.T) {
 			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 			},
 		},
 		{
@@ -31,6 +35,10 @@ func TestAttributeParser(t *testing.T) {
 			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
 				Name: "turbo-frame",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 12, Line: 0, Col: 12},
+				},
 			},
 		},
 		{
@@ -39,10 +47,18 @@ func TestAttributeParser(t *testing.T) {
 			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
 				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "_",
 						Value: "show = true",
+						NameRange: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 6, Line: 0, Col: 6},
+						},
 					},
 				},
 			},
@@ -53,14 +69,26 @@ func TestAttributeParser(t *testing.T) {
 			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
 				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "@click",
 						Value: "show = true",
+						NameRange: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
 					},
 					ConstantAttribute{
 						Name:  ":class",
 						Value: "{'foo': true}",
+						NameRange: Range{
+							From: Position{Index: 26, Line: 0, Col: 26},
+							To:   Position{Index: 32, Line: 0, Col: 32},
+						},
 					},
 				},
 			},
@@ -71,14 +99,26 @@ func TestAttributeParser(t *testing.T) {
 			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
 				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "id",
 						Value: "123",
+						NameRange: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 7, Line: 0, Col: 7},
+						},
 					},
 					ConstantAttribute{
 						Name:  "style",
 						Value: "padding: 10px",
+						NameRange: Range{
+							From: Position{Index: 14, Line: 0, Col: 14},
+							To:   Position{Index: 19, Line: 0, Col: 19},
+						},
 					},
 				},
 			},
@@ -111,6 +151,10 @@ func TestAttributeParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "class",
 						Value: "important",
+						NameRange: Range{
+							From: Position{Index: 23, Line: 2, Col: 3},
+							To:   Position{Index: 28, Line: 2, Col: 8},
+						},
 					},
 				},
 			},
@@ -145,12 +189,24 @@ if test {
 					ConstantAttribute{
 						Name:  "class",
 						Value: "itIsTrue",
+						NameRange: Range{
+							From: Position{Index: 13, Line: 2, Col: 1},
+							To:   Position{Index: 18, Line: 2, Col: 6},
+						},
 					},
 					BoolConstantAttribute{
 						Name: "noshade",
+						NameRange: Range{
+							From: Position{Index: 31, Line: 3, Col: 1},
+							To:   Position{Index: 38, Line: 3, Col: 8},
+						},
 					},
 					ExpressionAttribute{
 						Name: "name",
+						NameRange: Range{
+							From: Position{Index: 40, Line: 4, Col: 1},
+							To:   Position{Index: 44, Line: 4, Col: 5},
+						},
 						Expression: Expression{
 							Value: `"other"`,
 							Range: Range{
@@ -176,6 +232,10 @@ if test {
 			parser: StripType(boolExpressionAttributeParser),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 8, Line: 0, Col: 8},
+				},
 				Expression: Expression{
 					Value: "true",
 					Range: Range{
@@ -199,6 +259,10 @@ if test {
 			parser: StripType(boolExpressionAttributeParser),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 8, Line: 0, Col: 8},
+				},
 				Expression: Expression{
 					Value: "true",
 					Range: Range{
@@ -222,6 +286,10 @@ if test {
 			parser: StripType[Attribute](attributeParser{}),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 8, Line: 0, Col: 8},
+				},
 				Expression: Expression{
 					Value: "true",
 					Range: Range{
@@ -245,6 +313,10 @@ if test {
 			parser: StripType(boolExpressionAttributeParser),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 8, Line: 0, Col: 8},
+				},
 				Expression: Expression{
 					Value: "true",
 					Range: Range{
@@ -291,6 +363,10 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "href",
 				Value: "test",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
 			},
 		},
 		{
@@ -301,6 +377,10 @@ if test {
 				Name:        "href",
 				Value:       `no double quote in value`,
 				SingleQuote: false,
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
 			},
 		},
 		{
@@ -311,6 +391,10 @@ if test {
 				Name:        "href",
 				Value:       `"test"`,
 				SingleQuote: true,
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
 			},
 		},
 		{
@@ -320,6 +404,10 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "data-turbo-permanent",
 				Value: "value",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 21, Line: 0, Col: 21},
+				},
 			},
 		},
 		{
@@ -329,6 +417,10 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "data",
 				Value: "",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
 			},
 		},
 		{
@@ -341,6 +433,10 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "data-script",
 				Value: "on click\n                do something\n             end",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 12, Line: 0, Col: 12},
+				},
 			},
 		},
 		{
@@ -349,9 +445,18 @@ if test {
 			parser: StripType(elementOpenTagParser),
 			expected: elementOpenTag{
 				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
 						Name: "data",
+
+						NameRange: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 9, Line: 0, Col: 9},
+						},
 					},
 				},
 			},
@@ -363,9 +468,17 @@ if test {
 			expected: Element{
 				Name:        "input",
 				IndentAttrs: true,
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 6, Line: 0, Col: 6},
+				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
 						Name: "required",
+						NameRange: Range{
+							From: Position{Index: 9, Line: 1, Col: 2},
+							To:   Position{Index: 17, Line: 1, Col: 10},
+						},
 					},
 				},
 			},
@@ -377,9 +490,17 @@ if test {
 			expected: Element{
 				Name:        "input",
 				IndentAttrs: true,
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 6, Line: 0, Col: 6},
+				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
 						Name: "required",
+						NameRange: Range{
+							From: Position{Index: 10, Line: 1, Col: 2},
+							To:   Position{Index: 18, Line: 1, Col: 10},
+						},
 					},
 				},
 			},
@@ -391,6 +512,10 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "href",
 				Value: `<">`,
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
 			},
 		},
 		{
@@ -400,6 +525,10 @@ if test {
 			expected: ConstantAttribute{
 				Name:  "hx-target-*",
 				Value: `#errors`,
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 12, Line: 0, Col: 12},
+				},
 			},
 		},
 	}
@@ -432,10 +561,18 @@ func TestElementParser(t *testing.T) {
 			input: `<a href="test"/>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "href",
 						Value: "test",
+						NameRange: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 7, Line: 0, Col: 7},
+						},
 					},
 				},
 			},
@@ -445,9 +582,17 @@ func TestElementParser(t *testing.T) {
 			input: `<hr noshade?={ true }/>`,
 			expected: Element{
 				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
 				Attributes: []Attribute{
 					BoolExpressionAttribute{
 						Name: "noshade",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
 						Expression: Expression{
 							Value: `true`,
 							Range: Range{
@@ -472,9 +617,17 @@ func TestElementParser(t *testing.T) {
 			input: `<a href={ "test" }/>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Attributes: []Attribute{
 					ExpressionAttribute{
 						Name: "href",
+						NameRange: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 7, Line: 0, Col: 7},
+						},
 						Expression: Expression{
 							Value: `"test"`,
 							Range: Range{
@@ -499,14 +652,26 @@ func TestElementParser(t *testing.T) {
 			input: `<a href="test" style="text-underline: auto"/>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "href",
 						Value: "test",
+						NameRange: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 7, Line: 0, Col: 7},
+						},
 					},
 					ConstantAttribute{
 						Name:  "style",
 						Value: "text-underline: auto",
+						NameRange: Range{
+							From: Position{Index: 15, Line: 0, Col: 15},
+							To:   Position{Index: 20, Line: 0, Col: 20},
+						},
 					},
 				},
 			},
@@ -516,6 +681,10 @@ func TestElementParser(t *testing.T) {
 			input: `<a { firstSpread... } { children... }/>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Attributes: []Attribute{
 					SpreadAttributes{
 						Expression: Expression{
@@ -559,12 +728,24 @@ func TestElementParser(t *testing.T) {
 			input: `<hr optionA optionB?={ true } optionC="other"/>`,
 			expected: Element{
 				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
 						Name: "optionA",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
 					},
 					BoolExpressionAttribute{
 						Name: "optionB",
+						NameRange: Range{
+							From: Position{Index: 12, Line: 0, Col: 12},
+							To:   Position{Index: 19, Line: 0, Col: 19},
+						},
 						Expression: Expression{
 							Value: `true`,
 							Range: Range{
@@ -584,6 +765,10 @@ func TestElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "optionC",
 						Value: "other",
+						NameRange: Range{
+							From: Position{Index: 30, Line: 0, Col: 30},
+							To:   Position{Index: 37, Line: 0, Col: 37},
+						},
 					},
 				},
 			},
@@ -593,13 +778,25 @@ func TestElementParser(t *testing.T) {
 			input: `<a href="test" title={ localisation.Get("a_title") } style="text-underline: auto"/>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "href",
 						Value: "test",
+						NameRange: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 7, Line: 0, Col: 7},
+						},
 					},
 					ExpressionAttribute{
 						Name: "title",
+						NameRange: Range{
+							From: Position{Index: 15, Line: 0, Col: 15},
+							To:   Position{Index: 20, Line: 0, Col: 20},
+						},
 						Expression: Expression{
 							Value: `localisation.Get("a_title")`,
 							Range: Range{
@@ -619,6 +816,10 @@ func TestElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "style",
 						Value: "text-underline: auto",
+						NameRange: Range{
+							From: Position{Index: 53, Line: 0, Col: 53},
+							To:   Position{Index: 58, Line: 0, Col: 58},
+						},
 					},
 				},
 			},
@@ -635,10 +836,18 @@ func TestElementParser(t *testing.T) {
 `,
 			expected: Element{
 				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "style",
 						Value: "width: 100;",
+						NameRange: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 10, Line: 0, Col: 10},
+						},
 					},
 					ConditionalAttribute{
 						Expression: Expression{
@@ -660,6 +869,10 @@ func TestElementParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "class",
 								Value: "important",
+								NameRange: Range{
+									From: Position{Index: 47, Line: 2, Col: 3},
+									To:   Position{Index: 52, Line: 2, Col: 8},
+								},
 							},
 						},
 					},
@@ -678,6 +891,10 @@ func TestElementParser(t *testing.T) {
 			input: `<hr/>`,
 			expected: Element{
 				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
 			},
 		},
 		{
@@ -685,10 +902,18 @@ func TestElementParser(t *testing.T) {
 			input: `<hr style="padding: 10px" />`,
 			expected: Element{
 				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "style",
 						Value: "padding: 10px",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 9, Line: 0, Col: 9},
+						},
 					},
 				},
 			},
@@ -702,10 +927,18 @@ func TestElementParser(t *testing.T) {
 />`,
 			expected: Element{
 				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "style",
 						Value: "padding: 10px",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 9, Line: 0, Col: 9},
+						},
 					},
 					ConditionalAttribute{
 						Expression: Expression{
@@ -727,6 +960,10 @@ func TestElementParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "class",
 								Value: "itIsTrue",
+								NameRange: Range{
+									From: Position{Index: 44, Line: 2, Col: 4},
+									To:   Position{Index: 49, Line: 2, Col: 9},
+								},
 							},
 						},
 					},
@@ -745,10 +982,18 @@ func TestElementParser(t *testing.T) {
 />`,
 			expected: Element{
 				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "style",
 						Value: "padding: 10px",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 9, Line: 0, Col: 9},
+						},
 					},
 					ConditionalAttribute{
 						Expression: Expression{
@@ -770,12 +1015,20 @@ func TestElementParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "class",
 								Value: "itIsTrue",
+								NameRange: Range{
+									From: Position{Index: 44, Line: 2, Col: 4},
+									To:   Position{Index: 49, Line: 2, Col: 9},
+								},
 							},
 						},
 						Else: []Attribute{
 							ConstantAttribute{
 								Name:  "class",
 								Value: "itIsNotTrue",
+								NameRange: Range{
+									From: Position{Index: 77, Line: 4, Col: 4},
+									To:   Position{Index: 82, Line: 4, Col: 9},
+								},
 							},
 						},
 					},
@@ -792,10 +1045,18 @@ func TestElementParser(t *testing.T) {
 >Test</p>`,
 			expected: Element{
 				Name: "p",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "style",
 						Value: "padding: 10px",
+						NameRange: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 8, Line: 0, Col: 8},
+						},
 					},
 					ConditionalAttribute{
 						Expression: Expression{
@@ -817,6 +1078,10 @@ func TestElementParser(t *testing.T) {
 							ConstantAttribute{
 								Name:  "class",
 								Value: "itIsTrue",
+								NameRange: Range{
+									From: Position{Index: 43, Line: 2, Col: 4},
+									To:   Position{Index: 48, Line: 2, Col: 9},
+								},
 							},
 						},
 					},
@@ -832,6 +1097,10 @@ func TestElementParser(t *testing.T) {
 			input: `<a></a>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 			},
 		},
 		{
@@ -839,6 +1108,10 @@ func TestElementParser(t *testing.T) {
 			input: `<a>The text</a>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Children: []Node{
 					Text{
 						Value: "The text",
@@ -851,9 +1124,17 @@ func TestElementParser(t *testing.T) {
 			input: `<a><b/></a>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Children: []Node{
 					Element{
 						Name: "b",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 5, Line: 0, Col: 5},
+						},
 					},
 				},
 			},
@@ -863,9 +1144,17 @@ func TestElementParser(t *testing.T) {
 			input: `<a><b></b></a>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Children: []Node{
 					Element{
 						Name: "b",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 5, Line: 0, Col: 5},
+						},
 					},
 				},
 			},
@@ -875,10 +1164,19 @@ func TestElementParser(t *testing.T) {
 			input: `<a> <b> </b> </a>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Children: []Node{
 					Whitespace{Value: " "},
 					Element{
 						Name: "b",
+						NameRange: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 6, Line: 0, Col: 6},
+						},
+
 						Children: []Node{
 							Whitespace{Value: " "},
 						},
@@ -892,15 +1190,31 @@ func TestElementParser(t *testing.T) {
 			input: `<a><b></b><c><d/></c></a>`,
 			expected: Element{
 				Name: "a",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
 				Children: []Node{
 					Element{
 						Name: "b",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 5, Line: 0, Col: 5},
+						},
 					},
 					Element{
 						Name: "c",
+						NameRange: Range{
+							From: Position{Index: 11, Line: 0, Col: 11},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
 						Children: []Node{
 							Element{
 								Name: "d",
+								NameRange: Range{
+									From: Position{Index: 14, Line: 0, Col: 14},
+									To:   Position{Index: 15, Line: 0, Col: 15},
+								},
 							},
 						},
 					},
@@ -912,6 +1226,10 @@ func TestElementParser(t *testing.T) {
 			input: `<div></div>`,
 			expected: Element{
 				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
 			},
 		},
 		{
@@ -919,6 +1237,10 @@ func TestElementParser(t *testing.T) {
 			input: `<div>{ "test" }</div>`,
 			expected: Element{
 				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
 				Children: []Node{
 					StringExpression{
 						Expression: Expression{
@@ -945,21 +1267,41 @@ func TestElementParser(t *testing.T) {
 			input: `<input  type="email" id="email" name="email" class={ "a", "b", "c",  templ.KV("c", false)}	placeholder="your@email.com" autocomplete="off"/>`,
 			expected: Element{
 				Name: "input",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 6, Line: 0, Col: 6},
+				},
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "type",
 						Value: "email",
+						NameRange: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
 					},
 					ConstantAttribute{
 						Name:  "id",
 						Value: "email",
+						NameRange: Range{
+							From: Position{Index: 21, Line: 0, Col: 21},
+							To:   Position{Index: 23, Line: 0, Col: 23},
+						},
 					},
 					ConstantAttribute{
 						Name:  "name",
 						Value: "email",
+						NameRange: Range{
+							From: Position{Index: 32, Line: 0, Col: 32},
+							To:   Position{Index: 36, Line: 0, Col: 36},
+						},
 					},
 					ExpressionAttribute{
 						Name: "class",
+						NameRange: Range{
+							From: Position{Index: 45, Line: 0, Col: 45},
+							To:   Position{Index: 50, Line: 0, Col: 50},
+						},
 						Expression: Expression{
 							Value: `"a", "b", "c",  templ.KV("c", false)`,
 							Range: Range{
@@ -979,10 +1321,60 @@ func TestElementParser(t *testing.T) {
 					ConstantAttribute{
 						Name:  "placeholder",
 						Value: "your@email.com",
+						NameRange: Range{
+							From: Position{Index: 91, Line: 0, Col: 91},
+							To:   Position{Index: 102, Line: 0, Col: 102},
+						},
 					},
 					ConstantAttribute{
 						Name:  "autocomplete",
 						Value: "off",
+						NameRange: Range{
+							From: Position{Index: 120, Line: 0, Col: 120},
+							To:   Position{Index: 132, Line: 0, Col: 132},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "element: with multi-line attributes",
+			input: `<input
+	type="email" 
+	id="email" 
+	name="email"
+></input>`,
+			expected: Element{
+				Name:        "input",
+				IndentAttrs: true,
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 6, Line: 0, Col: 6},
+				},
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "type",
+						Value: "email",
+						NameRange: Range{
+							From: Position{Index: 8, Line: 1, Col: 1},
+							To:   Position{Index: 12, Line: 1, Col: 5},
+						},
+					},
+					ConstantAttribute{
+						Name:  "id",
+						Value: "email",
+						NameRange: Range{
+							From: Position{Index: 23, Line: 2, Col: 1},
+							To:   Position{Index: 25, Line: 2, Col: 3},
+						},
+					},
+					ConstantAttribute{
+						Name:  "name",
+						Value: "email",
+						NameRange: Range{
+							From: Position{Index: 36, Line: 3, Col: 1},
+							To:   Position{Index: 40, Line: 3, Col: 5},
+						},
 					},
 				},
 			},

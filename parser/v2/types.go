@@ -86,6 +86,22 @@ func NewExpression(value string, from, to parse.Position) Expression {
 	}
 }
 
+// NewRange creates a Range expression.
+func NewRange(from, to parse.Position) Range {
+	return Range{
+		From: Position{
+			Index: int64(from.Index),
+			Line:  uint32(from.Line),
+			Col:   uint32(from.Col),
+		},
+		To: Position{
+			Index: int64(to.Index),
+			Line:  uint32(to.Line),
+			Col:   uint32(to.Col),
+		},
+	}
+}
+
 // Range of text within a file.
 type Range struct {
 	From Position
@@ -436,6 +452,7 @@ type Element struct {
 	Children       []Node
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
+	NameRange      Range
 }
 
 func (e Element) Trailing() TrailingSpace {
@@ -691,7 +708,8 @@ type Attribute interface {
 
 // <hr noshade/>
 type BoolConstantAttribute struct {
-	Name string
+	Name      string
+	NameRange Range
 }
 
 func (bca BoolConstantAttribute) String() string {
@@ -707,6 +725,7 @@ type ConstantAttribute struct {
 	Name        string
 	Value       string
 	SingleQuote bool
+	NameRange   Range
 }
 
 func (ca ConstantAttribute) String() string {
@@ -725,20 +744,22 @@ func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
 type BoolExpressionAttribute struct {
 	Name       string
 	Expression Expression
+	NameRange  Range
 }
 
-func (ea BoolExpressionAttribute) String() string {
-	return ea.Name + `?={ ` + ea.Expression.Value + ` }`
+func (bea BoolExpressionAttribute) String() string {
+	return bea.Name + `?={ ` + bea.Expression.Value + ` }`
 }
 
-func (ea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
-	return writeIndent(w, indent, ea.String())
+func (bea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, bea.String())
 }
 
 // href={ ... }
 type ExpressionAttribute struct {
 	Name       string
 	Expression Expression
+	NameRange  Range
 }
 
 func (ea ExpressionAttribute) String() string {
