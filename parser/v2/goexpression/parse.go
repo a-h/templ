@@ -183,6 +183,8 @@ loop:
 			end = int(pos) + len(lit) - 1
 		case token.SEMICOLON:
 			continue
+		case token.ILLEGAL:
+			return 0, 0, fmt.Errorf("illegal token: %v", lit)
 		default:
 			end = int(pos) + len(tok.String()) - 1
 		}

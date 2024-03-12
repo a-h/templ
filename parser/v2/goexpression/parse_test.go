@@ -296,6 +296,22 @@ func FuzzCaseDefault(f *testing.F) {
 
 var expressionTests = []testInput{
 	{
+		name:  "string literal",
+		input: `"hello"`,
+	},
+	{
+		name:  "string literal with escape",
+		input: `"hello\n"`,
+	},
+	{
+		name:  "backtick string literal",
+		input: "`hello`",
+	},
+	{
+		name:  "backtick string literal containing double quote",
+		input: "`hello" + `"` + `world` + "`",
+	},
+	{
 		name:  "function call in package",
 		input: `components.Other()`,
 	},
@@ -369,6 +385,10 @@ var templExpressionTests = []testInput{
 		input: `components["name"].Other()`,
 	},
 	{
+		name:  "map index function call backtick literal",
+		input: "components[`name" + `"` + "`].Other()",
+	},
+	{
 		name:  "function literal",
 		input: `components["name"].Other(func() bool { return true })`,
 	},
@@ -414,6 +434,29 @@ func TestTemplExpression(t *testing.T) {
 			t.Run(fmt.Sprintf("%s_%d", test.name, i), run(test, prefix, suffix, TemplExpression))
 		}
 	}
+}
+
+func FuzzTemplExpression(f *testing.F) {
+	suffixes := []string{
+		"",
+		" }",
+		" }}</a>\n}",
+		"...",
+	}
+	for _, test := range expressionTests {
+		for _, suffix := range suffixes {
+			f.Add(test.input + suffix)
+		}
+	}
+	f.Fuzz(func(t *testing.T, s string) {
+		src := "switch " + s
+		start, end, err := TemplExpression(src)
+		if err != nil {
+			t.Skip()
+			return
+		}
+		panicIfInvalid(src, start, end)
+	})
 }
 
 func FuzzExpression(f *testing.F) {
