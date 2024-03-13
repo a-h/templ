@@ -28,7 +28,8 @@ func TestFormat(t *testing.T) {
 				t.Fatal(err)
 			}
 			var actual bytes.Buffer
-			if err := tem.Write(&actual); err != nil {
+			cw := NewContextWriter(&actual)
+			if err := tem.Write(cw); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
 			if diff := cmp.Diff(string(a.Files[1].Data), actual.String()); diff != "" {
