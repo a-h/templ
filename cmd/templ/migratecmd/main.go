@@ -94,7 +94,7 @@ func migrate(fileName string) (err error) {
 
 	// Write the updated file.
 	w := new(bytes.Buffer)
-	cw := v2.NewContextWriter(w)
+	cw := v2.NewContextWriter(w, v2.WriteContextAll)
 	err = v2Template.Write(cw)
 	if err != nil {
 		return fmt.Errorf("%s formatting error: %w", fileName, err)

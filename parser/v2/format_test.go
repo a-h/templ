@@ -28,7 +28,7 @@ func TestFormat(t *testing.T) {
 				t.Fatal(err)
 			}
 			var actual bytes.Buffer
-			cw := NewContextWriter(&actual)
+			cw := NewContextWriter(&actual, WriteContextAll)
 			if err := tem.Write(cw); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

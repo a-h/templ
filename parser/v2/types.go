@@ -64,10 +64,10 @@ type ContextWriter struct {
 	w              io.Writer
 }
 
-func NewContextWriter(w io.Writer) ContextWriter {
+func NewContextWriter(w io.Writer, wc WriteContext) ContextWriter {
 	return ContextWriter{
 		IndexToContext: make(map[int]WriteContext),
-		wc:             WriteContextAll,
+		wc:             wc,
 		w:              w,
 	}
 }

@@ -734,7 +734,7 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 		return
 	}
 	w := new(strings.Builder)
-	cw := parser.NewContextWriter(w)
+	cw := parser.NewContextWriter(w, parser.WriteContextAll)
 	err = template.Write(cw)
 	if err != nil {
 		p.Log.Error("handleFormatting: faled to write template", zap.Error(err))

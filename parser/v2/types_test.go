@@ -833,7 +833,7 @@ templ test() {
 				t.Fatalf("failed to parse template: %v", err)
 			}
 			w := new(strings.Builder)
-			cw := NewContextWriter(w)
+			cw := NewContextWriter(w, WriteContextAll)
 			err = template.Write(cw)
 			if err != nil {
 				t.Fatalf("failed to write template: %v", err)

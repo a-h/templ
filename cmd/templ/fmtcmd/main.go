@@ -144,7 +144,7 @@ func format(write writer, read reader) (err error) {
 		return err
 	}
 	w := new(bytes.Buffer)
-	cw := parser.NewContextWriter(w)
+	cw := parser.NewContextWriter(w, parser.WriteContextAll)
 	if err = t.Write(cw); err != nil {
 		return fmt.Errorf("formatting error: %w", err)
 	}
