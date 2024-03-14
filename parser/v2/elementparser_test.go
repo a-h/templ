@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -552,9 +553,10 @@ if test {
 
 func TestElementParser(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected Element
+		name         string
+		input        string
+		expected     Element
+		expectedHTML string
 	}{
 		{
 			name:  "element: self-closing with single constant attribute",
@@ -887,8 +889,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: self-closing with no attributes",
-			input: `<hr/>`,
+			name:         "element: self-closing with no attributes",
+			input:        `<hr/>`,
+			expectedHTML: `<hr/>`,
 			expected: Element{
 				Name: "hr",
 				NameRange: Range{
@@ -898,8 +901,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: self-closing with attribute",
-			input: `<hr style="padding: 10px" />`,
+			name:         "element: self-closing with attribute",
+			input:        `<hr style="padding: 10px" />`,
+			expectedHTML: `<hr style="padding: 10px" />`,
 			expected: Element{
 				Name: "hr",
 				NameRange: Range{
@@ -924,6 +928,11 @@ func TestElementParser(t *testing.T) {
 			if true {
 				class="itIsTrue"
 			}
+/>`,
+			expectedHTML: `<hr style="padding: 10px" 
+			         
+				class="itIsTrue"
+			 
 />`,
 			expected: Element{
 				Name: "hr",
@@ -979,6 +988,13 @@ func TestElementParser(t *testing.T) {
 			} else {
 				class="itIsNotTrue"
 			}
+/>`,
+			expectedHTML: `<hr style="padding: 10px" 
+				
+			class="itIsTrue"
+				
+			class="itIsNotTrue"
+		
 />`,
 			expected: Element{
 				Name: "hr",
@@ -1043,6 +1059,11 @@ func TestElementParser(t *testing.T) {
 				class="itIsTrue"
 			}
 >Test</p>`,
+			expectedHTML: `<p style="padding: 10px" 
+         
+	class="itIsTrue"
+ 
+>Test</p>`,
 			expected: Element{
 				Name: "p",
 				NameRange: Range{
@@ -1093,8 +1114,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: open and close",
-			input: `<a></a>`,
+			name:         "element: open and close",
+			input:        `<a></a>`,
+			expectedHTML: `<a></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -1104,8 +1126,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: open and close with text",
-			input: `<a>The text</a>`,
+			name:         "element: open and close with text",
+			input:        `<a>The text</a>`,
+			expectedHTML: `<a>The text</a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -1120,8 +1143,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: with self-closing child element",
-			input: `<a><b/></a>`,
+			name:         "element: with self-closing child element",
+			input:        `<a><b/></a>`,
+			expectedHTML: `<a><b/></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -1140,8 +1164,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: with non-self-closing child element",
-			input: `<a><b></b></a>`,
+			name:         "element: with non-self-closing child element",
+			input:        `<a><b></b></a>`,
+			expectedHTML: `<a><b></b></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -1160,8 +1185,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: containing space",
-			input: `<a> <b> </b> </a>`,
+			name:         "element: containing space",
+			input:        `<a> <b> </b> </a>`,
+			expectedHTML: `<a> <b> </b> </a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -1186,8 +1212,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: with multiple child elements",
-			input: `<a><b></b><c><d/></c></a>`,
+			name:         "element: with multiple child elements",
+			input:        `<a><b></b><c><d/></c></a>`,
+			expectedHTML: `<a><b></b><c><d/></c></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -1222,8 +1249,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: empty",
-			input: `<div></div>`,
+			name:         "element: empty",
+			input:        `<div></div>`,
+			expectedHTML: `<div></div>`,
 			expected: Element{
 				Name: "div",
 				NameRange: Range{
@@ -1233,8 +1261,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: containing string expression",
-			input: `<div>{ "test" }</div>`,
+			name:         "element: containing string expression",
+			input:        `<div>{ "test" }</div>`,
+			expectedHTML: `<div>          </div>`,
 			expected: Element{
 				Name: "div",
 				NameRange: Range{
@@ -1263,8 +1292,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: inputs can contain class attributes",
-			input: `<input  type="email" id="email" name="email" class={ "a", "b", "c",  templ.KV("c", false)}	placeholder="your@email.com" autocomplete="off"/>`,
+			name:         "element: inputs can contain class attributes",
+			input:        `<input  type="email" id="email" name="email" class={ "a", "b", "c",  templ.KV("c", false)}	placeholder="your@email.com" autocomplete="off"/>`,
+			expectedHTML: `<input  type="email" id="email" name="email" class="                                     "	placeholder="your@email.com" autocomplete="off"/>`,
 			expected: Element{
 				Name: "input",
 				NameRange: Range{
@@ -1344,6 +1374,11 @@ func TestElementParser(t *testing.T) {
 	id="email" 
 	name="email"
 ></input>`,
+			expectedHTML: `<input
+type="email" 
+id="email" 
+name="email"
+></input>`,
 			expected: Element{
 				Name:        "input",
 				IndentAttrs: true,
@@ -1393,6 +1428,21 @@ func TestElementParser(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
+			}
+			if tt.expectedHTML != "" {
+				w := new(bytes.Buffer)
+				cw := NewContextWriter(w, WriteContextHTML)
+				if err := result.Write(cw, 0); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				actualHTML := w.String()
+				if diff := cmp.Diff(tt.expectedHTML, actualHTML); diff != "" {
+					t.Error(diff)
+
+					t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
+					t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedHTML))
+					t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+				}
 			}
 		})
 	}
