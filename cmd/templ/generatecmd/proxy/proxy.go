@@ -77,6 +77,9 @@ func insertScriptTagIntoBody(body string) (updated string) {
 }
 
 func modifyResponse(r *http.Response) error {
+	if r.Header.Get("templ-skip-modify") == "true" {
+		return nil
+	}
 	if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "text/html") {
 		return nil
 	}
@@ -132,6 +135,15 @@ type roundTripper struct {
 	backoffExponent float64
 }
 
+func (rt *roundTripper) setShouldSkipResponseModificationHeader(r *http.Request, resp *http.Response) {
+	// Instruct the modifyResponse function to skip modifying the response if the
+	// HTTP request has come from HTMX.
+	if r.Header.Get("HX-Request") != "true" {
+		return
+	}
+	resp.Header.Set("templ-skip-modify", "true")
+}
+
 func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	// Read and buffer the body.
 	var bodyBytes []byte
@@ -160,6 +172,8 @@ func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 			time.Sleep(rt.initialDelay * time.Duration(math.Pow(rt.backoffExponent, float64(retries))))
 			continue
 		}
+
+		rt.setShouldSkipResponseModificationHeader(r, resp)
 
 		return resp, nil
 	}
