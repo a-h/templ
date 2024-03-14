@@ -80,6 +80,10 @@ default:
 							Whitespace{Value: "\t"},
 							Element{
 								Name: "span",
+								NameRange: Range{
+									From: Position{Index: 30, Line: 2, Col: 2},
+									To:   Position{Index: 34, Line: 2, Col: 6},
+								},
 								Children: []Node{
 									Whitespace{Value: "\n\t  "},
 									StringExpression{
@@ -153,6 +157,10 @@ default:
 						Children: []Node{
 							Element{
 								Name: "span",
+								NameRange: Range{
+									From: Position{Index: 37, Line: 2, Col: 1},
+									To:   Position{Index: 41, Line: 2, Col: 5},
+								},
 								Children: []Node{
 									Whitespace{Value: "\n  "},
 									StringExpression{
