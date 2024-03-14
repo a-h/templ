@@ -135,6 +135,7 @@ It's possible to spread any variable of type `templ.Attributes`. `templ.Attribut
 * If the value is a `bool`, the attribute is added as a boolean attribute if the value is true, e.g. `<div name>`.
 * If the value is a `templ.KeyValue[string, bool]`, the attribute is added if the boolean is true, e.g. `<div name="value">`.
 * If the value is a `templ.KeyValue[bool, bool]`, the attribute is added if both boolean values are true, as `<div name>`.
+* If the value is a `templ.ComponentScript`, the relevant `<script>` element will be rendered into the HTML and the generated function call will be inserted into the value of the attribute.
 
 ```templ
 templ component(shouldBeUsed bool, attrs templ.Attributes) {

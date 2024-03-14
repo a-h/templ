@@ -536,6 +536,10 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (
 					return err
 				}
 			}
+		case ComponentScript:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, value.Call, `"`); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -691,6 +695,20 @@ func (c ComponentScript) Render(ctx context.Context, w io.Writer) error {
 
 // RenderScriptItems renders a <script> element, if the script has not already been rendered.
 func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScript) (err error) {
+	return RenderScriptItemsWithSpread(ctx, w, nil, scripts...)
+}
+
+// RenderScriptItemsWithSpread renders a <script> element, if the script has not already been rendered.
+// Includes support for scripts passed from spread attributes { attrs... }.
+func RenderScriptItemsWithSpread(ctx context.Context, w io.Writer, attrSlice []Attributes, scripts ...ComponentScript) (err error) {
+	for _, attrs := range attrSlice {
+		for _, attr := range attrs {
+			if script, ok := attr.(ComponentScript); ok {
+				scripts = append(scripts, script)
+			}
+		}
+	}
+
 	if len(scripts) == 0 {
 		return nil
 	}

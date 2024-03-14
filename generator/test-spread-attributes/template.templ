@@ -1,13 +1,17 @@
 package testspreadattributes
 
-templ BasicTemplate(spread templ.Attributes) {
+script BasicScript(message string) {
+	alert(message);
+}
+
+templ BasicTemplate(spread templ.Attributes, otherSpread templ.Attributes) {
 	<div>
-		<a { spread... }>text</a>
-		<div
+		<a { spread... } { otherSpread... }>text</a>
+		<button onclick={BasicScript("you clicked on me")}
 			if true {
 				{ spread... }
 			}
-		>text2</div>
+		>text2</button>
 		<div
 			if false {
 				{ spread... }
