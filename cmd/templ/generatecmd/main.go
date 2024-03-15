@@ -17,6 +17,7 @@ type Arguments struct {
 	Watch                           bool
 	OpenBrowser                     bool
 	Command                         string
+	ProxyBind                       string
 	ProxyPort                       int
 	Proxy                           string
 	WorkerCount                     int

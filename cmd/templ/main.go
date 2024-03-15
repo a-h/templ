@@ -86,6 +86,8 @@ Args:
     Set the URL to proxy after generating code and executing the command.
   -proxyport
     The port the proxy will listen on. (default 7331)
+  -proxybind
+    The address the proxy will listen on. (default 127.0.0.1)
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
   -pprof
@@ -127,6 +129,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	cmdFlag := cmd.String("cmd", "", "")
 	proxyFlag := cmd.String("proxy", "", "")
 	proxyPortFlag := cmd.Int("proxyport", 7331, "")
+	proxyBindFlag := cmd.String("proxybind", "127.0.0.1", "")
 	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
 	pprofPortFlag := cmd.Int("pprof", 0, "")
 	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
@@ -160,6 +163,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 		Command:                         *cmdFlag,
 		Proxy:                           *proxyFlag,
 		ProxyPort:                       *proxyPortFlag,
+		ProxyBind:                       *proxyBindFlag,
 		WorkerCount:                     *workerCountFlag,
 		GenerateSourceMapVisualisations: *sourceMapVisualisationsFlag,
 		IncludeVersion:                  *includeVersionFlag,

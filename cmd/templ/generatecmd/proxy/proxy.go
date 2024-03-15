@@ -90,7 +90,7 @@ func modifyResponse(r *http.Response) error {
 	return modifier(r)
 }
 
-func New(port int, target *url.URL) *Handler {
+func New(bind string, port int, target *url.URL) *Handler {
 	p := httputil.NewSingleHostReverseProxy(target)
 	p.ErrorLog = log.New(os.Stderr, "Proxy to target error: ", 0)
 	p.Transport = &roundTripper{
@@ -100,7 +100,7 @@ func New(port int, target *url.URL) *Handler {
 	}
 	p.ModifyResponse = modifyResponse
 	return &Handler{
-		URL:    fmt.Sprintf("http://127.0.0.1:%d", port),
+		URL:    fmt.Sprintf("http://%s:%d", bind, port),
 		Target: target,
 		p:      p,
 		sse:    sse.New(),
