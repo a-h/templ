@@ -233,12 +233,15 @@ func writeLinesIndented(cw ContextWriter, wc WriteContext, level int, s string) 
 		return err
 	}
 
-	for _, line := range strings.Split(s, "\n") {
+	lines := strings.Split(s, "\n")
+	for idx, line := range lines {
 		if err := cw.Write(wc, line); err != nil {
 			return err
 		}
-		if err := cw.Write(cw.wc, indent+"\n"); err != nil {
-			return err
+		if idx < len(lines)-1 {
+			if err := cw.Write(cw.wc, "\n"+indent); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -634,7 +637,7 @@ func (e Element) Write(cw ContextWriter, indent int) error {
 		return nil
 	}
 	if e.IsVoidElement() {
-		if err := writeIndent(cw, WriteContextHTML, closeAngleBracketIndent, " />"); err != nil {
+		if err := writeIndent(cw, WriteContextHTML, closeAngleBracketIndent, "/>"); err != nil {
 			return err
 		}
 		return nil
@@ -859,16 +862,34 @@ func (ea ExpressionAttribute) Write(cw ContextWriter, indent int) (err error) {
 		}
 	}
 
-	// TODO: make this conditionally use WriteContexts
-	if err = writeIndent(cw, WriteContextGo, 0, "{\n"); err != nil {
-		return err
-	}
-	for _, line := range lines {
-		if err = writeIndent(cw, WriteContextGo, indent, line, "\n"); err != nil {
+	if cw.wc.IsSet(WriteContextGo) {
+		if err := cw.Write(WriteContextGo, "{"); err != nil {
+			return err
+		}
+	} else {
+		if err := cw.Write(cw.wc, `"`); err != nil {
 			return err
 		}
 	}
-	return writeIndent(cw, WriteContextGo, indent, "}")
+
+	if err := cw.Write(cw.wc, "\n"); err != nil {
+		return err
+	}
+
+	for _, line := range lines {
+		if err = writeIndent(cw, WriteContextGo, indent, line); err != nil {
+			return err
+		}
+		if err := cw.Write(cw.wc, "\n"); err != nil {
+			return err
+		}
+	}
+
+	if cw.wc.IsSet(WriteContextGo) {
+		return writeIndent(cw, WriteContextGo, indent, "}")
+	} else {
+		return writeIndent(cw, cw.wc, indent, `"`)
+	}
 }
 
 // <a { spread... } />

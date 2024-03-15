@@ -903,7 +903,7 @@ func TestElementParser(t *testing.T) {
 		{
 			name:         "element: self-closing with attribute",
 			input:        `<hr style="padding: 10px" />`,
-			expectedHTML: `<hr style="padding: 10px" />`,
+			expectedHTML: `<hr style="padding: 10px"/>`,
 			expected: Element{
 				Name: "hr",
 				NameRange: Range{
@@ -929,10 +929,11 @@ func TestElementParser(t *testing.T) {
 				class="itIsTrue"
 			}
 />`,
-			expectedHTML: `<hr style="padding: 10px" 
-			         
-				class="itIsTrue"
-			 
+			expectedHTML: `<hr
+	style="padding: 10px"
+	         
+		class="itIsTrue"
+	 
 />`,
 			expected: Element{
 				Name: "hr",
@@ -989,12 +990,13 @@ func TestElementParser(t *testing.T) {
 				class="itIsNotTrue"
 			}
 />`,
-			expectedHTML: `<hr style="padding: 10px" 
-				
-			class="itIsTrue"
-				
-			class="itIsNotTrue"
-		
+			expectedHTML: `<hr
+	style="padding: 10px"
+	         
+		class="itIsTrue"
+	        
+		class="itIsNotTrue"
+	 
 />`,
 			expected: Element{
 				Name: "hr",
@@ -1059,10 +1061,11 @@ func TestElementParser(t *testing.T) {
 				class="itIsTrue"
 			}
 >Test</p>`,
-			expectedHTML: `<p style="padding: 10px" 
-         
-	class="itIsTrue"
- 
+			expectedHTML: `<p
+	style="padding: 10px"
+	         
+		class="itIsTrue"
+	 
 >Test</p>`,
 			expected: Element{
 				Name: "p",
@@ -1145,7 +1148,7 @@ func TestElementParser(t *testing.T) {
 		{
 			name:         "element: with self-closing child element",
 			input:        `<a><b/></a>`,
-			expectedHTML: `<a><b/></a>`,
+			expectedHTML: `<a><b></b></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -1187,7 +1190,7 @@ func TestElementParser(t *testing.T) {
 		{
 			name:         "element: containing space",
 			input:        `<a> <b> </b> </a>`,
-			expectedHTML: `<a> <b> </b> </a>`,
+			expectedHTML: `<a><b></b> </a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -1214,7 +1217,7 @@ func TestElementParser(t *testing.T) {
 		{
 			name:         "element: with multiple child elements",
 			input:        `<a><b></b><c><d/></c></a>`,
-			expectedHTML: `<a><b></b><c><d/></c></a>`,
+			expectedHTML: `<a><b></b><c><d></d></c></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -1294,7 +1297,7 @@ func TestElementParser(t *testing.T) {
 		{
 			name:         "element: inputs can contain class attributes",
 			input:        `<input  type="email" id="email" name="email" class={ "a", "b", "c",  templ.KV("c", false)}	placeholder="your@email.com" autocomplete="off"/>`,
-			expectedHTML: `<input  type="email" id="email" name="email" class="                                     "	placeholder="your@email.com" autocomplete="off"/>`,
+			expectedHTML: `<input type="email" id="email" name="email" class="                                      " placeholder="your@email.com" autocomplete="off"/>`,
 			expected: Element{
 				Name: "input",
 				NameRange: Range{
@@ -1375,10 +1378,10 @@ func TestElementParser(t *testing.T) {
 	name="email"
 ></input>`,
 			expectedHTML: `<input
-type="email" 
-id="email" 
-name="email"
-></input>`,
+	type="email"
+	id="email"
+	name="email"
+/>`,
 			expected: Element{
 				Name:        "input",
 				IndentAttrs: true,
