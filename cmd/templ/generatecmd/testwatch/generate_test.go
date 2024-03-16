@@ -307,14 +307,15 @@ loop:
 	}
 }
 
-func NewTestArgs(modRoot, appDir string, appPort int, proxyPort int) TestArgs {
+func NewTestArgs(modRoot, appDir string, appPort int, proxyBind string, proxyPort int) TestArgs {
 	return TestArgs{
 		ModRoot:   modRoot,
 		AppDir:    appDir,
 		AppPort:   appPort,
 		AppURL:    fmt.Sprintf("http://localhost:%d", appPort),
+		ProxyBind: proxyBind,
 		ProxyPort: proxyPort,
-		ProxyURL:  fmt.Sprintf("http://localhost:%d", proxyPort),
+		ProxyURL:  fmt.Sprintf("http://%s:%d", proxyBind, proxyPort),
 	}
 }
 
@@ -323,6 +324,7 @@ type TestArgs struct {
 	AppDir    string
 	AppPort   int
 	AppURL    string
+	ProxyBind string
 	ProxyPort int
 	ProxyURL  string
 }
@@ -349,8 +351,9 @@ func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err e
 	if err != nil {
 		return args, teardown, fmt.Errorf("failed to get available port: %v", err)
 	}
+	proxyBind := "localhost"
 
-	args = NewTestArgs(moduleRoot, appDir, appPort, proxyPort)
+	args = NewTestArgs(moduleRoot, appDir, appPort, proxyBind, proxyPort)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	var wg sync.WaitGroup
@@ -369,6 +372,7 @@ func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err e
 			Path:              appDir,
 			Watch:             true,
 			Command:           command,
+			ProxyBind:         proxyBind,
 			ProxyPort:         proxyPort,
 			Proxy:             args.AppURL,
 			IncludeVersion:    false,

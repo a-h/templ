@@ -15,7 +15,7 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 
 	var r TemplElementExpression
 	// Parse the Go expression.
-	if r.Expression, err = parseGo("templ element", pi, goexpression.Expression); err != nil {
+	if r.Expression, err = parseGo("templ element", pi, goexpression.TemplExpression); err != nil {
 		return r, false, err
 	}
 

@@ -44,6 +44,8 @@ Args:
     Set the URL to proxy after generating code and executing the command.
   -proxyport
     The port the proxy will listen on. (default 7331)
+  -proxybind
+    The address the proxy will listen on. (default 127.0.0.1)
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
   -pprof

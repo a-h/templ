@@ -301,10 +301,13 @@ func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err erro
 	if cmd.Args.ProxyPort == 0 {
 		cmd.Args.ProxyPort = 7331
 	}
-	p = proxy.New(cmd.Args.ProxyPort, target)
+	if cmd.Args.ProxyBind == "" {
+		cmd.Args.ProxyBind = "127.0.0.1"
+	}
+	p = proxy.New(cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
 	go func() {
 		cmd.Log.Info("Proxying", slog.String("from", p.URL), slog.String("to", p.Target.String()))
-		if err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", cmd.Args.ProxyPort), p); err != nil {
+		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort), p); err != nil {
 			cmd.Log.Error("Proxy failed", slog.Any("error", err))
 		}
 	}()
