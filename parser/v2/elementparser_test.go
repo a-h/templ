@@ -559,8 +559,9 @@ func TestElementParser(t *testing.T) {
 		expectedHTML string
 	}{
 		{
-			name:  "element: self-closing with single constant attribute",
-			input: `<a href="test"/>`,
+			name:         "element: self-closing with single constant attribute",
+			input:        `<a href="test"/>`,
+			expectedHTML: `<a href="test"></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -580,8 +581,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: self-closing with single bool expression attribute",
-			input: `<hr noshade?={ true }/>`,
+			name:         "element: self-closing with single bool expression attribute",
+			input:        `<hr noshade?={ true }/>`,
+			expectedHTML: `<hr noshade ="      "/>`,
 			expected: Element{
 				Name: "hr",
 				NameRange: Range{
@@ -615,8 +617,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: self-closing with single expression attribute",
-			input: `<a href={ "test" }/>`,
+			name:         "element: self-closing with single expression attribute",
+			input:        `<a href={ "test" }/>`,
+			expectedHTML: `<a href="        "></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -650,8 +653,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: self-closing with multiple constant attributes",
-			input: `<a href="test" style="text-underline: auto"/>`,
+			name:         "element: self-closing with multiple constant attributes",
+			input:        `<a href="test" style="text-underline: auto"/>`,
+			expectedHTML: `<a href="test" style="text-underline: auto"></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -679,8 +683,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: self-closing with multiple spreads attributes",
-			input: `<a { firstSpread... } { children... }/>`,
+			name:         "element: self-closing with multiple spreads attributes",
+			input:        `<a { firstSpread... } { children... }/>`,
+			expectedHTML: `<a                                   ></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -726,8 +731,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: self-closing with multiple boolean attributes",
-			input: `<hr optionA optionB?={ true } optionC="other"/>`,
+			name:         "element: self-closing with multiple boolean attributes",
+			input:        `<hr optionA optionB?={ true } optionC="other"/>`,
+			expectedHTML: `<hr optionA optionB ="      " optionC="other"/>`,
 			expected: Element{
 				Name: "hr",
 				NameRange: Range{
@@ -776,8 +782,9 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: self-closing with multiple constant and expr attributes",
-			input: `<a href="test" title={ localisation.Get("a_title") } style="text-underline: auto"/>`,
+			name:         "element: self-closing with multiple constant and expr attributes",
+			input:        `<a href="test" title={ localisation.Get("a_title") } style="text-underline: auto"/>`,
+			expectedHTML: `<a href="test" title="                             " style="text-underline: auto"></a>`,
 			expected: Element{
 				Name: "a",
 				NameRange: Range{
@@ -833,9 +840,13 @@ func TestElementParser(t *testing.T) {
 			class="important"
 		}
 >Test</div>
-}
-
 `,
+			expectedHTML: `<div
+	style="width: 100;"
+	                
+		class="important"
+	 
+>Test</div>`,
 			expected: Element{
 				Name: "div",
 				NameRange: Range{

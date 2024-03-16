@@ -74,7 +74,7 @@ func NewContextWriter(w io.Writer, wc WriteContext) ContextWriter {
 
 func (cw ContextWriter) Write(wc WriteContext, s string) (err error) {
 	if cw.wc.IsSet(wc) {
-		//TODO: Keep a map of indices to the writecontext, so we can look up in the LSP what type of context (HTML, CSS, JS etc. should be used)
+		//TODO: Keep a map of indices to the writecontext, so we can look up in the LSP what type of context (Go, HTML, CSS, JS etc. should be used)
 		_, err := io.WriteString(cw.w, s)
 		return err
 	}
@@ -801,7 +801,15 @@ func (bea BoolExpressionAttribute) String() string {
 }
 
 func (bea BoolExpressionAttribute) Write(cw ContextWriter, indent int) error {
-	return writeIndent(cw, WriteContextGo, indent, bea.String())
+	if err := writeIndent(cw, WriteContextHTML, indent, bea.Name); err != nil {
+		return err
+	}
+
+	if cw.wc.IsSet(WriteContextGo) {
+		return cw.Write(WriteContextGo, "?={ "+bea.Expression.Value+" }")
+	} else {
+		return cw.Write(WriteContextHTML, ` =" `+strings.Repeat(" ", len(bea.Expression.Value))+` "`)
+	}
 }
 
 // href={ ... }
