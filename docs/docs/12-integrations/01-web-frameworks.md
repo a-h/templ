@@ -28,6 +28,37 @@ See an example of using https://github.com/gofiber/fiber with templ at:
 
 https://github.com/a-h/templ/tree/main/examples/integration-gofiber
 
+### Gorilla/csrf
+gorilla/csrf is a HTTP middleware library that provides cross-site request forgery (CSRF) protection. To integrate it with templ, start by creating a csrf component:
+
+```go
+templ Csrf() {
+	<input type="hidden" name="gorilla.csrf.Token" value={ ctx.Value("gorilla.csrf.Token").(string) }/>
+}
+```
+
+Then ensure you pass the request's context to the Render method:
+```go
+r := mux.NewRouter()
+r.HandleFunc("/login", func (w http.ResponseWriter, r *http.Request) {
+    login := Login(csrf.Token(r))
+    err := login.Render(r.Context(), w)
+    if err != nil {
+        //handle error
+    }
+})
+```
+
+Finally in your template you add:
+```go
+templ Login() {
+    <form method="post" action="/login">
+        @Csrf()
+        // other fields
+    </form>
+}
+```
+
 ## Project scaffolding
 
 - Gowebly - https://github.com/gowebly/gowebly
