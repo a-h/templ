@@ -78,11 +78,21 @@ func (cw ContextWriter) Write(wc WriteContext, s string) (err error) {
 		_, err := io.WriteString(cw.w, s)
 		return err
 	}
-	// Render an empty string of the same length as s.
-	// This is to keep the indices in sync with the original string.
-	s = strings.Repeat(" ", len(s))
-	_, err = io.WriteString(cw.w, s)
+
+	_, err = io.WriteString(cw.w, whiteSpaceString(s))
 	return
+}
+
+// Creates in equivalent length string to the one provided while preserving all white space characters.
+func whiteSpaceString(of string) string {
+	output := []rune(of)
+	for i, r := range output {
+		if unicode.IsSpace(r) {
+			continue
+		}
+		output[i] = ' '
+	}
+	return string(output)
 }
 
 // Source mapping to map from the source code of the template to the
@@ -228,21 +238,13 @@ func (exp TemplateFileGoExpression) Write(cw ContextWriter, indent int) error {
 
 func writeLinesIndented(cw ContextWriter, wc WriteContext, level int, s string) (err error) {
 	indent := strings.Repeat("\t", level)
-
-	if err := cw.Write(cw.wc, indent); err != nil {
+	lines := strings.Split(s, "\n")
+	indented := strings.Join(lines, "\n"+indent)
+	if err := cw.Write(wc, indent); err != nil {
 		return err
 	}
-
-	lines := strings.Split(s, "\n")
-	for idx, line := range lines {
-		if err := cw.Write(wc, line); err != nil {
-			return err
-		}
-		if idx < len(lines)-1 {
-			if err := cw.Write(cw.wc, "\n"+indent); err != nil {
-				return err
-			}
-		}
+	if err := cw.Write(wc, indented); err != nil {
+		return err
 	}
 	return nil
 }
@@ -310,10 +312,7 @@ type CSSTemplate struct {
 func (css CSSTemplate) IsTemplateFileNode() bool { return true }
 func (css CSSTemplate) Write(cw ContextWriter, indent int) error {
 	source := formatFunctionArguments(css.Expression.Value)
-	if err := writeIndent(cw, WriteContextGo, indent, "css ", string(source), " {"); err != nil {
-		return err
-	}
-	if err := cw.Write(cw.wc, "\n"); err != nil {
+	if err := writeIndent(cw, WriteContextGo, indent, "css ", string(source), " {\n"); err != nil {
 		return err
 	}
 	for _, p := range css.Properties {
@@ -409,10 +408,7 @@ func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
 
 func (t HTMLTemplate) Write(cw ContextWriter, indent int) error {
 	source := formatFunctionArguments(t.Expression.Value)
-	if err := writeIndent(cw, WriteContextGo, indent, "templ ", string(source), " {"); err != nil {
-		return err
-	}
-	if err := cw.Write(cw.wc, "\n"); err != nil {
+	if err := writeIndent(cw, WriteContextGo, indent, "templ ", string(source), " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(cw, indent+1, t.Children); err != nil {
@@ -611,10 +607,7 @@ func (e Element) Write(cw ContextWriter, indent int) error {
 	}
 	if e.hasNonWhitespaceChildren() {
 		if e.IndentChildren {
-			if err := writeIndent(cw, WriteContextHTML, closeAngleBracketIndent, ">"); err != nil {
-				return err
-			}
-			if err := cw.Write(cw.wc, "\n"); err != nil {
+			if err := writeIndent(cw, WriteContextHTML, closeAngleBracketIndent, ">\n"); err != nil {
 				return err
 			}
 			if err := writeNodesIndented(cw, indent+1, e.Children); err != nil {
@@ -863,24 +856,17 @@ func (ea ExpressionAttribute) Write(cw ContextWriter, indent int) (err error) {
 	}
 
 	if cw.wc.IsSet(WriteContextGo) {
-		if err := cw.Write(WriteContextGo, "{"); err != nil {
+		if err := cw.Write(WriteContextGo, "{\n"); err != nil {
 			return err
 		}
 	} else {
-		if err := cw.Write(cw.wc, `"`); err != nil {
+		if err := cw.Write(cw.wc, `"\n`); err != nil {
 			return err
 		}
-	}
-
-	if err := cw.Write(cw.wc, "\n"); err != nil {
-		return err
 	}
 
 	for _, line := range lines {
-		if err = writeIndent(cw, WriteContextGo, indent, line); err != nil {
-			return err
-		}
-		if err := cw.Write(cw.wc, "\n"); err != nil {
+		if err = writeIndent(cw, WriteContextGo, indent, line, "\n"); err != nil {
 			return err
 		}
 	}
@@ -888,7 +874,7 @@ func (ea ExpressionAttribute) Write(cw ContextWriter, indent int) (err error) {
 	if cw.wc.IsSet(WriteContextGo) {
 		return writeIndent(cw, WriteContextGo, indent, "}")
 	} else {
-		return writeIndent(cw, cw.wc, indent, `"`)
+		return writeIndent(cw, WriteContextHTML, indent, `"`)
 	}
 }
 
@@ -922,10 +908,7 @@ func (ca ConditionalAttribute) Write(cw ContextWriter, indent int) error {
 	if err := cw.Write(WriteContextGo, ca.Expression.Value); err != nil {
 		return err
 	}
-	if err := cw.Write(WriteContextGo, " {"); err != nil {
-		return err
-	}
-	if err := cw.Write(cw.wc, "\n"); err != nil {
+	if err := cw.Write(WriteContextGo, " {\n"); err != nil {
 		return err
 	}
 	{
@@ -947,10 +930,7 @@ func (ca ConditionalAttribute) Write(cw ContextWriter, indent int) error {
 		return nil
 	}
 	// Write the else blocks.
-	if err := cw.Write(WriteContextGo, " else {"); err != nil {
-		return err
-	}
-	if err := cw.Write(cw.wc, "\n"); err != nil {
+	if err := cw.Write(WriteContextGo, " else {\n"); err != nil {
 		return err
 	}
 	{
@@ -1038,10 +1018,7 @@ func (tee TemplElementExpression) Write(cw ContextWriter, indent int) error {
 	if len(tee.Children) == 0 {
 		return nil
 	}
-	if err := cw.Write(WriteContextGo, " {"); err != nil {
-		return err
-	}
-	if err := cw.Write(cw.wc, "\n"); err != nil {
+	if err := cw.Write(WriteContextGo, " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(cw, indent+1, tee.Children); err != nil {
@@ -1090,10 +1067,7 @@ func (n IfExpression) ChildNodes() []Node {
 }
 func (n IfExpression) IsNode() bool { return true }
 func (n IfExpression) Write(cw ContextWriter, indent int) error {
-	if err := writeIndent(cw, WriteContextGo, indent, "if ", n.Expression.Value, " {"); err != nil {
-		return err
-	}
-	if err := cw.Write(cw.wc, "\n"); err != nil {
+	if err := writeIndent(cw, WriteContextGo, indent, "if ", n.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	indent++
@@ -1102,10 +1076,7 @@ func (n IfExpression) Write(cw ContextWriter, indent int) error {
 	}
 	indent--
 	for _, elseIf := range n.ElseIfs {
-		if err := writeIndent(cw, WriteContextGo, indent, "} else if ", elseIf.Expression.Value, " {"); err != nil {
-			return err
-		}
-		if err := cw.Write(cw.wc, "\n"); err != nil {
+		if err := writeIndent(cw, WriteContextGo, indent, "} else if ", elseIf.Expression.Value, " {\n"); err != nil {
 			return err
 		}
 		indent++
@@ -1115,10 +1086,7 @@ func (n IfExpression) Write(cw ContextWriter, indent int) error {
 		indent--
 	}
 	if len(n.Else) > 0 {
-		if err := writeIndent(cw, WriteContextGo, indent, "} else {"); err != nil {
-			return err
-		}
-		if err := cw.Write(cw.wc, "\n"); err != nil {
+		if err := writeIndent(cw, WriteContextGo, indent, "} else {\n"); err != nil {
 			return err
 		}
 		if err := writeNodesIndented(cw, indent+1, n.Else); err != nil {
@@ -1148,19 +1116,13 @@ func (se SwitchExpression) ChildNodes() []Node {
 }
 func (se SwitchExpression) IsNode() bool { return true }
 func (se SwitchExpression) Write(cw ContextWriter, indent int) error {
-	if err := writeIndent(cw, WriteContextGo, indent, "switch ", se.Expression.Value, " {"); err != nil {
-		return err
-	}
-	if err := cw.Write(cw.wc, "\n"); err != nil {
+	if err := writeIndent(cw, WriteContextGo, indent, "switch ", se.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	indent++
 	for i := 0; i < len(se.Cases); i++ {
 		c := se.Cases[i]
-		if err := writeIndent(cw, WriteContextGo, indent, c.Expression.Value); err != nil {
-			return err
-		}
-		if err := cw.Write(cw.wc, "\n"); err != nil {
+		if err := writeIndent(cw, WriteContextGo, indent, c.Expression.Value, "\n"); err != nil {
 			return err
 		}
 		if err := writeNodesIndented(cw, indent+1, c.Children); err != nil {
@@ -1193,10 +1155,7 @@ func (fe ForExpression) ChildNodes() []Node {
 }
 func (fe ForExpression) IsNode() bool { return true }
 func (fe ForExpression) Write(cw ContextWriter, indent int) error {
-	if err := writeIndent(cw, WriteContextGo, indent, "for ", fe.Expression.Value, " {"); err != nil {
-		return err
-	}
-	if err := cw.Write(cw.wc, "\n"); err != nil {
+	if err := writeIndent(cw, WriteContextGo, indent, "for ", fe.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	if err := writeNodesIndented(cw, indent+1, fe.Children); err != nil {
@@ -1239,10 +1198,7 @@ type ScriptTemplate struct {
 func (s ScriptTemplate) IsTemplateFileNode() bool { return true }
 func (s ScriptTemplate) Write(cw ContextWriter, indent int) error {
 	source := formatFunctionArguments(s.Name.Value + "(" + s.Parameters.Value + ")")
-	if err := writeIndent(cw, WriteContextGo, indent, "script ", string(source), " {"); err != nil {
-		return err
-	}
-	if err := cw.Write(cw.wc, "\n"); err != nil {
+	if err := writeIndent(cw, WriteContextGo, indent, "script ", string(source), " {\n"); err != nil {
 		return err
 	}
 	if err := cw.Write(WriteContextJS, s.Value); err != nil {
