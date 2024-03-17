@@ -77,6 +77,7 @@
             goreleaser
             nodejs # Used to build templ-docs.
             ko # Used to build Docker images.
+            cosign # Used to sign container images.
             gomod2nix.legacyPackages.${system}.gomod2nix
             xc.packages.${system}.xc
           ];
