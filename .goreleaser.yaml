@@ -34,3 +34,18 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+kos:
+  - repository: ghcr.io/a-h/templ
+    tags:
+    - '{{.Version}}'
+    - latest
+    bare: true
+    preserve_import_paths: false
+    platforms:
+    - linux/amd64
+    - linux/arm64
+
+docker_signs:
+  -
+    artifacts: manifests
