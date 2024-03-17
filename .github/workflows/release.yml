@@ -27,7 +27,7 @@ jobs:
       - uses: goreleaser/goreleaser-action@v5
         with:
           version: v1.24.0
-          args: release --clean
+          args: release --clean --timeout 90m
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
           COSIGN_PASSWORD: '${{ secrets.COSIGN_PASSWORD }}'
