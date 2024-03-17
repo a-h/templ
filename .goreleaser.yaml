@@ -39,6 +39,7 @@ kos:
     - latest
     bare: true
     preserve_import_paths: false
+    sbom: none
     platforms:
     - linux/amd64
     - linux/arm64
