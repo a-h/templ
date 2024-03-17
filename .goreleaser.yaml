@@ -12,21 +12,6 @@ builds:
       - windows
       - darwin
 
-signs:
-  - id: checksums
-    cmd: cosign
-    stdin: '{{ .Env.COSIGN_PASSWORD }}'
-    output: true
-    artifacts: checksum
-    args:
-      - sign-blob
-      - --yes
-      - --key
-      - env://COSIGN_PRIVATE_KEY
-      - '--output-certificate=${certificate}'
-      - '--output-signature=${signature}'
-      - '${artifact}'
-
 archives:
   - format: tar.gz
     name_template: >-
@@ -50,22 +35,10 @@ changelog:
 kos:
   - repository: ghcr.io/a-h/templ
     tags:
-    - '{{.Version}}'
+    - 'v{{.Version}}'
     - latest
     bare: true
     preserve_import_paths: false
     platforms:
     - linux/amd64
     - linux/arm64
-
-docker_signs:
-  - id: selfsigned
-    cmd: cosign
-    artifacts: all
-    output: true
-    args:
-      - sign
-      - --yes
-      - --key
-      - env://COSIGN_PRIVATE_KEY
-      - '${artifact}'
