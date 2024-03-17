@@ -14,15 +14,17 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
-
-      - uses: cachix/install-nix-action@v25
         with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - uses: DeterminateSystems/magic-nix-cache-action@v3
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
 
-      - name: Release
-        run: nix develop --command goreleaser --clean
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          version: v1.24.0
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
