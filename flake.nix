@@ -75,7 +75,8 @@
             go_1_21
             gopls
             goreleaser
-            nodejs
+            nodejs # Used to build templ-docs.
+            ko # Used to build Docker images.
             gomod2nix.legacyPackages.${system}.gomod2nix
             xc.packages.${system}.xc
           ];
