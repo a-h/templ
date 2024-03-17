@@ -20,7 +20,7 @@ templ provides a Nix flake with an exported package containing the binary at htt
 nix run github:a-h/templ
 ```
 
-templ also provides a development shell which includes a Neovim configuration setup to use the templ autocompletion features.
+templ also provides a development shell which includes all of the tools required to build templ, e.g. go, gopls etc. but not templ itself.
 
 ```sh
 nix develop github:a-h/templ
