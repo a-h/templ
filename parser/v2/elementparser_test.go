@@ -1443,20 +1443,19 @@ func TestElementParser(t *testing.T) {
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
-			if tt.expectedHTML != "" {
-				w := new(bytes.Buffer)
-				cw := NewContextWriter(w, WriteContextHTML)
-				if err := result.Write(cw, 0); err != nil {
-					t.Fatalf("unexpected error: %v", err)
-				}
-				actualHTML := w.String()
-				if diff := cmp.Diff(tt.expectedHTML, actualHTML); diff != "" {
-					t.Error(diff)
 
-					t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
-					t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedHTML))
-					t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
-				}
+			w := new(bytes.Buffer)
+			cw := NewContextWriter(w, WriteContextHTML)
+			if err := result.Write(cw, 0); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			actualHTML := w.String()
+			if diff := cmp.Diff(tt.expectedHTML, actualHTML); diff != "" {
+				t.Error(diff)
+
+				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
+				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedHTML))
+				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
 			}
 		})
 	}
