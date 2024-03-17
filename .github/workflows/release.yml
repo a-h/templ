@@ -1,0 +1,21 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v25
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: DeterminateSystems/magic-nix-cache-action@v3
+
+      - name: Release
+        run: nix develop --command goreleaser --clean
