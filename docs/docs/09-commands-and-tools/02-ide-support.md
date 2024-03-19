@@ -221,7 +221,7 @@ Minimal config with the following features (useful for debugging):
 - [lazy-vim](https://github.com/folke/lazy.nvim): neovim package manager
 - [lsp config](https://github.com/neovim/nvim-lspconfig)
     - templ-lsp
-    - htmp-lsp
+    - html-lsp
     - htmx-lsp
     - tailwind-lsp
 - [cmp](https://github.com/hrsh7th/nvim-cmp): for autocompletion
