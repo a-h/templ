@@ -72,6 +72,9 @@ Args:
     Generates code for all files in path. (default .)
   -f <file>
     Optionally generates code for a single file, e.g. -f header.templ
+  -stdout
+    Prints to stdout instead of to generated files.
+    Only applicable when -f is used.
   -sourceMapVisualisations
     Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
   -include-version
@@ -121,6 +124,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	cmd.SetOutput(w)
 	fileNameFlag := cmd.String("f", "", "")
 	pathFlag := cmd.String("path", ".", "")
+	toStdoutFlag := cmd.Bool("stdout", false, "")
 	sourceMapVisualisationsFlag := cmd.Bool("source-map-visualisations", false, "")
 	includeVersionFlag := cmd.Bool("include-version", true, "")
 	includeTimestampFlag := cmd.Bool("include-timestamp", false, "")
@@ -158,6 +162,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	err = generatecmd.Run(ctx, w, generatecmd.Arguments{
 		FileName:                        *fileNameFlag,
 		Path:                            *pathFlag,
+		ToStdout:                        *toStdoutFlag,
 		Watch:                           *watchFlag,
 		OpenBrowser:                     *openBrowserFlag,
 		Command:                         *cmdFlag,
