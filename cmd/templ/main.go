@@ -73,7 +73,7 @@ Args:
   -f <file>
     Optionally generates code for a single file, e.g. -f header.templ
   -stdout
-    Prints to stdout instead of to generated files.
+    Prints to stdout instead of writing generated files to the filesystem.
     Only applicable when -f is used.
   -sourceMapVisualisations
     Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
