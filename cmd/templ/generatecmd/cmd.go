@@ -53,7 +53,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}
 	if cmd.Args.FileName == "" && cmd.Args.ToStdout {
-		return fmt.Errorf("can onlyt output a single file to stdout, remove the -f or -stdout flag")
+		return fmt.Errorf("only a single file can be output to stdout, add the -f flag to specify the file to generate code for")
 	}
 	if cmd.Args.PPROFPort > 0 {
 		go func() {
