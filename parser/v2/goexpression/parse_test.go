@@ -400,6 +400,20 @@ var templExpressionTests = []testInput{
 			})`,
 	},
 	{
+		name: "function call with slice of complex types",
+		input: `tabs([]TabData{
+  {Name: "A"},
+  {Name: "B"},
+})`,
+	},
+	{
+		name: "function call with slice of pointers to complex types",
+		input: `tabs([]*TabData{
+  &{Name: "A"},
+  &{Name: "B"},
+})`,
+	},
+	{
 		name:  "call with braces and brackets",
 		input: `templates.New(test{}, other())`,
 	},
