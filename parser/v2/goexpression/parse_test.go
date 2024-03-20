@@ -407,10 +407,24 @@ var templExpressionTests = []testInput{
 })`,
 	},
 	{
+		name: "function call with slice of explicitly named complex types",
+		input: `tabs([]TabData{
+  TabData{Name: "A"},
+  TabData{Name: "B"},
+})`,
+	},
+	{
 		name: "function call with slice of pointers to complex types",
 		input: `tabs([]*TabData{
   &{Name: "A"},
   &{Name: "B"},
+})`,
+	},
+	{
+		name: "function call with slice of pointers to explictly named complex types",
+		input: `tabs([]*TabData{
+  &TabData{Name: "A"},
+  &TabData{Name: "B"},
 })`,
 	},
 	{
