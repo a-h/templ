@@ -140,7 +140,7 @@ templ page(content string) {
 }
 ```
 
-The data passed into the Javascript funtion will be JSON encoded, which then can be used inside the function.
+The data passed into the Javascript function will be JSON encoded, which then can be used inside the function.
 
 ```go title="main.go"
 package main
