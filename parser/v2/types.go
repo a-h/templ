@@ -59,16 +59,14 @@ const WriteContextJS WriteContext = 0b1000
 const WriteContextAll WriteContext = 0b1111
 
 type ContextWriter struct {
-	IndexToContext map[int]WriteContext
-	wc             WriteContext
-	w              io.Writer
+	wc WriteContext
+	w  io.Writer
 }
 
 func NewContextWriter(w io.Writer, wc WriteContext) ContextWriter {
 	return ContextWriter{
-		IndexToContext: make(map[int]WriteContext),
-		wc:             wc,
-		w:              w,
+		wc: wc,
+		w:  w,
 	}
 }
 
