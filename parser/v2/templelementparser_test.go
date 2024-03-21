@@ -401,6 +401,25 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "templelement: arguments can receive a slice of complex types",
+			input: `@tabs([]*TabData{
+  {Name: "A"},
+  {Name: "B"},
+})`,
+			expected: TemplElementExpression{
+				Expression: Expression{
+					Value: `tabs([]*TabData{
+  {Name: "A"},
+  {Name: "B"},
+})`,
+					Range: Range{
+						From: Position{1, 0, 1},
+						To:   Position{50, 3, 2},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

@@ -60,64 +60,88 @@ type ExpressionParser struct {
 	End      int
 	Previous token.Token
 	Fns      Stack[int] // Stack of function depths.
+	Slices   Stack[int] // Stack of slice depths.
+}
+
+func (ep *ExpressionParser) setEnd(pos token.Pos, tok token.Token, lit string) {
+	ep.End = int(pos) + len(tokenString(tok, lit)) - 1
+}
+
+func (ep *ExpressionParser) hasSpaceBeforeCurrentToken(pos token.Pos) bool {
+	return (int(pos) - 1) > ep.End
+}
+
+func (ep *ExpressionParser) isTopLevel() bool {
+	return len(ep.Fns) == 0 && len(ep.Slices) == 0 && len(ep.Stack) == 0
 }
 
 func (ep *ExpressionParser) Insert(pos token.Pos, tok token.Token, lit string) (stop bool, err error) {
 	defer func() {
 		ep.Previous = tok
 	}()
+	// Handle function literals e.g. func() { fmt.Println("Hello") }
+	// By pushing the current depth onto the stack, we prevent stopping
+	// until we've closed the function.
 	if tok == token.FUNC {
-		// The next open brace will be the body of a function literal, so push the fn depth.
 		ep.Fns.Push(len(ep.Stack))
-		ep.End = int(pos) + len(tokenString(tok, lit)) - 1
+		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
-	// Opening a pair can be done after an ident, but it can also be a func literal.
-	// e.g. "name()", or "name(func() bool { return true })".
-	if _, ok := goTokenOpenToClose[tok]; ok {
-		if tok == token.LBRACE {
-			if ep.Previous != token.IDENT {
+	// Handle slice definitions e.g.: []string{"a", "b"}
+	// Similarly to functions, we push the current depth onto the stack,
+	// and prevent stopping until we've closed the slice.
+	if ep.Previous == token.LBRACK && tok == token.RBRACK {
+		ep.Slices.Push(len(ep.Stack))
+		ep.setEnd(pos, tok, lit)
+		// Pop a left square bracket from the stack.
+		ep.Stack.Pop()
+		return false, nil
+	}
+	// If we're opening a pair, we don't stop until we've closed it.
+	if _, isOpener := goTokenOpenToClose[tok]; isOpener {
+		// If we're at an open brace, at the top level, where a space has been used, stop.
+		if tok == token.LBRACE && ep.isTopLevel() {
+			// Previous was paren, e.g. () {
+			if ep.Previous == token.RPAREN {
 				return true, nil
 			}
-			hasSpace := (int(pos) - 1) > ep.End
-			if hasSpace && len(ep.Fns) == 0 {
-				// There's a space, and we're not in a function so stop.
+			// Previous was ident that isn't a type.
+			// In `name {`, `name` is considered to be a variable.
+			// In `name{`, `name` is considered to be a type name.
+			if ep.Previous == token.IDENT && ep.hasSpaceBeforeCurrentToken(pos) {
 				return true, nil
 			}
 		}
 		ep.Stack.Push(tok)
-		ep.End = int(pos) + len(tokenString(tok, lit)) - 1
+		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
-	// Closing a pair.
-	if expected, ok := goTokenCloseToOpen[tok]; ok {
+	if opener, isCloser := goTokenCloseToOpen[tok]; isCloser {
 		if len(ep.Stack) == 0 {
 			// We've got a close token, but there's nothing to close, so we must be done.
 			return true, nil
 		}
 		actual := ep.Stack.Pop()
-		if !ok {
+		if !isCloser {
 			return false, ErrUnbalanced{tok}
 		}
-		if actual != expected {
+		if actual != opener {
 			return false, ErrUnbalanced{tok}
 		}
 		// If we're closing a function, pop the function depth.
 		if tok == token.RBRACE && len(ep.Stack) == ep.Fns.Peek() {
 			ep.Fns.Pop()
 		}
-		ep.End = int(pos) + len(tokenString(tok, lit)) - 1
+		// If we're closing a slice assignment, pop the slice depth.
+		if tok == token.RBRACE && len(ep.Stack) == ep.Slices.Peek() {
+			ep.Slices.Pop()
+		}
+		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
-	// If we're within a pair, we allow anything.
-	if len(ep.Stack) > 0 {
-		ep.End = int(pos) + len(tokenString(tok, lit)) - 1
-		return false, nil
-	}
-	// We allow a period to follow an ident or a closer.
-	// e.g. "package.name" or "typeName{field: value}.name()".
-	if tok == token.PERIOD && (ep.Previous == token.IDENT || isCloser(ep.Previous)) {
-		ep.End = int(pos) + len(tokenString(tok, lit)) - 1
+	// If we're in a function literal slice, or pair, we allow anything until we close it.
+	if len(ep.Fns) > 0 || len(ep.Slices) > 0 || len(ep.Stack) > 0 {
+		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
 	// We allow an ident to follow a period or a closer.
@@ -125,14 +149,20 @@ func (ep *ExpressionParser) Insert(pos token.Pos, tok token.Token, lit string) (
 	// or "call().name", "call().name()".
 	// But not "package .name" or "typeName{field: value} .name()".
 	if tok == token.IDENT && (ep.Previous == token.PERIOD || isCloser(ep.Previous)) {
-		if (int(pos) - 1) > ep.End {
-			// There's a space, so stop.
+		if ep.hasSpaceBeforeCurrentToken(pos) {
+			// This token starts later than the last ending, which means
+			// there's a space.
 			return true, nil
 		}
-		ep.End = int(pos) + len(tokenString(tok, lit)) - 1
+		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
-	// Anything else returns stop=true.
+	if tok == token.PERIOD && (ep.Previous == token.IDENT || isCloser(ep.Previous)) {
+		ep.setEnd(pos, tok, lit)
+		return false, nil
+	}
+
+	// No match, so stop.
 	return true, nil
 }
 
