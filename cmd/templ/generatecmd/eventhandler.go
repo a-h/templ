@@ -21,7 +21,15 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func NewFSEventHandler(log *slog.Logger, dir string, devMode bool, genOpts []generator.GenerateOpt, genSourceMapVis bool, keepOrphanedFiles bool) *FSEventHandler {
+func NewFSEventHandler(
+	log *slog.Logger,
+	dir string,
+	devMode bool,
+	genOpts []generator.GenerateOpt,
+	genSourceMapVis bool,
+	keepOrphanedFiles bool,
+	toStdout bool,
+) *FSEventHandler {
 	if !path.IsAbs(dir) {
 		dir, _ = filepath.Abs(dir)
 	}
@@ -38,6 +46,10 @@ func NewFSEventHandler(log *slog.Logger, dir string, devMode bool, genOpts []gen
 		genSourceMapVis:            genSourceMapVis,
 		DevMode:                    devMode,
 		keepOrphanedFiles:          keepOrphanedFiles,
+		writer:                     writeToFile,
+	}
+	if toStdout {
+		fseh.writer = writeToStdout
 	}
 	if devMode {
 		fseh.genOpts = append(fseh.genOpts, generator.WithExtractStrings())
@@ -60,9 +72,28 @@ type FSEventHandler struct {
 	DevMode                    bool
 	Errors                     []error
 	keepOrphanedFiles          bool
+	writer                     func(string, []byte) error
 }
 
-func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (goUpdated, textUpdated bool, err error) {
+func writeToFile(
+	fileName string,
+	contents []byte,
+) error {
+	return os.WriteFile(fileName, contents, 0o644)
+}
+
+func writeToStdout(
+	_ string,
+	contents []byte,
+) error {
+	_, err := os.Stdout.Write(contents)
+	return err
+}
+
+func (h *FSEventHandler) HandleEvent(
+	ctx context.Context,
+	event fsnotify.Event,
+) (goUpdated, textUpdated bool, err error) {
 	// Handle _templ.go files.
 	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.go") {
 		_, err = os.Stat(strings.TrimSuffix(event.Name, "_templ.go") + ".templ")
@@ -108,25 +139,44 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	start := time.Now()
 	goUpdated, textUpdated, diag, err := h.generate(ctx, event.Name)
 	if err != nil {
-		h.Log.Error("Error generating code", slog.String("file", event.Name), slog.Any("error", err))
+		h.Log.Error(
+			"Error generating code",
+			slog.String("file", event.Name),
+			slog.Any("error", err),
+		)
 		h.SetError(event.Name, true)
-		return goUpdated, textUpdated, fmt.Errorf("failed to generate code for %q: %w", event.Name, err)
+		return goUpdated, textUpdated, fmt.Errorf(
+			"failed to generate code for %q: %w",
+			event.Name,
+			err,
+		)
 	}
 	if len(diag) > 0 {
 		for _, d := range diag {
-			h.Log.Warn(d.Message, slog.String("from", fmt.Sprintf("%d:%d", d.Range.From.Line, d.Range.From.Col)), slog.String("to", fmt.Sprintf("%d:%d", d.Range.To.Line, d.Range.To.Col)))
+			h.Log.Warn(
+				d.Message,
+				slog.String("from", fmt.Sprintf("%d:%d", d.Range.From.Line, d.Range.From.Col)),
+				slog.String("to", fmt.Sprintf("%d:%d", d.Range.To.Line, d.Range.To.Col)),
+			)
 		}
 		return
 	}
 	if errorCleared, errorCount := h.SetError(event.Name, false); errorCleared {
 		h.Log.Info("Error cleared", slog.String("file", event.Name), slog.Int("errors", errorCount))
 	}
-	h.Log.Debug("Generated code", slog.String("file", event.Name), slog.Duration("in", time.Since(start)))
+	h.Log.Debug(
+		"Generated code",
+		slog.String("file", event.Name),
+		slog.Duration("in", time.Since(start)),
+	)
 
 	return goUpdated, textUpdated, nil
 }
 
-func (h *FSEventHandler) SetError(fileName string, hasError bool) (previouslyHadError bool, errorCount int) {
+func (h *FSEventHandler) SetError(
+	fileName string,
+	hasError bool,
+) (previouslyHadError bool, errorCount int) {
 	h.fileNameToErrorMutex.Lock()
 	defer h.fileNameToErrorMutex.Unlock()
 	_, previouslyHadError = h.fileNameToError[fileName]
@@ -165,7 +215,10 @@ func (h *FSEventHandler) UpsertHash(fileName string, hash [sha256.Size]byte) (up
 
 // generate Go code for a single template.
 // If a basePath is provided, the filename included in error messages is relative to it.
-func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdated, textUpdated bool, diagnostics []parser.Diagnostic, err error) {
+func (h *FSEventHandler) generate(
+	ctx context.Context,
+	fileName string,
+) (goUpdated, textUpdated bool, diagnostics []parser.Diagnostic, err error) {
 	t, err := parser.Parse(fileName)
 	if err != nil {
 		return false, false, nil, fmt.Errorf("%s parsing error: %w", fileName, err)
@@ -175,15 +228,26 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	// Only use relative filenames to the basepath for filenames in runtime error messages.
 	absFilePath, err := filepath.Abs(fileName)
 	if err != nil {
-		return false, false, nil, fmt.Errorf("failed to get absolute path for %q: %w", fileName, err)
+		return false, false, nil, fmt.Errorf(
+			"failed to get absolute path for %q: %w",
+			fileName,
+			err,
+		)
 	}
 	relFilePath, err := filepath.Rel(h.dir, absFilePath)
 	if err != nil {
-		return false, false, nil, fmt.Errorf("failed to get relative path for %q: %w", fileName, err)
+		return false, false, nil, fmt.Errorf(
+			"failed to get relative path for %q: %w",
+			fileName,
+			err,
+		)
 	}
 
 	var b bytes.Buffer
-	sourceMap, literals, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath))...)
+	sourceMap, literals, err := generator.Generate(
+		t,
+		&b,
+		append(h.genOpts, generator.WithFileName(relFilePath))...)
 	if err != nil {
 		return false, false, nil, fmt.Errorf("%s generation error: %w", fileName, err)
 	}
@@ -197,8 +261,12 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	goCodeHash := sha256.Sum256(formattedGoCode)
 	if h.UpsertHash(targetFileName, goCodeHash) {
 		goUpdated = true
-		if err = os.WriteFile(targetFileName, formattedGoCode, 0o644); err != nil {
-			return false, false, nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
+		if err = h.writer(targetFileName, formattedGoCode); err != nil {
+			return false, false, nil, fmt.Errorf(
+				"failed to write target file %q: %w",
+				targetFileName,
+				err,
+			)
 		}
 	}
 
@@ -209,7 +277,11 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 		if h.UpsertHash(txtFileName, txtHash) {
 			textUpdated = true
 			if err = os.WriteFile(txtFileName, []byte(literals), 0o644); err != nil {
-				return false, false, nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
+				return false, false, nil, fmt.Errorf(
+					"failed to write string literal file %q: %w",
+					txtFileName,
+					err,
+				)
 			}
 		}
 	}
@@ -226,7 +298,11 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	return goUpdated, textUpdated, parsedDiagnostics, err
 }
 
-func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
+func generateSourceMapVisualisation(
+	ctx context.Context,
+	templFileName, goFileName string,
+	sourceMap *parser.SourceMap,
+) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -259,5 +335,6 @@ func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileNa
 	b := bufio.NewWriter(w)
 	defer b.Flush()
 
-	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).Render(ctx, b)
+	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).
+		Render(ctx, b)
 }

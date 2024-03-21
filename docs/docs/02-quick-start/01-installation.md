@@ -20,7 +20,7 @@ templ provides a Nix flake with an exported package containing the binary at htt
 nix run github:a-h/templ
 ```
 
-templ also provides a development shell which includes a Neovim configuration setup to use the templ autocompletion features.
+templ also provides a development shell which includes all of the tools required to build templ, e.g. go, gopls etc. but not templ itself.
 
 ```sh
 nix develop github:a-h/templ
@@ -79,4 +79,20 @@ This flake exposes an overlay, so you can add it to your own Flake and/or NixOS 
       };
   };
 }
+```
+
+## Docker
+
+A Docker container is pushed on each release to https://github.com/a-h/templ/pkgs/container/templ
+
+Pull the latest version with:
+
+```bash
+docker pull ghcr.io/a-h/templ:latest
+```
+
+To use the container, mount the source code of your application into the `/app` directory, set the working directory to the same directory and run `templ generate`, e.g. in a Linux or Mac shell, you can generate code for the current directory with:
+
+```bash
+docker run -v `pwd`:/app -w=/app ghcr.io/a-h/templ:latest generate
 ```

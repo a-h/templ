@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+   contents: write
+   packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
+          cache: true
+      - uses: ko-build/setup-ko@v0.6
+      - uses: sigstore/cosign-installer@v3.3.0
+        with:
+          cosign-release: v2.2.3
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          version: v1.24.0
+          args: release --clean
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          COSIGN_PASSWORD: '${{ secrets.COSIGN_PASSWORD }}'
+          COSIGN_PRIVATE_KEY: '${{ secrets.COSIGN_PRIVATE_KEY }}'
+          COSIGN_PUBLIC_KEY: '${{ secrets.COSIGN_PUBLIC_KEY }}'

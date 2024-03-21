@@ -125,14 +125,12 @@ go run ./cmd/templ fmt .
 golangci-lint run --verbose
 ```
 
-### release
+### push-release-tag
 
-Create production build with goreleaser.
+Push a semantic version number to Github to trigger the release process.
 
 ```sh
-if [ "${GITHUB_TOKEN}" == "" ]; then echo "No github token, run:"; echo "export GITHUB_TOKEN=`pass github.com/goreleaser_access_token`"; exit 1; fi
 ./push-tag.sh
-goreleaser --clean
 ```
 
 ### docs-run

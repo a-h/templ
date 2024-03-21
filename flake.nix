@@ -2,7 +2,7 @@
   description = "templ";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/23.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
     gomod2nix = {
       url = "github:nix-community/gomod2nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -75,7 +75,9 @@
             go_1_21
             gopls
             goreleaser
-            nodejs
+            nodejs # Used to build templ-docs.
+            ko # Used to build Docker images.
+            cosign # Used to sign container images.
             gomod2nix.legacyPackages.${system}.gomod2nix
             xc.packages.${system}.xc
           ];

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -51,7 +52,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	if cmd.Args.Watch && cmd.Args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}
-
+	if cmd.Args.FileName == "" && cmd.Args.ToStdout {
+		return fmt.Errorf("only a single file can be output to stdout, add the -f flag to specify the file to generate code for")
+	}
 	if cmd.Args.PPROFPort > 0 {
 		go func() {
 			_ = http.ListenAndServe(fmt.Sprintf("localhost:%d", cmd.Args.PPROFPort), nil)
@@ -75,12 +78,24 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		opts = append(opts, generator.WithTimestamp(time.Now()))
 	}
 
+	if cmd.Args.ToStdout {
+		cmd.Log = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
+	}
+
 	// Check the version of the templ module.
 	if err := modcheck.Check(cmd.Args.Path); err != nil {
 		cmd.Log.Warn("templ version check: " + err.Error())
 	}
 
-	fseh := NewFSEventHandler(cmd.Log, cmd.Args.Path, cmd.Args.Watch, opts, cmd.Args.GenerateSourceMapVisualisations, cmd.Args.KeepOrphanedFiles)
+	fseh := NewFSEventHandler(
+		cmd.Log,
+		cmd.Args.Path,
+		cmd.Args.Watch,
+		opts,
+		cmd.Args.GenerateSourceMapVisualisations,
+		cmd.Args.KeepOrphanedFiles,
+		cmd.Args.ToStdout,
+	)
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
 	if cmd.Args.FileName != "" {
@@ -119,7 +134,11 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	go func() {
 		defer pushHandlerWG.Done()
 		defer close(events)
-		cmd.Log.Debug("Walking directory", slog.String("path", cmd.Args.Path), slog.Bool("devMode", cmd.Args.Watch))
+		cmd.Log.Debug(
+			"Walking directory",
+			slog.String("path", cmd.Args.Path),
+			slog.Bool("devMode", cmd.Args.Watch),
+		)
 		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {
 			cmd.Log.Error("WalkFiles failed, exiting", slog.Any("error", err))
 			errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
@@ -144,11 +163,24 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		}
 		cmd.Log.Debug("Waiting for events to be processed")
 		eventsWG.Wait()
-		cmd.Log.Debug("All pending events processed, waiting for pending post-generation events to complete")
+		cmd.Log.Debug(
+			"All pending events processed, waiting for pending post-generation events to complete",
+		)
 		postGenerationEventsWG.Wait()
-		cmd.Log.Debug("All post-generation events processed, running walk again, but in production mode", slog.Int64("errorCount", errorCount.Load()))
+		cmd.Log.Debug(
+			"All post-generation events processed, running walk again, but in production mode",
+			slog.Int64("errorCount", errorCount.Load()),
+		)
 		// Reset to reprocess all files in production mode.
-		fseh = NewFSEventHandler(cmd.Log, cmd.Args.Path, cmd.Args.Watch, opts, cmd.Args.GenerateSourceMapVisualisations, cmd.Args.KeepOrphanedFiles)
+		fseh = NewFSEventHandler(
+			cmd.Log,
+			cmd.Args.Path,
+			cmd.Args.Watch,
+			opts,
+			cmd.Args.GenerateSourceMapVisualisations,
+			cmd.Args.KeepOrphanedFiles,
+			cmd.Args.ToStdout,
+		)
 		errorCount.Store(0)
 		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {
 			cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
@@ -284,7 +316,11 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		return fmt.Errorf("generation completed with %d errors", errorCount.Load())
 	}
 
-	cmd.Log.Info("Complete", slog.Int("updates", updates), slog.Duration("duration", time.Since(start)))
+	cmd.Log.Info(
+		"Complete",
+		slog.Int("updates", updates),
+		slog.Duration("duration", time.Since(start)),
+	)
 	return nil
 }
 
@@ -326,7 +362,11 @@ func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err erro
 				break
 			}
 			d := backoff.NextBackOff()
-			cmd.Log.Debug("Proxy not ready, retrying", slog.String("url", p.URL), slog.Any("backoff", d))
+			cmd.Log.Debug(
+				"Proxy not ready, retrying",
+				slog.String("url", p.URL),
+				slog.Any("backoff", d),
+			)
 			time.Sleep(d)
 		}
 		if err := browser.OpenURL(p.URL); err != nil {

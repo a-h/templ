@@ -13,6 +13,7 @@ import (
 
 type Arguments struct {
 	FileName                        string
+	ToStdout                        bool
 	Path                            string
 	Watch                           bool
 	OpenBrowser                     bool
