@@ -1189,11 +1189,24 @@ func (se StringExpression) Trailing() TrailingSpace {
 
 func (se StringExpression) IsNode() bool                  { return true }
 func (se StringExpression) IsStyleDeclarationValue() bool { return true }
-func (se StringExpression) Write(w ContextWriter, indent int) error {
+func (se StringExpression) Write(cw ContextWriter, indent int) error {
 	if isWhitespace(se.Expression.Value) {
 		se.Expression.Value = ""
 	}
-	return writeIndent(w, WriteContextGo, indent, `{ `, se.Expression.Value, ` }`)
+
+	if cw.wc.IsSet(WriteContextGo) {
+		return writeIndent(cw, WriteContextGo, indent, `{ `, se.Expression.Value, ` }`)
+	}
+
+	if cw.wc.IsSet(WriteContextCSS) {
+		return writeIndent(cw, WriteContextCSS, indent, `' `, whiteSpaceString(se.Expression.Value), ` '`)
+	}
+
+	if cw.wc.IsSet(WriteContextHTML) {
+		return writeIndent(cw, WriteContextCSS, indent, `" `, whiteSpaceString(se.Expression.Value), ` "`)
+	}
+
+	return writeIndent(cw, WriteContextGo, indent, `{ `, se.Expression.Value, ` }`)
 }
 
 // ScriptTemplate is a script block.
