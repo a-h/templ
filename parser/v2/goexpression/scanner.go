@@ -91,10 +91,11 @@ func (ep *ExpressionParser) Insert(pos token.Pos, tok token.Token, lit string) (
 	// Similarly to functions, we push the current depth onto the stack,
 	// and prevent stopping until we've closed the slice.
 	if ep.Previous == token.LBRACK && tok == token.RBRACK {
-		ep.Slices.Push(len(ep.Stack))
-		ep.setEnd(pos, tok, lit)
 		// Pop a left square bracket from the stack.
 		ep.Stack.Pop()
+		// Push the current depth onto the slice stack.
+		ep.Slices.Push(len(ep.Stack))
+		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
 	// If we're opening a pair, we don't stop until we've closed it.
@@ -129,12 +130,14 @@ func (ep *ExpressionParser) Insert(pos token.Pos, tok token.Token, lit string) (
 			return false, ErrUnbalanced{tok}
 		}
 		// If we're closing a function, pop the function depth.
-		if tok == token.RBRACE && len(ep.Stack) == ep.Fns.Peek() {
-			ep.Fns.Pop()
-		}
-		// If we're closing a slice assignment, pop the slice depth.
-		if tok == token.RBRACE && len(ep.Stack) == ep.Slices.Peek() {
-			ep.Slices.Pop()
+		if tok == token.RBRACE {
+			if len(ep.Stack) == ep.Fns.Peek() {
+				ep.Fns.Pop()
+			}
+			// If we're closing a slice assignment, pop the slice depth.
+			if len(ep.Stack) == ep.Slices.Peek() {
+				ep.Slices.Pop()
+			}
 		}
 		ep.setEnd(pos, tok, lit)
 		return false, nil
