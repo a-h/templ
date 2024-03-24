@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/a-h/parse"
@@ -9,13 +10,15 @@ import (
 
 func TestExpressionCSSPropertyParser(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected ExpressionCSSProperty
+		name        string
+		input       string
+		expected    ExpressionCSSProperty
+		expectedCSS string
 	}{
 		{
-			name:  "css: single constant property",
-			input: `background-color: { constants.BackgroundColor };`,
+			name:        "css: single constant property",
+			input:       `background-color: { constants.BackgroundColor };`,
+			expectedCSS: "background-color: '                           ';\n",
 			expected: ExpressionCSSProperty{
 				Name: "background-color",
 				Value: StringExpression{
@@ -38,8 +41,9 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "css: single constant property with windows newlines",
-			input: "background-color:\r\n{ constants.BackgroundColor };\r\n",
+			name:        "css: single constant property with windows newlines",
+			input:       "background-color:\r\n{ constants.BackgroundColor };\r\n",
+			expectedCSS: "background-color: '                           ';\n",
 			expected: ExpressionCSSProperty{
 				Name: "background-color",
 				Value: StringExpression{
@@ -76,27 +80,44 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
+
+			w := new(bytes.Buffer)
+			cw := NewContextWriter(w, WriteContextCSS)
+			if err := result.Write(cw, 0); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			actualHTML := w.String()
+			if diff := cmp.Diff(tt.expectedCSS, actualHTML); diff != "" {
+				t.Error(diff)
+
+				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
+				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedCSS))
+				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+			}
 		})
 	}
 }
 
 func TestConstantCSSPropertyParser(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected ConstantCSSProperty
+		name        string
+		input       string
+		expected    ConstantCSSProperty
+		expectedCSS string
 	}{
 		{
-			name:  "css: single constant property",
-			input: `background-color: #ffffff;`,
+			name:        "css: single constant property",
+			input:       `background-color: #ffffff;`,
+			expectedCSS: "background-color: #ffffff;\n",
 			expected: ConstantCSSProperty{
 				Name:  "background-color",
 				Value: "#ffffff",
 			},
 		},
 		{
-			name:  "css: single constant webkit property",
-			input: `-webkit-text-stroke-color: #ffffff;`,
+			name:        "css: single constant webkit property",
+			input:       `-webkit-text-stroke-color: #ffffff;`,
+			expectedCSS: "-webkit-text-stroke-color: #ffffff;\n",
 			expected: ConstantCSSProperty{
 				Name:  "-webkit-text-stroke-color",
 				Value: "#ffffff",
@@ -117,20 +138,37 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
 			}
+
+			w := new(bytes.Buffer)
+			cw := NewContextWriter(w, WriteContextCSS)
+			if err := result.Write(cw, 0); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			actualHTML := w.String()
+			if diff := cmp.Diff(tt.expectedCSS, actualHTML); diff != "" {
+				t.Error(diff)
+
+				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
+				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedCSS))
+				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+			}
 		})
 	}
 }
 
 func TestCSSParser(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected CSSTemplate
+		name        string
+		input       string
+		expected    CSSTemplate
+		expectedCSS string
 	}{
 		{
 			name: "css: no parameters, no content",
 			input: `css Name() {
 }`,
+			expectedCSS: `            
+ `,
 			expected: CSSTemplate{
 				Name: "Name",
 				Expression: Expression{
@@ -155,6 +193,8 @@ func TestCSSParser(t *testing.T) {
 			name: "css: without spaces",
 			input: `css Name() {
 }`,
+			expectedCSS: `            
+ `,
 			expected: CSSTemplate{
 				Name: "Name",
 				Expression: Expression{
@@ -180,6 +220,9 @@ func TestCSSParser(t *testing.T) {
 			input: `css Name() {
 background-color: #ffffff;
 }`,
+			expectedCSS: `            
+	background-color: #ffffff;
+ `,
 			expected: CSSTemplate{
 				Name: "Name",
 				Expression: Expression{
@@ -210,6 +253,9 @@ background-color: #ffffff;
 			input: `css Name() {
 background-color: { constants.BackgroundColor };
 }`,
+			expectedCSS: `            
+	background-color: '                           ';
+ `,
 			expected: CSSTemplate{
 				Name: "Name",
 				Expression: Expression{
@@ -256,6 +302,9 @@ background-color: { constants.BackgroundColor };
 			input: `css Name(prop string) {
 background-color: { prop };
 }`,
+			expectedCSS: `                       
+	background-color: '      ';
+ `,
 			expected: CSSTemplate{
 				Name: "Name",
 				Expression: Expression{
@@ -311,6 +360,20 @@ background-color: { prop };
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
+			}
+
+			w := new(bytes.Buffer)
+			cw := NewContextWriter(w, WriteContextCSS)
+			if err := result.Write(cw, 0); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			actualHTML := w.String()
+			if diff := cmp.Diff(tt.expectedCSS, actualHTML); diff != "" {
+				t.Error(diff)
+
+				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
+				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedCSS))
+				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
 			}
 		})
 	}
