@@ -129,8 +129,8 @@ func (ep *ExpressionParser) Insert(pos token.Pos, tok token.Token, lit string) (
 		if actual != opener {
 			return false, ErrUnbalanced{tok}
 		}
-		// If we're closing a function, pop the function depth.
 		if tok == token.RBRACE {
+			// If we're closing a function, pop the function depth.
 			if len(ep.Stack) == ep.Fns.Peek() {
 				ep.Fns.Pop()
 			}
