@@ -512,8 +512,20 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {
 				return err
 			}
+		case *string:
+			if value != nil {
+				if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(*value), `"`); err != nil {
+					return err
+				}
+			}
 		case bool:
 			if value {
+				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+					return err
+				}
+			}
+		case *bool:
+			if value != nil && *value {
 				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
 					return err
 				}
