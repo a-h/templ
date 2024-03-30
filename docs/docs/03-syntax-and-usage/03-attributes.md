@@ -234,6 +234,7 @@ func countriesJSON() string {
 	return string(bytes)
 }
 ```
+
 ```templ
 templ SearchBox() {
 	<search-webcomponent suggestions={ countriesJSON() } />
