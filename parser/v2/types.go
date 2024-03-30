@@ -857,7 +857,7 @@ func (ea ExpressionAttribute) Write(cw ContextWriter, indent int) (err error) {
 		if cw.wc.IsSet(WriteContextGo) {
 			return writeIndent(cw, WriteContextGo, 0, `{ `, lines[0], ` }`)
 		} else {
-			return writeIndent(cw, WriteContextHTML, 0, `" `, strings.Repeat(" ", len(lines[0])), ` "`)
+			return writeIndent(cw, WriteContextHTML, 0, `" `, whiteSpaceString(lines[0]), ` "`)
 		}
 	}
 
@@ -1194,17 +1194,11 @@ func (se StringExpression) Write(cw ContextWriter, indent int) error {
 
 	if cw.wc.IsSet(WriteContextGo) {
 		return writeIndent(cw, WriteContextGo, indent, `{ `, se.Expression.Value, ` }`)
-	}
-
-	if cw.wc.IsSet(WriteContextCSS) {
+	} else if cw.wc.IsSet(WriteContextCSS) {
 		return writeIndent(cw, WriteContextCSS, indent, `' `, whiteSpaceString(se.Expression.Value), ` '`)
+	} else {
+		return writeIndent(cw, WriteContextHTML, indent, `" `, whiteSpaceString(se.Expression.Value), ` "`)
 	}
-
-	if cw.wc.IsSet(WriteContextHTML) {
-		return writeIndent(cw, WriteContextCSS, indent, `" `, whiteSpaceString(se.Expression.Value), ` "`)
-	}
-
-	return writeIndent(cw, WriteContextGo, indent, `{ `, se.Expression.Value, ` }`)
 }
 
 // ScriptTemplate is a script block.
