@@ -768,6 +768,9 @@ func TestTemplateParser(t *testing.T) {
 					t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedHTML))
 					t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
 				}
+				if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedHTML)); diff != "" {
+					t.Errorf(diff)
+				}
 			}
 		})
 	}

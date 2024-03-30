@@ -298,6 +298,9 @@ console.log(value);
 					t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedJS))
 					t.Errorf("got:\n%s", displayWhitespaceChars(actualJS))
 				}
+				if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedJS)); diff != "" {
+					t.Errorf(diff)
+				}
 			})
 		}
 	}

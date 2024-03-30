@@ -1457,6 +1457,9 @@ func TestElementParser(t *testing.T) {
 				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedHTML))
 				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
 			}
+			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedHTML)); diff != "" {
+				t.Errorf(diff)
+			}
 		})
 	}
 }
@@ -1574,4 +1577,13 @@ func TestBigElement(t *testing.T) {
 	if !ok {
 		t.Errorf("unexpected failure to parse")
 	}
+}
+
+func getLineLengths(s string) (lengths []int) {
+	lines := strings.Split(s, "\n")
+	lengths = make([]int, len(lines))
+	for i := 0; i < len(lines); i++ {
+		lengths[i] = len(lines[i])
+	}
+	return lengths
 }

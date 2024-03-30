@@ -94,6 +94,9 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedCSS))
 				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
 			}
+			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedCSS)); diff != "" {
+				t.Errorf(diff)
+			}
 		})
 	}
 }
@@ -151,6 +154,9 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
 				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedCSS))
 				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+			}
+			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedCSS)); diff != "" {
+				t.Errorf(diff)
 			}
 		})
 	}
@@ -374,6 +380,9 @@ background-color: { prop };
 				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
 				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedCSS))
 				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+			}
+			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedCSS)); diff != "" {
+				t.Errorf(diff)
 			}
 		})
 	}
