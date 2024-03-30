@@ -350,7 +350,7 @@ default:
 				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedHTML))
 				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
 			}
-			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedHTML)); diff != "" {
+			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(actualHTML)); diff != "" {
 				t.Errorf(diff)
 			}
 		})

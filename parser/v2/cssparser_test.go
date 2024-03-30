@@ -86,15 +86,15 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 			if err := result.Write(cw, 0); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			actualHTML := w.String()
-			if diff := cmp.Diff(tt.expectedCSS, actualHTML); diff != "" {
+			actualCSS := w.String()
+			if diff := cmp.Diff(tt.expectedCSS, actualCSS); diff != "" {
 				t.Error(diff)
 
 				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
 				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedCSS))
-				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+				t.Errorf("got:\n%s", displayWhitespaceChars(actualCSS))
 			}
-			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedCSS)); diff != "" {
+			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(actualCSS)); diff != "" {
 				t.Errorf(diff)
 			}
 		})
@@ -147,15 +147,15 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 			if err := result.Write(cw, 0); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			actualHTML := w.String()
-			if diff := cmp.Diff(tt.expectedCSS, actualHTML); diff != "" {
+			actualCSS := w.String()
+			if diff := cmp.Diff(tt.expectedCSS, actualCSS); diff != "" {
 				t.Error(diff)
 
 				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
 				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedCSS))
-				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+				t.Errorf("got:\n%s", displayWhitespaceChars(actualCSS))
 			}
-			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedCSS)); diff != "" {
+			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(actualCSS)); diff != "" {
 				t.Errorf(diff)
 			}
 		})
@@ -373,15 +373,15 @@ background-color: { prop };
 			if err := result.Write(cw, 0); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			actualHTML := w.String()
-			if diff := cmp.Diff(tt.expectedCSS, actualHTML); diff != "" {
+			actualCSS := w.String()
+			if diff := cmp.Diff(tt.expectedCSS, actualCSS); diff != "" {
 				t.Error(diff)
 
 				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
 				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedCSS))
-				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+				t.Errorf("got:\n%s", displayWhitespaceChars(actualCSS))
 			}
-			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(tt.expectedCSS)); diff != "" {
+			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(actualCSS)); diff != "" {
 				t.Errorf(diff)
 			}
 		})
