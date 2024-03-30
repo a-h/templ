@@ -233,6 +233,7 @@ func countriesJSON() string {
 	bytes, _ := json.Marshal(countries)
 	return string(bytes)
 }
+```
 ```templ
 templ SearchBox() {
 	<search-webcomponent suggestions={ countriesJSON() } />

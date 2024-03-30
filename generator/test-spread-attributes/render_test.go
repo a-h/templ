@@ -17,12 +17,20 @@ func Test(t *testing.T) {
 		"bool": templ.KV(true, true),
 		// Should not render, as the conditional render value is false.
 		"bool-disabled": templ.KV(true, false),
+		// Should render non-nil string values.
+		"data-attr": ptr("value"),
+		// Should render non-nil boolean values that evaluate to true.
+		"data-attr-bool": ptr(true),
 		// Should render as `dateId="my-custom-id"`.
 		"dateId": "my-custom-id",
 		// Should render as `hx-get="/page"`.
 		"hx-get": "/page",
 		// Should render as `id="test"`.
 		"id": "test",
+		// Should not render a nil string pointer.
+		"key": nilPtr[string](),
+		// Should not render a nil boolean value.
+		"boolkey": nilPtr[bool](),
 		// Should not render, as the attribute value, and the conditional render value is false.
 		"no-bool": templ.KV(false, false),
 		// Should not render, as the conditional render value is false.
@@ -46,4 +54,12 @@ func Test(t *testing.T) {
 	if diff != "" {
 		t.Error(diff)
 	}
+}
+
+func nilPtr[T any]() *T {
+	return nil
+}
+
+func ptr[T any](x T) *T {
+	return &x
 }

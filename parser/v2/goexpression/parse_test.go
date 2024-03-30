@@ -414,6 +414,18 @@ var templExpressionTests = []testInput{
 })`,
 	},
 	{
+		name:  "function call with empty slice of strings",
+		input: `Inner([]string{})`,
+	},
+	{
+		name:  "function call with empty slice of maps",
+		input: `Inner([]map[string]any{})`,
+	},
+	{
+		name:  "function call with empty slice of anon structs",
+		input: `Inner([]map[string]struct{}{})`,
+	},
+	{
 		name: "function call with slice of pointers to complex types",
 		input: `tabs([]*TabData{
   &{Name: "A"},
