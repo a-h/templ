@@ -198,6 +198,24 @@ templ index() {
 <div class="loading_9ccc"></div>
 ```
 
+### CSS Sanitization
+
+To prevent CSS injection attacks, templ automatically sanitizes dynamic CSS property names and values using the `templ.SanitizeCSS` function. Internally, this uses a lightweight fork of Google's `safehtml` package to sanitize the value.
+
+If a property name or value has been sanitized, it will be replaced with `zTemplUnsafeCSSPropertyName` for property names, or `zTemplUnsafeCSSPropertyValue` for property values.
+
+To bypass this sanitization, e.g. for URL values of `background-image`, you can mark the value as safe using the `templ.SafeCSSProperty` type.
+
+```templ
+css windVaneRotation(degrees float64) {
+	transform: { templ.SafeCSSProperty(fmt.Sprintf("rotate(%ddeg)", int(math.Round(degrees)))) };
+}
+
+templ Rotate(degrees float64) {
+	<div class={ windVaneRotation(degrees) }>Rotate</div>
+}
+```
+
 ### CSS Middleware
 
 The use of CSS templates means that `<style>` elements containing the CSS are rendered on each HTTP request.
