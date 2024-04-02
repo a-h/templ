@@ -218,6 +218,7 @@ func TestProxy(t *testing.T) {
 	})
 
 	t.Run("notify-proxy: sending POST request to /_templ/reload/events should receive reload sse event", func(t *testing.T) {
+		// Arrange 1: create a test proxy server
 		dummyHandler := func(w http.ResponseWriter, r *http.Request) {}
 		dummyServer := httptest.NewServer(http.HandlerFunc(dummyHandler))
 		defer dummyServer.Close()
@@ -239,7 +240,7 @@ func TestProxy(t *testing.T) {
 			t.Fatalf("unexpected error parsing port: %v", err)
 		}
 
-		// we start an sse request to receive the events. The connection will be closed by the server or timeout.
+		// Arrange 2: start a goroutine to listen for sse events
 		ctx := context.Background()
 		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
@@ -278,8 +279,8 @@ func TestProxy(t *testing.T) {
 			}
 		}()
 
-		// either sse is listening or an error occurred
-		select {
+		// Act: notify the proxy
+		select { // either sse is listening or an error occurred
 		case <-sseListening:
 			err = NotifyProxy(u2.Hostname(), port)
 			if err != nil {
@@ -291,8 +292,8 @@ func TestProxy(t *testing.T) {
 			}
 		}
 
-		// either sse has a expected response or an error or timeout occurred
-		select {
+		// Assert
+		select { // either sse has a expected response or an error or timeout occurred
 		case resp := <-sseRespCh:
 			if !strings.Contains(resp, "event: message\ndata: reload") {
 				t.Errorf("expected sse reload event to be received, got: %q", resp)
