@@ -470,7 +470,7 @@ const FailedSanitizationURL = SafeURL("about:invalid#TemplFailedSanitizationURL"
 func URL(s string) SafeURL {
 	if i := strings.IndexRune(s, ':'); i >= 0 && !strings.ContainsRune(s[:i], '/') {
 		protocol := s[:i]
-		if !strings.EqualFold(protocol, "http") && !strings.EqualFold(protocol, "https") && !strings.EqualFold(protocol, "mailto") {
+		if !strings.EqualFold(protocol, "http") && !strings.EqualFold(protocol, "https") && !strings.EqualFold(protocol, "mailto") && !strings.EqualFold(protocol, "tel") && !strings.EqualFold(protocol, "ftp") && !strings.EqualFold(protocol, "ftps") {
 			return FailedSanitizationURL
 		}
 	}
