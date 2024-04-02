@@ -254,7 +254,7 @@ func TestProxy(t *testing.T) {
 				errChan <- err
 				return
 			}
-			resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				errChan <- err
 				return
