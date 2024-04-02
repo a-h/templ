@@ -2,5 +2,4 @@ public/
 build/
 node_modules/
 tmp/
-*_templ.go
 static/style.css
