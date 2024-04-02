@@ -374,8 +374,8 @@ For VS Code, use the "Preferences: Open User Settings (JSON)" command in VS Code
 ```js
 {
     // More settings...
-    "templ.log": "/Users/adrian/logs/vscode-templ.txt",
-    "templ.goplsLog": "/Users/adrian/logs/vscode-gopls.txt",
+    "templ.log": "/Users/adrian/templ.log",
+    "templ.goplsLog": "/Users/adrian/gopls.log",
     "templ.http": "localhost:7575",
     "templ.goplsRPCTrace": true,
     "templ.pprof": false,
@@ -395,6 +395,20 @@ configs.templ = {
     settings = {},
   },
 }
+```
+
+For IntelliJ, configure the plugin settings `.idea/templ.xml`.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="TemplSettings">
+    <option name="goplsLog" value="$USER_HOME$/gopls.log" />
+    <option name="goplsRPCTrace" value="true" />
+    <option name="http" value="localhost:7575" />
+    <option name="log" value="$USER_HOME$/templ.log" />
+  </component>
+</project>
 ```
 
 ### Make a minimal reproduction, and include the logs
