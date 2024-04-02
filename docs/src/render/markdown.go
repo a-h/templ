@@ -22,7 +22,7 @@ func NewMarkdownPage(relativePath string, file []byte) (*Page, error) {
 		return nil, err
 	}
 
-	md, err := parseMarkdown(relativePath, file)
+	md, err := parseMarkdown(file)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +63,7 @@ var GoldmarkDefinition = goldmark.New(
 	),
 	goldmark.WithExtensions(
 		&anchor.Extender{
-			Texter: anchor.Text("#"),
-		},
+			Texter: anchor.Text("#")},
 		extension.NewLinkify(
 			extension.WithLinkifyAllowedProtocols([][]byte{
 				[]byte("http:"),
@@ -95,7 +94,7 @@ func renderTitleFromFileContent(relativePath string, file []byte) (string, error
 
 }
 
-func parseMarkdown(relativePath string, file []byte) ([]byte, error) {
+func parseMarkdown(file []byte) ([]byte, error) {
 	// remove frontmatter
 	if strings.HasPrefix(string(file), "---") {
 		_, file, _ = bytes.Cut(file[3:], []byte("---\n"))
