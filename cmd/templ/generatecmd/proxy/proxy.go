@@ -118,8 +118,17 @@ func (p *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.URL.Path == "/_templ/reload/events" {
-		// Provides a list of messages including a reload message.
-		p.sse.ServeHTTP(w, r)
+		switch r.Method {
+		case http.MethodGet:
+			// Provides a list of messages including a reload message.
+			p.sse.ServeHTTP(w, r)
+			return
+		case http.MethodPost:
+			// Send a reload message to all connected clients.
+			p.sse.Send("message", "reload")
+			return
+		}
+		http.Error(w, "only GET or POST method allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	p.p.ServeHTTP(w, r)
@@ -179,4 +188,14 @@ func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	}
 
 	return nil, fmt.Errorf("max retries reached")
+}
+
+func NotifyProxy(host string, port int) error {
+	urlStr := fmt.Sprintf("http://%s:%d/_templ/reload/events", host, port)
+	req, err := http.NewRequest(http.MethodPost, urlStr, nil)
+	if err != nil {
+		return err
+	}
+	_, err = http.DefaultClient.Do(req)
+	return err
 }

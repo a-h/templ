@@ -21,6 +21,7 @@ type Arguments struct {
 	ProxyBind                       string
 	ProxyPort                       int
 	Proxy                           string
+	NotifyProxy                     bool
 	WorkerCount                     int
 	GenerateSourceMapVisualisations bool
 	IncludeVersion                  bool
