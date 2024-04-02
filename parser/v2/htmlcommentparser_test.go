@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/a-h/parse"
@@ -66,6 +67,19 @@ func TestHTMLCommentParser(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Errorf(diff)
+			}
+
+			w := new(bytes.Buffer)
+			cw := NewContextWriter(w, WriteContextHTML)
+			if err := result.Write(cw, 0); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			actualHTML := w.String()
+			if diff := cmp.Diff(tt.input, actualHTML); diff != "" {
+				t.Error(diff)
+
+				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.input))
+				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
 			}
 		})
 	}

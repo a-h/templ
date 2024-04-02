@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/a-h/parse"
@@ -9,9 +10,10 @@ import (
 
 func TestIfExpression(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected IfExpression
+		name         string
+		input        string
+		expected     IfExpression
+		expectedHTML string
 	}{
 		{
 			name: "if: simple expression",
@@ -21,6 +23,11 @@ func TestIfExpression(t *testing.T) {
 </span>
 }
 `,
+			expectedHTML: `           
+	<span>
+		                  
+	</span>
+ `,
 			expected: IfExpression{
 				Expression: Expression{
 					Value: `p.Test`,
@@ -606,6 +613,25 @@ func TestIfExpression(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.expected, actual); diff != "" {
 				t.Error(diff)
+			}
+
+			if tt.expectedHTML != "" {
+				w := new(bytes.Buffer)
+				cw := NewContextWriter(w, WriteContextHTML)
+				if err := actual.Write(cw, 0); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				actualHTML := w.String()
+				if diff := cmp.Diff(tt.expectedHTML, actualHTML); diff != "" {
+					t.Error(diff)
+
+					t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
+					t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedHTML))
+					t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+				}
+				if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(actualHTML)); diff != "" {
+					t.Errorf(diff)
+				}
 			}
 		})
 	}

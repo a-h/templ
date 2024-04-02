@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/a-h/parse"
@@ -9,10 +10,11 @@ import (
 
 func TestTemplateParser(t *testing.T) {
 	var tests = []struct {
-		name        string
-		input       string
-		expected    HTMLTemplate
-		expectError bool
+		name         string
+		input        string
+		expected     HTMLTemplate
+		expectedHTML string
+		expectError  bool
 	}{
 		{
 			name: "template: no parameters",
@@ -131,6 +133,9 @@ func TestTemplateParser(t *testing.T) {
 			input: `templ Name(p Parameter) {
 <span>{ "span content" }</span>
 }`,
+			expectedHTML: `                         
+	<span>                  </span>
+ `,
 			expected: HTMLTemplate{
 				Expression: Expression{
 					Value: "Name(p Parameter)",
@@ -748,6 +753,24 @@ func TestTemplateParser(t *testing.T) {
 				t.Errorf("Success=%v want=%v", ok, !tt.expectError)
 			case !tt.expectError && diff != "":
 				t.Errorf(diff)
+			}
+			if tt.expectedHTML != "" {
+				w := new(bytes.Buffer)
+				cw := NewContextWriter(w, WriteContextHTML)
+				if err := actual.Write(cw, 0); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				actualHTML := w.String()
+				if diff := cmp.Diff(tt.expectedHTML, actualHTML); diff != "" {
+					t.Error(diff)
+
+					t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
+					t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedHTML))
+					t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+				}
+				if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(actualHTML)); diff != "" {
+					t.Errorf(diff)
+				}
 			}
 		})
 	}

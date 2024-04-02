@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -10,14 +11,17 @@ import (
 
 func TestScriptTemplateParser(t *testing.T) {
 	var tests = []struct {
-		name     string
-		input    string
-		expected ScriptTemplate
+		name       string
+		input      string
+		expected   ScriptTemplate
+		expectedJS string
 	}{
 		{
 			name: "script: no parameters, no content",
 			input: `script Name() {
 }`,
+			expectedJS: `               
+ `,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
@@ -55,6 +59,8 @@ func TestScriptTemplateParser(t *testing.T) {
 			name: "script: no spaces",
 			input: `script Name(){
 }`,
+			expectedJS: `               
+ `,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
@@ -93,6 +99,9 @@ func TestScriptTemplateParser(t *testing.T) {
 			input: `script Name() {
 var x = "x";
 }`,
+			expectedJS: `               
+var x = "x";
+ `,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
@@ -132,6 +141,9 @@ var x = "x";
 			input: `script Name(value string) {
 console.log(value);
 }`,
+			expectedJS: `                           
+console.log(value);
+ `,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
@@ -171,6 +183,9 @@ console.log(value);
 			input: `script Name() {
 	//'
 }`,
+			expectedJS: `               
+	//'
+ `,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
@@ -210,6 +225,9 @@ console.log(value);
 			input: `script Name() {
   let x = '';
 }`,
+			expectedJS: `               
+  let x = '';
+ `,
 			expected: ScriptTemplate{
 				Name: Expression{
 					Value: "Name",
@@ -265,6 +283,23 @@ console.log(value);
 				if diff := cmp.Diff(suffix, actualSuffix); diff != "" {
 					t.Error("unexpected suffix")
 					t.Error(diff)
+				}
+
+				w := new(bytes.Buffer)
+				cw := NewContextWriter(w, WriteContextJS)
+				if err := actual.Write(cw, 0); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				actualJS := w.String()
+				if diff := cmp.Diff(tt.expectedJS, actualJS); diff != "" {
+					t.Error(diff)
+
+					t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
+					t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedJS))
+					t.Errorf("got:\n%s", displayWhitespaceChars(actualJS))
+				}
+				if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(actualJS)); diff != "" {
+					t.Errorf(diff)
 				}
 			})
 		}

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/a-h/parse"
@@ -9,14 +10,17 @@ import (
 
 func TestSwitchExpressionParser(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected SwitchExpression
+		name         string
+		input        string
+		expected     SwitchExpression
+		expectedHTML string
 	}{
 		{
 			name: "switch: simple",
 			input: `switch "stringy" {
 }`,
+			expectedHTML: `                  
+ `,
 			expected: SwitchExpression{
 				Expression: Expression{
 					Value: `"stringy"`,
@@ -43,6 +47,12 @@ default:
 	  { "span content" }
 	</span>
 }`,
+			expectedHTML: `                  
+	        
+		<span>
+			                  
+		</span>
+ `,
 			expected: SwitchExpression{
 				Expression: Expression{
 					Value: `"stringy"`,
@@ -121,6 +131,12 @@ default:
   { "span content" }
 </span>
 }`,
+			expectedHTML: `                  
+	               
+		<span>
+			                  
+		</span>
+ `,
 			expected: SwitchExpression{
 				Expression: Expression{
 					Value: `"stringy"`,
@@ -198,6 +214,12 @@ default:
 	case "b":
 		{ "B" }
 }`,
+			expectedHTML: `                  
+	         
+		       
+	         
+		       
+ `,
 			expected: SwitchExpression{
 				Expression: Expression{
 					Value: `"stringy"`,
@@ -313,6 +335,23 @@ default:
 			}
 			if diff := cmp.Diff(tt.expected, actual); diff != "" {
 				t.Error(diff)
+			}
+
+			w := new(bytes.Buffer)
+			cw := NewContextWriter(w, WriteContextHTML)
+			if err := actual.Write(cw, 0); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			actualHTML := w.String()
+			if diff := cmp.Diff(tt.expectedHTML, actualHTML); diff != "" {
+				t.Error(diff)
+
+				t.Errorf("input:\n%s", displayWhitespaceChars(tt.input))
+				t.Errorf("expected:\n%s", displayWhitespaceChars(tt.expectedHTML))
+				t.Errorf("got:\n%s", displayWhitespaceChars(actualHTML))
+			}
+			if diff := cmp.Diff(getLineLengths(tt.input), getLineLengths(actualHTML)); diff != "" {
+				t.Errorf(diff)
 			}
 		})
 	}
