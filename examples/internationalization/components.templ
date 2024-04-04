@@ -1,0 +1,30 @@
+package main
+
+import "github.com/invopop/ctxi18n/i18n"
+
+templ title() {
+  <h2 class="title is-2">{ i18n.T(ctx, "welcome_message") }</h2>
+}
+
+templ page() {
+  <html>
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Internationalization</title>
+			<link rel="stylesheet" href="/assets/bulma.min.css"/>
+		</head>
+		<body class="bg-gray-100">
+			<header class="hero is-primary">
+				<div class="hero-body">
+					<div class="container">
+						<h1 class="title">Internationalization</h1>
+					</div>
+				</div>
+			</header>
+			<section class="section">
+				@title()
+			</section>
+		</body>
+	</html>
+}
