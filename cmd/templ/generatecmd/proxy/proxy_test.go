@@ -218,7 +218,7 @@ func TestProxy(t *testing.T) {
 	})
 
 	t.Run("notify-proxy: sending POST request to /_templ/reload/events should receive reload sse event", func(t *testing.T) {
-		// Arrange 1: create a test proxy server
+		// Arrange 1: create a test proxy server.
 		dummyHandler := func(w http.ResponseWriter, r *http.Request) {}
 		dummyServer := httptest.NewServer(http.HandlerFunc(dummyHandler))
 		defer dummyServer.Close()
