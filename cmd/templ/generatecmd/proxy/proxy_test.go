@@ -247,7 +247,7 @@ func TestProxy(t *testing.T) {
 
 		errChan := make(chan error)
 		sseRespCh := make(chan string)
-		sseListening := make(chan bool) // coordination channel to ensure the sse listener is started before notifying the proxy
+		sseListening := make(chan bool) // Coordination channel that ensures the SSE listener is started before notifying the proxy.
 		go func() {
 			req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/_templ/reload/events", proxyServer.URL), nil)
 			if err != nil {
