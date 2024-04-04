@@ -1,0 +1,12 @@
+de:
+  welcome_message: "Willkommen bei unserer Anwendung!"
+  login:
+    button: "Anmelden"
+    signup-button: "Registrieren"
+    forgot-password: "Passwort vergessen?"
+  time:
+    container: "Die Uhrzeit ist %{time}"
+  contact_us: "Kontaktieren Sie uns"
+  about_us: "Über uns"
+  terms_of_service: "Nutzungsbedingungen"
+  privacy_policy: "Datenschutzbestimmungen"

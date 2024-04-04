@@ -1,0 +1,10 @@
+github.com/a-h/templ v0.2.648 h1:A1ggHGIE7AONOHrFaDTM8SrqgqHL6fWgWCijQ21Zy9I=
+github.com/a-h/templ v0.2.648/go.mod h1:SA7mtYwVEajbIXFRh3vKdYm/4FYyLQAtPH1+KxzGPA8=
+github.com/invopop/ctxi18n v0.2.0 h1:7DJEM6s9fNn/XcVRNOljv4nKsKdlLa6bsbYq6OG/fhE=
+github.com/invopop/ctxi18n v0.2.0/go.mod h1:1Osw+JGYA+anHt0Z4reF36r5FtGHYjGQ+m1X7keIhPc=
+github.com/invopop/yaml v0.2.0 h1:7zky/qH+O0DwAyoobXUqvVBwgBFRxKoQ/3FjcVpjTMY=
+github.com/invopop/yaml v0.2.0/go.mod h1:2XuRLgs/ouIrW3XNzuNj7J3Nvu/Dig5MXvbCEdiBN3Q=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.0/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=

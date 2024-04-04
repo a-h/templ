@@ -1,0 +1,12 @@
+en:
+  welcome_message: "Welcome to our application!"
+  login:
+    button: "Log In"
+    signup-button: "Sign Up"
+    forgot-password: "Forgot Password?"
+  time:
+    container: "The time is %{time}"
+  contact_us: "Contact Us"
+  about_us: "About Us"
+  terms_of_service: "Terms of Service"
+  privacy_policy: "Privacy Policy"
