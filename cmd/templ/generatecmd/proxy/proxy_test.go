@@ -272,7 +272,7 @@ func TestProxy(t *testing.T) {
 				}
 			}
 			err = scanner.Err()
-			// we expect the connection to be closed by the server: this is the only way to terminate the sse connection
+			// We expect the connection to be closed by the server: this is the only way to terminate the sse connection.
 			if err != nil {
 				errChan <- err
 				return
