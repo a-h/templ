@@ -89,5 +89,5 @@ func Check(dir string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("templ not found in go.mod file, run `go get github.com/a-h/templ to install it`")
+	return fmt.Errorf("templ not found in go.mod file, run `go get github.com/a-h/templ` to install it")
 }
