@@ -96,3 +96,43 @@ To use the container, mount the source code of your application into the `/app` 
 ```bash
 docker run -v `pwd`:/app -w=/app ghcr.io/a-h/templ:latest generate
 ```
+
+If you want to build templates using a multi-stage Docker build, you can use the `templ` image as a base image.
+
+Here's an example multi-stage Dockerfile. Note that in the `generate-stage` the source code is copied into the container, and the `templ generate` command is run. The `build-stage` then copies the generated code into the container and builds the application.
+
+The permissions of the source code are set to a user with a UID of 65532, which is the UID of the `nonroot` user in the `ghcr.io/a-h/templ:latest` image.
+
+Note also the use of the `RUN ["templ", "generate"]` command instead of the common `RUN templ generate` command. This is because the templ Docker container does not contain a shell environment to keep its size minimal, so the command must be ran in the ["exec" form](https://docs.docker.com/reference/dockerfile/#shell-and-exec-form).
+
+```Dockerfile
+# Fetch
+FROM golang:latest AS fetch-stage
+COPY go.mod go.sum /app
+WORKDIR /app
+RUN go mod download
+
+# Generate
+FROM ghcr.io/a-h/templ:latest AS generate-stage
+COPY --chown=65532:65532 . /app
+WORKDIR /app
+RUN ["templ", "generate"]
+
+# Build
+FROM golang:latest AS build-stage
+COPY --from=generate-stage /app /app
+WORKDIR /app
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/app
+
+# Test
+FROM build-stage AS test-stage
+RUN go test -v ./...
+
+# Deploy
+FROM gcr.io/distroless/base-debian12 AS deploy-stage
+WORKDIR /
+COPY --from=build-stage /app/app /app
+EXPOSE 8080
+USER nonroot:nonroot
+ENTRYPOINT ["/app"]
+```
