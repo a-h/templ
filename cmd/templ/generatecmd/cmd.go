@@ -115,7 +115,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	// Create channels:
 	// For the initial filesystem walk and subsequent (optional) fsnotify events.
 	events := make(chan fsnotify.Event)
-	// count of events currently being processed by the event handler.
+	// Count of events currently being processed by the event handler.
 	var eventsWG sync.WaitGroup
 	// Used to check that the event handler has completed.
 	var eventHandlerWG sync.WaitGroup
@@ -178,7 +178,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		fseh = NewFSEventHandler(
 			cmd.Log,
 			cmd.Args.Path,
-			cmd.Args.Watch,
+			false, // Force production mode.
 			opts,
 			cmd.Args.GenerateSourceMapVisualisations,
 			cmd.Args.KeepOrphanedFiles,
