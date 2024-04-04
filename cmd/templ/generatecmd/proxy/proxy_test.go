@@ -293,7 +293,7 @@ func TestProxy(t *testing.T) {
 		}
 
 		// Assert.
-		select { // either sse has a expected response or an error or timeout occurred
+		select { // Either SSE has a expected response or an error or timeout occurred.
 		case resp := <-sseRespCh:
 			if !strings.Contains(resp, "event: message\ndata: reload") {
 				t.Errorf("expected sse reload event to be received, got: %q", resp)
