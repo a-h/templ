@@ -240,7 +240,7 @@ func TestProxy(t *testing.T) {
 			t.Fatalf("unexpected error parsing port: %v", err)
 		}
 
-		// Arrange 2: start a goroutine to listen for sse events
+		// Arrange 2: start a goroutine to listen for sse events.
 		ctx := context.Background()
 		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		defer cancel()
