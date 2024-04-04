@@ -1,13 +1,19 @@
 package proxy
 
 import (
+	"bufio"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -208,6 +214,96 @@ func TestProxy(t *testing.T) {
 		}
 		if diff := cmp.Diff(expectedString, string(actualBody)); diff != "" {
 			t.Errorf("unexpected response body (-got +want):\n%s", diff)
+		}
+	})
+
+	t.Run("notify-proxy: sending POST request to /_templ/reload/events should receive reload sse event", func(t *testing.T) {
+		// Arrange 1: create a test proxy server.
+		dummyHandler := func(w http.ResponseWriter, r *http.Request) {}
+		dummyServer := httptest.NewServer(http.HandlerFunc(dummyHandler))
+		defer dummyServer.Close()
+
+		u, err := url.Parse(dummyServer.URL)
+		if err != nil {
+			t.Fatalf("unexpected error parsing URL: %v", err)
+		}
+		handler := New("0.0.0.0", 0, u)
+		proxyServer := httptest.NewServer(handler)
+		defer proxyServer.Close()
+
+		u2, err := url.Parse(proxyServer.URL)
+		if err != nil {
+			t.Fatalf("unexpected error parsing URL: %v", err)
+		}
+		port, err := strconv.Atoi(u2.Port())
+		if err != nil {
+			t.Fatalf("unexpected error parsing port: %v", err)
+		}
+
+		// Arrange 2: start a goroutine to listen for sse events.
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+		defer cancel()
+
+		errChan := make(chan error)
+		sseRespCh := make(chan string)
+		sseListening := make(chan bool) // Coordination channel that ensures the SSE listener is started before notifying the proxy.
+		go func() {
+			req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/_templ/reload/events", proxyServer.URL), nil)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			defer resp.Body.Close()
+
+			sseListening <- true
+			lines := []string{}
+			scanner := bufio.NewScanner(resp.Body)
+			for scanner.Scan() {
+				lines = append(lines, scanner.Text())
+				if scanner.Text() == "data: reload" {
+					sseRespCh <- strings.Join(lines, "\n")
+					return
+				}
+			}
+			err = scanner.Err()
+			// We expect the connection to be closed by the server: this is the only way to terminate the sse connection.
+			if err != nil {
+				errChan <- err
+				return
+			}
+		}()
+
+		// Act: notify the proxy.
+		select { // Either SSE is listening or an error occurred.
+		case <-sseListening:
+			err = NotifyProxy(u2.Hostname(), port)
+			if err != nil {
+				t.Fatalf("unexpected error notifying proxy: %v", err)
+			}
+		case err := <-errChan:
+			if err == nil {
+				t.Fatalf("unexpected sse response: %v", err)
+			}
+		}
+
+		// Assert.
+		select { // Either SSE has a expected response or an error or timeout occurred.
+		case resp := <-sseRespCh:
+			if !strings.Contains(resp, "event: message\ndata: reload") {
+				t.Errorf("expected sse reload event to be received, got: %q", resp)
+			}
+		case err := <-errChan:
+			if err == nil {
+				t.Fatalf("unexpected sse response: %v", err)
+			}
+		case <-ctx.Done():
+			t.Fatalf("timeout waiting for sse response")
 		}
 	})
 }

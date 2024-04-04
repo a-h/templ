@@ -49,6 +49,9 @@ type GenerationEvent struct {
 }
 
 func (cmd Generate) Run(ctx context.Context) (err error) {
+	if cmd.Args.NotifyProxy {
+		return proxy.NotifyProxy(cmd.Args.ProxyBind, cmd.Args.ProxyPort)
+	}
 	if cmd.Args.Watch && cmd.Args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}

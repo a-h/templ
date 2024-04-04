@@ -91,6 +91,8 @@ Args:
     The port the proxy will listen on. (default 7331)
   -proxybind
     The address the proxy will listen on. (default 127.0.0.1)
+  -notify-proxy
+    If present, the command will issue a reload event to the proxy 127.0.0.1:7331, or use proxyport and proxybind to specify a different address.
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
   -pprof
@@ -134,6 +136,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	proxyFlag := cmd.String("proxy", "", "")
 	proxyPortFlag := cmd.Int("proxyport", 7331, "")
 	proxyBindFlag := cmd.String("proxybind", "127.0.0.1", "")
+	notifyProxyFlag := cmd.Bool("notify-proxy", false, "")
 	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
 	pprofPortFlag := cmd.Int("pprof", 0, "")
 	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
@@ -169,6 +172,7 @@ func generateCmd(w io.Writer, args []string) (code int) {
 		Proxy:                           *proxyFlag,
 		ProxyPort:                       *proxyPortFlag,
 		ProxyBind:                       *proxyBindFlag,
+		NotifyProxy:                     *notifyProxyFlag,
 		WorkerCount:                     *workerCountFlag,
 		GenerateSourceMapVisualisations: *sourceMapVisualisationsFlag,
 		IncludeVersion:                  *includeVersionFlag,
