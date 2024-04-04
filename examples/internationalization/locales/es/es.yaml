@@ -4,8 +4,6 @@ es:
     button: "Iniciar sesión"
     signup-button: "Registrarse"
     forgot-password: "¿Olvidaste la contraseña?"
-  time:
-    container: "La hora es %{time}"
   contact_us: "Contáctanos"
   about_us: "Sobre nosotros"
   terms_of_service: "Términos de Servicio"

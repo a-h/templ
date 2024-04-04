@@ -1,4 +1,24 @@
-<h2 class=\"title is-2\">
+<button class=\"button is-warning\">
+</button>
+<button class=\"button is-info\">
+</button>
+<button class=\"button is-primary\">
+</button>
+<button class=\"button is-danger\">
+</button>
+<button class=\"button is-primary\">
+</button>
+<button class=\"button is-info\">
+</button>
+<button class=\"button is-warning\">
+</button>
+<h2 class=\"title is-2 mb-10 has-text-centered\">
 </h2>
-<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Internationalization</title><link rel=\"stylesheet\" href=\"/assets/bulma.min.css\"></head><body class=\"bg-gray-100\"><header class=\"hero is-primary\"><div class=\"hero-body\"><div class=\"container\"><h1 class=\"title\">Internationalization</h1></div></div></header><section class=\"section\">
+<div class=\"buttons are-small is-flex-direction-column mb-3\">
+</div>
+<div class=\"buttons has-addons is-centered \">
+</div>
+<form class=\"box\">
+</form>
+<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Internationalization</title><link rel=\"stylesheet\" href=\"/assets/css/bulma.min.css\"><script src=\"/assets/js/htmx.min.js\"></script></head><body class=\"bg-gray-100\"><header class=\"hero is-primary\"><div class=\"hero-body\"><div class=\"container\"><h1 class=\"title\">Internationalization</h1></div></div></header><section class=\"section\">
 </section></body></html>

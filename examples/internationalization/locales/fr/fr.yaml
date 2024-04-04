@@ -4,8 +4,6 @@ fr:
     button: "Se connecter"
     signup-button: "S'inscrire"
     forgot-password: "Mot de passe oublié ?"
-  time:
-    container: "Il est %{time}"
   contact_us: "Contactez-nous"
   about_us: "À propos de nous"
   terms_of_service: "Conditions d'utilisation"
