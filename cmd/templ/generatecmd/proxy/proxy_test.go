@@ -280,7 +280,7 @@ func TestProxy(t *testing.T) {
 		}()
 
 		// Act: notify the proxy.
-		select { // either sse is listening or an error occurred
+		select { // Either SSE is listening or an error occurred.
 		case <-sseListening:
 			err = NotifyProxy(u2.Hostname(), port)
 			if err != nil {
