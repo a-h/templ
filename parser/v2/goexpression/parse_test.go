@@ -454,6 +454,12 @@ var templExpressionTests = []testInput{
 })`,
 	},
 	{
+		name: "function call with function arg",
+		input: `componentA(func(y []int) string {
+		return "hi"
+	})`,
+	},
+	{
 		name:  "call with braces and brackets",
 		input: `templates.New(test{}, other())`,
 	},
