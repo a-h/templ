@@ -275,9 +275,10 @@ func (ws Whitespace) Write(w io.Writer, indent int) error {
 //	  background-image: url('./somewhere.png');
 //	}
 type CSSTemplate struct {
-	Name       string
-	Expression Expression
-	Properties []CSSProperty
+	Name            string
+	Expression      Expression
+	Properties      []CSSProperty
+	PropertiesRange Range
 }
 
 func (css CSSTemplate) IsTemplateFileNode() bool { return true }
@@ -295,6 +296,9 @@ func (css CSSTemplate) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+func (css CSSTemplate) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	return append(ranges, FoldingRange{Range: css.PropertiesRange})
 }
 
 // func (css CSSTemplate) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
@@ -1267,6 +1271,7 @@ type ScriptTemplate struct {
 	Name       Expression
 	Parameters Expression
 	Value      string
+	ValueRange Range
 }
 
 func (s ScriptTemplate) IsTemplateFileNode() bool { return true }
@@ -1282,6 +1287,9 @@ func (s ScriptTemplate) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+func (s ScriptTemplate) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	return append(ranges, FoldingRange{Range: s.ValueRange})
 }
 
 // func (s ScriptTemplate) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {

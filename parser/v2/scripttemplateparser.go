@@ -23,6 +23,7 @@ var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, o
 		return
 	}
 	r.Value = e.Value
+	r.ValueRange = e.Range
 
 	// Try for }
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {

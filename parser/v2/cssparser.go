@@ -19,6 +19,7 @@ var cssParser = parse.Func(func(pi *parse.Input) (r CSSTemplate, ok bool, err er
 	}
 	r.Name = exp.Name
 	r.Expression = exp.Expression
+	contentStartPos := pi.Position()
 
 	for {
 		var cssProperty CSSProperty
@@ -49,6 +50,8 @@ var cssParser = parse.Func(func(pi *parse.Input) (r CSSTemplate, ok bool, err er
 		if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
 			return
 		}
+
+		r.PropertiesRange = NewRange(contentStartPos, pi.Position())
 
 		// Try for }
 		if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
