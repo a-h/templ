@@ -30,6 +30,8 @@ func (_ switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err err
 		return
 	}
 
+	childrenStartPos := pi.Position()
+
 	// Once we've had the start of a switch block, we must conclude the block.
 
 	// Read the optional 'case' nodes.
@@ -44,6 +46,8 @@ func (_ switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err err
 		}
 		r.Cases = append(r.Cases, ce)
 	}
+
+	r.ChildrenRange = NewRange(childrenStartPos, pi.Position())
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
@@ -84,6 +88,8 @@ var caseExpressionParser = parse.Func(func(pi *parse.Input) (r CaseExpression, o
 		return
 	}
 
+	childrenStartPos := pi.Position()
+
 	// Read until the next case statement, default, or end of the block.
 	pr := newTemplateNodeParser(parse.Any(StripType(closeBraceWithOptionalPadding), StripType(caseExpressionStartParser)), "closing brace or case expression")
 	var nodes Nodes
@@ -92,6 +98,7 @@ var caseExpressionParser = parse.Func(func(pi *parse.Input) (r CaseExpression, o
 		return
 	}
 	r.Children = nodes.Nodes
+	r.ChildrenRange = NewRange(childrenStartPos, pi.Position())
 
 	// Optional whitespace.
 	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {

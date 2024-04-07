@@ -716,9 +716,41 @@ func (p *Server) ExecuteCommand(ctx context.Context, params *lsp.ExecuteCommandP
 func (p *Server) FoldingRanges(ctx context.Context, params *lsp.FoldingRangeParams) (result []lsp.FoldingRange, err error) {
 	p.Log.Info("client -> server: FoldingRanges")
 	defer p.Log.Info("client -> server: FoldingRanges end")
-	// There are no folding ranges in templ files.
-	// return p.Target.FoldingRanges(ctx, params)
-	return []lsp.FoldingRange{}, nil
+
+	d, _ := p.TemplSource.Get(string(params.TextDocument.URI))
+	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, d.String())
+	if err != nil {
+		p.Log.Error("parseTemplate failure", zap.Error(err))
+	}
+	if !ok {
+		return
+	}
+
+	// get folding from Target server
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	if !ok {
+		return
+	}
+	// Get the response.
+	// targetResult, err := p.Target.FoldingRanges(ctx, params)
+	// if err != nil {
+	// 	return
+	// }
+
+	// goFoldingRanges := []lsp.FoldingRange{}
+
+	ranges := template.GetFoldingRanges()
+
+	for _, v := range ranges {
+		result = append(result, lsp.FoldingRange{
+			StartLine:      v.Range.From.Line - 1,
+			StartCharacter: v.Range.From.Col,
+			EndLine:        v.Range.To.Line - 1,
+			EndCharacter:   v.Range.To.Col,
+		})
+	}
+
+	return result, nil
 }
 
 func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingParams) (result []lsp.TextEdit, err error) {
@@ -736,7 +768,7 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 	w := new(strings.Builder)
 	err = template.Write(w)
 	if err != nil {
-		p.Log.Error("handleFormatting: faled to write template", zap.Error(err))
+		p.Log.Error("handleFormatting: failed to write template", zap.Error(err))
 		return
 	}
 	// Replace everything.

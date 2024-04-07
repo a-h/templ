@@ -50,6 +50,8 @@ func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 
+	contentStartPos := pi.Position()
+
 	// Once we've got an open tag, parse anything until the end tag as the tag contents.
 	// It's going to be rendered out raw.
 	end := parse.All(parse.String("</"), parse.String(p.name), parse.String(">"))
@@ -57,6 +59,9 @@ func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		err = parse.Error(fmt.Sprintf("<%s>: expected end tag not present", e.Name), pi.Position())
 		return
 	}
+
+	e.ContentRange = NewRange(contentStartPos, pi.Position())
+
 	// Cut the end element.
 	_, _, _ = end.Parse(pi)
 

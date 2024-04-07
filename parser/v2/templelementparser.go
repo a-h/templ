@@ -25,6 +25,7 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	if err != nil {
 		return
 	}
+	childrenStartPos := pi.Position()
 	if !hasOpenBrace {
 		return r, true, nil
 	}
@@ -39,6 +40,7 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 		return
 	}
 	r.Children = nodes.Nodes
+	r.ChildrenRange = NewRange(childrenStartPos, pi.Position())
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {

@@ -398,6 +398,7 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 	r.NameRange = ot.NameRange
 
 	// Once we've got an open tag, the rest must be present.
+	childrenStartPos := pi.Position()
 	l := pi.Position().Line
 	var nodes Nodes
 	if nodes, ok, err = newTemplateNodeParser[any](nil, "").Parse(pi); err != nil || !ok {
@@ -411,6 +412,7 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 
 	// Close tag.
 	pos := pi.Position()
+	r.ChildrenRange = NewRange(childrenStartPos, pos)
 	var ct elementCloseTag
 	ct, ok, err = elementCloseTagParser.Parse(pi)
 	if err != nil {

@@ -17,6 +17,8 @@ var template = parse.Func(func(pi *parse.Input) (r HTMLTemplate, ok bool, err er
 	}
 	r.Expression = te.Expression
 
+	childrenStartPos := pi.Position()
+
 	// Once we're in a template, we should expect some template whitespace, if/switch/for,
 	// or node string expressions etc.
 	var nodes Nodes
@@ -35,6 +37,8 @@ var template = parse.Func(func(pi *parse.Input) (r HTMLTemplate, ok bool, err er
 	if err != nil {
 		return
 	}
+
+	r.ChildrenRange = NewRange(childrenStartPos, pi.Position())
 
 	// Try for }
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {

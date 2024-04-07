@@ -30,6 +30,8 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 
+	thenStartPos := pi.Position()
+
 	// Once we've had the start of an if block, we must conclude the block.
 
 	// Read the 'Then' nodes.
@@ -41,6 +43,7 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 	r.Then = thenNodes.Nodes
+	r.ThenRange = NewRange(thenStartPos, pi.Position())
 
 	// Read the optional 'ElseIf' Nodes.
 	if r.ElseIfs, _, err = parse.ZeroOrMore(elseIfExpression).Parse(pi); err != nil {
@@ -48,11 +51,12 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 
 	// Read the optional 'Else' Nodes.
-	var elseNodes Nodes
-	if elseNodes, _, err = elseExpression.Parse(pi); err != nil {
+	var elseNode elseNode
+	if elseNode, _, err = elseExpression.Parse(pi); err != nil {
 		return
 	}
-	r.Else = elseNodes.Nodes
+	r.Else = elseNode.Nodes
+	r.ElseRange = elseNode.Range
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
@@ -78,7 +82,7 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, ok boo
 
 	// Rewind to the start of the `if` statement.
 	pi.Seek(pi.Index() - 2)
-	// Parse the Go if expresion.
+	// Parse the Go if expression.
 	if r.Expression, err = parseGo("else if", pi, goexpression.If); err != nil {
 		return r, false, err
 	}
@@ -88,6 +92,8 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, ok boo
 		err = parse.Error("else if: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return
 	}
+
+	thenStartPos := pi.Position()
 
 	// Once we've had the start of an if block, we must conclude the block.
 
@@ -100,6 +106,7 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, ok boo
 		return
 	}
 	r.Then = thenNodes.Nodes
+	r.ThenRange = NewRange(thenStartPos, pi.Position())
 
 	return r, true, nil
 }
@@ -112,11 +119,16 @@ var endElseParser = parse.All(
 	parse.Rune('{'),
 	parse.OptionalWhitespace)
 
-var elseExpression parse.Parser[Nodes] = elseExpressionParser{}
+var elseExpression parse.Parser[elseNode] = elseExpressionParser{}
+
+type elseNode struct {
+	Nodes []Node
+	Range Range
+}
 
 type elseExpressionParser struct{}
 
-func (elseExpressionParser) Parse(in *parse.Input) (r Nodes, ok bool, err error) {
+func (elseExpressionParser) Parse(in *parse.Input) (e elseNode, ok bool, err error) {
 	start := in.Index()
 
 	// } else {
@@ -125,11 +137,17 @@ func (elseExpressionParser) Parse(in *parse.Input) (r Nodes, ok bool, err error)
 		return
 	}
 
+	elseStartPos := in.Position()
+
 	// Else contents
-	if r, ok, err = newTemplateNodeParser(closeBraceWithOptionalPadding, "else expression closing brace").Parse(in); err != nil || !ok {
+	var nodes Nodes
+	if nodes, ok, err = newTemplateNodeParser(closeBraceWithOptionalPadding, "else expression closing brace").Parse(in); err != nil || !ok {
 		in.Seek(start)
 		return
 	}
 
-	return r, true, nil
+	e.Nodes = nodes.Nodes
+	e.Range = NewRange(elseStartPos, in.Position())
+
+	return e, true, nil
 }

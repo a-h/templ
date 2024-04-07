@@ -108,6 +108,13 @@ type Range struct {
 	To   Position
 }
 
+// Folding range of text within a file.
+type FoldingRange struct {
+	Range Range
+	// The kind of the folding range, like comment, import or region
+	Kind string
+}
+
 // Expression containing Go code.
 type Expression struct {
 	Value string
@@ -146,6 +153,15 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	}
 	return nil
 }
+func (tf TemplateFile) GetFoldingRanges() []FoldingRange {
+	ranges := []FoldingRange{}
+	for _, n := range tf.Nodes {
+		if f, ok := n.(FoldableNode); ok {
+			ranges = f.AppendFoldingRanges(ranges)
+		}
+	}
+	return ranges
+}
 
 func getNodeWhitespace(nodes []TemplateFileNode, i int) string {
 	if i == len(nodes)-1 {
@@ -168,6 +184,10 @@ func endsWithComment(s string) bool {
 type TemplateFileNode interface {
 	IsTemplateFileNode() bool
 	Write(w io.Writer, indent int) error
+}
+
+type FoldableNode interface {
+	AppendFoldingRanges(ranges []FoldingRange) []FoldingRange
 }
 
 // TemplateFileGoExpression within a TemplateFile
@@ -277,6 +297,10 @@ func (css CSSTemplate) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+// func (css CSSTemplate) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+// 	return append(ranges, FoldingRange{Range: css.Expression.Range})
+// }
+
 // CSSProperty is a CSS property and value pair.
 type CSSProperty interface {
 	IsCSSProperty() bool
@@ -351,8 +375,9 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 //	  }
 //	}
 type HTMLTemplate struct {
-	Expression Expression
-	Children   []Node
+	Expression    Expression
+	Children      []Node
+	ChildrenRange Range
 }
 
 func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
@@ -369,6 +394,15 @@ func (t HTMLTemplate) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+func (t HTMLTemplate) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	ranges = append(ranges, FoldingRange{Range: t.ChildrenRange})
+	for _, n := range t.Children {
+		if f, ok := n.(FoldableNode); ok {
+			ranges = f.AppendFoldingRanges(ranges)
+		}
+	}
+	return ranges
 }
 
 // TrailingSpace defines the whitespace that may trail behind the close of an element, a
@@ -453,6 +487,7 @@ type Element struct {
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
 	NameRange      Range
+	ChildrenRange  Range
 }
 
 func (e Element) Trailing() TrailingSpace {
@@ -591,6 +626,19 @@ func (e Element) Write(w io.Writer, indent int) error {
 	}
 	return nil
 }
+func (e Element) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	// skip if it's a self closing element
+	if (e.ChildrenRange == Range{}) {
+		return ranges
+	}
+	ranges = append(ranges, FoldingRange{Range: e.ChildrenRange})
+	for _, n := range e.Children {
+		if f, ok := n.(FoldableNode); ok {
+			ranges = f.AppendFoldingRanges(ranges)
+		}
+	}
+	return ranges
+}
 
 func writeNodesWithoutIndentation(w io.Writer, nodes []Node) error {
 	return writeNodes(w, 0, nodes, false)
@@ -666,9 +714,10 @@ func isBlockNode(node Node) bool {
 }
 
 type RawElement struct {
-	Name       string
-	Attributes []Attribute
-	Contents   string
+	Name         string
+	Attributes   []Attribute
+	Contents     string
+	ContentRange Range
 }
 
 func (e RawElement) IsNode() bool { return true }
@@ -699,6 +748,9 @@ func (e RawElement) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+func (e RawElement) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	return append(ranges, FoldingRange{Range: e.ContentRange})
 }
 
 type Attribute interface {
@@ -895,8 +947,9 @@ func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
 
 // GoComment.
 type GoComment struct {
-	Contents  string
-	Multiline bool
+	Contents     string
+	Multiline    bool
+	ContentRange Range
 }
 
 func (c GoComment) IsNode() bool { return true }
@@ -906,15 +959,26 @@ func (c GoComment) Write(w io.Writer, indent int) error {
 	}
 	return writeIndent(w, indent, "//", c.Contents)
 }
+func (c GoComment) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	// skip if it's a single line comment
+	if (c.ContentRange == Range{}) {
+		return ranges
+	}
+	return append(ranges, FoldingRange{Range: c.ContentRange, Kind: "comment"})
+}
 
 // HTMLComment.
 type HTMLComment struct {
-	Contents string
+	Contents     string
+	ContentRange Range
 }
 
 func (c HTMLComment) IsNode() bool { return true }
 func (c HTMLComment) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, "<!--", c.Contents, "-->")
+}
+func (c HTMLComment) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	return append(ranges, FoldingRange{Range: c.ContentRange, Kind: "comment"})
 }
 
 // Nodes.
@@ -942,7 +1006,8 @@ type TemplElementExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
 	// Children returns the elements in a block element.
-	Children []Node
+	Children      []Node
+	ChildrenRange Range
 }
 
 func (tee TemplElementExpression) ChildNodes() []Node {
@@ -971,6 +1036,19 @@ func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
 	}
 	return nil
 }
+func (tee TemplElementExpression) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	// skip if it's a self closing element
+	if (tee.ChildrenRange == Range{}) {
+		return ranges
+	}
+	ranges = append(ranges, FoldingRange{Range: tee.ChildrenRange})
+	for _, n := range tee.Children {
+		if f, ok := n.(FoldableNode); ok {
+			ranges = f.AppendFoldingRanges(ranges)
+		}
+	}
+	return ranges
+}
 
 // ChildrenExpression can be used to rended the children of a templ element.
 // { children ... }
@@ -989,13 +1067,16 @@ func (ChildrenExpression) Write(w io.Writer, indent int) error {
 type IfExpression struct {
 	Expression Expression
 	Then       []Node
+	ThenRange  Range
 	ElseIfs    []ElseIfExpression
 	Else       []Node
+	ElseRange  Range
 }
 
 type ElseIfExpression struct {
 	Expression Expression
 	Then       []Node
+	ThenRange  Range
 }
 
 func (n IfExpression) ChildNodes() []Node {
@@ -1040,13 +1121,36 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 	}
 	return nil
 }
+func (n IfExpression) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	ranges = append(ranges, FoldingRange{Range: n.ThenRange})
+	if (n.ElseRange != Range{}) {
+		ranges = append(ranges, FoldingRange{Range: n.ElseRange})
+	}
+
+	for _, n := range n.ChildNodes() {
+		if f, ok := n.(FoldableNode); ok {
+			ranges = f.AppendFoldingRanges(ranges)
+		}
+	}
+	return ranges
+}
+func (n ElseIfExpression) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	ranges = append(ranges, FoldingRange{Range: n.ThenRange})
+	for _, n := range n.Then {
+		if f, ok := n.(FoldableNode); ok {
+			ranges = f.AppendFoldingRanges(ranges)
+		}
+	}
+	return ranges
+}
 
 //	switch p.Type {
 //	 case "Something":
 //	}
 type SwitchExpression struct {
-	Expression Expression
-	Cases      []CaseExpression
+	Expression    Expression
+	Cases         []CaseExpression
+	ChildrenRange Range
 }
 
 func (se SwitchExpression) ChildNodes() []Node {
@@ -1077,19 +1181,38 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 	}
 	return nil
 }
+func (se SwitchExpression) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	ranges = append(ranges, FoldingRange{Range: se.ChildrenRange})
+	for _, c := range se.Cases {
+		ranges = c.AppendFoldingRanges(ranges)
+	}
+	return ranges
+}
 
 // case "Something":
 type CaseExpression struct {
-	Expression Expression
-	Children   []Node
+	Expression    Expression
+	Children      []Node
+	ChildrenRange Range
+}
+
+func (c CaseExpression) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	ranges = append(ranges, FoldingRange{Range: c.ChildrenRange})
+	for _, n := range c.Children {
+		if f, ok := n.(FoldableNode); ok {
+			ranges = f.AppendFoldingRanges(ranges)
+		}
+	}
+	return ranges
 }
 
 //	for i, v := range p.Addresses {
 //	  {! Address(v) }
 //	}
 type ForExpression struct {
-	Expression Expression
-	Children   []Node
+	Expression    Expression
+	Children      []Node
+	ChildrenRange Range
 }
 
 func (fe ForExpression) ChildNodes() []Node {
@@ -1107,6 +1230,15 @@ func (fe ForExpression) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+func (fe ForExpression) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+	ranges = append(ranges, FoldingRange{Range: fe.ChildrenRange})
+	for _, n := range fe.Children {
+		if f, ok := n.(FoldableNode); ok {
+			ranges = f.AppendFoldingRanges(ranges)
+		}
+	}
+	return ranges
 }
 
 // StringExpression is used within HTML elements, and for style values.
@@ -1152,6 +1284,16 @@ func (s ScriptTemplate) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+// func (s ScriptTemplate) AppendFoldingRanges(ranges []FoldingRange) []FoldingRange {
+// 	ranges = append(ranges, FoldingRange{Range: s.ChildrenRange})
+// 	for _, n := range t.Children {
+// 		if f, ok := n.(FoldableNode); ok {
+// 			ranges = f.AppendFoldingRanges(ranges)
+// 		}
+// 	}
+// 	return ranges
+// }
+
 // formatFunctionArguments formats the function arguments, if possible.
 func formatFunctionArguments(expression string) string {
 	source := []byte(expression)
@@ -1162,3 +1304,5 @@ func formatFunctionArguments(expression string) string {
 	}
 	return string(source)
 }
+
+//

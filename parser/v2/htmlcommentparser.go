@@ -20,12 +20,17 @@ func (p htmlCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 
+	contentStartPos := pi.Position()
+
 	// Once we've got the comment start sequence, parse anything until the end
 	// sequence as the comment contents.
 	if c.Contents, ok, err = parse.StringUntil(htmlCommentEnd).Parse(pi); err != nil || !ok {
 		err = parse.Error("expected end comment literal '-->' not found", start)
 		return
 	}
+
+	c.ContentRange = NewRange(contentStartPos, pi.Position())
+
 	// Cut the end element.
 	_, _, _ = htmlCommentEnd.Parse(pi)
 

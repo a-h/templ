@@ -33,6 +33,8 @@ func (_ forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 		return
 	}
 
+	childrenStartPos := pi.Position()
+
 	// Node contents.
 	tnp := newTemplateNodeParser(closeBraceWithOptionalPadding, "for expression closing brace")
 	var nodes Nodes
@@ -41,6 +43,7 @@ func (_ forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 		return
 	}
 	r.Children = nodes.Nodes
+	r.ChildrenRange = NewRange(childrenStartPos, pi.Position())
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
