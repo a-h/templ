@@ -55,7 +55,7 @@ To ensure that each part of the application is initialized with its dependencies
 
 As per https://go.dev/wiki/CodeReviewComments#interfaces the HTTP handler defines the interface that it's expecting, rather than the service defining its own interface.
 
-```go title="services/count.go"
+```go title="handlers/default.go"
 type CountService interface {
 	Increment(ctx context.Context, it services.IncrementType, sessionID string) (counts services.Counts, err error)
 	Get(ctx context.Context, sessionID string) (counts services.Counts, err error)
