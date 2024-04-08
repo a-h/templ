@@ -460,8 +460,18 @@ var templExpressionTests = []testInput{
 	})`,
 	},
 	{
+		name: "function call with function called arg",
+		input: `componentA(func(y []int) string {
+		return "hi"
+	}())`,
+	},
+	{
 		name:  "call with braces and brackets",
 		input: `templates.New(test{}, other())`,
+	},
+	{
+		name:  "generic call",
+		input: `templates.New(toString[[]int](data))`,
 	},
 	{
 		name:  "struct method call",
