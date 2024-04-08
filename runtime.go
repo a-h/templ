@@ -119,7 +119,7 @@ func WithStatus(status int) func(*ComponentHandler) {
 	}
 }
 
-// WithConentType sets the Content-Type header returned by the ComponentHandler.
+// WithContentType sets the Content-Type header returned by the ComponentHandler.
 func WithContentType(contentType string) func(*ComponentHandler) {
 	return func(ch *ComponentHandler) {
 		ch.ContentType = contentType
