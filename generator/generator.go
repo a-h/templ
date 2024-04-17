@@ -101,6 +101,9 @@ func (g *generator) generate() (err error) {
 	if err = g.writeGeneratedDateComment(); err != nil {
 		return
 	}
+	if err = g.writeHeader(); err != nil {
+		return
+	}
 	if err = g.writePackage(); err != nil {
 		return
 	}
@@ -128,6 +131,18 @@ func (g *generator) writeVersionComment() (err error) {
 func (g *generator) writeGeneratedDateComment() (err error) {
 	if g.generatedDate != "" {
 		_, err = g.w.Write("// templ: generated: " + g.generatedDate + "\n")
+	}
+	return err
+}
+
+func (g *generator) writeHeader() (err error) {
+	if len(g.tf.Header) == 0 {
+		return nil
+	}
+	for _, n := range g.tf.Header {
+		if err := g.writeGoExpression(n); err != nil {
+			return err
+		}
 	}
 	return err
 }

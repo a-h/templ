@@ -1,0 +1,10 @@
+-- in --
+//go:build dev
+
+package p
+
+-- out --
+//go:build dev
+
+package p
+

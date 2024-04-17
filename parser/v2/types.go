@@ -172,14 +172,23 @@ type TemplateFileNode interface {
 
 // TemplateFileGoExpression within a TemplateFile
 type TemplateFileGoExpression struct {
-	Expression Expression
+	Expression    Expression
+	BeforePackage bool
 }
 
 func (exp TemplateFileGoExpression) IsTemplateFileNode() bool { return true }
 func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
-	data, err := format.Source([]byte(exp.Expression.Value))
+	in := exp.Expression.Value
+
+	if exp.BeforePackage {
+		in += "\\\\formatstring\npackage p\n\\\\formatstring"
+	}
+	data, err := format.Source([]byte(in))
 	if err != nil {
 		return writeIndent(w, indent, exp.Expression.Value)
+	}
+	if exp.BeforePackage {
+		data = bytes.TrimSuffix(data, []byte("\\\\formatstring\npackage p\n\\\\formatstring"))
 	}
 	_, err = w.Write(data)
 	return err
