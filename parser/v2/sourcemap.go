@@ -81,11 +81,17 @@ func (sm *SourceMap) TargetPositionFromSource(line, col uint32) (tgt Position, o
 }
 
 // SourcePositionFromTarget looks the source position using the target position.
+// If a source exists on the line but not the col, the function will search backwards.
 func (sm *SourceMap) SourcePositionFromTarget(line, col uint32) (src Position, ok bool) {
 	lm, ok := sm.TargetLinesToSource[line]
 	if !ok {
 		return
 	}
-	src, ok = lm[col]
-	return
+	for {
+		src, ok = lm[col]
+		if ok || col == 0 {
+			return
+		}
+		col--
+	}
 }
