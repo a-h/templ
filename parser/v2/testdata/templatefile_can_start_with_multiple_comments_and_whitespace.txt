@@ -1,0 +1,32 @@
+-- in --
+// Go comment
+
+/* Multiline comment on a single line */
+
+/*
+
+Multi-line comment on multiple lines
+
+*/
+
+package goof
+
+templ Hello() {
+	Hello
+}
+-- out --
+// Go comment
+
+/* Multiline comment on a single line */
+
+/*
+
+Multi-line comment on multiple lines
+
+*/
+
+package goof
+
+templ Hello() {
+	Hello
+}
