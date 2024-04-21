@@ -34,6 +34,24 @@ templ right() {
 </div>
 ```
 
+Templates need to be called on their own line.
+```templ
+templ showLeftWithLabel() {
+	<div>
+ 		Left:
+ 		@left()
+	</div>
+}
+
+templ left() {
+ <div>Left</div>
+}
+```
+:::note
+If you have a string preceding the template call inline, such as `Left: @left()`, it would output `Left: @left()` exactly.<br/>
+The templ component would not be generated.
+:::
+
 # Children
 
 Children can be passed to a component for it to wrap.
