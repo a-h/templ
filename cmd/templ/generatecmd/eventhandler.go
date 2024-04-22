@@ -210,6 +210,8 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	if err != nil {
 		return false, false, nil, fmt.Errorf("failed to get relative path for %q: %w", fileName, err)
 	}
+	// Convert Windows file paths to Unix-style for consistency.
+	relFilePath = filepath.ToSlash(relFilePath)
 
 	var b bytes.Buffer
 	sourceMap, literals, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath))...)
