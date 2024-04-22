@@ -7,11 +7,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -58,7 +60,9 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Length", "16")
 
 		// Act
-		err := modifyResponse(r)
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -86,7 +90,9 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("templ-skip-modify", "true")
 
 		// Act
-		err := modifyResponse(r)
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -118,7 +124,9 @@ func TestProxy(t *testing.T) {
 		}
 
 		// Act
-		err := modifyResponse(r)
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -148,7 +156,9 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Length", "16")
 
 		// Act
-		err := modifyResponse(r)
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -196,7 +206,10 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Length", fmt.Sprintf("%d", expectedLength))
 
 		// Act
-		if err = modifyResponse(r); err != nil {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		err = h.modifyResponse(r)
+		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
@@ -248,7 +261,10 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Length", fmt.Sprintf("%d", expectedLength))
 
 		// Act
-		if err = modifyResponse(r); err != nil {
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		err = h.modifyResponse(r)
+		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
@@ -275,7 +291,8 @@ func TestProxy(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error parsing URL: %v", err)
 		}
-		handler := New("0.0.0.0", 0, u)
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		handler := New(log, "0.0.0.0", 0, u)
 		proxyServer := httptest.NewServer(handler)
 		defer proxyServer.Close()
 
@@ -353,4 +370,65 @@ func TestProxy(t *testing.T) {
 			t.Fatalf("timeout waiting for sse response")
 		}
 	})
+	t.Run("unsupported encodings result in a warning", func(t *testing.T) {
+		// Arrange
+		r := &http.Response{
+			Body:   io.NopCloser(bytes.NewReader([]byte("<p>Data</p>"))),
+			Header: make(http.Header),
+		}
+		r.Header.Set("Content-Type", "text/html, charset=utf-8")
+		r.Header.Set("Content-Encoding", "weird-encoding")
+
+		// Act
+		lh := newTestLogHandler()
+		log := slog.New(lh)
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		err := h.modifyResponse(r)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Assert
+		if len(lh.records) != 1 {
+			t.Fatalf("expected 1 log entry, but got %d", len(lh.records))
+		}
+		record := lh.records[0]
+		if record.Message != unsupportedContentEncoding {
+			t.Errorf("expected warning message %q, got %q", unsupportedContentEncoding, record.Message)
+		}
+		if record.Level != slog.LevelWarn {
+			t.Errorf("expected warning, got level %v", record.Level)
+		}
+	})
+}
+
+func newTestLogHandler() *testLogHandler {
+	return &testLogHandler{
+		m:       new(sync.Mutex),
+		records: nil,
+	}
+}
+
+type testLogHandler struct {
+	m       *sync.Mutex
+	records []slog.Record
+}
+
+func (h *testLogHandler) Enabled(context.Context, slog.Level) bool {
+	return true
+}
+
+func (h *testLogHandler) Handle(ctx context.Context, r slog.Record) error {
+	h.m.Lock()
+	defer h.m.Unlock()
+	h.records = append(h.records, r)
+	return nil
+}
+
+func (h *testLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return h
+}
+
+func (h *testLogHandler) WithGroup(name string) slog.Handler {
+	return h
 }

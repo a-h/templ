@@ -5,7 +5,8 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"log"
+	stdlog "log"
+	"log/slog"
 	"math"
 	"net/http"
 	"net/http/httputil"
@@ -27,6 +28,7 @@ var script string
 const scriptTag = `<script src="/_templ/reload/script.js"></script>`
 
 type Handler struct {
+	log    *slog.Logger
 	URL    string
 	Target *url.URL
 	p      *httputil.ReverseProxy
@@ -45,7 +47,9 @@ func (pwc passthroughWriteCloser) Close() error {
 	return nil
 }
 
-func modifyResponse(r *http.Response) error {
+const unsupportedContentEncoding = "Unsupported content encoding, hot reload script not inserted."
+
+func (h *Handler) modifyResponse(r *http.Response) error {
 	if r.Header.Get("templ-skip-modify") == "true" {
 		return nil
 	}
@@ -75,6 +79,10 @@ func modifyResponse(r *http.Response) error {
 		newWriter = func(out io.Writer) io.WriteCloser {
 			return brotli.NewWriter(out)
 		}
+	case "":
+		// No content encoding.
+	default:
+		h.log.Warn(unsupportedContentEncoding, slog.String("encoding", r.Header.Get("Content-Encoding")))
 	}
 
 	// Read the encoded body.
@@ -110,21 +118,23 @@ func modifyResponse(r *http.Response) error {
 	return nil
 }
 
-func New(bind string, port int, target *url.URL) *Handler {
+func New(log *slog.Logger, bind string, port int, target *url.URL) (h *Handler) {
 	p := httputil.NewSingleHostReverseProxy(target)
-	p.ErrorLog = log.New(os.Stderr, "Proxy to target error: ", 0)
+	p.ErrorLog = stdlog.New(os.Stderr, "Proxy to target error: ", 0)
 	p.Transport = &roundTripper{
 		maxRetries:      10,
 		initialDelay:    100 * time.Millisecond,
 		backoffExponent: 1.5,
 	}
-	p.ModifyResponse = modifyResponse
-	return &Handler{
+	h = &Handler{
+		log:    log,
 		URL:    fmt.Sprintf("http://%s:%d", bind, port),
 		Target: target,
 		p:      p,
 		sse:    sse.New(),
 	}
+	p.ModifyResponse = h.modifyResponse
+	return h
 }
 
 func (p *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
