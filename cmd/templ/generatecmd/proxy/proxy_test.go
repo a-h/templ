@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -216,7 +217,54 @@ func TestProxy(t *testing.T) {
 			t.Errorf("unexpected response body (-got +want):\n%s", diff)
 		}
 	})
+	t.Run("brotli: body tags get the script inserted", func(t *testing.T) {
+		// Arrange
+		body := `<html><body></body></html>`
+		var buf bytes.Buffer
+		brw := brotli.NewWriter(&buf)
+		_, err := brw.Write([]byte(body))
+		if err != nil {
+			t.Fatalf("unexpected error writing gzip: %v", err)
+		}
+		brw.Close()
 
+		expectedString := insertScriptTagIntoBody(body)
+
+		var expectedBytes bytes.Buffer
+		brw = brotli.NewWriter(&expectedBytes)
+		_, err = brw.Write([]byte(expectedString))
+		if err != nil {
+			t.Fatalf("unexpected error writing gzip: %v", err)
+		}
+		brw.Close()
+		expectedLength := len(expectedBytes.Bytes())
+
+		r := &http.Response{
+			Body:   io.NopCloser(&buf),
+			Header: make(http.Header),
+		}
+		r.Header.Set("Content-Type", "text/html, charset=utf-8")
+		r.Header.Set("Content-Encoding", "br")
+		r.Header.Set("Content-Length", fmt.Sprintf("%d", expectedLength))
+
+		// Act
+		if err = modifyResponse(r); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Assert
+		if r.Header.Get("Content-Length") != fmt.Sprintf("%d", expectedLength) {
+			t.Errorf("expected content length to be %d, got %v", expectedLength, r.Header.Get("Content-Length"))
+		}
+
+		actualBody, err := io.ReadAll(brotli.NewReader(r.Body))
+		if err != nil {
+			t.Fatalf("unexpected error reading response: %v", err)
+		}
+		if diff := cmp.Diff(expectedString, string(actualBody)); diff != "" {
+			t.Errorf("unexpected response body (-got +want):\n%s", diff)
+		}
+	})
 	t.Run("notify-proxy: sending POST request to /_templ/reload/events should receive reload sse event", func(t *testing.T) {
 		// Arrange 1: create a test proxy server.
 		dummyHandler := func(w http.ResponseWriter, r *http.Request) {}

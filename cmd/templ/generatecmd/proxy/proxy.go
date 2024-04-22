@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd/sse"
+	"github.com/andybalholm/brotli"
 
 	_ "embed"
 )
@@ -32,48 +33,16 @@ type Handler struct {
 	sse    *sse.Handler
 }
 
-func updateGzipResponse(r *http.Response) error {
-	plainr, err := gzip.NewReader(r.Body)
-	if err != nil {
-		return err
-	}
-	defer plainr.Close()
-	body, err := io.ReadAll(plainr)
-	if err != nil {
-		return err
-	}
-	updated := insertScriptTagIntoBody(string(body))
-	var buf bytes.Buffer
-	gzw := gzip.NewWriter(&buf)
-	defer gzw.Close()
-	_, err = gzw.Write([]byte(updated))
-	if err != nil {
-		return err
-	}
-	err = gzw.Close()
-	if err != nil {
-		return err
-	}
-	r.Body = io.NopCloser(&buf)
-	r.ContentLength = int64(buf.Len())
-	r.Header.Set("Content-Length", strconv.Itoa(buf.Len()))
-	return nil
-}
-
-func updatePlainResponse(r *http.Response) error {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return err
-	}
-	updated := insertScriptTagIntoBody(string(body))
-	r.Body = io.NopCloser(strings.NewReader(updated))
-	r.ContentLength = int64(len(updated))
-	r.Header.Set("Content-Length", strconv.Itoa(len(updated)))
-	return nil
-}
-
 func insertScriptTagIntoBody(body string) (updated string) {
 	return strings.Replace(body, "</body>", scriptTag+"</body>", -1)
+}
+
+type passthroughWriteCloser struct {
+	io.Writer
+}
+
+func (pwc passthroughWriteCloser) Close() error {
+	return nil
 }
 
 func modifyResponse(r *http.Response) error {
@@ -83,11 +52,62 @@ func modifyResponse(r *http.Response) error {
 	if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "text/html") {
 		return nil
 	}
-	modifier := updatePlainResponse
-	if r.Header.Get("Content-Encoding") == "gzip" {
-		modifier = updateGzipResponse
+
+	// Set up readers and writers.
+	newReader := func(in io.Reader) (out io.Reader, err error) {
+		return in, nil
 	}
-	return modifier(r)
+	newWriter := func(out io.Writer) io.WriteCloser {
+		return passthroughWriteCloser{out}
+	}
+	switch r.Header.Get("Content-Encoding") {
+	case "gzip":
+		newReader = func(in io.Reader) (out io.Reader, err error) {
+			return gzip.NewReader(in)
+		}
+		newWriter = func(out io.Writer) io.WriteCloser {
+			return gzip.NewWriter(out)
+		}
+	case "br":
+		newReader = func(in io.Reader) (out io.Reader, err error) {
+			return brotli.NewReader(in), nil
+		}
+		newWriter = func(out io.Writer) io.WriteCloser {
+			return brotli.NewWriter(out)
+		}
+	}
+
+	// Read the encoded body.
+	encr, err := newReader(r.Body)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	body, err := io.ReadAll(encr)
+	if err != nil {
+		return err
+	}
+
+	// Update it.
+	updated := insertScriptTagIntoBody(string(body))
+
+	// Encode the response.
+	var buf bytes.Buffer
+	encw := newWriter(&buf)
+	_, err = encw.Write([]byte(updated))
+	if err != nil {
+		return err
+	}
+	err = encw.Close()
+	if err != nil {
+		return err
+	}
+
+	// Update the response.
+	r.Body = io.NopCloser(&buf)
+	r.ContentLength = int64(buf.Len())
+	r.Header.Set("Content-Length", strconv.Itoa(buf.Len()))
+	return nil
 }
 
 func New(bind string, port int, target *url.URL) *Handler {
