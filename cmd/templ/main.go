@@ -13,7 +13,6 @@ import (
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
-	"github.com/a-h/templ/cmd/templ/migratecmd"
 	"github.com/fatih/color"
 )
 
@@ -34,7 +33,6 @@ commands:
   generate   Generates Go code from templ files
   fmt        Formats templ files
   lsp        Starts a language server for templ files
-  migrate    Migrates v1 templ files to v2 format
   version    Prints the version
 `
 
@@ -46,8 +44,6 @@ func run(w io.Writer, args []string) (code int) {
 	switch args[1] {
 	case "generate":
 		return generateCmd(w, args[2:])
-	case "migrate":
-		return migrateCmd(w, args[2:])
 	case "fmt":
 		return fmtCmd(w, args[2:])
 	case "lsp":
@@ -184,44 +180,6 @@ func generateCmd(w io.Writer, args []string) (code int) {
 	if err != nil {
 		color.New(color.FgRed).Fprint(w, "(✗) ")
 		fmt.Fprintln(w, "Command failed: "+err.Error())
-		return 1
-	}
-	return 0
-}
-
-const migrateUsageText = `usage: templ migrate [<args> ...]
-
-Migrates v1 templ files to v2 format.
-
-Args:
-  -f string
-     Optionally migrate a single file, e.g. -f header.templ
-  -help
-     Print help and exit.
-  -path string
-     Migrates code for all files in path.
-`
-
-func migrateCmd(w io.Writer, args []string) (code int) {
-	cmd := flag.NewFlagSet("migrate", flag.ExitOnError)
-	cmd.SetOutput(w)
-	fileName := cmd.String("f", "", "")
-	path := cmd.String("path", "", "")
-	helpFlag := cmd.Bool("help", false, "")
-	cmd.Usage = func() {
-		fmt.Fprint(w, migrateUsageText)
-	}
-	err := cmd.Parse(args)
-	if err != nil || *helpFlag || (*path == "" && *fileName == "") {
-		cmd.Usage()
-		return
-	}
-	err = migratecmd.Run(w, migratecmd.Arguments{
-		FileName: *fileName,
-		Path:     *path,
-	})
-	if err != nil {
-		fmt.Fprintln(w, err.Error())
 		return 1
 	}
 	return 0
