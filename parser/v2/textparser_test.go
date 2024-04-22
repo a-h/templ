@@ -55,6 +55,22 @@ func TestTextParser(t *testing.T) {
 				Value: "abcdef&#x20;ghijk",
 			},
 		},
+		{
+			name:  "Multiline text is colected line by line",
+			input: "Line 1\nLine 2",
+			expected: Text{
+				Value:         "Line 1",
+				TrailingSpace: "\n",
+			},
+		},
+		{
+			name:  "Multiline text is colected line by line (Windows)",
+			input: "Line 1\r\nLine 2",
+			expected: Text{
+				Value:         "Line 1",
+				TrailingSpace: "\n",
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
