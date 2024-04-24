@@ -343,7 +343,7 @@ func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err erro
 	if cmd.Args.ProxyBind == "" {
 		cmd.Args.ProxyBind = "127.0.0.1"
 	}
-	p = proxy.New(cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
+	p = proxy.New(cmd.Log, cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
 	go func() {
 		cmd.Log.Info("Proxying", slog.String("from", p.URL), slog.String("to", p.Target.String()))
 		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort), p); err != nil {

@@ -9,6 +9,7 @@ require (
 	github.com/a-h/parse v0.0.0-20240121214402-3caf7543159a
 	github.com/a-h/pathvars v0.0.12
 	github.com/a-h/protocol v0.0.0-20230224160810-b4eec67c1c22
+	github.com/andybalholm/brotli v1.1.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cli/browser v1.2.0
 	github.com/fatih/color v1.16.0

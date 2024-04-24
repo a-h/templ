@@ -19,6 +19,9 @@ schema = 3
   [mod."github.com/a-h/protocol"]
     version = "v0.0.0-20230224160810-b4eec67c1c22"
     hash = "sha256-aoxNdsVfyXtiKv3mkEqF63bBEHd6thX7tC/7a1c8rcQ="
+  [mod."github.com/andybalholm/brotli"]
+    version = "v1.1.0"
+    hash = "sha256-njLViV4v++ZdgOWGWzlvkefuFvA/nkugl3Ta/h1nu/0="
   [mod."github.com/andybalholm/cascadia"]
     version = "v1.3.1"
     hash = "sha256-M0u22DXSeXUaYtl1KoW1qWL46niFpycFkraCEQ/luYA="
