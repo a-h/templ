@@ -160,3 +160,102 @@ func main() {
 	<p>Dynamic contents</p>
 </div>
 ```
+
+# Referencing Components Across Different Packages
+
+When working on a project organized into multiple packages, it's often necessary to reference components from other packages to maintain clean and efficient code organization. Consider the following project structure:
+
+#### Project structure example
+
+```
+my-project/
+├── ui/
+│   ├── pages/
+│   │   ├── home.templ
+│   │   ├── faq.templ
+│   ├── components/
+|       ├── button.templ
+│   ├── layout.templ
+```
+
+#### Project components
+
+In the `layout.templ` file, we declare it as part of the `ui` package. It contains a `Layout` component, which provides a basic HTML structure for every page of the site:
+
+```templ title="my-project/ui/layout.templ"
+package ui
+
+templ Layout() {
+    <html>
+        <head>
+            <title>My Project</title>
+        </head>
+        <body>
+            <main>
+                { children... }
+            </main>
+        </body>
+    </html>
+}
+```
+
+From within the `home.templ` file, you can import and use the `Layout` component from the `ui` package:
+
+```templ title="my-project/ui/pages/home.templ"
+package pages
+
+import (
+	"my-project/ui"
+)
+
+templ Home() {
+    // Import the `Layout` component from the `ui` package for use here
+    @ui.Layout() {
+        <h1>Home Page</h1>
+    }
+}
+```
+
+This method allows for great project organization and component reuse. For example, consider a reusable button component:
+
+```templ title="my-project/ui/components/button.templ"
+package components
+
+templ Button(title string) {
+    <button class="my-button">{ title }</button>
+}
+```
+
+You can now reuse this button component across various parts of your project:
+
+```templ title="my-project/ui/pages/home.templ"
+package home
+
+import (
+    "my-project/ui"
+    "my-project/ui/components"
+)
+
+templ Home() {
+    @ui.Layout() {
+        <h1>Home Page</h1>
+        @components.Button("Click Me!")
+    }
+}
+```
+
+```templ title="my-project/ui/pages/faq.templ"
+package pages
+
+import (
+    "my-project/ui"
+    "my-project/ui/components"
+)
+
+templ Faq() {
+    @ui.Layout() {
+        <p>FAQ</p>
+        @components.Button("Know More")
+    }
+}
+```
