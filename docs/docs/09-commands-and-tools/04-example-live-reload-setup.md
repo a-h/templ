@@ -123,6 +123,30 @@ This is because you're not re-building Go binary when assets change, so the embe
 If you would like to use `//go:embed`, you can add the necessary extensions to `--build.include_ext` in the `air` command for **Rebuilding Go Source** section.
 :::
 
+:::tip
+For the assets to be reloaded correct, we need to ensure that the browser doesn't cache the assets. Although we didn't add any cache headers to the assets route, the browser will cache the assets after 304 response. You can add cache headers to `no-store` in DEV mode to avoid this.
+
+E.g. 
+```go
+var dev = true
+
+func noCache(next http.Handler) http.Handler {
+	if !dev {
+		return next
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		next.ServeHTTP(w, r)
+	})
+}
+
+mux.Handle("/assets/", 
+  noCache(
+    http.StripPrefix("/assets", 
+      http.FileServer(http.Dir("assets")))))
+```
+:::
+
 ## Putting it all together
 
 You can put all the commands in a `Makefile`:
@@ -167,3 +191,5 @@ live:
 ```
 
 Notice we added the `make -j5` command to run all the commands in parallel. This is to ensure that all the watch process runs in parallel.
+
+You can check out the full example in the [example-live-reload-setup](https://github.com/jackielii/templ-live-reload-example)
