@@ -99,7 +99,7 @@ go run github.com/cosmtrek/air@v1.51.0 \
   --build.include_ext "js,css"
 ```
 
-Here we use a `true` command as the binary to build, because we don't want to build anything. We just want to send the reload event to the `templ` proxy server. You might see `Process Exit with Code 0` in the output, which is expected.
+Here we use a `true` command as the binary to run (`true` is a *nix command that exits with code 0), because we don't build anything. We just want to send the reload event to the `templ` proxy server. You might see `Process Exit with Code 0` in the output, which is expected.
 
 :::tip
 In this setup, you should serve your static asset with http.Dir instead of using //go:embed and http.FS. E.g.
@@ -151,10 +151,10 @@ mux.Handle("/assets/",
 
 You can put all the commands in a `Makefile`:
 
-```makefile
+```make
 # run templ generation in watch mode to detect all .templ files and 
 # re-create _templ.txt files on change, then send reload event to browser. 
-# Open http://localhost:7331
+# Default url: http://localhost:7331
 live/templ:
 	templ generate --watch --proxy="http://localhost:8080" --open-browser=false -v
 
@@ -167,15 +167,15 @@ live/server:
 	--build.stop_on_error "false" \
 	--misc.clean_on_exit true
 
-# run tailwindcss to generate the styles.css bundle
+# run tailwindcss to generate the styles.css bundle in watch mode
 live/tailwind:
 	npx tailwindcss -i ./input.css -o ./assets/styles.css --minify --watch
 
-# run esbuild to generate the index.js bundle
+# run esbuild to generate the index.js bundle in watch mode
 live/esbuild:
 	npx esbuild js/index.ts --bundle --outdir=assets/ --watch
 
-# watch for any js or css change in the assets/ folder, then reload the browser via templ watch
+# watch for any js or css change in the assets/ folder, then reload the browser via templ proxy
 live/sync_assets:
 	go run github.com/cosmtrek/air@v1.51.0 \
 	--build.cmd "templ generate --notify-proxy" \
@@ -190,6 +190,8 @@ live:
 	make -j5 live/templ live/server live/tailwind live/esbuild live/sync_assets
 ```
 
-Notice we added the `make -j5` command to run all the commands in parallel. This is to ensure that all the watch process runs in parallel.
+Notice we added the `-j5` command to run all 5 the commands in parallel.
+
+Now you can run `make live` to start all the watch processes.
 
 You can check out the full example in the [example-live-reload-setup](https://github.com/jackielii/templ-live-reload-example)
