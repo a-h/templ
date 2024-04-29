@@ -1,4 +1,4 @@
-# Hot reload
+# Live reload
 
 To access a Go web application that uses templ in a web browser, a few things must happen:
 
@@ -25,7 +25,7 @@ The `--proxy` argument starts a HTTP proxy which proxies requests to your app. F
 
 By default, the proxy binds to `127.0.0.1`. You can use `--proxybind` to bind to another address, e.g., `--proxybind="0.0.0.0"`.
 
-Altogether, to setup hot reload on an app that listens on port 8080, run the following.
+Altogether, to setup live reload on an app that listens on port 8080, run the following.
 
 ```
 templ generate --watch --proxy="http://localhost:8080" --cmd="go run ."
