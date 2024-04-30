@@ -409,6 +409,9 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		}
 		result.Items[i] = item
 	}
+
+	//Add snippet for templ
+	result.Items = append(result.Items, snippet...)
 	return
 }
 
