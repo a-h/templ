@@ -99,9 +99,7 @@ var htmlSnippets = []lsp.CompletionItem{
 	},
 	{
 		Label: "templ",
-		InsertText: `package ${1:};
-
-templ ${2:}() {
+		InsertText: `templ ${2:}() {
 	${0}
 }`,
 		Kind: lsp.CompletionItemKind(lsp.CompletionItemKindSnippet),
