@@ -128,8 +128,8 @@ func TestSourceMapPosition(t *testing.T) {
 				sm.Add(NewExpression("生日快乐", pos(0, 10, 0), pos(12, 10, 4)),
 					Range{From: NewPosition(1, 11, 1), To: NewPosition(13, 11, 5)})
 			},
-			source: NewPosition(1, 10, 1), // 日
-			target: NewPosition(2, 11, 2),
+			source: NewPosition(3, 10, 3), // 日
+			target: NewPosition(4, 11, 4),
 		},
 	}
 	for _, tt := range tests {

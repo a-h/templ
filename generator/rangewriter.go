@@ -4,6 +4,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/a-h/templ/parser/v2"
 )
@@ -126,15 +127,16 @@ func (rw *RangeWriter) write(s string) (r parser.Range, err error) {
 		Line:  rw.Current.Line,
 		Col:   rw.Current.Col,
 	}
-	var n int
-	for _, c := range s {
-		rw.Current.Col++
+	utf8Bytes := make([]byte, 4)
+	for _, c := range []rune(s) {
+		rlen := utf8.EncodeRune(utf8Bytes, c)
+		rw.Current.Col += uint32(rlen)
 		if c == '\n' {
 			rw.Current.Line++
 			rw.Current.Col = 0
 		}
-		n, err = io.WriteString(rw.w, string(c))
-		rw.Current.Index += int64(n)
+		_, err = rw.w.Write(utf8Bytes[:rlen])
+		rw.Current.Index += int64(rlen)
 		if err != nil {
 			return r, err
 		}
