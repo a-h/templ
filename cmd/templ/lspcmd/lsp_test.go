@@ -12,6 +12,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/a-h/protocol"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
@@ -51,6 +52,12 @@ func createTestProject(moduleRoot string) (dir string, err error) {
 		}
 	}
 	return dir, nil
+}
+
+func mustReplaceLine(file string, line int, replacement string) string {
+	lines := strings.Split(file, "\n")
+	lines[line-1] = replacement
+	return strings.Join(lines, "\n")
 }
 
 func TestCompletion(t *testing.T) {
@@ -137,7 +144,7 @@ func TestCompletion(t *testing.T) {
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
 			// Edit the file.
-			updated := strings.ReplaceAll(string(templFile), `<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`, test.replacement)
+			updated := mustReplaceLine(string(templFile), test.line, test.replacement)
 			err = server.DidChange(ctx, &protocol.DidChangeTextDocumentParams{
 				TextDocument: protocol.VersionedTextDocumentIdentifier{
 					TextDocumentIdentifier: protocol.TextDocumentIdentifier{
@@ -273,6 +280,24 @@ func TestHover(t *testing.T) {
 				return "", true
 			},
 		},
+		{
+			line:        19,
+			replacement: `var nihao = "你好"`,
+			cursor:      `             ^`,
+			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
+				// There's nothing to hover, just want to make sure it doesn't panic.
+				return "", true
+			},
+		},
+		{
+			line:        19,
+			replacement: `var nihao = "你好"`,
+			cursor:      `              ^`, // Your text editor might not render this well, but it's the hao.
+			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
+				// There's nothing to hover, just want to make sure it doesn't panic.
+				return "", true
+			},
+		},
 	}
 
 	for i, test := range tests {
@@ -301,6 +326,10 @@ func TestHover(t *testing.T) {
 			var ok bool
 			var msg string
 			for i := 0; i < 3; i++ {
+				lspCharIndex, err := runeIndexToUTF8ByteIndex(test.replacement, len(test.cursor)-1)
+				if err != nil {
+					t.Error(err)
+				}
 				actual, err := server.Hover(ctx, &protocol.HoverParams{
 					TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 						TextDocument: protocol.TextDocumentIdentifier{
@@ -309,7 +338,7 @@ func TestHover(t *testing.T) {
 						// Positions are zero indexed.
 						Position: protocol.Position{
 							Line:      uint32(test.line - 1),
-							Character: uint32(len(test.cursor) - 1),
+							Character: lspCharIndex,
 						},
 					},
 				})
@@ -328,6 +357,20 @@ func TestHover(t *testing.T) {
 			}
 		})
 	}
+}
+
+func runeIndexToUTF8ByteIndex(s string, runeIndex int) (lspChar uint32, err error) {
+	for i, r := range []rune(s) {
+		if i == runeIndex {
+			break
+		}
+		l := utf8.RuneLen(r)
+		if l < 0 {
+			return 0, fmt.Errorf("invalid rune in string at index %d", runeIndex)
+		}
+		lspChar += uint32(l)
+	}
+	return lspChar, nil
 }
 
 func NewTestClient(log *zap.Logger) TestClient {
