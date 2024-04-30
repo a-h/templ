@@ -36,7 +36,8 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 		}
 
 		// Process the cols.
-		for colIndex := 0; colIndex < len(line); colIndex++ {
+		// for colIndex := 0; colIndex < len(line); colIndex++ {
+		for range line {
 			if _, ok := sm.SourceLinesToTarget[srcLine]; !ok {
 				sm.SourceLinesToTarget[srcLine] = make(map[uint32]Position)
 			}

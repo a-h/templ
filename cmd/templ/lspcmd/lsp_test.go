@@ -173,7 +173,7 @@ func TestCompletion(t *testing.T) {
 						// Positions are zero indexed.
 						Position: protocol.Position{
 							Line:      uint32(test.line - 1),
-							Character: uint32(len(test.replacement) - 1),
+							Character: uint32(len(test.cursor) - 1),
 						},
 					},
 				})
@@ -227,29 +227,106 @@ func TestHover(t *testing.T) {
 		return
 	}
 	log.Info("Calling hover")
-	hr, err := server.Hover(ctx, &protocol.HoverParams{
-		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
-			TextDocument: protocol.TextDocumentIdentifier{
-				URI: uri.URI("file://" + appDir + "/templates.templ"),
-			},
-			Position: protocol.Position{
-				Line:      12,
-				Character: 34,
+
+	// Edit the file.
+	// Replace:
+	// <div data-testid="count">{ fmt.Sprintf("%d", count) }</div>
+	// With various tests:
+	// <div data-testid="count">{ f
+	tests := []struct {
+		line        int
+		replacement string
+		cursor      string
+		assert      func(t *testing.T, hr *protocol.Hover) (msg string, ok bool)
+	}{
+		{
+			line:        13,
+			replacement: `			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`,
+			cursor:      `                                 ^`,
+			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
+				expectedHover := protocol.Hover{
+					Contents: protocol.MarkupContent{
+						Kind:  "markdown",
+						Value: "```go\npackage fmt\n```\n\n[`fmt` on pkg.go.dev](https://pkg.go.dev/fmt)",
+					},
+				}
+				if diff := lspdiff.Hover(expectedHover, *actual); diff != "" {
+					return fmt.Sprintf("unexpected hover: %v\n\n: markdown: %#v", diff, actual.Contents.Value), false
+				}
+				return "", true
 			},
 		},
-	})
-	if err != nil {
-		t.Errorf("failed to get hover: %v", err)
-	}
-	expectedHover := protocol.Hover{
-		Contents: protocol.MarkupContent{
-			Kind:  "markdown",
-			Value: "```go\nfunc fmt.Sprintf(format string, a ...any) string\n```\n\nSprintf formats according to a format specifier and returns the resulting string.\n\n\n[`fmt.Sprintf` on pkg.go.dev](https://pkg.go.dev/fmt#Sprintf)",
+		{
+			line:        13,
+			replacement: `			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`,
+			cursor:      `                                     ^`,
+			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
+				expectedHover := protocol.Hover{
+					Contents: protocol.MarkupContent{
+						Kind:  "markdown",
+						Value: "```go\nfunc fmt.Sprintf(format string, a ...any) string\n```\n\nSprintf formats according to a format specifier and returns the resulting string.\n\n\n[`fmt.Sprintf` on pkg.go.dev](https://pkg.go.dev/fmt#Sprintf)",
+					},
+				}
+				if diff := lspdiff.Hover(expectedHover, *actual); diff != "" {
+					return fmt.Sprintf("unexpected hover: %v", diff), false
+				}
+				return "", true
+			},
 		},
 	}
-	if diff := lspdiff.Hover(expectedHover, *hr); diff != "" {
-		t.Errorf("unexpected hover: %v", diff)
-		return
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
+			// Put the file back to the initial point.
+			err = server.DidChange(ctx, &protocol.DidChangeTextDocumentParams{
+				TextDocument: protocol.VersionedTextDocumentIdentifier{
+					TextDocumentIdentifier: protocol.TextDocumentIdentifier{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+					},
+					Version: int32(i + 2),
+				},
+				ContentChanges: []protocol.TextDocumentContentChangeEvent{
+					{
+						Range: nil,
+						Text:  string(templFile),
+					},
+				},
+			})
+			if err != nil {
+				t.Errorf("failed to change file: %v", err)
+				return
+			}
+
+			// Give CI/CD pipeline executors some time because they're often quite slow.
+			var ok bool
+			var msg string
+			for i := 0; i < 3; i++ {
+				actual, err := server.Hover(ctx, &protocol.HoverParams{
+					TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+						TextDocument: protocol.TextDocumentIdentifier{
+							URI: uri.URI("file://" + appDir + "/templates.templ"),
+						},
+						// Positions are zero indexed.
+						Position: protocol.Position{
+							Line:      uint32(test.line - 1),
+							Character: uint32(len(test.cursor) - 1),
+						},
+					},
+				})
+				if err != nil {
+					t.Errorf("failed to hover: %v", err)
+					return
+				}
+				msg, ok = test.assert(t, actual)
+				if !ok {
+					break
+				}
+				time.Sleep(time.Millisecond * 500)
+			}
+			if !ok {
+				t.Error(msg)
+			}
+		})
 	}
 }
 
