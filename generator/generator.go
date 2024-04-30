@@ -534,6 +534,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeSwitchExpression(indentLevel, n, next)
 	case parser.StringExpression:
 		err = g.writeStringExpression(indentLevel, n.Expression)
+	case parser.GoCode:
+		err = g.writeGoCode(indentLevel, n.Expression)
 	case parser.Whitespace:
 		err = g.writeWhitespace(indentLevel, n)
 	case parser.Text:
@@ -1315,6 +1317,18 @@ func (g *generator) writeComment(indentLevel int, c parser.HTMLComment) (err err
 func (g *generator) createVariableName() string {
 	g.variableID++
 	return "templ_7745c5c3_Var" + strconv.Itoa(g.variableID)
+}
+
+func (g *generator) writeGoCode(indentLevel int, e parser.Expression) (err error) {
+	if strings.TrimSpace(e.Value) == "" {
+		return
+	}
+	var r parser.Range
+	if r, err = g.w.WriteIndent(indentLevel, e.Value+"\n"); err != nil {
+		return err
+	}
+	g.sourceMap.Add(e, r)
+	return nil
 }
 
 func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) (err error) {
