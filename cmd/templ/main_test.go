@@ -46,18 +46,6 @@ func TestMain(t *testing.T) {
 			expectedCode: 0,
 		},
 		{
-			name:         `"templ migrate" prints usage`,
-			args:         []string{"templ", "migrate"},
-			expected:     migrateUsageText,
-			expectedCode: 0,
-		},
-		{
-			name:         `"templ migrate --help" prints usage`,
-			args:         []string{"templ", "migrate", "--help"},
-			expected:     migrateUsageText,
-			expectedCode: 0,
-		},
-		{
 			name:         `"templ fmt --help" prints usage`,
 			args:         []string{"templ", "fmt", "--help"},
 			expected:     fmtUsageText,
