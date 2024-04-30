@@ -128,7 +128,7 @@ func (rw *RangeWriter) write(s string) (r parser.Range, err error) {
 		Col:   rw.Current.Col,
 	}
 	utf8Bytes := make([]byte, 4)
-	for _, c := range []rune(s) {
+	for _, c := range s {
 		rlen := utf8.EncodeRune(utf8Bytes, c)
 		rw.Current.Col += uint32(rlen)
 		if c == '\n' {
