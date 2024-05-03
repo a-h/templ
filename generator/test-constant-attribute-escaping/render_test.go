@@ -1,4 +1,4 @@
-package testcomment
+package testconstantattributeescaping
 
 import (
 	_ "embed"
