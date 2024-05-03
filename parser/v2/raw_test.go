@@ -90,3 +90,36 @@ func TestRawElementParser(t *testing.T) {
 		})
 	}
 }
+
+func TestRawElementParserIsNotGreedy(t *testing.T) {
+	var tests = []struct {
+		name     string
+		input    string
+		expected RawElement
+	}{
+		{
+			name:  "styles tag",
+			input: `<styles></styles>`,
+		},
+		{
+			name:  "scripts tag",
+			input: `<scripts></scripts>`,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			input := parse.NewInput(tt.input)
+			actual, ok, err := rawElements.Parse(input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if ok {
+				t.Fatalf("unexpected success for input %q", tt.input)
+			}
+			if actual != nil {
+				t.Fatalf("expected nil Node got %v", actual)
+			}
+		})
+	}
+}
