@@ -10,19 +10,19 @@ import (
 
 // Test data.
 //
-//	| 0 1 2 3 4 5 6 7 8 9
-//
-// - - - - - - - - - - -
-// 0 |
-// 1 |   a b c d e f g h i
-// 2 |   j k l m n o
-// 3 |   p q r s t u v
-// 4 |
-// 5 |   w x y
-// 6 |   z
-// 7 |   m u l t i
-// 8 | l i n e
-// 9 | m a t c h
+//	|  - | 0 1 2 3 4 5 6 7 8 9
+//	|  - | - - - - - - - - -
+//	|  0 |
+//	|  1 |   a b c d e f g h i
+//	|  2 |   j k l m n o
+//	|  3 |   p q r s t u v
+//	|  4 |
+//	|  5 |   w x y
+//	|  6 |   z
+//	|  7 |   m u l t i
+//	|  8 | l i n e
+//	|  9 | m a t c h
+//	| 10 | 生 日 快 乐
 func pos(index, line, col int) parse.Position {
 	return parse.Position{
 		Index: index,
@@ -112,6 +112,24 @@ func TestSourceMapPosition(t *testing.T) {
 			},
 			source: NewPosition(11, 2, 0), // m (atch)
 			target: NewPosition(12, 3, 0),
+		},
+		{
+			name: "unicode characters are indexed correctly (sheng)",
+			setup: func(sm *SourceMap) {
+				sm.Add(NewExpression("生日快乐", pos(0, 10, 0), pos(12, 10, 4)),
+					Range{From: NewPosition(1, 11, 1), To: NewPosition(13, 11, 5)})
+			},
+			source: NewPosition(0, 10, 0), // 生
+			target: NewPosition(1, 11, 1),
+		},
+		{
+			name: "unicode characters are indexed correctly (ri)",
+			setup: func(sm *SourceMap) {
+				sm.Add(NewExpression("生日快乐", pos(0, 10, 0), pos(12, 10, 4)),
+					Range{From: NewPosition(1, 11, 1), To: NewPosition(13, 11, 5)})
+			},
+			source: NewPosition(3, 10, 3), // 日
+			target: NewPosition(4, 11, 4),
 		},
 	}
 	for _, tt := range tests {
