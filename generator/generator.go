@@ -1082,8 +1082,8 @@ func (g *generator) writeBoolConstantAttribute(indentLevel int, attr parser.Bool
 func (g *generator) writeConstantAttribute(indentLevel int, attr parser.ConstantAttribute) (err error) {
 	name := html.EscapeString(attr.Name)
 	value := html.EscapeString(attr.Value)
-	value = strings.ReplaceAll(value, "\\", "\\\\")
-	value = strings.ReplaceAll(value, "\n", "\\n")
+	value = strconv.Quote(value)
+	value = value[1 : len(value)-1]
 	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s=\"%s\"`, name, value)); err != nil {
 		return err
 	}
