@@ -22,7 +22,7 @@ func BasicTemplate() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input pattern=\"\\s\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><!-- valid go escape sequences --><input pattern=\"\\a\"> <input pattern=\"\\b\"> <input pattern=\"\\f\"> <input pattern=\"\\n\"> <input pattern=\"\\r\"> <input pattern=\"\\t\"> <input pattern=\"\\v\"> <input pattern=\"\\\\\"> <input pattern=\"\\777\"> <input pattern=\"\\xFF\"> <input pattern=\"\\u00FF\"> <input pattern=\"\\u00FF\\u00FF\\u00FF\"><!-- invalid go escape sequences --><input pattern=\"\\s\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
