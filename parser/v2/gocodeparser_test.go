@@ -4,11 +4,18 @@ import (
 	"testing"
 
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/cfg"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestGoCodeParser(t *testing.T) {
-	var tests = []struct {
+	flagVal := cfg.Experiment.RawGo
+	cfg.Experiment.RawGo = true
+	defer func() {
+		cfg.Experiment.RawGo = flagVal
+	}()
+
+	tests := []struct {
 		name     string
 		input    string
 		expected GoCode
@@ -26,7 +33,6 @@ func TestGoCodeParser(t *testing.T) {
 							Col:   3,
 						},
 						To: Position{
-
 							Index: 14,
 							Line:  0,
 							Col:   14,
@@ -48,7 +54,6 @@ func TestGoCodeParser(t *testing.T) {
 							Col:   2,
 						},
 						To: Position{
-
 							Index: 11,
 							Line:  0,
 							Col:   11,
@@ -77,7 +82,6 @@ func TestGoCodeParser(t *testing.T) {
 							Col:   2,
 						},
 						To: Position{
-
 							Index: 45,
 							Line:  3,
 							Col:   5,
