@@ -469,7 +469,7 @@ func getVoidCloser(name string) parse.Parser[string] {
 		// >
 		// HTML5 states that void elements are closed with just a >.
 		_, ok, err = parse.Rune('>').Parse(pi)
-		if err != nil {
+		if err != nil || !ok {
 			return
 		}
 
