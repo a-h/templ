@@ -94,6 +94,8 @@ func TestCompletion(t *testing.T) {
 	}
 	log.Info("Calling completion")
 
+	globalSnippetsLen := 1
+
 	// Edit the file.
 	// Replace:
 	// <div data-testid="count">{ fmt.Sprintf("%d", count) }</div>
@@ -106,15 +108,12 @@ func TestCompletion(t *testing.T) {
 		assert      func(t *testing.T, cl *protocol.CompletionList) (msg string, ok bool)
 	}{
 		{
-			line:        3,
-			replacement: `templ`,
-			cursor:      `    ^`,
+			line:        13,
+			replacement: ` <div data-testid="count">{  `,
+			cursor:      `                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
-				if !lspdiff.CompletionListContainsText(actual, "templ") {
-					return fmt.Sprintf(
-						"expected templ to be in the completion list, but got %#v",
-						actual,
-					), false
+				if actual != nil && len(actual.Items) != globalSnippetsLen {
+					return "expected completion list to be empty", false
 				}
 				return "", true
 			},
@@ -125,10 +124,7 @@ func TestCompletion(t *testing.T) {
 			cursor:      `                               ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
 				if !lspdiff.CompletionListContainsText(actual, "fmt.Sprintf") {
-					return fmt.Sprintf(
-						"expected fmt.Sprintf to be in the completion list, but got %#v",
-						actual,
-					), false
+					return fmt.Sprintf("expected fmt.Sprintf to be in the completion list, but got %#v", actual), false
 				}
 				return "", true
 			},
@@ -138,7 +134,7 @@ func TestCompletion(t *testing.T) {
 			replacement: ` <div data-testid="count">{ fmt.Sprintf("%d",`,
 			cursor:      `                                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
-				if actual != nil && len(actual.Items) != 0 {
+				if actual != nil && len(actual.Items) != globalSnippetsLen {
 					return "expected completion list to be empty", false
 				}
 				return "", true
