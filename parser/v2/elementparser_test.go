@@ -54,6 +54,19 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
+			name:   "element: colon in name, closing",
+			input:  `<maps:map>Content</maps:map>`,
+			parser: StripType(element),
+			expected: Element{
+				Name: "maps:map",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+				Children: []Node{Text{Value: "Content"}},
+			},
+		},
+		{
 			name:   "element: open with hyperscript attribute",
 			input:  `<div _="show = true">`,
 			parser: StripType(elementOpenTagParser),
