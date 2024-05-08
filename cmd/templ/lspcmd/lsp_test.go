@@ -81,7 +81,6 @@ func TestCompletion(t *testing.T) {
 			Text:       string(templFile),
 		},
 	})
-
 	if err != nil {
 		t.Errorf("failed to register open file: %v", err)
 		return
@@ -100,12 +99,15 @@ func TestCompletion(t *testing.T) {
 		assert      func(t *testing.T, cl *protocol.CompletionList) (msg string, ok bool)
 	}{
 		{
-			line:        13,
-			replacement: ` <div data-testid="count">{  `,
-			cursor:      `                            ^`,
+			line:        3,
+			replacement: `templ`,
+			cursor:      `    ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
-				if diff := lspdiff.CompletionList(nil, actual); diff != "" {
-					return fmt.Sprintf("unexpected completion: %v", diff), false
+				if !lspdiff.CompletionListContainsText(actual, "templ") {
+					return fmt.Sprintf(
+						"expected templ to be in the completion list, but got %#v",
+						actual,
+					), false
 				}
 				return "", true
 			},
@@ -116,7 +118,10 @@ func TestCompletion(t *testing.T) {
 			cursor:      `                               ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
 				if !lspdiff.CompletionListContainsText(actual, "fmt.Sprintf") {
-					return fmt.Sprintf("expected fmt.Sprintf to be in the completion list, but got %#v", actual), false
+					return fmt.Sprintf(
+						"expected fmt.Sprintf to be in the completion list, but got %#v",
+						actual,
+					), false
 				}
 				return "", true
 			},
@@ -137,7 +142,11 @@ func TestCompletion(t *testing.T) {
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
 			// Edit the file.
-			updated := strings.ReplaceAll(string(templFile), `<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`, test.replacement)
+			updated := strings.ReplaceAll(
+				string(templFile),
+				`<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`,
+				test.replacement,
+			)
 			err = server.DidChange(ctx, &protocol.DidChangeTextDocumentParams{
 				TextDocument: protocol.VersionedTextDocumentIdentifier{
 					TextDocumentIdentifier: protocol.TextDocumentIdentifier{
@@ -268,27 +277,42 @@ func (tc TestClient) Progress(ctx context.Context, params *protocol.ProgressPara
 	return nil
 }
 
-func (tc TestClient) WorkDoneProgressCreate(ctx context.Context, params *protocol.WorkDoneProgressCreateParams) (err error) {
+func (tc TestClient) WorkDoneProgressCreate(
+	ctx context.Context,
+	params *protocol.WorkDoneProgressCreateParams,
+) (err error) {
 	tc.log.Info("client: Received WorkDoneProgressCreate", zap.Any("params", params))
 	return nil
 }
 
-func (tc TestClient) LogMessage(ctx context.Context, params *protocol.LogMessageParams) (err error) {
+func (tc TestClient) LogMessage(
+	ctx context.Context,
+	params *protocol.LogMessageParams,
+) (err error) {
 	tc.log.Info("client: Received LogMessage", zap.Any("params", params))
 	return nil
 }
 
-func (tc TestClient) PublishDiagnostics(ctx context.Context, params *protocol.PublishDiagnosticsParams) (err error) {
+func (tc TestClient) PublishDiagnostics(
+	ctx context.Context,
+	params *protocol.PublishDiagnosticsParams,
+) (err error) {
 	tc.log.Info("client: Received PublishDiagnostics", zap.Any("params", params))
 	return nil
 }
 
-func (tc TestClient) ShowMessage(ctx context.Context, params *protocol.ShowMessageParams) (err error) {
+func (tc TestClient) ShowMessage(
+	ctx context.Context,
+	params *protocol.ShowMessageParams,
+) (err error) {
 	tc.log.Info("client: Received ShowMessage", zap.Any("params", params))
 	return nil
 }
 
-func (tc TestClient) ShowMessageRequest(ctx context.Context, params *protocol.ShowMessageRequestParams) (result *protocol.MessageActionItem, err error) {
+func (tc TestClient) ShowMessageRequest(
+	ctx context.Context,
+	params *protocol.ShowMessageRequestParams,
+) (result *protocol.MessageActionItem, err error) {
 	return nil, nil
 }
 
@@ -297,44 +321,70 @@ func (tc TestClient) Telemetry(ctx context.Context, params interface{}) (err err
 	return nil
 }
 
-func (tc TestClient) RegisterCapability(ctx context.Context, params *protocol.RegistrationParams) (err error) {
+func (tc TestClient) RegisterCapability(
+	ctx context.Context,
+	params *protocol.RegistrationParams,
+) (err error) {
 	tc.log.Info("client: Received RegisterCapability", zap.Any("params", params))
 	return nil
 }
 
-func (tc TestClient) UnregisterCapability(ctx context.Context, params *protocol.UnregistrationParams) (err error) {
+func (tc TestClient) UnregisterCapability(
+	ctx context.Context,
+	params *protocol.UnregistrationParams,
+) (err error) {
 	tc.log.Info("client: Received UnregisterCapability", zap.Any("params", params))
 	return nil
 }
 
-func (tc TestClient) ApplyEdit(ctx context.Context, params *protocol.ApplyWorkspaceEditParams) (result *protocol.ApplyWorkspaceEditResponse, err error) {
+func (tc TestClient) ApplyEdit(
+	ctx context.Context,
+	params *protocol.ApplyWorkspaceEditParams,
+) (result *protocol.ApplyWorkspaceEditResponse, err error) {
 	tc.log.Info("client: Received ApplyEdit", zap.Any("params", params))
 	return nil, nil
 }
 
-func (tc TestClient) Configuration(ctx context.Context, params *protocol.ConfigurationParams) (result []interface{}, err error) {
+func (tc TestClient) Configuration(
+	ctx context.Context,
+	params *protocol.ConfigurationParams,
+) (result []interface{}, err error) {
 	tc.log.Info("client: Received Configuration", zap.Any("params", params))
 	return nil, nil
 }
 
-func (tc TestClient) WorkspaceFolders(ctx context.Context) (result []protocol.WorkspaceFolder, err error) {
+func (tc TestClient) WorkspaceFolders(
+	ctx context.Context,
+) (result []protocol.WorkspaceFolder, err error) {
 	tc.log.Info("client: Received WorkspaceFolders")
 	return nil, nil
 }
 
-func Setup(ctx context.Context, log *zap.Logger) (clientCtx context.Context, appDir string, client protocol.Client, server protocol.Server, teardown func(t *testing.T), err error) {
+func Setup(
+	ctx context.Context,
+	log *zap.Logger,
+) (clientCtx context.Context, appDir string, client protocol.Client, server protocol.Server, teardown func(t *testing.T), err error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return ctx, appDir, client, server, teardown, fmt.Errorf("could not find working dir: %w", err)
+		return ctx, appDir, client, server, teardown, fmt.Errorf(
+			"could not find working dir: %w",
+			err,
+		)
 	}
 	moduleRoot, err := modcheck.WalkUp(wd)
 	if err != nil {
-		return ctx, appDir, client, server, teardown, fmt.Errorf("could not find local templ go.mod file: %v", err)
+		return ctx, appDir, client, server, teardown, fmt.Errorf(
+			"could not find local templ go.mod file: %v",
+			err,
+		)
 	}
 
 	appDir, err = createTestProject(moduleRoot)
 	if err != nil {
-		return ctx, appDir, client, server, teardown, fmt.Errorf("failed to create test project: %v", err)
+		return ctx, appDir, client, server, teardown, fmt.Errorf(
+			"failed to create test project: %v",
+			err,
+		)
 	}
 
 	var wg sync.WaitGroup
@@ -429,13 +479,19 @@ func Setup(ctx context.Context, log *zap.Logger) (clientCtx context.Context, app
 		log.Error("Failed to init", zap.Error(err))
 	}
 	if ir.ServerInfo.Name != "templ-lsp" {
-		return ctx, appDir, client, server, teardown, fmt.Errorf("expected server name to be templ-lsp, got %q", ir.ServerInfo.Name)
+		return ctx, appDir, client, server, teardown, fmt.Errorf(
+			"expected server name to be templ-lsp, got %q",
+			ir.ServerInfo.Name,
+		)
 	}
 
 	// Confirm initialization.
 	log.Info("Confirming initialization...")
 	if err = server.Initialized(ctx, &protocol.InitializedParams{}); err != nil {
-		return ctx, appDir, client, server, teardown, fmt.Errorf("failed to confirm initialization: %v", err)
+		return ctx, appDir, client, server, teardown, fmt.Errorf(
+			"failed to confirm initialization: %v",
+			err,
+		)
 	}
 	log.Info("Initialized")
 
