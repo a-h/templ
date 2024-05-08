@@ -438,6 +438,48 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 	return r, true, nil
 }
 
+var voidElementNamesMap = map[string]struct{}{
+	"area":    {},
+	"base":    {},
+	"br":      {},
+	"col":     {},
+	"command": {},
+	"embed":   {},
+	"hr":      {},
+	"img":     {},
+	"input":   {},
+	"keygen":  {},
+	"link":    {},
+	"meta":    {},
+	"param":   {},
+	"source":  {},
+	"track":   {},
+	"wbr":     {},
+}
+
+func getVoidCloser(name string) parse.Parser[string] {
+	return parse.Func(func(pi *parse.Input) (s string, ok bool, err error) {
+		// />
+		// If it's a self-closing element, take that.
+		_, ok, err = parse.String("/>").Parse(pi)
+		if err != nil || ok {
+			return
+		}
+
+		// >
+		// HTML5 states that void elements are closed with just a >.
+		_, ok, err = parse.Rune('>').Parse(pi)
+		if err != nil {
+			return
+		}
+
+		// Optional </name>
+		// However, some people like to close them with </name>.
+		_, ok, err = parse.Optional(parse.All(parse.String("</"), parse.String(name), parse.Rune('>'))).Parse(pi)
+		return s, ok, err
+	})
+}
+
 // Element self-closing tag.
 var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, err error) {
 	start := pi.Index()
@@ -471,7 +513,13 @@ var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, e
 		e.IndentAttrs = true
 	}
 
-	if _, ok, err = parse.String("/>").Parse(pi); err != nil || !ok {
+	// Parse closer.
+	var terminatingParser = parse.String("/>")
+	// Allow void elements to not be closed.
+	if _, isVoid := voidElementNamesMap[e.Name]; isVoid {
+		terminatingParser = getVoidCloser(e.Name)
+	}
+	if _, ok, err = terminatingParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}

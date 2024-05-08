@@ -19,21 +19,37 @@ func TestFormatting(t *testing.T) {
 package test
 
 templ input(value, validation string) {
+	<area>
 	<area></area>
+	<base>
 	<base></base>
+	<br>
 	<br></br>
+	<col>
 	<col></col>
+	<command>
 	<command></command>
+	<embed>
 	<embed></embed>
+	<hr>
 	<hr></hr>
+	<img>
 	<img></img>
+	<input>
 	<input></input>
+	<keygen>
 	<keygen></keygen>
+	<link>
 	<link></link>
+	<meta>
 	<meta></meta>
+	<param>
 	<param></param>
+	<source>
 	<source></source>
+	<track>
 	<track></track>
+	<wbr>
 	<wbr></wbr>
 }
 
@@ -43,20 +59,36 @@ package test
 
 templ input(value, validation string) {
 	<area/>
+	<area/>
+	<base/>
 	<base/>
 	<br/>
+	<br/>
+	<col/>
 	<col/>
 	<command/>
+	<command/>
+	<embed/>
 	<embed/>
 	<hr/>
+	<hr/>
+	<img/>
 	<img/>
 	<input/>
+	<input/>
+	<keygen/>
 	<keygen/>
 	<link/>
+	<link/>
+	<meta/>
 	<meta/>
 	<param/>
+	<param/>
+	<source/>
 	<source/>
 	<track/>
+	<track/>
+	<wbr/>
 	<wbr/>
 }
 `,

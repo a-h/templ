@@ -42,31 +42,6 @@ func TestAttributeParser(t *testing.T) {
 			},
 		},
 		{
-			name:   "element: colon in name",
-			input:  `<maps:map>`,
-			parser: StripType(elementOpenTagParser),
-			expected: elementOpenTag{
-				Name: "maps:map",
-				NameRange: Range{
-					From: Position{Index: 1, Line: 0, Col: 1},
-					To:   Position{Index: 9, Line: 0, Col: 9},
-				},
-			},
-		},
-		{
-			name:   "element: colon in name, closing",
-			input:  `<maps:map>Content</maps:map>`,
-			parser: StripType(element),
-			expected: Element{
-				Name: "maps:map",
-				NameRange: Range{
-					From: Position{Index: 1, Line: 0, Col: 1},
-					To:   Position{Index: 9, Line: 0, Col: 9},
-				},
-				Children: []Node{Text{Value: "Content"}},
-			},
-		},
-		{
 			name:   "element: open with hyperscript attribute",
 			input:  `<div _="show = true">`,
 			parser: StripType(elementOpenTagParser),
@@ -600,6 +575,74 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+			},
+		},
+		{
+			name:  "element: colon in name, empty",
+			input: `<maps:map></maps:map>`,
+			expected: Element{
+				Name: "maps:map",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+			},
+		},
+		{
+			name:  "element: colon in name, with content",
+			input: `<maps:map>Content</maps:map>`,
+			expected: Element{
+				Name: "maps:map",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+				Children: []Node{Text{Value: "Content"}},
+			},
+		},
+		{
+			name:  "element: void (input)",
+			input: `<input>`,
+			expected: Element{
+				Name: "input",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 6, Line: 0, Col: 6},
+				},
+				Children: nil,
+			},
+		},
+		{
+			name:  "element: void (br)",
+			input: `<br>`,
+			expected: Element{
+				Name: "br",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
+				Children: nil,
+			},
+		},
+		{
+			name:  "element: void (hr)",
+			input: `<hr noshade>`,
+			expected: Element{
+				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Name: "noshade",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
+					},
+				},
+				Children: nil,
 			},
 		},
 		{
