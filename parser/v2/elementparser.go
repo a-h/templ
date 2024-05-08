@@ -361,7 +361,7 @@ func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool,
 // Element name.
 var (
 	elementNameFirst      = "abcdefghijklmnopqrstuvwxyz"
-	elementNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+	elementNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-:"
 	elementNameParser     = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
 		start := in.Index()
 		var prefix, suffix string
