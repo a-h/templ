@@ -55,16 +55,6 @@
               "-extldflags -static"
             ];
           };
-
-          templ-docs = pkgs.buildNpmPackage {
-            name = "templ-docs";
-            src = gitignore.lib.gitignoreSource ./docs;
-            npmDepsHash = "sha256-i6clvSyHtQEGl2C/wcCXonl1W/Kxq7WPTYH46AhUvDM=";
-            installPhase = ''
-              mkdir -p $out/share
-              cp -r build/ $out/share/docs
-            '';
-          };
         });
 
       # `nix develop` provides a shell containing development tools.

@@ -2,6 +2,7 @@ package parser
 
 import (
 	"strings"
+	"unicode/utf8"
 )
 
 // NewSourceMap creates a new lookup to map templ source code to items in the
@@ -36,7 +37,7 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 		}
 
 		// Process the cols.
-		for colIndex := 0; colIndex < len(line); colIndex++ {
+		for _, r := range line {
 			if _, ok := sm.SourceLinesToTarget[srcLine]; !ok {
 				sm.SourceLinesToTarget[srcLine] = make(map[uint32]Position)
 			}
@@ -47,10 +48,15 @@ func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
 			}
 			sm.TargetLinesToSource[tgtLine][tgtCol] = NewPosition(srcIndex, srcLine, srcCol)
 
-			srcCol++
-			tgtCol++
-			srcIndex++
-			tgtIndex++
+			// Ignore invalid runes.
+			rlen := utf8.RuneLen(r)
+			if rlen < 0 {
+				rlen = 1
+			}
+			srcCol += uint32(rlen)
+			tgtCol += uint32(rlen)
+			srcIndex += int64(rlen)
+			tgtIndex += int64(rlen)
 		}
 
 		// LSPs include the newline char as a col.

@@ -1,0 +1,21 @@
+package testconstantattributeescaping
+
+templ BasicTemplate() {
+	<div>
+		<!-- valid go escape sequences -->
+		<input pattern="\a"/>
+		<input pattern="\b"/>
+		<input pattern="\f"/>
+		<input pattern="\n"/>
+		<input pattern="\r"/>
+		<input pattern="\t"/>
+		<input pattern="\v"/>
+		<input pattern="\\"/>
+		<input pattern="\777"/>
+		<input pattern="\xFF"/>
+		<input pattern="\u00FF"/>
+		<input pattern="\u00FF\u00FF\u00FF"/>
+		<!-- invalid go escape sequences -->
+		<input pattern="\s"/>
+	</div>
+}
