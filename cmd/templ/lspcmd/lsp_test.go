@@ -88,12 +88,13 @@ func TestCompletion(t *testing.T) {
 			Text:       string(templFile),
 		},
 	})
-
 	if err != nil {
 		t.Errorf("failed to register open file: %v", err)
 		return
 	}
 	log.Info("Calling completion")
+
+	globalSnippetsLen := 1
 
 	// Edit the file.
 	// Replace:
@@ -111,8 +112,8 @@ func TestCompletion(t *testing.T) {
 			replacement: ` <div data-testid="count">{  `,
 			cursor:      `                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
-				if diff := lspdiff.CompletionList(nil, actual); diff != "" {
-					return fmt.Sprintf("unexpected completion: %v", diff), false
+				if actual != nil && len(actual.Items) != globalSnippetsLen {
+					return "expected completion list to be empty", false
 				}
 				return "", true
 			},
@@ -133,7 +134,7 @@ func TestCompletion(t *testing.T) {
 			replacement: ` <div data-testid="count">{ fmt.Sprintf("%d",`,
 			cursor:      `                                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
-				if actual != nil && len(actual.Items) != 0 {
+				if actual != nil && len(actual.Items) != globalSnippetsLen {
 					return "expected completion list to be empty", false
 				}
 				return "", true
@@ -417,7 +418,8 @@ func (tc TestClient) Telemetry(ctx context.Context, params interface{}) (err err
 	return nil
 }
 
-func (tc TestClient) RegisterCapability(ctx context.Context, params *protocol.RegistrationParams) (err error) {
+func (tc TestClient) RegisterCapability(ctx context.Context, params *protocol.RegistrationParams,
+) (err error) {
 	tc.log.Info("client: Received RegisterCapability", zap.Any("params", params))
 	return nil
 }
