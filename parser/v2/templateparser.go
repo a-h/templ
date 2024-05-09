@@ -118,9 +118,15 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, ok bool, err er
 			break
 		}
 
-		err = fmt.Errorf("%v not found", p.untilName)
+		err = UntilNotFoundError{
+			ParseError: parse.Error(fmt.Sprintf("%v not found", p.untilName), pi.Position()),
+		}
 		return
 	}
 
 	return op, true, nil
+}
+
+type UntilNotFoundError struct {
+	parse.ParseError
 }

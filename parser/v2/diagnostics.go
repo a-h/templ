@@ -1,6 +1,9 @@
 package parser
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type diagnoser func(Node) ([]Diagnostic, error)
 
@@ -30,10 +33,12 @@ func walkNodes(t []Node, f func(Node) bool) {
 	}
 }
 
+var diagnosers = []diagnoser{
+	useOfLegacyCallSyntaxDiagnoser,
+	voidElementWithChildrenDiagnoser,
+}
+
 func Diagnose(t TemplateFile) ([]Diagnostic, error) {
-	diagnosers := []diagnoser{
-		legacyCallSyntaxDiagnoser,
-	}
 	var diags []Diagnostic
 	var errs error
 	walkTemplate(t, func(n Node) bool {
@@ -50,7 +55,7 @@ func Diagnose(t TemplateFile) ([]Diagnostic, error) {
 	return diags, errs
 }
 
-func legacyCallSyntaxDiagnoser(n Node) ([]Diagnostic, error) {
+func useOfLegacyCallSyntaxDiagnoser(n Node) ([]Diagnostic, error) {
 	if c, ok := n.(CallTemplateExpression); ok {
 		return []Diagnostic{{
 			Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
@@ -58,4 +63,21 @@ func legacyCallSyntaxDiagnoser(n Node) ([]Diagnostic, error) {
 		}}, nil
 	}
 	return nil, nil
+}
+
+func voidElementWithChildrenDiagnoser(n Node) (d []Diagnostic, err error) {
+	e, ok := n.(Element)
+	if !ok {
+		return
+	}
+	if !e.IsVoidElement() {
+		return
+	}
+	if len(e.Children) == 0 {
+		return
+	}
+	return []Diagnostic{{
+		Message: fmt.Sprintf("void element <%s> should not have child content", e.Name),
+		Range:   e.NameRange,
+	}}, nil
 }
