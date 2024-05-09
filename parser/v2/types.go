@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"go/format"
 	"io"
+	"reflect"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -532,6 +534,95 @@ func containsNonTextNodes(nodes []Node) bool {
 	return false
 }
 
+// Order the attributes using the algorithm from https://codeguide.co/#attribute-order
+func orderCategory(name string) int {
+	if name == "class" {
+		return 0
+	} else if name == "id" {
+		return 1
+	} else if name == "name" {
+		return 2
+	} else if strings.HasPrefix(name, "data-") {
+		return 3
+	} else if name == "src" {
+		return 4
+	} else if name == "for" {
+		return 5
+	} else if name == "type" {
+		return 6
+	} else if name == "href" {
+		return 7
+	} else if name == "value" {
+		return 8
+	} else if name == "title" {
+		return 9
+	} else if name == "alt" {
+		return 10
+	} else if name == "role" {
+		return 11
+	} else if strings.HasPrefix(name, "aria-") {
+		return 12
+	} else if name == "tabindex" {
+		return 13
+	} else if name == "style" {
+		return 14
+	}
+	return -1
+}
+
+func compareAttributeNames(a, b string) bool {
+	aOrder := orderCategory(a)
+	bOrder := orderCategory(b)
+	if aOrder == -1 && bOrder == -1 {
+		return a < b
+	}
+	if aOrder == -1 {
+		return false
+	}
+	if bOrder == -1 {
+		return true
+	}
+	return aOrder < bOrder
+}
+
+func sortAttributesInPlace(sortedAttributes []Attribute) {
+	sort.SliceStable(sortedAttributes, func(i, j int) bool {
+		// Sort the attributes alphabetically.
+		// If the attribute doesn't have a "name", put it at the end.
+
+		// This could be done in many ways. It should probably be done without reflection.
+		// Either by adding a "Name()" attribute to the Attribute interface,
+		// or by just iterating through and trying to cast to the different types (like ConstantAttribute etc).
+		// Check if the element has a "Name" field
+
+		getName := func(item Attribute) (string, bool) {
+			v := reflect.ValueOf(item)
+			if v.Kind() == reflect.Struct {
+				field := v.FieldByName("Name")
+				if field.IsValid() && field.Kind() == reflect.String {
+					return field.String(), true
+				}
+			}
+			return "", false
+		}
+
+		nameI, okI := getName(sortedAttributes[i])
+		nameJ, okJ := getName(sortedAttributes[j])
+
+		if !okI && !okJ {
+			return false // Both don't have Name, keep original order
+		}
+		if !okI {
+			return false // i doesn't have Name, move it towards the end
+		}
+		if !okJ {
+			return true // j doesn't have Name, keep i before j
+		}
+
+		return compareAttributeNames(nameI, nameJ) // Both have Name, sort alphabetically
+	})
+}
+
 func (e Element) ChildNodes() []Node {
 	return e.Children
 }
@@ -540,6 +631,12 @@ func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<", e.Name); err != nil {
 		return err
 	}
+	sortedAttributes := make([]Attribute, len(e.Attributes))
+	copy(sortedAttributes, e.Attributes)
+	sortAttributesInPlace(sortedAttributes)
+
+	e.Attributes = sortedAttributes
+
 	for i := 0; i < len(e.Attributes); i++ {
 		a := e.Attributes[i]
 		// Only the conditional attributes get indented.
