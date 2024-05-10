@@ -17,6 +17,7 @@ type elementOpenTag struct {
 	Attributes  []Attribute
 	IndentAttrs bool
 	NameRange   Range
+	Void        bool
 }
 
 var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, ok bool, err error) {
@@ -51,34 +52,27 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 		return
 	}
 
+	// />
+	if _, ok, err = parse.String("/>").Parse(pi); err != nil {
+		return
+	}
+	if ok {
+		e.Void = true
+		return
+	}
+
 	// >
 	if _, ok, err = gt.Parse(pi); err != nil {
 		return
 	}
+
+	// If it's not a self-closing or complete open element, we have an error.
 	if !ok {
 		err = parse.Error(fmt.Sprintf("<%s>: malformed open element", e.Name), pi.Position())
-		return e, false, err
+		return
 	}
 
 	return e, true, nil
-})
-
-// Element close tag.
-type elementCloseTag struct {
-	Name string
-}
-
-var elementCloseTagParser = parse.Func(func(in *parse.Input) (ct elementCloseTag, ok bool, err error) {
-	var parts []string
-	parts, ok, err = parse.All(
-		parse.String("</"),
-		elementNameParser,
-		parse.Rune('>')).Parse(in)
-	if err != nil || !ok {
-		return
-	}
-	ct.Name = parts[1]
-	return ct, true, nil
 })
 
 // Attribute name.
@@ -382,11 +376,14 @@ var (
 )
 
 // Element.
-var elementOpenClose elementOpenCloseParser
+var element elementParser
 
-type elementOpenCloseParser struct{}
+type elementParser struct{}
 
-func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err error) {
+func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+	var r Element
+	start := pi.Position()
+
 	// Check the open tag.
 	var ot elementOpenTag
 	if ot, ok, err = elementOpenTagParser.Parse(pi); err != nil || !ok {
@@ -399,84 +396,54 @@ func (elementOpenCloseParser) Parse(pi *parse.Input) (r Element, ok bool, err er
 
 	// Once we've got an open tag, the rest must be present.
 	l := pi.Position().Line
-	var nodes Nodes
-	if nodes, ok, err = newTemplateNodeParser[any](nil, "").Parse(pi); err != nil || !ok {
-		return
+	endOfOpenTag := pi.Index()
+
+	// If the element is self-closing, even if it's not really a void element (br, hr etc.), we can return early.
+	if ot.Void {
+		// Escape early, no need to try to parse children for self-closing elements.
+		return addTrailingSpaceAndValidate(start, r, pi)
+	}
+
+	// Void elements _might_ have children, even though it's invalid.
+	// We want to allow this to be parsed.
+	closer := StripType(parse.All(parse.String("</"), parse.String(ot.Name), parse.Rune('>')))
+	tnp := newTemplateNodeParser[any](closer, fmt.Sprintf("<%s>: close tag", ot.Name))
+	nodes, _, err := tnp.Parse(pi)
+	if err != nil {
+		notFoundErr, isNotFoundError := err.(UntilNotFoundError)
+		if r.IsVoidElement() && isNotFoundError {
+			// Void elements shouldn't have children, or a close tag, so this is expected.
+			// When the template is reformatted, we won't reach here, because <hr> will be converted to <hr/>.
+			// Return the element as we have it.
+			pi.Seek(endOfOpenTag)
+			return addTrailingSpaceAndValidate(start, r, pi)
+		}
+		if isNotFoundError {
+			err = notFoundErr.ParseError
+		}
+		return r, false, err
 	}
 	r.Children = nodes.Nodes
-	// If the children are not all on the same line, indent them
+	// If the children are not all on the same line, indent them.
 	if l != pi.Position().Line {
 		r.IndentChildren = true
 	}
 
 	// Close tag.
-	pos := pi.Position()
-	var ct elementCloseTag
-	ct, ok, err = elementCloseTagParser.Parse(pi)
+	_, ok, err = closer.Parse(pi)
 	if err != nil {
-		return
+		return r, false, err
 	}
 	if !ok {
 		err = parse.Error(fmt.Sprintf("<%s>: expected end tag not present or invalid tag contents", r.Name), pi.Position())
-		return
-	}
-	if ct.Name != r.Name {
-		err = parse.Error(fmt.Sprintf("<%s>: mismatched end tag, expected '</%s>', got '</%s>'", r.Name, r.Name, ct.Name), pos)
-		return
-	}
-
-	// Parse trailing whitespace.
-	ws, _, err := parse.Whitespace.Parse(pi)
-	if err != nil {
-		return r, false, err
-	}
-	r.TrailingSpace, err = NewTrailingSpace(ws)
-	if err != nil {
 		return r, false, err
 	}
 
-	return r, true, nil
+	return addTrailingSpaceAndValidate(start, r, pi)
 }
 
-// Element self-closing tag.
-var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, err error) {
-	start := pi.Index()
-
-	// lt
-	if _, ok, err = lt.Parse(pi); err != nil || !ok {
-		return
-	}
-
-	// Element name.
-	l := pi.Position().Line
-	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return
-	}
-	e.NameRange = NewRange(pi.PositionAt(pi.Index()-len(e.Name)), pi.Position())
-
-	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return
-	}
-
-	// Optional whitespace.
-	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
-		pi.Seek(start)
-		return
-	}
-
-	// If any attribute is not on the same line as the element name, indent them.
-	if pi.Position().Line != l {
-		e.IndentAttrs = true
-	}
-
-	if _, ok, err = parse.String("/>").Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return
-	}
-
-	// Parse trailing whitespace.
+func addTrailingSpaceAndValidate(start parse.Position, e Element, pi *parse.Input) (n Node, ok bool, err error) {
+	// Add trailing space.
 	ws, _, err := parse.Whitespace.Parse(pi)
 	if err != nil {
 		return e, false, err
@@ -486,25 +453,12 @@ var selfClosingElement = parse.Func(func(pi *parse.Input) (e Element, ok bool, e
 		return e, false, err
 	}
 
-	return e, true, nil
-})
-
-// Element
-var element elementParser
-
-type elementParser struct{}
-
-func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	start := pi.Position()
-
-	var r Element
-	if r, ok, err = parse.Any[Element](selfClosingElement, elementOpenClose).Parse(pi); err != nil || !ok {
-		return
-	}
+	// Validate.
 	var msgs []string
-	if msgs, ok = r.Validate(); !ok {
-		err = parse.Error(fmt.Sprintf("<%s>: %s", r.Name, strings.Join(msgs, ", ")), start)
+	if msgs, ok = e.Validate(); !ok {
+		err = parse.Error(fmt.Sprintf("<%s>: %s", e.Name, strings.Join(msgs, ", ")), start)
+		return e, false, err
 	}
 
-	return r, ok, err
+	return e, true, nil
 }

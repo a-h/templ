@@ -1,0 +1,15 @@
+-- in --
+package test
+
+css ClassName() {
+background-color    :   #ffffff	;
+  color	:  { constants.White };
+  }
+		
+-- out --
+package test
+
+css ClassName() {
+	background-color: #ffffff;
+	color: { constants.White };
+}

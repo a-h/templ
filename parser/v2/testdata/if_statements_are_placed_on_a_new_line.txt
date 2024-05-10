@@ -1,0 +1,25 @@
+-- in --
+package test
+
+templ input(items []string) {
+<div>{ "the" }<div>{ "other" }</div>if items != nil {
+<div>{ items[0] }</div>
+		} else {
+			<div>{ items[1] }</div>
+		}
+</div>
+}
+-- out --
+package test
+
+templ input(items []string) {
+	<div>
+		{ "the" }
+		<div>{ "other" }</div>
+		if items != nil {
+			<div>{ items[0] }</div>
+		} else {
+			<div>{ items[1] }</div>
+		}
+	</div>
+}

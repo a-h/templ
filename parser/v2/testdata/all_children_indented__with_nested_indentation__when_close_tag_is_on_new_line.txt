@@ -1,0 +1,20 @@
+-- in --
+package test
+
+templ input(value, validation string) {
+	<div><p>{ "the" }<a href="http://example.com">{ "data" }
+</a></p></div>
+}
+-- out --
+package test
+
+templ input(value, validation string) {
+	<div>
+		<p>
+			{ "the" }
+			<a href="http://example.com">
+				{ "data" }
+			</a>
+		</p>
+	</div>
+}

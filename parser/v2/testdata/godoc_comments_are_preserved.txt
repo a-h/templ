@@ -1,0 +1,14 @@
+-- in --
+package main
+
+// test the comment handling.
+templ test() {
+	Test
+}
+-- out --
+package main
+
+// test the comment handling.
+templ test() {
+	Test
+}

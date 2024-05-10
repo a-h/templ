@@ -100,7 +100,7 @@ func render(p person) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("><hr noshade>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("><hr noshade><input name=\"test\">Text</input>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

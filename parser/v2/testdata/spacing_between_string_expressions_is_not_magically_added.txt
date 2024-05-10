@@ -1,0 +1,12 @@
+-- in --
+package main
+
+templ x() {
+    <div>{pt1}{pt2}</div>
+}
+-- out --
+package main
+
+templ x() {
+	<div>{ pt1 }{ pt2 }</div>
+}
