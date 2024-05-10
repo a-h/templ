@@ -1,0 +1,12 @@
+-- in --
+package main
+
+templ test() {
+	<div>Linebreaks<br/>used<br/>for<br/>spacing</div>
+}
+-- out --
+package main
+
+templ test() {
+	<div>Linebreaks<br/>used<br/>for<br/>spacing</div>
+}

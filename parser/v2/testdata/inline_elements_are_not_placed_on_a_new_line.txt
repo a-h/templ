@@ -1,0 +1,20 @@
+-- in --
+package main
+
+templ test() {
+	<p>
+		In a flowing <strong>paragraph</strong>, you can use inline elements.
+		These <strong>inline elements</strong> can be <strong>styled</strong>
+		and are not placed on new lines.
+	</p>
+}
+-- out --
+package main
+
+templ test() {
+	<p>
+		In a flowing <strong>paragraph</strong>, you can use inline elements.
+		These <strong>inline elements</strong> can be <strong>styled</strong>
+		and are not placed on new lines.
+	</p>
+}

@@ -1,0 +1,26 @@
+-- in --
+package main
+
+templ x() {
+	<li>
+		<a href="/">
+	    Home
+	    @hello("home") {
+                data
+                }
+     </a>
+	</li>
+}
+-- out --
+package main
+
+templ x() {
+	<li>
+		<a href="/">
+			Home
+			@hello("home") {
+				data
+			}
+		</a>
+	</li>
+}

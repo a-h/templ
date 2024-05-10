@@ -1,0 +1,17 @@
+-- in --
+package test
+
+templ nested() {
+	<div class="double">double</div>
+	<div class='single-not-required'>single-not-required</div>
+	<div data-value='{"data":"value"}'>single-required</div>
+}
+
+-- out --
+package test
+
+templ nested() {
+	<div class="double">double</div>
+	<div class="single-not-required">single-not-required</div>
+	<div data-value='{"data":"value"}'>single-required</div>
+}

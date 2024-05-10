@@ -1,0 +1,24 @@
+-- in --
+package main
+
+templ test() {
+	<div>
+		Linebreaks<br/>and<hr/>rules<br/>for<br/>spacing
+	</div>
+}
+-- out --
+package main
+
+templ test() {
+	<div>
+		Linebreaks
+		<br/>
+		and
+		<hr/>
+		rules
+		<br/>
+		for
+		<br/>
+		spacing
+	</div>
+}

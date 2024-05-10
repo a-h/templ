@@ -1,0 +1,26 @@
+-- in --
+package test
+
+templ input(items []string) {
+<div>{ "the" }<div>{ "other" }</div>switch items[0] {
+	case "a":
+<div>{ items[0] }</div>
+	case "b":
+<div>{ items[1] }</div>
+}</div>
+}
+-- out --
+package test
+
+templ input(items []string) {
+	<div>
+		{ "the" }
+		<div>{ "other" }</div>
+		switch items[0] {
+			case "a":
+				<div>{ items[0] }</div>
+			case "b":
+				<div>{ items[1] }</div>
+		}
+	</div>
+}
