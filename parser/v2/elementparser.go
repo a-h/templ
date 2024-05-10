@@ -407,8 +407,8 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Void elements _might_ have children, even though it's invalid.
 	// We want to allow this to be parsed.
 	closer := StripType(parse.All(parse.String("</"), parse.String(ot.Name), parse.Rune('>')))
-	var nodes Nodes
-	nodes, ok, err = newTemplateNodeParser[any](closer, fmt.Sprintf("<%s>: close tag", ot.Name)).Parse(pi)
+	tnp := newTemplateNodeParser[any](closer, fmt.Sprintf("<%s>: close tag", ot.Name))
+	nodes, _, err := tnp.Parse(pi)
 	if err != nil {
 		notFoundErr, isNotFoundError := err.(UntilNotFoundError)
 		if r.IsVoidElement() && isNotFoundError {
@@ -424,7 +424,7 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return r, false, err
 	}
 	r.Children = nodes.Nodes
-	// If the children are not all on the same line, indent them
+	// If the children are not all on the same line, indent them.
 	if l != pi.Position().Line {
 		r.IndentChildren = true
 	}

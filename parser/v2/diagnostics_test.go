@@ -145,7 +145,7 @@ templ template () {
 	</div>
 }`,
 			want: []Diagnostic{{
-				Message: "<input> should not have child content",
+				Message: "void element <input> should not have child content",
 				Range:   Range{Position{46, 5, 4}, Position{51, 5, 9}},
 			}},
 		},
