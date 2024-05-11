@@ -34,7 +34,7 @@ templ right() {
 </div>
 ```
 
-# Children
+## Children
 
 Children can be passed to a component for it to wrap.
 
@@ -64,7 +64,7 @@ The use of the `{ children... }` expression in the child component.
 </div>
 ```
 
-# Components as parameters
+## Components as parameters
 
 Components can also be passed as parameters and rendered using the `@component` expression.
 
@@ -160,3 +160,49 @@ func main() {
 	<p>Dynamic contents</p>
 </div>
 ```
+
+## Sharing and re-using components
+
+Since templ components are compiled into Go functions by the `go generate` command, templ components follow the rules of Go, and are shared in exactly the same way as Go code.
+
+templ files in the same directory can access each other's components. Components in different directories can be accessed by importing the package that contains the component, so long as the component is exported by capitalizing its name.
+
+:::tip
+In Go, a _package_ is a collection of Go source files in the same directory that are compiled together. All of the functions, types, variables, and constants defined in one source file in a package are available to all other source files in the same package.
+
+Packages exist within a Go _module_, defined by the `go.mod` file.
+:::
+
+:::note
+Go is structured differently to JavaScript, but uses similar terminology. A single `.js` or `.ts` _file_ is like a Go package, and an NPM package is like a Go module.
+:::
+
+### Exporting components
+
+To make a templ component available to other packages, export it by capitalizing its name.
+
+```templ
+package components
+
+templ Hello() {
+	<div>Hello</div>
+}
+```
+
+### Importing components
+
+To use a component in another package, import the package and use the component as you would any other Go function or type.
+
+```templ
+package main
+
+import "github.com/a-h/templ/examples/counter/components"
+
+templ Home() {
+	@components.Hello()
+}
+```
+
+:::tip
+To import a component from another Go module, you must first import the module by using the `go get <module>` command. Then, you can import the component as you would any other Go package.
+:::

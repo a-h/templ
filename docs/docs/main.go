@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -83,7 +82,7 @@ func main() {
 	for _, item := range items {
 		fmt.Println(item.Path)
 		if item.IsFile {
-			ioutil.WriteFile(item.Path, []byte(item.Content), 0644)
+			os.WriteFile(item.Path, []byte(item.Content), 0644)
 			continue
 		}
 		os.Mkdir(item.Path, 0755)
