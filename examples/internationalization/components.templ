@@ -4,83 +4,21 @@ import (
 	"github.com/invopop/ctxi18n/i18n"
 )
 
-templ contactUsButton() {
-	<button class="button is-warning">{ i18n.T(ctx, "contact_us") }</button>
-}
-
-templ aboutUsButton() {
-	<button class="button is-info">{ i18n.T(ctx, "about_us") }</button>
-}
-
-templ tosButton() {
-	<button class="button is-primary">{ i18n.T(ctx, "terms_of_service") }</button>
-}
-
-templ privacyPolicyButton() {
-	<button class="button is-danger">{ i18n.T(ctx, "privacy_policy") }</button>
-}
-
-templ loginButton() {
-	<button class="button is-primary">{ i18n.T(ctx, "login.button") }</button>
-}
-
-templ signUpButton() {
-	<button class="button is-info">{ i18n.T(ctx, "login.signup-button") }</button>
-}
-
-templ forgotPasswordButton() {
-	<button class="button is-warning">{ i18n.T(ctx, "login.forgot-password") }</button>
-}
-
-templ title() {
-	<h2 class="title is-2 mb-10 has-text-centered">{ i18n.T(ctx, "welcome_message") }</h2>
-}
-
-templ loginButtons() {
-	<div class="buttons are-small is-flex-direction-column mb-3">
-		@loginButton()
-		@signUpButton()
-		@forgotPasswordButton()
-	</div>
-}
-
-templ policyButtons() {
-	<div class="buttons has-addons is-centered ">
-		@contactUsButton()
-		@aboutUsButton()
-		@tosButton()
-		@privacyPolicyButton()
-	</div>
-}
-
-templ login() {
-	<form class="box">
-		@title()
-		@loginButtons()
-		@policyButtons()
-	</form>
-}
-
 templ page() {
 	<html>
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<title>Internationalization</title>
-			<link rel="stylesheet" href="/assets/css/bulma.min.css"/>
-			<script src="/assets/js/htmx.min.js"></script>
+			<title>{ i18n.T(ctx, "hello") }</title>
 		</head>
-		<body class="bg-gray-100">
-			<header class="hero is-primary">
-				<div class="hero-body">
-					<div class="container">
-						<h1 class="title">Internationalization</h1>
-					</div>
-				</div>
-			</header>
-			<section class="section">
-				@login()
-			</section>
+		<body>
+			<h1>{ i18n.T(ctx, "hello") }</h1>
+			<h2>{ i18n.T(ctx, "select_language") }</h2>
+			<ul>
+				<li><a href="/en">English</a></li>
+				<li><a href="/de">Deutsch</a></li>
+				<li><a href="/zh-cn">中文</a></li>
+			</ul>
 		</body>
 	</html>
 }

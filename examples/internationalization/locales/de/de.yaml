@@ -1,10 +1,3 @@
 de:
-  welcome_message: "Willkommen bei unserer Anwendung!"
-  login:
-    button: "Anmelden"
-    signup-button: "Registrieren"
-    forgot-password: "Passwort vergessen?"
-  contact_us: "Kontaktieren Sie uns"
-  about_us: "Über uns"
-  terms_of_service: "Nutzungsbedingungen"
-  privacy_policy: "Datenschutzbestimmungen"
+  hello: Hallo
+  select_language: Sprache auswählen

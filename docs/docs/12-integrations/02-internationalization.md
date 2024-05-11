@@ -1,89 +1,95 @@
 # Internationalization
 
-While Templ does not provide internationalization out of the box, it can be achieved with available internationalization libraries such as [ctxi18n](github.com/invopop/ctxi18n).
+templ can be used with 3rd party internationalization libraries.
 
 ## ctxi18n
 
-**ctxi18n** works well as it focuses on making i18n methods accessible through the application's context. Check out an example of using [ctxi18n](github.com/invopop/ctxi18n) over [here](https://github.com/a-h/templ/tree/main/examples/internationalization).
+[ctxi18n](github.com/invopop/ctxi18n) uses the context package to load strings based on the selected locale.
 
-In the example, we create a HTTP server and add a middleware function that loads the requested language based on the provided URL parameter.
+An example is available at https://github.com/a-h/templ/tree/main/examples/internationalization
+
+### Storing translations
+
+Translations are stored in YAML files, according to the language.
+
+```yaml title="locales/en/en.yaml"
+en:
+  hello: "Hello"
+  select_language: "Select Language"
+```
+
+### Selecting the language
+
+HTTP middleware selects the language to load based on the URL path, `/en`, `/de`, etc.
 
 ```go title="main.go"
+func newLanguageMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		lang := "en" // Default language
+		pathSegments := strings.Split(r.URL.Path, "/")
+		if len(pathSegments) > 1 {
+			lang = pathSegments[1]
+		}
+		ctx, err := ctxi18n.WithLocale(r.Context(), lang)
+		if err != nil {
+			log.Printf("error setting locale: %v", err)
+			http.Error(w, "error setting locale", http.StatusBadRequest)
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+```
+
+### Using the middleware
+
+The `ctxi18n.Load` function is used to load the translations, and the middleware is used to set the language.
+
+```go title="main.go"
+func main() {
+	if err := ctxi18n.Load(locales.Content); err != nil {
+		log.Fatalf("error loading locales: %v", err)
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/", templ.Handler(page()))
+
+	withLanguageMiddleware := newLanguageMiddleware(mux)
+
+	log.Println("listening on :8080")
+	if err := http.ListenAndServe("127.0.0.1:8080", withLanguageMiddleware); err != nil {
+		log.Printf("error listening: %v", err)
+	}
+}
+```
+
+### Fetching translations in templates
+
+Translations are fetched using the `i18n.T` function, passing the implicit context that's available in all templ components, and the key for the translation.
+
+```templ
 package main
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"net/http"
-	"strings"
-
-	"github.com/a-h/templ/examples/internationalization/locales"
-	"github.com/invopop/ctxi18n"
+	"github.com/invopop/ctxi18n/i18n"
 )
 
-func formDefaultLangContext(ctx context.Context) (context.Context, error) {
-  // Returns with the English translation loaded in context
-  return ctxi18n.WithLocale(ctx, "en")
-}
-
-func langMiddleware(next http.Handler) http.Handler {
-  return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    lang := "en" // Default language
-    pathSegments := strings.Split(r.URL.Path, "/")
-    if len(pathSegments) > 1 {
-      lang = pathSegments[1]
-    }
-
-    // Tries to load the language provided as URL params
-    ctx, err := ctxi18n.WithLocale(r.Context(), lang)
-    if err != nil {
-      ctx, _ = formDefaultLangContext(r.Context())
-    }
-    
-    r = r.WithContext(ctx)
-    next.ServeHTTP(w, r)
-  })
-}
-
-func main() {
-  ctxi18n.Load(locales.Content)
-  muxWithLanguages := langMiddleware(mux)
-  
-  // Rest of your server initialisation follows...
+templ page() {
+	<html>
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ i18n.T(ctx, "hello") }</title>
+		</head>
+		<body>
+			<h1>{ i18n.T(ctx, "hello") }</h1>
+			<h2>{ i18n.T(ctx, "select_language") }</h2>
+			<ul>
+				<li><a href="/en">English</a></li>
+				<li><a href="/de">Deutsch</a></li>
+				<li><a href="/zh-cn">中文</a></li>
+			</ul>
+		</body>
+	</html>
 }
 ```
-
-This allows for easy translations based on your provided locale mappings, which can be provided by creating a `locales` module. Locale mapping files themselves look like this:
-
-```yaml title="app.yaml"
-en:
-  welcome_message: "Welcome to our application!"
-  contact_us: "Contact Us"
-  about_us: "About Us"
-  name_msg: "My name is %{name}"
-es:
-  welcome_message: "¡Bienvenido a nuestra aplicación!"
-  contact_us: "Contáctanos"
-  about_us: "Sobre nosotros"
-  name_msg: "Mi nombre es %{name}"
-# Your other mappings followed...
-```
-
-It is important to ensure that your language mappings begin with the language that you wish to map with, followed by key-value pairs. You can also create mappings which accept parameters, such as the `name_msg` key above.
-
-By creating mappings which are loaded within the context, you can finally retrieve your content within your templ components like this:
-
-```templ title="components.templ"
-templ contactUsButton() {
-  <button class="button is-warning">{ i18n.T(ctx, "contact_us") }</button>
-}
-
-templ aboutUsButton() {
-  <button class="button is-info">{ i18n.T(ctx, "about_us") }</button>
-}
-
-// Followed by your other components...
-```
-
-Check out the documentation for [ctxi18n](github.com/invopop/ctxi18n)!
