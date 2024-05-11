@@ -578,6 +578,86 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "element: colon in name, empty",
+			input: `<maps:map></maps:map>`,
+			expected: Element{
+				Name: "maps:map",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+			},
+		},
+		{
+			name:  "element: colon in name, with content",
+			input: `<maps:map>Content</maps:map>`,
+			expected: Element{
+				Name: "maps:map",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+				Children: []Node{Text{Value: "Content"}},
+			},
+		},
+		{
+			name:  "element: void (input)",
+			input: `<input>`,
+			expected: Element{
+				Name: "input",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 6, Line: 0, Col: 6},
+				},
+				Children: nil,
+			},
+		},
+		{
+			name:  "element: void (br)",
+			input: `<br>`,
+			expected: Element{
+				Name: "br",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
+				Children: nil,
+			},
+		},
+		{
+			name:  "element: void (hr)",
+			input: `<hr noshade>`,
+			expected: Element{
+				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Name: "noshade",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
+					},
+				},
+				Children: nil,
+			},
+		},
+		{
+			name:  "element: void with content",
+			input: `<input>Text</input>`,
+			expected: Element{
+				Name: "input",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 6, Line: 0, Col: 6},
+				},
+				Children: []Node{Text{Value: "Text"}},
+			},
+		},
+		{
 			name:  "element: self-closing with single bool expression attribute",
 			input: `<hr noshade?={ true }/>`,
 			expected: Element{
@@ -607,6 +687,53 @@ func TestElementParser(t *testing.T) {
 									Col:   19,
 								},
 							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "element: void nesting same is OK",
+			input: `<div><br><br></br></div>`,
+			expected: Element{
+				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				Children: []Node{
+					Element{
+						Name: "br", // The <br> one.
+						NameRange: Range{
+							From: Position{Index: 6, Line: 0, Col: 6},
+							To:   Position{Index: 8, Line: 0, Col: 8},
+						},
+					},
+					Element{
+						Name: "br", // The <br></br> one.
+						NameRange: Range{
+							From: Position{Index: 10, Line: 0, Col: 10},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "element: void nesting others is OK (br/hr)",
+			input: `<br><hr></br>`,
+			expected: Element{
+				Name: "br",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
+				Children: []Node{
+					Element{
+						Name: "hr",
+						NameRange: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 7, Line: 0, Col: 7},
 						},
 					},
 				},
@@ -1407,7 +1534,7 @@ func TestElementParserErrors(t *testing.T) {
 		{
 			name:  "element: mismatched end tag",
 			input: `<a></b>`,
-			expected: parse.Error("<a>: mismatched end tag, expected '</a>', got '</b>'",
+			expected: parse.Error("<a>: close tag not found",
 				parse.Position{
 					Index: 3,
 					Line:  0,

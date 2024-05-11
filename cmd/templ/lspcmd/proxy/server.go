@@ -75,6 +75,7 @@ func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) 
 		zap.String("toGo", fmt.Sprintf("%d:%d", to.Line, to.Col)))
 	updated.Line = to.Line
 	updated.Character = to.Col
+
 	return true, goURI, updated
 }
 
@@ -409,6 +410,9 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		}
 		result.Items[i] = item
 	}
+
+	// Add templ snippet.
+	result.Items = append(result.Items, snippet...)
 	return
 }
 
@@ -761,6 +765,7 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 	if !ok {
 		return nil, nil
 	}
+	// Call gopls.
 	result, err = p.Target.Hover(ctx, params)
 	if err != nil {
 		return
@@ -769,7 +774,7 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 	if result != nil && result.Range != nil {
 		p.Log.Info("hover: result returned")
 		r := p.convertGoRangeToTemplRange(templURI, *result.Range)
-		p.Log.Info("hover: setting range", zap.Any("range", r))
+		p.Log.Info("hover: setting range")
 		result.Range = &r
 	}
 	return
@@ -882,11 +887,10 @@ func (p *Server) References(ctx context.Context, params *lsp.ReferenceParams) (r
 	defer p.Log.Info("client -> server: References end")
 	templURI := params.TextDocument.URI
 	// Rewrite the request.
-	var isTemplURI bool
-	isTemplURI, params.TextDocument.URI = convertTemplToGoURI(params.TextDocument.URI)
-	if !isTemplURI {
-		err = fmt.Errorf("not a templ file")
-		return
+	var ok bool
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
 	}
 	// Call gopls.
 	result, err = p.Target.References(ctx, params)

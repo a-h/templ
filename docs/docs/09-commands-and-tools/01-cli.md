@@ -8,7 +8,6 @@ To see help text, you can run:
   templ generate --help
   templ fmt --help
   templ lsp --help
-  templ migrate --help
   templ version
 examples:
   templ generate

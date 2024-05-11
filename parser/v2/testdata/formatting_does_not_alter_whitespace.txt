@@ -1,0 +1,13 @@
+-- in --
+package test
+
+templ nested() {
+	<div>{ "the" }<div>{ "other" }</div></div>
+}
+
+-- out --
+package test
+
+templ nested() {
+	<div>{ "the" }<div>{ "other" }</div></div>
+}

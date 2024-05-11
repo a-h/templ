@@ -60,7 +60,6 @@ type ExpressionParser struct {
 	End      int
 	Previous token.Token
 	Fns      Stack[int] // Stack of function depths.
-	Slices   Stack[int] // Stack of slice depths.
 }
 
 func (ep *ExpressionParser) setEnd(pos token.Pos, tok token.Token, lit string) {
@@ -72,10 +71,14 @@ func (ep *ExpressionParser) hasSpaceBeforeCurrentToken(pos token.Pos) bool {
 }
 
 func (ep *ExpressionParser) isTopLevel() bool {
-	return len(ep.Fns) == 0 && len(ep.Slices) == 0 && len(ep.Stack) == 0
+	return len(ep.Fns) == 0 && len(ep.Stack) == 0
 }
 
-func (ep *ExpressionParser) Insert(pos token.Pos, tok token.Token, lit string) (stop bool, err error) {
+func (ep *ExpressionParser) Insert(
+	pos token.Pos,
+	tok token.Token,
+	lit string,
+) (stop bool, err error) {
 	defer func() {
 		ep.Previous = tok
 	}()
@@ -84,17 +87,6 @@ func (ep *ExpressionParser) Insert(pos token.Pos, tok token.Token, lit string) (
 	// until we've closed the function.
 	if tok == token.FUNC {
 		ep.Fns.Push(len(ep.Stack))
-		ep.setEnd(pos, tok, lit)
-		return false, nil
-	}
-	// Handle slice definitions e.g.: []string{"a", "b"}
-	// Similarly to functions, we push the current depth onto the stack,
-	// and prevent stopping until we've closed the slice.
-	if ep.Previous == token.LBRACK && tok == token.RBRACK {
-		// Pop a left square bracket from the stack.
-		ep.Stack.Pop()
-		// Push the current depth onto the slice stack.
-		ep.Slices.Push(len(ep.Stack))
 		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
@@ -134,16 +126,12 @@ func (ep *ExpressionParser) Insert(pos token.Pos, tok token.Token, lit string) (
 			if len(ep.Stack) == ep.Fns.Peek() {
 				ep.Fns.Pop()
 			}
-			// If we're closing a slice assignment, pop the slice depth.
-			if len(ep.Stack) == ep.Slices.Peek() {
-				ep.Slices.Pop()
-			}
 		}
 		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
 	// If we're in a function literal slice, or pair, we allow anything until we close it.
-	if len(ep.Fns) > 0 || len(ep.Slices) > 0 || len(ep.Stack) > 0 {
+	if len(ep.Fns) > 0 || len(ep.Stack) > 0 {
 		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}

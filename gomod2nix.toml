@@ -7,9 +7,6 @@ schema = 3
   [mod."github.com/a-h/htmlformat"]
     version = "v0.0.0-20231108124658-5bd994fe268e"
     hash = "sha256-YSl9GsXhc0L2oKGZLwwjUtpe5W6ra6kk74zvQdsDCMU="
-  [mod."github.com/a-h/lexical"]
-    version = "v0.0.53"
-    hash = "sha256-2nBWXgbkvl2lzrQmfsuxbOFm6BKdC3BcsFaGgaskhDM="
   [mod."github.com/a-h/parse"]
     version = "v0.0.0-20240121214402-3caf7543159a"
     hash = "sha256-ee/g6xwwhtF7vVt3griUSh96Kz4z0hM5/tpXxHW6PZk="
@@ -19,6 +16,9 @@ schema = 3
   [mod."github.com/a-h/protocol"]
     version = "v0.0.0-20230224160810-b4eec67c1c22"
     hash = "sha256-aoxNdsVfyXtiKv3mkEqF63bBEHd6thX7tC/7a1c8rcQ="
+  [mod."github.com/andybalholm/brotli"]
+    version = "v1.1.0"
+    hash = "sha256-njLViV4v++ZdgOWGWzlvkefuFvA/nkugl3Ta/h1nu/0="
   [mod."github.com/andybalholm/cascadia"]
     version = "v1.3.1"
     hash = "sha256-M0u22DXSeXUaYtl1KoW1qWL46niFpycFkraCEQ/luYA="

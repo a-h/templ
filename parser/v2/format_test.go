@@ -9,7 +9,7 @@ import (
 	"golang.org/x/tools/txtar"
 )
 
-func TestFormat(t *testing.T) {
+func TestFormatting(t *testing.T) {
 	files, _ := filepath.Glob("testdata/*.txt")
 	if len(files) == 0 {
 		t.Errorf("no test files found")

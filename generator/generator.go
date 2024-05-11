@@ -101,6 +101,9 @@ func (g *generator) generate() (err error) {
 	if err = g.writeGeneratedDateComment(); err != nil {
 		return
 	}
+	if err = g.writeHeader(); err != nil {
+		return
+	}
 	if err = g.writePackage(); err != nil {
 		return
 	}
@@ -128,6 +131,18 @@ func (g *generator) writeVersionComment() (err error) {
 func (g *generator) writeGeneratedDateComment() (err error) {
 	if g.generatedDate != "" {
 		_, err = g.w.Write("// templ: generated: " + g.generatedDate + "\n")
+	}
+	return err
+}
+
+func (g *generator) writeHeader() (err error) {
+	if len(g.tf.Header) == 0 {
+		return nil
+	}
+	for _, n := range g.tf.Header {
+		if err := g.writeGoExpression(n); err != nil {
+			return err
+		}
 	}
 	return err
 }
@@ -865,46 +880,6 @@ func (g *generator) writeExpressionErrorHandler(indentLevel int, expression pars
 }
 
 func (g *generator) writeElement(indentLevel int, n parser.Element) (err error) {
-	if n.IsVoidElement() {
-		return g.writeVoidElement(indentLevel, n)
-	}
-	return g.writeStandardElement(indentLevel, n)
-}
-
-func (g *generator) writeVoidElement(indentLevel int, n parser.Element) (err error) {
-	if len(n.Children) > 0 {
-		return fmt.Errorf("writeVoidElement: void element %q must not have child elements", n.Name)
-	}
-	if len(n.Attributes) == 0 {
-		// <br>
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s>`, html.EscapeString(n.Name))); err != nil {
-			return err
-		}
-	} else {
-		// <style type="text/css"></style>
-		if err = g.writeElementCSS(indentLevel, n); err != nil {
-			return err
-		}
-		// <script type="text/javascript"></script>
-		if err = g.writeElementScript(indentLevel, n); err != nil {
-			return err
-		}
-		// <hr
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s`, html.EscapeString(n.Name))); err != nil {
-			return err
-		}
-		if err = g.writeElementAttributes(indentLevel, n.Name, n.Attributes); err != nil {
-			return err
-		}
-		// >
-		if _, err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
-			return err
-		}
-	}
-	return err
-}
-
-func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err error) {
 	if len(n.Attributes) == 0 {
 		// <div>
 		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s>`, html.EscapeString(n.Name))); err != nil {
@@ -930,6 +905,10 @@ func (g *generator) writeStandardElement(indentLevel int, n parser.Element) (err
 		if _, err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
 			return err
 		}
+	}
+	// Skip children and close tag for void elements.
+	if n.IsVoidElement() && len(n.Children) == 0 {
+		return nil
 	}
 	// Children.
 	if err = g.writeNodes(indentLevel, stripWhitespace(n.Children), nil); err != nil {
@@ -1067,7 +1046,8 @@ func (g *generator) writeBoolConstantAttribute(indentLevel int, attr parser.Bool
 func (g *generator) writeConstantAttribute(indentLevel int, attr parser.ConstantAttribute) (err error) {
 	name := html.EscapeString(attr.Name)
 	value := html.EscapeString(attr.Value)
-	value = strings.ReplaceAll(value, "\n", "\\n")
+	value = strconv.Quote(value)
+	value = value[1 : len(value)-1]
 	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s=\"%s\"`, name, value)); err != nil {
 		return err
 	}

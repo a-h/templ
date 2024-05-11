@@ -1,0 +1,20 @@
+-- in --
+package test
+
+templ input(items []string) {
+<div>{ "the" }<div>{ "other" }</div>for _, item := range items {
+<div>{ item }</div>
+}</div>
+}
+-- out --
+package test
+
+templ input(items []string) {
+	<div>
+		{ "the" }
+		<div>{ "other" }</div>
+		for _, item := range items {
+			<div>{ item }</div>
+		}
+	</div>
+}

@@ -23,10 +23,10 @@ templ template () {
 			want: nil,
 		},
 
-		// legacyCallSyntaxDiagnoser
+		// useOfLegacyCallSyntaxDiagnoser
 
 		{
-			name: "legacyCallSyntaxDiagnoser: template root",
+			name: "useOfLegacyCallSyntaxDiagnoser: template root",
 			template: `
 package main
 
@@ -39,7 +39,7 @@ templ template () {
 			}},
 		},
 		{
-			name: "legacyCallSyntaxDiagnoser: in div",
+			name: "useOfLegacyCallSyntaxDiagnoser: in div",
 			template: `
 package main
 
@@ -54,7 +54,7 @@ templ template () {
 			}},
 		},
 		{
-			name: "legacyCallSyntaxDiagnoser: in if",
+			name: "useOfLegacyCallSyntaxDiagnoser: in if",
 			template: `
 package main
 
@@ -69,7 +69,7 @@ templ template () {
 			}},
 		},
 		{
-			name: "legacyCallSyntaxDiagnoser: in for",
+			name: "useOfLegacyCallSyntaxDiagnoser: in for",
 			template: `
 package main
 
@@ -84,7 +84,7 @@ templ template () {
 			}},
 		},
 		{
-			name: "legacyCallSyntaxDiagnoser: in switch",
+			name: "useOfLegacyCallSyntaxDiagnoser: in switch",
 			template: `
 package main
 
@@ -108,7 +108,7 @@ templ template () {
 			},
 		},
 		{
-			name: "legacyCallSyntaxDiagnoser: in block",
+			name: "useOfLegacyCallSyntaxDiagnoser: in block",
 			template: `
 package main
 
@@ -122,6 +122,33 @@ templ template () {
 				Range:   Range{Position{59, 5, 5}, Position{75, 5, 21}},
 			}},
 		},
+		{
+			name: "voidElementWithChildrenDiagnoser: no diagnostics",
+			template: `
+package main
+
+templ template () {
+	<div>
+		<input/>
+	</div>
+}`,
+			want: nil,
+		},
+		{
+			name: "voidElementWithChildrenDiagnoser: with diagnostics",
+			template: `
+package main
+
+templ template () {
+	<div>
+	  <input>Child content</input>
+	</div>
+}`,
+			want: []Diagnostic{{
+				Message: "void element <input> should not have child content",
+				Range:   Range{Position{46, 5, 4}, Position{51, 5, 9}},
+			}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -133,7 +160,7 @@ templ template () {
 			if err != nil {
 				t.Fatalf("Diagnose() error = %v", err)
 			}
-			if diff := cmp.Diff(got, tt.want); diff != "" {
+			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Errorf("Diagnose() mismatch (-got +want):\n%s", diff)
 			}
 		})

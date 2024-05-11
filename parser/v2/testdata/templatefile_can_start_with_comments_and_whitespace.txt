@@ -1,0 +1,16 @@
+-- in --
+// Go comment
+
+package goof
+
+templ Hello() {
+	Hello
+}
+-- out --
+// Go comment
+
+package goof
+
+templ Hello() {
+	Hello
+}

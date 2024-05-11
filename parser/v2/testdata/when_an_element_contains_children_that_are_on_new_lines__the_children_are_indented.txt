@@ -1,0 +1,15 @@
+-- in --
+package test
+
+templ input(value, validation string) {
+	<div>
+	<div><b>Text</b></div></div>
+}
+-- out --
+package test
+
+templ input(value, validation string) {
+	<div>
+		<div><b>Text</b></div>
+	</div>
+}

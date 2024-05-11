@@ -82,6 +82,20 @@ sequenceDiagram
     deactivate templ_proxy
 ```
 
+### Triggering hot reload from outside `templ generate --watch`
+
+If you want to trigger a hot reload from outside `templ generate --watch` (e.g. if you're using `air`, `wgo` or another tool to build, but you want to use the templ hot reload proxy), you can use the `--notify-proxy` argument.
+
+```shell
+templ generate --notify-proxy
+```
+
+This will default to the default templ proxy address of `localhost:7331`, but can be changed with the `--proxybind` and `--proxyport` arguments.
+
+```shell
+templ generate --notify-proxy --proxybind="localhost" --proxyport="8080"
+```
+
 ## Alternative 1: wgo
 
 [wgo](https://github.com/bokwoon95/wgo):
@@ -96,7 +110,7 @@ To avoid a continous reloading files ending with `_templ.go` should be skipped v
 
 ## Alternative 2: air
 
-Air's reload performance is better than templ's built-in feature due to its complex filesystem notification setup, but doesn't ship with a proxy to automatically reload pages, and requires a `toml` configuration file for operation.
+Air can handle `*.go` files, but doesn't ship with a proxy to automatically reload pages, and requires a `toml` configuration file for operation.
 
 See https://github.com/cosmtrek/air for details.
 

@@ -1,0 +1,22 @@
+-- in --
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div id="conditional"
+if addClass {
+class="itWasTrue"
+}
+width="300">Content</div>
+}
+-- out --
+package test
+
+templ conditionalAttributes(addClass bool) {
+	<div
+		id="conditional"
+		if addClass {
+			class="itWasTrue"
+		}
+		width="300"
+	>Content</div>
+}

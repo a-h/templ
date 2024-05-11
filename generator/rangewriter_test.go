@@ -32,11 +32,11 @@ func TestRangeWriter(t *testing.T) {
 			t.Error(diff)
 		}
 	})
-	t.Run("multi-byte characters count as a single column position", func(t *testing.T) {
+	t.Run("multi-byte characters count as 3, because that's their UTF8 representation", func(t *testing.T) {
 		if _, err := rw.Write("\n你"); err != nil {
 			t.Fatalf("failed to write: %v", err)
 		}
-		if diff := cmp.Diff(parser.NewPosition(9, 2, 1), rw.Current); diff != "" {
+		if diff := cmp.Diff(parser.NewPosition(9, 2, 3), rw.Current); diff != "" {
 			t.Error(diff)
 		}
 	})

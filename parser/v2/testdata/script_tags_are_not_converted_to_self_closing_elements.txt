@@ -1,0 +1,13 @@
+-- in --
+package test
+
+templ input(value, validation string) {
+	<script src="https://example.com/myscript.js"></script>
+}
+
+-- out --
+package test
+
+templ input(value, validation string) {
+	<script src="https://example.com/myscript.js"></script>
+}

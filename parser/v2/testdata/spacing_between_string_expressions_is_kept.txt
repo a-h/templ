@@ -1,0 +1,12 @@
+-- in --
+package main
+
+templ x() {
+    <div>{firstName} {lastName}</div>
+}
+-- out --
+package main
+
+templ x() {
+	<div>{ firstName } { lastName }</div>
+}

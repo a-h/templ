@@ -15,8 +15,8 @@ func main() {
 
 // This custom Render replaces Echo's echo.Context.Render() with templ's templ.Component.Render().
 func Render(ctx echo.Context, statusCode int, t templ.Component) error {
-	ctx.Response().Writer.WriteHeader(statusCode)
 	ctx.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTML)
+	ctx.Response().Writer.WriteHeader(statusCode)
 	return t.Render(ctx.Request().Context(), ctx.Response().Writer)
 }
 

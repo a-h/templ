@@ -1,0 +1,30 @@
+-- in --
+package test
+
+templ table(accountNumber string, registration string) {
+	<table>
+	       <tr>
+		       <th width="20%">Your account number</th>
+		       <td width="80%">{ accountNumber }</td>
+	       </tr>
+	       <tr>
+		       <td>Registration</td>
+		       <td>{ strings.ToUpper(registration) }</td>
+	       </tr>
+	</table>
+}
+-- out --
+package test
+
+templ table(accountNumber string, registration string) {
+	<table>
+		<tr>
+			<th width="20%">Your account number</th>
+			<td width="80%">{ accountNumber }</td>
+		</tr>
+		<tr>
+			<td>Registration</td>
+			<td>{ strings.ToUpper(registration) }</td>
+		</tr>
+	</table>
+}

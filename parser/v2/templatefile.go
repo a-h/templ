@@ -102,7 +102,7 @@ func (p TemplateFileParser) Parse(pi *parse.Input) (tf TemplateFile, ok bool, er
 		}
 		var newLine string
 		newLine, _, _ = parse.NewLine.Parse(pi)
-		tf.Header = append(tf.Header, TemplateFileGoExpression{Expression: NewExpression(line+newLine, from, pi.Position())})
+		tf.Header = append(tf.Header, TemplateFileGoExpression{Expression: NewExpression(line+newLine, from, pi.Position()), BeforePackage: true})
 	}
 
 	// Strip any whitespace between the template declaration and the first template.

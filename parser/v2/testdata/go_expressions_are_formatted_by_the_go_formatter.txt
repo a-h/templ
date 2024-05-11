@@ -1,0 +1,42 @@
+-- in --
+package main
+
+      type Link struct {
+Name string
+	        Url  string
+}
+
+var a = false;
+
+func test() {
+	      log.Print("hoi")
+
+	      if (a) {
+      log.Fatal("OH NO !")
+	}
+}
+
+templ x() {
+	<div>Hello World</div>
+}
+-- out --
+package main
+
+type Link struct {
+	Name string
+	Url  string
+}
+
+var a = false
+
+func test() {
+	log.Print("hoi")
+
+	if a {
+		log.Fatal("OH NO !")
+	}
+}
+
+templ x() {
+	<div>Hello World</div>
+}

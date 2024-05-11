@@ -49,6 +49,9 @@ type GenerationEvent struct {
 }
 
 func (cmd Generate) Run(ctx context.Context) (err error) {
+	if cmd.Args.NotifyProxy {
+		return proxy.NotifyProxy(cmd.Args.ProxyBind, cmd.Args.ProxyPort)
+	}
 	if cmd.Args.Watch && cmd.Args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}
@@ -112,7 +115,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	// Create channels:
 	// For the initial filesystem walk and subsequent (optional) fsnotify events.
 	events := make(chan fsnotify.Event)
-	// count of events currently being processed by the event handler.
+	// Count of events currently being processed by the event handler.
 	var eventsWG sync.WaitGroup
 	// Used to check that the event handler has completed.
 	var eventHandlerWG sync.WaitGroup
@@ -175,7 +178,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		fseh = NewFSEventHandler(
 			cmd.Log,
 			cmd.Args.Path,
-			cmd.Args.Watch,
+			false, // Force production mode.
 			opts,
 			cmd.Args.GenerateSourceMapVisualisations,
 			cmd.Args.KeepOrphanedFiles,
@@ -340,7 +343,7 @@ func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err erro
 	if cmd.Args.ProxyBind == "" {
 		cmd.Args.ProxyBind = "127.0.0.1"
 	}
-	p = proxy.New(cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
+	p = proxy.New(cmd.Log, cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
 	go func() {
 		cmd.Log.Info("Proxying", slog.String("from", p.URL), slog.String("to", p.Target.String()))
 		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort), p); err != nil {
