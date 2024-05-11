@@ -34,7 +34,7 @@ templ right() {
 </div>
 ```
 
-# Children
+## Children
 
 Children can be passed to a component for it to wrap.
 
@@ -64,7 +64,7 @@ The use of the `{ children... }` expression in the child component.
 </div>
 ```
 
-# Components as parameters
+## Components as parameters
 
 Components can also be passed as parameters and rendered using the `@component` expression.
 
@@ -161,101 +161,48 @@ func main() {
 </div>
 ```
 
-# Referencing Components Across Different Packages
+## Sharing and re-using components
 
-When working on a project organized into multiple packages, it's often necessary to reference components from other packages to maintain clean and efficient code organization. Consider the following project structure:
+Since templ components are compiled into Go functions by the `go generate` command, templ components follow the rules of Go, and are shared in exactly the same way as Go code.
 
-#### Project structure example
+templ files in the same directory can access each other's components. Components in different directories can be accessed by importing the package that contains the component, so long as the component is exported by capitalizing its name.
 
-```
-my-project/
-├── ui/
-│   ├── pages/
-│   │   ├── home.templ
-│   │   ├── faq.templ
-│   ├── components/
-|       ├── button.templ
-│   ├── layout.templ
-```
+:::tip
+In Go, a _package_ is a collection of Go source files in the same directory that are compiled together. All of the functions, types, variables, and constants defined in one source file in a package are available to all other source files in the same package.
 
-#### Project components
+Packages exist within a Go _module_, defined by the `go.mod` file.
+:::
 
-In the `layout.templ` file, we declare it as part of the `ui` package. It contains a `Layout` component, which provides a basic HTML structure for every page of the site:
+:::note
+Go is structured differently to JavaScript, but uses similar terminology. A single `.js` or `.ts` _file_ is like a Go package, and an NPM package is like a Go module.
+:::
 
-```templ title="my-project/ui/layout.templ"
-package ui
+### Exporting components
 
-templ Layout() {
-    <html>
-        <head>
-            <title>My Project</title>
-        </head>
-        <body>
-            <main>
-                { children... }
-            </main>
-        </body>
-    </html>
-}
-```
+To make a templ component available to other packages, export it by capitalizing its name.
 
-From within the `home.templ` file, you can import and use the `Layout` component from the `ui` package:
-
-```templ title="my-project/ui/pages/home.templ"
-package pages
-
-import (
-	"my-project/ui"
-)
-
-templ Home() {
-    // Import the `Layout` component from the `ui` package for use here
-    @ui.Layout() {
-        <h1>Home Page</h1>
-    }
-}
-```
-
-This method allows for great project organization and component reuse. For example, consider a reusable button component:
-
-```templ title="my-project/ui/components/button.templ"
+```templ
 package components
 
-templ Button(title string) {
-    <button class="my-button">{ title }</button>
+templ Hello() {
+	<div>Hello</div>
 }
 ```
 
-You can now reuse this button component across various parts of your project:
+### Importing components
 
-```templ title="my-project/ui/pages/home.templ"
-package home
+To use a component in another package, import the package and use the component as you would any other Go function or type.
 
-import (
-    "my-project/ui"
-    "my-project/ui/components"
-)
+```templ
+package main
+
+import "github.com/a-h/templ/examples/counter/components"
 
 templ Home() {
-    @ui.Layout() {
-        <h1>Home Page</h1>
-        @components.Button("Click Me!")
-    }
+	@components.Hello()
 }
 ```
 
-```templ title="my-project/ui/pages/faq.templ"
-package pages
-
-import (
-    "my-project/ui"
-    "my-project/ui/components"
-)
-
-templ Faq() {
-    @ui.Layout() {
-        <p>FAQ</p>
-        @components.Button("Know More")
-    }
-}
-```
+:::tip
+To import a component from another Go module, you must first import the module by using the `go get <module>` command. Then, you can import the component as you would any other Go package.
+:::
