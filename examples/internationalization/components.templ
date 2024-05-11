@@ -1,0 +1,24 @@
+package main
+
+import (
+	"github.com/invopop/ctxi18n/i18n"
+)
+
+templ page() {
+	<html>
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ i18n.T(ctx, "hello") }</title>
+		</head>
+		<body>
+			<h1>{ i18n.T(ctx, "hello") }</h1>
+			<h2>{ i18n.T(ctx, "select_language") }</h2>
+			<ul>
+				<li><a href="/en">English</a></li>
+				<li><a href="/de">Deutsch</a></li>
+				<li><a href="/zh-cn">中文</a></li>
+			</ul>
+		</body>
+	</html>
+}
