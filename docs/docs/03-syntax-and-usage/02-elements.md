@@ -35,9 +35,9 @@ templ automatically minifies HTML responses, output is shown formatted for reada
 
 ## Tags must be closed
 
-templ requires that all HTML elements are closed with either a closing tag (`</a>`), or by using a self-closing element (`<hr/>`).
+Unlike HTML, templ requires that all HTML elements are closed with either a closing tag (`</a>`), or by using a self-closing element (`<hr/>`).
 
-templ is aware of which HTML elements are "void", and will omit the closing `/` from the element.
+templ is aware of which HTML elements are "void", and will not include the closing `/` in the output HTML.
 
 ```templ title="button.templ"
 package main
