@@ -2,7 +2,10 @@
 
 :::caution
 This page describes functionality that is experimental, and not enabled by default.
+
 To enable this feature run the generation step with the `rawgo` experiment flag: `TEMPL_EXPERIMENT=rawgo templ generate`
+
+You will also need to set the `TEMPL_EXPERIMENT=rawgo` environment variable at your system level or within your editor to enable LSP behavior.
 :::
 
 For some more advanced use cases it may be useful to write go code statements in your template.
