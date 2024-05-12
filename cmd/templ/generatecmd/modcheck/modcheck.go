@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 
 	"github.com/a-h/templ"
 	"golang.org/x/mod/modfile"
@@ -45,13 +44,6 @@ func WalkUp(dir string) (string, error) {
 	return dir, nil
 }
 
-// Replace "go 1.21.3" with "go 1.21" until https://github.com/golang/go/issues/61888 is fixed, see templ issue https://github.com/a-h/templ/issues/355
-var goVersionRegexp = regexp.MustCompile(`\ngo (\d+\.\d+)(?:\D.+)\n`)
-
-func patchGoVersion(moduleFileContents []byte) []byte {
-	return goVersionRegexp.ReplaceAll(moduleFileContents, []byte("\ngo $1\n"))
-}
-
 func Check(dir string) error {
 	dir, err := WalkUp(dir)
 	if err != nil {
@@ -65,9 +57,6 @@ func Check(dir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read go.mod file: %w", err)
 	}
-
-	// Replace "go 1.21.x" with "go 1.21".
-	m = patchGoVersion(m)
 
 	mf, err := modfile.Parse(modFile, m, nil)
 	if err != nil {
