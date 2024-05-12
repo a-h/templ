@@ -1131,8 +1131,7 @@ func (gc GoCode) Trailing() TrailingSpace {
 	return gc.TrailingSpace
 }
 
-func (gc GoCode) IsNode() bool                  { return true }
-func (gc GoCode) IsStyleDeclarationValue() bool { return true }
+func (gc GoCode) IsNode() bool { return true }
 func (gc GoCode) Write(w io.Writer, indent int) error {
 	if isWhitespace(gc.Expression.Value) {
 		gc.Expression.Value = ""

@@ -29,7 +29,7 @@ var goCode = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	// Clear any optional whitespace.
 	_, _, _ = parse.OptionalWhitespace.Parse(pi)
 
-	// }
+	// }}
 	if _, ok, err = dblCloseBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
 		err = parse.Error("go code: missing close braces", pi.Position())
 		return

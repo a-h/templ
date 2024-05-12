@@ -7,15 +7,15 @@ import (
 )
 
 type Flags struct {
-	// RawGo will enable the support of arbibrary go code in templates.
+	// RawGo will enable the support of arbibrary Go code in templates.
 	RawGo bool
 }
 
-var Experiment = parseTEMPLEXPERIMENT()
+var Experiment = parse()
 
-func parseTEMPLEXPERIMENT() *Flags {
+func parse() *Flags {
 	m := map[string]bool{}
-	for _, f := range strings.Split(os.Getenv("TEMPLEXPERIMENT"), ",") {
+	for _, f := range strings.Split(os.Getenv("TEMPL_EXPERIMENT"), ",") {
 		m[strings.ToLower(f)] = true
 	}
 

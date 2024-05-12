@@ -2,15 +2,15 @@
 
 :::caution
 This page describes functionality that is experimental, and not enabled by default.
-To enable this feature run the generation step with the `rawgo` experiment flag: `TEMPLEXPERIMENT=rawgo templ generate`
+To enable this feature run the generation step with the `rawgo` experiment flag: `TEMPL_EXPERIMENT=rawgo templ generate`
 :::
 
-For some more advanced usecases it may be useful to write go code statements in your template.
+For some more advanced use cases it may be useful to write go code statements in your template.
 Use the `{{ ... }}` syntax to allow for this.
 
-## Variable Declarations
+## Variable declarations
 
-Scoped variables can be created using this syntax, to reduce the need for multiple calls.
+Scoped variables can be created using this syntax, to reduce the need for multiple function calls.
 
 ```templ title="component.templ"
 package main
