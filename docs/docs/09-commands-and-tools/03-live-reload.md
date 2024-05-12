@@ -1,4 +1,4 @@
-# Hot reload
+# Live reload
 
 To access a Go web application that uses templ in a web browser, a few things must happen:
 
@@ -25,7 +25,7 @@ The `--proxy` argument starts a HTTP proxy which proxies requests to your app. F
 
 By default, the proxy binds to `127.0.0.1`. You can use `--proxybind` to bind to another address, e.g., `--proxybind="0.0.0.0"`.
 
-Altogether, to setup hot reload on an app that listens on port 8080, run the following.
+Altogether, to setup live reload on an app that listens on port 8080, run the following.
 
 ```
 templ generate --watch --proxy="http://localhost:8080" --cmd="go run ."
@@ -61,7 +61,7 @@ templ hello(name string) {
 }
 ```
 
-The hot reload process can be shown in the following diagram:
+The live reload process can be shown in the following diagram:
 
 ```mermaid
 sequenceDiagram
@@ -82,9 +82,9 @@ sequenceDiagram
     deactivate templ_proxy
 ```
 
-### Triggering hot reload from outside `templ generate --watch`
+### Triggering live reload from outside `templ generate --watch`
 
-If you want to trigger a hot reload from outside `templ generate --watch` (e.g. if you're using `air`, `wgo` or another tool to build, but you want to use the templ hot reload proxy), you can use the `--notify-proxy` argument.
+If you want to trigger a live reload from outside `templ generate --watch` (e.g. if you're using `air`, `wgo` or another tool to build, but you want to use the templ live reload proxy), you can use the `--notify-proxy` argument.
 
 ```shell
 templ generate --notify-proxy
