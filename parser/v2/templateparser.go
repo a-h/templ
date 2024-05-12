@@ -73,6 +73,7 @@ var templateNodeParsers = []parse.Parser[Node]{
 	callTemplateExpression, // {! TemplateName(a, b, c) }
 	templElementExpression, // @TemplateName(a, b, c) { <div>Children</div> }
 	childrenExpression,     // { children... }
+	goCode,                 // {{ myval := x.myval }}
 	stringExpression,       // { "abc" }
 	whitespaceExpression,   // { " " }
 	textParser,             // anything &amp; everything accepted...

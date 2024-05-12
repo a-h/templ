@@ -26,6 +26,7 @@ var (
 	_ Node = SwitchExpression{}
 	_ Node = ForExpression{}
 	_ Node = StringExpression{}
+	_ Node = GoCode{}
 	_ Node = Whitespace{}
 	_ Node = DocType{}
 )

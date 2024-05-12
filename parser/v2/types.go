@@ -1118,6 +1118,37 @@ func (fe ForExpression) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+// GoCode is used within HTML elements, and allows arbitrary go code.
+// {{ ... }}
+type GoCode struct {
+	Expression Expression
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
+	Multiline     bool
+}
+
+func (gc GoCode) Trailing() TrailingSpace {
+	return gc.TrailingSpace
+}
+
+func (gc GoCode) IsNode() bool { return true }
+func (gc GoCode) Write(w io.Writer, indent int) error {
+	if isWhitespace(gc.Expression.Value) {
+		gc.Expression.Value = ""
+	}
+	if !gc.Multiline {
+		return writeIndent(w, indent, `{{ `, gc.Expression.Value, ` }}`)
+	}
+	formatted, err := format.Source([]byte(gc.Expression.Value))
+	if err != nil {
+		return err
+	}
+	if err := writeIndent(w, indent, "{{"+string(formatted)+"\n"); err != nil {
+		return err
+	}
+	return writeIndent(w, indent, "}}")
+}
+
 // StringExpression is used within HTML elements, and for style values.
 // { ... }
 type StringExpression struct {
