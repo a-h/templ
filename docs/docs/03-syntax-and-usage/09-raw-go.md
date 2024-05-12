@@ -1,15 +1,16 @@
 # Raw Go
 
 :::caution
-This page describes functionality that is experimental, and not enabled by default.
+This page describes functionality that is experimental, not enabled by default, and may change or be removed in future versions.
 
 To enable this feature run the generation step with the `rawgo` experiment flag: `TEMPL_EXPERIMENT=rawgo templ generate`
 
 You will also need to set the `TEMPL_EXPERIMENT=rawgo` environment variable at your system level or within your editor to enable LSP behavior.
 :::
 
-For some more advanced use cases it may be useful to write go code statements in your template.
-Use the `{{ ... }}` syntax to allow for this.
+For some more advanced use cases it may be useful to write Go code statements in your template.
+
+Use the `{{ ... }}` syntax for this.
 
 ## Variable declarations
 
