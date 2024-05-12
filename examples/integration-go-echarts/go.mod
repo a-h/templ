@@ -1,6 +1,8 @@
 module github.com/a-h/templ/examples/integration-go-echarts
 
-go 1.20
+go 1.21
+
+toolchain go1.21.5
 
 require (
 	github.com/a-h/templ v0.2.529
