@@ -61,7 +61,7 @@ templ hello(name string) {
 }
 ```
 
-The hot reload process can be shown in the following diagram:
+The live reload process can be shown in the following diagram:
 
 ```mermaid
 sequenceDiagram
@@ -82,9 +82,9 @@ sequenceDiagram
     deactivate templ_proxy
 ```
 
-### Triggering hot reload from outside `templ generate --watch`
+### Triggering live reload from outside `templ generate --watch`
 
-If you want to trigger a hot reload from outside `templ generate --watch` (e.g. if you're using `air`, `wgo` or another tool to build, but you want to use the templ hot reload proxy), you can use the `--notify-proxy` argument.
+If you want to trigger a live reload from outside `templ generate --watch` (e.g. if you're using `air`, `wgo` or another tool to build, but you want to use the templ live reload proxy), you can use the `--notify-proxy` argument.
 
 ```shell
 templ generate --notify-proxy
