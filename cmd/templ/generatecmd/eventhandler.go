@@ -29,6 +29,7 @@ func NewFSEventHandler(
 	genSourceMapVis bool,
 	keepOrphanedFiles bool,
 	toStdout bool,
+	outputFileName string,
 ) *FSEventHandler {
 	if !path.IsAbs(dir) {
 		dir, _ = filepath.Abs(dir)
@@ -50,6 +51,9 @@ func NewFSEventHandler(
 	}
 	if toStdout {
 		fseh.writer = writeToStdout
+	}
+	if outputFileName != "" {
+		fseh.writer = writerTo(outputFileName)
 	}
 	if devMode {
 		fseh.genOpts = append(fseh.genOpts, generator.WithExtractStrings())
@@ -76,12 +80,18 @@ type FSEventHandler struct {
 }
 
 func writeToFile(fileName string, contents []byte) error {
-	return os.WriteFile(fileName, contents, 0o644)
+	return os.WriteFile(fileName, contents, outputFileMode)
 }
 
 func writeToStdout(_ string, contents []byte) error {
 	_, err := os.Stdout.Write(contents)
 	return err
+}
+
+func writerTo(fileName string) func(string, []byte) error {
+	return func(_ string, contents []byte) error {
+		return os.WriteFile(fileName, contents, outputFileMode)
+	}
 }
 
 func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (goUpdated, textUpdated bool, err error) {
@@ -292,3 +302,5 @@ func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileNa
 
 	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).Render(ctx, b)
 }
+
+const outputFileMode = 0o644

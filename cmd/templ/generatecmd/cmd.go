@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -58,6 +59,15 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	if cmd.Args.FileName == "" && cmd.Args.ToStdout {
 		return fmt.Errorf("only a single file can be output to stdout, add the -f flag to specify the file to generate code for")
 	}
+	if cmd.Args.FileName == "" && cmd.Args.OutputFileName != "" {
+		return fmt.Errorf("the output file can only be overridden for a single input file, add the -f flag to specify the file to generate code for")
+	}
+	if cmd.Args.ToStdout && cmd.Args.OutputFileName != "" {
+		return fmt.Errorf("cannot use -o and -stdout simultaneously")
+	}
+	if cmd.Args.OutputFileName != "" && !strings.HasSuffix(cmd.Args.OutputFileName, "_templ.go") {
+		return fmt.Errorf("output files must end in _templ.go")
+	}
 	if cmd.Args.PPROFPort > 0 {
 		go func() {
 			_ = http.ListenAndServe(fmt.Sprintf("localhost:%d", cmd.Args.PPROFPort), nil)
@@ -98,6 +108,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		cmd.Args.GenerateSourceMapVisualisations,
 		cmd.Args.KeepOrphanedFiles,
 		cmd.Args.ToStdout,
+		cmd.Args.OutputFileName,
 	)
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
@@ -183,6 +194,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			cmd.Args.GenerateSourceMapVisualisations,
 			cmd.Args.KeepOrphanedFiles,
 			cmd.Args.ToStdout,
+			cmd.Args.OutputFileName,
 		)
 		errorCount.Store(0)
 		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {

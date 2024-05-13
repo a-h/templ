@@ -13,6 +13,7 @@ import (
 
 type Arguments struct {
 	FileName                        string
+	OutputFileName                  string
 	ToStdout                        bool
 	Path                            string
 	Watch                           bool
