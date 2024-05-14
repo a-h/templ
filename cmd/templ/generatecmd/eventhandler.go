@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -221,7 +222,12 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
-		return false, false, nil, fmt.Errorf("%s source formatting error: %w", fileName, err)
+		mapped, ok := mapFormatterError(err, sourceMap)
+		if !ok {
+			return false, false, nil, fmt.Errorf("%s source formatting error %w", targetFileName, err)
+		}
+
+		return false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, mapped)
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
@@ -255,6 +261,47 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	}
 
 	return goUpdated, textUpdated, parsedDiagnostics, err
+}
+
+func mapFormatterError(err error, sourceMap *parser.SourceMap) (error, bool) {
+	line, col, suffix, err2 := parseFormatterError(err.Error())
+	if err2 != nil {
+		return nil, false
+	}
+
+	// The sourceMap positions are off by one because of the package.
+	pos, ok := sourceMap.SourcePositionFromTarget(line-1, col)
+	if !ok {
+		return nil, false
+	}
+	return fmt.Errorf("%d:%d%s", pos.Line+1, pos.Col, suffix), true
+}
+
+func parseFormatterError(str string) (errLine, errCol uint32, suffix string, err error) {
+	first := strings.IndexRune(str, ':')
+	if first == -1 {
+		return 0, 0, "", fmt.Errorf("formatter error %s did not start with <line>:<col>: ", str)
+	}
+	if errLine, err = parseUint32(str[:first]); err != nil {
+		return
+	}
+
+	s := strings.IndexRune(str[first+1:], ':')
+	if s == -1 {
+		return 0, 0, "", fmt.Errorf("formatter error %s did not start with <line>:<col>: ", str)
+	}
+	second := s + first + 1
+	if errCol, err = parseUint32(str[first+1 : second]); err != nil {
+		return
+	}
+
+	suffix = str[second+1:]
+	return
+}
+
+func parseUint32(str string) (uint32, error) {
+	parsed64, err := strconv.ParseUint(str, 10, 32)
+	return uint32(parsed64), err
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
