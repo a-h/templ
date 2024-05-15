@@ -11,11 +11,11 @@ import "bytes"
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type Data struct {
 	Message string `json:"msg"`
-	Value   int    `json:"value"`
 }
 
 func JSON(v any) (string, error) {
@@ -26,7 +26,25 @@ func JSON(v any) (string, error) {
 	return string(s), nil
 }
 
-func Page(data Data) templ.Component {
+type JSONScript struct {
+	ID   string
+	Data any
+}
+
+func (s JSONScript) Render(ctx context.Context, w io.Writer) error {
+	var idAttr string
+	if s.ID != "" {
+		idAttr = fmt.Sprintf(` id="%s"`, templ.EscapeString(s.ID))
+	}
+	data, err := json.Marshal(s.Data)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w, `<script%s type="application/json">%s</script>`, idAttr, string(data))
+	return nil
+}
+
+func Page(attributeData Data, scriptData Data) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -39,20 +57,31 @@ func Page(data Data) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!doctype html><html><head><title>Script usage</title><script src=\"/assets/js/main.js\" defer></script></head><body><button id=\"alerter\" alert-data=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!doctype html><html><head><title>Script usage</title><script src=\"/assets/js/main.js\" defer></script></head><body><button id=\"attributeAlerter\" alert-data=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(JSON(data))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(JSON(attributeData))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/typescript/components/index.templ`, Line: 28, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/typescript/components/index.templ`, Line: 46, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">Show alert</button></body></html>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">Show alert from data in alert-data attribute</button>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = JSONScript{
+			ID:   "scriptData",
+			Data: scriptData,
+		}.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button id=\"scriptAlerter\">Show alert from data in script</button></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

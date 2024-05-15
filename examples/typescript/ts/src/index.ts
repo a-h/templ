@@ -4,11 +4,10 @@
 
 interface Data {
 	msg: string;
-	value: number;
 }
 
-function setupAlerter() {
-	const alerter = document.querySelector("#alerter");
+function setupAttributeAlerter() {
+	const alerter = document.querySelector("#attributeAlerter");
 	if (!alerter) {
 		return;
 	}
@@ -16,8 +15,20 @@ function setupAlerter() {
 		const dataAttr = alerter?.getAttribute('alert-data') ?? '{}';
 		const data: Data = JSON.parse(dataAttr);
 		alert(data.msg);
-		alert(`The meaning of life etc. is ${data.value}`);
 	})
 }
 
-setupAlerter();
+function setupScriptAlerter() {
+	const alerter = document.querySelector("#scriptAlerter");
+	if (!alerter) {
+		return;
+	}
+	alerter.addEventListener("click", (_event: Event) => {
+		const dataContent = document?.getElementById('scriptData')?.textContent ?? '{}';
+		const data: Data = JSON.parse(dataContent);
+		alert(data.msg);
+	})
+}
+
+setupAttributeAlerter();
+setupScriptAlerter();

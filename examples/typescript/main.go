@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -17,12 +16,16 @@ func main() {
 	// Serve the page.
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Create random server-side data.
-		d := components.Data{
-			Message: fmt.Sprintf("Hello, world! %d", rand.Intn(100)),
+		attributeData := components.Data{
+			Message: fmt.Sprintf("Hello, from the attribute data"),
 			Value:   42,
 		}
-		templ.Handler(components.Page(d)).ServeHTTP(w, r)
+		scriptData := components.Data{
+			Message: fmt.Sprintf("Hello, from the script data"),
+		}
+		templ.Handler(components.Page(attributeData, scriptData)).ServeHTTP(w, r)
 	})
 
+	fmt.Println("Listening on http://localhost:8080")
 	http.ListenAndServe("localhost:8080", mux)
 }

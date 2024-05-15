@@ -2,11 +2,11 @@ package components
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 type Data struct {
 	Message string `json:"msg"`
-	Value   int    `json:"value"`
 }
 
 func JSON(v any) (string, error) {
@@ -17,7 +17,25 @@ func JSON(v any) (string, error) {
 	return string(s), nil
 }
 
-templ Page(data Data) {
+type JSONScript struct {
+	ID   string
+	Data any
+}
+
+func (s JSONScript) Render(ctx context.Context, w io.Writer) error {
+	var idAttr string
+	if s.ID != "" {
+		idAttr = fmt.Sprintf(` id="%s"`, templ.EscapeString(s.ID))
+	}
+	data, err := json.Marshal(s.Data)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w, `<script%s type="application/json">%s</script>`, idAttr, string(data))
+	return nil
+}
+
+templ Page(attributeData Data, scriptData Data) {
 	<!DOCTYPE html>
 	<html>
 		<head>
@@ -25,7 +43,12 @@ templ Page(data Data) {
 			<script src="/assets/js/main.js" defer></script>
 		</head>
 		<body>
-			<button id="alerter" alert-data={ JSON(data) }>Show alert</button>
+			<button id="attributeAlerter" alert-data={ JSON(attributeData) }>Show alert from data in alert-data attribute</button>
+			@JSONScript{
+				ID:   "scriptData",
+				Data: scriptData,
+			}
+			<button id="scriptAlerter">Show alert from data in script</button>
 		</body>
 	</html>
 }
