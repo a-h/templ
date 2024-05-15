@@ -7,11 +7,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"go/format"
+	"go/scanner"
 	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -21,6 +21,8 @@ import (
 	"github.com/a-h/templ/parser/v2"
 	"github.com/fsnotify/fsnotify"
 )
+
+const maxReportedFormatterErrors = 5
 
 func NewFSEventHandler(
 	log *slog.Logger,
@@ -222,12 +224,12 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
-		mapped, ok := mapFormatterError(err, sourceMap)
+		mapped, ok := mapFormatterError(err, sourceMap, fileName, targetFileName, maxReportedFormatterErrors)
 		if !ok {
 			return false, false, nil, fmt.Errorf("generated file %s contains source formatting error %w", targetFileName, err)
 		}
 
-		return false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, mapped)
+		return false, false, nil, mapped
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
@@ -263,45 +265,43 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	return goUpdated, textUpdated, parsedDiagnostics, err
 }
 
-func mapFormatterError(err error, sourceMap *parser.SourceMap) (error, bool) {
-	line, col, suffix, err2 := parseFormatterError(err.Error())
-	if err2 != nil {
-		return nil, false
-	}
-
-	// The sourceMap positions are off by one because of the package.
-	pos, ok := sourceMap.SourcePositionFromTarget(line-1, col)
+// Takes an error from the formatter and attempts to convert the positions reported in the target file to their positions
+// in the source file.
+// Errors are ordered by Position ascending.
+// Errors that cannot be mapped back to the source file report the targetFileName.
+// If there are more than maxErrors, maxErrors are reported and the remaining errors are rolled up into a "...x more errors" message.
+func mapFormatterError(err error, sourceMap *parser.SourceMap, fileName string, targetFileName string, maxErrors int) (error, bool) {
+	list, ok := err.(scanner.ErrorList)
 	if !ok {
 		return nil, false
 	}
-	return fmt.Errorf("%d:%d%s", pos.Line+1, pos.Col, suffix), true
-}
+	list.Sort()
 
-func parseFormatterError(str string) (errLine, errCol uint32, suffix string, err error) {
-	first := strings.IndexRune(str, ':')
-	if first == -1 {
-		return 0, 0, "", fmt.Errorf("formatter error %s did not start with <line>:<col>: ", str)
-	}
-	if errLine, err = parseUint32(str[:first]); err != nil {
-		return
-	}
+	var b strings.Builder
+	count := min(len(list), maxErrors)
+	for i, e := range list[:count] {
+		// The positions in the source map are off by one line because of the package.
+		srcPos, ok := sourceMap.SourcePositionFromTarget(uint32(e.Pos.Line-1), uint32(e.Pos.Column))
 
-	s := strings.IndexRune(str[first+1:], ':')
-	if s == -1 {
-		return 0, 0, "", fmt.Errorf("formatter error %s did not start with <line>:<col>: ", str)
-	}
-	second := s + first + 1
-	if errCol, err = parseUint32(str[first+1 : second]); err != nil {
-		return
+		if i != 0 {
+			b.WriteRune('\n')
+		}
+
+		if ok {
+			b.WriteString(fmt.Sprintf("\t%s: %d:%d: %s", fileName, srcPos.Line+1, srcPos.Col, e.Msg))
+		} else {
+			b.WriteString(fmt.Sprintf("\t%s: %d:%d: %s", targetFileName, e.Pos.Line, e.Pos.Column, e.Msg))
+		}
 	}
 
-	suffix = str[second+1:]
-	return
-}
+	unreported := len(list) - count
+	if unreported == 1 {
+		b.WriteString("\n\t... 1 more error")
+	} else if unreported > 1 {
+		b.WriteString(fmt.Sprintf("\n\t... %d more errors", unreported))
+	}
 
-func parseUint32(str string) (uint32, error) {
-	parsed64, err := strconv.ParseUint(str, 10, 32)
-	return uint32(parsed64), err
+	return fmt.Errorf("%s source formatting error:\n%s", fileName, b.String()), true
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
