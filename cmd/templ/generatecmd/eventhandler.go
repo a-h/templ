@@ -224,7 +224,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	if err != nil {
 		mapped, ok := mapFormatterError(err, sourceMap)
 		if !ok {
-			return false, false, nil, fmt.Errorf("%s source formatting error %w", targetFileName, err)
+			return false, false, nil, fmt.Errorf("generated file %s contains source formatting error %w", targetFileName, err)
 		}
 
 		return false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, mapped)
