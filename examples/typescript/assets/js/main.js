@@ -1,0 +1,1 @@
+(()=>{function r(){let e=document.querySelector("#alerter");e&&e.addEventListener("click",n=>{let a=e?.getAttribute("alert-data")??"{}",t=JSON.parse(a);alert(t.msg),alert(`The value is ${t.value}`)})}r();})();

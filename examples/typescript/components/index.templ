@@ -1,0 +1,31 @@
+package components
+
+import (
+	"encoding/json"
+)
+
+type Data struct {
+	Message string `json:"msg"`
+	Value   int    `json:"value"`
+}
+
+func JSON(v any) (string, error) {
+	s, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(s), nil
+}
+
+templ Page(data Data) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<title>Script usage</title>
+			<script src="/assets/js/main.js" defer></script>
+		</head>
+		<body>
+			<button id="alerter" alert-data={ JSON(data) }>Show alert</button>
+		</body>
+	</html>
+}
