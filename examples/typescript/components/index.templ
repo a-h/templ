@@ -17,22 +17,25 @@ func JSON(v any) (string, error) {
 	return string(s), nil
 }
 
-type JSONScript struct {
-	ID   string
-	Data any
-}
-
-func (s JSONScript) Render(ctx context.Context, w io.Writer) error {
-	var idAttr string
-	if s.ID != "" {
-		idAttr = fmt.Sprintf(` id="%s"`, templ.EscapeString(s.ID))
-	}
-	data, err := json.Marshal(s.Data)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(w, `<script%s type="application/json">%s</script>`, idAttr, string(data))
-	return nil
+func JSONScript(id string, data any) templ.Component {
+	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		dataJSON, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		if _, err = io.WriteString(w, `<script`); err != nil {
+			return err
+		}
+		if id != "" {
+			if _, err = fmt.Fprintf(w, ` id="%s"`, templ.EscapeString(id)); err != nil {
+				return err
+			}
+		}
+		if _, err = fmt.Fprintf(w, ` type="application/json">%s</script>`, string(dataJSON)); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 templ Page(attributeData Data, scriptData Data) {
@@ -44,10 +47,7 @@ templ Page(attributeData Data, scriptData Data) {
 		</head>
 		<body>
 			<button id="attributeAlerter" alert-data={ JSON(attributeData) }>Show alert from data in alert-data attribute</button>
-			@JSONScript{
-				ID:   "scriptData",
-				Data: scriptData,
-			}
+			@JSONScript("scriptData", scriptData)
 			<button id="scriptAlerter">Show alert from data in script</button>
 		</body>
 	</html>
