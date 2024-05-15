@@ -18,7 +18,6 @@ func main() {
 		// Create random server-side data.
 		attributeData := components.Data{
 			Message: fmt.Sprintf("Hello, from the attribute data"),
-			Value:   42,
 		}
 		scriptData := components.Data{
 			Message: fmt.Sprintf("Hello, from the script data"),
