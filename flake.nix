@@ -62,6 +62,7 @@
         pkgs.mkShell {
           buildInputs = with pkgs; [
             (golangci-lint.override { buildGoModule = buildGo121Module; })
+            esbuild # Used to package JS examples.
             go_1_21
             gopls
             goreleaser

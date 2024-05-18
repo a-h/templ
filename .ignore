@@ -3,4 +3,5 @@ examples/integration-ct/static/index.js
 examples/counter/assets/css/bulma.*
 examples/counter/assets/js/htmx.min.js
 examples/counter-basic/assets/css/bulma.*
+examples/typescript/assets/index.js
 package-lock.json
