@@ -101,7 +101,7 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 
 	// Update it.
 	updated := insertScriptTagIntoBody(string(body))
-	if log.Enabled(nil, slog.LevelDebug) {
+	if log.Enabled(r.Request.Context(), slog.LevelDebug) {
 		if len(updated) == len(body) {
 			log.Debug("Reload script not inserted")
 		} else {
