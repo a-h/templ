@@ -62,14 +62,15 @@
         pkgs.mkShell {
           buildInputs = with pkgs; [
             (golangci-lint.override { buildGoModule = buildGo121Module; })
+            cosign # Used to sign container images.
             esbuild # Used to package JS examples.
             go_1_21
+            gomod2nix.legacyPackages.${system}.gomod2nix
             gopls
             goreleaser
-            nodejs # Used to build templ-docs.
+            gotestsum
             ko # Used to build Docker images.
-            cosign # Used to sign container images.
-            gomod2nix.legacyPackages.${system}.gomod2nix
+            nodejs # Used to build templ-docs.
             xc.packages.${system}.xc
           ];
         });
