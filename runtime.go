@@ -580,6 +580,21 @@ type contextValue struct {
 	children *Component
 }
 
+func (v *contextValue) setHasOnceBeenRendered(id string) {
+	if v.ss == nil {
+		v.ss = map[string]struct{}{}
+	}
+	v.ss["once_"+id] = struct{}{}
+}
+
+func (v *contextValue) getHasOnceBeenRendered(id string) (ok bool) {
+	if v.ss == nil {
+		v.ss = map[string]struct{}{}
+	}
+	_, ok = v.ss["once_"+id]
+	return
+}
+
 func (v *contextValue) addScript(s string) {
 	if v.ss == nil {
 		v.ss = map[string]struct{}{}

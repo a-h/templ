@@ -1,0 +1,17 @@
+package once
+
+templ hello(label, name string) {
+	@templ.Once("hello_example") {
+		<script type="text/javascript">
+			function hello(name) {
+				alert('Hello, ' + name + '!');
+			}
+		</script>
+	}
+	<input type="button" value={ label } data-name={ name } onclick="hello(this.getAttribute('data-name'))"/>
+}
+
+templ render() {
+	@hello("Hello User", "user")
+	@hello("Hello World", "world")
+}
