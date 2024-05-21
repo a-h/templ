@@ -41,26 +41,30 @@ func TestEventHandler(t *testing.T) {
 	for _, test := range tests {
 		_, _, _, err := fseh.generate(context.Background(), test.fileName)
 		if err == nil {
-			t.Fatalf("%s: no error was thrown", test.fileName)
+			t.Errorf("%s: no error was thrown", test.name)
+			break
 		}
 
 		tmp := err
 		err = errors.Unwrap(err)
 		if err == nil {
-			t.Fatalf("%s: thrown error could not be unwrapped %s", test.fileName, tmp.Error())
+			t.Errorf("%s: thrown error could not be unwrapped %s", test.name, tmp.Error())
+			break
 		}
 		list, ok := err.(scanner.ErrorList)
 		if !ok {
-			t.Fatalf("%s: unwrapped error is not of type scanner.ErrorList %s", test.fileName, err.Error())
+			t.Errorf("%s: unwrapped error is not of type scanner.ErrorList %s", test.name, err.Error())
+			break
 		}
 
 		if len(list) != len(test.errorPositions) {
-			t.Fatalf("%s: expected %d errors but got %d", test.fileName, len(test.errorPositions), len(list))
+			t.Errorf("%s: expected %d errors but got %d", test.name, len(test.errorPositions), len(list))
+			break
 		}
 
 		for i, err := range list {
 			if err.Pos != test.errorPositions[i] {
-				t.Errorf("%s: got error %s at pos %v, expected this error at pos %v", test.fileName, err.Msg, err.Pos, test.errorPositions[i])
+				t.Errorf("%s: got error %s at pos %v, expected this error at pos %v", test.name, err.Msg, err.Pos, test.errorPositions[i])
 			}
 		}
 	}
