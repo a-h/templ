@@ -62,6 +62,5 @@ func TestEventHandler(t *testing.T) {
 				t.Errorf("%s: got error %s at pos %v, expected this error at pos %v", test.fileName, err.Msg, err.Pos, test.errorPositions[i])
 			}
 		}
-
 	}
 }
