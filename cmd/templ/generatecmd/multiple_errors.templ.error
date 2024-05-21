@@ -7,3 +7,4 @@ func invalid(a: string) string {
 templ multipleError(a: string) {
     <div/>
 }
+l
