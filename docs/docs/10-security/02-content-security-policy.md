@@ -2,11 +2,25 @@
 
 ## Nonces
 
-In templ [script templates](/syntax-and-usage/script-templates#script-templates) are rendered as inline `<script>` tags. This means by default they are not compatible with a strict CSP.
+In templ [script templates](/syntax-and-usage/script-templates#script-templates) are rendered as inline `<script>` tags.
 
-Nonces can be used to allow templ to bypass a strict CSP. They are randomly generated string that should be re-generated on every request.
+Strict Content Security Policies (CSP) can prevent these inline scripts from executing.
 
-The `templ.WithNonce` function can be used to provide a nonce for templ to use when rendering a script.
+By setting a nonce attribute on the `<script>` tag, and setting the same nonce in the CSP header, the browser will allow the script to execute.
+
+:::info
+It's your responsibility to generate a secure nonce. Nonces should be generated using a cryptographically secure random number generator.
+
+See https://content-security-policy.com/nonce/ for more information.
+:::
+
+## Setting a nonce
+
+The `templ.WithNonce` function can be used to set a nonce for templ to use when rendering scripts.
+
+It returns an updated `context.Context` with the nonce set.
+
+In this example, the `alert` function is rendered as a script element by templ.
 
 ```templ title="templates.templ"
 package main
@@ -21,57 +35,7 @@ script onLoad() {
 templ template() {
     @onLoad()
 }
-
-func main() {
-    nonce := generateSecurelyRandomString()
-    ctx := templ.WithNonce(context.Background(), nonce)
-    if err := template().Render(ctx, os.Stdout); err != nil {
-        panic(err)
-    }
-}
 ```
-```go title="main.go"
-package main
-
-import (
-	"fmt"
-	"log"
-	"net/http"
-	"time"
-)
-
-func main() {
-	mux := http.NewServeMux()
-
-	// Handle template.
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        nonce := generateSecurelyRandomString()
-        rw.Header().Set("Content-Security-Policy", fmt.Sprintf("script-src: 'nonce-%s'", nonce))
-        ctx := templ.WithNonce(context.Background(), nonce)
-        if err := template().Render(ctx, os.Stdout); err != nil {
-            http.Error(w, "failed to render", 500)
-        }
-	})
-
-	// Start the server.
-	fmt.Println("listening on :8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Printf("error listening: %v", err)
-	}
-}
-
-```
-
-This would render the following:
-
-```html
-<script type="text/javascript" nonce="..randomly generated nonce">function __templ_onLoad_5a85(){alert("Hello, world!")}</script>
-<script type="text/javascript" nonce="..randomly generated nonce">__templ_onLoad_5a85()</script>
-```
-
-## Nonce Middleware
-
-Generate and apply nonces in a middleware to remove repeated code in handlers:
 
 ```go title="main.go"
 package main
@@ -83,11 +47,12 @@ import (
 	"time"
 )
 
-func nonceMiddleware(handler http.Handler) http.Handler {
+func withNonce(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		nonce := generateSecurelyRandomString()
-		ctx := templ.WithNonce(context.Background(), nonce)
+		nonce := securelyGenerateRandomString()
 		w.Header().Add("Content-Security-Policy", fmt.Sprintf("script-src 'nonce-%s'", nonce))
+		// Use the context to pass the nonce to the handler.
+		ctx := templ.WithNonce(r.Context(), nonce)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -96,18 +61,26 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Handle template.
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if err := template().Render(ctx, os.Stdout); err != nil {
-			http.Error(w, "failed to render", 500)
-		}
-	})
+	mux.HandleFunc("/", templ.Handler(template()))
+
+	// Apply middleware.
+	withNonceMux := withNonce(mux)
 
 	// Start the server.
 	fmt.Println("listening on :8080")
-	// Apply middlewares.
-	mux = nonceMiddleware(mux)
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	if err := http.ListenAndServe(":8080", withNonceMux); err != nil {
 		log.Printf("error listening: %v", err)
 	}
 }
+```
+
+```html title="Output"
+<script type="text/javascript" nonce="randomly generated nonce">
+  function __templ_onLoad_5a85() {
+    alert("Hello, world!")
+  }
+</script>
+<script type="text/javascript" nonce="randomly generated nonce">
+  __templ_onLoad_5a85()
+</script>
 ```
