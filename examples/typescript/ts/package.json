@@ -1,0 +1,15 @@
+{
+  "name": "ts",
+  "version": "1.0.0",
+  "description": "TypeScript templ example.",
+  "scripts": {
+    "build": "esbuild --bundle --minify --outfile=../assets/js/index.js ./src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "0.21.3",
+    "typescript": "^5.4.5"
+  }
+}

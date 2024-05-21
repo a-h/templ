@@ -9,7 +9,7 @@ var conditionalAttribute parse.Parser[ConditionalAttribute] = conditionalAttribu
 
 type conditionalAttributeParser struct{}
 
-func (_ conditionalAttributeParser) Parse(pi *parse.Input) (r ConditionalAttribute, ok bool, err error) {
+func (conditionalAttributeParser) Parse(pi *parse.Input) (r ConditionalAttribute, ok bool, err error) {
 	start := pi.Index()
 
 	// Strip leading whitespace and look for `if `.

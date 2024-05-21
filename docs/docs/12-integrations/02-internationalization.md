@@ -4,7 +4,7 @@ templ can be used with 3rd party internationalization libraries.
 
 ## ctxi18n
 
-[ctxi18n](github.com/invopop/ctxi18n) uses the context package to load strings based on the selected locale.
+https://github.com/invopop/ctxi18n uses the context package to load strings based on the selected locale.
 
 An example is available at https://github.com/a-h/templ/tree/main/examples/internationalization
 

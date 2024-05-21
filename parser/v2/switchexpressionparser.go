@@ -9,7 +9,7 @@ var switchExpression parse.Parser[Node] = switchExpressionParser{}
 
 type switchExpressionParser struct{}
 
-func (_ switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	var r SwitchExpression
 	start := pi.Index()
 
