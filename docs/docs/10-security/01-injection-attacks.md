@@ -1,6 +1,4 @@
-# Security
-
-## Injection attacks
+# Injection attacks
 
 templ is designed to prevent user-provided data from being used to inject vulnerabilities.
 
@@ -87,8 +85,3 @@ css className() {
 	color: { red };
 }
 ```
-
-## Code signing
-
-Binaries are created by https://github.com/a-h and signed with https://adrianhesketh.com/a-h.gpg
-
