@@ -51,6 +51,9 @@ func WithNonce(ctx context.Context, nonce string) context.Context {
 // GetNonce returns the CSP nonce value set with WithNonce, or an
 // empty string if none has been set.
 func GetNonce(ctx context.Context) (nonce string) {
+	if ctx == nil {
+		return ""
+	}
 	_, v := getContext(ctx)
 	return v.nonce
 }
