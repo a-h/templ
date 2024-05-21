@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"go/format"
 	"go/scanner"
+	"go/token"
 	"log/slog"
 	"os"
 	"path"
@@ -21,8 +22,6 @@ import (
 	"github.com/a-h/templ/parser/v2"
 	"github.com/fsnotify/fsnotify"
 )
-
-const maxReportedFormatterErrors = 5
 
 func NewFSEventHandler(
 	log *slog.Logger,
@@ -224,7 +223,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
-		mapped, ok := mapFormatterError(err, sourceMap, fileName, targetFileName, maxReportedFormatterErrors)
+		mapped, ok := mapFormatterError(err, sourceMap, fileName, targetFileName)
 		if !ok {
 			return false, false, nil, fmt.Errorf("generated file %s contains source formatting error %w", targetFileName, err)
 		}
@@ -267,41 +266,39 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 
 // Takes an error from the formatter and attempts to convert the positions reported in the target file to their positions
 // in the source file.
-// Errors are ordered by Position ascending.
-// Errors that cannot be mapped back to the source file report the targetFileName.
-// If there are more than maxErrors, maxErrors are reported and the remaining errors are rolled up into a "...x more errors" message.
-func mapFormatterError(err error, sourceMap *parser.SourceMap, fileName string, targetFileName string, maxErrors int) (error, bool) {
+func mapFormatterError(err error, sourceMap *parser.SourceMap, fileName string, targetFileName string) (error, bool) {
 	list, ok := err.(scanner.ErrorList)
 	if !ok {
 		return nil, false
 	}
 	list.Sort()
 
-	var b strings.Builder
-	count := min(len(list), maxErrors)
-	for i, e := range list[:count] {
+	mapped := scanner.ErrorList{}
+
+	for _, e := range list {
 		// The positions in the source map are off by one line because of the package.
 		srcPos, ok := sourceMap.SourcePositionFromTarget(uint32(e.Pos.Line-1), uint32(e.Pos.Column))
 
-		if i != 0 {
-			b.WriteRune('\n')
-		}
-
+		var mappedPos token.Position
 		if ok {
-			b.WriteString(fmt.Sprintf("\t%s: %d:%d: %s", fileName, srcPos.Line+1, srcPos.Col, e.Msg))
+			mappedPos = token.Position{
+				Filename: fileName,
+				Offset:   e.Pos.Offset,
+				Line:     int(srcPos.Line) + 1,
+				Column:   int(srcPos.Col),
+			}
 		} else {
-			b.WriteString(fmt.Sprintf("\t%s: %d:%d: %s", targetFileName, e.Pos.Line, e.Pos.Column, e.Msg))
+			mappedPos = token.Position{
+				Filename: targetFileName,
+				Offset:   e.Pos.Offset,
+				Line:     e.Pos.Line,
+				Column:   e.Pos.Column,
+			}
 		}
+		mapped.Add(mappedPos, e.Msg)
 	}
 
-	unreported := len(list) - count
-	if unreported == 1 {
-		b.WriteString("\n\t... 1 more error")
-	} else if unreported > 1 {
-		b.WriteString(fmt.Sprintf("\n\t... %d more errors", unreported))
-	}
-
-	return fmt.Errorf("%s source formatting error:\n%s", fileName, b.String()), true
+	return mapped, true
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
