@@ -47,6 +47,7 @@ func (m *CSPMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		m.Log.Error("failed to generate nonce", slog.Any("error", err))
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 	ctx := templ.WithNonce(r.Context(), nonce)
 	w.Header().Add("Content-Security-Policy", fmt.Sprintf("script-src 'nonce-%s'", nonce))
