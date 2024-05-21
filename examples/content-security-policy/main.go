@@ -5,59 +5,63 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"os"
+
+	"log/slog"
 
 	"github.com/a-h/templ"
 )
 
 func main() {
+	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	// Create HTTP routes.
 	mux := http.NewServeMux()
+	mux.Handle("/", templ.Handler(template()))
 
-	mux.HandleFunc("/basic", func(w http.ResponseWriter, r *http.Request) {
-		nonce, err := generateRandomString(28)
-		if err != nil {
-			// ...
-		}
-		ctx := templ.WithNonce(r.Context(), nonce)
-		w.Header().Add("Content-Security-Policy", fmt.Sprintf("script-src 'nonce-%s'", nonce))
-		err = template().Render(ctx, w)
-		if err != nil {
-			// ...
-		}
-	})
+	// Wrap the router with CSP middleware to apply the CSP nonce to templ scripts.
+	withCSPMiddleware := NewCSPMiddleware(log, mux)
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := template().Render(r.Context(), w)
-		if err != nil {
-			// ...
-		}
-	})
-	mux.Handle("/middleware", scriptNonceMiddleware(h))
-
-	http.ListenAndServe("127.0.0.1:7000", mux)
+	log.Info("Listening...", slog.String("addr", "127.0.0.1:7001"))
+	if err := http.ListenAndServe("127.0.0.1:7001", withCSPMiddleware); err != nil {
+		log.Error("failed to start server", slog.Any("error", err))
+	}
 }
 
-func scriptNonceMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		nonce, err := generateRandomString(28)
-		if err != nil {
-			// ...
-		}
-		ctx := templ.WithNonce(r.Context(), nonce)
-		w.Header().Add("Content-Security-Policy", fmt.Sprintf("script-src 'nonce-%s'", nonce))
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+func NewCSPMiddleware(log *slog.Logger, next http.Handler) *CSPMiddleware {
+	return &CSPMiddleware{
+		Log:  log,
+		Next: next,
+		Size: 28,
+	}
 }
 
-func generateRandomString(n int) (string, error) {
+type CSPMiddleware struct {
+	Log  *slog.Logger
+	Next http.Handler
+	Size int
+}
+
+func (m *CSPMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	nonce, err := m.generateNonce()
+	if err != nil {
+		m.Log.Error("failed to generate nonce", slog.Any("error", err))
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	}
+	ctx := templ.WithNonce(r.Context(), nonce)
+	w.Header().Add("Content-Security-Policy", fmt.Sprintf("script-src 'nonce-%s'", nonce))
+	m.Next.ServeHTTP(w, r.WithContext(ctx))
+}
+
+func (m *CSPMiddleware) generateNonce() (string, error) {
 	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
-	ret := make([]byte, n)
-	for i := 0; i < n; i++ {
+	ret := make([]byte, m.Size)
+	for i := 0; i < m.Size; i++ {
 		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
 		if err != nil {
 			return "", err
 		}
 		ret[i] = letters[num.Int64()]
 	}
-
 	return string(ret), nil
 }
