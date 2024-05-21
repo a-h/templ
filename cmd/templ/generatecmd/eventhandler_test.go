@@ -19,17 +19,17 @@ func TestEventHandler(t *testing.T) {
 	}{
 		{
 			name:     "single error outputs location in srcFile",
-			fileName: "single_error.templ",
+			fileName: "single_error.templ.error",
 			errorPositions: []token.Position{
-				{Filename: "single_error.templ", Offset: 41, Line: 3, Column: 20},
+				{Filename: "single_error.templ.error", Offset: 41, Line: 3, Column: 20},
 			},
 		},
 		{
 			name:     "multiple errors all output locations in srcFile",
-			fileName: "multiple_errors.templ",
+			fileName: "multiple_errors.templ.error",
 			errorPositions: []token.Position{
-				{Filename: "multiple_errors.templ", Offset: 36, Line: 3, Column: 15},
-				{Filename: "multiple_errors.templ", Offset: 96, Line: 7, Column: 22},
+				{Filename: "multiple_errors.templ.error", Offset: 36, Line: 3, Column: 15},
+				{Filename: "multiple_errors.templ.error", Offset: 96, Line: 7, Column: 22},
 			},
 		},
 	}
