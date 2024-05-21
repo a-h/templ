@@ -1,0 +1,44 @@
+package testscriptusage
+
+script withParameters(a string, b string, c int) {
+	console.log(a, b, c);
+}
+
+script withoutParameters() {
+	alert("hello");
+}
+
+script onClick() {
+	alert("clicked");
+}
+
+templ Button(text string) {
+	<button onClick={ withParameters("test", text, 123) } onMouseover={ withoutParameters() } type="button">{ text }</button>
+}
+
+script withComment() {
+	//'
+}
+
+templ ThreeButtons() {
+	@Button("A")
+	@Button("B")
+	<button onMouseover="console.log('mouseover')" type="button">Button C</button>
+	<button hx-on::click="alert('clicked inline')" type="button">Button D</button>
+	<button hx-on::click={ onClick() } type="button">Button E</button>
+	@Conditional(true)
+}
+
+script conditionalScript() {
+  alert("conditional");
+}
+
+templ Conditional(show bool) {
+	<input
+		type="button"
+		value="Click me"
+		if show {
+			onclick={ conditionalScript() }
+		}
+	/>
+}
