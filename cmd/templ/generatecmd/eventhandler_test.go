@@ -2,6 +2,7 @@ package generatecmd
 
 import (
 	"context"
+	"errors"
 	"go/scanner"
 	"go/token"
 	"io"
@@ -39,21 +40,26 @@ func TestEventHandler(t *testing.T) {
 	for _, test := range tests {
 		_, _, _, err := fseh.generate(context.Background(), test.fileName)
 		if err == nil {
-			t.Errorf("No error was thrown for file %s", test.fileName)
+			t.Errorf("%s: no error was thrown", test.fileName)
 		}
 
+		tmp := err
+		err = errors.Unwrap(err)
+		if err == nil {
+			t.Errorf("%s: thrown error could not be unwrapped %s", test.fileName, tmp.Error())
+		}
 		list, ok := err.(scanner.ErrorList)
 		if !ok {
-			t.Errorf("Error is not of type scanner.ErrorList")
+			t.Errorf("%s: unwrapped error is not of type scanner.ErrorList %s", test.fileName, err.Error())
 		}
 
 		if len(list) != len(test.errorPositions) {
-			t.Errorf("Expected %d errors but got %d", len(test.errorPositions), len(list))
+			t.Errorf("%s: expected %d errors but got %d", test.fileName, len(test.errorPositions), len(list))
 		}
 
 		for i, err := range list {
 			if err.Pos != test.errorPositions[i] {
-				t.Errorf("Got error %s at pos %v, expected this error at pos %v", err.Msg, err.Pos, test.errorPositions[i])
+				t.Errorf("%s: got error %s at pos %v, expected this error at pos %v", test.fileName, err.Msg, err.Pos, test.errorPositions[i])
 			}
 		}
 

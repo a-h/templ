@@ -228,7 +228,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 			return false, false, nil, fmt.Errorf("generated file %s contains source formatting error %w", targetFileName, err)
 		}
 
-		return false, false, nil, mapped
+		return false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, mapped)
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
@@ -268,7 +268,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 // in the source file.
 func mapFormatterError(err error, sourceMap *parser.SourceMap, fileName string, targetFileName string) (error, bool) {
 	list, ok := err.(scanner.ErrorList)
-	if !ok {
+	if !ok || len(list) == 0 {
 		return nil, false
 	}
 	list.Sort()
