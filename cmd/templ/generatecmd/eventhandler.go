@@ -283,7 +283,7 @@ func mapFormatterError(err error, sourceMap *parser.SourceMap, fileName string, 
 		if ok {
 			mappedPos = token.Position{
 				Filename: fileName,
-				Offset:   e.Pos.Offset,
+				Offset:   int(srcPos.Index),
 				Line:     int(srcPos.Line) + 1,
 				Column:   int(srcPos.Col),
 			}
