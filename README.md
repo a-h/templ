@@ -112,6 +112,12 @@ go tool covdata textfmt -i=./coverage/fmt,./coverage/generate,./coverage/version
 go tool cover -func coverage.out | grep total
 ```
 
+### test-cover-watch
+
+```sh
+gotestsum --watch -- -coverprofile=coverage.out
+```
+
 ### benchmark
 
 Run benchmarks.
