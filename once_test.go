@@ -17,10 +17,9 @@ type onceTest struct {
 
 func TestOnceComponent(t *testing.T) {
 	withHello := templ.WithChildren(context.Background(), templ.Raw("hello"))
-
 	tests := []struct {
 		name  string
-		c     templ.OnceComponent
+		c     templ.OnceComponent[string]
 		tests []onceTest
 	}{
 		{
@@ -102,4 +101,25 @@ func TestOnceComponent(t *testing.T) {
 			t.Errorf("unexpected diff:\n%v", diff)
 		}
 	})
+	t.Run("a private type can be used to set the once state", func(t *testing.T) {
+		ctx := templ.WithChildren(context.Background(), templ.Raw("hello"))
+		// Despite having the same underlying value, they are different types.
+		// As such, they are not directly comparable.
+		c1 := templ.Once(onceJQuery)
+		c2 := templ.Once("jquery")
+		var w strings.Builder
+		if err := c1.Render(ctx, &w); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if err := c2.Render(ctx, &w); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if diff := cmp.Diff("hellohello", w.String()); diff != "" {
+			t.Errorf("unexpected diff:\n%v", diff)
+		}
+	})
 }
+
+type onceType string
+
+const onceJQuery = onceType("jquery")

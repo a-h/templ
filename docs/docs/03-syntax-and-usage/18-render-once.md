@@ -6,11 +6,17 @@ If you need to render something to the page once per page, you can use the `temp
 
 The `hello` JavaScript function is only rendered once, even though the `hello` component is rendered twice.
 
+:::tip
+To ensure uniqueness, we use a private type as the argument instead of a plain `string` literal. You could use a string containing a unique value (e.g. your package name or domain), but there's no guarantee that another `templ` component won't use it.
+:::
+
 ```templ title="component.templ"
 package once
 
+type onceType string
+
 templ hello(label, name string) {
-	@templ.Once("github.com/a-h/templ#hello_script") {
+	@templ.Once(onceType("hello_script")) {
 		<script type="text/javascript">
 			function hello(name) {
 				alert('Hello, ' + name + '!');
@@ -54,6 +60,22 @@ To pass complex data structures, consider using a `data-` attribute to pass a JS
 
 `templ.Once` uses the `context.Context` passed to a templ component's `Render(ctx, w)` method to determine whether the content already been rendered.
 
-The `templ.Once` function takes a single argument, which is a string that uniquely identifies the content. Use the package path of the package that contains the content as a prefix to ensure uniqueness.
+The `templ.Once` function takes a single argument, which is a `comparable type that uniquely identifies the content.
+
+:::tip
+Define constants for your commonly used dependencies to reduce the likelihood of typos.
+:::
+
+```go
+type onceType string
+
+const onceJQuery = onceType("jquery")
+
+templ component() {
+  templ.Once(onceJQuery)) {
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  }
+}
+```
 
 If any children have already been rendered, the children are not rendered again.

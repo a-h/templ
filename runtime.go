@@ -594,22 +594,23 @@ const contextKey = contextKeyType(0)
 
 type contextValue struct {
 	ss       map[string]struct{}
+	once     map[any]struct{}
 	children *Component
 	nonce    string
 }
 
-func (v *contextValue) setHasOnceBeenRendered(id string) {
-	if v.ss == nil {
-		v.ss = map[string]struct{}{}
+func (v *contextValue) setHasOnceBeenRendered(id any) {
+	if v.once == nil {
+		v.once = map[any]struct{}{}
 	}
-	v.ss["once_"+id] = struct{}{}
+	v.once[id] = struct{}{}
 }
 
-func (v *contextValue) getHasOnceBeenRendered(id string) (ok bool) {
-	if v.ss == nil {
-		v.ss = map[string]struct{}{}
+func (v *contextValue) getHasOnceBeenRendered(id any) (ok bool) {
+	if v.once == nil {
+		v.once = map[any]struct{}{}
 	}
-	_, ok = v.ss["once_"+id]
+	_, ok = v.once[id]
 	return
 }
 
