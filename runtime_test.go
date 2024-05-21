@@ -725,3 +725,21 @@ func TestGoHTMLComponents(t *testing.T) {
 		}
 	})
 }
+
+func TestNonce(t *testing.T) {
+	ctx := context.Background()
+	t.Run("returns empty string if not set", func(t *testing.T) {
+		actual := templ.GetNonce(ctx)
+		if actual != "" {
+			t.Errorf("expected empty string got %q", actual)
+		}
+	})
+	t.Run("returns value if one has been set", func(t *testing.T) {
+		expected := "abc123"
+		ctx := templ.WithNonce(context.Background(), expected)
+		actual := templ.GetNonce(ctx)
+		if actual != expected {
+			t.Errorf("expected %q got %q", expected, actual)
+		}
+	})
+}

@@ -41,6 +41,20 @@ func (cf ComponentFunc) Render(ctx context.Context, w io.Writer) error {
 	return cf(ctx, w)
 }
 
+// WithNonce sets a CSP nonce on the context and returns it.
+func WithNonce(ctx context.Context, nonce string) context.Context {
+	ctx, v := getContext(ctx)
+	v.nonce = nonce
+	return ctx
+}
+
+// GetNonce returns the CSP nonce value set with WithNonce, or an
+// empty string if none has been set.
+func GetNonce(ctx context.Context) (nonce string) {
+	_, v := getContext(ctx)
+	return v.nonce
+}
+
 func WithChildren(ctx context.Context, children Component) context.Context {
 	ctx, v := getContext(ctx)
 	v.children = &children
@@ -578,6 +592,7 @@ const contextKey = contextKeyType(0)
 type contextValue struct {
 	ss       map[string]struct{}
 	children *Component
+	nonce    string
 }
 
 func (v *contextValue) setHasOnceBeenRendered(id string) {
@@ -678,13 +693,22 @@ type ComponentScript struct {
 
 var _ Component = ComponentScript{}
 
+func writeScriptHeader(ctx context.Context, w io.Writer) (err error) {
+	var nonceAttr string
+	if nonce := GetNonce(ctx); nonce != "" {
+		nonceAttr = " nonce=\"" + EscapeString(nonce) + "\""
+	}
+	_, err = fmt.Fprintf(w, `<script type="text/javascript"%s>`, nonceAttr)
+	return err
+}
+
 func (c ComponentScript) Render(ctx context.Context, w io.Writer) error {
 	err := RenderScriptItems(ctx, w, c)
 	if err != nil {
 		return err
 	}
 	if len(c.Call) > 0 {
-		if _, err = io.WriteString(w, `<script type="text/javascript">`); err != nil {
+		if err = writeScriptHeader(ctx, w); err != nil {
 			return err
 		}
 		if _, err = io.WriteString(w, c.CallInline); err != nil {
@@ -711,7 +735,7 @@ func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScr
 		}
 	}
 	if sb.Len() > 0 {
-		if _, err = io.WriteString(w, `<script type="text/javascript">`); err != nil {
+		if err = writeScriptHeader(ctx, w); err != nil {
 			return err
 		}
 		if _, err = io.WriteString(w, sb.String()); err != nil {
