@@ -55,6 +55,12 @@ func TestProxy(t *testing.T) {
 		r := &http.Response{
 			Body:   io.NopCloser(strings.NewReader(`{"key": "value"}`)),
 			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
 		}
 		r.Header.Set("Content-Type", "application/json")
 		r.Header.Set("Content-Length", "16")
@@ -84,6 +90,12 @@ func TestProxy(t *testing.T) {
 		r := &http.Response{
 			Body:   io.NopCloser(strings.NewReader(`Hello`)),
 			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
 		}
 		r.Header.Set("Content-Type", "text/html")
 		r.Header.Set("Content-Length", "5")
@@ -114,6 +126,12 @@ func TestProxy(t *testing.T) {
 		r := &http.Response{
 			Body:   io.NopCloser(strings.NewReader(`<html><body></body></html>`)),
 			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
 		}
 		r.Header.Set("Content-Type", "text/html, charset=utf-8")
 		r.Header.Set("Content-Length", "26")
@@ -148,6 +166,12 @@ func TestProxy(t *testing.T) {
 		r := &http.Response{
 			Body:   io.NopCloser(strings.NewReader(`{"key": "value"}`)),
 			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
 		}
 		r.Header.Set("Content-Type", "application/json")
 		// It's not actually gzipped here, but it doesn't matter, it shouldn't get that far.
@@ -200,6 +224,12 @@ func TestProxy(t *testing.T) {
 		r := &http.Response{
 			Body:   io.NopCloser(&buf),
 			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
 		}
 		r.Header.Set("Content-Type", "text/html, charset=utf-8")
 		r.Header.Set("Content-Encoding", "gzip")
@@ -255,6 +285,12 @@ func TestProxy(t *testing.T) {
 		r := &http.Response{
 			Body:   io.NopCloser(&buf),
 			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
 		}
 		r.Header.Set("Content-Type", "text/html, charset=utf-8")
 		r.Header.Set("Content-Encoding", "br")
@@ -375,12 +411,18 @@ func TestProxy(t *testing.T) {
 		r := &http.Response{
 			Body:   io.NopCloser(bytes.NewReader([]byte("<p>Data</p>"))),
 			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
 		}
 		r.Header.Set("Content-Type", "text/html, charset=utf-8")
 		r.Header.Set("Content-Encoding", "weird-encoding")
 
 		// Act
-		lh := newTestLogHandler()
+		lh := newTestLogHandler(slog.LevelInfo)
 		log := slog.New(lh)
 		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err := h.modifyResponse(r)
@@ -390,7 +432,12 @@ func TestProxy(t *testing.T) {
 
 		// Assert
 		if len(lh.records) != 1 {
-			t.Fatalf("expected 1 log entry, but got %d", len(lh.records))
+			var sb strings.Builder
+			for _, record := range lh.records {
+				sb.WriteString(record.Message)
+				sb.WriteString("\n")
+			}
+			t.Fatalf("expected 1 log entry, but got %d: \n%s", len(lh.records), sb.String())
 		}
 		record := lh.records[0]
 		if record.Message != unsupportedContentEncoding {
@@ -402,25 +449,30 @@ func TestProxy(t *testing.T) {
 	})
 }
 
-func newTestLogHandler() *testLogHandler {
+func newTestLogHandler(level slog.Level) *testLogHandler {
 	return &testLogHandler{
 		m:       new(sync.Mutex),
 		records: nil,
+		level:   level,
 	}
 }
 
 type testLogHandler struct {
 	m       *sync.Mutex
 	records []slog.Record
+	level   slog.Level
 }
 
-func (h *testLogHandler) Enabled(context.Context, slog.Level) bool {
-	return true
+func (h *testLogHandler) Enabled(ctx context.Context, l slog.Level) bool {
+	return l >= h.level
 }
 
 func (h *testLogHandler) Handle(ctx context.Context, r slog.Record) error {
 	h.m.Lock()
 	defer h.m.Unlock()
+	if r.Level < h.level {
+		return nil
+	}
 	h.records = append(h.records, r)
 	return nil
 }

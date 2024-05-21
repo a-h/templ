@@ -50,10 +50,13 @@ func (pwc passthroughWriteCloser) Close() error {
 const unsupportedContentEncoding = "Unsupported content encoding, hot reload script not inserted."
 
 func (h *Handler) modifyResponse(r *http.Response) error {
+	log := h.log.With(slog.String("url", r.Request.URL.String()))
 	if r.Header.Get("templ-skip-modify") == "true" {
+		log.Debug("Skipping response modification because templ-skip-modify header is set")
 		return nil
 	}
 	if contentType := r.Header.Get("Content-Type"); !strings.HasPrefix(contentType, "text/html") {
+		log.Debug("Skipping response modification because content type is not text/html", slog.String("content-type", contentType))
 		return nil
 	}
 
@@ -80,7 +83,7 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 			return brotli.NewWriter(out)
 		}
 	case "":
-		// No content encoding.
+		log.Debug("No content encoding header found")
 	default:
 		h.log.Warn(unsupportedContentEncoding, slog.String("encoding", r.Header.Get("Content-Encoding")))
 	}
@@ -98,6 +101,13 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 
 	// Update it.
 	updated := insertScriptTagIntoBody(string(body))
+	if log.Enabled(r.Request.Context(), slog.LevelDebug) {
+		if len(updated) == len(body) {
+			log.Debug("Reload script not inserted")
+		} else {
+			log.Debug("Reload script inserted")
+		}
+	}
 
 	// Encode the response.
 	var buf bytes.Buffer
