@@ -7,20 +7,6 @@ import (
 	"io"
 )
 
-type CSPContextKeyType int
-
-const CSPContextKey CSPContextKeyType = iota
-
-func CSPNonceFromContext(ctx context.Context) string {
-	if ctx == nil {
-		return ""
-	}
-	if nonce, ok := ctx.Value(CSPContextKey).(string); ok {
-		return nonce
-	}
-	return ""
-}
-
 var _ Component = JSONScriptElement{}
 
 // JSONScript renders a JSON object inside a script element.
@@ -29,7 +15,7 @@ func JSONScript(id string, data any) JSONScriptElement {
 	return JSONScriptElement{
 		ID:    id,
 		Data:  data,
-		Nonce: CSPNonceFromContext,
+		Nonce: GetNonce,
 	}
 }
 

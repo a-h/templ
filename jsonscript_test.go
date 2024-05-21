@@ -24,7 +24,7 @@ func TestJSONScriptElement(t *testing.T) {
 		},
 		{
 			name:     "if a nonce is available in the context, it is used",
-			ctx:      context.WithValue(context.Background(), templ.CSPContextKey, "nonce-from-context"),
+			ctx:      templ.WithNonce(context.Background(), "nonce-from-context"),
 			e:        templ.JSONScript("idc", data),
 			expected: "<script id=\"idc\" type=\"application/json\" nonce=\"nonce-from-context\">{\"foo\":\"bar\"}\n</script>",
 		},
