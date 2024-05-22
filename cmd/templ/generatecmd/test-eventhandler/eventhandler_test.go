@@ -44,7 +44,8 @@ func TestErrorLocationMapping(t *testing.T) {
 	slog := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	fseh := generatecmd.NewFSEventHandler(slog, ".", false, []generator.GenerateOpt{}, false, false, true)
 	for _, test := range tests {
-		// Copy the raw file to a temp file that ends in .templ so that the handler won't ignore it.
+		// The raw files cannot end in .templ because they will cause the generator to fail. Instead,
+		// we create a tmp file that ends in .templ only for the duration of the test.
 		rawFile, err := os.Open(test.rawFileName)
 		if err != nil {
 			t.Errorf("%s: Failed to open file %s: %v", test.name, test.rawFileName, err)
