@@ -1,4 +1,4 @@
-package generatecmd
+package testeventhandler
 
 func invalid(a: string) string {
     return "foo"
