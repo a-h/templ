@@ -223,12 +223,8 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
-		mapped, ok := mapFormatterError(err, sourceMap, fileName, targetFileName)
-		if !ok {
-			return false, false, nil, fmt.Errorf("generated file %s contains source formatting error %w", targetFileName, err)
-		}
-
-		return false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, mapped)
+		err = remapErrorList(err, sourceMap, fileName, targetFileName)
+		return false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
@@ -266,39 +262,25 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 
 // Takes an error from the formatter and attempts to convert the positions reported in the target file to their positions
 // in the source file.
-func mapFormatterError(err error, sourceMap *parser.SourceMap, fileName string, targetFileName string) (error, bool) {
+func remapErrorList(err error, sourceMap *parser.SourceMap, fileName string, targetFileName string) error {
 	list, ok := err.(scanner.ErrorList)
 	if !ok || len(list) == 0 {
-		return nil, false
+		return err
 	}
-	list.Sort()
-
-	mapped := scanner.ErrorList{}
-
-	for _, e := range list {
-		// The positions in the source map are off by one line because of the package.
+	for i, e := range list {
+		// The positions in the source map are off by one line because of the package definition.
 		srcPos, ok := sourceMap.SourcePositionFromTarget(uint32(e.Pos.Line-1), uint32(e.Pos.Column))
-
-		var mappedPos token.Position
-		if ok {
-			mappedPos = token.Position{
-				Filename: fileName,
-				Offset:   int(srcPos.Index),
-				Line:     int(srcPos.Line) + 1,
-				Column:   int(srcPos.Col),
-			}
-		} else {
-			mappedPos = token.Position{
-				Filename: targetFileName,
-				Offset:   e.Pos.Offset,
-				Line:     e.Pos.Line,
-				Column:   e.Pos.Column,
-			}
+		if !ok {
+			continue
 		}
-		mapped.Add(mappedPos, e.Msg)
+		list[i].Pos = token.Position{
+			Filename: fileName,
+			Offset:   int(srcPos.Index),
+			Line:     int(srcPos.Line) + 1,
+			Column:   int(srcPos.Col),
+		}
 	}
-
-	return mapped, true
+	return list
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
