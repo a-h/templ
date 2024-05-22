@@ -10,7 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-type onceTest struct {
+type renderLockTest struct {
 	ctx      context.Context
 	expected string
 }
@@ -19,13 +19,11 @@ func TestOnceComponent(t *testing.T) {
 	withHello := templ.WithChildren(context.Background(), templ.Raw("hello"))
 	tests := []struct {
 		name  string
-		c     templ.OnceComponent[string]
-		tests []onceTest
+		tests []renderLockTest
 	}{
 		{
 			name: "renders nothing without children",
-			c:    templ.Once("id"),
-			tests: []onceTest{
+			tests: []renderLockTest{
 				{
 					ctx:      context.Background(),
 					expected: "",
@@ -34,8 +32,7 @@ func TestOnceComponent(t *testing.T) {
 		},
 		{
 			name: "children are rendered",
-			c:    templ.Once("id"),
-			tests: []onceTest{
+			tests: []renderLockTest{
 				{
 					ctx:      templ.WithChildren(context.Background(), templ.Raw("hello")),
 					expected: "hello",
@@ -44,8 +41,7 @@ func TestOnceComponent(t *testing.T) {
 		},
 		{
 			name: "children are rendered once per context",
-			c:    templ.Once("id"),
-			tests: []onceTest{
+			tests: []renderLockTest{
 				{
 					ctx:      withHello,
 					expected: "hello",
@@ -58,8 +54,7 @@ func TestOnceComponent(t *testing.T) {
 		},
 		{
 			name: "different contexts have different once state",
-			c:    templ.Once("id"),
-			tests: []onceTest{
+			tests: []renderLockTest{
 				{
 					ctx:      templ.WithChildren(context.Background(), templ.Raw("hello")),
 					expected: "hello",
@@ -73,9 +68,10 @@ func TestOnceComponent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			c := templ.MustNewRenderLock().Once()
 			for i, test := range tt.tests {
 				t.Run(fmt.Sprintf("render %d/%d", i+1, len(tt.tests)), func(t *testing.T) {
-					html, err := templ.ToGoHTML(test.ctx, tt.c)
+					html, err := templ.ToGoHTML(test.ctx, c)
 					if err != nil {
 						t.Fatalf("unexpected error: %v", err)
 					}
@@ -86,10 +82,10 @@ func TestOnceComponent(t *testing.T) {
 			}
 		})
 	}
-	t.Run("different IDs have different once state", func(t *testing.T) {
+	t.Run("different RenderLock objects have different state", func(t *testing.T) {
 		ctx := templ.WithChildren(context.Background(), templ.Raw("hello"))
-		c1 := templ.Once("id1")
-		c2 := templ.Once("id2")
+		c1 := templ.MustNewRenderLock().Once()
+		c2 := templ.MustNewRenderLock().Once()
 		var w strings.Builder
 		if err := c1.Render(ctx, &w); err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -101,12 +97,11 @@ func TestOnceComponent(t *testing.T) {
 			t.Errorf("unexpected diff:\n%v", diff)
 		}
 	})
-	t.Run("a private type can be used to set the once state", func(t *testing.T) {
+	t.Run("using the same provider multiple times limits rendering", func(t *testing.T) {
 		ctx := templ.WithChildren(context.Background(), templ.Raw("hello"))
-		// Despite having the same underlying value, they are different types.
-		// As such, they are not directly comparable.
-		c1 := templ.Once(onceJQuery)
-		c2 := templ.Once("jquery")
+		provider := templ.MustNewRenderLock()
+		c1 := provider.Once()
+		c2 := provider.Once()
 		var w strings.Builder
 		if err := c1.Render(ctx, &w); err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -114,12 +109,23 @@ func TestOnceComponent(t *testing.T) {
 		if err := c2.Render(ctx, &w); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if diff := cmp.Diff("hellohello", w.String()); diff != "" {
+		if diff := cmp.Diff("hello", w.String()); diff != "" {
+			t.Errorf("unexpected diff:\n%v", diff)
+		}
+	})
+	t.Run("using the same ID limits rendering", func(t *testing.T) {
+		ctx := templ.WithChildren(context.Background(), templ.Raw("hello"))
+		c1 := templ.MustNewRenderLock(templ.WithLockID("abc")).Once()
+		c2 := templ.MustNewRenderLock(templ.WithLockID("abc")).Once()
+		var w strings.Builder
+		if err := c1.Render(ctx, &w); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if err := c2.Render(ctx, &w); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if diff := cmp.Diff("hello", w.String()); diff != "" {
 			t.Errorf("unexpected diff:\n%v", diff)
 		}
 	})
 }
-
-type onceType string
-
-const onceJQuery = onceType("jquery")
