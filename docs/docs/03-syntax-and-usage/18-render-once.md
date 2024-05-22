@@ -1,34 +1,36 @@
 # Render once
 
-If you need to render something to the page once per page, you can use the `templ.Once` function.
+If you need to render something to the page once per page, you can create a `*OnceHandler` with `templ.NewOnceHandler()` and use its `Once()` method.
+
+The `*OnceHandler.Once()` method ensures that the content is only rendered once per distinct context passed to the component's `Render` method, even if the component is rendered multiple times.
 
 ## Example
 
 The `hello` JavaScript function is only rendered once, even though the `hello` component is rendered twice.
 
-:::tip
-To ensure uniqueness, we use a private type as the argument instead of a plain `string` literal. You could use a string containing a unique value (e.g. your package name or domain), but there's no guarantee that another `templ` component won't use it.
+:::warning
+Dont write `@templ.NewOnceHandle().Once()` - this creates a new `*OnceHandler` each time the `Once` method is called, and will result in the content being rendered multiple times.
 :::
 
 ```templ title="component.templ"
 package once
 
-type onceType string
+var helloHandle = templ.NewOnceHandle()
 
 templ hello(label, name string) {
-	@templ.Once(onceType("hello_script")) {
-		<script type="text/javascript">
-			function hello(name) {
-				alert('Hello, ' + name + '!');
-			}
-		</script>
-	}
-	<input type="button" value={ label } data-name={ name } onclick="hello(this.getAttribute('data-name'))"/>
+  @helloHandle.Once() {
+    <script type="text/javascript">
+      function hello(name) {
+        alert('Hello, ' + name + '!');
+      }
+    </script>
+  }
+  <input type="button" value={ label } data-name={ name } onclick="hello(this.getAttribute('data-name'))"/>
 }
 
 templ page() {
-	@hello("Hello User", "user")
-	@hello("Hello World", "world")
+  @hello("Hello User", "user")
+  @hello("Hello World", "world")
 }
 ```
 
@@ -56,26 +58,45 @@ To pass complex data structures, consider using a `data-` attribute to pass a JS
 - Rendering a `<script>` tag that contains JavaScript required by a component.
 - Rendering a `<link>` tag that contains a reference to a stylesheet.
 
-## How it works
+## Usage across packages
 
-`templ.Once` uses the `context.Context` passed to a templ component's `Render(ctx, w)` method to determine whether the content already been rendered.
+Export a component that contains the `*OnceHandler` and the content to be rendered once.
 
-The `templ.Once` function takes a single argument, which is a `comparable type that uniquely identifies the content.
+For example, create a `deps` package that contains a `JQuery` component that renders a `<script>` tag that references the jQuery library.
 
-:::tip
-Define constants for your commonly used dependencies to reduce the likelihood of typos.
-:::
+```templ title="deps/deps.templ"
+package deps
 
-```go
-type onceType string
+var jqueryHandle = templ.NewOnceHandle()
 
-const onceJQuery = onceType("jquery")
-
-templ component() {
-  templ.Once(onceJQuery)) {
-	<script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+templ JQuery() {
+  @jqueryHandle.Once() {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   }
 }
 ```
 
-If any children have already been rendered, the children are not rendered again.
+You can then use the `JQuery` component in other packages, and the jQuery library will only be included once in the rendered HTML.
+
+```templ title="main.templ"
+package main
+
+import "deps"
+
+templ page() {
+  <html>
+    <head>
+      @deps.JQuery()
+    </head>
+    <body>
+      <h1>Hello, World!</h1>
+      @button()
+    </body>
+  </html>
+}
+
+templ button() {
+  @deps.JQuery()
+  <button>Click me</button>
+}
+```

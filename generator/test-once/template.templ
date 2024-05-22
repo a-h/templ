@@ -1,9 +1,9 @@
 package once
 
-var helloRenderLock = templ.MustNewRenderLock()
+var helloHandle = templ.NewOnceHandle()
 
 templ hello(label, name string) {
-	@helloRenderLock.Once() {
+	@helloHandle.Once() {
 		<script type="text/javascript">
 			function hello(name) {
 				alert('Hello, ' + name + '!');

@@ -10,20 +10,20 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-type renderLockTest struct {
+type onceHandleTest struct {
 	ctx      context.Context
 	expected string
 }
 
-func TestOnceComponent(t *testing.T) {
+func TestOnceHandle(t *testing.T) {
 	withHello := templ.WithChildren(context.Background(), templ.Raw("hello"))
 	tests := []struct {
 		name  string
-		tests []renderLockTest
+		tests []onceHandleTest
 	}{
 		{
 			name: "renders nothing without children",
-			tests: []renderLockTest{
+			tests: []onceHandleTest{
 				{
 					ctx:      context.Background(),
 					expected: "",
@@ -32,7 +32,7 @@ func TestOnceComponent(t *testing.T) {
 		},
 		{
 			name: "children are rendered",
-			tests: []renderLockTest{
+			tests: []onceHandleTest{
 				{
 					ctx:      templ.WithChildren(context.Background(), templ.Raw("hello")),
 					expected: "hello",
@@ -41,7 +41,7 @@ func TestOnceComponent(t *testing.T) {
 		},
 		{
 			name: "children are rendered once per context",
-			tests: []renderLockTest{
+			tests: []onceHandleTest{
 				{
 					ctx:      withHello,
 					expected: "hello",
@@ -54,7 +54,7 @@ func TestOnceComponent(t *testing.T) {
 		},
 		{
 			name: "different contexts have different once state",
-			tests: []renderLockTest{
+			tests: []onceHandleTest{
 				{
 					ctx:      templ.WithChildren(context.Background(), templ.Raw("hello")),
 					expected: "hello",
@@ -68,7 +68,7 @@ func TestOnceComponent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := templ.MustNewRenderLock().Once()
+			c := templ.NewOnceHandle().Once()
 			for i, test := range tt.tests {
 				t.Run(fmt.Sprintf("render %d/%d", i+1, len(tt.tests)), func(t *testing.T) {
 					html, err := templ.ToGoHTML(test.ctx, c)
@@ -82,49 +82,24 @@ func TestOnceComponent(t *testing.T) {
 			}
 		})
 	}
-	t.Run("different RenderLock objects have different state", func(t *testing.T) {
+	t.Run("each new handle manages different state", func(t *testing.T) {
 		ctx := templ.WithChildren(context.Background(), templ.Raw("hello"))
-		c1 := templ.MustNewRenderLock().Once()
-		c2 := templ.MustNewRenderLock().Once()
+		h1 := templ.NewOnceHandle()
+		c1 := h1.Once()
+		h2 := templ.NewOnceHandle()
+		c2 := h2.Once()
+		c3 := h2.Once()
 		var w strings.Builder
 		if err := c1.Render(ctx, &w); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if err := c2.Render(ctx, &w); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if err := c3.Render(ctx, &w); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if diff := cmp.Diff("hellohello", w.String()); diff != "" {
-			t.Errorf("unexpected diff:\n%v", diff)
-		}
-	})
-	t.Run("using the same provider multiple times limits rendering", func(t *testing.T) {
-		ctx := templ.WithChildren(context.Background(), templ.Raw("hello"))
-		provider := templ.MustNewRenderLock()
-		c1 := provider.Once()
-		c2 := provider.Once()
-		var w strings.Builder
-		if err := c1.Render(ctx, &w); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if err := c2.Render(ctx, &w); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if diff := cmp.Diff("hello", w.String()); diff != "" {
-			t.Errorf("unexpected diff:\n%v", diff)
-		}
-	})
-	t.Run("using the same ID limits rendering", func(t *testing.T) {
-		ctx := templ.WithChildren(context.Background(), templ.Raw("hello"))
-		c1 := templ.MustNewRenderLock(templ.WithLockID("abc")).Once()
-		c2 := templ.MustNewRenderLock(templ.WithLockID("abc")).Once()
-		var w strings.Builder
-		if err := c1.Render(ctx, &w); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if err := c2.Render(ctx, &w); err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if diff := cmp.Diff("hello", w.String()); diff != "" {
 			t.Errorf("unexpected diff:\n%v", diff)
 		}
 	})

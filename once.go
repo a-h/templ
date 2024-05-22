@@ -2,78 +2,43 @@ package templ
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
 	"io"
+	"sync/atomic"
 )
 
-func MustNewRenderLock(opts ...RenderLockOpt) *RenderLock {
-	provider, err := NewRenderLock(opts...)
-	if err != nil {
-		panic(err)
-	}
-	return provider
-}
+// onceHandleIndex is used to identify unique once handles in a program run.
+var onceHandleIndex int64
 
-type RenderLockOpt func(o *RenderLock) error
-
-func WithLockID(id string) RenderLockOpt {
-	return func(o *RenderLock) error {
-		o.ID = id
-		return nil
+// NewOnceHandle creates a OnceHandle used to ensure that the children of its
+// `Once` method are only rendered once per context.
+// once per render operation.
+func NewOnceHandle() *OnceHandle {
+	return &OnceHandle{
+		id: atomic.AddInt64(&onceHandleIndex, 1),
 	}
 }
 
-func WithLockIDFunction(f func() (string, error)) RenderLockOpt {
-	return func(o *RenderLock) error {
-		o.IDFunction = f
-		return nil
-	}
+// OnceHandle is used to ensure that the children of its `Once` method are are only
+// rendered once per context.
+type OnceHandle struct {
+	// id is used to identify which instance of the OnceHandle is being used.
+	// The OnceHandle can't be an empty struct, because:
+	//
+	//  | Two distinct zero-size variables may
+	//  | have the same address in memory
+	//
+	// https://go.dev/ref/spec#Size_and_alignment_guarantees
+	id int64
 }
 
-// NewRenderLock proivdes a component that renders its children once per context.
-func NewRenderLock(opts ...RenderLockOpt) (once *RenderLock, err error) {
-	once = &RenderLock{
-		IDFunction: generateLockID,
-	}
-	for _, opt := range opts {
-		err = opt(once)
-		if err != nil {
-			return nil, fmt.Errorf("failed to apply option: %w", err)
-		}
-	}
-	if once.ID == "" {
-		once.ID, err = once.IDFunction()
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate ID: %w", err)
-		}
-	}
-	return once, nil
-}
-
-func generateLockID() (id string, err error) {
-	h := sha256.New()
-	_, err = io.CopyN(h, rand.Reader, 128)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate lock ID: %w", err)
-	}
-	return hex.EncodeToString(h.Sum(nil)), nil
-}
-
-type RenderLock struct {
-	ID         string
-	IDFunction func() (string, error)
-}
-
-func (o *RenderLock) Once() Component {
+// Once returns a component that renders its children once per context.
+func (o *OnceHandle) Once() Component {
 	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		_, v := getContext(ctx)
-		if v.getHasOnceBeenRendered(o.ID) {
+		if v.getHasBeenRendered(o) {
 			return nil
 		}
-		v.setHasOnceBeenRendered(o.ID)
+		v.setHasBeenRendered(o)
 		return GetChildren(ctx).Render(ctx, w)
 	})
 }
