@@ -893,7 +893,7 @@ func (g *generator) writeElement(indentLevel int, n parser.Element) (err error) 
 			return err
 		}
 		// <script type="text/javascript"></script>
-		if err = g.writeElementScript(indentLevel, n); err != nil {
+		if err = g.writeElementScript(indentLevel, n.Attributes); err != nil {
 			return err
 		}
 		// <div
@@ -1000,9 +1000,9 @@ func isScriptAttribute(name string) bool {
 	return false
 }
 
-func (g *generator) writeElementScript(indentLevel int, n parser.Element) (err error) {
+func (g *generator) writeElementScript(indentLevel int, attrs []parser.Attribute) (err error) {
 	var scriptExpressions []string
-	for _, attr := range n.Attributes {
+	for _, attr := range attrs {
 		scriptExpressions = append(scriptExpressions, getAttributeScripts(attr)...)
 	}
 	if len(scriptExpressions) == 0 {
@@ -1275,6 +1275,10 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 			return err
 		}
 	} else {
+		// <script type="text/javascript"></script>
+		if err = g.writeElementScript(indentLevel, n.Attributes); err != nil {
+			return err
+		}
 		// <div
 		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s`, html.EscapeString(n.Name))); err != nil {
 			return err

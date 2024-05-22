@@ -27,6 +27,7 @@ templ ThreeButtons() {
 	<button hx-on::click="alert('clicked inline')" type="button">Button D</button>
 	<button hx-on::click={ onClick() } type="button">Button E</button>
 	@Conditional(true)
+	@ScriptOnLoad()
 }
 
 script conditionalScript() {
@@ -41,4 +42,12 @@ templ Conditional(show bool) {
 			onclick={ conditionalScript() }
 		}
 	/>
+}
+
+script alertTest() {
+	alert('testing');
+}
+
+templ ScriptOnLoad() {
+	<script async crossorigin="true" onload={ alertTest() } src="url.to.some.script"></script>
 }
