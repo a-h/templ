@@ -7,6 +7,8 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"go/format"
+	"go/scanner"
+	"go/token"
 	"log/slog"
 	"os"
 	"path"
@@ -221,7 +223,8 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
-		return false, false, nil, fmt.Errorf("%s source formatting error: %w", fileName, err)
+		err = remapErrorList(err, sourceMap, fileName, targetFileName)
+		return false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
@@ -255,6 +258,29 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	}
 
 	return goUpdated, textUpdated, parsedDiagnostics, err
+}
+
+// Takes an error from the formatter and attempts to convert the positions reported in the target file to their positions
+// in the source file.
+func remapErrorList(err error, sourceMap *parser.SourceMap, fileName string, targetFileName string) error {
+	list, ok := err.(scanner.ErrorList)
+	if !ok || len(list) == 0 {
+		return err
+	}
+	for i, e := range list {
+		// The positions in the source map are off by one line because of the package definition.
+		srcPos, ok := sourceMap.SourcePositionFromTarget(uint32(e.Pos.Line-1), uint32(e.Pos.Column))
+		if !ok {
+			continue
+		}
+		list[i].Pos = token.Position{
+			Filename: fileName,
+			Offset:   int(srcPos.Index),
+			Line:     int(srcPos.Line) + 1,
+			Column:   int(srcPos.Col),
+		}
+	}
+	return list
 }
 
 func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileName string, sourceMap *parser.SourceMap) error {
