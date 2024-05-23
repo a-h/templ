@@ -11,7 +11,6 @@ var onceHandleIndex int64
 
 // NewOnceHandle creates a OnceHandle used to ensure that the children of its
 // `Once` method are only rendered once per context.
-// once per render operation.
 func NewOnceHandle() *OnceHandle {
 	return &OnceHandle{
 		id: atomic.AddInt64(&onceHandleIndex, 1),
