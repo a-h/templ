@@ -132,7 +132,7 @@ func New(log *slog.Logger, bind string, port int, target *url.URL) (h *Handler) 
 	p := httputil.NewSingleHostReverseProxy(target)
 	p.ErrorLog = stdlog.New(os.Stderr, "Proxy to target error: ", 0)
 	p.Transport = &roundTripper{
-		maxRetries:      10,
+		maxRetries:      20,
 		initialDelay:    100 * time.Millisecond,
 		backoffExponent: 1.5,
 	}
@@ -227,7 +227,7 @@ func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		return resp, nil
 	}
 
-	return nil, fmt.Errorf("max retries reached")
+	return nil, fmt.Errorf("max retries reached: %q", r.URL.String())
 }
 
 func NotifyProxy(host string, port int) error {
