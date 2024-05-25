@@ -103,4 +103,15 @@ func TestOnceHandle(t *testing.T) {
 			t.Errorf("unexpected diff:\n%v", diff)
 		}
 	})
+	t.Run("a handle can be used to render a specific component", func(t *testing.T) {
+		ctx := templ.WithChildren(context.Background(), templ.Raw("child"))
+		o := templ.NewOnceHandle(templ.WithComponent(templ.Raw("c"))).Once()
+		var w strings.Builder
+		if err := o.Render(ctx, &w); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if diff := cmp.Diff("c", w.String()); diff != "" {
+			t.Errorf("unexpected diff:\n%v", diff)
+		}
+	})
 }
