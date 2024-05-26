@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -55,8 +54,13 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	if cmd.Args.Watch && cmd.Args.FileName != "" {
 		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
 	}
-	if cmd.Args.FileName == "" && cmd.Args.ToStdout {
+	writingToWriter := cmd.Args.FileWriter != nil
+	if cmd.Args.FileName == "" && writingToWriter {
 		return fmt.Errorf("only a single file can be output to stdout, add the -f flag to specify the file to generate code for")
+	}
+	// Default to writing to files.
+	if cmd.Args.FileWriter == nil {
+		cmd.Args.FileWriter = FileWriter
 	}
 	if cmd.Args.PPROFPort > 0 {
 		go func() {
@@ -81,10 +85,6 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		opts = append(opts, generator.WithTimestamp(time.Now()))
 	}
 
-	if cmd.Args.ToStdout {
-		cmd.Log = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
-	}
-
 	// Check the version of the templ module.
 	if err := modcheck.Check(cmd.Args.Path); err != nil {
 		cmd.Log.Warn("templ version check: " + err.Error())
@@ -97,7 +97,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		opts,
 		cmd.Args.GenerateSourceMapVisualisations,
 		cmd.Args.KeepOrphanedFiles,
-		cmd.Args.ToStdout,
+		cmd.Args.FileWriter,
 	)
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
@@ -182,7 +182,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			opts,
 			cmd.Args.GenerateSourceMapVisualisations,
 			cmd.Args.KeepOrphanedFiles,
-			cmd.Args.ToStdout,
+			cmd.Args.FileWriter,
 		)
 		errorCount.Store(0)
 		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {

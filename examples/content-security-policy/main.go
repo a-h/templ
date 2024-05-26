@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	// Create HTTP routes.
 	mux := http.NewServeMux()

@@ -6,6 +6,8 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -368,16 +370,23 @@ func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err e
 			command += " -gzip true"
 		}
 
-		cmdErr = generatecmd.Run(ctx, os.Stdout, generatecmd.Arguments{
-			Path:              appDir,
-			Watch:             true,
-			Command:           command,
-			ProxyBind:         proxyBind,
-			ProxyPort:         proxyPort,
-			Proxy:             args.AppURL,
-			IncludeVersion:    false,
-			IncludeTimestamp:  false,
-			KeepOrphanedFiles: false,
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+		cmdErr = generatecmd.Run(ctx, log, generatecmd.Arguments{
+			Path:                            appDir,
+			Watch:                           true,
+			OpenBrowser:                     false,
+			Command:                         command,
+			ProxyBind:                       proxyBind,
+			ProxyPort:                       proxyPort,
+			Proxy:                           args.AppURL,
+			NotifyProxy:                     false,
+			WorkerCount:                     0,
+			GenerateSourceMapVisualisations: false,
+			IncludeVersion:                  false,
+			IncludeTimestamp:                false,
+			PPROFPort:                       0,
+			KeepOrphanedFiles:               false,
 		})
 	}()
 
@@ -460,8 +469,10 @@ func TestGenerateReturnsErrors(t *testing.T) {
 		t.Errorf("failed to replace text in file: %v", err)
 	}
 
+	log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
 	// Run.
-	err = generatecmd.Run(context.Background(), os.Stdout, generatecmd.Arguments{
+	err = generatecmd.Run(context.Background(), log, generatecmd.Arguments{
 		Path:              appDir,
 		Watch:             false,
 		IncludeVersion:    false,

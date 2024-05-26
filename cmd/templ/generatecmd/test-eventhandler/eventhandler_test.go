@@ -42,7 +42,8 @@ func TestErrorLocationMapping(t *testing.T) {
 	}
 
 	slog := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
-	fseh := generatecmd.NewFSEventHandler(slog, ".", false, []generator.GenerateOpt{}, false, false, true)
+	var fw generatecmd.FileWriterFunc
+	fseh := generatecmd.NewFSEventHandler(slog, ".", false, []generator.GenerateOpt{}, false, false, fw)
 	for _, test := range tests {
 		// The raw files cannot end in .templ because they will cause the generator to fail. Instead,
 		// we create a tmp file that ends in .templ only for the duration of the test.

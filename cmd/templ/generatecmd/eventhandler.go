@@ -9,6 +9,7 @@ import (
 	"go/format"
 	"go/scanner"
 	"go/token"
+	"io"
 	"log/slog"
 	"os"
 	"path"
@@ -23,6 +24,19 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
+type FileWriterFunc func(name string, contents []byte) error
+
+func FileWriter(fileName string, contents []byte) error {
+	return os.WriteFile(fileName, contents, 0o644)
+}
+
+func WriterFileWriter(w io.Writer) FileWriterFunc {
+	return func(_ string, contents []byte) error {
+		_, err := w.Write(contents)
+		return err
+	}
+}
+
 func NewFSEventHandler(
 	log *slog.Logger,
 	dir string,
@@ -30,7 +44,7 @@ func NewFSEventHandler(
 	genOpts []generator.GenerateOpt,
 	genSourceMapVis bool,
 	keepOrphanedFiles bool,
-	toStdout bool,
+	fileWriter FileWriterFunc,
 ) *FSEventHandler {
 	if !path.IsAbs(dir) {
 		dir, _ = filepath.Abs(dir)
@@ -48,10 +62,7 @@ func NewFSEventHandler(
 		genSourceMapVis:            genSourceMapVis,
 		DevMode:                    devMode,
 		keepOrphanedFiles:          keepOrphanedFiles,
-		writer:                     writeToFile,
-	}
-	if toStdout {
-		fseh.writer = writeToStdout
+		writer:                     fileWriter,
 	}
 	if devMode {
 		fseh.genOpts = append(fseh.genOpts, generator.WithExtractStrings())
@@ -75,15 +86,6 @@ type FSEventHandler struct {
 	Errors                     []error
 	keepOrphanedFiles          bool
 	writer                     func(string, []byte) error
-}
-
-func writeToFile(fileName string, contents []byte) error {
-	return os.WriteFile(fileName, contents, 0o644)
-}
-
-func writeToStdout(_ string, contents []byte) error {
-	_, err := os.Stdout.Write(contents)
-	return err
 }
 
 func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (goUpdated, textUpdated bool, err error) {
@@ -223,8 +225,8 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
-		err = remapErrorList(err, sourceMap, fileName, targetFileName)
-		return false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
+		err = remapErrorList(err, sourceMap, fileName)
+		return false, false, nil, fmt.Errorf("% source formatting error %w", fileName, err)
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
@@ -262,7 +264,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 
 // Takes an error from the formatter and attempts to convert the positions reported in the target file to their positions
 // in the source file.
-func remapErrorList(err error, sourceMap *parser.SourceMap, fileName string, targetFileName string) error {
+func remapErrorList(err error, sourceMap *parser.SourceMap, fileName string) error {
 	list, ok := err.(scanner.ErrorList)
 	if !ok || len(list) == 0 {
 		return err

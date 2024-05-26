@@ -29,7 +29,7 @@ type Arguments struct {
 	HTTPDebug string
 }
 
-func Run(w io.Writer, args Arguments) (err error) {
+func Run(stdin io.Reader, stdout, stderr io.Writer, args Arguments) (err error) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	signalChan := make(chan os.Signal, 1)
@@ -61,14 +61,14 @@ func Run(w io.Writer, args Arguments) (err error) {
 		}
 		log, err = cfg.Build()
 		if err != nil {
-			_, _ = fmt.Fprintf(w, "failed to create logger: %v\n", err)
+			_, _ = fmt.Fprintf(stderr, "failed to create logger: %v\n", err)
 			os.Exit(1)
 		}
 	}
 	defer func() {
 		_ = log.Sync()
 	}()
-	templStream := jsonrpc2.NewStream(newStdRwc(log, "templStream", w, os.Stdin))
+	templStream := jsonrpc2.NewStream(newStdRwc(log, "templStream", stdout, stdin))
 	return run(ctx, log, templStream, args)
 }
 
