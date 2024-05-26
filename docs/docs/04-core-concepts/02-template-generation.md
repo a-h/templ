@@ -39,3 +39,4 @@ templ generate --help
   -w int
         Number of workers to run in parallel. (default runtime.NumCPU())
 ```
+ `templ generate --watch` would be very helpfull during development specially with HTMX and go frameworks.
