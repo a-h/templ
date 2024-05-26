@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/processor"
-	"github.com/a-h/templ/cmd/templ/sloghandler"
 	parser "github.com/a-h/templ/parser/v2"
 	"github.com/natefinch/atomic"
 )
@@ -19,37 +18,19 @@ import (
 type Arguments struct {
 	ToStdout    bool
 	Files       []string
-	LogLevel    string
 	WorkerCount int
 }
 
-func Run(w io.Writer, args Arguments) (err error) {
+func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (err error) {
 	// If no files are provided, read from stdin and write to stdout.
 	if len(args.Files) == 0 {
-		return format(writeToStdout, readFromStdin)
-	}
-
-	level := slog.LevelInfo.Level()
-	switch args.LogLevel {
-	case "debug":
-		level = slog.LevelDebug.Level()
-	case "warn":
-		level = slog.LevelWarn.Level()
-	case "error":
-		level = slog.LevelError.Level()
-	}
-	log := slog.New(sloghandler.NewHandler(w, &slog.HandlerOptions{
-		AddSource: args.LogLevel == "debug",
-		Level:     level,
-	}))
-	if args.ToStdout {
-		log = slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
+		return format(writeToWriter(stdout), readFromReader(stdin))
 	}
 	process := func(fileName string) error {
 		read := readFromFile(fileName)
 		write := writeToFile
 		if args.ToStdout {
-			write = writeToStdout
+			write = writeToWriter(stdout)
 		}
 		return format(write, read)
 	}
@@ -101,12 +82,14 @@ func (f *Formatter) Run() (err error) {
 
 type reader func() (fileName, src string, err error)
 
-func readFromStdin() (fileName, src string, err error) {
-	b, err := io.ReadAll(os.Stdin)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to read stdin: %w", err)
+func readFromReader(r io.Reader) func() (fileName, src string, err error) {
+	return func() (fileName, src string, err error) {
+		b, err := io.ReadAll(r)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to read stdin: %w", err)
+		}
+		return "stdin.templ", string(b), nil
 	}
-	return "stdin.templ", string(b), nil
 }
 
 func readFromFile(name string) reader {
@@ -123,11 +106,13 @@ type writer func(fileName, tgt string) error
 
 var mu sync.Mutex
 
-func writeToStdout(fileName, tgt string) error {
-	mu.Lock()
-	defer mu.Unlock()
-	_, err := os.Stdout.Write([]byte(tgt))
-	return err
+func writeToWriter(w io.Writer) func(fileName, tgt string) error {
+	return func(fileName, tgt string) error {
+		mu.Lock()
+		defer mu.Unlock()
+		_, err := w.Write([]byte(tgt))
+		return err
+	}
 }
 
 func writeToFile(fileName, tgt string) error {
