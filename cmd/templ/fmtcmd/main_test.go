@@ -63,9 +63,11 @@ func TestFormat(t *testing.T) {
 		defer tp.cleanup()
 		stdin := strings.NewReader(tp.testFiles["a.templ"].input)
 		stdout := new(strings.Builder)
-		Run(log, stdin, stdout, Arguments{
+		if err = Run(log, stdin, stdout, Arguments{
 			ToStdout: true,
-		})
+		}); err != nil {
+			t.Fatalf("failed to run format command: %v", err)
+		}
 		if diff := cmp.Diff(tp.testFiles["a.templ"].expected, stdout.String()); diff != "" {
 			t.Error(diff)
 		}
@@ -77,12 +79,14 @@ func TestFormat(t *testing.T) {
 		}
 		defer tp.cleanup()
 		stdout := new(strings.Builder)
-		Run(log, nil, stdout, Arguments{
+		if err = Run(log, nil, stdout, Arguments{
 			ToStdout: true,
 			Files: []string{
 				tp.testFiles["a.templ"].name,
 			},
-		})
+		}); err != nil {
+			t.Fatalf("failed to run format command: %v", err)
+		}
 		if diff := cmp.Diff(tp.testFiles["a.templ"].expected, stdout.String()); diff != "" {
 			t.Error(diff)
 		}
@@ -93,11 +97,13 @@ func TestFormat(t *testing.T) {
 			t.Fatalf("failed to setup project dir: %v", err)
 		}
 		defer tp.cleanup()
-		Run(log, nil, nil, Arguments{
+		if err = Run(log, nil, nil, Arguments{
 			Files: []string{
 				tp.testFiles["a.templ"].name,
 			},
-		})
+		}); err != nil {
+			t.Fatalf("failed to run format command: %v", err)
+		}
 		data, err := os.ReadFile(tp.testFiles["a.templ"].name)
 		if err != nil {
 			t.Fatalf("failed to read file: %v", err)
