@@ -1,0 +1,34 @@
+-- a.templ --
+package test
+
+templ a() {
+	<div><p>A
+</p></div>
+}
+-- a.templ --
+package test
+
+templ a() {
+	<div>
+		<p>
+			A
+		</p>
+	</div>
+}
+-- b.templ --
+package test
+
+templ b() {
+	<div><p>B
+</p></div>
+}
+-- a.templ --
+package test
+
+templ b() {
+	<div>
+		<p>
+			B
+		</p>
+	</div>
+}

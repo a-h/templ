@@ -1,14 +1,10 @@
 package lspcmd
 
 import (
-	"bytes"
 	"context"
-	"embed"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -17,48 +13,11 @@ import (
 	"github.com/a-h/protocol"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"github.com/a-h/templ/cmd/templ/lspcmd/lspdiff"
+	"github.com/a-h/templ/cmd/templ/testproject"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/uri"
 	"go.uber.org/zap"
 )
-
-//go:embed testdata/*
-var testdata embed.FS
-
-func createTestProject(moduleRoot string) (dir string, err error) {
-	dir, err = os.MkdirTemp("", "templ_watch_test_*")
-	if err != nil {
-		return dir, fmt.Errorf("failed to make test dir: %w", err)
-	}
-	files, err := testdata.ReadDir("testdata")
-	if err != nil {
-		return dir, fmt.Errorf("failed to read embedded dir: %w", err)
-	}
-	for _, file := range files {
-		src := filepath.Join("testdata", file.Name())
-		data, err := testdata.ReadFile(src)
-		if err != nil {
-			return dir, fmt.Errorf("failed to read file: %w", err)
-		}
-
-		target := filepath.Join(dir, file.Name())
-		if file.Name() == "go.mod.embed" {
-			data = bytes.ReplaceAll(data, []byte("{moduleRoot}"), []byte(moduleRoot))
-			target = filepath.Join(dir, "go.mod")
-		}
-		err = os.WriteFile(target, data, 0660)
-		if err != nil {
-			return dir, fmt.Errorf("failed to copy file: %w", err)
-		}
-	}
-	return dir, nil
-}
-
-func mustReplaceLine(file string, line int, replacement string) string {
-	lines := strings.Split(file, "\n")
-	lines[line-1] = replacement
-	return strings.Join(lines, "\n")
-}
 
 func TestCompletion(t *testing.T) {
 	if testing.Short() {
@@ -145,7 +104,7 @@ func TestCompletion(t *testing.T) {
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
 			// Edit the file.
-			updated := mustReplaceLine(string(templFile), test.line, test.replacement)
+			updated := testproject.MustReplaceLine(string(templFile), test.line, test.replacement)
 			err = server.DidChange(ctx, &protocol.DidChangeTextDocumentParams{
 				TextDocument: protocol.VersionedTextDocumentIdentifier{
 					TextDocumentIdentifier: protocol.TextDocumentIdentifier{
@@ -454,7 +413,7 @@ func Setup(ctx context.Context, log *zap.Logger) (clientCtx context.Context, app
 		return ctx, appDir, client, server, teardown, fmt.Errorf("could not find local templ go.mod file: %v", err)
 	}
 
-	appDir, err = createTestProject(moduleRoot)
+	appDir, err = testproject.Create(moduleRoot)
 	if err != nil {
 		return ctx, appDir, client, server, teardown, fmt.Errorf("failed to create test project: %v", err)
 	}

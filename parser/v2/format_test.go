@@ -10,7 +10,7 @@ import (
 )
 
 func TestFormatting(t *testing.T) {
-	files, _ := filepath.Glob("testdata/*.txt")
+	files, _ := filepath.Glob("formattestdata/*.txt")
 	if len(files) == 0 {
 		t.Errorf("no test files found")
 	}
