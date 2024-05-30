@@ -161,6 +161,49 @@ func TestProxy(t *testing.T) {
 			t.Errorf("unexpected response body (-got +want):\n%s", diff)
 		}
 	})
+	t.Run("plain: body tags get the script inserted ignoring js with body tags", func(t *testing.T) {
+		// Arrange
+		r := &http.Response{
+			Body:   io.NopCloser(strings.NewReader(`<html><body><script>console.log("<body></body>")</script></body></html>`)),
+			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
+		}
+		r.Header.Set("Content-Type", "text/html, charset=utf-8")
+		r.Header.Set("Content-Length", "26")
+
+		expectedString := insertScriptTagIntoBody(`<html><body><script>console.log("<body></body>")</script></body></html>`)
+		if !strings.Contains(expectedString, scriptTag) {
+			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
+		}
+		if !strings.Contains(expectedString, `console.log("<body></body>")`) {
+			t.Fatalf("expected the script tag to be inserted, but mangled the html: %q", expectedString)
+		}
+
+		// Act
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		err := h.modifyResponse(r)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Assert
+		if r.Header.Get("Content-Length") != fmt.Sprintf("%d", len(expectedString)) {
+			t.Errorf("expected content length to be %d, got %v", len(expectedString), r.Header.Get("Content-Length"))
+		}
+		actualBody, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("unexpected error reading response: %v", err)
+		}
+		if diff := cmp.Diff(expectedString, string(actualBody)); diff != "" {
+			t.Errorf("unexpected response body (-got +want):\n%s", diff)
+		}
+	})
 	t.Run("gzip: non-html content is not modified", func(t *testing.T) {
 		// Arrange
 		r := &http.Response{
