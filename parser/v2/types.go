@@ -194,6 +194,7 @@ func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
 	return err
 }
 
+//nolint:unused // This could be useful.
 func writeLinesIndented(w io.Writer, level int, s string) (err error) {
 	indent := strings.Repeat("\t", level)
 	lines := strings.Split(s, "\n")
@@ -963,8 +964,32 @@ func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
 	if err != nil {
 		source = []byte(tee.Expression.Value)
 	}
-	if err := writeLinesIndented(w, indent, "@"+string(source)); err != nil {
-		return err
+	// Indent all lines and re-format, we can then use this to only re-indent lines that gofmt would modify.
+	reformattedSource, err := format.Source(bytes.ReplaceAll(source, []byte("\n"), []byte("\n\t")))
+	if err != nil {
+		reformattedSource = source
+	}
+	sourceLines := bytes.Split(source, []byte("\n"))
+	reformattedSourceLines := bytes.Split(reformattedSource, []byte("\n"))
+	for i := range sourceLines {
+		if i == 0 {
+			if err := writeIndent(w, indent, "@"+string(sourceLines[i])); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, err := io.WriteString(w, "\n"); err != nil {
+			return err
+		}
+		if string(sourceLines[i]) != string(reformattedSourceLines[i]) {
+			if _, err := io.WriteString(w, string(sourceLines[i])); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := writeIndent(w, indent, string(sourceLines[i])); err != nil {
+			return err
+		}
 	}
 	if len(tee.Children) == 0 {
 		return nil
