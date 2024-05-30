@@ -179,31 +179,37 @@ func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
 func (g *generator) writeImports() error {
 	var err error
 	// Always import templ because it's the interface type of all templates.
-	if _, err = g.w.Write("import \"github.com/a-h/templ\"\n"); err != nil {
+	hasTemplates, hasCSS := g.templateNodeInfo()
+	if !hasTemplates && !hasCSS {
+		if _, err = g.w.Write("import \"github.com/a-h/templ\"\n\n"); err != nil {
+			return err
+		}
+		return nil
+	}
+	if _, err = g.w.Write("import (\n"); err != nil {
 		return err
 	}
-	hasTemplates, hasCSS := g.templateNodeInfo()
 	if hasTemplates {
+		// Buffer namespace.
+		if _, err = g.w.Write("\t\"bytes\"\n"); err != nil {
+			return err
+		}
 		// The first parameter of a template function.
-		if _, err = g.w.Write("import \"context\"\n"); err != nil {
+		if _, err = g.w.Write("\t\"context\"\n"); err != nil {
 			return err
 		}
 		// The second parameter of a template function.
-		if _, err = g.w.Write("import \"io\"\n"); err != nil {
-			return err
-		}
-		// Buffer namespace.
-		if _, err = g.w.Write("import \"bytes\"\n"); err != nil {
+		if _, err = g.w.Write("\t\"io\"\n"); err != nil {
 			return err
 		}
 	}
 	if hasCSS {
 		// strings.Builder is used to create CSS.
-		if _, err = g.w.Write("import \"strings\"\n"); err != nil {
+		if _, err = g.w.Write("\t\"strings\"\n"); err != nil {
 			return err
 		}
 	}
-	if _, err = g.w.Write("\n"); err != nil {
+	if _, err = g.w.Write("\n\t\"github.com/a-h/templ\"\n)\n\n"); err != nil {
 		return err
 	}
 	return nil

@@ -4,11 +4,14 @@ package testelementattributes
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import "context"
-import "io"
-import "bytes"
-import "strings"
+import (
+	"bytes"
+	"context"
+	"io"
+	"strings"
+
+	"github.com/a-h/templ"
+)
 
 func important() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder

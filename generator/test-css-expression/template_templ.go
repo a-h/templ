@@ -4,8 +4,11 @@ package testcssexpression
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import "github.com/a-h/templ"
-import "strings"
+import (
+	"strings"
+
+	"github.com/a-h/templ"
+)
 
 func className() templ.CSSClass {
 	var templ_7745c5c3_CSSBuilder strings.Builder
