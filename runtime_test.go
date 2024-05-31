@@ -145,6 +145,7 @@ var cssInputs = []any{
 	func() templ.CSSClass { return templ.ConstantCSSClass("l") },              // func() CSSClass
 	templ.CSSClass(templ.ConstantCSSClass("m")),                               // CSSClass
 	customClass{name: "n"},                                                    // CSSClass
+	[]templ.CSSClass{customClass{name: "n"}},                                  // []CSSClass
 	templ.KV[templ.ConstantCSSClass, bool](templ.ConstantCSSClass("o"), true), // KeyValue[ConstantCSSClass, bool]
 	[]templ.KeyValue[templ.ConstantCSSClass, bool]{
 		templ.KV(templ.ConstantCSSClass("p"), true),
