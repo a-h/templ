@@ -23,8 +23,10 @@ const (
 	defaultUrl = "https://templ.guide/"
 )
 
-var docsFsys = os.DirFS(docsPath)
-var staticFsys = os.DirFS(staticPath)
+var (
+	docsFsys   = os.DirFS(docsPath)
+	staticFsys = os.DirFS(staticPath)
+)
 
 func main() {
 	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
@@ -64,7 +66,7 @@ func main() {
 		fs := http.FileServer(http.Dir(outputPath))
 		http.Handle("/", fs)
 		fmt.Printf("Starting server at %s\n", render.BaseUrl)
-		err := http.ListenAndServe(":8080", nil)
+		err := http.ListenAndServe("127.0.0.1:8080", nil)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -108,5 +110,4 @@ func buildPages() ([]*render.Page, error) {
 	})
 
 	return pages, nil
-
 }

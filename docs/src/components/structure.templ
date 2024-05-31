@@ -12,7 +12,7 @@ templ HTML(c *r.PageContext, pages []*r.Page, data string) {
 			<link href={ r.BaseUrl + "style.css" } rel="stylesheet"/>
 			<link id="theme" href={ r.BaseUrl + "prism-onedark.css" } rel="stylesheet"/>
 		</head>
-		<body class="bg-white dark:bg-gray-800 dark:text-gray-100">
+		<body class="bg-white dark:bg-gray-800 dark:text-gray-100" hx-boost="true">
 			@frame(header(), sidebar(c, pages), content(data), footer())
 			@insertUrlInJs(r.BaseUrl)
 			<script src={ r.BaseUrl + "prism.js" }></script>
@@ -21,6 +21,7 @@ templ HTML(c *r.PageContext, pages []*r.Page, data string) {
 			<script src={ r.BaseUrl + "search_content.js" }></script>
 			<script src={ r.BaseUrl + "search.js" }></script>
 			<script src={ r.BaseUrl + "accordion.js" }></script>
+			<script src="https://unpkg.com/htmx.org@1.9.12"></script>
 		</body>
 	</html>
 }
