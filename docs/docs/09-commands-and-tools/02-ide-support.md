@@ -322,6 +322,15 @@ require'nvim-treesitter.configs'.setup {
 }
 ```
 
+## Vim
+
+Currently support for vim is limited. Configure formatting with the following VimScript:
+
+```vim
+set autoread
+autocmd BufWritePost *.templ silent! execute "!PATH=\"$PATH:$(go env GOPATH)/bin\" templ fmt <afile> >/dev/null 2>&1" | redraw!
+```
+
 ## Helix
 
 https://helix-editor.com/
