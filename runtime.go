@@ -233,6 +233,10 @@ func (cp *cssProcessor) Add(item any) {
 		for _, item := range c {
 			cp.Add(item)
 		}
+	case []CSSClass:
+		for _, item := range c {
+			cp.Add(item)
+		}
 	case func() CSSClass:
 		cp.AddClassName(c().ClassName(), true)
 	default:
@@ -438,6 +442,10 @@ func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...an
 			renderCSSItemsToBuilder(sb, v, ccc.Key)
 		case CSSClasses:
 			renderCSSItemsToBuilder(sb, v, ccc...)
+		case []CSSClass:
+			for _, item := range ccc {
+				renderCSSItemsToBuilder(sb, v, item)
+			}
 		case func() CSSClass:
 			renderCSSItemsToBuilder(sb, v, ccc())
 		case []string:
