@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/a-h/templ/cmd/templ/generatecmd/sse"
 	"github.com/andybalholm/brotli"
 
@@ -36,7 +37,16 @@ type Handler struct {
 }
 
 func insertScriptTagIntoBody(body string) (updated string) {
-	return strings.Replace(body, "</body>", scriptTag+"</body>", -1)
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(body))
+	if err != nil {
+		return strings.Replace(body, "</body>", scriptTag+"</body>", -1)
+	}
+	doc.Find("body").AppendHtml(scriptTag)
+	r, err := doc.Html()
+	if err != nil {
+		return strings.Replace(body, "</body>", scriptTag+"</body>", -1)
+	}
+	return r
 }
 
 type passthroughWriteCloser struct {
