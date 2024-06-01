@@ -1136,14 +1136,14 @@ func (gc GoCode) Write(w io.Writer, indent int) error {
 	if isWhitespace(gc.Expression.Value) {
 		gc.Expression.Value = ""
 	}
-	if !gc.Multiline {
-		return writeIndent(w, indent, `{{ `, gc.Expression.Value, ` }}`)
-	}
-	formatted, err := format.Source([]byte(gc.Expression.Value))
+	source, err := format.Source([]byte(gc.Expression.Value))
 	if err != nil {
-		return err
+		source = []byte(gc.Expression.Value)
 	}
-	if err := writeIndent(w, indent, "{{"+string(formatted)+"\n"); err != nil {
+	if !gc.Multiline {
+		return writeIndent(w, indent, `{{ `, string(source), ` }}`)
+	}
+	if err := writeIndent(w, indent, "{{"+string(source)+"\n"); err != nil {
 		return err
 	}
 	return writeIndent(w, indent, "}}")
