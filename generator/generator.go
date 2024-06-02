@@ -16,6 +16,7 @@ import (
 	_ "embed"
 
 	"github.com/a-h/templ/parser/v2"
+	"github.com/tdewolff/minify/v2/minify"
 )
 
 type GenerateOpt func(g *generator) error
@@ -57,6 +58,13 @@ func WithExtractStrings() GenerateOpt {
 	}
 }
 
+func WithJsMinification() GenerateOpt {
+	return func(g *generator) error {
+		g.minifyJs = true
+		return nil
+	}
+}
+
 // Generate generates Go code from the input template file to w, and returns a map of the location of Go expressions in the template
 // to the location of the generated Go code in the output.
 func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, literals string, err error) {
@@ -89,6 +97,8 @@ type generator struct {
 	generatedDate string
 	// fileName to include in error messages if string expressions return an error.
 	fileName string
+	// minifyJs bool to set js minification on or off
+	minifyJs bool
 }
 
 func (g *generator) generate() (err error) {
@@ -1449,6 +1459,14 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
 		body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
 		suffix := "}"
+
+		if g.minifyJs {
+			body, err = minify.JS(body)
+			if err != nil {
+				return err
+			}
+		}
+
 		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+body+suffix)+",\n"); err != nil {
 			return err
 		}

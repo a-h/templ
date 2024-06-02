@@ -116,6 +116,8 @@ Args:
     Port to run the pprof server on.
   -keep-orphaned-files
     Keeps orphaned generated templ files. (default false)
+  -minify-js
+	Minify the Javascript script blocks
   -v
     Set log verbosity level to "debug". (default "info")
   -log-level
@@ -159,6 +161,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
 	helpFlag := cmd.Bool("help", false, "")
+	minifyJSFlag := cmd.Bool("minify-js", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
 		fmt.Fprint(stderr, generateUsageText)
@@ -202,6 +205,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 		IncludeTimestamp:                *includeTimestampFlag,
 		PPROFPort:                       *pprofPortFlag,
 		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
+		MinifyJS:                        *minifyJSFlag,
 	})
 	if err != nil {
 		color.New(color.FgRed).Fprint(stderr, "(✗) ")
