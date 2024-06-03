@@ -291,12 +291,14 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 			r.Diagnostics[di].Range = p.convertGoRangeToTemplRange(templURI, r.Diagnostics[di].Range)
 		}
 		// Rewrite the DocumentChanges.
-		for dci := 0; dci < len(r.Edit.DocumentChanges); dci++ {
-			dc := r.Edit.DocumentChanges[0]
-			for ei := 0; ei < len(dc.Edits); ei++ {
-				dc.Edits[ei].Range = p.convertGoRangeToTemplRange(templURI, dc.Edits[ei].Range)
+		if r.Edit != nil {
+			for dci := 0; dci < len(r.Edit.DocumentChanges); dci++ {
+				dc := r.Edit.DocumentChanges[0]
+				for ei := 0; ei < len(dc.Edits); ei++ {
+					dc.Edits[ei].Range = p.convertGoRangeToTemplRange(templURI, dc.Edits[ei].Range)
+				}
+				dc.TextDocument.URI = templURI
 			}
-			dc.TextDocument.URI = templURI
 		}
 		result[i] = r
 	}
