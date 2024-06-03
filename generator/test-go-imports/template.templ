@@ -1,0 +1,14 @@
+package testgoimports
+
+import (
+	"github.com/a-h/templ"
+)
+
+// An example of when the user would like to explicitly import templ.
+var handler = templ.NewOnceHandle()
+
+templ render(content string) {
+	@handler.Once() {
+		<p>{ content }</p>
+	}
+}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -178,28 +179,29 @@ func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
 
 func (g *generator) writeImports() error {
 	var err error
-	// Always import templ because it's the interface type of all templates.
-	if _, err = g.w.Write("import \"github.com/a-h/templ\"\n"); err != nil {
+	// Always import templ if not already imported in the template file,
+	// because it's the interface type of all templates.
+	if _, err = g.writeImportStatementOnce("github.com/a-h/templ"); err != nil {
 		return err
 	}
 	hasTemplates, hasCSS := g.templateNodeInfo()
 	if hasTemplates {
 		// The first parameter of a template function.
-		if _, err = g.w.Write("import \"context\"\n"); err != nil {
+		if _, err = g.writeImportStatementOnce("context"); err != nil {
 			return err
 		}
 		// The second parameter of a template function.
-		if _, err = g.w.Write("import \"io\"\n"); err != nil {
+		if _, err = g.writeImportStatementOnce("io"); err != nil {
 			return err
 		}
 		// Buffer namespace.
-		if _, err = g.w.Write("import \"bytes\"\n"); err != nil {
+		if _, err = g.writeImportStatementOnce("bytes"); err != nil {
 			return err
 		}
 	}
 	if hasCSS {
 		// strings.Builder is used to create CSS.
-		if _, err = g.w.Write("import \"strings\"\n"); err != nil {
+		if _, err = g.writeImportStatementOnce("strings"); err != nil {
 			return err
 		}
 	}
@@ -207,6 +209,45 @@ func (g *generator) writeImports() error {
 		return err
 	}
 	return nil
+}
+
+func (g *generator) writeImportStatementOnce(pkg string) (r parser.Range, err error) {
+	for i := 0; i < len(g.tf.Nodes); i++ {
+		switch n := g.tf.Nodes[i].(type) {
+		case parser.TemplateFileGoExpression:
+			if g.hasImportStatement(n.Expression.Value, pkg) {
+				return
+			}
+		}
+	}
+	return g.w.Write(fmt.Sprintf("import %q\n", pkg))
+}
+
+func (g *generator) hasImportStatement(expVal string, pkg string) bool {
+	singleImportRe := regexp.MustCompile(`import\s+"([^"]+)"`)
+	groupImportRe := regexp.MustCompile(`import\s+\(([^)]+)\)`)
+
+	// Check for single import statements
+	singleMatches := singleImportRe.FindAllStringSubmatch(expVal, -1)
+	for _, match := range singleMatches {
+		if len(match) > 1 && strings.TrimSpace(match[1]) == pkg {
+			return true
+		}
+	}
+
+	// Check for grouped import statements
+	groupMatches := groupImportRe.FindAllStringSubmatch(expVal, -1)
+	for _, m := range groupMatches {
+		if len(m) > 1 {
+			imports := strings.Split(m[1], "\n")
+			for _, imp := range imports {
+				if strings.Trim(strings.TrimSpace(imp), `"`) == pkg {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func (g *generator) writeTemplateNodes() error {
@@ -1327,6 +1368,9 @@ func (g *generator) writeGoCode(indentLevel int, e parser.Expression) (err error
 	if strings.TrimSpace(e.Value) == "" {
 		return
 	}
+
+	fmt.Println("Writing go code", e.Value)
+
 	var r parser.Range
 	if r, err = g.w.WriteIndent(indentLevel, e.Value+"\n"); err != nil {
 		return err
