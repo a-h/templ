@@ -1369,8 +1369,6 @@ func (g *generator) writeGoCode(indentLevel int, e parser.Expression) (err error
 		return
 	}
 
-	fmt.Println("Writing go code", e.Value)
-
 	var r parser.Range
 	if r, err = g.w.WriteIndent(indentLevel, e.Value+"\n"); err != nil {
 		return err
