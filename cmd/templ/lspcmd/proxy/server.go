@@ -302,7 +302,6 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 		}
 		result[i] = r
 	}
-	p.Log.Info("result", zap.Any("result", result))
 	return
 }
 
