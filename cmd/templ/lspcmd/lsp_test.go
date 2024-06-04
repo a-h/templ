@@ -67,7 +67,7 @@ func TestCompletion(t *testing.T) {
 		assert      func(t *testing.T, cl *protocol.CompletionList) (msg string, ok bool)
 	}{
 		{
-			line:        13,
+			line:        17,
 			replacement: ` <div data-testid="count">{  `,
 			cursor:      `                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
@@ -78,7 +78,7 @@ func TestCompletion(t *testing.T) {
 			},
 		},
 		{
-			line:        13,
+			line:        17,
 			replacement: ` <div data-testid="count">{ fmt.`,
 			cursor:      `                               ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
@@ -89,7 +89,7 @@ func TestCompletion(t *testing.T) {
 			},
 		},
 		{
-			line:        13,
+			line:        17,
 			replacement: ` <div data-testid="count">{ fmt.Sprintf("%d",`,
 			cursor:      `                                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
