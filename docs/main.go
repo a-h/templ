@@ -29,9 +29,10 @@ var (
 )
 
 func main() {
-	cmd := flag.NewFlagSet("generate", flag.ExitOnError)
-	localFlag := cmd.Bool("local", false, "Hosts public/ directory on http://localhost:8080")
+	cmd := flag.NewFlagSet("velocitempl", flag.ExitOnError)
+	localFlag := cmd.Bool("local", false, "Builds site and hosts public/ directory on http://localhost:8080")
 	helpFlag := cmd.Bool("help", false, "Print help and exit.")
+
 	if cmd.Parse(os.Args[1:]) != nil || *helpFlag {
 		cmd.PrintDefaults()
 		return
@@ -89,6 +90,7 @@ func buildPages() ([]*render.Page, error) {
 
 		path := filepath.Join(".", info.Name())
 
+		// This is where the rest of the program does its work
 		newPage, err := render.NewPage(path, info, docsFsys)
 		if err != nil {
 			return nil, err

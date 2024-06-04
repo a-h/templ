@@ -11,11 +11,12 @@ import (
 )
 
 var BaseUrl string
+var strictFiles = false
 var bannedFiles = []string{"readme.md"}
 
 func NewPage(path string, info fs.FileInfo, inputFsys fs.FS) (*Page, error) {
 
-	if slices.Contains[[]string](bannedFiles, strings.ToLower(info.Name())) {
+	if slices.Contains(bannedFiles, strings.ToLower(info.Name())) {
 		return nil, nil
 	}
 
@@ -23,6 +24,7 @@ func NewPage(path string, info fs.FileInfo, inputFsys fs.FS) (*Page, error) {
 
 	if info.IsDir() {
 		fmt.Printf("Reading folder: %v\n", path)
+		// NewSectionPage will call renderChildren, which calls this function, recursively.
 		newPage, err := NewSectionPage(path, inputFsys)
 		if err != nil {
 			return nil, err
@@ -42,6 +44,10 @@ func NewPage(path string, info fs.FileInfo, inputFsys fs.FS) (*Page, error) {
 		}
 		p = newPage
 	}
+
+	if p == nil && strictFiles {
+		return nil, fmt.Errorf("unrecognized file %s is not a .md file, a folder, and does not exist in the bannedFiles slice", path)
+	} // otherwise, the caller just ignores nil *Page
 
 	return p, nil
 
