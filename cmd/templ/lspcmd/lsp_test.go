@@ -207,7 +207,7 @@ func TestHover(t *testing.T) {
 		assert      func(t *testing.T, hr *protocol.Hover) (msg string, ok bool)
 	}{
 		{
-			line:        13,
+			line:        17,
 			replacement: `			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`,
 			cursor:      `                                 ^`,
 			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
@@ -224,7 +224,7 @@ func TestHover(t *testing.T) {
 			},
 		},
 		{
-			line:        13,
+			line:        17,
 			replacement: `			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`,
 			cursor:      `                                     ^`,
 			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
@@ -241,7 +241,7 @@ func TestHover(t *testing.T) {
 			},
 		},
 		{
-			line:        19,
+			line:        23,
 			replacement: `var nihao = "你好"`,
 			cursor:      `             ^`,
 			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
@@ -250,7 +250,7 @@ func TestHover(t *testing.T) {
 			},
 		},
 		{
-			line:        19,
+			line:        23,
 			replacement: `var nihao = "你好"`,
 			cursor:      `              ^`, // Your text editor might not render this well, but it's the hao.
 			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
