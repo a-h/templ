@@ -158,21 +158,6 @@ func (g *generator) writePackage() error {
 	return nil
 }
 
-func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
-	for _, n := range g.tf.Nodes {
-		switch n.(type) {
-		case parser.HTMLTemplate:
-			hasTemplates = true
-		case parser.CSSTemplate:
-			hasCSS = true
-		}
-		if hasTemplates && hasCSS {
-			return
-		}
-	}
-	return
-}
-
 func (g *generator) writeTemplateNodes() error {
 	for i := 0; i < len(g.tf.Nodes); i++ {
 		switch n := g.tf.Nodes[i].(type) {
