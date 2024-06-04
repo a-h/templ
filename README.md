@@ -155,8 +155,10 @@ Run the development server.
 
 Directory: docs
 
+Requires: generate
+
 ```sh
-npm run start
+tailwindcss -i ./static/in.css -o ./static/style.css && go run main.go --local
 ```
 
 ### docs-build
@@ -165,7 +167,9 @@ Build production docs site.
 
 Directory: docs
 
+Requires: generate
+
 ```sh
-npm run build
+tailwindcss -i ./static/in.css -o ./static/style.css && go run main.go
 ```
 
