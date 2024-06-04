@@ -107,9 +107,6 @@ func (g *generator) generate() (err error) {
 	if err = g.writePackage(); err != nil {
 		return
 	}
-	if err = g.writeImports(); err != nil {
-		return
-	}
 	if err = g.writeTemplateNodes(); err != nil {
 		return
 	}
@@ -176,45 +173,6 @@ func (g *generator) templateNodeInfo() (hasTemplates bool, hasCSS bool) {
 	return
 }
 
-func (g *generator) writeImports() error {
-	var err error
-	// Always import templ because it's the interface type of all templates.
-	hasTemplates, hasCSS := g.templateNodeInfo()
-	if !hasTemplates && !hasCSS {
-		if _, err = g.w.Write("import \"github.com/a-h/templ\"\n\n"); err != nil {
-			return err
-		}
-		return nil
-	}
-	if _, err = g.w.Write("import (\n"); err != nil {
-		return err
-	}
-	if hasTemplates {
-		// Buffer namespace.
-		if _, err = g.w.Write("\t\"bytes\"\n"); err != nil {
-			return err
-		}
-		// The first parameter of a template function.
-		if _, err = g.w.Write("\t\"context\"\n"); err != nil {
-			return err
-		}
-		// The second parameter of a template function.
-		if _, err = g.w.Write("\t\"io\"\n"); err != nil {
-			return err
-		}
-	}
-	if hasCSS {
-		// strings.Builder is used to create CSS.
-		if _, err = g.w.Write("\t\"strings\"\n"); err != nil {
-			return err
-		}
-	}
-	if _, err = g.w.Write("\n\t\"github.com/a-h/templ\"\n)\n\n"); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (g *generator) writeTemplateNodes() error {
 	for i := 0; i < len(g.tf.Nodes); i++ {
 		switch n := g.tf.Nodes[i].(type) {
@@ -260,8 +218,11 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	}
 	{
 		indentLevel++
-		// var templ_7745c5c3_CSSBuilder strings.Builder
-		if _, err = g.w.WriteIndent(indentLevel, "var templ_7745c5c3_CSSBuilder strings.Builder\n"); err != nil {
+		// templ_7745c5c3_CSSBuilder := templ.GetBuffer()
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_CSSBuilder := templ.GetBuffer()\n"); err != nil {
+			return err
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "defer templ.ReleaseBuffer(templ_7745c5c3_CSSBuilder)\n"); err != nil {
 			return err
 		}
 		for i := 0; i < len(n.Properties); i++ {
@@ -340,26 +301,11 @@ func (g *generator) writeGoExpression(n parser.TemplateFileGoExpression) (err er
 }
 
 func (g *generator) writeTemplBuffer(indentLevel int) (err error) {
-	// templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := w.(*bytes.Buffer)
-	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)\n"); err != nil {
+	// templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templ.WriterToBuffer(templ_7745c5c3_W)
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templ.WriterToBuffer(templ_7745c5c3_W)\n"); err != nil {
 		return err
 	}
-	if _, err = g.w.WriteIndent(indentLevel, "if !templ_7745c5c3_IsBuffer {\n"); err != nil {
-		return err
-	}
-	{
-		indentLevel++
-		// templ_7745c5c3_Buffer = templ.GetBuffer()
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Buffer = templ.GetBuffer()\n"); err != nil {
-			return err
-		}
-		// defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		if _, err = g.w.WriteIndent(indentLevel, "defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)\n"); err != nil {
-			return err
-		}
-		indentLevel--
-	}
-	if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "defer templ_7745c5c3_Release()\n"); err != nil {
 		return err
 	}
 	return
@@ -384,12 +330,15 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		return err
 	}
 	indentLevel++
-	// return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-	if _, err = g.w.WriteIndent(indentLevel, "return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {\n"); err != nil {
+	// return templ.GeneratedTemplate(func(templ_7745c5c3_Input templ.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+	if _, err = g.w.WriteIndent(indentLevel, "return templ.GeneratedTemplate(func(templ_7745c5c3_Input templ.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
 		return err
 	}
 	{
 		indentLevel++
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context\n"); err != nil {
+			return err
+		}
 		if err := g.writeTemplBuffer(indentLevel); err != nil {
 			return err
 		}
@@ -731,11 +680,18 @@ func (g *generator) writeTemplElementExpression(indentLevel int, n parser.TemplE
 func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.TemplElementExpression) (err error) {
 	var r parser.Range
 	childrenName := g.createVariableName()
-	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templ.GeneratedTemplate(func(templ_7745c5c3_Input templ.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
 		return err
 	}
 	indentLevel++
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context\n"); err != nil {
+		return err
+	}
 	if err := g.writeTemplBuffer(indentLevel); err != nil {
+		return err
+	}
+	// ctx = templ.InitializeContext(ctx)
+	if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeContext(ctx)\n"); err != nil {
 		return err
 	}
 	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Children), nil); err != nil {
@@ -747,8 +703,8 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 	}
 	{
 		indentLevel++
-		// _, templ_7745c5c3_Err = io.Copy(templ_7745c5c3_W, templ_7745c5c3_Buffer)
-		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = io.Copy(templ_7745c5c3_W, templ_7745c5c3_Buffer)\n"); err != nil {
+		// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)
+		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_W)\n"); err != nil {
 			return err
 		}
 		indentLevel--

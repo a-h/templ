@@ -1,9 +1,11 @@
 package example
 
-import "fmt"
-import "time"
+import (
+	"fmt"
+	"time"
 
-
+	"github.com/a-h/templ"
+)
 
 templ headerTemplate(name string) {
 	<header data-testid="headerTemplate">
@@ -16,4 +18,3 @@ templ footerTemplate() {
 		<div>&copy; { fmt.Sprintf("%d", time.Now().Year()) }</div>
 	</footer>
 }
-

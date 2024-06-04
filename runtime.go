@@ -766,6 +766,17 @@ var bufferPool = sync.Pool{
 	},
 }
 
+func WriterToBuffer(w io.Writer) (*bytes.Buffer, bool, func()) {
+	buffer, ok := w.(*bytes.Buffer)
+	if !ok {
+		buffer = GetBuffer()
+		return buffer, false, func() {
+			ReleaseBuffer(buffer)
+		}
+	}
+	return buffer, true, func() {}
+}
+
 func GetBuffer() *bytes.Buffer {
 	return bufferPool.Get().(*bytes.Buffer)
 }
@@ -773,6 +784,17 @@ func GetBuffer() *bytes.Buffer {
 func ReleaseBuffer(b *bytes.Buffer) {
 	b.Reset()
 	bufferPool.Put(b)
+}
+
+type GeneratedComponentInput struct {
+	Context context.Context
+	Writer  io.Writer
+}
+
+func GeneratedTemplate(f func(GeneratedComponentInput) error) Component {
+	return ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		return f(GeneratedComponentInput{ctx, w})
+	})
 }
 
 // JoinStringErrs joins an optional list of errors.

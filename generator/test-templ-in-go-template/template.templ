@@ -1,6 +1,10 @@
 package testgotemplates
 
-import "html/template"
+import (
+	"html/template"
+
+	"github.com/a-h/templ"
+)
 
 var example = template.Must(template.New("example").Parse(`<!DOCTYPE html>
 <html>

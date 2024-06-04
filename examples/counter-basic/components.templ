@@ -1,6 +1,10 @@
 package main
 
-import "strconv"
+import (
+	"strconv"
+
+	"github.com/a-h/templ"
+)
 
 templ counts(global, user int) {
 	<div>Global: { strconv.Itoa(global) }</div>

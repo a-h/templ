@@ -1,5 +1,7 @@
 package testspreadattributes
 
+import "github.com/a-h/templ"
+
 templ BasicTemplate(spread templ.Attributes) {
 	<div>
 		<a { spread... }>text</a>

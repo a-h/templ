@@ -1,10 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/a-h/templ"
+)
 
 script renderHelloReact(id, name string) {
 	// Use the renderHello function from the React bundle.
 	bundle.renderHello(id, name)
+
 }
 
 templ Hello(id, name string) {

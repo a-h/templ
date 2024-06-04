@@ -1,5 +1,7 @@
 package testhtml
 
+import "github.com/a-h/templ"
+
 templ BasicTemplate(url string) {
 	<div>
 		<a href={ templ.URL(url) }>text</a>

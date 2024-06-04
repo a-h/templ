@@ -39,7 +39,7 @@ func Test(t *testing.T) {
 			if templateErr.FileName != `generator/test-string-errors/template.templ` {
 				t.Errorf("expected error in `generator/test-string-errors/template.templ`, but got %v", templateErr.FileName)
 			}
-			if templateErr.Line != 18 {
+			if templateErr.Line != 20 {
 				t.Errorf("expected error on line 18, but got %v", templateErr.Line)
 			}
 			if templateErr.Col != 26 {
@@ -52,6 +52,5 @@ func Test(t *testing.T) {
 				t.Errorf("expected error: %v, but got %v", errSomethingBad, err)
 			}
 		})
-
 	})
 }

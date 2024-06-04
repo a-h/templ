@@ -1,5 +1,7 @@
 package main
 
+import "github.com/a-h/templ"
+
 script graph(data []TimeValue) {
 	const chart = LightweightCharts.createChart(document.body, { width: 400, height: 300 });
 	const lineSeries = chart.addLineSeries();

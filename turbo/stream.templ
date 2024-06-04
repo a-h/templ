@@ -1,5 +1,11 @@
 package turbo
 
+import (
+	"fmt"
+
+	"github.com/a-h/templ"
+)
+
 templ actionTemplate(action string, target string) {
 	<turbo-stream action={ action } target={ target }>
 		<template>

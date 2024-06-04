@@ -5,33 +5,28 @@ package main
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
 import (
-	"bytes"
-	"context"
-	"io"
+	"fmt"
 
 	"github.com/a-h/templ"
 )
 
-import "fmt"
-
 func renderHelloReact(id, name string) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_renderHelloReact_7494`,
-		Function: `function __templ_renderHelloReact_7494(id, name){// Use the renderHello function from the React bundle.
+		Name: `__templ_renderHelloReact_9165`,
+		Function: `function __templ_renderHelloReact_9165(id, name){// Use the renderHello function from the React bundle.
 	bundle.renderHello(id, name)
+
 }`,
-		Call:       templ.SafeScript(`__templ_renderHelloReact_7494`, id, name),
-		CallInline: templ.SafeScriptInline(`__templ_renderHelloReact_7494`, id, name),
+		Call:       templ.SafeScript(`__templ_renderHelloReact_9165`, id, name),
+		CallInline: templ.SafeScriptInline(`__templ_renderHelloReact_9165`, id, name),
 	}
 }
 
 func Hello(id, name string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templ.GeneratedTemplate(func(templ_7745c5c3_Input templ.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templ.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var1 == nil {
@@ -45,7 +40,7 @@ func Hello(id, name string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/integration-react/components.templ`, Line: 11, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/integration-react/components.templ`, Line: 16, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -67,12 +62,10 @@ func Hello(id, name string) templ.Component {
 }
 
 func page() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templ.GeneratedTemplate(func(templ_7745c5c3_Input templ.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templ.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var3 == nil {

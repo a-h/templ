@@ -1,6 +1,10 @@
 package testtemplelement
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/a-h/templ"
+)
 
 templ wrapper(index int) {
 	<div id={ fmt.Sprint(index) }>
