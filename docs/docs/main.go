@@ -82,10 +82,16 @@ func main() {
 	for _, item := range items {
 		fmt.Println(item.Path)
 		if item.IsFile {
-			os.WriteFile(item.Path, []byte(item.Content), 0644)
+			if err := os.WriteFile(item.Path, []byte(item.Content), 0644); err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
 			continue
 		}
-		os.Mkdir(item.Path, 0755)
+		if err := os.Mkdir(item.Path, 0755); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	}
 }
 

@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .note {
+        @apply p-4 my-6 text-gray-800 rounded bg-gray-50 border-2 dark:bg-gray-700 dark:text-gray-300 border-gray-400 border;
+    }
+
+    .tip {
+        @apply p-4 my-6 text-green-800 rounded bg-green-50 border-2 dark:bg-gray-700 dark:text-green-400 border-green-400 border;
+    }
+
+    .info {
+        @apply p-4 my-6 text-purple-800 rounded bg-purple-50 border-2 dark:bg-gray-700 dark:text-purple-400 border-purple-400 border;
+    }
+
+    .warning {
+        @apply p-4 my-6 text-yellow-800 rounded bg-yellow-50 border-2 dark:bg-gray-700 dark:text-yellow-400 border-yellow-400 border;
+    }
+
+    .critical, .caution {
+        @apply p-4 my-6 text-red-800 rounded bg-red-50 border-2 dark:bg-gray-700 dark:text-red-300 border-red-300 border;
+    }
+
+    .note > *, .tip > *, .info > *, .warning > *, .critical > *, .caution > * {
+        @apply mx-1 my-0;
+    }
+
+    .anchor {
+        @apply no-underline text-gray-300 hover:text-gray-500 dark:text-gray-700 dark:hover:text-gray-400;
+    }
+}
+
+#sidebar {
+    left: -100vw;
+    transition: left 0.2s ease-out;
+}
+
+@media (min-width: 768px) {
+    #sidebar {
+        left: 0;
+    }
+}
+
+#sidebar.open {
+    left: 0;
+}
+
+.wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.2s ease-out;
+}
+
+.active > .wrapper {
+    grid-template-rows: 1fr;
+}
+
+.inner {
+    overflow: hidden;
+}
+
+.chevron {
+    transform: rotate(-90deg);
+    transition: grid-template-rows 0.2s ease-out;
+}
+
+.active > div > .chevron {
+    transform: rotate(0deg);
+}
