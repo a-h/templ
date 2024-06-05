@@ -137,13 +137,13 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	if _, err := io.WriteString(w, "\n\n"); err != nil {
 		return err
 	}
-	for i := 0; i < len(tf.Nodes); i++ {
-		n := tf.Nodes[i]
-		if ge, ok := n.(TemplateFileGoExpression); ok && i == 0 && !tf.ContainsTemplImport() {
-			ge.Expression.Value = `import "github.com/a-h/templ"` + "\n\n" + ge.Expression.Value
-			n = ge
+	if !tf.ContainsTemplImport() {
+		if _, err := io.WriteString(w, `import "github.com/a-h/templ"`+"\n\n"); err != nil {
+			return err
 		}
-		if err := n.Write(w, indent); err != nil {
+	}
+	for i := 0; i < len(tf.Nodes); i++ {
+		if err := tf.Nodes[i].Write(w, indent); err != nil {
 			return err
 		}
 		if _, err := io.WriteString(w, getNodeWhitespace(tf.Nodes, i)); err != nil {

@@ -1,0 +1,24 @@
+-- in --
+package test
+
+import (
+	"fmt"
+	"strings"
+)
+
+templ nameList() {
+	<div></div>
+}
+-- out --
+package test
+
+import "github.com/a-h/templ"
+
+import (
+	"fmt"
+	"strings"
+)
+
+templ nameList() {
+	<div></div>
+}
