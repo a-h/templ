@@ -1,12 +1,16 @@
 -- a.templ --
 package test
 
+import "github.com/a-h/templ"
+
 templ a() {
 	<div><p>A
 </p></div>
 }
 -- a.templ --
 package test
+
+import "github.com/a-h/templ"
 
 templ a() {
 	<div>
@@ -18,12 +22,16 @@ templ a() {
 -- b.templ --
 package test
 
+import "github.com/a-h/templ"
+
 templ b() {
 	<div><p>B
 </p></div>
 }
 -- a.templ --
 package test
+
+import "github.com/a-h/templ"
 
 templ b() {
 	<div>
