@@ -159,6 +159,11 @@ func (g *generator) writePackage() error {
 }
 
 func (g *generator) writeTemplateNodes() error {
+	if !g.tf.ContainsTemplImport() {
+		if _, err := g.w.Write("import \"github.com/a-h/templ\"\n\n"); err != nil {
+			return err
+		}
+	}
 	for i := 0; i < len(g.tf.Nodes); i++ {
 		switch n := g.tf.Nodes[i].(type) {
 		case parser.TemplateFileGoExpression:
