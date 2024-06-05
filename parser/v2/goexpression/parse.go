@@ -267,24 +267,15 @@ func ContainsImport(content, name string) (found bool, err error) {
 	prefix := "package main\n"
 	src := prefix + content
 
-	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.ImportsOnly)
 	if node == nil {
 		return false, parseErr
 	}
-
-	inspectFirstNode(node, func(n ast.Node) bool {
-		// Find the first function declaration.
-		imp, ok := n.(*ast.ImportSpec)
-		if !ok {
-			return true
+	for _, d := range node.Imports {
+		if d.Path.Value == fmt.Sprintf("%q", name) {
+			return true, nil
 		}
-		if imp.Path.Value == fmt.Sprintf("%q", name) {
-			found = true
-			return true
-		}
-		return false
-	})
-
+	}
 	return found, err
 }
 
