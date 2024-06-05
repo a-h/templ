@@ -32,10 +32,6 @@ First, define a HTML some with two buttons. One to update a global state, and on
 ```templ title="components.templ"
 package site
 
-import (
-	"github.com/delaneyj/datastar"
-)
-
 type TemplCounterStore struct {
 	Global uint32 `json:"global"`
 	User   uint32 `json:"user"`
@@ -72,7 +68,7 @@ templ templCounterExampleCounts() {
 templ templCounterExampleInitialContents(store TemplCounterStore) {
 	<div
 		id="container"
-		data-store={ datastar.MustJSONString(store) }
+		data-store={ templ.JSONString(store) }
 	>
 		@templCounterExampleButtons()
 		@templCounterExampleCounts()
