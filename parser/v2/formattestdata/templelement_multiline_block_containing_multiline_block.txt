@@ -1,6 +1,8 @@
 -- in --
 package p
 
+import "github.com/a-h/templ"
+
 templ f() {
 @Other(
 			p.Test,
@@ -17,6 +19,8 @@ templ f() {
 }
 -- out --
 package p
+
+import "github.com/a-h/templ"
 
 templ f() {
 	@Other(

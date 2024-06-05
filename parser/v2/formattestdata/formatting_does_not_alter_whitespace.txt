@@ -1,12 +1,16 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 templ nested() {
 	<div>{ "the" }<div>{ "other" }</div></div>
 }
 
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 templ nested() {
 	<div>{ "the" }<div>{ "other" }</div></div>

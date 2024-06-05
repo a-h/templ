@@ -1,11 +1,15 @@
 -- in --
 package main
 
+import "github.com/a-h/templ"
+
 templ x() {
     <div>{firstName...} {lastName...}</div>
 }
 -- out --
 package main
+
+import "github.com/a-h/templ"
 
 templ x() {
 	<div>{ firstName... } { lastName... }</div>

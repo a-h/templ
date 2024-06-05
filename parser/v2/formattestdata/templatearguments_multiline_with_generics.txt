@@ -1,6 +1,8 @@
 -- in --
 package p
 
+import "github.com/a-h/templ"
+
 templ List(
 list1 list[item],
 list2 list[item],
@@ -10,6 +12,8 @@ list3 list[item],
 }
 -- out --
 package p
+
+import "github.com/a-h/templ"
 
 templ List(
 	list1 list[item],

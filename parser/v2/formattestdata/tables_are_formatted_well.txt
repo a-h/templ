@@ -1,6 +1,8 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 templ table(accountNumber string, registration string) {
 	<table>
 	       <tr>
@@ -15,6 +17,8 @@ templ table(accountNumber string, registration string) {
 }
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 templ table(accountNumber string, registration string) {
 	<table>

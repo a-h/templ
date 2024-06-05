@@ -5,12 +5,56 @@ import (
 	"fmt"
 )
 
-type diagnoser func(Node) ([]Diagnostic, error)
+type (
+	nodeDiagnoser         func(Node) ([]Diagnostic, error)
+	templateFileDiagnoser func(TemplateFile) ([]Diagnostic, error)
+)
 
 // Diagnostic for template file.
 type Diagnostic struct {
 	Message string
 	Range   Range
+}
+
+func Diagnose(t TemplateFile) ([]Diagnostic, error) {
+	var diags []Diagnostic
+	var errs error
+	for _, d := range diagnosers {
+		diag, err := d(t)
+		if err != nil {
+			errs = errors.Join(errs, err)
+			continue
+		}
+		diags = append(diags, diag...)
+	}
+	return diags, errs
+}
+
+var diagnosers = []templateFileDiagnoser{
+	templNotImportedDiagnoser,
+	diagnoseNodesDiagnoser(
+		useOfLegacyCallSyntaxDiagnoser,
+		voidElementWithChildrenDiagnoser,
+	),
+}
+
+func diagnoseNodesDiagnoser(ds ...nodeDiagnoser) templateFileDiagnoser {
+	return func(tf TemplateFile) ([]Diagnostic, error) {
+		var diags []Diagnostic
+		var errs error
+		walkTemplate(tf, func(n Node) bool {
+			for _, d := range ds {
+				diag, err := d(n)
+				if err != nil {
+					errs = errors.Join(errs, err)
+					return false
+				}
+				diags = append(diags, diag...)
+			}
+			return true
+		})
+		return diags, errs
+	}
 }
 
 func walkTemplate(t TemplateFile, f func(Node) bool) {
@@ -22,6 +66,7 @@ func walkTemplate(t TemplateFile, f func(Node) bool) {
 		walkNodes(hn.Children, f)
 	}
 }
+
 func walkNodes(t []Node, f func(Node) bool) {
 	for _, n := range t {
 		if !f(n) {
@@ -31,28 +76,6 @@ func walkNodes(t []Node, f func(Node) bool) {
 			walkNodes(h.ChildNodes(), f)
 		}
 	}
-}
-
-var diagnosers = []diagnoser{
-	useOfLegacyCallSyntaxDiagnoser,
-	voidElementWithChildrenDiagnoser,
-}
-
-func Diagnose(t TemplateFile) ([]Diagnostic, error) {
-	var diags []Diagnostic
-	var errs error
-	walkTemplate(t, func(n Node) bool {
-		for _, d := range diagnosers {
-			diag, err := d(n)
-			if err != nil {
-				errs = errors.Join(errs, err)
-				return false
-			}
-			diags = append(diags, diag...)
-		}
-		return true
-	})
-	return diags, errs
 }
 
 func useOfLegacyCallSyntaxDiagnoser(n Node) ([]Diagnostic, error) {
@@ -80,4 +103,13 @@ func voidElementWithChildrenDiagnoser(n Node) (d []Diagnostic, err error) {
 		Message: fmt.Sprintf("void element <%s> should not have child content", e.Name),
 		Range:   e.NameRange,
 	}}, nil
+}
+
+func templNotImportedDiagnoser(tf TemplateFile) ([]Diagnostic, error) {
+	if !tf.ContainsTemplImport() {
+		return []Diagnostic{{
+			Message: "no \"github.com/a-h/templ\" import found. Run `templ fmt .` to fix all instances.",
+		}}, nil
+	}
+	return nil, nil
 }

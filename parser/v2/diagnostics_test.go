@@ -17,6 +17,8 @@ func TestDiagnose(t *testing.T) {
 			template: `
 package main
 
+import "github.com/a-h/templ"
+
 templ template () {
 	<p>Hello, World!</p>
 }`,
@@ -30,18 +32,22 @@ templ template () {
 			template: `
 package main
 
+import "github.com/a-h/templ"
+
 templ template () {
 	{! templ.Raw("foo") }
 }`,
 			want: []Diagnostic{{
 				Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
-				Range:   Range{Position{39, 4, 4}, Position{55, 4, 20}},
+				Range:   Range{Position{70, 6, 4}, Position{86, 6, 20}},
 			}},
 		},
 		{
 			name: "useOfLegacyCallSyntaxDiagnoser: in div",
 			template: `
 package main
+
+import "github.com/a-h/templ"
 
 templ template () {
 	<div>
@@ -50,13 +56,15 @@ templ template () {
 }`,
 			want: []Diagnostic{{
 				Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
-				Range:   Range{Position{47, 5, 5}, Position{63, 5, 21}},
+				Range:   Range{Position{78, 7, 5}, Position{94, 7, 21}},
 			}},
 		},
 		{
 			name: "useOfLegacyCallSyntaxDiagnoser: in if",
 			template: `
 package main
+
+import "github.com/a-h/templ"
 
 templ template () {
 	if true {
@@ -65,13 +73,15 @@ templ template () {
 }`,
 			want: []Diagnostic{{
 				Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
-				Range:   Range{Position{51, 5, 5}, Position{67, 5, 21}},
+				Range:   Range{Position{82, 7, 5}, Position{98, 7, 21}},
 			}},
 		},
 		{
 			name: "useOfLegacyCallSyntaxDiagnoser: in for",
 			template: `
 package main
+
+import "github.com/a-h/templ"
 
 templ template () {
 	for i := range x {
@@ -80,13 +90,15 @@ templ template () {
 }`,
 			want: []Diagnostic{{
 				Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
-				Range:   Range{Position{60, 5, 5}, Position{76, 5, 21}},
+				Range:   Range{Position{91, 7, 5}, Position{107, 7, 21}},
 			}},
 		},
 		{
 			name: "useOfLegacyCallSyntaxDiagnoser: in switch",
 			template: `
 package main
+
+import "github.com/a-h/templ"
 
 templ template () {
 	switch x {
@@ -99,11 +111,11 @@ templ template () {
 			want: []Diagnostic{
 				{
 					Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
-					Range:   Range{Position{61, 6, 5}, Position{77, 6, 21}},
+					Range:   Range{Position{92, 8, 5}, Position{108, 8, 21}},
 				},
 				{
 					Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
-					Range:   Range{Position{95, 8, 5}, Position{96, 8, 6}},
+					Range:   Range{Position{126, 10, 5}, Position{127, 10, 6}},
 				},
 			},
 		},
@@ -112,6 +124,8 @@ templ template () {
 			template: `
 package main
 
+import "github.com/a-h/templ"
+
 templ template () {
 	@layout("Home") {
 		{! templ.Raw("foo") }
@@ -119,13 +133,15 @@ templ template () {
 }`,
 			want: []Diagnostic{{
 				Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
-				Range:   Range{Position{59, 5, 5}, Position{75, 5, 21}},
+				Range:   Range{Position{90, 7, 5}, Position{106, 7, 21}},
 			}},
 		},
 		{
 			name: "voidElementWithChildrenDiagnoser: no diagnostics",
 			template: `
 package main
+
+import "github.com/a-h/templ"
 
 templ template () {
 	<div>
@@ -139,6 +155,8 @@ templ template () {
 			template: `
 package main
 
+import "github.com/a-h/templ"
+
 templ template () {
 	<div>
 	  <input>Child content</input>
@@ -146,7 +164,33 @@ templ template () {
 }`,
 			want: []Diagnostic{{
 				Message: "void element <input> should not have child content",
-				Range:   Range{Position{46, 5, 4}, Position{51, 5, 9}},
+				Range:   Range{Position{77, 7, 4}, Position{82, 7, 9}},
+			}},
+		},
+		{
+			name: "templNotImportedDiagnoser: with diagnostics",
+			template: `
+package main
+
+templ template () {
+	<div></div>
+}`,
+			want: []Diagnostic{{
+				Message: "no \"github.com/a-h/templ\" import found. Run `templ fmt .` to fix all instances.",
+			}},
+		},
+		{
+			name: "templNotImportedDiagnoser: with existing import",
+			template: `
+package main
+
+import "fmt"
+
+templ template () {
+	<div></div>
+}`,
+			want: []Diagnostic{{
+				Message: "no \"github.com/a-h/templ\" import found. Run `templ fmt .` to fix all instances.",
 			}},
 		},
 	}

@@ -1,6 +1,8 @@
 -- in --
 package main
 
+import "github.com/a-h/templ"
+
 templ x(id string, class string) {
 <button
 id={id}
@@ -18,6 +20,8 @@ class={
 }
 -- out --
 package main
+
+import "github.com/a-h/templ"
 
 templ x(id string, class string) {
 	<button

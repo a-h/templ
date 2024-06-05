@@ -1,6 +1,8 @@
 -- in --
 package main
 
+import "github.com/a-h/templ"
+
 templ x() {
 	<li>
 		<a href="/">
@@ -13,6 +15,8 @@ templ x() {
 }
 -- out --
 package main
+
+import "github.com/a-h/templ"
 
 templ x() {
 	<li>

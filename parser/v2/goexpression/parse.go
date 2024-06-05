@@ -262,6 +262,32 @@ func Func(content string) (name, expr string, err error) {
 	return name, expr, err
 }
 
+// ContainsImport will parse go code and return true if a matching ast.ImportSpec is found.
+func ContainsImport(content, name string) (found bool, err error) {
+	prefix := "package main\n"
+	src := prefix + content
+
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
+	if node == nil {
+		return false, parseErr
+	}
+
+	inspectFirstNode(node, func(n ast.Node) bool {
+		// Find the first function declaration.
+		imp, ok := n.(*ast.ImportSpec)
+		if !ok {
+			return true
+		}
+		if imp.Path.Value == fmt.Sprintf("%q", name) {
+			found = true
+			return true
+		}
+		return false
+	})
+
+	return found, err
+}
+
 func latestEnd(start int, nodes ...ast.Node) (end int) {
 	end = start
 	for _, n := range nodes {

@@ -1,6 +1,8 @@
 -- in --
 package main
 
+import "github.com/a-h/templ"
+
 templ test() {
 	<!-- This is a comment -->
 	// This is not included in the output.
@@ -12,6 +14,8 @@ templ test() {
 }
 -- out --
 package main
+
+import "github.com/a-h/templ"
 
 templ test() {
 	<!-- This is a comment -->

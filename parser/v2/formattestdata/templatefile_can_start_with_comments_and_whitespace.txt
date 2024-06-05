@@ -3,6 +3,8 @@
 
 package goof
 
+import "github.com/a-h/templ"
+
 templ Hello() {
 	Hello
 }
@@ -10,6 +12,8 @@ templ Hello() {
 // Go comment
 
 package goof
+
+import "github.com/a-h/templ"
 
 templ Hello() {
 	Hello

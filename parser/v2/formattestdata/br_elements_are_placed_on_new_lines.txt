@@ -1,6 +1,8 @@
 -- in --
 package main
 
+import "github.com/a-h/templ"
+
 templ test() {
 	<div>
 		Linebreaks<br/>and<hr/>rules<br/>for<br/>spacing
@@ -8,6 +10,8 @@ templ test() {
 }
 -- out --
 package main
+
+import "github.com/a-h/templ"
 
 templ test() {
 	<div>

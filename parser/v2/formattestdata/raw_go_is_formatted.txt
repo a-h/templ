@@ -1,11 +1,15 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 templ nameList(items []Item) {
 	{{ first  := items[0] }}
 }
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 templ nameList(items []Item) {
 	{{ first := items[0] }}

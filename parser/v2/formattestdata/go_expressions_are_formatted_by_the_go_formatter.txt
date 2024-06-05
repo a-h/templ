@@ -1,6 +1,8 @@
 -- in --
 package main
 
+import "github.com/a-h/templ"
+
       type Link struct {
 Name string
 	        Url  string
@@ -21,6 +23,8 @@ templ x() {
 }
 -- out --
 package main
+
+import "github.com/a-h/templ"
 
 type Link struct {
 	Name string

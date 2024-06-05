@@ -1,12 +1,16 @@
 -- in --
 package main
 
+import "github.com/a-h/templ"
+
 // test the comment handling.
 templ test() {
 	Test
 }
 -- out --
 package main
+
+import "github.com/a-h/templ"
 
 // test the comment handling.
 templ test() {

@@ -1,6 +1,8 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 templ input(items []string) {
 <div>{ "the" }<div>{ "other" }</div>switch items[0] {
 	case "a":
@@ -11,6 +13,8 @@ templ input(items []string) {
 }
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 templ input(items []string) {
 	<div>

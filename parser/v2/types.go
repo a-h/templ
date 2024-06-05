@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
 // package parser
@@ -137,7 +138,12 @@ func (tf TemplateFile) Write(w io.Writer) error {
 		return err
 	}
 	for i := 0; i < len(tf.Nodes); i++ {
-		if err := tf.Nodes[i].Write(w, indent); err != nil {
+		n := tf.Nodes[i]
+		if ge, ok := n.(TemplateFileGoExpression); ok && i == 0 && !tf.ContainsTemplImport() {
+			ge.Expression.Value = `import "github.com/a-h/templ"` + "\n\n" + ge.Expression.Value
+			n = ge
+		}
+		if err := n.Write(w, indent); err != nil {
 			return err
 		}
 		if _, err := io.WriteString(w, getNodeWhitespace(tf.Nodes, i)); err != nil {
@@ -145,6 +151,24 @@ func (tf TemplateFile) Write(w io.Writer) error {
 		}
 	}
 	return nil
+}
+
+func (tf TemplateFile) ContainsTemplImport() bool {
+	for i := 0; i < len(tf.Nodes); i++ {
+		if NodeContainsTemplImport(tf.Nodes[i]) {
+			return true
+		}
+	}
+	return false
+}
+
+func NodeContainsTemplImport(n TemplateFileNode) bool {
+	gc, ok := n.(TemplateFileGoExpression)
+	if !ok {
+		return false
+	}
+	found, _ := goexpression.ContainsImport(gc.Expression.Value, "github.com/a-h/templ")
+	return found
 }
 
 func getNodeWhitespace(nodes []TemplateFileNode, i int) string {

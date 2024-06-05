@@ -1,6 +1,8 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 templ nested() {
 	<div class="double">double</div>
 	<div class='single-not-required'>single-not-required</div>
@@ -9,6 +11,8 @@ templ nested() {
 
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 templ nested() {
 	<div class="double">double</div>

@@ -1,11 +1,15 @@
 -- in --
 package main
 
+import "github.com/a-h/templ"
+
 templ test() {
 	<div>Linebreaks<br/>used<br/>for<br/>spacing</div>
 }
 -- out --
 package main
+
+import "github.com/a-h/templ"
 
 templ test() {
 	<div>Linebreaks<br/>used<br/>for<br/>spacing</div>

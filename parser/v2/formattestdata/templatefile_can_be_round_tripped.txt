@@ -1,12 +1,16 @@
 -- in --
 package goof
 
+import "github.com/a-h/templ"
+
 templ Hello() {
 	Hello
 }
 
 -- out --
 package goof
+
+import "github.com/a-h/templ"
 
 templ Hello() {
 	Hello

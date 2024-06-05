@@ -1,6 +1,8 @@
 -- in --
 package p
 
+import "github.com/a-h/templ"
+
 script Style(
 a string,
 b string,
@@ -10,6 +12,8 @@ c string,
 }
 -- out --
 package p
+
+import "github.com/a-h/templ"
 
 script Style(
 	a string,

@@ -1,12 +1,16 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 templ input(value, validation string) {
 	<script src="https://example.com/myscript.js"></script>
 }
 
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 templ input(value, validation string) {
 	<script src="https://example.com/myscript.js"></script>

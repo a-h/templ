@@ -3,8 +3,10 @@
 
 package p
 
+import "github.com/a-h/templ"
 -- out --
 //go:build dev
 
 package p
 
+import "github.com/a-h/templ"

@@ -1,6 +1,8 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 templ input(items []string) {
 <div>{ "the" }<div>{ "other" }</div>for _, item := range items {
 <div>{ item }</div>
@@ -8,6 +10,8 @@ templ input(items []string) {
 }
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 templ input(items []string) {
 	<div>

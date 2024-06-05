@@ -1,6 +1,8 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 templ conditionalAttributes(addClass bool) {
 	<div id="conditional"
 if addClass {
@@ -10,6 +12,8 @@ width="300">Content</div>
 }
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 templ conditionalAttributes(addClass bool) {
 	<div

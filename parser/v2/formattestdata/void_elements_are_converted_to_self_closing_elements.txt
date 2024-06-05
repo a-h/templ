@@ -1,6 +1,8 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 templ input(value, validation string) {
 	<area>
 	<area></area>
@@ -39,6 +41,8 @@ templ input(value, validation string) {
 
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 templ input(value, validation string) {
 	<area/>

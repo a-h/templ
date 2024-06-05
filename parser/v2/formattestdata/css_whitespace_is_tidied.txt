@@ -1,6 +1,8 @@
 -- in --
 package test
 
+import "github.com/a-h/templ"
+
 css ClassName() {
 background-color    :   #ffffff	;
   color	:  { constants.White };
@@ -8,6 +10,8 @@ background-color    :   #ffffff	;
 		
 -- out --
 package test
+
+import "github.com/a-h/templ"
 
 css ClassName() {
 	background-color: #ffffff;
