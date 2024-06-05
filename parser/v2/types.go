@@ -194,21 +194,6 @@ func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
 	return err
 }
 
-//nolint:unused // This could be useful.
-func writeLinesIndented(w io.Writer, level int, s string) (err error) {
-	indent := strings.Repeat("\t", level)
-	lines := strings.Split(s, "\n")
-	indented := strings.Join(lines, "\n"+indent)
-	if _, err = io.WriteString(w, indent); err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, indented)
-	if err != nil {
-		return
-	}
-	return
-}
-
 func writeIndent(w io.Writer, level int, s ...string) (err error) {
 	indent := strings.Repeat("\t", level)
 	if _, err = io.WriteString(w, indent); err != nil {
