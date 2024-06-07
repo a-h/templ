@@ -154,8 +154,7 @@ outer:
 		if parts[0] != "script-src" {
 			continue
 		}
-		sources := strings.Fields(parts[1])
-		for _, source := range sources {
+		for _, source := range parts[1:] {
 			source = strings.TrimPrefix(source, "'")
 			source = strings.TrimSuffix(source, "'")
 			if strings.HasPrefix(source, "nonce-") {

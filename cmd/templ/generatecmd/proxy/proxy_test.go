@@ -569,3 +569,59 @@ func (h *testLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 func (h *testLogHandler) WithGroup(name string) slog.Handler {
 	return h
 }
+
+func TestParseNonce(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		csp      string
+		expected string
+	}{
+		{
+			name:     "empty csp",
+			csp:      "",
+			expected: "",
+		},
+		{
+			name:     "simple csp",
+			csp:      "script-src 'nonce-oLhVst3hTAcxI734qtB0J9Qc7W4qy09C'",
+			expected: "oLhVst3hTAcxI734qtB0J9Qc7W4qy09C",
+		},
+		{
+			name:     "simple csp without single quote",
+			csp:      "script-src nonce-oLhVst3hTAcxI734qtB0J9Qc7W4qy09C",
+			expected: "oLhVst3hTAcxI734qtB0J9Qc7W4qy09C",
+		},
+		{
+			name:     "complete csp",
+			csp:      "default-src 'self'; frame-ancestors 'self'; form-action 'self'; script-src 'strict-dynamic' 'nonce-4VOtk0Uo1l7pwtC';",
+			expected: "4VOtk0Uo1l7pwtC",
+		},
+		{
+			name:     "mdn example 1",
+			csp:      "default-src 'self'",
+			expected: "",
+		},
+		{
+			name:     "mdn example 2",
+			csp:      "default-src 'self' *.trusted.com",
+			expected: "",
+		},
+		{
+			name:     "mdn example 3",
+			csp:      "default-src 'self'; img-src *; media-src media1.com media2.com; script-src userscripts.example.com",
+			expected: "",
+		},
+		{
+			name:     "mdn example 3 multiple sources",
+			csp:      "default-src 'self'; img-src *; media-src media1.com media2.com; script-src userscripts.example.com foo.com 'strict-dynamic' 'nonce-4VOtk0Uo1l7pwtC'",
+			expected: "4VOtk0Uo1l7pwtC",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			nonce := parseNonce(tc.csp)
+			if nonce != tc.expected {
+				t.Errorf("expected nonce to be %s, but got %s", tc.expected, nonce)
+			}
+		})
+	}
+}
