@@ -1,15 +1,12 @@
 package main
 
-import "fmt"
-
-script renderHelloReact(id, name string) {
-	// Use the renderHello function from the React bundle.
-	bundle.renderHello(id, name)
-}
-
-templ Hello(id, name string) {
-	<div id={ id }></div>
-	@renderHelloReact(id, name)
+templ Hello(name string) {
+	<div data-name={ name }>
+		<script type="text/javascript">
+			// Place the React component into the parent div.
+			bundle.renderHello(document.currentScript.closest('div'));
+		</script>
+	</div>
 }
 
 templ page() {
@@ -28,8 +25,8 @@ templ page() {
 			<script src="static/index.js"></script>
 			<!-- Now that the React bundle is loaded, we can use the functions that are in it -->
 			<!-- the renderName function in the bundle can be used, but we want to pass it some server-side data -->
-			for i, name := range []string{"Alice", "Bob", "Charlie"} {
-				@Hello(fmt.Sprintf("react-hello-%d", i), name)
+			for _, name := range []string{"Alice", "Bob", "Charlie"} {
+				@Hello(name)
 			}
 		</body>
 	</html>

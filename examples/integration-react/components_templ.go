@@ -9,20 +9,7 @@ import "context"
 import "io"
 import "bytes"
 
-import "fmt"
-
-func renderHelloReact(id, name string) templ.ComponentScript {
-	return templ.ComponentScript{
-		Name: `__templ_renderHelloReact_7494`,
-		Function: `function __templ_renderHelloReact_7494(id, name){// Use the renderHello function from the React bundle.
-	bundle.renderHello(id, name)
-}`,
-		Call:       templ.SafeScript(`__templ_renderHelloReact_7494`, id, name),
-		CallInline: templ.SafeScriptInline(`__templ_renderHelloReact_7494`, id, name),
-	}
-}
-
-func Hello(id, name string) templ.Component {
+func Hello(name string) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -35,24 +22,20 @@ func Hello(id, name string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div id=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div data-name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(id)
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/integration-react/components.templ`, Line: 11, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/integration-react/components.templ`, Line: 4, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></div>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = renderHelloReact(id, name).Render(ctx, templ_7745c5c3_Buffer)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><script type=\"text/javascript\">\n\t\t\t// Place the React component into the parent div.\n\t\t\tbundle.renderHello(document.currentScript.closest('div'));\n\t\t</script></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -80,8 +63,8 @@ func page() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		for i, name := range []string{"Alice", "Bob", "Charlie"} {
-			templ_7745c5c3_Err = Hello(fmt.Sprintf("react-hello-%d", i), name).Render(ctx, templ_7745c5c3_Buffer)
+		for _, name := range []string{"Alice", "Bob", "Charlie"} {
+			templ_7745c5c3_Err = Hello(name).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
