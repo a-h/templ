@@ -26,8 +26,6 @@ import (
 //go:embed script.js
 var script string
 
-const scriptTag = `<script src="/_templ/reload/script.js"></script>`
-
 type Handler struct {
 	log    *slog.Logger
 	URL    string
@@ -36,15 +34,22 @@ type Handler struct {
 	sse    *sse.Handler
 }
 
-func insertScriptTagIntoBody(body string) (updated string) {
+func getScriptTag(nonce string) string {
+	if nonce == "" {
+		return `<script src="/_templ/reload/script.js"></script>`
+	}
+	return `<script src="/_templ/reload/script.js" nonce="` + nonce + `"></script>`
+}
+
+func insertScriptTagIntoBody(nonce, body string) (updated string) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(body))
 	if err != nil {
-		return strings.Replace(body, "</body>", scriptTag+"</body>", -1)
+		return strings.Replace(body, "</body>", getScriptTag(nonce)+"</body>", -1)
 	}
-	doc.Find("body").AppendHtml(scriptTag)
+	doc.Find("body").AppendHtml(getScriptTag(nonce))
 	r, err := doc.Html()
 	if err != nil {
-		return strings.Replace(body, "</body>", scriptTag+"</body>", -1)
+		return strings.Replace(body, "</body>", getScriptTag(nonce)+"</body>", -1)
 	}
 	return r
 }
@@ -110,7 +115,8 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 	}
 
 	// Update it.
-	updated := insertScriptTagIntoBody(string(body))
+	csp := r.Header.Get("Content-Security-Policy")
+	updated := insertScriptTagIntoBody(parseNonce(csp), string(body))
 	if log.Enabled(r.Request.Context(), slog.LevelDebug) {
 		if len(updated) == len(body) {
 			log.Debug("Reload script not inserted")
@@ -136,6 +142,29 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 	r.ContentLength = int64(buf.Len())
 	r.Header.Set("Content-Length", strconv.Itoa(buf.Len()))
 	return nil
+}
+
+func parseNonce(csp string) (nonce string) {
+outer:
+	for _, rawDirective := range strings.Split(csp, ";") {
+		parts := strings.Fields(rawDirective)
+		if len(parts) < 2 {
+			continue
+		}
+		if parts[0] != "script-src" {
+			continue
+		}
+		sources := strings.Fields(parts[1])
+		for _, source := range sources {
+			source = strings.TrimPrefix(source, "'")
+			source = strings.TrimSuffix(source, "'")
+			if strings.HasPrefix(source, "nonce-") {
+				nonce = source[6:]
+				break outer
+			}
+		}
+	}
+	return nonce
 }
 
 func New(log *slog.Logger, bind string, port int, target *url.URL) (h *Handler) {

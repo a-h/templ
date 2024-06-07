@@ -136,8 +136,50 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Type", "text/html, charset=utf-8")
 		r.Header.Set("Content-Length", "26")
 
-		expectedString := insertScriptTagIntoBody(`<html><body></body></html>`)
-		if !strings.Contains(expectedString, scriptTag) {
+		expectedString := insertScriptTagIntoBody("", `<html><body></body></html>`)
+		if !strings.Contains(expectedString, getScriptTag("")) {
+			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
+		}
+
+		// Act
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		err := h.modifyResponse(r)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Assert
+		if r.Header.Get("Content-Length") != fmt.Sprintf("%d", len(expectedString)) {
+			t.Errorf("expected content length to be %d, got %v", len(expectedString), r.Header.Get("Content-Length"))
+		}
+		actualBody, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("unexpected error reading response: %v", err)
+		}
+		if diff := cmp.Diff(expectedString, string(actualBody)); diff != "" {
+			t.Errorf("unexpected response body (-got +want):\n%s", diff)
+		}
+	})
+	t.Run("plain: body tags get the script inserted with nonce", func(t *testing.T) {
+		// Arrange
+		r := &http.Response{
+			Body:   io.NopCloser(strings.NewReader(`<html><body></body></html>`)),
+			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
+		}
+		r.Header.Set("Content-Type", "text/html, charset=utf-8")
+		r.Header.Set("Content-Length", "26")
+		const nonce = "this-is-the-nonce"
+		r.Header.Set("Content-Security-Policy", fmt.Sprintf("script-src 'nonce-%s'", nonce))
+
+		expectedString := insertScriptTagIntoBody(nonce, `<html><body></body></html>`)
+		if !strings.Contains(expectedString, getScriptTag(nonce)) {
 			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
 		}
 
@@ -176,8 +218,8 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Type", "text/html, charset=utf-8")
 		r.Header.Set("Content-Length", "26")
 
-		expectedString := insertScriptTagIntoBody(`<html><body><script>console.log("<body></body>")</script></body></html>`)
-		if !strings.Contains(expectedString, scriptTag) {
+		expectedString := insertScriptTagIntoBody("", `<html><body><script>console.log("<body></body>")</script></body></html>`)
+		if !strings.Contains(expectedString, getScriptTag("")) {
 			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
 		}
 		if !strings.Contains(expectedString, `console.log("<body></body>")`) {
@@ -253,7 +295,7 @@ func TestProxy(t *testing.T) {
 		}
 		gzw.Close()
 
-		expectedString := insertScriptTagIntoBody(body)
+		expectedString := insertScriptTagIntoBody("", body)
 
 		var expectedBytes bytes.Buffer
 		gzw = gzip.NewWriter(&expectedBytes)
@@ -314,7 +356,7 @@ func TestProxy(t *testing.T) {
 		}
 		brw.Close()
 
-		expectedString := insertScriptTagIntoBody(body)
+		expectedString := insertScriptTagIntoBody("", body)
 
 		var expectedBytes bytes.Buffer
 		brw = brotli.NewWriter(&expectedBytes)
