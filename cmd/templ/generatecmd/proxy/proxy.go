@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"html"
 	"io"
 	stdlog "log"
 	"log/slog"
@@ -35,10 +36,14 @@ type Handler struct {
 }
 
 func getScriptTag(nonce string) string {
-	if nonce == "" {
-		return `<script src="/_templ/reload/script.js"></script>`
+	if nonce != "" {
+		var sb strings.Builder
+		sb.WriteString(`<script src="/_templ/reload/script.js" nonce="`)
+		sb.WriteString(html.EscapeString(nonce))
+		sb.WriteString(`"></script>`)
+		return sb.String()
 	}
-	return `<script src="/_templ/reload/script.js" nonce="` + nonce + `"></script>`
+	return `<script src="/_templ/reload/script.js"></script>`
 }
 
 func insertScriptTagIntoBody(nonce, body string) (updated string) {
