@@ -1,6 +1,8 @@
 # Datastar
 
-[Datastar](https://data-star.dev) is another hypermedia framework similar to [HTMX](htmx) can be used to selectively replace content within a web page. It does this by combining fine grain reactive signals with SSE. It's geared primarily to real time applications where you'd normally reach for a SPA framework such as React/Vue/Svelte. If you are combining HTMX with a reactive frames (such as AlpineJS or hyperscript) then you may find Datastar a better fit.
+[Datastar](https://data-star.dev) is a hypermedia framework that is similar to [HTMX](htmx).
+
+Datastar can be used to selectively replace content within a web page by combining fine grained reactive signals with SSE. It's geared primarily to real time applications where you'd normally reach for a SPA framework such as React/Vue/Svelte.
 
 ## Usage
 
@@ -19,15 +21,21 @@ Advanced Datastar installation and usage help is covered in the user guide at ht
 
 ## Datastar examples using Templ
 
-Datastar website itself is built using Datastar and Templ. Look at any of the examples in the [source code](https://github.com/delaneyj/datastar/tree/main/backends/go/site) for the Datastar website to see how it's done! This specific example is [here](http://data-star.dev/examples/templ_counter)
+The Datastar website is built using Datastar and templ, so you can see how it works in practice.
+
+The Datastar website contains a number of examples that demonstrate how to use Datastar. The examples are written in Go and use the templ package to generate the HTML.
+
+See examples at https://github.com/delanej/datastar/tree/main/backends/go/site
+
+This document will walk you through how to create a simple counter example using Datastar, following the [example](https://data-star.dev/examples/templ_counter) in the Datastar website.
 
 ## Counter Example
 
-We are going to modify the counter example [previously discussed](example-counter-application) to use Datastar.
+We are going to modify the [templ counter example](example-counter-application) to use Datastar.
 
 ### Frontend
 
-First, define a HTML some with two buttons. One to update a global state, and one for a per-user state.
+First, define a HTML some with two buttons. One to update a global state, and one to update a per-user state.
 
 ```templ title="components.templ"
 package site
@@ -74,11 +82,10 @@ templ templCounterExampleInitialContents(store TemplCounterStore) {
 		@templCounterExampleCounts()
 	</div>
 }
-
 ```
 
 :::tip
-Note that Datastar doesn't promote the use of forms. This is because they are ill suited to nested reactive contents. Instead it will send all[^1] reactive state (as JSON) to the server on every request. This means far less bookkeeping and more predictable state management.
+Note that Datastar doesn't promote the use of forms, because they are ill-suited to nested reactive contents. Instead it sends all[^1] reactive state (as JSON) to the server on each request. This means far less bookkeeping and more predictable state management.
 :::
 
 :::note
@@ -91,7 +98,7 @@ Note that Datastar doesn't promote the use of forms. This is because they are il
 
 ### Backend
 
-The backend is pretty straightforward. Notice there is a bit of setup for the SSE handling but Datastar comes with helpers built in to make this easy.
+Note the use of Datastar's helpers to set up SSE.
 
 ```go title="examples_templ_counter.go"
 package site
@@ -107,7 +114,6 @@ import (
 )
 
 func setupExamplesTemplCounter(examplesRouter chi.Router, sessionStore sessions.Store) error {
-
 	var globalCounter atomic.Uint32
 	const (
 		sessionKey = "templ_counter"
@@ -180,10 +186,10 @@ func setupExamplesTemplCounter(examplesRouter chi.Router, sessionStore sessions.
 }
 ```
 
-We are using the `atomic.Uint32` type to store the global state. The `userVal` function is a helper that retrieves the user's session state. The `updateGlobal` function increments the global state.
+The `atomic.Uint32` type is used to store the global state. The `userVal` function is a helper that retrieves the user's session state. The `updateGlobal` function increments the global state.
 
 :::note
-In this example, the global state is stored in RAM, and will be lost when the web server reboots. To support load-balanced web servers, and stateless function deployments, you might consider storing the state in a data store such as [NATS KV](https://docs.nats.io/using-nats/developer/develop_jetstream/kv).
+In this example, the global state is stored in RAM, and will be lost when the web server reboots. To support load-balanced web servers, and stateless function deployments, consider storing the state in a data store such as [NATS KV](https://docs.nats.io/using-nats/developer/develop_jetstream/kv).
 :::
 
 ### Per-user session state
@@ -192,9 +198,9 @@ In a HTTP application, per-user state information is partitioned by a HTTP cooki
 
 ### Signal only patching
 
-Since this is a very simple example the page's elements aren't changing dynamically we can use the `datastar.PatchStore` function to send only the signals that have changed. This is a more efficient way to update the page without even needing to send HTML fragments!
+Since the page's elements aren't changing dynamically, we can use the `datastar.PatchStore` function to send only the signals that have changed. This is a more efficient way to update the page without even needing to send HTML fragments.
 
 :::tip
-Datastar will merge updates to the store similar to a JSON merge patch. This means you can do dynamic partial updates to the store and the page will update accordingly. [Gabs](https://pkg.go.dev/github.com/Jeffail/gabs/v2#section-readme) is a great library used here to make dynamic JSON in Go easy.
+Datastar will merge updates to the store similar to a JSON merge patch. This means you can do dynamic partial updates to the store and the page will update accordingly. [Gabs](https://pkg.go.dev/github.com/Jeffail/gabs/v2#section-readme) is used here to handle dynamic JSON in Go.
 
-[^1]: You can control what get's sent to the server by prefixing local signals with `_`. This will prevent them from being sent to the server on every request.
+[^1]: You can control the data that is sent to the server by prefixing local signals with `_`. This will prevent them from being sent to the server on every request.
