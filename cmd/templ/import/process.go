@@ -44,7 +44,6 @@ func updateImports(name, src string) (updated []*ast.ImportSpec, err error) {
 		return updated, fmt.Errorf("failed to get imports from updated go code: %w", err)
 	}
 	for _, imp := range gofile.Imports {
-		fmt.Println(imp.Path.Value)
 		if !slices.Contains(internalImports, strings.Trim(imp.Path.Value, "\"")) {
 			updated = append(updated, imp)
 		}
