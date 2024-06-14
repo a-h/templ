@@ -20,6 +20,8 @@ import (
 	"github.com/a-h/templ/parser/v2"
 )
 
+var internalImports = []string{"github.com/a-h/templ", "github.com/a-h/templ/runtime"}
+
 func convertTemplToGoURI(templURI string) (isTemplFile bool, goURI string) {
 	base, fileName := path.Split(templURI)
 	if !strings.HasSuffix(fileName, ".templ") {
@@ -41,7 +43,13 @@ func updateImports(name, src string) (updated []*ast.ImportSpec, err error) {
 	if err != nil {
 		return updated, fmt.Errorf("failed to get imports from updated go code: %w", err)
 	}
-	return gofile.Imports, nil
+	for _, imp := range gofile.Imports {
+		fmt.Println(imp.Path.Value)
+		if !slices.Contains(internalImports, strings.Trim(imp.Path.Value, "\"")) {
+			updated = append(updated, imp)
+		}
+	}
+	return updated, nil
 }
 
 func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
