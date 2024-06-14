@@ -13,6 +13,7 @@ import (
 
 	goparser "go/parser"
 
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/tools/imports"
 
 	"github.com/a-h/templ/generator"
@@ -67,22 +68,32 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 
 	// Generate code.
 	gw := bytes.NewBuffer(nil)
-	if _, _, err := generator.Generate(t, gw); err != nil {
-		return t, fmt.Errorf("failed to generate go code: %w", err)
-	}
+	var updatedImports []*ast.ImportSpec
+	var eg errgroup.Group
+	eg.Go(func() (err error) {
+		if _, _, err := generator.Generate(t, gw); err != nil {
+			return fmt.Errorf("failed to generate go code: %w", err)
+		}
+		updatedImports, err = updateImports(fileName, gw.String())
+		if err != nil {
+			return fmt.Errorf("failed to get imports from generated go code: %w", err)
+		}
+		return nil
+	})
 
-	// Find all the imports in the generated Go code.
-	updatedImports, err := updateImports(fileName, gw.String())
-	if err != nil {
-		return t, fmt.Errorf("failed to get imports from generated go code: %w", err)
-	}
-
+	var gofile *ast.File
 	// Update the template with the imports.
 	// Ensure that there is a Go expression to add the imports to as the first node.
-	gofile, err := goparser.ParseFile(fset, fileName, t.Package.Expression.Value+"\n"+importsNode.Expression.Value, goparser.AllErrors)
-	if err != nil {
-		log.Printf("failed to parse go code: %v", importsNode.Expression.Value)
-		return t, fmt.Errorf("failed to parse imports section: %w", err)
+	eg.Go(func() (err error) {
+		gofile, err = goparser.ParseFile(fset, fileName, t.Package.Expression.Value+"\n"+importsNode.Expression.Value, goparser.AllErrors)
+		if err != nil {
+			log.Printf("failed to parse go code: %v", importsNode.Expression.Value)
+			return fmt.Errorf("failed to parse imports section: %w", err)
+		}
+		return nil
+	})
+	if err := eg.Wait(); err != nil {
+		return t, err
 	}
 	slices.SortFunc(updatedImports, func(a, b *ast.ImportSpec) int {
 		return strings.Compare(a.Path.Value, b.Path.Value)
@@ -105,7 +116,7 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 	gofile.Decls = append([]ast.Decl{newImportDecl}, gofile.Decls...)
 	// Write out the Go code with the imports.
 	updatedGoCode := new(strings.Builder)
-	err = printer.Fprint(updatedGoCode, fset, gofile)
+	err := printer.Fprint(updatedGoCode, fset, gofile)
 	if err != nil {
 		return t, fmt.Errorf("failed to write updated go code: %w", err)
 	}
