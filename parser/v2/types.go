@@ -250,6 +250,7 @@ func (ws Whitespace) Write(w io.Writer, indent int) error {
 //	  background-image: url('./somewhere.png');
 //	}
 type CSSTemplate struct {
+	Range      Range
 	Name       string
 	Expression Expression
 	Properties []CSSProperty
@@ -346,6 +347,7 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 //	  }
 //	}
 type HTMLTemplate struct {
+	Range      Range
 	Expression Expression
 	Children   []Node
 }
@@ -424,6 +426,8 @@ var (
 
 // Text node within the document.
 type Text struct {
+	// Range of the text within the templ file.
+	Range Range
 	// Value is the raw HTML encoded value.
 	Value string
 	// TrailingSpace lists what happens after the text.
@@ -1182,6 +1186,7 @@ func (se StringExpression) Write(w io.Writer, indent int) error {
 
 // ScriptTemplate is a script block.
 type ScriptTemplate struct {
+	Range      Range
 	Name       Expression
 	Parameters Expression
 	Value      string
