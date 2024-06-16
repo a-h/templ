@@ -24,7 +24,7 @@ type Arguments struct {
 func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (err error) {
 	// If no files are provided, read from stdin and write to stdout.
 	if len(args.Files) == 0 {
-		return format(writeToWriter(stdout), readFromReader(stdin))
+		return format(writeToWriter(stdout), readFromReader(stdin), true)
 	}
 	process := func(fileName string) error {
 		read := readFromFile(fileName)
@@ -32,7 +32,8 @@ func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (e
 		if args.ToStdout {
 			write = writeToWriter(stdout)
 		}
-		return format(write, read)
+		writeIfUnchanged := args.ToStdout
+		return format(write, read, writeIfUnchanged)
 	}
 	dir := args.Files[0]
 	return NewFormatter(log, dir, process, args.WorkerCount).Run()
@@ -119,7 +120,7 @@ func writeToFile(fileName, tgt string) error {
 	return atomic.WriteFile(fileName, bytes.NewBufferString(tgt))
 }
 
-func format(write writer, read reader) (err error) {
+func format(write writer, read reader, writeIfUnchanged bool) (err error) {
 	fileName, src, err := read()
 	if err != nil {
 		return err
@@ -131,6 +132,9 @@ func format(write writer, read reader) (err error) {
 	w := new(bytes.Buffer)
 	if err = t.Write(w); err != nil {
 		return fmt.Errorf("formatting error: %w", err)
+	}
+	if !writeIfUnchanged && src == w.String() {
+		return nil
 	}
 	return write(fileName, w.String())
 }
