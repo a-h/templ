@@ -21,7 +21,7 @@ type elementOpenTag struct {
 }
 
 var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, ok bool, err error) {
-	start := pi.Index()
+	start := pi.Position()
 
 	// <
 	if _, ok, err = lt.Parse(pi); err != nil || !ok {
@@ -31,13 +31,13 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 	// Element name.
 	l := pi.Position().Line
 	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
+		pi.Seek(start.Index)
 		return
 	}
 	e.NameRange = NewRange(pi.PositionAt(pi.Index()-len(e.Name)), pi.Position())
 
 	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
-		pi.Seek(start)
+		pi.Seek(start.Index)
 		return
 	}
 
@@ -48,7 +48,7 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 
 	// Optional whitespace.
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
-		pi.Seek(start)
+		pi.Seek(start.Index)
 		return
 	}
 
