@@ -950,7 +950,9 @@ func (g *generator) writeAttributesCSS(indentLevel int, attrs []parser.Attribute
 }
 
 func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err error) {
-	return g.writeAttributesCSS(indentLevel, n.Attributes)
+	attrs := make([]parser.Attribute, len(n.Attributes))
+	copy(attrs, n.Attributes)
+	return g.writeAttributesCSS(indentLevel, attrs)
 }
 
 func isScriptAttribute(name string) bool {
