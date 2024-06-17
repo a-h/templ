@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/printer"
+	"go/format"
 	"go/token"
 	"log"
 	"path"
@@ -105,7 +105,6 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 	slices.SortFunc(updatedImports, func(a, b *ast.ImportSpec) int {
 		return strings.Compare(a.Path.Value, b.Path.Value)
 	})
-	gofile.Imports = updatedImports
 	newImportDecl := &ast.GenDecl{
 		Tok:   token.IMPORT,
 		Specs: convertSlice(updatedImports),
@@ -120,16 +119,22 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 	for i := len(indicesToDelete) - 1; i >= 0; i-- {
 		gofile.Decls = append(gofile.Decls[:indicesToDelete[i]], gofile.Decls[indicesToDelete[i]+1:]...)
 	}
-	gofile.Decls = append([]ast.Decl{newImportDecl}, gofile.Decls...)
+	if len(updatedImports) > 0 {
+		gofile.Imports = updatedImports
+		gofile.Decls = append([]ast.Decl{newImportDecl}, gofile.Decls...)
+	}
 	// Write out the Go code with the imports.
 	updatedGoCode := new(strings.Builder)
-	err := printer.Fprint(updatedGoCode, fset, gofile)
+	err := format.Node(updatedGoCode, fset, gofile)
 	if err != nil {
 		return t, fmt.Errorf("failed to write updated go code: %w", err)
 	}
 	importsNode.Expression.Value = strings.TrimSpace(strings.SplitN(updatedGoCode.String(), "\n", 2)[1])
+	if len(updatedImports) == 0 && importsNode.Expression.Value == "" {
+		t.Nodes = t.Nodes[1:]
+		return t, nil
+	}
 	t.Nodes[0] = importsNode
-
 	return t, nil
 }
 
