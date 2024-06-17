@@ -1,0 +1,12 @@
+-- fmt.templ --
+package test
+
+templ Hello() {
+	<div>Hello</div>
+}
+-- fmt.templ --
+package test
+
+templ Hello() {
+	<div>Hello</div>
+}
