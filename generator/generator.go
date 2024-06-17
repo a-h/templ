@@ -221,11 +221,11 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	}
 	{
 		indentLevel++
-		// templ_7745c5c3_CSSBuilder := templ.GetBuffer()
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_CSSBuilder := templ.GetBuffer()\n"); err != nil {
+		// templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)\n"); err != nil {
 			return err
 		}
-		if _, err = g.w.WriteIndent(indentLevel, "defer templ.ReleaseBuffer(templ_7745c5c3_CSSBuilder)\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "defer release()\n"); err != nil {
 			return err
 		}
 		for i := 0; i < len(n.Properties); i++ {
@@ -339,6 +339,9 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 	}
 	{
 		indentLevel++
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context\n"); err != nil {
+			return err
+		}
 		if err := g.writeTemplBuffer(indentLevel); err != nil {
 			return err
 		}
@@ -843,6 +846,20 @@ func (g *generator) writeExpressionErrorHandler(indentLevel int, expression pars
 	return err
 }
 
+func copyAttributes(attr []parser.Attribute) []parser.Attribute {
+	o := make([]parser.Attribute, len(attr))
+	for i, a := range attr {
+		if c, ok := a.(parser.ConditionalAttribute); ok {
+			c.Then = copyAttributes(c.Then)
+			c.Else = copyAttributes(c.Else)
+			o[i] = c
+			continue
+		}
+		o[i] = a
+	}
+	return o
+}
+
 func (g *generator) writeElement(indentLevel int, n parser.Element) (err error) {
 	if len(n.Attributes) == 0 {
 		// <div>
@@ -850,19 +867,20 @@ func (g *generator) writeElement(indentLevel int, n parser.Element) (err error) 
 			return err
 		}
 	} else {
+		attrs := copyAttributes(n.Attributes)
 		// <style type="text/css"></style>
-		if err = g.writeElementCSS(indentLevel, n); err != nil {
+		if err = g.writeElementCSS(indentLevel, attrs); err != nil {
 			return err
 		}
 		// <script type="text/javascript"></script>
-		if err = g.writeElementScript(indentLevel, n.Attributes); err != nil {
+		if err = g.writeElementScript(indentLevel, attrs); err != nil {
 			return err
 		}
 		// <div
 		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s`, html.EscapeString(n.Name))); err != nil {
 			return err
 		}
-		if err = g.writeElementAttributes(indentLevel, n.Name, n.Attributes); err != nil {
+		if err = g.writeElementAttributes(indentLevel, n.Name, attrs); err != nil {
 			return err
 		}
 		// >
@@ -949,9 +967,7 @@ func (g *generator) writeAttributesCSS(indentLevel int, attrs []parser.Attribute
 	return nil
 }
 
-func (g *generator) writeElementCSS(indentLevel int, n parser.Element) (err error) {
-	attrs := make([]parser.Attribute, len(n.Attributes))
-	copy(attrs, n.Attributes)
+func (g *generator) writeElementCSS(indentLevel int, attrs []parser.Attribute) (err error) {
 	return g.writeAttributesCSS(indentLevel, attrs)
 }
 

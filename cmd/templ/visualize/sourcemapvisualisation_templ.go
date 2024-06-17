@@ -5,13 +5,11 @@ package visualize
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
 import "github.com/a-h/templ"
-import "context"
-import "io"
-import "bytes"
-import "strings"
+import templruntime "github.com/a-h/templ/runtime"
 
 func row() templ.CSSClass {
-	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
+	defer release()
 	templ_7745c5c3_CSSBuilder.WriteString(`display:flex;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`row`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -21,7 +19,8 @@ func row() templ.CSSClass {
 }
 
 func column() templ.CSSClass {
-	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
+	defer release()
 	templ_7745c5c3_CSSBuilder.WriteString(`flex:50%;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`overflow-y:scroll;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`max-height:100vh;`)
@@ -33,7 +32,8 @@ func column() templ.CSSClass {
 }
 
 func code() templ.CSSClass {
-	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
+	defer release()
 	templ_7745c5c3_CSSBuilder.WriteString(`font-family:monospace;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`code`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -43,12 +43,10 @@ func code() templ.CSSClass {
 }
 
 func combine(templFileName string, left, right templ.Component) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var1 == nil {
@@ -209,12 +207,10 @@ func removeHighlight(sourceId, targetId string) templ.ComponentScript {
 }
 
 func mappedCharacter(s string, sourceID, targetID string) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var10 == nil {

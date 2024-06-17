@@ -1,7 +1,9 @@
 package main
 
-import "path"
-import "github.com/gosimple/slug"
+import (
+	"github.com/gosimple/slug"
+	"path"
+)
 
 templ headerComponent(title string) {
 	<head><title>{ title }</title></head>
