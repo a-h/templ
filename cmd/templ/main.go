@@ -228,6 +228,9 @@ Format file or directory to stdout:
 Args:
   -stdout
     Prints to stdout instead of in-place format
+  -stdin-filepath
+    Provides the formatter with filepath context when using -stdout.
+    Required for organising imports.
   -v
     Set log verbosity level to "debug". (default "info")
   -log-level
@@ -245,6 +248,7 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
 	stdoutFlag := cmd.Bool("stdout", false, "")
+	stdinFilepath := cmd.String("stdin-filepath", "", "")
 	err := cmd.Parse(args)
 	if err != nil {
 		fmt.Fprint(stderr, fmtUsageText)
@@ -258,9 +262,10 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	log := newLogger(*logLevelFlag, *verboseFlag, stderr)
 
 	err = fmtcmd.Run(log, stdin, stdout, fmtcmd.Arguments{
-		ToStdout:    *stdoutFlag,
-		Files:       cmd.Args(),
-		WorkerCount: *workerCountFlag,
+		ToStdout:      *stdoutFlag,
+		Files:         cmd.Args(),
+		WorkerCount:   *workerCountFlag,
+		StdinFilepath: *stdinFilepath,
 	})
 	if err != nil {
 		return 1

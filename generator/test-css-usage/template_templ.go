@@ -5,22 +5,18 @@ package testcssusage
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
 import "github.com/a-h/templ"
-import "context"
-import "io"
-import "bytes"
-import "strings"
+import templruntime "github.com/a-h/templ/runtime"
 
-import "fmt"
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
-// Constant class.
 func StyleTagsAreSupported() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var1 == nil {
@@ -43,7 +39,8 @@ func StyleTagsAreSupported() templ.Component {
 const red = "#00ff00"
 
 func cssComponentGreen() templ.CSSClass {
-	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
 	templ_7745c5c3_CSSID := templ.CSSID(`cssComponentGreen`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -53,12 +50,10 @@ func cssComponentGreen() templ.CSSClass {
 }
 
 func CSSComponentsAreSupported() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var2 == nil {
@@ -97,12 +92,10 @@ func CSSComponentsAreSupported() templ.Component {
 // Both CSS components and constants are supported.
 // Only string names are really required. There is no need to use templ.Class or templ.SafeClass.
 func CSSComponentsAndConstantsAreSupported() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var5 == nil {
@@ -162,12 +155,10 @@ func CSSComponentsAndConstantsAreSupported() templ.Component {
 
 // Maps can be used to determine if a class should be added or not.
 func MapsCanBeUsedToConditionallySetClasses() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var10 == nil {
@@ -205,7 +196,8 @@ func MapsCanBeUsedToConditionallySetClasses() templ.Component {
 
 // The templ.KV function can be used to add a class if a condition is true.
 func d() templ.CSSClass {
-	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`font-size:12pt;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`d`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -215,7 +207,8 @@ func d() templ.CSSClass {
 }
 
 func e() templ.CSSClass {
-	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`font-size:14pt;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`e`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -225,12 +218,10 @@ func e() templ.CSSClass {
 }
 
 func KVCanBeUsedToConditionallySetClasses() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var13 == nil {
@@ -268,12 +259,10 @@ func KVCanBeUsedToConditionallySetClasses() templ.Component {
 
 // Pseudo attributes can be used without any special syntax.
 func PsuedoAttributesAndComplexClassNamesAreSupported() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var16 == nil {
@@ -311,12 +300,10 @@ func PsuedoAttributesAndComplexClassNamesAreSupported() templ.Component {
 
 // Class names are HTML escaped.
 func ClassNamesAreHTMLEscaped() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var19 == nil {
@@ -354,7 +341,8 @@ func ClassNamesAreHTMLEscaped() templ.Component {
 
 // CSS components can be used with arguments.
 func loading(percent int) templ.CSSClass {
-	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`width`, fmt.Sprintf("%d%%", percent))))
 	templ_7745c5c3_CSSID := templ.CSSID(`loading`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -364,12 +352,10 @@ func loading(percent int) templ.CSSClass {
 }
 
 func CSSComponentsCanBeUsedWithArguments() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var22 == nil {
@@ -428,7 +414,8 @@ func CSSComponentsCanBeUsedWithArguments() templ.Component {
 }
 
 func windVaneRotation(degrees float64) templ.CSSClass {
-	var templ_7745c5c3_CSSBuilder strings.Builder
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`transform`, templ.SafeCSSProperty(fmt.Sprintf("rotate(%ddeg)", int(math.Round(degrees)))))))
 	templ_7745c5c3_CSSID := templ.CSSID(`windVaneRotation`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -438,12 +425,10 @@ func windVaneRotation(degrees float64) templ.CSSClass {
 }
 
 func Rotate(degrees float64) templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var27 == nil {
@@ -481,12 +466,10 @@ func Rotate(degrees float64) templ.Component {
 
 // Combine all tests.
 func TestComponent() templ.Component {
-	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
-		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
-		if !templ_7745c5c3_IsBuffer {
-			templ_7745c5c3_Buffer = templ.GetBuffer()
-			defer templ.ReleaseBuffer(templ_7745c5c3_Buffer)
-		}
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer, templ_7745c5c3_Release := templruntime.WriterToBuffer(templ_7745c5c3_W)
+		defer templ_7745c5c3_Release()
 		ctx = templ.InitializeContext(ctx)
 		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
 		if templ_7745c5c3_Var30 == nil {
