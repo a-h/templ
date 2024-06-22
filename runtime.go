@@ -837,7 +837,7 @@ func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
 // WriteWatchModeString is used when rendering templates in development mode.
 // the generator would have written non-go code to the _templ.txt file, which
 // is then read by this function and written to the output.
-func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
+func WriteWatchModeString(w io.Writer, lineNum int) error {
 	_, path, _, _ := runtime.Caller(1)
 	if !strings.HasSuffix(path, "_templ.go") {
 		return errors.New("templ: WriteWatchModeString can only be called from _templ.go")
@@ -857,7 +857,7 @@ func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.WriteString(io.Writer(w), unquoted)
+	_, err = io.WriteString(w, unquoted)
 	return err
 }
 
