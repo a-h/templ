@@ -8,8 +8,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 func className() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
-	defer templ_7745c5c3_release()
+	templ_7745c5c3_CSSBuilder := templruntime.GetBuilder()
 	templ_7745c5c3_CSSBuilder.WriteString(`background-color:#ffffff;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`max-height:calc(100vh - 170px);`)
 	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
