@@ -50,7 +50,6 @@ func (ch *ComponentHandler) ServeHTTPStreamed(w http.ResponseWriter, r *http.Req
 		}
 		http.Error(w, componentHandlerErrorMessage, http.StatusInternalServerError)
 	}
-	return
 }
 
 // ServeHTTP implements the http.Handler interface.
