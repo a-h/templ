@@ -11,7 +11,12 @@ var bufferPool = sync.Pool{
 	},
 }
 
+// GetBuffer creates and returns a new buffer if the writer is not already a buffer,
+// or returns the existing buffer if it is.
 func GetBuffer(w io.Writer) (b *Buffer, existing bool) {
+	if w == nil {
+		return nil, false
+	}
 	b, ok := w.(*Buffer)
 	if ok {
 		return b, true
@@ -21,18 +26,13 @@ func GetBuffer(w io.Writer) (b *Buffer, existing bool) {
 	return b, false
 }
 
-var DefaultBufferSize = 4 * 1024 // 4KB
-var MaxBufferSize = 64 * 1024    // 64KB
-
+// ReleaseBuffer flushes the buffer and returns it to the pool.
 func ReleaseBuffer(w io.Writer) (err error) {
 	b, ok := w.(*Buffer)
 	if !ok {
 		return nil
 	}
 	err = b.Flush()
-	if b.Size() > MaxBufferSize {
-		b.Reset(nil)
-	}
 	bufferPool.Put(b)
 	return err
 }
