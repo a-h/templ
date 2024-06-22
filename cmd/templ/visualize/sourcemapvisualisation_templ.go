@@ -8,8 +8,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 func row() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`display:flex;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`row`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -19,8 +19,8 @@ func row() templ.CSSClass {
 }
 
 func column() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`flex:50%;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`overflow-y:scroll;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`max-height:100vh;`)
@@ -32,8 +32,8 @@ func column() templ.CSSClass {
 }
 
 func code() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`font-family:monospace;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`code`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{

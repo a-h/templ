@@ -39,8 +39,8 @@ func StyleTagsAreSupported() templ.Component {
 const red = "#00ff00"
 
 func cssComponentGreen() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
 	templ_7745c5c3_CSSID := templ.CSSID(`cssComponentGreen`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -196,8 +196,8 @@ func MapsCanBeUsedToConditionallySetClasses() templ.Component {
 
 // The templ.KV function can be used to add a class if a condition is true.
 func d() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`font-size:12pt;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`d`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -207,8 +207,8 @@ func d() templ.CSSClass {
 }
 
 func e() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`font-size:14pt;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`e`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -341,8 +341,8 @@ func ClassNamesAreHTMLEscaped() templ.Component {
 
 // CSS components can be used with arguments.
 func loading(percent int) templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`width`, fmt.Sprintf("%d%%", percent))))
 	templ_7745c5c3_CSSID := templ.CSSID(`loading`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -414,8 +414,8 @@ func CSSComponentsCanBeUsedWithArguments() templ.Component {
 }
 
 func windVaneRotation(degrees float64) templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`transform`, templ.SafeCSSProperty(fmt.Sprintf("rotate(%ddeg)", int(math.Round(degrees)))))))
 	templ_7745c5c3_CSSID := templ.CSSID(`windVaneRotation`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{

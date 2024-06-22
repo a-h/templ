@@ -8,8 +8,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 func red() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`color:red;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`red`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{

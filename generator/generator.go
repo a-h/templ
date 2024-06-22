@@ -222,10 +222,10 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	{
 		indentLevel++
 		// templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)\n"); err != nil {
 			return err
 		}
-		if _, err = g.w.WriteIndent(indentLevel, "defer release()\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "defer templ_7745c5c3_release()\n"); err != nil {
 			return err
 		}
 		for i := 0; i < len(n.Properties); i++ {

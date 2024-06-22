@@ -10,8 +10,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import "strconv"
 
 func border() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`border:1px solid #eeeeee;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`border-radius:4px;`)
 	templ_7745c5c3_CSSBuilder.WriteString(`margin:10px;`)

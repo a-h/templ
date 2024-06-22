@@ -8,8 +8,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 func important() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`width:100;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`important`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -19,8 +19,8 @@ func important() templ.CSSClass {
 }
 
 func unimportant() templ.CSSClass {
-	templ_7745c5c3_CSSBuilder, _, release := templruntime.WriterToBuffer(nil)
-	defer release()
+	templ_7745c5c3_CSSBuilder, _, templ_7745c5c3_release := templruntime.WriterToBuffer(nil)
+	defer templ_7745c5c3_release()
 	templ_7745c5c3_CSSBuilder.WriteString(`width:50;`)
 	templ_7745c5c3_CSSID := templ.CSSID(`unimportant`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{

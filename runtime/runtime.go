@@ -8,15 +8,15 @@ import (
 	"github.com/a-h/templ"
 )
 
-func WriterToBuffer(w io.Writer) (*bytes.Buffer, bool, func()) {
-	buffer, ok := w.(*bytes.Buffer)
+func WriterToBuffer(w io.Writer) (buf *bytes.Buffer, ok bool, release func()) {
+	buf, ok = w.(*bytes.Buffer)
 	if !ok {
-		buffer = templ.GetBuffer()
-		return buffer, false, func() {
-			templ.ReleaseBuffer(buffer)
+		buf = templ.GetBuffer()
+		return buf, false, func() {
+			templ.ReleaseBuffer(buf)
 		}
 	}
-	return buffer, true, func() {}
+	return buf, true, func() {}
 }
 
 type GeneratedComponentInput struct {
