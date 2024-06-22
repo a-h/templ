@@ -171,7 +171,9 @@ func TestHandler(t *testing.T) {
 				// This will be ignored, because the header has already been written.
 				w.WriteHeader(http.StatusBadRequest)
 				// This will be written, but will be appended to the written body.
-				io.WriteString(w, "Error message")
+				if _, err := io.WriteString(w, "Error message"); err != nil {
+					t.Errorf("failed to write error message: %v", err)
+				}
 			})
 		}
 
