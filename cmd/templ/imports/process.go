@@ -129,7 +129,7 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 	}
 	// Remove the package statement from the node, by cutting the first line of the file.
 	importsNode.Expression.Value = strings.TrimSpace(strings.SplitN(updatedGoCode.String(), "\n", 2)[1])
-	if len(updatedImports) == 0 {
+	if len(updatedImports) == 0 && importsNode.Expression.Value == "" {
 		t.Nodes = t.Nodes[1:]
 		return t, nil
 	}
