@@ -1,0 +1,53 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+)
+
+func main() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Create a channel to send data to the template.
+		data := make(chan string)
+		// Run a background process that will take 10 seconds to complete.
+		go func() {
+			// Always remember to close the channel.
+			defer close(data)
+			for i := 0; i < 10; i++ {
+				select {
+				case <-r.Context().Done():
+					// Quit early if the client is no longer connected.
+					return
+				case <-time.After(time.Second):
+					// Send a new piece of data to the channel.
+					data <- fmt.Sprintf("Part %d", i+1)
+				}
+			}
+		}()
+
+		// Pass the channel to the template.
+		component := Page(data)
+
+		// Serve using the streaming mode of the handler.
+		templ.Handler(component, templ.WithStreaming()).ServeHTTP(w, r)
+	})
+	http.ListenAndServe("127.0.0.1:8080", nil)
+}
+
+templ Page(data chan string) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<title>Page</title>
+		</head>
+		<body>
+			<h1>Page</h1>
+			for d := range data {
+				@templ.Flush() {
+					<div>{ d }</div>
+				}
+			}
+		</body>
+	</html>
+}

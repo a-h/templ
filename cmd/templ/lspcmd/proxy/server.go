@@ -9,7 +9,7 @@ import (
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/protocol"
 	"github.com/a-h/templ"
-	imports "github.com/a-h/templ/cmd/templ/import"
+	"github.com/a-h/templ/cmd/templ/imports"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 	"go.lsp.dev/uri"

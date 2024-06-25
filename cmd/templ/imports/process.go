@@ -6,14 +6,15 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
-	"log"
 	"path"
 	"slices"
+	"strconv"
 	"strings"
 
 	goparser "go/parser"
 
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/imports"
 
 	"github.com/a-h/templ/generator"
@@ -88,47 +89,45 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 		return nil
 	})
 
-	var gofile *ast.File
+	var firstGoNodeInTemplate *ast.File
 	// Update the template with the imports.
 	// Ensure that there is a Go expression to add the imports to as the first node.
 	eg.Go(func() (err error) {
-		gofile, err = goparser.ParseFile(fset, fileName, t.Package.Expression.Value+"\n"+importsNode.Expression.Value, goparser.AllErrors)
+		firstGoNodeInTemplate, err = goparser.ParseFile(fset, fileName, t.Package.Expression.Value+"\n"+importsNode.Expression.Value, goparser.AllErrors|goparser.ParseComments)
 		if err != nil {
-			log.Printf("failed to parse go code: %v", importsNode.Expression.Value)
 			return fmt.Errorf("failed to parse imports section: %w", err)
 		}
 		return nil
 	})
+
+	// Wait for completion of both parts.
 	if err := eg.Wait(); err != nil {
 		return t, err
 	}
-	slices.SortFunc(updatedImports, func(a, b *ast.ImportSpec) int {
-		return strings.Compare(a.Path.Value, b.Path.Value)
-	})
-	newImportDecl := &ast.GenDecl{
-		Tok:   token.IMPORT,
-		Specs: convertSlice(updatedImports),
-	}
+
 	// Delete all the existing imports.
-	var indicesToDelete []int
-	for i, decl := range gofile.Decls {
-		if decl, ok := decl.(*ast.GenDecl); ok && decl.Tok == token.IMPORT {
-			indicesToDelete = append(indicesToDelete, i)
+	for _, imp := range firstGoNodeInTemplate.Imports {
+		name, path, err := getImportDetails(imp)
+		if err != nil {
+			return t, err
 		}
+		astutil.DeleteNamedImport(fset, firstGoNodeInTemplate, name, path)
 	}
-	for i := len(indicesToDelete) - 1; i >= 0; i-- {
-		gofile.Decls = append(gofile.Decls[:indicesToDelete[i]], gofile.Decls[indicesToDelete[i]+1:]...)
-	}
-	if len(updatedImports) > 0 {
-		gofile.Imports = updatedImports
-		gofile.Decls = append([]ast.Decl{newImportDecl}, gofile.Decls...)
+	// Add imports, if there are any to add.
+	for _, imp := range updatedImports {
+		name, path, err := getImportDetails(imp)
+		if err != nil {
+			return t, err
+		}
+		astutil.AddNamedImport(fset, firstGoNodeInTemplate, name, path)
 	}
 	// Write out the Go code with the imports.
 	updatedGoCode := new(strings.Builder)
-	err := format.Node(updatedGoCode, fset, gofile)
+	err := format.Node(updatedGoCode, fset, firstGoNodeInTemplate)
 	if err != nil {
 		return t, fmt.Errorf("failed to write updated go code: %w", err)
 	}
+	// Remove the package statement from the node, by cutting the first line of the file.
 	importsNode.Expression.Value = strings.TrimSpace(strings.SplitN(updatedGoCode.String(), "\n", 2)[1])
 	if len(updatedImports) == 0 && importsNode.Expression.Value == "" {
 		t.Nodes = t.Nodes[1:]
@@ -138,10 +137,16 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 	return t, nil
 }
 
-func convertSlice(slice []*ast.ImportSpec) []ast.Spec {
-	result := make([]ast.Spec, len(slice))
-	for i, v := range slice {
-		result[i] = ast.Spec(v)
+func getImportDetails(imp *ast.ImportSpec) (name, path string, err error) {
+	if imp.Name != nil {
+		name = imp.Name.Name
 	}
-	return result
+	if imp.Path != nil {
+		path, err = strconv.Unquote(imp.Path.Value)
+		if err != nil {
+			err = fmt.Errorf("failed to unquote package path %s: %w", imp.Path.Value, err)
+			return
+		}
+	}
+	return name, path, nil
 }

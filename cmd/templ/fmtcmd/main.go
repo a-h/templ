@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	imports "github.com/a-h/templ/cmd/templ/import"
+	"github.com/a-h/templ/cmd/templ/imports"
 	"github.com/a-h/templ/cmd/templ/processor"
 	parser "github.com/a-h/templ/parser/v2"
 	"github.com/natefinch/atomic"
