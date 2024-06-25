@@ -107,25 +107,17 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 
 	// Delete all the existing imports.
 	for _, imp := range firstGoNodeInTemplate.Imports {
-		var name string
-		if imp.Name != nil {
-			name = imp.Name.Name
-		}
-		var path string
-		if imp.Path != nil {
-			path, _ = strconv.Unquote(imp.Path.Value)
+		name, path, err := getImportDetails(imp)
+		if err != nil {
+			return t, err
 		}
 		astutil.DeleteNamedImport(fset, firstGoNodeInTemplate, name, path)
 	}
 	// Add imports, if there are any to add.
 	for _, imp := range updatedImports {
-		var name string
-		if imp.Name != nil {
-			name = imp.Name.Name
-		}
-		var path string
-		if imp.Path != nil {
-			path, _ = strconv.Unquote(imp.Path.Value)
+		name, path, err := getImportDetails(imp)
+		if err != nil {
+			return t, err
 		}
 		astutil.AddNamedImport(fset, firstGoNodeInTemplate, name, path)
 	}
@@ -143,4 +135,18 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 	}
 	t.Nodes[0] = importsNode
 	return t, nil
+}
+
+func getImportDetails(imp *ast.ImportSpec) (name, path string, err error) {
+	if imp.Name != nil {
+		name = imp.Name.Name
+	}
+	if imp.Path != nil {
+		path, err = strconv.Unquote(imp.Path.Value)
+		if err != nil {
+			err = fmt.Errorf("failed to unquote package path %s: %w", imp.Path.Value, err)
+			return
+		}
+	}
+	return name, path, nil
 }
