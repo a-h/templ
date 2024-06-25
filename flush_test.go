@@ -117,10 +117,10 @@ func TestFlush(t *testing.T) {
 			t.Fatalf("expected flushed section to be 'hello', got %q", b.flushedSections[0])
 		}
 	})
-	t.Run("returns an error if the writer is not flushable", func(t *testing.T) {
+	t.Run("non-flushable streams are a no-op", func(t *testing.T) {
 		sb := new(strings.Builder)
-		if err := Flush().Render(context.Background(), sb); err == nil {
-			t.Fatalf("expected an error, got nil")
+		if err := Flush().Render(context.Background(), sb); err != nil {
+			t.Fatalf("expected no error, got %v", err)
 		}
 	})
 }

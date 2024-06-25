@@ -2,7 +2,6 @@ package templ
 
 import (
 	"context"
-	"fmt"
 	"io"
 )
 
@@ -33,5 +32,5 @@ func (f FlushComponent) Render(ctx context.Context, w io.Writer) (err error) {
 	case flusherError:
 		return w.Flush()
 	}
-	return fmt.Errorf("unable to flush, writer is not flushable")
+	return nil
 }
