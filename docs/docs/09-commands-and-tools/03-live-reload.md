@@ -149,4 +149,9 @@ tmp_dir = "tmp"
 
 [misc]
   clean_on_exit = false
+
+[proxy]
+  enabled = true
+  proxy_port = 8383
+  app_port = 8282
 ```
