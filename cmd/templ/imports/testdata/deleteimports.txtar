@@ -1,0 +1,14 @@
+-- fmt.templ --
+package test
+
+import "strconv"
+
+templ Hello() {
+	<div>Hello</div>
+}
+-- fmt.templ --
+package test
+
+templ Hello() {
+	<div>Hello</div>
+}

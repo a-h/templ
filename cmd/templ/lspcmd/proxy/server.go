@@ -9,6 +9,7 @@ import (
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/protocol"
 	"github.com/a-h/templ"
+	"github.com/a-h/templ/cmd/templ/imports"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 	"go.lsp.dev/uri"
@@ -153,6 +154,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		}
 		return
 	}
+	template.Filepath = string(uri)
 	parsedDiagnostics, err := parser.Diagnose(template)
 	if err != nil {
 		return
@@ -735,8 +737,15 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, d.String())
 	if err != nil {
 		p.Log.Error("parseTemplate failure", zap.Error(err))
+		return
 	}
 	if !ok {
+		return
+	}
+	p.Log.Info("attempting to organise imports", zap.String("uri", template.Filepath))
+	template, err = imports.Process(template)
+	if err != nil {
+		p.Log.Error("organise imports failure", zap.Error(err))
 		return
 	}
 	w := new(strings.Builder)

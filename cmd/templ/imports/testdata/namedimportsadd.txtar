@@ -1,0 +1,19 @@
+-- fmt_templ.templ --
+package test
+
+import (
+  sconv "strconv"
+)
+
+// Comment on variable or function.
+var x = fmt.Sprintf(sconv.Quote("Hello"))
+-- fmt_templ.templ --
+package test
+
+import (
+	"fmt"
+	sconv "strconv"
+)
+
+// Comment on variable or function.
+var x = fmt.Sprintf(sconv.Quote("Hello"))

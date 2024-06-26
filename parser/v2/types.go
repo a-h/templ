@@ -119,6 +119,8 @@ type TemplateFile struct {
 	Header []TemplateFileGoExpression
 	// Package expression.
 	Package Package
+	// Filepath is where the file was loaded from. It is not always available.
+	Filepath string
 	// Nodes in the file.
 	Nodes []TemplateFileNode
 }

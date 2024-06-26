@@ -2,7 +2,7 @@
 package test
 
 templ a() {
-	<div><p>A
+	<div><p class={templ.Class("mapped")}>A
 </p></div>
 }
 -- a.templ --
@@ -10,7 +10,7 @@ package test
 
 templ a() {
 	<div>
-		<p>
+		<p class={ templ.Class("mapped") }>
 			A
 		</p>
 	</div>
