@@ -29,8 +29,8 @@ func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 
 	// Eat " {\n".
 	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
-		err = parse.Error("for: "+unterminatedMissingCurly, pi.PositionAt(start))
-		return
+		pi.Seek(start)
+		return r, false, err
 	}
 
 	// Node contents.

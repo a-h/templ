@@ -407,7 +407,7 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Void elements _might_ have children, even though it's invalid.
 	// We want to allow this to be parsed.
 	closer := StripType(parse.All(parse.String("</"), parse.String(ot.Name), parse.Rune('>')))
-	tnp := newTemplateNodeParser[any](closer, fmt.Sprintf("<%s>: close tag", ot.Name))
+	tnp := newTemplateNodeParser(closer, fmt.Sprintf("<%s>: close tag", ot.Name))
 	nodes, _, err := tnp.Parse(pi)
 	if err != nil {
 		notFoundErr, isNotFoundError := err.(UntilNotFoundError)
