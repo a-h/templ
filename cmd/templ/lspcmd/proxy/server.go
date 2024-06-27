@@ -282,6 +282,7 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 	}
 	templURI := params.TextDocument.URI
 	params.TextDocument.URI = goURI
+	params.Range = p.convertTemplRangeToGoRange(params.TextDocument.URI, params.Range)
 	result, err = p.Target.CodeAction(ctx, params)
 	if err != nil {
 		return
