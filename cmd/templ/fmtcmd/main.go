@@ -26,7 +26,7 @@ type Arguments struct {
 func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (err error) {
 	// If no files are provided, read from stdin and write to stdout.
 	if len(args.Files) == 0 {
-    return format(writeToWriter(stdout), readFromReader(stdin, args.StdinFilepath), true)
+		return format(writeToWriter(stdout), readFromReader(stdin, args.StdinFilepath), true)
 	}
 	process := func(fileName string) error {
 		read := readFromFile(fileName)
