@@ -39,3 +39,8 @@ templ generate --help
   -w int
         Number of workers to run in parallel. (default runtime.NumCPU())
 ```
+When developing with HTMX and Go frameworks, you might find the `templ generate --watch` option very useful. This command will watch for changes and regenerate the necessary files automatically.
+
+:::tip
+Using `templ generate --watch` can significantly streamline your development workflow by automatically regenerating files when changes are detected.
+:::
