@@ -273,6 +273,8 @@ func (p *Server) SetTrace(ctx context.Context, params *lsp.SetTraceParams) (err 
 	return p.Target.SetTrace(ctx, params)
 }
 
+var supportedCodeActions = map[string]bool{}
+
 func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (result []lsp.CodeAction, err error) {
 	p.Log.Info("client -> server: CodeAction")
 	defer p.Log.Info("client -> server: CodeAction end")
@@ -281,13 +283,22 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 		return p.Target.CodeAction(ctx, params)
 	}
 	templURI := params.TextDocument.URI
+	params.Range = p.convertTemplRangeToGoRange(templURI, params.Range)
 	params.TextDocument.URI = goURI
-	params.Range = p.convertTemplRangeToGoRange(params.TextDocument.URI, params.Range)
 	result, err = p.Target.CodeAction(ctx, params)
 	if err != nil {
 		return
 	}
+	var updatedResults []lsp.CodeAction
+	// Filter out commands that are not yet supported.
+	// For example, "Fill Struct" runs the `gopls.apply_fix` command.
+	// This command has a set of arguments, including Fix, Range and URI.
+	// However, these are just a map[string]any so for each command that we want to support,
+	// we need to know what the arguments are so that we can rewrite them.
 	for i := 0; i < len(result); i++ {
+		if !supportedCodeActions[result[i].Title] {
+			continue
+		}
 		r := result[i]
 		// Rewrite the Diagnostics range field.
 		for di := 0; di < len(r.Diagnostics); di++ {
@@ -301,11 +312,12 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 					dc.Edits[ei].Range = p.convertGoRangeToTemplRange(templURI, dc.Edits[ei].Range)
 				}
 				dc.TextDocument.URI = templURI
+				r.Edit.DocumentChanges[dci] = dc
 			}
 		}
-		result[i] = r
+		updatedResults = append(updatedResults, r)
 	}
-	return
+	return updatedResults, nil
 }
 
 func (p *Server) CodeLens(ctx context.Context, params *lsp.CodeLensParams) (result []lsp.CodeLens, err error) {
@@ -555,6 +567,12 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		return
 	}
 	w := new(strings.Builder)
+	// In future updates, we may pass `WithSkipCodeGeneratedComment` to the generator.
+	// This will enable a number of actions within gopls that it doesn't currently apply because
+	// it recognises templ code as being auto-generated.
+	//
+	// This change would increase the surface area of gopls that we use, so may surface a number of issues
+	// if enabled.
 	sm, _, err := generator.Generate(template, w)
 	if err != nil {
 		p.Log.Error("generate failure", zap.Error(err))

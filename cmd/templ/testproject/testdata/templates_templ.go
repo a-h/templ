@@ -49,3 +49,9 @@ func Page(count int) templ.Component {
 }
 
 var nihao = "你好"
+
+type Struct struct {
+	Count int
+}
+
+var s = Struct{}
