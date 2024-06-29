@@ -140,7 +140,7 @@ func (ep *ExpressionParser) Insert(
 	// or "call().name", "call().name()".
 	// But not "package .name" or "typeName{field: value} .name()".
 	if tok == token.IDENT && (ep.Previous == token.PERIOD || isCloser(ep.Previous)) {
-		if ep.hasSpaceBeforeCurrentToken(pos) {
+		if isCloser(ep.Previous) && ep.hasSpaceBeforeCurrentToken(pos) {
 			// This token starts later than the last ending, which means
 			// there's a space.
 			return true, nil
