@@ -80,9 +80,10 @@ func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) 
 	return true, goURI, updated
 }
 
-func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range) {
+func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range, ok bool) {
 	output = input
-	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
+	var sourceMap *parser.SourceMap
+	sourceMap, ok = p.SourceMapCache.Get(string(templURI))
 	if !ok {
 		return
 	}
@@ -276,14 +277,18 @@ func (p *Server) SetTrace(ctx context.Context, params *lsp.SetTraceParams) (err 
 var supportedCodeActions = map[string]bool{}
 
 func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (result []lsp.CodeAction, err error) {
-	p.Log.Info("client -> server: CodeAction")
+	p.Log.Info("client -> server: CodeAction", zap.Any("params", params))
 	defer p.Log.Info("client -> server: CodeAction end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.CodeAction(ctx, params)
 	}
 	templURI := params.TextDocument.URI
-	params.Range = p.convertTemplRangeToGoRange(templURI, params.Range)
+	var ok bool
+	if params.Range, ok = p.convertTemplRangeToGoRange(templURI, params.Range); !ok {
+		// Don't pass the request to gopls if the range is not within a Go code block.
+		return
+	}
 	params.TextDocument.URI = goURI
 	result, err = p.Target.CodeAction(ctx, params)
 	if err != nil {
@@ -712,7 +717,10 @@ func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLi
 	}
 	templURI := params.Target
 	params.Target = goURI
-	params.Range = p.convertTemplRangeToGoRange(templURI, params.Range)
+	var ok bool
+	if params.Range, ok = p.convertTemplRangeToGoRange(templURI, params.Range); !ok {
+		return
+	}
 	// Rewrite the result.
 	result, err = p.Target.DocumentLinkResolve(ctx, params)
 	if err != nil {
