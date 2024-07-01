@@ -376,7 +376,7 @@ func content(data string) templ.Component {
 			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<section id=\"search-results\" class=\"hidden flex-1 p-4 max-w-prose\"><div class=\"prose\"><h1>Search results</h1></div><div id=\"search-results-list\"></div></section><main id=\"main\" class=\"p-4 prose dark:prose-invert\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<section id=\"search-results\" class=\"hidden flex-1 p-4 max-w-prose\"><div class=\"prose\"><h1 class=\"dark:text-white\">Search results</h1></div><div id=\"search-results-list\"></div></section><main id=\"main\" class=\"p-4 prose dark:prose-invert\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

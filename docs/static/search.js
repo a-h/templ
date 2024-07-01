@@ -49,128 +49,82 @@ function handleSearch(evt) {
 
     for (let i = 0; i < index.length; i++) {
       let pos = index[i].body.toLowerCase().indexOf(value);
-      if (pos !== -1) {
-        let excerptPrefix = "";
-        if (pos - excerptWidth < 0) {
-          excerptPrefix = index[i].body.substring(0, pos);
-        } else {
-          excerptPrefix =
-            "..." + index[i].body.substring(pos - excerptWidth, pos);
-        }
-
-        let excerptSuffix = "";
-        if (pos + excerptWidth > index[i].body.length) {
-          excerptSuffix = index[i].body.substring(pos, index[i].body.length);
-        } else {
-          excerptSuffix =
-            index[i].body.substring(
-              pos + value.length,
-              pos + value.length + excerptWidth,
-            ) + "...";
-        }
-
-        let term = index[i].body.substring(pos, pos + value.length);
-
-        results.push(
-          searchresult(
-            index[i].title,
-            index[i].href,
-            excerptPrefix,
-            term,
-            excerptSuffix,
-            pos,
-          ),
-        );
+      if (pos === -1) {
+        continue
       }
+      let excerptPrefix = "";
+      if (pos - excerptWidth < 0) {
+        excerptPrefix = index[i].body.substring(0, pos);
+      } else {
+        excerptPrefix =
+          "..." + index[i].body.substring(pos - excerptWidth, pos);
+      }
+
+      let excerptSuffix = "";
+      if (pos + excerptWidth > index[i].body.length) {
+        excerptSuffix = index[i].body.substring(pos, index[i].body.length);
+      } else {
+        excerptSuffix =
+          index[i].body.substring(
+            pos + value.length,
+            pos + value.length + excerptWidth,
+          ) + "...";
+      }
+
+      let term = index[i].body.substring(pos, pos + value.length);
+
+      results.push(
+        resultMarkup(
+          index[i].title,
+          index[i].href,
+          escapeHtml(excerptPrefix),
+          escapeHtml(term),
+          escapeHtml(excerptSuffix),
+        ),
+      );
     }
 
-    if (results.length === 0) {
-      document.getElementById("search-results-list").innerHTML = "";
-      let noResults = document.createElement("div");
-      noResults.classList.add(
-        "py-8",
-        "font-semibold",
-        "leading-6",
-        "text-gray-900",
-      );
-      let text = document.createTextNode(
-        "No results found for '" + value + "'",
-      );
-      noResults.appendChild(text);
+    let searchResultsList = document.getElementById("search-results-list")
+    let r = ""
 
-      document.getElementById("search-results-list").appendChild(noResults);
+    if (results.length > 0) {
+        r = results.join("\n")
     } else {
-      document.getElementById("search-results-list").innerHTML = "";
-      results.forEach((result) => {
-        document.getElementById("search-results-list").appendChild(result);
-      });
+      r = `
+        <div class="py-8 font-semibold leading-6 text-gray-900 dark:text-gray-100">
+                No results found for "${escapeHtml(value)}"
+        </div>
+      `
     }
+    
+    searchResultsList.innerHTML = r
+
     document.getElementById("main").classList.add("hidden");
     document.getElementById("search-results").classList.remove("hidden");
     document.getElementById("search-clear").classList.remove("hidden");
   }, 400);
 }
 
-function searchresult(title, url, excerptPrefix, term, excerptSuffix, pos) {
-  let a = document.createElement("a");
-  a.setAttribute("href", base_url + url);
-
-  let div = document.createElement("div");
-  div.classList.add(
-    "flex",
-    "flex-col",
-    "gap-x-6",
-    "mt-2",
-    "p-5",
-    "bg-gray-100",
-    "rounded",
-    "hover:bg-gray-200",
-  );
-
-  let titleDiv = document.createElement("div");
-  titleDiv.classList.add("min-w-0", "flex-auto");
-
-  let titleP = document.createElement("p");
-  titleP.classList.add(
-    "text-sm",
-    "font-semibold",
-    "leading-6",
-    "text-gray-900",
-  );
-
-  let excerptP = document.createElement("p");
-  excerptP.classList.add("mt-1", "text-xs", "leading-5", "text-gray-500");
-
-  let urlDiv = document.createElement("div");
-  urlDiv.classList.add("shrink-0", "sm:flex", "sm:flex-col", "sm:items-end");
-
-  let urlP = document.createElement("p");
-  urlP.classList.add("mt-1", "text-xs", "leading-5", "text-gray-500");
-
-  let text = document.createTextNode(title);
-  titleP.appendChild(text);
-
-  text = document.createTextNode(excerptPrefix);
-  excerptP.appendChild(text);
-
-  let strong = document.createElement("strong");
-  text = document.createTextNode(term);
-  strong.appendChild(text);
-  excerptP.appendChild(strong);
-
-  text = document.createTextNode(excerptSuffix);
-  excerptP.appendChild(text);
-
-  text = document.createTextNode(url);
-  urlP.appendChild(text);
-
-  titleDiv.appendChild(titleP);
-  div.appendChild(titleDiv);
-  div.appendChild(excerptP);
-  urlDiv.appendChild(urlP);
-  div.appendChild(urlDiv);
-  a.appendChild(div);
-
-  return a;
+function resultMarkup(title, url, excerptPrefix, term, excerptSuffix) {
+  return `
+        <a href="/${url}">
+          <div class="flex flex-col gap-x-6 mt-2 p-5 bg-gray-100 rounded hover:bg-gray-200 dark:bg-gray-900 dark:hover:bg-gray-600">
+            <div class="min-w-0 flex-auto">
+              <p class="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-100">${title}</p>
+            </div>
+            <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-200">${excerptPrefix}<strong>${term}</strong>${excerptSuffix}</p>
+            <div class="shrink-0 sm:flex sm:flex-col sm:items-end">
+              <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-gray-400">${url}</p>
+            </div>
+          </div>
+        </a>
+  `
 }
 
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
