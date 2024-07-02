@@ -47,36 +47,36 @@ function handleSearch(evt) {
     let results = [];
     let excerptWidth = 100;
 
-    for (let i = 0; i < index.length; i++) {
-      let pos = index[i].body.toLowerCase().indexOf(value);
+    for (let i = 0; i < AllPagesData.length; i++) {
+      let pos = AllPagesData[i].body.toLowerCase().indexOf(value);
       if (pos === -1) {
         continue
       }
       let excerptPrefix = "";
       if (pos - excerptWidth < 0) {
-        excerptPrefix = index[i].body.substring(0, pos);
+        excerptPrefix = AllPagesData[i].body.substring(0, pos);
       } else {
         excerptPrefix =
-          "..." + index[i].body.substring(pos - excerptWidth, pos);
+          "..." + AllPagesData[i].body.substring(pos - excerptWidth, pos);
       }
 
       let excerptSuffix = "";
-      if (pos + excerptWidth > index[i].body.length) {
-        excerptSuffix = index[i].body.substring(pos, index[i].body.length);
+      if (pos + excerptWidth > AllPagesData[i].body.length) {
+        excerptSuffix = AllPagesData[i].body.substring(pos, AllPagesData[i].body.length);
       } else {
         excerptSuffix =
-          index[i].body.substring(
+          AllPagesData[i].body.substring(
             pos + value.length,
             pos + value.length + excerptWidth,
           ) + "...";
       }
 
-      let term = index[i].body.substring(pos, pos + value.length);
+      let term = AllPagesData[i].body.substring(pos, pos + value.length);
 
       results.push(
         resultMarkup(
-          index[i].title,
-          index[i].href,
+          AllPagesData[i].title,
+          AllPagesData[i].href,
           escapeHtml(excerptPrefix),
           escapeHtml(term),
           escapeHtml(excerptSuffix),
@@ -122,9 +122,12 @@ function resultMarkup(title, url, excerptPrefix, term, excerptSuffix) {
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;')
+  return str
+    // Escape HTML for safety
+    .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    // Remove markdown symbols for looks
+    .replace(/#/g, '')
+    .replace(/`/g, '');
 }

@@ -102,7 +102,7 @@ func searchJS(pages []*render.Page) ([]byte, error) {
 		return nil, err
 	}
 
-	return []byte("var index = " + string(b) + ";"), nil
+	return []byte("var AllPagesData = " + string(b) + ";"), nil
 }
 
 func searchIndex(pages []*render.Page) []map[string]string {
