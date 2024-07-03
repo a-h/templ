@@ -1,2 +1,136 @@
 /*https://github.com/kenchandev/prism-theme-one-light-dark/blob/master/dist/prism-onedark.css*/
-code[class*="language-"],pre[class*="language-"]{color:#ABB2BF;background:none;font-family:Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*="language-"]::selection,pre[class*="language-"] ::selection,code[class*="language-"]::selection,code[class*="language-"] ::selection,pre[class*="language-"]::-moz-selection,pre[class*="language-"] ::-moz-selection,code[class*="language-"]::-moz-selection,code[class*="language-"] ::-moz-selection{text-shadow:none;background:#9AA2B1}@media print{code[class*="language-"],pre[class*="language-"]{text-shadow:none}}pre[class*="language-"]{padding:1em;margin:.5em 0;overflow:auto}:not(pre)>code[class*="language-"],pre[class*="language-"]{background:#282C34;border:1px solid rgba(0,0,0,0)}:not(pre)>code[class*="language-"]{padding:.1em;border-radius:.3em;white-space:normal}.token.comment,.token.prolog,.token.doctype,.token.cdata{color:#5C6370}.token.punctuation{color:#ABB2BF}.token.selector,.token.tag{color:#E06C75}.token.property,.token.boolean,.token.number,.token.constant,.token.symbol,.token.attr-name,.token.deleted{color:#D19A66}.token.string,.token.char,.token.attr-value,.token.builtin,.token.inserted{color:#98C379}.token.operator,.token.entity,.token.url,.language-css .token.string,.style .token.string{color:#56B6C2}.token.function{color:#61AFEF}.token.atrule,.token.keyword,.token.regex,.token.important,.token.variable{color:#C678DD}.token.important,.token.bold{font-weight:bold}.token.italic{font-style:italic}.token.entity{cursor:help}pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}pre.line-numbers>code{position:relative}.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:0;font-size:100%;left:-3.8em;width:3em;letter-spacing:-1px;border-right:0;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.line-numbers-rows>span:before{content:counter(linenumber);color:#5C6370;display:block;padding-right:0.8em;text-align:right}code.language-css,pre.languagecss{color:#FA4273}code.language-javascript,pre.languagejavascript{color:#FA4273}code.language-js,pre.languagejs{color:#FA4273}code.language-jsx,pre.languagejsx{color:#FA4273}code.language-sass,pre.languagesass{color:#FA4273}code.language-scss,pre.languagescss{color:#FA4273}code.language-ts,pre.languagets{color:#FA4273}code.language-tsx,pre.languagetsx{color:#FA4273}code.language-typescript,pre.languagetypescript{color:#FA4273}
+html.dark code[class*="language-"],html.dark pre[class*="language-"]{
+    color:#ABB2BF;
+    background:none;
+    font-family:Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    text-align:left;
+    white-space:pre;
+    word-spacing:normal;
+    word-break:normal;
+    word-wrap:normal;
+    line-height:1.5;
+    -moz-tab-size:4;
+    -o-tab-size:4;
+    tab-size:4;
+    -webkit-hyphens:none;
+    -moz-hyphens:none;
+    -ms-hyphens:none;
+    hyphens:none
+}
+html.dark pre[class*="language-"]::selection,html.dark pre[class*="language-"] ::selection,html.dark code[class*="language-"]::selection,html.dark code[class*="language-"] ::selection,html.dark pre[class*="language-"]::-moz-selection,html.dark pre[class*="language-"] ::-moz-selection,html.dark code[class*="language-"]::-moz-selection,html.dark code[class*="language-"] ::-moz-selection{
+    text-shadow:none;
+    background:#9AA2B1
+}
+@media print{
+    html.dark code[class*="language-"],pre[class*="language-"]{
+        text-shadow:none
+    }
+}
+html.dark pre[class*="language-"]{
+    padding:1em;
+    margin:.5em 0;
+    overflow:auto
+}
+:not(pre)>html.dark code[class*="language-"],html.dark pre[class*="language-"]{
+    background:#282C34;
+    border:1px solid rgba(0,0,0,0)
+}
+:not(pre)>html.dark code[class*="language-"]{
+    padding:.1em;
+    border-radius:.3em;
+    white-space:normal
+}
+html.dark .token.comment,html.dark .token.prolog,html.dark .token.doctype,html.dark .token.cdata{
+    color:#5C6370
+}
+html.dark .token.punctuation{
+    color:#ABB2BF
+}
+html.dark .token.selector,html.dark .token.tag{
+    color:#E06C75
+}
+html.dark .token.property,html.dark .token.boolean,html.dark .token.number,html.dark .token.constant,html.dark .token.symbol,html.dark .token.attr-name,html.dark .token.deleted{
+    color:#D19A66
+}
+html.dark .token.string,html.dark .token.char,html.dark .token.attr-value,html.dark .token.builtin,html.dark .token.inserted{
+    color:#98C379
+}
+html.dark .token.operator,html.dark .token.entity,html.dark .token.url,html.dark .language-css html.dark .token.string,html.dark .style .token.string{
+    color:#56B6C2
+}
+html.dark .token.function{
+    color:#61AFEF
+}
+html.dark .token.atrule,html.dark .token.keyword,html.dark .token.regex,html.dark .token.important,html.dark .token.variable{
+    color:#C678DD
+}
+html.dark .token.important,html.dark .token.bold{
+    font-weight:bold
+}
+html.dark .token.italic{
+    font-style:italic
+}
+html.dark .token.entity{
+    cursor:help
+}
+html.dark pre.line-numbers{
+    position:relative;
+    padding-left:3.8em;
+    counter-reset:linenumber
+}
+html.dark pre.line-numbers>code{
+    position:relative
+}
+html.dark .line-numbers html.dark .line-numbers-rows{
+    position:absolute;
+    pointer-events:none;
+    top:0;
+    font-size:100%;
+    left:-3.8em;
+    width:3em;
+    letter-spacing:-1px;
+    border-right:0;
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none
+}
+html.dark .line-numbers-rows>span{
+    pointer-events:none;
+    display:block;
+    counter-increment:linenumber
+}
+html.dark .line-numbers-rows>span:before{
+    content:counter(linenumber);
+    color:#5C6370;
+    display:block;
+    padding-right:0.8em;
+    text-align:right
+}
+html.dark code.language-css,html.dark pre.languagecss{
+    color:#FA4273
+}
+html.dark code.language-javascript,html.dark pre.languagejavascript{
+    color:#FA4273
+}
+html.dark code.language-js,html.dark pre.languagejs{
+    color:#FA4273
+}
+html.dark code.language-jsx,html.dark pre.languagejsx{
+    color:#FA4273
+}
+html.dark code.language-sass,html.dark pre.languagesass{
+    color:#FA4273
+}
+html.dark code.language-scss,html.dark pre.languagescss{
+    color:#FA4273
+}
+html.dark code.language-ts,html.dark pre.languagets{
+    color:#FA4273
+}
+html.dark code.language-tsx,html.dark pre.languagetsx{
+    color:#FA4273
+}
+html.dark code.language-typescript,html.dark pre.languagetypescript{
+    color:#FA4273
+}

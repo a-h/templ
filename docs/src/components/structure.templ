@@ -3,14 +3,30 @@ package components
 import r "github.com/a-h/templ/docs/src/render"
 
 templ HTML(c *r.PageContext, pages []*r.Page, data string) {
+        <!doctype html>
 	<html>
 		<head>
+                        <script>
+                              function initTheme() {
+                                var themeIsLight = localStorage.theme === "light";
+                                var browerLightPreference = window.matchMedia(
+                                  "(prefers-color-scheme: light)",
+                                ).matches;
+
+                                if (themeIsLight || browserLightPreference) {
+                                  document.documentElement.classList.remove("dark"); // light is opt-in
+                                } else {
+                                  document.documentElement.classList.add("dark"); // dark is default
+                                }
+                              }
+                        </script>
 			<title>{ c.Title }</title>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<link href={ r.BaseUrl + "img/favicon.ico" } rel="icon"/>
 			<link href={ r.BaseUrl + "style.css" } rel="stylesheet"/>
-			<link id="theme" href={ r.BaseUrl + "prism/prism-light.css" } rel="stylesheet"/>
+			<link href={ r.BaseUrl + "prism/prism-light.css" } rel="stylesheet"/>
+			<link href={ r.BaseUrl + "prism/prism-dark.css" } rel="stylesheet"/>
 		</head>
 		<body class="bg-white dark:bg-gray-800 dark:text-gray-100" hx-boost="true">
 			@frame(header(), sidebar(c, pages), content(data), footer())
@@ -29,13 +45,14 @@ templ HTML(c *r.PageContext, pages []*r.Page, data string) {
 
 templ frame(headerContent, asideContent, mainContent, footerContent templ.Component) {
 	<div id="frame" class="flex min-h-screen w-full overflow-x-hidden">
-		<aside id="sidebar" class="fixed w-10/12 md:w-64 flex flex-col h-full md:h-screen z-20">
+		<aside id="sidebar-container" class="fixed w-10/12 md:w-64 hidden flex-col h-full md:flex md:h-screen z-20 transition-transform">
 			<div class="overflow-y-auto w-full h-full">
 				@asideContent
 			</div>
 		</aside>
-		<div class="flex flex-col flex-1 md:ml-64 overflow-hidden">
-			<div id="overlay" class="fixed w-full h-full bg-black z-10 transition-opacity opacity-0 hidden cursor-pointer"></div>
+		<div id="content-container" class="flex flex-col flex-1 md:ml-64">
+			<div id="overlay" onclick="toggleSidebar()" class="fixed w-full h-full bg-black z-10 transition-opacity opacity-0 hidden cursor-pointer" ></div>
+
 			<header class="sticky top-0 w-full flex flex-row">
 				@headerContent
 			</header>
@@ -61,7 +78,7 @@ templ header() {
 	<div class="min-h-full min-w-full p-4 flex flex-col md:flex-row bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
 		<div class="flex flex-row w-full sm:w-64 md:hidden">
 			<div class="py-3">
-				@toggleHamburgerMenu()
+				@hamburgerButton()
 			</div>
 			@logo()
 		</div>
@@ -74,7 +91,7 @@ templ header() {
 			</div>
 			<div class="hidden md:flex flex-row">
 				<div>
-					@toggleDarkMode()
+					@themeButton()
 				</div>
 				<!-- github -->
 				<a href="https://github.com/a-h/templ" class="flex ml-4 hover:text-gray-300 flex-row space-x-2">
@@ -89,7 +106,7 @@ templ header() {
 }
 
 templ sidebar(c *r.PageContext, pages []*r.Page) {
-	<div class="min-h-full min-w-full p-4 border-r-2 dark:border-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 space-y-2">
+	<div id="sidebar" class="min-h-full min-w-full p-4 border-r-2 dark:border-none bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 space-y-2">
 		@logo()
 		@nav(c, pages, 0)
 	</div>
@@ -112,7 +129,7 @@ templ content(data string) {
 templ footer() {
 	<div class="flex justify-between min-h-full min-w-full p-4 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100 md:hidden">
 		<div>
-			@toggleDarkMode()
+			@themeButton()
 		</div>
 		<!-- github -->
 		<a href="https://github.com/a-h/templ" class="flex items-center space-x-2 hover:text-gray-700 dark:hover:text-gray-300">
@@ -124,16 +141,16 @@ templ footer() {
 	</div>
 }
 
-templ toggleHamburgerMenu() {
-	<div id="hamburger-container" class=" md:hidden cursor-pointer">
+templ hamburgerButton() {
+	<div onclick="toggleSidebar()" id="hamburger-container" class=" md:hidden cursor-pointer">
 		<svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 			<path fill-rule="evenodd" clip-rule="evenodd" d="M3 5C3 4.45 3.45 4 4 4H20C20.55 4 21 4.45 21 5C21 5.55 20.55 6 20 6H4C3.45 6 3 5.55 3 5ZM3 11C3 10.45 3.45 10 4 10H20C20.55 10 21 10.45 21 11C21 11.55 20.55 12 20 12H4C3.45 12 3 11.55 3 11ZM4 16C3.45 16 3 16.45 3 17C3 17.55 3.45 18 4 18H20C20.55 18 21 17.55 21 17C21 16.45 20.55 16 20 16H4Z"></path>
 		</svg>
 	</div>
 }
 
-templ toggleDarkMode() {
-	<div class="dark-mode-toggle cursor-pointer">
+templ themeButton() {
+	<div onclick="darkModeToggle()" class="dark-mode-toggle cursor-pointer">
 		<svg viewBox="0 0 24 24" width="24" height="24" class="dark:hidden">
 			<path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path>
 		</svg>
