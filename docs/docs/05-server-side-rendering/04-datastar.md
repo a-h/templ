@@ -25,7 +25,7 @@ The Datastar website is built using Datastar and templ, so you can see how it wo
 
 The Datastar website contains a number of examples that demonstrate how to use Datastar. The examples are written in Go and use the templ package to generate the HTML.
 
-See examples at https://github.com/delanej/datastar/tree/main/backends/go/site
+See examples at https://github.com/delaneyj/datastar/tree/main/backends/go/site
 
 This document will walk you through how to create a simple counter example using Datastar, following the [example](https://data-star.dev/examples/templ_counter) in the Datastar website.
 
