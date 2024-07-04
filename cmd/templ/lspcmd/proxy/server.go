@@ -396,10 +396,12 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 
 	// Ensure that Go source is available.
 	gosrc := strings.Split(p.GoSource[string(templURI)], "\n")
-	if len(gosrc)-1 < int(params.TextDocumentPositionParams.Position.Line) {
+	if len(gosrc) < int(params.TextDocumentPositionParams.Position.Line) {
+		p.Log.Info("completion: line position out of range")
 		return nil, nil
 	}
-	if len(gosrc[params.TextDocumentPositionParams.Position.Line])-1 < int(params.TextDocumentPositionParams.Position.Character) {
+	if len(gosrc[params.TextDocumentPositionParams.Position.Line]) < int(params.TextDocumentPositionParams.Position.Character) {
+		p.Log.Info("completion: col position out of range")
 		return nil, nil
 	}
 
