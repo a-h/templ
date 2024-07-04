@@ -64,7 +64,7 @@ func nav(c *r.PageContext, pages []*r.Page, depth int) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if page.Type == r.PageMarkdown {
-				templ_7745c5c3_Err = link(c, page, depth).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = link(c, page).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -189,7 +189,7 @@ func section(c *r.PageContext, page *r.Page, depth int) templ.Component {
 	})
 }
 
-func link(c *r.PageContext, page *r.Page, depth int) templ.Component {
+func link(c *r.PageContext, page *r.Page) templ.Component {
 	return templ.ComponentFunc(func(ctx context.Context, templ_7745c5c3_W io.Writer) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templ_7745c5c3_W.(*bytes.Buffer)
 		if !templ_7745c5c3_IsBuffer {
@@ -204,9 +204,10 @@ func link(c *r.PageContext, page *r.Page, depth int) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		var templ_7745c5c3_Var11 = []any{
 			"block",
+			"w-[95%]",
+			"ml-2",
 			"p-2",
 			"rounded",
-			"w-full",
 			"hover:bg-gray-200",
 			"dark:hover:bg-gray-700",
 			templ.KV("font-bold", strings.HasPrefix(c.Active, page.Slug)),
@@ -260,7 +261,7 @@ func link(c *r.PageContext, page *r.Page, depth int) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(page.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/nav.templ`, Line: 78, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/nav.templ`, Line: 79, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {

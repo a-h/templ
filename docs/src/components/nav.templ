@@ -17,7 +17,7 @@ templ nav(c *r.PageContext, pages []*r.Page, depth int) {
 				@section(c, page, depth)
 			}
 			if page.Type == r.PageMarkdown {
-				@link(c, page, depth)
+				@link(c, page)
 			}
 		}
 	</nav>
@@ -58,15 +58,16 @@ templ section(c *r.PageContext, page *r.Page, depth int) {
 	</div>
 }
 
-templ link(c *r.PageContext, page *r.Page, depth int) {
+templ link(c *r.PageContext, page *r.Page) {
 	<a
 		id={ page.Slug }
 		href={ templ.URL(r.BaseUrl + page.Href) }
 		class={
 			"block",
+                        "w-[95%]",
+                        "ml-2",
 			"p-2",
 			"rounded",
-			"w-full",
 			"hover:bg-gray-200",
 			"dark:hover:bg-gray-700",
 			templ.KV("font-bold", strings.HasPrefix(c.Active, page.Slug)),
