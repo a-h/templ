@@ -393,6 +393,16 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	if !ok {
 		return nil, nil
 	}
+
+	// Ensure that Go source is available.
+	gosrc := strings.Split(p.GoSource[string(templURI)], "\n")
+	if len(gosrc)-1 < int(params.TextDocumentPositionParams.Position.Line) {
+		return nil, nil
+	}
+	if len(gosrc[params.TextDocumentPositionParams.Position.Line])-1 < int(params.TextDocumentPositionParams.Position.Character) {
+		return nil, nil
+	}
+
 	// Call the target.
 	result, err = p.Target.Completion(ctx, params)
 	if err != nil {
