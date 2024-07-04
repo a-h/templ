@@ -32,7 +32,6 @@ import (
 // character positions.
 type Server struct {
 	Log             *zap.Logger
-	Client          lsp.Client
 	Target          lsp.Server
 	SourceMapCache  *SourceMapCache
 	DiagnosticCache *DiagnosticCache
@@ -40,17 +39,14 @@ type Server struct {
 	GoSource        map[string]string
 }
 
-func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server, init func(lsp.Client)) {
-	s = &Server{
+func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server) {
+	return &Server{
 		Log:             log,
 		Target:          target,
 		SourceMapCache:  cache,
 		DiagnosticCache: diagnosticCache,
 		TemplSource:     newDocumentContents(log),
 		GoSource:        make(map[string]string),
-	}
-	return s, func(client lsp.Client) {
-		s.Client = client
 	}
 }
 
@@ -149,7 +145,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 			}
 		}
 		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
-		err = p.Client.PublishDiagnostics(ctx, msg)
+		err = lsp.ClientFromContext(ctx).PublishDiagnostics(ctx, msg)
 		if err != nil {
 			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
 		}
@@ -184,7 +180,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 			})
 		}
 		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
-		err = p.Client.PublishDiagnostics(ctx, msg)
+		err = lsp.ClientFromContext(ctx).PublishDiagnostics(ctx, msg)
 		if err != nil {
 			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
 		}
@@ -192,7 +188,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 	}
 	// Clear templ diagnostics.
 	p.DiagnosticCache.ClearTemplDiagnostics(string(uri))
-	err = p.Client.PublishDiagnostics(ctx, &lsp.PublishDiagnosticsParams{
+	err = lsp.ClientFromContext(ctx).PublishDiagnostics(ctx, &lsp.PublishDiagnosticsParams{
 		URI: uri,
 		// Cannot be nil as per https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
 		Diagnostics: []lsp.Diagnostic{},
@@ -408,10 +404,17 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	}
 	// Rewrite the result positions.
 	p.Log.Info("completion: received items", zap.Int("count", len(result.Items)))
+
 	for i := 0; i < len(result.Items); i++ {
 		item := result.Items[i]
 		if item.TextEdit != nil {
-			item.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.Range)
+			if item.TextEdit.TextEdit != nil {
+				item.TextEdit.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.TextEdit.Range)
+			}
+			if item.TextEdit.InsertReplaceEdit != nil {
+				item.TextEdit.InsertReplaceEdit.Insert = p.convertGoRangeToTemplRange(templURI, item.TextEdit.InsertReplaceEdit.Insert)
+				item.TextEdit.InsertReplaceEdit.Replace = p.convertGoRangeToTemplRange(templURI, item.TextEdit.InsertReplaceEdit.Replace)
+			}
 		}
 		if len(item.AdditionalTextEdits) > 0 {
 			doc, ok := p.TemplSource.Get(string(templURI))
@@ -435,6 +438,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 
 	// Add templ snippet.
 	result.Items = append(result.Items, snippet...)
+
 	return
 }
 
