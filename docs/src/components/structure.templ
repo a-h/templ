@@ -3,22 +3,20 @@ package components
 import r "github.com/a-h/templ/docs/src/render"
 
 templ HTML(c *r.PageContext, pages []*r.Page, data string) {
-        <!doctype html>
+	<!DOCTYPE html>
 	<html>
 		<head>
-                        <script>
-                              function initTheme() {
-                                var themeIsLight = localStorage.theme === "light";
-                                var browerLightPreference = window.matchMedia(
-                                  "(prefers-color-scheme: light)",
-                                ).matches;
+			<script>
+                                (function() {
+                                  var theme = localStorage.getItem('theme');
+                                  var browserLightPreference = window.matchMedia('(prefers-color-scheme: light)').matches;
 
-                                if (themeIsLight || browserLightPreference) {
-                                  document.documentElement.classList.remove("dark"); // light is opt-in
-                                } else {
-                                  document.documentElement.classList.add("dark"); // dark is default
-                                }
-                              }
+                                  if (theme === 'light' || (!theme && browserLightPreference)) {
+                                    document.documentElement.classList.remove('dark'); // light is opt-in
+                                  } else {
+                                    document.documentElement.classList.add('dark'); // dark is default
+                                  }
+                                })();
                         </script>
 			<title>{ c.Title }</title>
 			<meta charset="UTF-8"/>
@@ -51,8 +49,7 @@ templ frame(headerContent, asideContent, mainContent, footerContent templ.Compon
 			</div>
 		</aside>
 		<div id="content-container" class="flex flex-col flex-1 md:ml-64">
-			<div id="overlay" onclick="toggleSidebar()" class="fixed w-full h-full bg-black z-10 transition-opacity opacity-0 hidden cursor-pointer" ></div>
-
+			<div id="overlay" onclick="toggleSidebar()" class="fixed w-full h-full bg-black z-10 transition-opacity opacity-0 hidden cursor-pointer"></div>
 			<header class="sticky top-0 w-full flex flex-row">
 				@headerContent
 			</header>
