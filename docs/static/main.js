@@ -53,7 +53,3 @@ function handleToggle ({ target }) {
 document.addEventListener("DOMContentLoaded", () => {
   Prism.highlightAll();  
 })
-
-document.addEventListener("htmx:load", () => {
-  Prism.highlightAll();  
-})

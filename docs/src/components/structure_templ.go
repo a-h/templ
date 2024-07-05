@@ -24,14 +24,14 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!doctype html><html><head><script>\n                                (function() {\n                                  var theme = localStorage.getItem('theme');\n                                  var browserLightPreference = window.matchMedia('(prefers-color-scheme: light)').matches;\n\n                                  if (theme === 'light' || (!theme && browserLightPreference)) {\n                                    document.documentElement.classList.remove('dark'); // light is opt-in\n                                  } else {\n                                    document.documentElement.classList.add('dark'); // dark is default\n                                  }\n                                })();\n                        </script><title>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!doctype html><html><head><title>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(c.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 21, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 9, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -44,7 +44,7 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "img/favicon.ico")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 24, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 12, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -57,7 +57,7 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "style.css")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 25, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 13, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -70,7 +70,7 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "prism/prism-light.css")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 26, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 14, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -83,17 +83,13 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "prism/prism-dark.css")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 27, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 15, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" rel=\"stylesheet\"></head><body class=\"bg-white dark:bg-gray-800 dark:text-gray-100\" hx-boost=\"true\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = frame(header(), sidebar(c, pages), content(data), footer()).Render(ctx, templ_7745c5c3_Buffer)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" rel=\"stylesheet\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -101,14 +97,14 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script src=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<script>\n                                (function() {\n                                  var theme = localStorage.getItem('theme');\n                                  var browserLightPreference = window.matchMedia('(prefers-color-scheme: light)').matches;\n                                  if (theme === 'light' || (!theme && browserLightPreference)) {\n                                    document.documentElement.classList.remove('dark');\n                                  } else {\n                                    document.documentElement.classList.add('dark');\n                                  }\n                                })();\n                        </script><script src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "prism/prism-light.js")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 32, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 28, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -121,7 +117,7 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "prism/prism-dark.js")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 33, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 29, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -134,7 +130,7 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "prism/prism-templ-plugin.js")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 34, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 30, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -147,7 +143,7 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "main.js")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 35, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 31, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -160,7 +156,7 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "search_content.js")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 36, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 32, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -173,13 +169,21 @@ func HTML(c *r.PageContext, pages []*r.Page, data string) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "search.js")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 37, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 33, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></script><script src=\"https://unpkg.com/htmx.org@1.9.12\"></script></body></html>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></script><script src=\"https://unpkg.com/htmx.org@1.9.12\"></script></head><body class=\"bg-white dark:bg-gray-800 dark:text-gray-100\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = frame(header(), sidebar(c, pages), content(data), footer()).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -275,13 +279,13 @@ func logo() templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(r.BaseUrl + "img/logo.svg")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 68, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `docs/src/components/structure.templ`, Line: 67, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" alt=\"templ\" class=\"h-12 w-52\"></h1></a>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" class=\"h-12 w-52\" aria-hidden=\"true\"></h1></a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

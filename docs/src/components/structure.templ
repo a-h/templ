@@ -6,18 +6,6 @@ templ HTML(c *r.PageContext, pages []*r.Page, data string) {
 	<!DOCTYPE html>
 	<html>
 		<head>
-			<script>
-                                (function() {
-                                  var theme = localStorage.getItem('theme');
-                                  var browserLightPreference = window.matchMedia('(prefers-color-scheme: light)').matches;
-
-                                  if (theme === 'light' || (!theme && browserLightPreference)) {
-                                    document.documentElement.classList.remove('dark'); // light is opt-in
-                                  } else {
-                                    document.documentElement.classList.add('dark'); // dark is default
-                                  }
-                                })();
-                        </script>
 			<title>{ c.Title }</title>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -25,10 +13,18 @@ templ HTML(c *r.PageContext, pages []*r.Page, data string) {
 			<link href={ r.BaseUrl + "style.css" } rel="stylesheet"/>
 			<link href={ r.BaseUrl + "prism/prism-light.css" } rel="stylesheet"/>
 			<link href={ r.BaseUrl + "prism/prism-dark.css" } rel="stylesheet"/>
-		</head>
-		<body class="bg-white dark:bg-gray-800 dark:text-gray-100" hx-boost="true">
-			@frame(header(), sidebar(c, pages), content(data), footer())
 			@insertUrlInJs(r.BaseUrl)
+			<script>
+                                (function() {
+                                  var theme = localStorage.getItem('theme');
+                                  var browserLightPreference = window.matchMedia('(prefers-color-scheme: light)').matches;
+                                  if (theme === 'light' || (!theme && browserLightPreference)) {
+                                    document.documentElement.classList.remove('dark');
+                                  } else {
+                                    document.documentElement.classList.add('dark');
+                                  }
+                                })();
+                        </script>
 			<script src={ r.BaseUrl + "prism/prism-light.js" }></script>
 			<script src={ r.BaseUrl + "prism/prism-dark.js" }></script>
 			<script src={ r.BaseUrl + "prism/prism-templ-plugin.js" }></script>
@@ -36,6 +32,9 @@ templ HTML(c *r.PageContext, pages []*r.Page, data string) {
 			<script src={ r.BaseUrl + "search_content.js" }></script>
 			<script src={ r.BaseUrl + "search.js" }></script>
 			<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+		</head>
+		<body class="bg-white dark:bg-gray-800 dark:text-gray-100">
+			@frame(header(), sidebar(c, pages), content(data), footer())
 		</body>
 	</html>
 }
@@ -65,7 +64,7 @@ templ frame(headerContent, asideContent, mainContent, footerContent templ.Compon
 templ logo() {
 	<a href={ templ.URL(r.BaseUrl) }>
 		<h1 class="text-2xl font-bold">
-			<img src={ r.BaseUrl + "img/logo.svg" } alt="templ" class="h-12 w-52"/>
+			<img src={ r.BaseUrl + "img/logo.svg" } class="h-12 w-52" aria-hidden="true"/>
 		</h1>
 	</a>
 }
