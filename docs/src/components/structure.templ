@@ -63,8 +63,8 @@ templ frame(headerContent, asideContent, mainContent, footerContent templ.Compon
 
 templ logo() {
 	<a href={ templ.URL(r.BaseUrl) }>
-		<h1 class="text-2xl font-bold">
-			<img src={ r.BaseUrl + "img/logo.svg" } class="h-12 w-52" aria-hidden="true"/>
+		<h1 class="text-2xl font-bold " >
+			@logoSvg()
 		</h1>
 	</a>
 }
