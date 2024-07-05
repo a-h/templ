@@ -1,6 +1,7 @@
 package components
 
 import "strings"
+import "fmt"
 import r "github.com/a-h/templ/docs/src/render"
 
 templ nav(c *r.PageContext, pages []*r.Page, depth int) {
@@ -25,13 +26,14 @@ templ nav(c *r.PageContext, pages []*r.Page, depth int) {
 
 templ section(c *r.PageContext, page *r.Page, depth int) {
 	<div
+		id={ fmt.Sprintf("section-container-%s", page.Slug) }
 		class={ templ.KV("active", strings.HasPrefix(c.Active, page.Slug)), }
 	>
 		<div
+                        id={ fmt.Sprintf("section-dropdown-%s", page.Slug) }
 			class={
 				"flex",
 				"justify-between",
-				"toggle",
 				"block",
 				"p-2",
 				"rounded",
@@ -64,8 +66,8 @@ templ link(c *r.PageContext, page *r.Page) {
 		href={ templ.URL(r.BaseUrl + page.Href) }
 		class={
 			"block",
-                        "w-[95%]",
-                        "ml-2",
+			"w-[95%]",
+			"ml-2",
 			"p-2",
 			"rounded",
 			"hover:bg-gray-200",
