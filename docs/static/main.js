@@ -46,10 +46,3 @@ function handleToggle ({ target }) {
   // no default action
   return false;
 };
-
-// prism-plugin-templ.js runs but it doesn't update
-// the dom until after a manual refresh. This makes gives
-// the templ language its colors without needing to refresh.
-document.addEventListener("DOMContentLoaded", () => {
-  Prism.highlightAll();  
-})
