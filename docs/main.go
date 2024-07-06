@@ -53,17 +53,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	docsFs, err := src.CreateMemoryFs(context.Background(), pages, pages, false)
+	docsFs, err := src.CreateMemoryFs(context.Background(), pages, pages)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	bodyFs, err := src.CreateMemoryFs(context.Background(), pages, pages, true)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = src.WriteToDisk([]fs.FS{docsFs, staticFsys, bodyFs}, outputPath)
+	err = src.WriteToDisk([]fs.FS{docsFs, staticFsys}, outputPath)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -55,12 +55,12 @@ func WriteToDisk(fsyss []fs.FS, outputPath string) error {
 	return nil
 }
 
-func CreateMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page, bodyOnly bool) (fstest.MapFS, error) {
+func CreateMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page) (fstest.MapFS, error) {
 	files := fstest.MapFS{}
 
 	for _, page := range pagesToRender {
 		if page.Type == render.PageSection {
-			subFiles, err := CreateMemoryFs(ctx, allPages, page.Children, bodyOnly)
+			subFiles, err := CreateMemoryFs(ctx, allPages, page.Children)
 			if err != nil {
 				return nil, err
 			}
@@ -74,20 +74,9 @@ func CreateMemoryFs(ctx context.Context, allPages, pagesToRender []*render.Page,
 			}
 
 			var htmlBuffer bytes.Buffer
-			if bodyOnly {
-
-				err := components.Body(pc, allPages, page.RenderedContent).Render(ctx, &htmlBuffer)
-				if err != nil {
-					return nil, err
-				}
-
-				page.Href = "body-only/" + page.Href
-
-			} else {
-				err := components.HTML(pc, allPages, page.RenderedContent).Render(ctx, &htmlBuffer)
-				if err != nil {
-					return nil, err
-				}
+			err := components.HTML(pc, allPages, page.RenderedContent).Render(ctx, &htmlBuffer)
+			if err != nil {
+				return nil, err
 			}
 
 			files[page.Href] = &fstest.MapFile{Data: htmlBuffer.Bytes()}

@@ -23,18 +23,3 @@ function toggleSidebar() {
   let body = document.getElementsByTagName("body")[0];
   body.classList.toggle("overflow-hidden");
 }
-
-document.addEventListener("DOMContentLoaded", function (_) {
-  document.body.addEventListener("htmx:configRequest", function (event) {
-    relativeUrl = event.detail.path.split(base_url);
-
-    bodyOnlyUrl = base_url + "body-only/" + relativeUrl[1];
-
-    event.detail.path = bodyOnlyUrl;
-    htmx.ajax(event)
-  });
-
-  document.addEventListener("htmx:load", (_) => {
-    htmx.logAll();
-  });
-});
