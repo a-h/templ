@@ -13,8 +13,15 @@ templ HTML(c *r.PageContext, pages []*r.Page, data string) {
 			<link href={ r.BaseUrl + "style.css" } rel="stylesheet"/>
 			<link href={ r.BaseUrl + "prism/prism-light.css" } rel="stylesheet"/>
 			<link href={ r.BaseUrl + "prism/prism-dark.css" } rel="stylesheet"/>
-			@insertUrlInJs(r.BaseUrl)
-			<script>
+			@Body(c, pages, data)
+		</head>
+	</html>
+}
+
+templ Body(c *r.PageContext, pages []*r.Page, data string) {
+	<body class="bg-white dark:bg-gray-800 dark:text-gray-100" hx-boost="true">
+		@insertUrlInJs(r.BaseUrl)
+		<script>
                                 (function() {
                                   var theme = localStorage.getItem('theme');
                                   var browserLightPreference = window.matchMedia('(prefers-color-scheme: light)').matches;
@@ -25,19 +32,16 @@ templ HTML(c *r.PageContext, pages []*r.Page, data string) {
                                   }
                                 })();
                         </script>
-			<script src={ r.BaseUrl + "prism/prism-light.js" }></script>
-			<script src={ r.BaseUrl + "prism/prism-dark.js" }></script>
-			<script src={ r.BaseUrl + "prism/prism-templ-plugin.js" }></script>
-			<script src={ r.BaseUrl + "main.js" }></script>
-			<script src={ r.BaseUrl + "accordion.js" }></script>
-			<script src={ r.BaseUrl + "search_content.js" }></script>
-			<script src={ r.BaseUrl + "search.js" }></script>
-			<script src="https://unpkg.com/htmx.org@1.9.12"></script>
-		</head>
-		<body class="bg-white dark:bg-gray-800 dark:text-gray-100">
-			@frame(header(), sidebar(c, pages), content(data), footer())
-		</body>
-	</html>
+		<script src={ r.BaseUrl + "prism/prism-light.js" }></script>
+		<script src={ r.BaseUrl + "prism/prism-dark.js" }></script>
+		<script src={ r.BaseUrl + "prism/prism-templ-plugin.js" }></script>
+		<script src={ r.BaseUrl + "main.js" }></script>
+		<script src={ r.BaseUrl + "accordion.js" }></script>
+		<script src={ r.BaseUrl + "search_content.js" }></script>
+		<script src={ r.BaseUrl + "search.js" }></script>
+                <script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous"></script>
+		@frame(header(), sidebar(c, pages), content(data), footer())
+	</body>
 }
 
 templ frame(headerContent, asideContent, mainContent, footerContent templ.Component) {
@@ -64,7 +68,7 @@ templ frame(headerContent, asideContent, mainContent, footerContent templ.Compon
 
 templ logo() {
 	<a href={ templ.URL(r.BaseUrl) }>
-		<h1 class="text-2xl font-bold " >
+		<h1 class="text-2xl font-bold ">
 			@logoSvg()
 		</h1>
 	</a>
