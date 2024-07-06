@@ -134,6 +134,10 @@ templ themeName() {
 }
 ```
 
+:::note
+As of v0.2.731, Go's built in `context` package is no longer implicitly imported into .templ files.
+:::
+
 ## Using `context` with HTTP middleware
 
 In HTTP applications, a common pattern is to insert HTTP middleware into the request/response chain.
