@@ -41,13 +41,12 @@ func TestURLWithPaths(t *testing.T) {
 	t.Parallel()
 
 	c := "c"
-	builder := New("https", "example.com").
+	got := New("https", "example.com").
 		Path("a").
 		Path("b").
 		Path(c).
-		Query("key", "value")
+		Query("key", "value").Build()
 
-	got := builder.Build()
 	expected := templ.URL("https://example.com/a/b/c?key=value")
 
 	if got != expected {
@@ -58,12 +57,12 @@ func TestURLWithPaths(t *testing.T) {
 func TestURLWithMultipleQueries(t *testing.T) {
 	t.Parallel()
 
-	builder := New("https", "example.com").
+	got := New("https", "example.com").
 		Path("path").
 		Query("key1", "value1").
-		Query("key2", "value2")
+		Query("key2", "value2").
+		Build()
 
-	got := builder.Build()
 	expected := templ.URL("https://example.com/path?key1=value1&key2=value2")
 
 	if got != expected {
@@ -74,10 +73,10 @@ func TestURLWithMultipleQueries(t *testing.T) {
 func TestURLWithNoPaths(t *testing.T) {
 	t.Parallel()
 
-	builder := New("http", "example.org").
-		Query("search", "golang")
+	got := New("http", "example.org").
+		Query("search", "golang").
+		Build()
 
-	got := builder.Build()
 	expected := templ.URL("http://example.org?search=golang")
 
 	if got != expected {
@@ -88,11 +87,11 @@ func TestURLWithNoPaths(t *testing.T) {
 func TestURLEscapingPath(t *testing.T) {
 	t.Parallel()
 
-	builder := New("https", "example.com").
+	got := New("https", "example.com").
 		Path("a/b").
-		Path("c d")
+		Path("c d").
+		Build()
 
-	got := builder.Build()
 	expected := templ.URL("https://example.com/a%2Fb/c%20d")
 
 	if got != expected {
@@ -103,11 +102,12 @@ func TestURLEscapingPath(t *testing.T) {
 func TestURLEscapingQuery(t *testing.T) {
 	t.Parallel()
 
-	builder := New("https", "example.com").
-		Query("key with space", "value/with/slash")
+	got := New("https", "example.com").
+		Query("key with space", "value with space").
+		Query("key/with/slash", "value/with/slash").
+		Build()
 
-	got := builder.Build()
-	expected := templ.URL("https://example.com?key+with+space=value%2Fwith%2Fslash")
+	expected := templ.URL("https://example.com?key+with+space=value+with+space&key%2Fwith%2Fslash=value%2Fwith%2Fslash")
 
 	if got != expected {
 		t.Fatalf("got %s, want %s", got, expected)
