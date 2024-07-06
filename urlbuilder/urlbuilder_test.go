@@ -28,8 +28,9 @@ func BenchmarkURLBuilder(b *testing.B) {
 func TestBasicURL(t *testing.T) {
 	t.Parallel()
 
-	builder := New("https", "example.com")
-	got := builder.Build()
+	got := New("https", "example.com").
+		Build()
+
 	expected := templ.URL("https://example.com")
 
 	if got != expected {
