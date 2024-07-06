@@ -52,8 +52,7 @@ module.exports = {
         "c-highlighted-code-light": "rgba(0, 0, 0, 0.1)", // --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
         "c-highlighted-code-dark": "rgba(0, 0, 0, 0.3)", // --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
       },
-
-      plugins: [require("@tailwindcss/typography")],
     },
   },
+  plugins: [require("@tailwindcss/typography")],
 };
