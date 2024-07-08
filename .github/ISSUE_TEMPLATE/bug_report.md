@@ -25,8 +25,8 @@ If applicable, add screenshots or screen captures to help explain your problem.
 **Logs**
 If the issue is related to IDE support, run through the LSP troubleshooting section at https://templ.guide/commands-and-tools/ide-support/#troubleshooting-1 and include logs from templ
 
-**`templ diagnose` output**
-Run `templ diagnose` and include the output.
+**`templ info` output**
+Run `templ info` and include the output.
 
 **Desktop (please complete the following information):**
  - OS: [e.g. MacOS, Linux, Windows, WSL]
