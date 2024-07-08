@@ -3,14 +3,18 @@
 `templ` provides a command line interface. Most users will only need to run the `templ generate` command to generate Go code from `*.templ` files.
 
 ```
-usage: templ <command> [parameters]
-To see help text, you can run:
-  templ generate --help
-  templ fmt --help
-  templ lsp --help
-  templ version
-examples:
-  templ generate
+usage: templ <command> [<args>...]
+
+templ - build HTML UIs with Go
+
+See docs at https://templ.guide
+
+commands:
+  generate   Generates Go code from templ files
+  fmt        Formats templ files
+  lsp        Starts a language server for templ files
+  diagnose   Diagnose the templ environment
+  version    Prints the version
 ```
 
 ## Generating Go code from templ files

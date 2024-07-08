@@ -11,6 +11,7 @@ import (
 	"runtime"
 
 	"github.com/a-h/templ"
+	"github.com/a-h/templ/cmd/templ/diagnosecmd"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
@@ -35,6 +36,7 @@ commands:
   generate   Generates Go code from templ files
   fmt        Formats templ files
   lsp        Starts a language server for templ files
+  diagnose   Diagnose the templ environment
   version    Prints the version
 `
 
@@ -44,6 +46,8 @@ func run(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
 		return 64 // EX_USAGE
 	}
 	switch args[1] {
+	case "diagnose":
+		return diagnoseCmd(stdout, stderr, args[2:])
 	case "generate":
 		return generateCmd(stdout, stderr, args[2:])
 	case "fmt":
@@ -78,6 +82,54 @@ func newLogger(logLevel string, verbose bool, stderr io.Writer) *slog.Logger {
 		AddSource: logLevel == "debug",
 		Level:     level,
 	}))
+}
+
+const diagnoseUsageText = `usage: templ diagnose [<args>...]
+
+Diagnoses the templ environment.
+
+Args:
+  -v
+    Set log verbosity level to "debug". (default "info")
+  -log-level
+    Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
+  -help
+    Print help and exit.
+`
+
+func diagnoseCmd(stdout, stderr io.Writer, args []string) (code int) {
+	cmd := flag.NewFlagSet("diagnose", flag.ExitOnError)
+	verboseFlag := cmd.Bool("v", false, "")
+	logLevelFlag := cmd.String("log-level", "info", "")
+	helpFlag := cmd.Bool("help", false, "")
+	err := cmd.Parse(args)
+	if err != nil {
+		fmt.Fprint(stderr, diagnoseUsageText)
+		return 64 // EX_USAGE
+	}
+	if *helpFlag {
+		fmt.Fprint(stdout, diagnoseUsageText)
+		return
+	}
+
+	log := newLogger(*logLevelFlag, *verboseFlag, stderr)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		<-signalChan
+		fmt.Fprintln(stderr, "Stopping...")
+		cancel()
+	}()
+
+	err = diagnosecmd.Run(ctx, log, diagnosecmd.Arguments{})
+	if err != nil {
+		color.New(color.FgRed).Fprint(stderr, "(✗) ")
+		fmt.Fprintln(stderr, "Command failed: "+err.Error())
+		return 1
+	}
+	return 0
 }
 
 const generateUsageText = `usage: templ generate [<args>...]

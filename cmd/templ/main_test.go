@@ -65,6 +65,12 @@ func TestMain(t *testing.T) {
 			expectedStdout: lspUsageText,
 			expectedCode:   0,
 		},
+		{
+			name:           `"templ diagnose --help" prints usage`,
+			args:           []string{"templ", "diagnose", "--help"},
+			expectedStdout: diagnoseUsageText,
+			expectedCode:   0,
+		},
 	}
 
 	for _, test := range tests {

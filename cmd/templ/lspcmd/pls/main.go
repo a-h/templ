@@ -31,13 +31,13 @@ func (opts Options) AsArguments() []string {
 	return args
 }
 
-func findGopls() (location string, err error) {
+func FindGopls() (location string, err error) {
 	executableName := "gopls"
 	if runtime.GOOS == "windows" {
 		executableName = "gopls.exe"
 	}
 
-	_, err = exec.LookPath(executableName)
+	executableName, err = exec.LookPath(executableName)
 	if err == nil {
 		// Found on the path.
 		return executableName, nil
@@ -72,7 +72,7 @@ func findGopls() (location string, err error) {
 
 // NewGopls starts gopls and opens up a jsonrpc2 connection to it.
 func NewGopls(ctx context.Context, log *zap.Logger, opts Options) (rwc io.ReadWriteCloser, err error) {
-	location, err := findGopls()
+	location, err := FindGopls()
 	if err != nil {
 		return nil, err
 	}
