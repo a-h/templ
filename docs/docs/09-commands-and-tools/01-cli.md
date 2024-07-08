@@ -13,7 +13,7 @@ commands:
   generate   Generates Go code from templ files
   fmt        Formats templ files
   lsp        Starts a language server for templ files
-  diagnose   Diagnose the templ environment
+  info       Displays information about the templ environment
   version    Prints the version
 ```
 

@@ -434,6 +434,6 @@ The logs can be quite verbose, since almost every keypress results in additional
 
 The web server option provides an insight into the internal state of the language server. It may provide insight into what's going wrong.
 
-### Run templ diagnose
+### Run templ info
 
-The `templ diagnose` command outputs information that's useful in debugging issues.
+The `templ info` command outputs information that's useful for debugging issues.
