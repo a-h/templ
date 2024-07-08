@@ -2,8 +2,10 @@ package diagnosecmd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -15,16 +17,27 @@ import (
 )
 
 type Arguments struct {
+	JSON bool `flag:"json" help:"Output the diagnostics as JSON."`
 }
 
-type diagnostic struct {
-	Location string
-	Version  string
-	OK       bool
-	Message  string
+type Diagnostics struct {
+	OS struct {
+		GOOS   string `json:"goos"`
+		GOARCH string `json:"goarch"`
+	} `json:"os"`
+	Go    Diagnostic `json:"go"`
+	Gopls Diagnostic `json:"gopls"`
+	Templ Diagnostic `json:"templ"`
 }
 
-func diagnoseGo() (d diagnostic) {
+type Diagnostic struct {
+	Location string `json:"location"`
+	Version  string `json:"version"`
+	OK       bool   `json:"ok"`
+	Message  string `json:"message,omitempty"`
+}
+
+func diagnoseGo() (d Diagnostic) {
 	// Find Go.
 	var err error
 	d.Location, err = exec.LookPath("go")
@@ -44,7 +57,7 @@ func diagnoseGo() (d diagnostic) {
 	return
 }
 
-func diagnoseGopls() (d diagnostic) {
+func diagnoseGopls() (d Diagnostic) {
 	var err error
 	d.Location, err = pls.FindGopls()
 	if err != nil {
@@ -62,7 +75,7 @@ func diagnoseGopls() (d diagnostic) {
 	return
 }
 
-func diagnoseTempl() (d diagnostic) {
+func diagnoseTempl() (d Diagnostic) {
 	// Find templ.
 	var err error
 	d.Location, err = findTempl()
@@ -105,15 +118,30 @@ func findTempl() (location string, err error) {
 	return "", fmt.Errorf("templ is not in the path (%q). You can install templ with `go install github.com/a-h/templ/cmd/templ@latest`", os.Getenv("PATH"))
 }
 
-func Run(ctx context.Context, log *slog.Logger, args Arguments) (err error) {
-	log.Info("os", slog.String("name", runtime.GOOS), slog.String("arch", runtime.GOARCH))
-	logDiagnostic(ctx, log, "go", diagnoseGo())
-	logDiagnostic(ctx, log, "gopls", diagnoseGopls())
-	logDiagnostic(ctx, log, "templ", diagnoseTempl())
+func diagnose() (d Diagnostics) {
+	d.OS.GOOS = runtime.GOOS
+	d.OS.GOARCH = runtime.GOARCH
+	d.Go = diagnoseGo()
+	d.Gopls = diagnoseGopls()
+	d.Templ = diagnoseTempl()
+	return
+}
+
+func Run(ctx context.Context, log *slog.Logger, stdout io.Writer, args Arguments) (err error) {
+	diagnostics := diagnose()
+	if args.JSON {
+		enc := json.NewEncoder(stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(diagnostics)
+	}
+	log.Info("os", slog.String("goos", diagnostics.OS.GOOS), slog.String("goarch", diagnostics.OS.GOARCH))
+	logDiagnostic(ctx, log, "go", diagnostics.Go)
+	logDiagnostic(ctx, log, "gopls", diagnostics.Gopls)
+	logDiagnostic(ctx, log, "templ", diagnostics.Templ)
 	return nil
 }
 
-func logDiagnostic(ctx context.Context, log *slog.Logger, name string, d diagnostic) {
+func logDiagnostic(ctx context.Context, log *slog.Logger, name string, d Diagnostic) {
 	level := slog.LevelInfo
 	if !d.OK {
 		level = slog.LevelError

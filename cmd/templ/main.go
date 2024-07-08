@@ -89,6 +89,8 @@ const diagnoseUsageText = `usage: templ diagnose [<args>...]
 Diagnoses the templ environment.
 
 Args:
+  -json
+    Output diagnostics in JSON format to stdout. (default false)
   -v
     Set log verbosity level to "debug". (default "info")
   -log-level
@@ -99,6 +101,7 @@ Args:
 
 func diagnoseCmd(stdout, stderr io.Writer, args []string) (code int) {
 	cmd := flag.NewFlagSet("diagnose", flag.ExitOnError)
+	jsonFlag := cmd.Bool("json", false, "")
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
 	helpFlag := cmd.Bool("help", false, "")
@@ -123,7 +126,9 @@ func diagnoseCmd(stdout, stderr io.Writer, args []string) (code int) {
 		cancel()
 	}()
 
-	err = diagnosecmd.Run(ctx, log, diagnosecmd.Arguments{})
+	err = diagnosecmd.Run(ctx, log, stdout, diagnosecmd.Arguments{
+		JSON: *jsonFlag,
+	})
 	if err != nil {
 		color.New(color.FgRed).Fprint(stderr, "(✗) ")
 		fmt.Fprintln(stderr, "Command failed: "+err.Error())
