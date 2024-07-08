@@ -11,9 +11,9 @@ import (
 	"runtime"
 
 	"github.com/a-h/templ"
-	"github.com/a-h/templ/cmd/templ/diagnosecmd"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
+	"github.com/a-h/templ/cmd/templ/infocmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
 	"github.com/a-h/templ/cmd/templ/sloghandler"
 	"github.com/fatih/color"
@@ -36,7 +36,7 @@ commands:
   generate   Generates Go code from templ files
   fmt        Formats templ files
   lsp        Starts a language server for templ files
-  diagnose   Diagnose the templ environment
+  info       Displays information about the templ environment
   version    Prints the version
 `
 
@@ -46,8 +46,8 @@ func run(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
 		return 64 // EX_USAGE
 	}
 	switch args[1] {
-	case "diagnose":
-		return diagnoseCmd(stdout, stderr, args[2:])
+	case "info":
+		return infoCmd(stdout, stderr, args[2:])
 	case "generate":
 		return generateCmd(stdout, stderr, args[2:])
 	case "fmt":
@@ -84,13 +84,13 @@ func newLogger(logLevel string, verbose bool, stderr io.Writer) *slog.Logger {
 	}))
 }
 
-const diagnoseUsageText = `usage: templ diagnose [<args>...]
+const infoUsageText = `usage: templ info [<args>...]
 
-Diagnoses the templ environment.
+Displays information about the templ environment.
 
 Args:
   -json
-    Output diagnostics in JSON format to stdout. (default false)
+    Output information in JSON format to stdout. (default false)
   -v
     Set log verbosity level to "debug". (default "info")
   -log-level
@@ -99,7 +99,7 @@ Args:
     Print help and exit.
 `
 
-func diagnoseCmd(stdout, stderr io.Writer, args []string) (code int) {
+func infoCmd(stdout, stderr io.Writer, args []string) (code int) {
 	cmd := flag.NewFlagSet("diagnose", flag.ExitOnError)
 	jsonFlag := cmd.Bool("json", false, "")
 	verboseFlag := cmd.Bool("v", false, "")
@@ -107,11 +107,11 @@ func diagnoseCmd(stdout, stderr io.Writer, args []string) (code int) {
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
-		fmt.Fprint(stderr, diagnoseUsageText)
+		fmt.Fprint(stderr, infoUsageText)
 		return 64 // EX_USAGE
 	}
 	if *helpFlag {
-		fmt.Fprint(stdout, diagnoseUsageText)
+		fmt.Fprint(stdout, infoUsageText)
 		return
 	}
 
@@ -126,7 +126,7 @@ func diagnoseCmd(stdout, stderr io.Writer, args []string) (code int) {
 		cancel()
 	}()
 
-	err = diagnosecmd.Run(ctx, log, stdout, diagnosecmd.Arguments{
+	err = infocmd.Run(ctx, log, stdout, infocmd.Arguments{
 		JSON: *jsonFlag,
 	})
 	if err != nil {

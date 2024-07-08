@@ -1,4 +1,4 @@
-package diagnosecmd
+package infocmd
 
 import (
 	"context"
@@ -17,27 +17,27 @@ import (
 )
 
 type Arguments struct {
-	JSON bool `flag:"json" help:"Output the diagnostics as JSON."`
+	JSON bool `flag:"json" help:"Output info as JSON."`
 }
 
-type Diagnostics struct {
+type Info struct {
 	OS struct {
 		GOOS   string `json:"goos"`
 		GOARCH string `json:"goarch"`
 	} `json:"os"`
-	Go    Diagnostic `json:"go"`
-	Gopls Diagnostic `json:"gopls"`
-	Templ Diagnostic `json:"templ"`
+	Go    ToolInfo `json:"go"`
+	Gopls ToolInfo `json:"gopls"`
+	Templ ToolInfo `json:"templ"`
 }
 
-type Diagnostic struct {
+type ToolInfo struct {
 	Location string `json:"location"`
 	Version  string `json:"version"`
 	OK       bool   `json:"ok"`
 	Message  string `json:"message,omitempty"`
 }
 
-func diagnoseGo() (d Diagnostic) {
+func getGoInfo() (d ToolInfo) {
 	// Find Go.
 	var err error
 	d.Location, err = exec.LookPath("go")
@@ -57,7 +57,7 @@ func diagnoseGo() (d Diagnostic) {
 	return
 }
 
-func diagnoseGopls() (d Diagnostic) {
+func getGoplsInfo() (d ToolInfo) {
 	var err error
 	d.Location, err = pls.FindGopls()
 	if err != nil {
@@ -75,7 +75,7 @@ func diagnoseGopls() (d Diagnostic) {
 	return
 }
 
-func diagnoseTempl() (d Diagnostic) {
+func getTemplInfo() (d ToolInfo) {
 	// Find templ.
 	var err error
 	d.Location, err = findTempl()
@@ -118,40 +118,40 @@ func findTempl() (location string, err error) {
 	return "", fmt.Errorf("templ is not in the path (%q). You can install templ with `go install github.com/a-h/templ/cmd/templ@latest`", os.Getenv("PATH"))
 }
 
-func diagnose() (d Diagnostics) {
+func getInfo() (d Info) {
 	d.OS.GOOS = runtime.GOOS
 	d.OS.GOARCH = runtime.GOARCH
-	d.Go = diagnoseGo()
-	d.Gopls = diagnoseGopls()
-	d.Templ = diagnoseTempl()
+	d.Go = getGoInfo()
+	d.Gopls = getGoplsInfo()
+	d.Templ = getTemplInfo()
 	return
 }
 
 func Run(ctx context.Context, log *slog.Logger, stdout io.Writer, args Arguments) (err error) {
-	diagnostics := diagnose()
+	info := getInfo()
 	if args.JSON {
 		enc := json.NewEncoder(stdout)
 		enc.SetIndent("", "  ")
-		return enc.Encode(diagnostics)
+		return enc.Encode(info)
 	}
-	log.Info("os", slog.String("goos", diagnostics.OS.GOOS), slog.String("goarch", diagnostics.OS.GOARCH))
-	logDiagnostic(ctx, log, "go", diagnostics.Go)
-	logDiagnostic(ctx, log, "gopls", diagnostics.Gopls)
-	logDiagnostic(ctx, log, "templ", diagnostics.Templ)
+	log.Info("os", slog.String("goos", info.OS.GOOS), slog.String("goarch", info.OS.GOARCH))
+	logInfo(ctx, log, "go", info.Go)
+	logInfo(ctx, log, "gopls", info.Gopls)
+	logInfo(ctx, log, "templ", info.Templ)
 	return nil
 }
 
-func logDiagnostic(ctx context.Context, log *slog.Logger, name string, d Diagnostic) {
+func logInfo(ctx context.Context, log *slog.Logger, name string, ti ToolInfo) {
 	level := slog.LevelInfo
-	if !d.OK {
+	if !ti.OK {
 		level = slog.LevelError
 	}
 	args := []any{
-		slog.String("location", d.Location),
-		slog.String("version", d.Version),
+		slog.String("location", ti.Location),
+		slog.String("version", ti.Version),
 	}
-	if d.Message != "" {
-		args = append(args, slog.String("message", d.Message))
+	if ti.Message != "" {
+		args = append(args, slog.String("message", ti.Message))
 	}
 	log.Log(ctx, level, name, args...)
 }

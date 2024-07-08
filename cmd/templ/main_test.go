@@ -66,9 +66,9 @@ func TestMain(t *testing.T) {
 			expectedCode:   0,
 		},
 		{
-			name:           `"templ diagnose --help" prints usage`,
-			args:           []string{"templ", "diagnose", "--help"},
-			expectedStdout: diagnoseUsageText,
+			name:           `"templ info --help" prints usage`,
+			args:           []string{"templ", "info", "--help"},
+			expectedStdout: infoUsageText,
 			expectedCode:   0,
 		},
 	}
