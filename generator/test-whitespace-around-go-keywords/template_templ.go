@@ -233,3 +233,5 @@ func WhitespaceIsConsistentInFor(i int) templ.Component {
 const WhitespaceIsConsistentInForZeroExpected = `<button>Start</button> <button>End</button>`
 const WhitespaceIsConsistentInForOneExpected = `<button>Start</button> <button>0</button> <button>End</button>`
 const WhitespaceIsConsistentInForThreeExpected = `<button>Start</button> <button>0</button> <button>1</button> <button>2</button> <button>End</button>`
+
+var _ = templruntime.GeneratedTemplate

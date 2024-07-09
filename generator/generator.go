@@ -125,6 +125,9 @@ func (g *generator) generate() (err error) {
 	if err = g.writeTemplateNodes(); err != nil {
 		return
 	}
+	if err = g.writeRuntimeFakeImport(); err != nil {
+		return
+	}
 	return err
 }
 
@@ -1477,6 +1480,15 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 	indentLevel--
 	// }
 	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// to handle the following err: "github.com/a-h/templ/runtime" imported as templruntime and not usedcompilerUnusedImport
+func (g *generator) writeRuntimeFakeImport() error {
+	var err error
+	if _, err = g.w.Write("var _ = templruntime.GeneratedTemplate"); err != nil {
 		return err
 	}
 	return nil
