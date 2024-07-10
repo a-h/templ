@@ -32,3 +32,5 @@ func BasicTemplate() templ.Component {
 		return templ_7745c5c3_Err
 	})
 }
+
+var _ = templruntime.GeneratedTemplate

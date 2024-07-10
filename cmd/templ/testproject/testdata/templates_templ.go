@@ -55,3 +55,5 @@ type Struct struct {
 }
 
 var s = Struct{}
+
+var _ = templruntime.GeneratedTemplate
