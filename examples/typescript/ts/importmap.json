@@ -1,0 +1,15 @@
+{
+  "env": [
+    "browser",
+    "development",
+    "module"
+  ],
+  "imports": {
+    "lightweight-charts": "https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.6/dist/lightweight-charts.development.mjs"
+  },
+  "scopes": {
+    "https://cdn.jsdelivr.net/": {
+      "fancy-canvas": "https://cdn.jsdelivr.net/npm/fancy-canvas@2.1.0/index.mjs"
+    }
+  }
+}

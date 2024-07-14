@@ -1,1 +1,0 @@
-(()=>{function a(){let t=document.querySelector("#attributeAlerter");t&&t.addEventListener("click",n=>{let e=t?.getAttribute("alert-data")??"{}",r=JSON.parse(e);alert(r.msg)})}function c(){let t=document.querySelector("#scriptAlerter");t&&t.addEventListener("click",n=>{let e=document?.getElementById("scriptData")?.textContent??"{}",r=JSON.parse(e);alert(r.msg)})}a();c();})();

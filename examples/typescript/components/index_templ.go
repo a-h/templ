@@ -7,9 +7,17 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "github.com/a-h/templ/examples/typescript/ts"
+
 type Data struct {
 	Message string `json:"msg"`
 }
+
+var (
+	// The importmap is generated outside the template to avoid
+	// validating the JSON every time the template is executed.
+	importMapScriptElement = templ.ImportMapScript("", ts.ImportMapJSON)
+)
 
 func Page(attributeData Data, scriptData Data) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -32,20 +40,28 @@ func Page(attributeData Data, scriptData Data) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html><head><title>Script usage</title><script src=\"/assets/js/index.js\" defer></script></head><body><button id=\"attributeAlerter\" alert-data=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html><head><title>Typescript</title>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = importMapScriptElement.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<script src=\"/assets/js/alert.js\" defer></script></head><body><h2>Alert</h2><button id=\"attributeAlerter\" alert-data=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(templ.JSONString(attributeData))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/typescript/components/index.templ`, Line: 15, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/typescript/components/index.templ`, Line: 25, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">Show alert from data in alert-data attribute</button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\">Show alert from data in alert-data attribute</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -53,7 +69,7 @@ func Page(attributeData Data, scriptData Data) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<button id=\"scriptAlerter\">Show alert from data in script</button></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<button id=\"scriptAlerter\">Show alert from data in script</button><h2>Graph</h2><div id=\"graph\" style=\"height: 200px\"></div><script type=\"module\">\n\t\t\t\timport graph from \"./assets/js/graph.js\";\n\t\t\t\tlet container = document.getElementById(\"graph\");\n\t\t\t\tnew graph.Graph(container);\n\t\t\t</script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
