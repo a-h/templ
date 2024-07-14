@@ -2,10 +2,8 @@ module github.com/a-h/templ/storybook/example
 
 go 1.20
 
-replace github.com/a-h/templ => ../../
-
 require (
-	github.com/a-h/templ v0.0.0-00010101000000-000000000000
+	github.com/a-h/templ v0.2.747
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.25.0
 	github.com/aws/aws-cdk-go/awscdkapigatewayv2alpha/v2 v2.25.0-alpha.0
 	github.com/aws/aws-cdk-go/awscdkapigatewayv2integrationsalpha/v2 v2.25.0-alpha.0

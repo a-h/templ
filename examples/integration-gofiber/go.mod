@@ -3,7 +3,7 @@ module github.com/a-h/templ/examples/integration-gofiber
 go 1.21
 
 require (
-	github.com/a-h/templ v0.2.501
+	github.com/a-h/templ v0.2.747
 	github.com/gofiber/fiber/v2 v2.52.5
 )
 
@@ -20,5 +20,3 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 )
-
-replace github.com/a-h/templ => ../../

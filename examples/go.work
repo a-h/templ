@@ -1,0 +1,19 @@
+go 1.22.5
+
+use (
+	..
+	./counter
+	./counter-basic
+	./external-libraries
+	./integration-chi
+	./integration-echo
+	./integration-gin
+	./integration-go-echarts
+	./integration-gofiber
+	./integration-react
+	./internationalization
+	./static-generator
+	./streaming
+	./suspense
+	./typescript
+)

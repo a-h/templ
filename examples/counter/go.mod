@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.5
 
 require (
-	github.com/a-h/templ v0.2.234-0.20230427112944-80f0dc03a8a8
+	github.com/a-h/templ v0.2.747
 	github.com/akrylysov/algnhsa v1.1.0
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.147.3
 	github.com/aws/aws-cdk-go/awscdklambdagoalpha/v2 v2.147.3-alpha.0
@@ -48,5 +48,3 @@ require (
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/tools v0.22.0 // indirect
 )
-
-replace github.com/a-h/templ => ../../
