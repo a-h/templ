@@ -614,6 +614,9 @@ func TestDocumentSymbol(t *testing.T) {
 
 func sliceToAnySlice(in []any) ([]any, error) {
 	b, err := json.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]any, 0, len(in))
 	err = json.Unmarshal(b, &out)
 	return out, err
