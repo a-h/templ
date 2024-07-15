@@ -2,6 +2,7 @@ package lspcmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"github.com/a-h/templ/cmd/templ/lspcmd/lspdiff"
 	"github.com/a-h/templ/cmd/templ/testproject"
+	"github.com/google/go-cmp/cmp"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/uri"
 	"go.uber.org/zap"
@@ -440,6 +442,147 @@ func TestCodeAction(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDocumentSymbol(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	log := zap.NewNop()
+	// log, err := zap.NewDevelopment()
+	// if err != nil {
+	// 	t.Fatalf("failed to create logger: %v", err)
+	// }
+
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	if err != nil {
+		t.Fatalf("failed to setup test: %v", err)
+	}
+	defer teardown(t)
+	defer cancel()
+
+	templFile, err := os.ReadFile(appDir + "/templates.templ")
+	if err != nil {
+		t.Fatalf("failed to read file %q: %v", appDir+"/templates.templ", err)
+	}
+	err = server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        uri.URI("file://" + appDir + "/templates.templ"),
+			LanguageID: "templ",
+			Version:    1,
+			Text:       string(templFile),
+		},
+	})
+	if err != nil {
+		t.Errorf("failed to register open file: %v", err)
+		return
+	}
+	log.Info("Calling hover")
+
+	// Edit the file.
+	// Replace:
+	// <div data-testid="count">{ fmt.Sprintf("%d", count) }</div>
+	// With various tests:
+	// <div data-testid="count">{ f
+	tests := []struct {
+		line        int
+		replacement string
+		cursor      string
+		expect      []any
+	}{
+		{
+			line:        13,
+			replacement: `			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`,
+			cursor:      `                                 ^`,
+			expect: []any{
+				protocol.SymbolInformation{
+					Name: "nihao",
+					Kind: protocol.SymbolKindVariable,
+					Location: protocol.Location{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      18,
+								Character: 4,
+							},
+							End: protocol.Position{
+								Line:      18,
+								Character: 16,
+							},
+						},
+					},
+				},
+				protocol.SymbolInformation{
+					Name: "Page(count int)",
+					Kind: protocol.SymbolKindFunction,
+					Location: protocol.Location{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      4,
+								Character: 6,
+							},
+							End: protocol.Position{
+								Line:      4,
+								Character: 21,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
+			// Put the file back to the initial point.
+			err = server.DidChange(ctx, &protocol.DidChangeTextDocumentParams{
+				TextDocument: protocol.VersionedTextDocumentIdentifier{
+					TextDocumentIdentifier: protocol.TextDocumentIdentifier{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+					},
+					Version: int32(i + 2),
+				},
+				ContentChanges: []protocol.TextDocumentContentChangeEvent{
+					{
+						Range: nil,
+						Text:  string(templFile),
+					},
+				},
+			})
+			if err != nil {
+				t.Errorf("failed to change file: %v", err)
+				return
+			}
+
+			// Give CI/CD pipeline executors some time because they're often quite slow.
+			actual, err := server.DocumentSymbol(ctx, &protocol.DocumentSymbolParams{
+				TextDocument: protocol.TextDocumentIdentifier{
+					URI: uri.URI("file://" + appDir + "/templates.templ"),
+				},
+			})
+			if err != nil {
+				t.Errorf("failed to get document symbol: %v", err)
+			}
+			expectdSlice, err := sliceToAnySlice(test.expect)
+			if err != nil {
+				t.Errorf("failed to convert expect to any slice: %v", err)
+			}
+			diff := cmp.Diff(expectdSlice, actual)
+			if diff != "" {
+				t.Errorf("unexpected document symbol: %v", diff)
+			}
+		})
+	}
+}
+
+func sliceToAnySlice(in []any) ([]any, error) {
+	b, err := json.Marshal(in)
+	out := make([]any, 0, len(in))
+	err = json.Unmarshal(b, &out)
+	return out, err
 }
 
 func runeIndexToUTF8ByteIndex(s string, runeIndex int) (lspChar uint32, err error) {
