@@ -777,6 +777,7 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 	// TODO: it looks like we only have SymbolInformation in the result. We should handle DocumentSymbol as well.
 	_ = requireDocumentSymbols
 
+	templSymbols := []interface{}{}
 	doc, ok := p.TemplSource.Get(string(params.TextDocument.URI))
 	if ok {
 		template, err := parser.ParseString(doc.String())
@@ -785,7 +786,7 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 				switch s := s.(type) {
 				case parser.TemplateFileGoExpression:
 				case parser.HTMLTemplate:
-					result = append(result, lsp.SymbolInformation{
+					templSymbols = append(templSymbols, lsp.SymbolInformation{
 						Name: s.Expression.Value,
 						Kind: lsp.SymbolKindFunction,
 						Location: lsp.Location{
@@ -798,6 +799,10 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 				}
 			}
 		}
+	}
+	// Put the templ symbols first.
+	if len(templSymbols) > 0 {
+		result = append(templSymbols, result...)
 	}
 	return result, err
 }

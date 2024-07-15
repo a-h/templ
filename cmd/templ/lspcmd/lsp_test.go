@@ -498,6 +498,23 @@ func TestDocumentSymbol(t *testing.T) {
 			cursor:      `                                 ^`,
 			expect: []any{
 				protocol.SymbolInformation{
+					Name: "Page(count int)",
+					Kind: protocol.SymbolKindFunction,
+					Location: protocol.Location{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      4,
+								Character: 6,
+							},
+							End: protocol.Position{
+								Line:      4,
+								Character: 21,
+							},
+						},
+					},
+				},
+				protocol.SymbolInformation{
 					Name: "nihao",
 					Kind: protocol.SymbolKindVariable,
 					Location: protocol.Location{
@@ -515,18 +532,35 @@ func TestDocumentSymbol(t *testing.T) {
 					},
 				},
 				protocol.SymbolInformation{
-					Name: "Page(count int)",
-					Kind: protocol.SymbolKindFunction,
+					Name: "Struct",
+					Kind: protocol.SymbolKindStruct,
 					Location: protocol.Location{
 						URI: uri.URI("file://" + appDir + "/templates.templ"),
 						Range: protocol.Range{
 							Start: protocol.Position{
-								Line:      4,
-								Character: 6,
+								Line:      20,
+								Character: 5,
 							},
 							End: protocol.Position{
-								Line:      4,
-								Character: 21,
+								Line:      22,
+								Character: 1,
+							},
+						},
+					},
+				},
+				protocol.SymbolInformation{
+					Name: "s",
+					Kind: protocol.SymbolKindVariable,
+					Location: protocol.Location{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      24,
+								Character: 4,
+							},
+							End: protocol.Position{
+								Line:      24,
+								Character: 16,
 							},
 						},
 					},
