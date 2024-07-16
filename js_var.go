@@ -6,7 +6,7 @@ type JsVar string
 
 const (
 	// JsEvent represents the "event" variable in Javascript
-	JsEventVar JsVar = "event"
+	JsEvent JsVar = "event"
 	// JsTargetElement represents the "this" variable in Javascript
-	JsTargetElementVar JsVar = "this"
+	JsTargetElement JsVar = "this"
 )
