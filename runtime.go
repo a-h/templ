@@ -556,6 +556,14 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (
 func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
 	encodedParams := make([]string, len(params))
 	for i := 0; i < len(encodedParams); i++ {
+		// If its a JsVar, Just leave it and don't encode it
+		// Values of this type refer to variables in the Javascript Runtime
+		// and must be passed along as such
+		if val, ok := params[i].(JsVar); ok {
+			encodedParams[i] = string(val)
+			continue
+		}
+
 		enc, _ := json.Marshal(params[i])
 		if !escapeHTML {
 			encodedParams[i] = string(enc)
@@ -563,6 +571,7 @@ func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
 		}
 		encodedParams[i] = EscapeString(string(enc))
 	}
+
 	return encodedParams
 }
 
