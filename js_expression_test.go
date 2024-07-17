@@ -9,10 +9,11 @@ func TestJsVar(t *testing.T) {
 	params := []any{
 		"StringValue",
 		123,
-		JsVar("event"),
+		JsExpression("event"),
+		JsExpression("1 + 2"),
 	}
 
-	expected := "myJsFunction(\"StringValue\",123,event)"
+	expected := "myJsFunction(\"StringValue\",123,event,1 + 2)"
 	result := SafeScriptInline(functionName, params...)
 
 	if result != expected {
