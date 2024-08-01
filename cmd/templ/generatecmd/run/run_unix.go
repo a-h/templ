@@ -9,17 +9,24 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 )
 
-var m = &sync.Mutex{}
-var running = map[string]*exec.Cmd{}
+var (
+	m       = &sync.Mutex{}
+	running = map[string]*exec.Cmd{}
+)
 
 func KillAll() (err error) {
 	m.Lock()
 	defer m.Unlock()
 	for _, cmd := range running {
-		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
 		if err != nil {
+			return err
+		}
+		time.Sleep(1 * time.Second)
+		if err = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
 			return err
 		}
 	}
@@ -28,7 +35,7 @@ func KillAll() (err error) {
 }
 
 func Stop(cmd *exec.Cmd) (err error) {
-	return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	return syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
 }
 
 func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err error) {
@@ -36,9 +43,14 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 	defer m.Unlock()
 	cmd, ok := running[input]
 	if ok {
+		if err = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM); err != nil {
+			return cmd, err
+		}
+		time.Sleep(1 * time.Second)
 		if err = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
 			return cmd, err
 		}
+
 		delete(running, input)
 	}
 	parts := strings.Fields(input)
