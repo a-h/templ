@@ -155,7 +155,7 @@ Pass data from the server to the client by embedding it in the HTML as a JSON ob
 
 ```templ title="input.templ"
 templ body(data any) {
-  <button id="alerter" alert-data={ templ.JSONString(attributeData) }>Show alert</button>
+  <button id="alerter" alert-data={ templ.JSONString(data) }>Show alert</button>
 }
 ```
 
