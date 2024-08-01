@@ -1,20 +1,40 @@
 package components
 
+import (
+	"github.com/a-h/templ/examples/typescript/ts"
+)
+
 type Data struct {
 	Message string `json:"msg"`
 }
+
+var (
+	// The importmap is generated outside the template to avoid
+	// validating the JSON every time the template is executed.
+	importMapScriptElement = templ.NewImportMapScriptElement("", ts.ImportMapJSON)
+)
 
 templ Page(attributeData Data, scriptData Data) {
 	<!DOCTYPE html>
 	<html>
 		<head>
-			<title>Script usage</title>
-			<script src="/assets/js/index.js" defer></script>
+			<title>Typescript</title>
+			@importMapScriptElement
+			<script src="/assets/js/alert.js" defer></script>
 		</head>
 		<body>
+			<h2>Alert</h2>
 			<button id="attributeAlerter" alert-data={ templ.JSONString(attributeData) }>Show alert from data in alert-data attribute</button>
 			@templ.JSONScript("scriptData", scriptData)
 			<button id="scriptAlerter">Show alert from data in script</button>
+
+			<h2>Graph</h2>
+			<div id="graph" style="height: 200px"></div>
+			<script type="module">
+				import graph from "./assets/js/graph.js";
+				let container = document.getElementById("graph");
+				new graph.Graph(container);
+			</script>
 		</body>
 	</html>
 }
