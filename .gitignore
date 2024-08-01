@@ -26,3 +26,6 @@ result
 
 # Go workspace.
 go.work
+go.work.sum
+!examples/go.work
+!examples/go.work.sum

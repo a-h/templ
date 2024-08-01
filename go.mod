@@ -36,6 +36,3 @@ require (
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 )
-
-// replace github.com/a-h/parse => /Users/adrian/github.com/a-h/parse
-// replace github.com/a-h/protocol => /Users/adrian/github.com/a-h/protocol
