@@ -556,7 +556,6 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (
 func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
 	encodedParams := make([]string, len(params))
 	for i := 0; i < len(encodedParams); i++ {
-		// If its a JsExpression, Just leave it and don't encode it
 		if val, ok := params[i].(JsExpression); ok {
 			encodedParams[i] = string(val)
 			continue
