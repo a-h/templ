@@ -125,6 +125,9 @@ func (g *generator) generate() (err error) {
 	if err = g.writeTemplateNodes(); err != nil {
 		return
 	}
+	if err = g.writeBlankAssignmentForRuntimeImport(); err != nil {
+		return
+	}
 	return err
 }
 
@@ -1477,6 +1480,17 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 	indentLevel--
 	// }
 	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// writeBlankAssignmentForRuntimeImport writes out a blank identifier assignment.
+// This ensures that even if the github.com/a-h/templ/runtime package is not used in the generated code,
+// the Go compiler will not complain about the unused import.
+func (g *generator) writeBlankAssignmentForRuntimeImport() error {
+	var err error
+	if _, err = g.w.Write("var _ = templruntime.GeneratedTemplate"); err != nil {
 		return err
 	}
 	return nil

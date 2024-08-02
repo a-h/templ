@@ -18,3 +18,5 @@ func className() templ.CSSClass {
 		Class: templ.SafeCSS(`.` + templ_7745c5c3_CSSID + `{` + templ_7745c5c3_CSSBuilder.String() + `}`),
 	}
 }
+
+var _ = templruntime.GeneratedTemplate
