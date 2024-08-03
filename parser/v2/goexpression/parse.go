@@ -176,6 +176,7 @@ loop:
 			braceDepth--
 			if braceDepth < 0 {
 				// We've hit the end of the expression.
+				end = int(pos) - 1
 				break loop
 			}
 			end = int(pos)
