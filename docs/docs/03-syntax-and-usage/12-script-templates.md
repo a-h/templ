@@ -316,3 +316,21 @@ After building and running the executable, running `curl http://localhost:8080/`
 	</body>
 </html>
 ```
+The ```JSExpression``` type allows for passing any Javascript expressions to a ```script``` element. A common use case for this is to pass the ```event``` or ```this``` objects to a ```script``` element that functions as a ```on*``` event handler.
+``` templ
+package main
+
+script showButtonWasClicked(event templ.JSExpression) {
+	const originalButtonText = event.target.innerText
+	event.target.innerText = "I was Clicked!"
+	setTimeout(() => event.target.innerText = originalButtonText, 2000)
+}
+
+templ page() {
+	<html>
+		<body>
+			<button type="button" onclick={ showButtonWasClicked(templ.JSExpression("event")) }>Click Me</button>
+		</body>
+	</html>
+}
+```
