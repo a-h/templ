@@ -60,6 +60,8 @@ Args:
     If present, the command will issue a reload event to the proxy 127.0.0.1:7331, or use proxyport and proxybind to specify a different address.
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
+  -lazy
+    Only generate .go files if the source .templ file is newer.	
   -pprof
     Port to run the pprof server on.
   -keep-orphaned-files

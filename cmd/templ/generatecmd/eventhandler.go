@@ -45,6 +45,7 @@ func NewFSEventHandler(
 	genSourceMapVis bool,
 	keepOrphanedFiles bool,
 	fileWriter FileWriterFunc,
+	lazy bool,
 ) *FSEventHandler {
 	if !path.IsAbs(dir) {
 		dir, _ = filepath.Abs(dir)
@@ -63,6 +64,7 @@ func NewFSEventHandler(
 		DevMode:                    devMode,
 		keepOrphanedFiles:          keepOrphanedFiles,
 		writer:                     fileWriter,
+		lazy:                       lazy,
 	}
 	if devMode {
 		fseh.genOpts = append(fseh.genOpts, generator.WithExtractStrings())
@@ -86,6 +88,7 @@ type FSEventHandler struct {
 	Errors                     []error
 	keepOrphanedFiles          bool
 	writer                     func(string, []byte) error
+	lazy                       bool
 }
 
 func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (goUpdated, textUpdated bool, err error) {
@@ -128,6 +131,26 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	if !h.UpsertLastModTime(event.Name) {
 		h.Log.Debug("Skipping file because it wasn't updated", slog.String("file", event.Name))
 		return false, false, nil
+	}
+	if h.lazy {
+		// If the .templ file hasn't been updated since the last the _templ.go file was updated, ignore it.
+		mustBeGenerated := false
+		goFileName := strings.TrimSuffix(event.Name, ".templ") + "_templ.go"
+		goFileInfo, err := os.Stat(goFileName)
+		if err != nil {
+			mustBeGenerated = true
+		}
+		templFileInfo, err := os.Stat(event.Name)
+		if err != nil {
+			mustBeGenerated = true
+		}
+		if !mustBeGenerated {
+			mustBeGenerated = !goFileInfo.ModTime().After(templFileInfo.ModTime())
+		}
+		if !mustBeGenerated {
+			h.Log.Debug("Skipping file because it hasn't been updated since its generated counterpart", slog.String("file", event.Name))
+			return false, false, nil
+		}
 	}
 
 	// Start a processor.
