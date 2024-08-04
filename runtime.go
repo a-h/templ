@@ -496,6 +496,11 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (
 func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
 	encodedParams := make([]string, len(params))
 	for i := 0; i < len(encodedParams); i++ {
+		if val, ok := params[i].(JSExpression); ok {
+			encodedParams[i] = string(val)
+			continue
+		}
+
 		enc, _ := json.Marshal(params[i])
 		if !escapeHTML {
 			encodedParams[i] = string(enc)
@@ -503,6 +508,7 @@ func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
 		}
 		encodedParams[i] = EscapeString(string(enc))
 	}
+
 	return encodedParams
 }
 
