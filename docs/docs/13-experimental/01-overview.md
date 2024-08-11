@@ -1,6 +1,4 @@
-# Overview
-
-## What is Experimental?
+# Experimental packages
 
 Experimental Packages for templ are available at https://github.com/templ-go/x/
 
