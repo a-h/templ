@@ -8,6 +8,7 @@ import (
 	"io"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -16,8 +17,15 @@ import (
 	_ "embed"
 
 	"github.com/a-h/templ/parser/v2"
-	"github.com/tdewolff/minify/v2/minify"
+	"github.com/tdewolff/minify/v2"
+	"github.com/tdewolff/minify/v2/js"
 )
+
+var minifyer *minify.M
+
+func init() {
+	setupMinifyer()
+}
 
 type GenerateOpt func(g *generator) error
 
@@ -1314,7 +1322,7 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 	// handles script elements within a templ component
 	// ex: templ Component() { <script ...>...</script> }
 	if g.minifyJS && html.EscapeString(n.Name) == "script" {
-		minified, err := minify.JS(n.Contents)
+		minified, err := minifyer.String("application/javascript", n.Contents)
 		if err != nil {
 			return err
 		}
@@ -1481,7 +1489,7 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		// handles contents of a script component
 		// ex: script Component() { ... }
 		if g.minifyJS {
-			if body, err = minify.JS(body); err != nil {
+			if body, err = minifyer.String("application/javascript", body); err != nil {
 				return err
 			}
 		}
@@ -1536,4 +1544,9 @@ func stripTypes(parameters string) string {
 		variableNames = append(variableNames, strings.TrimSpace(p[0]))
 	}
 	return strings.Join(variableNames, ", ")
+}
+
+func setupMinifyer() {
+	minifyer = minify.New()
+	minifyer.AddFuncRegexp(regexp.MustCompile(`^(application|text)/(x-)?(java|ecma|j|live)script(1\\.[0-5])?$|^module$`), js.Minify)
 }
