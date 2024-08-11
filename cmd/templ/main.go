@@ -155,6 +155,8 @@ Args:
     Set to false to skip inclusion of the templ version in the generated code. (default true)
   -include-timestamp
     Set to true to include the current time in the generated code.
+  -minify-js
+    Minify Javascript script blocks. (default false)
   -watch
     Set to true to watch the path for changes and regenerate code.
   -cmd <cmd>
@@ -203,6 +205,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	sourceMapVisualisationsFlag := cmd.Bool("source-map-visualisations", false, "")
 	includeVersionFlag := cmd.Bool("include-version", true, "")
 	includeTimestampFlag := cmd.Bool("include-timestamp", false, "")
+	minifyJSFlag := cmd.Bool("minify-js", false, "")
 	watchFlag := cmd.Bool("watch", false, "")
 	openBrowserFlag := cmd.Bool("open-browser", true, "")
 	cmdFlag := cmd.String("cmd", "", "")
@@ -257,6 +260,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 		GenerateSourceMapVisualisations: *sourceMapVisualisationsFlag,
 		IncludeVersion:                  *includeVersionFlag,
 		IncludeTimestamp:                *includeTimestampFlag,
+		MinifyJS:                        *minifyJSFlag,
 		PPROFPort:                       *pprofPortFlag,
 		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
 	})

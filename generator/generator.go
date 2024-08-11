@@ -16,6 +16,7 @@ import (
 	_ "embed"
 
 	"github.com/a-h/templ/parser/v2"
+	"github.com/tdewolff/minify/v2/minify"
 )
 
 type GenerateOpt func(g *generator) error
@@ -67,6 +68,13 @@ func WithSkipCodeGeneratedComment() GenerateOpt {
 	}
 }
 
+func WithJSMinification() GenerateOpt {
+	return func(g *generator) error {
+		g.minifyJS = true
+		return nil
+	}
+}
+
 // Generate generates Go code from the input template file to w, and returns a map of the location of Go expressions in the template
 // to the location of the generated Go code in the output.
 func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, literals string, err error) {
@@ -101,6 +109,7 @@ type generator struct {
 	fileName string
 	// skipCodeGeneratedComment skips the code generated comment at the top of the file.
 	skipCodeGeneratedComment bool
+	minifyJS                 bool
 }
 
 func (g *generator) generate() (err error) {
@@ -1302,6 +1311,13 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 			return err
 		}
 	}
+	if g.minifyJS {
+		minified, err := minify.JS(n.Contents)
+		if err != nil {
+			return err
+		}
+		n.Contents = minified
+	}
 	// Contents.
 	if err = g.writeText(indentLevel, parser.Text{Value: n.Contents}); err != nil {
 		return err
@@ -1460,6 +1476,12 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
 		body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
 		suffix := "}"
+		// impacts script elements (script instad of templ)
+		if g.minifyJS {
+			if body, err = minify.JS(body); err != nil {
+				return err
+			}
+		}
 		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+body+suffix)+",\n"); err != nil {
 			return err
 		}
