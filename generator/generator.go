@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html"
 	"io"
-	"log/slog"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -1326,7 +1325,6 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		return err
 	}
 	// </div>
-	slog.Info(html.EscapeString(n.Name))
 	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`</%s>`, html.EscapeString(n.Name))); err != nil {
 		return err
 	}
