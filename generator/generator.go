@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"log/slog"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -1311,7 +1312,9 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 			return err
 		}
 	}
-	if g.minifyJS {
+	// handles script elements within a templ component
+	// ex: templ Component() { <script ...>...</script> }
+	if g.minifyJS && html.EscapeString(n.Name) == "script" {
 		minified, err := minify.JS(n.Contents)
 		if err != nil {
 			return err
@@ -1323,6 +1326,7 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		return err
 	}
 	// </div>
+	slog.Info(html.EscapeString(n.Name))
 	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`</%s>`, html.EscapeString(n.Name))); err != nil {
 		return err
 	}
@@ -1476,7 +1480,8 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
 		body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
 		suffix := "}"
-		// impacts script elements (script instad of templ)
+		// handles contents of a script component
+		// ex: script Component() { ... }
 		if g.minifyJS {
 			if body, err = minify.JS(body); err != nil {
 				return err
