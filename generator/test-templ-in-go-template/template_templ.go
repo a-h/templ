@@ -30,12 +30,12 @@ func greeting() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div>Hello, World!</div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[0]) // "<div>Hello, World!</div>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -44,3 +44,13 @@ func greeting() templ.Component {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{
+	"<div>Hello, World!</div>",
+}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}

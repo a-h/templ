@@ -20,12 +20,12 @@ func BasicTemplate() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><!-- valid go escape sequences --><input pattern=\"\\a\"> <input pattern=\"\\b\"> <input pattern=\"\\f\"> <input pattern=\"\\n\"> <input pattern=\"\\r\"> <input pattern=\"\\t\"> <input pattern=\"\\v\"> <input pattern=\"\\\\\"> <input pattern=\"\\777\"> <input pattern=\"\\xFF\"> <input pattern=\"\\u00FF\"> <input pattern=\"\\u00FF\\u00FF\\u00FF\"><!-- invalid go escape sequences --><input pattern=\"\\s\"></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[0]) // "<div><!-- valid go escape sequences --><input pattern=\"\\a\"> <input pattern=\"\\b\"> <input pattern=\"\\f\"> <input pattern=\"\\n\"> <input pattern=\"\\r\"> <input pattern=\"\\t\"> <input pattern=\"\\v\"> <input pattern=\"\\\\\"> <input pattern=\"\\777\"> <input pattern=\"\\xFF\"> <input pattern=\"\\u00FF\"> <input pattern=\"\\u00FF\\u00FF\\u00FF\"><!-- invalid go escape sequences --><input pattern=\"\\s\"></div>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -34,3 +34,13 @@ func BasicTemplate() templ.Component {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{
+	"<div><!-- valid go escape sequences --><input pattern=\"\\a\"> <input pattern=\"\\b\"> <input pattern=\"\\f\"> <input pattern=\"\\n\"> <input pattern=\"\\r\"> <input pattern=\"\\t\"> <input pattern=\"\\v\"> <input pattern=\"\\\\\"> <input pattern=\"\\777\"> <input pattern=\"\\xFF\"> <input pattern=\"\\u00FF\"> <input pattern=\"\\u00FF\\u00FF\\u00FF\"><!-- invalid go escape sequences --><input pattern=\"\\s\"></div>",
+}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}

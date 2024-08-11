@@ -9,10 +9,11 @@ import (
 	"github.com/a-h/templ/parser/v2"
 )
 
-func NewRangeWriter(w io.Writer) *RangeWriter {
+func NewRangeWriter(w io.Writer, literalVarName string) *RangeWriter {
 	return &RangeWriter{
-		w:             w,
-		literalWriter: prodLiteralWriter{},
+		w:              w,
+		literalVarName: literalVarName,
+		buf:            &strings.Builder{},
 	}
 }
 
@@ -21,72 +22,35 @@ type RangeWriter struct {
 	inLiteral bool
 	w         io.Writer
 
-	// Extract strings.
-	literalWriter literalWriter
-}
+	// Variable name used to store a slice of all string literals.
+	literalVarName string
 
-type literalWriter interface {
-	writeLiteral(inLiteral bool, s string) string
-	closeLiteral(indent int) string
-	literals() string
-}
-
-type watchLiteralWriter struct {
-	index   int
-	builder *strings.Builder
-}
-
-func (w *watchLiteralWriter) closeLiteral(indent int) string {
-	w.index++
-	w.builder.WriteString("\n")
-	return ""
-}
-
-func (w *watchLiteralWriter) writeLiteral(inLiteral bool, s string) string {
-	w.builder.WriteString(s)
-	if inLiteral {
-		return ""
-	}
-
-	return "templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, " + strconv.Itoa(w.index+1) + ")\n"
-}
-
-func (w *watchLiteralWriter) literals() string {
-	return w.builder.String()
-}
-
-type prodLiteralWriter struct{}
-
-func (prodLiteralWriter) closeLiteral(indent int) string {
-	return "\")\n"
-}
-
-func (prodLiteralWriter) writeLiteral(inLiteral bool, s string) string {
-	if inLiteral {
-		return s
-	}
-	return `_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("` + s
-}
-
-func (prodLiteralWriter) literals() string {
-	return ""
+	// literal buffer.
+	buf *strings.Builder
+	// literal index.
+	index int
+	// literal string slice.
+	ss []string
 }
 
 func (rw *RangeWriter) closeLiteral(indent int) (r parser.Range, err error) {
 	rw.inLiteral = false
-	if _, err := rw.write(rw.literalWriter.closeLiteral(indent)); err != nil {
+	rw.ss = append(rw.ss, rw.buf.String())
+	defer func() {
+		rw.index++
+		rw.buf.Reset()
+	}()
+	s := "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" + rw.literalVarName + "[" + strconv.Itoa(rw.index) + "]) // " + strconv.Quote(rw.buf.String()) + "\n"
+	if _, err := rw.WriteIndent(indent, s); err != nil {
 		return r, err
 	}
-
 	err = rw.writeErrorHandler(indent)
 	return
 }
 
 func (rw *RangeWriter) WriteIndent(level int, s string) (r parser.Range, err error) {
-	if rw.inLiteral {
-		if _, err = rw.closeLiteral(level); err != nil {
-			return
-		}
+	if err = rw.Close(); err != nil {
+		return r, err
 	}
 	_, err = rw.write(strings.Repeat("\t", level))
 	if err != nil {
@@ -96,29 +60,26 @@ func (rw *RangeWriter) WriteIndent(level int, s string) (r parser.Range, err err
 }
 
 func (rw *RangeWriter) WriteStringLiteral(level int, s string) (r parser.Range, err error) {
-	if !rw.inLiteral {
-		_, err = rw.write(strings.Repeat("\t", level))
-		if err != nil {
-			return
-		}
-	}
-
-	if _, err := rw.write(rw.literalWriter.writeLiteral(rw.inLiteral, s)); err != nil {
-		return r, err
-	}
-
+	rw.buf.WriteString(s)
 	rw.inLiteral = true
-
 	return
 }
 
 func (rw *RangeWriter) Write(s string) (r parser.Range, err error) {
-	if rw.inLiteral {
-		if _, err = rw.closeLiteral(0); err != nil {
-			return
-		}
+	if err = rw.Close(); err != nil {
+		return r, err
 	}
 	return rw.write(s)
+}
+
+func (rw *RangeWriter) Close() error {
+	if rw.inLiteral {
+		_, err := rw.closeLiteral(0)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (rw *RangeWriter) write(s string) (r parser.Range, err error) {

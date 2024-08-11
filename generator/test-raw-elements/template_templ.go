@@ -20,12 +20,12 @@ func Example() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<html><head></head><body><style><!-- Some stuff --></style><style>\n        .customClass {\n          border: 1px solid black;\n        }\n      </style><script type=\"text/javascript\">\n        $(\"div\").marquee();\n        function test() {\n              window.open(\"https://example.com\")\n        }\n      </script><h1>Hello</h1>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[0]) // "<html><head></head><body><style><!-- Some stuff --></style><style>\n        .customClass {\n          border: 1px solid black;\n        }\n      </style><script type=\"text/javascript\">\n        $(\"div\").marquee();\n        function test() {\n              window.open(\"https://example.com\")\n        }\n      </script><h1>Hello</h1>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -33,7 +33,7 @@ func Example() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</body></html>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[1]) // "</body></html>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -42,3 +42,14 @@ func Example() templ.Component {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{
+	"<html><head></head><body><style><!-- Some stuff --></style><style>\n        .customClass {\n          border: 1px solid black;\n        }\n      </style><script type=\"text/javascript\">\n        $(\"div\").marquee();\n        function test() {\n              window.open(\"https://example.com\")\n        }\n      </script><h1>Hello</h1>",
+	"</body></html>",
+}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}

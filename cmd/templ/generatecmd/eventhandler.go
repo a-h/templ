@@ -64,9 +64,6 @@ func NewFSEventHandler(
 		keepOrphanedFiles:          keepOrphanedFiles,
 		writer:                     fileWriter,
 	}
-	if devMode {
-		fseh.genOpts = append(fseh.genOpts, generator.WithExtractStrings())
-	}
 	return fseh
 }
 
@@ -239,7 +236,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (goUpdat
 	}
 
 	// Add the txt file if it has changed.
-	if len(literals) > 0 {
+	if h.DevMode && len(literals) > 0 {
 		txtFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.txt"
 		txtHash := sha256.Sum256([]byte(literals))
 		if h.UpsertHash(txtFileName, txtHash) {

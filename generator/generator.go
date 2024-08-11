@@ -48,15 +48,6 @@ func WithFileName(name string) GenerateOpt {
 	}
 }
 
-func WithExtractStrings() GenerateOpt {
-	return func(g *generator) error {
-		g.w.literalWriter = &watchLiteralWriter{
-			builder: &strings.Builder{},
-		}
-		return nil
-	}
-}
-
 // WithSkipCodeGeneratedComment skips the code generated comment at the top of the file.
 // gopls disables edit related functionality for generated files, so the templ LSP may
 // wish to skip generation of this comment so that gopls provides expected results.
@@ -72,7 +63,6 @@ func WithSkipCodeGeneratedComment() GenerateOpt {
 func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, literals string, err error) {
 	g := &generator{
 		tf:        template,
-		w:         NewRangeWriter(w),
 		sourceMap: parser.NewSourceMap(),
 	}
 	for _, opt := range opts {
@@ -80,9 +70,17 @@ func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (s
 			return
 		}
 	}
+	g.w = NewRangeWriter(w, g.createVariableName())
 	err = g.generate()
 	sm = g.sourceMap
-	literals = g.w.literalWriter.literals()
+
+	// Convert the literals to a string.
+	var sb strings.Builder
+	for _, s := range g.w.ss {
+		sb.WriteString(strconv.Quote(s))
+	}
+	literals = sb.String()
+
 	return
 }
 
@@ -126,6 +124,9 @@ func (g *generator) generate() (err error) {
 		return
 	}
 	if err = g.writeBlankAssignmentForRuntimeImport(); err != nil {
+		return
+	}
+	if err = g.writeStringLiterals(); err != nil {
 		return
 	}
 	return err
@@ -252,7 +253,7 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 			switch p := n.Properties[i].(type) {
 			case parser.ConstantCSSProperty:
 				// Constant CSS property values are not sanitized.
-				if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_CSSBuilder.WriteString("+createGoString(p.String(true))+")\n"); err != nil {
+				if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_CSSBuilder.WriteString("+strconv.Quote(p.String(true))+")\n"); err != nil {
 					return err
 				}
 			case parser.ExpressionCSSProperty:
@@ -865,7 +866,7 @@ func (g *generator) writeExpressionErrorHandler(indentLevel int, expression pars
 	indentLevel++
 	line := int(expression.Range.To.Line + 1)
 	col := int(expression.Range.To.Col)
-	_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, FileName: "+createGoString(g.fileName)+", Line: "+strconv.Itoa(line)+", Col: "+strconv.Itoa(col)+"}\n")
+	_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, FileName: "+strconv.Quote(g.fileName)+", Line: "+strconv.Itoa(line)+", Col: "+strconv.Itoa(col)+"}\n")
 	if err != nil {
 		return err
 	}
@@ -1059,9 +1060,7 @@ func (g *generator) writeBoolConstantAttribute(indentLevel int, attr parser.Bool
 func (g *generator) writeConstantAttribute(indentLevel int, attr parser.ConstantAttribute) (err error) {
 	name := html.EscapeString(attr.Name)
 	value := html.EscapeString(attr.Value)
-	value = strconv.Quote(value)
-	value = value[1 : len(value)-1]
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s=\"%s\"`, name, value)); err != nil {
+	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s="%s"`, name, value)); err != nil {
 		return err
 	}
 	return nil
@@ -1105,7 +1104,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	}
 	// Value.
 	// Open quote.
-	if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
+	if _, err = g.w.WriteStringLiteral(indentLevel, `"`); err != nil {
 		return err
 	}
 	if (elementName == "a" && attr.Name == "href") || (elementName == "form" && attr.Name == "action") {
@@ -1188,7 +1187,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 		}
 	}
 	// Close quote.
-	if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
+	if _, err = g.w.WriteStringLiteral(indentLevel, `"`); err != nil {
 		return err
 	}
 	return nil
@@ -1398,23 +1397,8 @@ func (g *generator) writeWhitespace(indentLevel int, n parser.Whitespace) (err e
 }
 
 func (g *generator) writeText(indentLevel int, n parser.Text) (err error) {
-	quoted := strconv.Quote(n.Value)
-	_, err = g.w.WriteStringLiteral(indentLevel, quoted[1:len(quoted)-1])
+	_, err = g.w.WriteStringLiteral(indentLevel, n.Value)
 	return err
-}
-
-func createGoString(s string) string {
-	var sb strings.Builder
-	sb.WriteRune('`')
-	sects := strings.Split(s, "`")
-	for i := 0; i < len(sects); i++ {
-		sb.WriteString(sects[i])
-		if len(sects) > i+1 {
-			sb.WriteString("` + \"`\" + `")
-		}
-	}
-	sb.WriteRune('`')
-	return sb.String()
 }
 
 func (g *generator) writeScript(t parser.ScriptTemplate) error {
@@ -1451,7 +1435,7 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 	{
 		indentLevel++
 		fn := functionName(t.Name.Value, t.Value)
-		goFn := createGoString(fn)
+		goFn := strconv.Quote(fn)
 		// Name: "scriptName",
 		if _, err = g.w.WriteIndent(indentLevel, "Name: "+goFn+",\n"); err != nil {
 			return err
@@ -1460,7 +1444,7 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
 		body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
 		suffix := "}"
-		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+body+suffix)+",\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "Function: "+strconv.Quote(prefix+body+suffix)+",\n"); err != nil {
 			return err
 		}
 		// Call: templ.SafeScript(scriptName, a, b, c)
@@ -1488,11 +1472,66 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 // writeBlankAssignmentForRuntimeImport writes out a blank identifier assignment.
 // This ensures that even if the github.com/a-h/templ/runtime package is not used in the generated code,
 // the Go compiler will not complain about the unused import.
-func (g *generator) writeBlankAssignmentForRuntimeImport() error {
-	var err error
-	if _, err = g.w.Write("var _ = templruntime.GeneratedTemplate"); err != nil {
+func (g *generator) writeBlankAssignmentForRuntimeImport() (err error) {
+	_, err = g.w.Write("var _ = templruntime.GeneratedTemplate\n\n")
+	return err
+}
+
+func (g *generator) writeStringLiterals() (err error) {
+	var indentLevel int
+	if _, err = g.w.WriteIndent(0, "var "+g.w.literalVarName+" = []string{\n"); err != nil {
 		return err
 	}
+	{
+		indentLevel++
+		for _, l := range g.w.ss {
+			if _, err = g.w.WriteIndent(indentLevel, strconv.Quote(l)+",\n"); err != nil {
+				return err
+			}
+		}
+		indentLevel--
+	}
+	if _, err = g.w.WriteIndent(0, "}\n\n"); err != nil {
+		return err
+	}
+
+	if _, err = g.w.WriteIndent(0, "func init() {\n"); err != nil {
+		return err
+	}
+	{
+		indentLevel++
+		if _, err = g.w.WriteIndent(indentLevel, `if templruntime.WatchMode {`+"\n"); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			if _, err = g.w.WriteIndent(indentLevel, `templruntime.Watch(&`+g.w.literalVarName+")\n"); err != nil {
+				return err
+			}
+			indentLevel--
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+			return err
+		}
+		indentLevel--
+	}
+	if _, err = g.w.WriteIndent(0, "}\n\n"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) writeInit() (err error) {
+	var indentLevel int
+	g.w.WriteIndent(0, "func init() {\n")
+	{
+		indentLevel++
+		for _, l := range g.w.ss {
+			g.w.WriteIndent(indentLevel, strconv.Quote(l)+",\n")
+		}
+		indentLevel--
+	}
+	g.w.WriteIndent(0, "}\n")
 	return nil
 }
 

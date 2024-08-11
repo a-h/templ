@@ -20,25 +20,25 @@ func Hello(name string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div data-name=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[0]) // "<div data-name=\""
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(name)
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/integration-react/components.templ`, Line: 4, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: "examples/integration-react/components.templ", Line: 4, Col: 22}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"><script type=\"text/javascript\">\n\t\t\t// Place the React component into the parent div.\n\t\t\tbundle.renderHello(document.currentScript.closest('div'));\n\t\t</script></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[1]) // "\"><script type=\"text/javascript\">\n\t\t\t// Place the React component into the parent div.\n\t\t\tbundle.renderHello(document.currentScript.closest('div'));\n\t\t</script></div>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -59,12 +59,12 @@ func page() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var3 == nil {
-			templ_7745c5c3_Var3 = templ.NopComponent
+		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var4 == nil {
+			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<html><head><title>React integration</title></head><body><div id=\"react-header\"></div><div id=\"react-content\"></div><div>This is server-side content from templ.</div><!-- Load the React bundle that was created using esbuild --><!-- Since the bundle was coded to expect the react-header and react-content elements to exist already, in this case, the script has to be loaded after the elements are on the page --><script src=\"static/index.js\"></script><!-- Now that the React bundle is loaded, we can use the functions that are in it --><!-- the renderName function in the bundle can be used, but we want to pass it some server-side data -->")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[2]) // "<html><head><title>React integration</title></head><body><div id=\"react-header\"></div><div id=\"react-content\"></div><div>This is server-side content from templ.</div><!-- Load the React bundle that was created using esbuild --><!-- Since the bundle was coded to expect the react-header and react-content elements to exist already, in this case, the script has to be loaded after the elements are on the page --><script src=\"static/index.js\"></script><!-- Now that the React bundle is loaded, we can use the functions that are in it --><!-- the renderName function in the bundle can be used, but we want to pass it some server-side data -->"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -74,7 +74,7 @@ func page() templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</body></html>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[3]) // "</body></html>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -83,3 +83,16 @@ func page() templ.Component {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{
+	"<div data-name=\"",
+	"\"><script type=\"text/javascript\">\n\t\t\t// Place the React component into the parent div.\n\t\t\tbundle.renderHello(document.currentScript.closest('div'));\n\t\t</script></div>",
+	"<html><head><title>React integration</title></head><body><div id=\"react-header\"></div><div id=\"react-content\"></div><div>This is server-side content from templ.</div><!-- Load the React bundle that was created using esbuild --><!-- Since the bundle was coded to expect the react-header and react-content elements to exist already, in this case, the script has to be loaded after the elements are on the page --><script src=\"static/index.js\"></script><!-- Now that the React bundle is loaded, we can use the functions that are in it --><!-- the renderName function in the bundle can be used, but we want to pass it some server-side data -->",
+	"</body></html>",
+}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}

@@ -9,31 +9,28 @@ import templruntime "github.com/a-h/templ/runtime"
 
 func withParameters(a string, b string, c int) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_withParameters_1056`,
-		Function: `function __templ_withParameters_1056(a, b, c){console.log(a, b, c);
-}`,
-		Call:       templ.SafeScript(`__templ_withParameters_1056`, a, b, c),
-		CallInline: templ.SafeScriptInline(`__templ_withParameters_1056`, a, b, c),
+		Name:       "__templ_withParameters_1056",
+		Function:   "function __templ_withParameters_1056(a, b, c){console.log(a, b, c);\n}",
+		Call:       templ.SafeScript("__templ_withParameters_1056", a, b, c),
+		CallInline: templ.SafeScriptInline("__templ_withParameters_1056", a, b, c),
 	}
 }
 
 func withoutParameters() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_withoutParameters_6bbf`,
-		Function: `function __templ_withoutParameters_6bbf(){alert("hello");
-}`,
-		Call:       templ.SafeScript(`__templ_withoutParameters_6bbf`),
-		CallInline: templ.SafeScriptInline(`__templ_withoutParameters_6bbf`),
+		Name:       "__templ_withoutParameters_6bbf",
+		Function:   "function __templ_withoutParameters_6bbf(){alert(\"hello\");\n}",
+		Call:       templ.SafeScript("__templ_withoutParameters_6bbf"),
+		CallInline: templ.SafeScriptInline("__templ_withoutParameters_6bbf"),
 	}
 }
 
 func onClick() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_onClick_657d`,
-		Function: `function __templ_onClick_657d(){alert("clicked");
-}`,
-		Call:       templ.SafeScript(`__templ_onClick_657d`),
-		CallInline: templ.SafeScriptInline(`__templ_onClick_657d`),
+		Name:       "__templ_onClick_657d",
+		Function:   "function __templ_onClick_657d(){alert(\"clicked\");\n}",
+		Call:       templ.SafeScript("__templ_onClick_657d"),
+		CallInline: templ.SafeScriptInline("__templ_onClick_657d"),
 	}
 }
 
@@ -50,47 +47,47 @@ func Button(text string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, withParameters("test", text, 123), withoutParameters())
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button onClick=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[0]) // "<button onClick=\""
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 templ.ComponentScript = withParameters("test", text, 123)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2.Call)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" onMouseover=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var3 templ.ComponentScript = withoutParameters()
+		var templ_7745c5c3_Var3 templ.ComponentScript = withParameters("test", text, 123)
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" type=\"button\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[1]) // "\" onMouseover=\""
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(text)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-script-usage-nonce/template.templ`, Line: 16, Col: 111}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+		var templ_7745c5c3_Var4 templ.ComponentScript = withoutParameters()
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</button>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[2]) // "\" type=\"button\">"
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var5 string
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(text)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: "generator/test-script-usage-nonce/template.templ", Line: 16, Col: 111}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[3]) // "</button>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -100,11 +97,10 @@ func Button(text string) templ.Component {
 
 func withComment() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_withComment_9cf8`,
-		Function: `function __templ_withComment_9cf8(){//'
-}`,
-		Call:       templ.SafeScript(`__templ_withComment_9cf8`),
-		CallInline: templ.SafeScriptInline(`__templ_withComment_9cf8`),
+		Name:       "__templ_withComment_9cf8",
+		Function:   "function __templ_withComment_9cf8(){//'\n}",
+		Call:       templ.SafeScript("__templ_withComment_9cf8"),
+		CallInline: templ.SafeScriptInline("__templ_withComment_9cf8"),
 	}
 }
 
@@ -121,9 +117,9 @@ func ThreeButtons() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var5 == nil {
-			templ_7745c5c3_Var5 = templ.NopComponent
+		templ_7745c5c3_Var6 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var6 == nil {
+			templ_7745c5c3_Var6 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = Button("A").Render(ctx, templ_7745c5c3_Buffer)
@@ -134,7 +130,7 @@ func ThreeButtons() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button onMouseover=\"console.log(&#39;mouseover&#39;)\" type=\"button\">Button C</button> <button hx-on::click=\"alert(&#39;clicked inline&#39;)\" type=\"button\">Button D</button> ")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[4]) // "<button onMouseover=\"console.log(&#39;mouseover&#39;)\" type=\"button\">Button C</button> <button hx-on::click=\"alert(&#39;clicked inline&#39;)\" type=\"button\">Button D</button> "
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -142,16 +138,16 @@ func ThreeButtons() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<button hx-on::click=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[5]) // "<button hx-on::click=\""
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var6 templ.ComponentScript = onClick()
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6.Call)
+		var templ_7745c5c3_Var7 templ.ComponentScript = onClick()
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\" type=\"button\">Button E</button>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[6]) // "\" type=\"button\">Button E</button>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -165,11 +161,10 @@ func ThreeButtons() templ.Component {
 
 func conditionalScript() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_conditionalScript_de41`,
-		Function: `function __templ_conditionalScript_de41(){alert("conditional");
-}`,
-		Call:       templ.SafeScript(`__templ_conditionalScript_de41`),
-		CallInline: templ.SafeScriptInline(`__templ_conditionalScript_de41`),
+		Name:       "__templ_conditionalScript_de41",
+		Function:   "function __templ_conditionalScript_de41(){alert(\"conditional\");\n}",
+		Call:       templ.SafeScript("__templ_conditionalScript_de41"),
+		CallInline: templ.SafeScriptInline("__templ_conditionalScript_de41"),
 	}
 }
 
@@ -186,35 +181,35 @@ func Conditional(show bool) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var7 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var7 == nil {
-			templ_7745c5c3_Var7 = templ.NopComponent
+		templ_7745c5c3_Var8 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var8 == nil {
+			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, conditionalScript())
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<input type=\"button\" value=\"Click me\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[7]) // "<input type=\"button\" value=\"Click me\""
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if show {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(" onclick=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[8]) // " onclick=\""
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var8 templ.ComponentScript = conditionalScript()
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8.Call)
+			var templ_7745c5c3_Var9 templ.ComponentScript = conditionalScript()
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9.Call)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[9]) // "\""
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[10]) // ">"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -223,3 +218,23 @@ func Conditional(show bool) templ.Component {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{
+	"<button onClick=\"",
+	"\" onMouseover=\"",
+	"\" type=\"button\">",
+	"</button>",
+	"<button onMouseover=\"console.log(&#39;mouseover&#39;)\" type=\"button\">Button C</button> <button hx-on::click=\"alert(&#39;clicked inline&#39;)\" type=\"button\">Button D</button> ",
+	"<button hx-on::click=\"",
+	"\" type=\"button\">Button E</button>",
+	"<input type=\"button\" value=\"Click me\"",
+	" onclick=\"",
+	"\"",
+	">",
+}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}

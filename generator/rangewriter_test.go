@@ -10,7 +10,8 @@ import (
 
 func TestRangeWriter(t *testing.T) {
 	w := new(bytes.Buffer)
-	rw := NewRangeWriter(w)
+	variableName := "test"
+	rw := NewRangeWriter(w, variableName)
 	t.Run("indices are zero bound", func(t *testing.T) {
 		if diff := cmp.Diff(parser.NewPosition(0, 0, 0), rw.Current); diff != "" {
 			t.Error(diff)
@@ -53,6 +54,31 @@ func TestRangeWriter(t *testing.T) {
 		}
 		if diff := cmp.Diff(parser.NewPosition(14, 3, 4), r.To); diff != "" {
 			t.Errorf("unexpected to:\n%s", diff)
+		}
+	})
+}
+
+func TestRangeWriterLiterals(t *testing.T) {
+	t.Run("a list of literals is returned", func(t *testing.T) {
+		w := new(bytes.Buffer)
+		variableName := "test"
+		rw := NewRangeWriter(w, variableName)
+		// Write some arbitrary text.
+		rw.WriteStringLiteral(0, "abc")
+		// Write some Go.
+		rw.WriteIndent(0, "package main")
+		// Write some more text, in two consecutive literals, to test that they are concatenated.
+		rw.WriteStringLiteral(0, "def")
+		rw.WriteStringLiteral(0, "ghi")
+		// Close the writer.
+		rw.Close()
+
+		expected := []string{
+			"abc",    // 0
+			"defghi", // 1
+		}
+		if diff := cmp.Diff(expected, rw.ss); diff != "" {
+			t.Error(diff)
 		}
 	})
 }

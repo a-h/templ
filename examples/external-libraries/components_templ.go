@@ -9,13 +9,10 @@ import templruntime "github.com/a-h/templ/runtime"
 
 func graph(data []TimeValue) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_graph_c2ba`,
-		Function: `function __templ_graph_c2ba(data){const chart = LightweightCharts.createChart(document.body, { width: 400, height: 300 });
-	const lineSeries = chart.addLineSeries();
-	lineSeries.setData(data);
-}`,
-		Call:       templ.SafeScript(`__templ_graph_c2ba`, data),
-		CallInline: templ.SafeScriptInline(`__templ_graph_c2ba`, data),
+		Name:       "__templ_graph_c2ba",
+		Function:   "function __templ_graph_c2ba(data){const chart = LightweightCharts.createChart(document.body, { width: 400, height: 300 });\n\tconst lineSeries = chart.addLineSeries();\n\tlineSeries.setData(data);\n}",
+		Call:       templ.SafeScript("__templ_graph_c2ba", data),
+		CallInline: templ.SafeScriptInline("__templ_graph_c2ba", data),
 	}
 }
 
@@ -32,12 +29,12 @@ func page(data []TimeValue) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Graphs</title><script src=\"https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js\"></script></head>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[0]) // "<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Graphs</title><script src=\"https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js\"></script></head>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -45,16 +42,16 @@ func page(data []TimeValue) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<body onload=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[1]) // "<body onload=\""
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 templ.ComponentScript = graph(data)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2.Call)
+		var templ_7745c5c3_Var3 templ.ComponentScript = graph(data)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3.Call)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\"></body></html>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[2]) // "\"></body></html>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -63,3 +60,15 @@ func page(data []TimeValue) templ.Component {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{
+	"<html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Graphs</title><script src=\"https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js\"></script></head>",
+	"<body onload=\"",
+	"\"></body></html>",
+}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}

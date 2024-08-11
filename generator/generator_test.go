@@ -11,9 +11,9 @@ import (
 func TestGeneratorSourceMap(t *testing.T) {
 	w := new(bytes.Buffer)
 	g := generator{
-		w:         NewRangeWriter(w),
 		sourceMap: parser.NewSourceMap(),
 	}
+	g.w = NewRangeWriter(w, g.createVariableName())
 	invalidExp := parser.TemplateFileGoExpression{
 		Expression: parser.Expression{
 			Value: "line1\nline2",

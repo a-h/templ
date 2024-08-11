@@ -20,12 +20,12 @@ func ComplexAttributes() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div x-data=\"{darkMode: localStorage.getItem(&#39;darkMode&#39;) || localStorage.setItem(&#39;darkMode&#39;, &#39;system&#39;)}\" x-init=\"$watch(&#39;darkMode&#39;, val =&gt; localStorage.setItem(&#39;darkMode&#39;, val))\" :class=\"{&#39;dark&#39;: darkMode === &#39;dark&#39; || (darkMode === &#39;system&#39; &amp;&amp; window.matchMedia(&#39;(prefers-color-scheme: dark)&#39;).matches)}\"></div><div x-data=\"{ count: 0 }\"><button x-on:click=\"count++\">Increment</button> <span x-text=\"count\"></span></div><div x-data=\"{ count: 0 }\"><button @click=\"count++\">Increment</button> <span x-text=\"count\"></span></div>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var1[0]) // "<div x-data=\"{darkMode: localStorage.getItem(&#39;darkMode&#39;) || localStorage.setItem(&#39;darkMode&#39;, &#39;system&#39;)}\" x-init=\"$watch(&#39;darkMode&#39;, val =&gt; localStorage.setItem(&#39;darkMode&#39;, val))\" :class=\"{&#39;dark&#39;: darkMode === &#39;dark&#39; || (darkMode === &#39;system&#39; &amp;&amp; window.matchMedia(&#39;(prefers-color-scheme: dark)&#39;).matches)}\"></div><div x-data=\"{ count: 0 }\"><button x-on:click=\"count++\">Increment</button> <span x-text=\"count\"></span></div><div x-data=\"{ count: 0 }\"><button @click=\"count++\">Increment</button> <span x-text=\"count\"></span></div>"
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -34,3 +34,13 @@ func ComplexAttributes() templ.Component {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{
+	"<div x-data=\"{darkMode: localStorage.getItem(&#39;darkMode&#39;) || localStorage.setItem(&#39;darkMode&#39;, &#39;system&#39;)}\" x-init=\"$watch(&#39;darkMode&#39;, val =&gt; localStorage.setItem(&#39;darkMode&#39;, val))\" :class=\"{&#39;dark&#39;: darkMode === &#39;dark&#39; || (darkMode === &#39;system&#39; &amp;&amp; window.matchMedia(&#39;(prefers-color-scheme: dark)&#39;).matches)}\"></div><div x-data=\"{ count: 0 }\"><button x-on:click=\"count++\">Increment</button> <span x-text=\"count\"></span></div><div x-data=\"{ count: 0 }\"><button @click=\"count++\">Increment</button> <span x-text=\"count\"></span></div>",
+}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}

@@ -9,8 +9,8 @@ import templruntime "github.com/a-h/templ/runtime"
 
 func className() templ.CSSClass {
 	templ_7745c5c3_CSSBuilder := templruntime.GetBuilder()
-	templ_7745c5c3_CSSBuilder.WriteString(`background-color:#ffffff;`)
-	templ_7745c5c3_CSSBuilder.WriteString(`max-height:calc(100vh - 170px);`)
+	templ_7745c5c3_CSSBuilder.WriteString("background-color:#ffffff;")
+	templ_7745c5c3_CSSBuilder.WriteString("max-height:calc(100vh - 170px);")
 	templ_7745c5c3_CSSBuilder.WriteString(string(templ.SanitizeCSS(`color`, red)))
 	templ_7745c5c3_CSSID := templ.CSSID(`className`, templ_7745c5c3_CSSBuilder.String())
 	return templ.ComponentCSSClass{
@@ -20,3 +20,11 @@ func className() templ.CSSClass {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}

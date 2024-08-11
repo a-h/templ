@@ -9,21 +9,19 @@ import templruntime "github.com/a-h/templ/runtime"
 
 func withParameters(a string, b string, c int) templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_withParameters_1056`,
-		Function: `function __templ_withParameters_1056(a, b, c){console.log(a, b, c);
-}`,
-		Call:       templ.SafeScript(`__templ_withParameters_1056`, a, b, c),
-		CallInline: templ.SafeScriptInline(`__templ_withParameters_1056`, a, b, c),
+		Name:       "__templ_withParameters_1056",
+		Function:   "function __templ_withParameters_1056(a, b, c){console.log(a, b, c);\n}",
+		Call:       templ.SafeScript("__templ_withParameters_1056", a, b, c),
+		CallInline: templ.SafeScriptInline("__templ_withParameters_1056", a, b, c),
 	}
 }
 
 func withoutParameters() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_withoutParameters_6bbf`,
-		Function: `function __templ_withoutParameters_6bbf(){alert("hello");
-}`,
-		Call:       templ.SafeScript(`__templ_withoutParameters_6bbf`),
-		CallInline: templ.SafeScriptInline(`__templ_withoutParameters_6bbf`),
+		Name:       "__templ_withoutParameters_6bbf",
+		Function:   "function __templ_withoutParameters_6bbf(){alert(\"hello\");\n}",
+		Call:       templ.SafeScript("__templ_withoutParameters_6bbf"),
+		CallInline: templ.SafeScriptInline("__templ_withoutParameters_6bbf"),
 	}
 }
 
@@ -40,9 +38,9 @@ func InlineJavascript(a string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = withoutParameters().Render(ctx, templ_7745c5c3_Buffer)
@@ -66,3 +64,11 @@ func InlineJavascript(a string) templ.Component {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}

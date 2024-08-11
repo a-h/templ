@@ -9,11 +9,10 @@ import templruntime "github.com/a-h/templ/runtime"
 
 func sayHello() templ.ComponentScript {
 	return templ.ComponentScript{
-		Name: `__templ_sayHello_6bd3`,
-		Function: `function __templ_sayHello_6bd3(){alert("Hello")
-}`,
-		Call:       templ.SafeScript(`__templ_sayHello_6bd3`),
-		CallInline: templ.SafeScriptInline(`__templ_sayHello_6bd3`),
+		Name:       "__templ_sayHello_6bd3",
+		Function:   "function __templ_sayHello_6bd3(){alert(\"Hello\")\n}",
+		Call:       templ.SafeScript("__templ_sayHello_6bd3"),
+		CallInline: templ.SafeScriptInline("__templ_sayHello_6bd3"),
 	}
 }
 
@@ -30,9 +29,9 @@ func template() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = sayHello().Render(ctx, templ_7745c5c3_Buffer)
@@ -44,3 +43,11 @@ func template() templ.Component {
 }
 
 var _ = templruntime.GeneratedTemplate
+
+var templ_7745c5c3_Var1 = []string{}
+
+func init() {
+	if templruntime.WatchMode {
+		templruntime.Watch(&templ_7745c5c3_Var1)
+	}
+}
