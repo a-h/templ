@@ -1,8 +1,6 @@
 package main
 
-import (
-  "context"
-)
+import "context"
 
 func NameFromContext(ctx context.Context) string {
 	if name, ok := ctx.Value("name").(string); ok && name != "" {
