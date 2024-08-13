@@ -24,6 +24,8 @@ require (
 	golang.org/x/tools v0.13.0
 )
 
+require github.com/tdewolff/parse/v2 v2.7.15 // indirect
+
 require (
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -31,6 +33,7 @@ require (
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/segmentio/encoding v0.4.0 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
+	github.com/tdewolff/minify/v2 v2.20.37
 	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
