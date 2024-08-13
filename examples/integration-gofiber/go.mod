@@ -20,5 +20,3 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 )
-
-replace github.com/a-h/templ => ../../
