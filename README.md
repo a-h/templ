@@ -141,6 +141,14 @@ go run ./cmd/templ fmt .
 golangci-lint run --verbose
 ```
 
+### ensure-generated
+
+Requires: generate
+
+```sh
+git diff --exit-code
+```
+
 ### push-release-tag
 
 Push a semantic version number to Github to trigger the release process.
