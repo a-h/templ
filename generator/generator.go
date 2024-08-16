@@ -1303,7 +1303,7 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 	}
 	// Contents.
 	if n.Name == "script" && g.minifyJS {
-		if err := minifyScriptElement(&n); err == nil {
+		if err := minifyScriptElementContents(&n); err == nil {
 			return err
 		}
 	}
@@ -1514,7 +1514,7 @@ func stripTypes(parameters string) string {
 	return strings.Join(variableNames, ", ")
 }
 
-func minifyScriptElement(element *parser.RawElement) error {
+func minifyScriptElementContents(element *parser.RawElement) error {
 	if element.Name != "script" {
 		return nil
 	}

@@ -117,7 +117,7 @@ Args:
   -keep-orphaned-files
     Keeps orphaned generated templ files. (default false)
   -minify-js
-	Minify the Javascript script blocks
+    Minify Javascript script blocks and tags. (default false)
   -v
     Set log verbosity level to "debug". (default "info")
   -log-level
