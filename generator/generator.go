@@ -60,7 +60,7 @@ func WithExtractStrings() GenerateOpt {
 
 func WithJsMinification() GenerateOpt {
 	return func(g *generator) error {
-		g.minifyJs = true
+		g.minifyJS = true
 		return nil
 	}
 }
@@ -97,8 +97,8 @@ type generator struct {
 	generatedDate string
 	// fileName to include in error messages if string expressions return an error.
 	fileName string
-	// minifyJs bool to set js minification on or off
-	minifyJs bool
+	// minifyJS bool to set js minification on or off
+	minifyJS bool
 }
 
 func (g *generator) generate() (err error) {
@@ -1302,6 +1302,12 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		}
 	}
 	// Contents.
+	if n.Name == "script" && g.minifyJS {
+		if err := minifyScriptElement(&n); err == nil {
+			return err
+		}
+	}
+
 	if err = g.writeText(indentLevel, parser.Text{Value: n.Contents}); err != nil {
 		return err
 	}
@@ -1460,10 +1466,9 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
 		suffix := "}"
 
-		if g.minifyJs {
-			body, err = minify.JS(body)
-			if err != nil {
-				return err
+		if g.minifyJS {
+			if body, err = minify.JS(body); err != nil {
+				return nil
 			}
 		}
 
@@ -1507,4 +1512,42 @@ func stripTypes(parameters string) string {
 		variableNames = append(variableNames, strings.TrimSpace(p[0]))
 	}
 	return strings.Join(variableNames, ", ")
+}
+
+func minifyScriptElement(element *parser.RawElement) error {
+	if element.Name != "script" {
+		return nil
+	}
+
+	for _, attr := range element.Attributes {
+		switch attr.GetName() {
+		case "type":
+			// Warning: this is build on the assumption that
+			// the script tag's 'type' is not am expressive/conditional
+			// assignment but a constant one. This may cause unexpected
+			// behaviour when the type is set using a spread, expressive
+			// or conditional attribute
+
+			// Check if this is a ConstantAttribute
+			if a, ok := attr.(parser.ConstantAttribute); ok {
+				if strings.ToLower(strings.Trim(a.Value, " ")) != "text/javascript" {
+					// Type declared but not text/javascript
+					// Lets skip minification
+					return nil
+				} else {
+					continue
+				}
+			}
+		case "src":
+			// Lets not minify remote scripts
+			return nil
+		}
+	}
+
+	var err error
+	if element.Contents, err = minify.JS(element.Contents); err == nil {
+		return err
+	}
+
+	return nil
 }
