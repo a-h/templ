@@ -39,6 +39,8 @@ Args:
     Set to false to skip inclusion of the templ version in the generated code. (default true)
   -include-timestamp
     Set to true to include the current time in the generated code.
+  -minify-js
+    Minify Javascript script blocks and tags. (default false)
   -watch
     Set to true to watch the path for changes and regenerate code.
   -cmd <cmd>
