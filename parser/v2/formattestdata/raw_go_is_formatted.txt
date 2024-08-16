@@ -1,0 +1,12 @@
+-- in --
+package test
+
+templ nameList(items []Item) {
+	{{ first  := items[0] }}
+}
+-- out --
+package test
+
+templ nameList(items []Item) {
+	{{ first := items[0] }}
+}

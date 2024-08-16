@@ -162,7 +162,14 @@ func TestIfExpression(t *testing.T) {
 				},
 				Then: []Node{
 					Whitespace{Value: "  "},
-					Text{Value: "text", TrailingSpace: SpaceVertical},
+					Text{
+						Value: "text",
+						Range: Range{
+							From: Position{Index: 15, Line: 1, Col: 2},
+							To:   Position{Index: 19, Line: 1, Col: 6},
+						},
+						TrailingSpace: SpaceVertical,
+					},
 				},
 			},
 		},

@@ -1,0 +1,40 @@
+-- in --
+package main
+
+templ x() {
+	@something(`Hi
+some cool text
+
+foo 
+
+bar
+
+		`)
+	@something(`
+		something
+				`,
+	`
+				something
+				`,
+		)
+}
+-- out --
+package main
+
+templ x() {
+	@something(`Hi
+some cool text
+
+foo 
+
+bar
+
+		`)
+	@something(`
+		something
+				`,
+		`
+				something
+				`,
+	)
+}

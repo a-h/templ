@@ -38,6 +38,11 @@ func TestJSONScriptElement(t *testing.T) {
 			e:        templ.JSONScript("idf", data).WithNonceFrom(func(context.Context) string { return "nonce-from-function" }),
 			expected: "<script id=\"idf\" type=\"application/json\" nonce=\"nonce-from-function\">{\"foo\":\"bar\"}\n</script>",
 		},
+		{
+			name:     "if a type is provided, it is used",
+			e:        templ.JSONScript("idt", data).WithType("application/ld+json"),
+			expected: "<script id=\"idt\" type=\"application/ld+json\">{\"foo\":\"bar\"}\n</script>",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

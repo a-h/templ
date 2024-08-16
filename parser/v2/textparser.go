@@ -23,6 +23,7 @@ var textParser = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 		err = parse.Error("textParser: unterminated text, expected tag open, templ expression open, or newline", from)
 		return
 	}
+	t.Range = NewRange(from, pi.Position())
 
 	// Parse trailing whitespace.
 	ws, _, err := parse.Whitespace.Parse(pi)

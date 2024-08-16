@@ -10,6 +10,8 @@ var expressionFuncEnd = parse.All(parse.Rune(')'), openBraceWithOptionalPadding)
 // Template
 
 var template = parse.Func(func(pi *parse.Input) (r HTMLTemplate, ok bool, err error) {
+	start := pi.Position()
+
 	// templ FuncName(p Person, other Other) {
 	var te templateExpression
 	if te, ok, err = templateExpressionParser.Parse(pi); err != nil || !ok {
@@ -41,6 +43,8 @@ var template = parse.Func(func(pi *parse.Input) (r HTMLTemplate, ok bool, err er
 		err = parse.Error("template: missing closing brace", pi.Position())
 		return
 	}
+
+	r.Range = NewRange(start, pi.Position())
 
 	return r, true, nil
 })

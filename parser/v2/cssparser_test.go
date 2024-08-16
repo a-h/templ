@@ -133,6 +133,10 @@ func TestCSSParser(t *testing.T) {
 }`,
 			expected: CSSTemplate{
 				Name: "Name",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 14, Line: 1, Col: 1},
+				},
 				Expression: Expression{
 					Value: "Name()",
 					Range: Range{
@@ -157,6 +161,10 @@ func TestCSSParser(t *testing.T) {
 }`,
 			expected: CSSTemplate{
 				Name: "Name",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 14, Line: 1, Col: 1},
+				},
 				Expression: Expression{
 					Value: "Name()",
 					Range: Range{
@@ -182,6 +190,10 @@ background-color: #ffffff;
 }`,
 			expected: CSSTemplate{
 				Name: "Name",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 41, Line: 2, Col: 1},
+				},
 				Expression: Expression{
 					Value: "Name()",
 					Range: Range{
@@ -212,6 +224,10 @@ background-color: { constants.BackgroundColor };
 }`,
 			expected: CSSTemplate{
 				Name: "Name",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 63, Line: 2, Col: 1},
+				},
 				Expression: Expression{
 					Value: "Name()",
 					Range: Range{
@@ -258,6 +274,10 @@ background-color: { prop };
 }`,
 			expected: CSSTemplate{
 				Name: "Name",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 53, Line: 2, Col: 1},
+				},
 				Expression: Expression{
 					Value: "Name(prop string)",
 					Range: Range{

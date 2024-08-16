@@ -15,6 +15,10 @@ func Hover(expected, actual protocol.Hover) string {
 	)
 }
 
+func CodeAction(expected, actual []protocol.CodeAction) string {
+	return cmp.Diff(expected, actual)
+}
+
 func CompletionList(expected, actual *protocol.CompletionList) string {
 	return cmp.Diff(expected, actual,
 		cmpopts.IgnoreFields(protocol.CompletionList{}, "IsIncomplete"),

@@ -100,7 +100,7 @@ func run(ctx context.Context, log *zap.Logger, templStream jsonrpc2.Stream, args
 
 	log.Info("creating proxy")
 	// Create the proxy to sit between.
-	serverProxy, serverInit := proxy.NewServer(log, goplsServer, cache, diagnosticCache)
+	serverProxy := proxy.NewServer(log, goplsServer, cache, diagnosticCache)
 
 	// Create templ server.
 	log.Info("creating templ server")
@@ -109,7 +109,6 @@ func run(ctx context.Context, log *zap.Logger, templStream jsonrpc2.Stream, args
 
 	// Allow both the server and the client to initiate outbound requests.
 	clientInit(templClient)
-	serverInit(templClient)
 
 	// Start the web server if required.
 	if args.HTTPDebug != "" {

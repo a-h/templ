@@ -5,12 +5,12 @@ import (
 )
 
 var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, ok bool, err error) {
-	start := pi.Index()
+	start := pi.Position()
 
 	// Parse the name.
 	var se scriptExpression
 	if se, ok, err = scriptExpressionParser.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
+		pi.Seek(start.Index)
 		return
 	}
 	r.Name = se.Name
@@ -19,7 +19,7 @@ var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, o
 	// Read code expression.
 	var e Expression
 	if e, ok, err = exp.Parse(pi); err != nil || !ok {
-		pi.Seek(start)
+		pi.Seek(start.Index)
 		return
 	}
 	r.Value = e.Value
@@ -29,6 +29,8 @@ var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, o
 		err = parse.Error("script template: missing closing brace", pi.Position())
 		return
 	}
+
+	r.Range = NewRange(start, pi.Position())
 
 	return r, true, nil
 })

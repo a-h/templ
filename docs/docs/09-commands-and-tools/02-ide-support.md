@@ -117,7 +117,13 @@ lspconfig.tailwindcss.setup({
     on_attach = on_attach,
     capabilities = capabilities,
     filetypes = { "templ", "astro", "javascript", "typescript", "react" },
-    init_options = { userLanguages = { templ = "html" } },
+    settings = {
+      tailwindCSS = {
+        includeLanguages = {
+          templ = "html",
+        },
+      },
+    },
 })
 ```
 
@@ -322,6 +328,15 @@ require'nvim-treesitter.configs'.setup {
 }
 ```
 
+## Vim
+
+Currently support for vim is limited. Configure formatting with the following VimScript:
+
+```vim
+set autoread
+autocmd BufWritePost *.templ silent! execute "!PATH=\"$PATH:$(go env GOPATH)/bin\" templ fmt <afile> >/dev/null 2>&1" | redraw!
+```
+
 ## Helix
 
 https://helix-editor.com/
@@ -418,3 +433,7 @@ The logs can be quite verbose, since almost every keypress results in additional
 ### Look at the web server
 
 The web server option provides an insight into the internal state of the language server. It may provide insight into what's going wrong.
+
+### Run templ info
+
+The `templ info` command outputs information that's useful for debugging issues.

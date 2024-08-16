@@ -1,6 +1,6 @@
 ![templ](https://github.com/a-h/templ/raw/main/templ.png)
 
-## A HTML templating language for Go that has great developer tooling.
+## An HTML templating language for Go that has great developer tooling.
 
 ![templ](ide-demo.gif)
 
@@ -139,6 +139,14 @@ go run ./cmd/templ fmt .
 
 ```sh
 golangci-lint run --verbose
+```
+
+### ensure-generated
+
+Requires: generate
+
+```sh
+git diff --exit-code
 ```
 
 ### push-release-tag

@@ -385,6 +385,11 @@ var templExpressionTests = []testInput{
 		input: `components["name"].Other()`,
 	},
 	{
+		name: "multiline chain call",
+		input: `components.
+	Other()`,
+	},
+	{
 		name:  "map index function call backtick literal",
 		input: "components[`name" + `"` + "`].Other()",
 	},

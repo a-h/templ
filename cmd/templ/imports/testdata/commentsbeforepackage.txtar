@@ -1,0 +1,28 @@
+-- fmt_templ.templ --
+// Comments before.
+/*
+  Some more comments
+*/
+package test
+
+templ test() {
+  <div>Hello</div>
+}
+
+// Comment on variable or function.
+var x = fmt.Sprintf("Hello")
+-- fmt_templ.templ --
+// Comments before.
+/*
+  Some more comments
+*/
+package test
+
+import "fmt"
+
+templ test() {
+	<div>Hello</div>
+}
+
+// Comment on variable or function.
+var x = fmt.Sprintf("Hello")

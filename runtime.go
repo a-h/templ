@@ -82,74 +82,6 @@ func GetChildren(ctx context.Context) Component {
 	return *v.children
 }
 
-// ComponentHandler is a http.Handler that renders components.
-type ComponentHandler struct {
-	Component    Component
-	Status       int
-	ContentType  string
-	ErrorHandler func(r *http.Request, err error) http.Handler
-}
-
-const componentHandlerErrorMessage = "templ: failed to render template"
-
-// ServeHTTP implements the http.Handler interface.
-func (ch ComponentHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Since the component may error, write to a buffer first.
-	// This prevents partial responses from being written to the client.
-	buf := GetBuffer()
-	defer ReleaseBuffer(buf)
-	err := ch.Component.Render(r.Context(), buf)
-	if err != nil {
-		if ch.ErrorHandler != nil {
-			w.Header().Set("Content-Type", ch.ContentType)
-			ch.ErrorHandler(r, err).ServeHTTP(w, r)
-			return
-		}
-		http.Error(w, componentHandlerErrorMessage, http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", ch.ContentType)
-	if ch.Status != 0 {
-		w.WriteHeader(ch.Status)
-	}
-	// Ignore write error like http.Error() does, because there is
-	// no way to recover at this point.
-	_, _ = w.Write(buf.Bytes())
-}
-
-// Handler creates a http.Handler that renders the template.
-func Handler(c Component, options ...func(*ComponentHandler)) *ComponentHandler {
-	ch := &ComponentHandler{
-		Component:   c,
-		ContentType: "text/html; charset=utf-8",
-	}
-	for _, o := range options {
-		o(ch)
-	}
-	return ch
-}
-
-// WithStatus sets the HTTP status code returned by the ComponentHandler.
-func WithStatus(status int) func(*ComponentHandler) {
-	return func(ch *ComponentHandler) {
-		ch.Status = status
-	}
-}
-
-// WithContentType sets the Content-Type header returned by the ComponentHandler.
-func WithContentType(contentType string) func(*ComponentHandler) {
-	return func(ch *ComponentHandler) {
-		ch.ContentType = contentType
-	}
-}
-
-// WithErrorHandler sets the error handler used if rendering fails.
-func WithErrorHandler(eh func(r *http.Request, err error) http.Handler) func(*ComponentHandler) {
-	return func(ch *ComponentHandler) {
-		ch.ErrorHandler = eh
-	}
-}
-
 // EscapeString escapes HTML text within templates.
 func EscapeString(s string) string {
 	return html.EscapeString(s)
@@ -230,6 +162,10 @@ func (cp *cssProcessor) Add(item any) {
 	case KeyValue[CSSClass, bool]:
 		cp.AddClassName(c.Key.ClassName(), c.Value)
 	case CSSClasses:
+		for _, item := range c {
+			cp.Add(item)
+		}
+	case []CSSClass:
 		for _, item := range c {
 			cp.Add(item)
 		}
@@ -438,6 +374,10 @@ func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...an
 			renderCSSItemsToBuilder(sb, v, ccc.Key)
 		case CSSClasses:
 			renderCSSItemsToBuilder(sb, v, ccc...)
+		case []CSSClass:
+			for _, item := range ccc {
+				renderCSSItemsToBuilder(sb, v, item)
+			}
 		case func() CSSClass:
 			renderCSSItemsToBuilder(sb, v, ccc())
 		case []string:
@@ -829,7 +769,7 @@ func ToGoHTML(ctx context.Context, c Component) (s template.HTML, err error) {
 // WriteWatchModeString is used when rendering templates in development mode.
 // the generator would have written non-go code to the _templ.txt file, which
 // is then read by this function and written to the output.
-func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
+func WriteWatchModeString(w io.Writer, lineNum int) error {
 	_, path, _, _ := runtime.Caller(1)
 	if !strings.HasSuffix(path, "_templ.go") {
 		return errors.New("templ: WriteWatchModeString can only be called from _templ.go")
@@ -849,7 +789,7 @@ func WriteWatchModeString(w *bytes.Buffer, lineNum int) error {
 	if err != nil {
 		return err
 	}
-	_, err = io.WriteString(io.Writer(w), unquoted)
+	_, err = io.WriteString(w, unquoted)
 	return err
 }
 
