@@ -2,7 +2,6 @@ package parser
 
 import (
 	"errors"
-	"fmt"
 )
 
 type diagnoser func(Node) ([]Diagnostic, error)
@@ -35,7 +34,6 @@ func walkNodes(t []Node, f func(Node) bool) {
 
 var diagnosers = []diagnoser{
 	useOfLegacyCallSyntaxDiagnoser,
-	voidElementWithChildrenDiagnoser,
 }
 
 func Diagnose(t TemplateFile) ([]Diagnostic, error) {
@@ -63,21 +61,4 @@ func useOfLegacyCallSyntaxDiagnoser(n Node) ([]Diagnostic, error) {
 		}}, nil
 	}
 	return nil, nil
-}
-
-func voidElementWithChildrenDiagnoser(n Node) (d []Diagnostic, err error) {
-	e, ok := n.(Element)
-	if !ok {
-		return
-	}
-	if !e.IsVoidElement() {
-		return
-	}
-	if len(e.Children) == 0 {
-		return
-	}
-	return []Diagnostic{{
-		Message: fmt.Sprintf("void element <%s> should not have child content", e.Name),
-		Range:   e.NameRange,
-	}}, nil
 }

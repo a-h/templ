@@ -550,6 +550,20 @@ if test {
 	}
 }
 
+func TestVoidElementCloserParser(t *testing.T) {
+	t.Run("all void elements are parsed", func(t *testing.T) {
+		for _, input := range voidElementCloseTags {
+			_, ok, err := voidElementCloser.Parse(parse.NewInput(input))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !ok {
+				t.Fatalf("failed to parse %q", input)
+			}
+		}
+	})
+}
+
 func TestElementParser(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -662,15 +676,9 @@ func TestElementParser(t *testing.T) {
 					From: Position{Index: 1, Line: 0, Col: 1},
 					To:   Position{Index: 6, Line: 0, Col: 6},
 				},
-				Children: []Node{
-					Text{
-						Value: "Text",
-						Range: Range{
-							From: Position{Index: 7, Line: 0, Col: 7},
-							To:   Position{Index: 11, Line: 0, Col: 11},
-						},
-					},
-				},
+				// <input> is a void element, so text is not a child of the input.
+				// </input> is ignored.
+				Children: nil,
 			},
 		},
 		{
@@ -736,7 +744,7 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "element: void nesting others is OK (br/hr)",
+			name:  "element: void nesting is ignored",
 			input: `<br><hr></br>`,
 			expected: Element{
 				Name: "br",
@@ -744,15 +752,9 @@ func TestElementParser(t *testing.T) {
 					From: Position{Index: 1, Line: 0, Col: 1},
 					To:   Position{Index: 3, Line: 0, Col: 3},
 				},
-				Children: []Node{
-					Element{
-						Name: "hr",
-						NameRange: Range{
-							From: Position{Index: 5, Line: 0, Col: 5},
-							To:   Position{Index: 7, Line: 0, Col: 7},
-						},
-					},
-				},
+				// <br> is a void element, so <hr> is not a child of the <br>.
+				// </br> is ignored.
+				Children: nil,
 			},
 		},
 		{
