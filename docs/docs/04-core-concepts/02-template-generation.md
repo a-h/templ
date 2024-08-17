@@ -48,6 +48,8 @@ Args:
     Set to true to include the current time in the generated code.
   -minify-js
     Minify Javascript script blocks and tags. (default false)
+  -minify-css
+    Minify CSS style blocks and tags. (default false)
   -watch
     Set to true to watch the path for changes and regenerate code.
   -cmd <cmd>

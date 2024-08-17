@@ -8,6 +8,7 @@ import (
 	"io"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -58,12 +59,18 @@ func WithExtractStrings() GenerateOpt {
 	}
 }
 
-
 func WithJsMinification() GenerateOpt {
 	return func(g *generator) error {
 		g.minifyJS = true
-    return nil
-  }
+		return nil
+	}
+}
+
+func WithCSSMinification() GenerateOpt {
+	return func(g *generator) error {
+		g.minifyCSS = true
+		return nil
+	}
 }
 
 // WithSkipCodeGeneratedComment skips the code generated comment at the top of the file.
@@ -110,6 +117,8 @@ type generator struct {
 	fileName string
 	// minifyJS bool to set js minification on or off
 	minifyJS bool
+	// minifyCSS bool to set css minification on or off
+	minifyCSS bool
 	// skipCodeGeneratedComment skips the code generated comment at the top of the file.
 	skipCodeGeneratedComment bool
 }
@@ -1315,7 +1324,14 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 	}
 	// Contents.
 	if n.Name == "script" && g.minifyJS {
-		if err := minifyScriptElementContents(&n); err == nil {
+		if err := minifyScriptElementContents(&n); err != nil {
+			return err
+		}
+	}
+
+	if n.Name == "style" && g.minifyCSS {
+		var err error
+		if n.Contents, err = minify.Default.String("text/css", n.Contents); err != nil {
 			return err
 		}
 	}
@@ -1542,24 +1558,27 @@ func minifyScriptElementContents(element *parser.RawElement) error {
 		return nil
 	}
 
+	mimetype := "text/javascript"
 	for _, attr := range element.Attributes {
 		switch attr.GetName() {
 		case "type":
 			// Warning: this is build on the assumption that
-			// the script tag's 'type' is not am expressive/conditional
-			// assignment but a constant one. This may cause unexpected
+			// the script attribute 'type' is not defined by a expressive/conditional
+			// statement but a constant one. This may cause unexpected
 			// behaviour when the type is set using a spread, expressive
 			// or conditional attribute
 
 			// Check if this is a ConstantAttribute
 			if a, ok := attr.(parser.ConstantAttribute); ok {
-				if strings.ToLower(strings.Trim(a.Value, " ")) != "text/javascript" {
-					// Type declared but not text/javascript
-					// Lets skip minification
-					return nil
-				} else {
+				typeVal := strings.ToLower(strings.Trim(a.Value, " "))
+				r := regexp.MustCompile(`^(application|text)/(x-)?(java|ecma|j|live)script(1\.[0-5])?$|^module$`)
+				if r.Match([]byte(typeVal)) || typeVal == "application/json" {
+					mimetype = typeVal
 					continue
 				}
+
+				// Unsupported script type
+				return nil
 			}
 		case "src":
 			// Lets not minify remote scripts
@@ -1568,7 +1587,7 @@ func minifyScriptElementContents(element *parser.RawElement) error {
 	}
 
 	var err error
-	if element.Contents, err = minify.JS(element.Contents); err == nil {
+	if element.Contents, err = minify.Default.String(mimetype, element.Contents); err == nil {
 		return err
 	}
 
