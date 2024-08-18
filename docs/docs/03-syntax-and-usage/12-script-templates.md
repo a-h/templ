@@ -321,7 +321,7 @@ The `JSExpression` type is used to pass arbitrary JavaScript expressions to a te
 
 A common use case is to pass the `event` or `this` objects to an event handler.
 
-``` templ
+```templ
 package main
 
 script showButtonWasClicked(event templ.JSExpression) {
