@@ -1549,11 +1549,19 @@ amount is charged</div>`,
 				},
 				Children: []Node{
 					Text{
-						Value:         "for which any ",
+						Value: "for which any ",
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 19, Line: 0, Col: 19},
+						},
 						TrailingSpace: SpaceVertical,
 					},
 					Text{
-						Value:         "amount is charged",
+						Value: "amount is charged",
+						Range: Range{
+							From: Position{Index: 20, Line: 1, Col: 0},
+							To:   Position{Index: 37, Line: 1, Col: 17},
+						},
 						TrailingSpace: SpaceNone,
 					},
 				},
