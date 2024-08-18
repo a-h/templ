@@ -140,10 +140,13 @@ func TestForExpressionParser(t *testing.T) {
 
 func TestIncompleteFor(t *testing.T) {
 	t.Run("no opening brace", func(t *testing.T) {
-		input := parse.NewInput(`for with no brace`)
-		_, _, err := forExpression.Parse(input)
-		if err.Error() != "for: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements: line 0, col 0" {
+		input := parse.NewInput(`for with no brace is ignored`)
+		_, ok, err := forExpression.Parse(input)
+		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
+		}
+		if ok {
+			t.Fatal("expected a non match, but got a match")
 		}
 	})
 	t.Run("capitalised For", func(t *testing.T) {
@@ -153,7 +156,7 @@ func TestIncompleteFor(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if ok {
-			t.Fatal("expected a non match")
+			t.Fatal("expected a non match, but got a match")
 		}
 	})
 }
