@@ -2,7 +2,7 @@
 
 The default behaviour of the `templ.Handler` is to render the template to a buffer and then write the buffer to the response.
 
-This ensures that the template has successfully rendered before the response is sent to the client, so that appropriate repsonse codes can be set if the template fails to render, and partial responses are not sent to the client.
+This ensures that the template has successfully rendered before the response is sent to the client, so that appropriate response codes can be set if the template fails to render, and partial responses are not sent to the client.
 
 ## Rendering lifecycle
 

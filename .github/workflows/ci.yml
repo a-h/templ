@@ -63,10 +63,7 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@v3
 
       - name: Generate
-        run: nix develop --command xc generate
-
-      - name: Ensure clean
-        run: git diff --exit-code
+        run: nix develop --command xc ensure-generated
 
   ensure-fmt:
     runs-on: ubuntu-latest
