@@ -91,6 +91,32 @@ func TestGoCodeParser(t *testing.T) {
 				Multiline: true,
 			},
 		},
+		{
+			name: "comments in expression",
+			input: `{{
+	one := "one"
+	two := "two"
+	// Comment in middle of expression.
+	four := "four"
+	// Comment at end of expression.
+}}`,
+			expected: GoCode{
+				Expression: Expression{
+					Value: `
+	one := "one"
+	two := "two"
+	// Comment in middle of expression.
+	four := "four"
+	// Comment at end of expression.`,
+					Range: Range{
+						From: Position{Index: 2, Line: 0, Col: 2},
+						To:   Position{Index: 117, Line: 5, Col: 33},
+					},
+				},
+				TrailingSpace: SpaceNone,
+				Multiline:     true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

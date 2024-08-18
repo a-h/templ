@@ -112,7 +112,7 @@ func TemplExpression(src string) (start, end int, err error) {
 	errorHandler := func(pos token.Position, msg string) {
 		err = fmt.Errorf("error parsing expression: %v", msg)
 	}
-	s.Init(file, []byte(src), errorHandler, 0)
+	s.Init(file, []byte(src), errorHandler, scanner.ScanComments)
 
 	// Read chains of identifiers, e.g.:
 	// components.Variable
@@ -140,7 +140,7 @@ func Expression(src string) (start, end int, err error) {
 	errorHandler := func(pos token.Position, msg string) {
 		err = fmt.Errorf("error parsing expression: %v", msg)
 	}
-	s.Init(file, []byte(src), errorHandler, 0)
+	s.Init(file, []byte(src), errorHandler, scanner.ScanComments)
 
 	// Read chains of identifiers and constants up until RBRACE, e.g.:
 	// true
@@ -176,7 +176,6 @@ loop:
 			braceDepth--
 			if braceDepth < 0 {
 				// We've hit the end of the expression.
-				end = int(pos) - 1
 				break loop
 			}
 			end = int(pos)
@@ -184,6 +183,8 @@ loop:
 			end = int(pos) + len(lit) - 1
 		case token.SEMICOLON:
 			continue
+		case token.COMMENT:
+			end = int(pos) + len(lit) - 1
 		case token.ILLEGAL:
 			return 0, 0, fmt.Errorf("illegal token: %v", lit)
 		default:
