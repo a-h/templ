@@ -20,12 +20,17 @@ script withComment() {
 	//'
 }
 
+script whenButtonIsClicked(event templ.JSExpression) {
+	console.log(event.target)
+}
+
 templ ThreeButtons() {
 	@Button("A")
 	@Button("B")
 	<button onMouseover="console.log('mouseover')" type="button">Button C</button>
 	<button hx-on::click="alert('clicked inline')" type="button">Button D</button>
 	<button hx-on::click={ onClick() } type="button">Button E</button>
+	<button onclick={ whenButtonIsClicked(templ.JSExpression("event")) }>Button F</button>
 	@Conditional(true)
 	@ScriptOnLoad()
 }
