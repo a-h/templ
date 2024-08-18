@@ -1,6 +1,6 @@
 # Using JavaScript with templ
 
-## Scripts
+## Script tags
 
 Use standard `<script>` tags, and standard HTML attributes to run JavaScript on the client.
 
@@ -14,6 +14,93 @@ templ body() {
   <button onclick="handleClick(this)">Click me</button>
 }
 ```
+
+To pass data from the server to client-side scripts, see [Passing server-side data to scripts](#passing-server-side-data-to-scripts).
+
+## Adding client side behaviours to components
+
+To ensure that a `<script>` tag within a templ component is only rendered once per HTTP response, use a [templ.OnceHandle](18-render-once.md).
+
+Using a `templ.OnceHandle` allows a component to define global client-side scripts that it needs to run without including the scripts multiple times in the response.
+
+The example below also demonstrates applying behaviour that's defined in a multiline script to its sibling element.
+
+```templ title="component.templ"
+package main
+
+import "net/http"
+
+var helloHandle = templ.NewOnceHandle()
+
+templ hello(label, name string) {
+  // This script is only rendered once per HTTP request.
+  @helloHandle.Once() {
+    <script type="text/javascript">
+      function hello(name) {
+        alert('Hello, ' + name + '!');
+      }
+    </script>
+  }
+  <div>
+    <input type="button" value={ label } data-name={ name }/>
+    <script type="text/javascript">
+      // To prevent the variables from leaking into the global scope,
+      // this script is wrapped in an IIFE (Immediately Invoked Function Expression).
+      (() => {
+        let scriptElement = document.currentScript;
+        let parent = scriptElement.closest('div');
+        let nearestButtonWithName = parent.querySelector('input[data-name]');
+        nearestButtonWithName.addEventListener('click', function() {
+          let name = nearestButtonWithName.getAttribute('data-name');
+          hello(name);
+        })
+      })()
+    </script>
+  </div>
+}
+
+templ page() {
+  @hello("Hello User", "user")
+  @hello("Hello World", "world")
+}
+
+func main() {
+  http.Handle("/", templ.Handler(page()))
+  http.ListenAndServe("127.0.0.1:8080", nil)
+}
+```
+
+:::tip
+You might find libraries like [surreal](https://github.com/gnat/surreal) useful for reducing boilerplate.
+
+```templ
+var helloHandle = templ.NewOnceHandle()
+var surrealHandle = templ.NewOnceHandle()
+
+templ hello(label, name string) {
+  @helloHandle.Once() {
+    <script type="text/javascript">
+      function hello(name) {
+        alert('Hello, ' + name + '!');
+      }
+    </script>
+  }
+  @surrealHandle.Once() {
+    <script src="https://cdn.jsdelivr.net/gh/gnat/surreal@3b4572dd0938ce975225ee598a1e7381cb64ffd8/surreal.js"></script>
+  }
+  <div>
+    <input type="button" value={ label } data-name={ name }/>
+    <script type="text/javascript">
+      // me("-") returns the previous sibling element.
+      me("-").addEventListener('click', function() {
+        let name = this.getAttribute('data-name');
+        hello(name);
+      })
+    </script>
+  </div>
+}
+```
+:::
 
 ## Importing scripts
 
@@ -68,7 +155,7 @@ Pass data from the server to the client by embedding it in the HTML as a JSON ob
 
 ```templ title="input.templ"
 templ body(data any) {
-  <button id="alerter" alert-data={ templ.JSONString(attributeData) }>Show alert</button>
+  <button id="alerter" alert-data={ templ.JSONString(data) }>Show alert</button>
 }
 ```
 

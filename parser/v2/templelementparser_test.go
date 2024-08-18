@@ -105,7 +105,12 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				},
 				Children: []Node{
 					Whitespace{Value: "\n\t"},
-					Text{Value: "some words",
+					Text{
+						Value: "some words",
+						Range: Range{
+							From: Position{Index: 18, Line: 1, Col: 1},
+							To:   Position{Index: 28, Line: 1, Col: 11},
+						},
 						TrailingSpace: SpaceVertical,
 					},
 				},
@@ -394,7 +399,13 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							To:   Position{Index: 42, Line: 1, Col: 6},
 						},
 						Children: []Node{
-							Text{Value: "hello"},
+							Text{
+								Value: "hello",
+								Range: Range{
+									From: Position{Index: 43, Line: 1, Col: 7},
+									To:   Position{Index: 48, Line: 1, Col: 12},
+								},
+							},
 						},
 						TrailingSpace: SpaceVertical,
 					},

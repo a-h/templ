@@ -6,7 +6,7 @@ toolchain go1.21.5
 
 require (
 	github.com/a-h/templ v0.2.529
-	github.com/go-echarts/go-echarts/v2 v2.3.3
+	github.com/go-echarts/go-echarts/v2 v2.4.0
 )
 
 replace github.com/a-h/templ => ../../

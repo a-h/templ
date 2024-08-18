@@ -119,6 +119,8 @@ type TemplateFile struct {
 	Header []TemplateFileGoExpression
 	// Package expression.
 	Package Package
+	// Filepath is where the file was loaded from. It is not always available.
+	Filepath string
 	// Nodes in the file.
 	Nodes []TemplateFileNode
 }
@@ -194,20 +196,6 @@ func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
 	return err
 }
 
-func writeLinesIndented(w io.Writer, level int, s string) (err error) {
-	indent := strings.Repeat("\t", level)
-	lines := strings.Split(s, "\n")
-	indented := strings.Join(lines, "\n"+indent)
-	if _, err = io.WriteString(w, indent); err != nil {
-		return err
-	}
-	_, err = io.WriteString(w, indented)
-	if err != nil {
-		return
-	}
-	return
-}
-
 func writeIndent(w io.Writer, level int, s ...string) (err error) {
 	indent := strings.Repeat("\t", level)
 	if _, err = io.WriteString(w, indent); err != nil {
@@ -264,6 +252,7 @@ func (ws Whitespace) Write(w io.Writer, indent int) error {
 //	  background-image: url('./somewhere.png');
 //	}
 type CSSTemplate struct {
+	Range      Range
 	Name       string
 	Expression Expression
 	Properties []CSSProperty
@@ -360,6 +349,7 @@ func (dt DocType) Write(w io.Writer, indent int) error {
 //	  }
 //	}
 type HTMLTemplate struct {
+	Range      Range
 	Expression Expression
 	Children   []Node
 }
@@ -438,6 +428,8 @@ var (
 
 // Text node within the document.
 type Text struct {
+	// Range of the text within the templ file.
+	Range Range
 	// Value is the raw HTML encoded value.
 	Value string
 	// TrailingSpace lists what happens after the text.
@@ -963,8 +955,32 @@ func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
 	if err != nil {
 		source = []byte(tee.Expression.Value)
 	}
-	if err := writeLinesIndented(w, indent, "@"+string(source)); err != nil {
-		return err
+	// Indent all lines and re-format, we can then use this to only re-indent lines that gofmt would modify.
+	reformattedSource, err := format.Source(bytes.ReplaceAll(source, []byte("\n"), []byte("\n\t")))
+	if err != nil {
+		reformattedSource = source
+	}
+	sourceLines := bytes.Split(source, []byte("\n"))
+	reformattedSourceLines := bytes.Split(reformattedSource, []byte("\n"))
+	for i := range sourceLines {
+		if i == 0 {
+			if err := writeIndent(w, indent, "@"+string(sourceLines[i])); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, err := io.WriteString(w, "\n"); err != nil {
+			return err
+		}
+		if string(sourceLines[i]) != string(reformattedSourceLines[i]) {
+			if _, err := io.WriteString(w, string(sourceLines[i])); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := writeIndent(w, indent, string(sourceLines[i])); err != nil {
+			return err
+		}
 	}
 	if len(tee.Children) == 0 {
 		return nil
@@ -1136,14 +1152,14 @@ func (gc GoCode) Write(w io.Writer, indent int) error {
 	if isWhitespace(gc.Expression.Value) {
 		gc.Expression.Value = ""
 	}
-	if !gc.Multiline {
-		return writeIndent(w, indent, `{{ `, gc.Expression.Value, ` }}`)
-	}
-	formatted, err := format.Source([]byte(gc.Expression.Value))
+	source, err := format.Source([]byte(gc.Expression.Value))
 	if err != nil {
-		return err
+		source = []byte(gc.Expression.Value)
 	}
-	if err := writeIndent(w, indent, "{{"+string(formatted)+"\n"); err != nil {
+	if !gc.Multiline {
+		return writeIndent(w, indent, `{{ `, string(source), ` }}`)
+	}
+	if err := writeIndent(w, indent, "{{"+string(source)+"\n"); err != nil {
 		return err
 	}
 	return writeIndent(w, indent, "}}")
@@ -1172,6 +1188,7 @@ func (se StringExpression) Write(w io.Writer, indent int) error {
 
 // ScriptTemplate is a script block.
 type ScriptTemplate struct {
+	Range      Range
 	Name       Expression
 	Parameters Expression
 	Value      string

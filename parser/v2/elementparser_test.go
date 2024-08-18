@@ -597,7 +597,15 @@ func TestElementParser(t *testing.T) {
 					From: Position{Index: 1, Line: 0, Col: 1},
 					To:   Position{Index: 9, Line: 0, Col: 9},
 				},
-				Children: []Node{Text{Value: "Content"}},
+				Children: []Node{
+					Text{
+						Value: "Content",
+						Range: Range{
+							From: Position{Index: 10, Line: 0, Col: 10},
+							To:   Position{Index: 17, Line: 0, Col: 17},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -654,7 +662,15 @@ func TestElementParser(t *testing.T) {
 					From: Position{Index: 1, Line: 0, Col: 1},
 					To:   Position{Index: 6, Line: 0, Col: 6},
 				},
-				Children: []Node{Text{Value: "Text"}},
+				Children: []Node{
+					Text{
+						Value: "Text",
+						Range: Range{
+							From: Position{Index: 7, Line: 0, Col: 7},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
+					},
+				},
 			},
 		},
 		{
@@ -1008,6 +1024,10 @@ func TestElementParser(t *testing.T) {
 				Children: []Node{
 					Text{
 						Value: "Test",
+						Range: Range{
+							From: Position{Index: 70, Line: 4, Col: 1},
+							To:   Position{Index: 74, Line: 4, Col: 5},
+						},
 					},
 				},
 				TrailingSpace: SpaceVertical,
@@ -1215,7 +1235,13 @@ func TestElementParser(t *testing.T) {
 				},
 				IndentAttrs: true,
 				Children: []Node{
-					Text{Value: "Test"},
+					Text{
+						Value: "Test",
+						Range: Range{
+							From: Position{Index: 66, Line: 4, Col: 1},
+							To:   Position{Index: 70, Line: 4, Col: 5},
+						},
+					},
 				},
 			},
 		},
@@ -1242,6 +1268,10 @@ func TestElementParser(t *testing.T) {
 				Children: []Node{
 					Text{
 						Value: "The text",
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
 					},
 				},
 			},

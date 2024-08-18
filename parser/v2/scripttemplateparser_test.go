@@ -19,6 +19,10 @@ func TestScriptTemplateParser(t *testing.T) {
 			input: `script Name() {
 }`,
 			expected: ScriptTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 17, Line: 1, Col: 1},
+				},
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -56,6 +60,10 @@ func TestScriptTemplateParser(t *testing.T) {
 			input: `script Name(){
 }`,
 			expected: ScriptTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 16, Line: 1, Col: 1},
+				},
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -94,6 +102,10 @@ func TestScriptTemplateParser(t *testing.T) {
 var x = "x";
 }`,
 			expected: ScriptTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 30, Line: 2, Col: 1},
+				},
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -133,6 +145,10 @@ var x = "x";
 console.log(value);
 }`,
 			expected: ScriptTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 49, Line: 2, Col: 1},
+				},
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -172,6 +188,10 @@ console.log(value);
 	//'
 }`,
 			expected: ScriptTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 22, Line: 2, Col: 1},
+				},
 				Name: Expression{
 					Value: "Name",
 					Range: Range{
@@ -211,6 +231,10 @@ console.log(value);
   let x = '';
 }`,
 			expected: ScriptTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 31, Line: 2, Col: 1},
+				},
 				Name: Expression{
 					Value: "Name",
 					Range: Range{

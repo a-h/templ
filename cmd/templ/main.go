@@ -13,6 +13,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
+	"github.com/a-h/templ/cmd/templ/infocmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
 	"github.com/a-h/templ/cmd/templ/sloghandler"
 	"github.com/fatih/color"
@@ -35,6 +36,7 @@ commands:
   generate   Generates Go code from templ files
   fmt        Formats templ files
   lsp        Starts a language server for templ files
+  info       Displays information about the templ environment
   version    Prints the version
 `
 
@@ -44,6 +46,8 @@ func run(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
 		return 64 // EX_USAGE
 	}
 	switch args[1] {
+	case "info":
+		return infoCmd(stdout, stderr, args[2:])
 	case "generate":
 		return generateCmd(stdout, stderr, args[2:])
 	case "fmt":
@@ -80,6 +84,59 @@ func newLogger(logLevel string, verbose bool, stderr io.Writer) *slog.Logger {
 	}))
 }
 
+const infoUsageText = `usage: templ info [<args>...]
+
+Displays information about the templ environment.
+
+Args:
+  -json
+    Output information in JSON format to stdout. (default false)
+  -v
+    Set log verbosity level to "debug". (default "info")
+  -log-level
+    Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
+  -help
+    Print help and exit.
+`
+
+func infoCmd(stdout, stderr io.Writer, args []string) (code int) {
+	cmd := flag.NewFlagSet("diagnose", flag.ExitOnError)
+	jsonFlag := cmd.Bool("json", false, "")
+	verboseFlag := cmd.Bool("v", false, "")
+	logLevelFlag := cmd.String("log-level", "info", "")
+	helpFlag := cmd.Bool("help", false, "")
+	err := cmd.Parse(args)
+	if err != nil {
+		fmt.Fprint(stderr, infoUsageText)
+		return 64 // EX_USAGE
+	}
+	if *helpFlag {
+		fmt.Fprint(stdout, infoUsageText)
+		return
+	}
+
+	log := newLogger(*logLevelFlag, *verboseFlag, stderr)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		<-signalChan
+		fmt.Fprintln(stderr, "Stopping...")
+		cancel()
+	}()
+
+	err = infocmd.Run(ctx, log, stdout, infocmd.Arguments{
+		JSON: *jsonFlag,
+	})
+	if err != nil {
+		color.New(color.FgRed).Fprint(stderr, "(✗) ")
+		fmt.Fprintln(stderr, "Command failed: "+err.Error())
+		return 1
+	}
+	return 0
+}
+
 const generateUsageText = `usage: templ generate [<args>...]
 
 Generates Go code from templ files.
@@ -112,6 +169,8 @@ Args:
     If present, the command will issue a reload event to the proxy 127.0.0.1:7331, or use proxyport and proxybind to specify a different address.
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
+  -lazy
+    Only generate .go files if the source .templ file is newer.	
   -pprof
     Port to run the pprof server on.
   -keep-orphaned-files
@@ -158,6 +217,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
+	lazyFlag := cmd.Bool("lazy", false, "")
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
@@ -202,6 +262,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 		IncludeTimestamp:                *includeTimestampFlag,
 		PPROFPort:                       *pprofPortFlag,
 		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
+		Lazy:                            *lazyFlag,
 	})
 	if err != nil {
 		color.New(color.FgRed).Fprint(stderr, "(✗) ")
@@ -228,6 +289,9 @@ Format file or directory to stdout:
 Args:
   -stdout
     Prints to stdout instead of in-place format
+  -stdin-filepath
+    Provides the formatter with filepath context when using -stdout.
+    Required for organising imports.
   -v
     Set log verbosity level to "debug". (default "info")
   -log-level
@@ -245,6 +309,7 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
 	stdoutFlag := cmd.Bool("stdout", false, "")
+	stdinFilepath := cmd.String("stdin-filepath", "", "")
 	err := cmd.Parse(args)
 	if err != nil {
 		fmt.Fprint(stderr, fmtUsageText)
@@ -258,9 +323,10 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	log := newLogger(*logLevelFlag, *verboseFlag, stderr)
 
 	err = fmtcmd.Run(log, stdin, stdout, fmtcmd.Arguments{
-		ToStdout:    *stdoutFlag,
-		Files:       cmd.Args(),
-		WorkerCount: *workerCountFlag,
+		ToStdout:      *stdoutFlag,
+		Files:         cmd.Args(),
+		WorkerCount:   *workerCountFlag,
+		StdinFilepath: *stdinFilepath,
 	})
 	if err != nil {
 		return 1

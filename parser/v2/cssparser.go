@@ -8,6 +8,8 @@ import (
 
 // CSS Parser.
 var cssParser = parse.Func(func(pi *parse.Input) (r CSSTemplate, ok bool, err error) {
+	from := pi.Position()
+
 	r = CSSTemplate{
 		Properties: []CSSProperty{},
 	}
@@ -55,6 +57,8 @@ var cssParser = parse.Func(func(pi *parse.Input) (r CSSTemplate, ok bool, err er
 			err = parse.Error("css property expression: missing closing brace", pi.Position())
 			return
 		}
+
+		r.Range = NewRange(from, pi.Position())
 
 		return r, true, nil
 	}

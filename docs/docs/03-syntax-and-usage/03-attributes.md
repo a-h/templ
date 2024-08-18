@@ -138,7 +138,7 @@ It's possible to spread any variable of type `templ.Attributes`. `templ.Attribut
 
 ```templ
 templ component(shouldBeUsed bool, attrs templ.Attributes) {
-  <p { attrs... }></p>
+  <p { attrs... }>Text</p>
   <hr
     if shouldBeUsed {
       { attrs... }

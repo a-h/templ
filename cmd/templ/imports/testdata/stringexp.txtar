@@ -1,0 +1,14 @@
+-- fmt.templ --
+package test
+
+templ Hello(name string) {
+	{ fmt.Sprintf("Hello, %s!", name) }
+}
+-- fmt.templ --
+package test
+
+import "fmt"
+
+templ Hello(name string) {
+	{ fmt.Sprintf("Hello, %s!", name) }
+}

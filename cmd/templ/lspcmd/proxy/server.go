@@ -9,6 +9,7 @@ import (
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/protocol"
 	"github.com/a-h/templ"
+	"github.com/a-h/templ/cmd/templ/imports"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 	"go.lsp.dev/uri"
@@ -31,7 +32,6 @@ import (
 // character positions.
 type Server struct {
 	Log             *zap.Logger
-	Client          lsp.Client
 	Target          lsp.Server
 	SourceMapCache  *SourceMapCache
 	DiagnosticCache *DiagnosticCache
@@ -39,17 +39,14 @@ type Server struct {
 	GoSource        map[string]string
 }
 
-func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server, init func(lsp.Client)) {
-	s = &Server{
+func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server) {
+	return &Server{
 		Log:             log,
 		Target:          target,
 		SourceMapCache:  cache,
 		DiagnosticCache: diagnosticCache,
 		TemplSource:     newDocumentContents(log),
 		GoSource:        make(map[string]string),
-	}
-	return s, func(client lsp.Client) {
-		s.Client = client
 	}
 }
 
@@ -79,9 +76,10 @@ func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) 
 	return true, goURI, updated
 }
 
-func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range) {
+func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range, ok bool) {
 	output = input
-	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
+	var sourceMap *parser.SourceMap
+	sourceMap, ok = p.SourceMapCache.Get(string(templURI))
 	if !ok {
 		return
 	}
@@ -147,12 +145,13 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 			}
 		}
 		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
-		err = p.Client.PublishDiagnostics(ctx, msg)
+		err = lsp.ClientFromContext(ctx).PublishDiagnostics(ctx, msg)
 		if err != nil {
 			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
 		}
 		return
 	}
+	template.Filepath = string(uri)
 	parsedDiagnostics, err := parser.Diagnose(template)
 	if err != nil {
 		return
@@ -181,7 +180,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 			})
 		}
 		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
-		err = p.Client.PublishDiagnostics(ctx, msg)
+		err = lsp.ClientFromContext(ctx).PublishDiagnostics(ctx, msg)
 		if err != nil {
 			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
 		}
@@ -189,7 +188,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 	}
 	// Clear templ diagnostics.
 	p.DiagnosticCache.ClearTemplDiagnostics(string(uri))
-	err = p.Client.PublishDiagnostics(ctx, &lsp.PublishDiagnosticsParams{
+	err = lsp.ClientFromContext(ctx).PublishDiagnostics(ctx, &lsp.PublishDiagnosticsParams{
 		URI: uri,
 		// Cannot be nil as per https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
 		Diagnostics: []lsp.Diagnostic{},
@@ -271,36 +270,55 @@ func (p *Server) SetTrace(ctx context.Context, params *lsp.SetTraceParams) (err 
 	return p.Target.SetTrace(ctx, params)
 }
 
+var supportedCodeActions = map[string]bool{}
+
 func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (result []lsp.CodeAction, err error) {
-	p.Log.Info("client -> server: CodeAction")
+	p.Log.Info("client -> server: CodeAction", zap.Any("params", params))
 	defer p.Log.Info("client -> server: CodeAction end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.CodeAction(ctx, params)
 	}
 	templURI := params.TextDocument.URI
+	var ok bool
+	if params.Range, ok = p.convertTemplRangeToGoRange(templURI, params.Range); !ok {
+		// Don't pass the request to gopls if the range is not within a Go code block.
+		return
+	}
 	params.TextDocument.URI = goURI
 	result, err = p.Target.CodeAction(ctx, params)
 	if err != nil {
 		return
 	}
+	var updatedResults []lsp.CodeAction
+	// Filter out commands that are not yet supported.
+	// For example, "Fill Struct" runs the `gopls.apply_fix` command.
+	// This command has a set of arguments, including Fix, Range and URI.
+	// However, these are just a map[string]any so for each command that we want to support,
+	// we need to know what the arguments are so that we can rewrite them.
 	for i := 0; i < len(result); i++ {
+		if !supportedCodeActions[result[i].Title] {
+			continue
+		}
 		r := result[i]
 		// Rewrite the Diagnostics range field.
 		for di := 0; di < len(r.Diagnostics); di++ {
 			r.Diagnostics[di].Range = p.convertGoRangeToTemplRange(templURI, r.Diagnostics[di].Range)
 		}
 		// Rewrite the DocumentChanges.
-		for dci := 0; dci < len(r.Edit.DocumentChanges); dci++ {
-			dc := r.Edit.DocumentChanges[0]
-			for ei := 0; ei < len(dc.Edits); ei++ {
-				dc.Edits[ei].Range = p.convertGoRangeToTemplRange(templURI, dc.Edits[ei].Range)
+		if r.Edit != nil {
+			for dci := 0; dci < len(r.Edit.DocumentChanges); dci++ {
+				dc := r.Edit.DocumentChanges[0]
+				for ei := 0; ei < len(dc.Edits); ei++ {
+					dc.Edits[ei].Range = p.convertGoRangeToTemplRange(templURI, dc.Edits[ei].Range)
+				}
+				dc.TextDocument.URI = templURI
+				r.Edit.DocumentChanges[dci] = dc
 			}
-			dc.TextDocument.URI = templURI
 		}
-		result[i] = r
+		updatedResults = append(updatedResults, r)
 	}
-	return
+	return updatedResults, nil
 }
 
 func (p *Server) CodeLens(ctx context.Context, params *lsp.CodeLensParams) (result []lsp.CodeLens, err error) {
@@ -375,6 +393,18 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	if !ok {
 		return nil, nil
 	}
+
+	// Ensure that Go source is available.
+	gosrc := strings.Split(p.GoSource[string(templURI)], "\n")
+	if len(gosrc) < int(params.TextDocumentPositionParams.Position.Line) {
+		p.Log.Info("completion: line position out of range")
+		return nil, nil
+	}
+	if len(gosrc[params.TextDocumentPositionParams.Position.Line]) < int(params.TextDocumentPositionParams.Position.Character) {
+		p.Log.Info("completion: col position out of range")
+		return nil, nil
+	}
+
 	// Call the target.
 	result, err = p.Target.Completion(ctx, params)
 	if err != nil {
@@ -386,10 +416,17 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	}
 	// Rewrite the result positions.
 	p.Log.Info("completion: received items", zap.Int("count", len(result.Items)))
+
 	for i := 0; i < len(result.Items); i++ {
 		item := result.Items[i]
 		if item.TextEdit != nil {
-			item.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.Range)
+			if item.TextEdit.TextEdit != nil {
+				item.TextEdit.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.TextEdit.Range)
+			}
+			if item.TextEdit.InsertReplaceEdit != nil {
+				item.TextEdit.InsertReplaceEdit.Insert = p.convertGoRangeToTemplRange(templURI, item.TextEdit.InsertReplaceEdit.Insert)
+				item.TextEdit.InsertReplaceEdit.Replace = p.convertGoRangeToTemplRange(templURI, item.TextEdit.InsertReplaceEdit.Replace)
+			}
 		}
 		if len(item.AdditionalTextEdits) > 0 {
 			doc, ok := p.TemplSource.Get(string(templURI))
@@ -413,6 +450,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 
 	// Add templ snippet.
 	result.Items = append(result.Items, snippet...)
+
 	return
 }
 
@@ -550,6 +588,12 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		return
 	}
 	w := new(strings.Builder)
+	// In future updates, we may pass `WithSkipCodeGeneratedComment` to the generator.
+	// This will enable a number of actions within gopls that it doesn't currently apply because
+	// it recognises templ code as being auto-generated.
+	//
+	// This change would increase the surface area of gopls that we use, so may surface a number of issues
+	// if enabled.
 	sm, _, err := generator.Generate(template, w)
 	if err != nil {
 		p.Log.Error("generate failure", zap.Error(err))
@@ -689,7 +733,10 @@ func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLi
 	}
 	templURI := params.Target
 	params.Target = goURI
-	params.Range = p.convertTemplRangeToGoRange(templURI, params.Range)
+	var ok bool
+	if params.Range, ok = p.convertTemplRangeToGoRange(templURI, params.Range); !ok {
+		return
+	}
 	// Rewrite the result.
 	result, err = p.Target.DocumentLinkResolve(ctx, params)
 	if err != nil {
@@ -733,8 +780,15 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, d.String())
 	if err != nil {
 		p.Log.Error("parseTemplate failure", zap.Error(err))
+		return
 	}
 	if !ok {
+		return
+	}
+	p.Log.Info("attempting to organise imports", zap.String("uri", template.Filepath))
+	template, err = imports.Process(template)
+	if err != nil {
+		p.Log.Error("organise imports failure", zap.Error(err))
 		return
 	}
 	w := new(strings.Builder)

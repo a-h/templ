@@ -59,7 +59,7 @@ type templateNodeParser[TUntil any] struct {
 	untilName string
 }
 
-var rawElements = parse.Any[Node](styleElement, scriptElement)
+var rawElements = parse.Any(styleElement, scriptElement)
 
 var templateNodeParsers = []parse.Parser[Node]{
 	docType,                // <!DOCTYPE html>

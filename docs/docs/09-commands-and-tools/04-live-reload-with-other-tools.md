@@ -107,7 +107,7 @@ go run github.com/cosmtrek/air@v1.51.0 \
 ```
 
 :::note
-The `build.cmd` option is set to use the `true` command instead of executing the output of the `build.cmd` option, because the `templ generate --notify-proxy` command doesn't build anything, it just sends a reload event to the `templ` proxy server.
+The `build.bin` option is set to use the `true` command instead of executing the output of the `build.cmd` option, because the `templ generate --notify-proxy` command doesn't build anything, it just sends a reload event to the `templ` proxy server.
 
 `true` is a command that exits with a zero status code, so you might see `Process Exit with Code 0` printed to the console.
 :::

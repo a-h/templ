@@ -10,21 +10,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/a-h/templ/cmd/templ/imports"
 	"github.com/a-h/templ/cmd/templ/processor"
 	parser "github.com/a-h/templ/parser/v2"
 	"github.com/natefinch/atomic"
 )
 
 type Arguments struct {
-	ToStdout    bool
-	Files       []string
-	WorkerCount int
+	ToStdout      bool
+	StdinFilepath string
+	Files         []string
+	WorkerCount   int
 }
 
 func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (err error) {
 	// If no files are provided, read from stdin and write to stdout.
 	if len(args.Files) == 0 {
-		return format(writeToWriter(stdout), readFromReader(stdin))
+		return format(writeToWriter(stdout), readFromReader(stdin, args.StdinFilepath), true)
 	}
 	process := func(fileName string) error {
 		read := readFromFile(fileName)
@@ -32,7 +34,8 @@ func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (e
 		if args.ToStdout {
 			write = writeToWriter(stdout)
 		}
-		return format(write, read)
+		writeIfUnchanged := args.ToStdout
+		return format(write, read, writeIfUnchanged)
 	}
 	dir := args.Files[0]
 	return NewFormatter(log, dir, process, args.WorkerCount).Run()
@@ -82,13 +85,13 @@ func (f *Formatter) Run() (err error) {
 
 type reader func() (fileName, src string, err error)
 
-func readFromReader(r io.Reader) func() (fileName, src string, err error) {
+func readFromReader(r io.Reader, stdinFilepath string) func() (fileName, src string, err error) {
 	return func() (fileName, src string, err error) {
 		b, err := io.ReadAll(r)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to read stdin: %w", err)
 		}
-		return "stdin.templ", string(b), nil
+		return stdinFilepath, string(b), nil
 	}
 }
 
@@ -119,7 +122,7 @@ func writeToFile(fileName, tgt string) error {
 	return atomic.WriteFile(fileName, bytes.NewBufferString(tgt))
 }
 
-func format(write writer, read reader) (err error) {
+func format(write writer, read reader, writeIfUnchanged bool) (err error) {
 	fileName, src, err := read()
 	if err != nil {
 		return err
@@ -128,9 +131,17 @@ func format(write writer, read reader) (err error) {
 	if err != nil {
 		return err
 	}
+	t.Filepath = fileName
+	t, err = imports.Process(t)
+	if err != nil {
+		return err
+	}
 	w := new(bytes.Buffer)
 	if err = t.Write(w); err != nil {
 		return fmt.Errorf("formatting error: %w", err)
+	}
+	if !writeIfUnchanged && src == w.String() {
+		return nil
 	}
 	return write(fileName, w.String())
 }

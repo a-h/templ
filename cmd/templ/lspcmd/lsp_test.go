@@ -319,6 +319,129 @@ func TestHover(t *testing.T) {
 	}
 }
 
+func TestCodeAction(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	log, _ := zap.NewProduction()
+
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	if err != nil {
+		t.Fatalf("failed to setup test: %v", err)
+	}
+	defer teardown(t)
+	defer cancel()
+
+	templFile, err := os.ReadFile(appDir + "/templates.templ")
+	if err != nil {
+		t.Fatalf("failed to read file %q: %v", appDir+"/templates.templ", err)
+	}
+	err = server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        uri.URI("file://" + appDir + "/templates.templ"),
+			LanguageID: "templ",
+			Version:    1,
+			Text:       string(templFile),
+		},
+	})
+	if err != nil {
+		t.Errorf("failed to register open file: %v", err)
+		return
+	}
+	log.Info("Calling codeAction")
+
+	tests := []struct {
+		line        int
+		replacement string
+		cursor      string
+		assert      func(t *testing.T, hr []protocol.CodeAction) (msg string, ok bool)
+	}{
+		{
+			line:        25,
+			replacement: `var s = Struct{}`,
+			cursor:      `              ^`,
+			assert: func(t *testing.T, actual []protocol.CodeAction) (msg string, ok bool) {
+				var expected []protocol.CodeAction
+				// To support code actions, update cmd/templ/lspcmd/proxy/server.go and add the
+				// Title (e.g. Organize Imports, or Fill Struct) to the supportedCodeActions map.
+
+				// Some Code Actions are simple edits, so all that is needed is for the server
+				// to remap the source code positions.
+
+				// However, other Code Actions are commands, where the arguments must be rewritten
+				// and will need to be handled individually.
+				if diff := lspdiff.CodeAction(expected, actual); diff != "" {
+					return fmt.Sprintf("unexpected codeAction: %v", diff), false
+				}
+				return "", true
+			},
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
+			// Put the file back to the initial point.
+			err = server.DidChange(ctx, &protocol.DidChangeTextDocumentParams{
+				TextDocument: protocol.VersionedTextDocumentIdentifier{
+					TextDocumentIdentifier: protocol.TextDocumentIdentifier{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+					},
+					Version: int32(i + 2),
+				},
+				ContentChanges: []protocol.TextDocumentContentChangeEvent{
+					{
+						Range: nil,
+						Text:  string(templFile),
+					},
+				},
+			})
+			if err != nil {
+				t.Errorf("failed to change file: %v", err)
+				return
+			}
+
+			// Give CI/CD pipeline executors some time because they're often quite slow.
+			var ok bool
+			var msg string
+			for i := 0; i < 3; i++ {
+				lspCharIndex, err := runeIndexToUTF8ByteIndex(test.replacement, len(test.cursor)-1)
+				if err != nil {
+					t.Error(err)
+				}
+				actual, err := server.CodeAction(ctx, &protocol.CodeActionParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+					},
+					Range: protocol.Range{
+						Start: protocol.Position{
+							Line:      uint32(test.line - 1),
+							Character: lspCharIndex,
+						},
+						End: protocol.Position{
+							Line:      uint32(test.line - 1),
+							Character: lspCharIndex + 1,
+						},
+					},
+				})
+				if err != nil {
+					t.Errorf("failed code action: %v", err)
+					return
+				}
+				msg, ok = test.assert(t, actual)
+				if !ok {
+					break
+				}
+				time.Sleep(time.Millisecond * 500)
+			}
+			if !ok {
+				t.Error(msg)
+			}
+		})
+	}
+}
+
 func runeIndexToUTF8ByteIndex(s string, runeIndex int) (lspChar uint32, err error) {
 	for i, r := range []rune(s) {
 		if i == runeIndex {

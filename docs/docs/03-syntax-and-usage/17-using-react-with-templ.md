@@ -162,13 +162,9 @@ import { Header, Body, Hello } from './components';
 
 // Previous script contents...
   
-export function renderHello(id: string, name: string) {
-	const rootElement = document.getElementById(id);
-	if (!rootElement) {
-		throw new Error(`Could not find element with id ${id}`);
-	}
-	const reactRoot = createRoot(rootElement);
-	reactRoot.render(Hello(name));
+export function renderHello(e: HTMLElement) {
+  const name = e.getAttribute('data-name') ?? "";
+  createRoot(e).render(Hello(name));
 }
 ```
 
@@ -178,11 +174,11 @@ Now that we have a `renderHello` function that will render the React component t
 
 In templ, we can add a `Hello` component that does two things:
 
-1. Renders an element for the React component to be loaded into.
-2. Renders the `renderHelloReact` script template, passing the server-side `id` and `name` fields to the script.
+1. Renders an element for the React component to be loaded into that sets the `data-name` attribute to the value of the server-side `name` field.
+2. Writes out JS that calls the `renderHello` function to mount the React component into the element.
 
 :::note
-The template renders three copies of the `Hello` React component, passing in a distinct `id` and `name` parameter ("Alice", "Bob" and "Charlie").
+The template renders three copies of the `Hello` React component, passing in a distinct `name` parameter ("Alice", "Bob" and "Charlie").
 :::
 
 ```templ title="components.templ"
@@ -190,14 +186,12 @@ package main
 
 import "fmt"
 
-script renderHelloReact(id, name string) {
-	// Use the renderHello function from the React bundle.
-	bundle.renderHello(id, name)
-}
-
-templ Hello(id, name string) {
-	<div id={ id }></div>
-	@renderHelloReact(id, name)
+templ Hello(name string) {
+	<div data-name={ name }>
+		<script type="text/javascript">
+			bundle.renderHello(document.currentScript.closest('div'));
+		</script>
+	</div>
 }
 
 templ page() {
@@ -216,8 +210,8 @@ templ page() {
 			<script src="static/index.js"></script>
 			<!-- Now that the React bundle is loaded, we can use the functions that are in it -->
 			<!-- the renderName function in the bundle can be used, but we want to pass it some server-side data -->
-			for i, name := range []string{"Alice", "Bob", "Charlie"} {
-				@Hello(fmt.Sprintf("react-hello-%d", i), name)
+			for _, name := range []string{"Alice", "Bob", "Charlie"} {
+				@Hello(name)
 			}
 		</body>
 	</html>
@@ -225,8 +219,6 @@ templ page() {
 ```
 
 ### Update the `esbuild` command
-
-The script template (`renderHellloReact`) content references the `bundle.renderHello` JavaScript function from the React bundle.
 
 The `bundle` namespace in JavaScript is created by adding a `--global-name` argument to `esbuild`. The argument causes any exported functions in `index.ts` to be added to that namespace.
 
@@ -240,24 +232,35 @@ The HTML that's rendered is:
 
 ```html
 <html>
-   <head>
-      <title>React integration</title>
-   </head>
-   <body>
-      <div id="react-header"></div>
-      <div id="react-content"></div>
-      <div>This is server-side content from templ.</div>
-      <!-- Load the React bundle that was created using esbuild --><!-- Since the bundle was coded to expect the react-header and react-content elements to exist already, in this case, the script has to be loaded after the elements are on the page --><script src="static/index.js"></script><!-- Now that the React bundle is loaded, we can use the functions that are in it --><!-- the renderName function in the bundle can be used, but we want to pass it some server-side data -->
-      <div id="react-hello-0"></div>
-      <script type="text/javascript">function __templ_renderHelloReact_7494(id, name){// Use the renderHello function from the React bundle.
-         bundle.renderHello(id, name)
-         }
-      </script><script type="text/javascript">__templ_renderHelloReact_7494("react-hello-0","Alice")</script>
-      <div id="react-hello-1"></div>
-      <script type="text/javascript">__templ_renderHelloReact_7494("react-hello-1","Bob")</script>
-      <div id="react-hello-2"></div>
-      <script type="text/javascript">__templ_renderHelloReact_7494("react-hello-2","Charlie")</script>
-   </body>
+  <head>
+    <title>React integration</title>
+  </head>
+  <body>
+    <div id="react-header"></div>
+    <div id="react-content"></div>
+    <div>This is server-side content from templ.</div>
+
+    <script src="static/index.js"></script>
+
+    <div data-name="Alice">
+      <script type="text/javascript">
+        // Place the React component into the parent div.
+        bundle.renderHello(document.currentScript.closest('div'));
+      </script>
+    </div>
+    <div data-name="Bob">
+      <script type="text/javascript">
+        // Place the React component into the parent div.
+	bundle.renderHello(document.currentScript.closest('div'));
+      </script>
+    </div>
+    <div data-name="Charlie">
+      <script type="text/javascript">
+        // Place the React component into the parent div.
+	bundle.renderHello(document.currentScript.closest('div'));
+      </script>
+    </div>
+  </body>
 </html>
 ```
 

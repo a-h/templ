@@ -1,0 +1,111 @@
+package main
+
+import (
+	"net/http"
+	"sync"
+	"time"
+)
+
+func main() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// Create a channel to send deferred component renders to the template.
+		data := make(chan SlotContents)
+
+		// We know there are 3 slots, so start a WaitGround.
+		var wg sync.WaitGroup
+		wg.Add(3)
+
+		// Start the async processes.
+		// Sidebar.
+		go func() {
+			defer wg.Done()
+			time.Sleep(time.Second * 3)
+			data <- SlotContents{
+				Name:     "a",
+				Contents: A(),
+			}
+		}()
+
+		// Content.
+		go func() {
+			defer wg.Done()
+			time.Sleep(time.Second * 2)
+			data <- SlotContents{
+				Name:     "b",
+				Contents: B(),
+			}
+		}()
+
+		// Footer.
+		go func() {
+			defer wg.Done()
+			time.Sleep(time.Second * 1)
+			data <- SlotContents{
+				Name:     "c",
+				Contents: C(),
+			}
+		}()
+
+		// Close the channel when all processes are done.
+		go func() {
+			wg.Wait()
+			close(data)
+		}()
+
+		// Pass the channel to the template.
+		component := Page(data)
+
+		// Serve using the streaming mode of the handler.
+		templ.Handler(component, templ.WithStreaming()).ServeHTTP(w, r)
+	})
+	http.ListenAndServe("127.0.0.1:8080", nil)
+}
+
+type SlotContents struct {
+	Name     string
+	Contents templ.Component
+}
+
+templ Slot(name string) {
+	<slot name={ name }>
+		<div>Loading { name }...</div>
+	</slot>
+}
+
+templ A() {
+	<div>Component A.</div>
+}
+
+templ B() {
+	<div>Component B.</div>
+}
+
+templ C() {
+	<div>Component C.</div>
+}
+
+templ Page(data chan SlotContents) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<title>Page</title>
+		</head>
+		<body>
+			<h1>Page</h1>
+			@templ.Flush() {
+				<template shadowrootmode="open">
+					@Slot("a")
+					@Slot("b")
+					@Slot("c")
+				</template>
+			}
+			for sc := range data {
+				@templ.Flush() {
+					<div slot={ sc.Name }>
+						@sc.Contents
+					</div>
+				}
+			}
+		</body>
+	</html>
+}

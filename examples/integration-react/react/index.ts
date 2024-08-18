@@ -17,11 +17,8 @@ if (!contentRoot) {
 const contentReactRoot = createRoot(contentRoot);
 contentReactRoot.render(Body());
 
-export function renderHello(id: string, name: string) {
-	const rootElement = document.getElementById(id);
-	if (!rootElement) {
-		throw new Error(`Could not find element with id ${id}`);
-	}
-	const reactRoot = createRoot(rootElement);
-	reactRoot.render(Hello(name));
+// Provide a helper for rendering hello.
+export function renderHello(e: HTMLElement) {
+	const name = e.getAttribute('data-name') ?? "";
+	createRoot(e).render(Hello(name));
 }
