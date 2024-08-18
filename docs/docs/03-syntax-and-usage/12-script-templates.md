@@ -316,7 +316,11 @@ After building and running the executable, running `curl http://localhost:8080/`
 	</body>
 </html>
 ```
-The ```JSExpression``` type allows for passing any Javascript expressions to a ```script``` element. A common use case for this is to pass the ```event``` or ```this``` objects to a ```script``` element that functions as a ```on*``` event handler.
+
+The `JSExpression` type is used to pass arbitrary JavaScript expressions to a templ script template.
+
+A common use case is to pass the `event` or `this` objects to an event handler.
+
 ``` templ
 package main
 
