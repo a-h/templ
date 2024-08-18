@@ -169,6 +169,8 @@ Args:
     If present, the command will issue a reload event to the proxy 127.0.0.1:7331, or use proxyport and proxybind to specify a different address.
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
+  -lazy
+    Only generate .go files if the source .templ file is newer.	
   -pprof
     Port to run the pprof server on.
   -keep-orphaned-files
@@ -215,6 +217,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
+	lazyFlag := cmd.Bool("lazy", false, "")
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
@@ -259,6 +262,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 		IncludeTimestamp:                *includeTimestampFlag,
 		PPROFPort:                       *pprofPortFlag,
 		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
+		Lazy:                            *lazyFlag,
 	})
 	if err != nil {
 		color.New(color.FgRed).Fprint(stderr, "(✗) ")
