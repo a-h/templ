@@ -45,6 +45,7 @@ func NewFSEventHandler(
 	genSourceMapVis bool,
 	keepOrphanedFiles bool,
 	fileWriter FileWriterFunc,
+	lazy bool,
 ) *FSEventHandler {
 	if !path.IsAbs(dir) {
 		dir, _ = filepath.Abs(dir)
@@ -63,6 +64,7 @@ func NewFSEventHandler(
 		DevMode:                    devMode,
 		keepOrphanedFiles:          keepOrphanedFiles,
 		writer:                     fileWriter,
+		lazy:                       lazy,
 	}
 	if devMode {
 		fseh.genOpts = append(fseh.genOpts, generator.WithExtractStrings())
@@ -86,6 +88,7 @@ type FSEventHandler struct {
 	Errors                     []error
 	keepOrphanedFiles          bool
 	writer                     func(string, []byte) error
+	lazy                       bool
 }
 
 func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (goUpdated, textUpdated bool, err error) {
@@ -125,8 +128,14 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	}
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
-	if !h.UpsertLastModTime(event.Name) {
+	lastModTime, updatedModTime := h.UpsertLastModTime(event.Name)
+	if !updatedModTime {
 		h.Log.Debug("Skipping file because it wasn't updated", slog.String("file", event.Name))
+		return false, false, nil
+	}
+	// If the go file is newer than the templ file, skip generation, because it's up-to-date.
+	if h.lazy && goFileIsUpToDate(event.Name, lastModTime) {
+		h.Log.Debug("Skipping file because the Go file is up-to-date", slog.String("file", event.Name))
 		return false, false, nil
 	}
 
@@ -159,6 +168,15 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	return goUpdated, textUpdated, nil
 }
 
+func goFileIsUpToDate(templFileName string, templFileLastMod time.Time) (upToDate bool) {
+	goFileName := strings.TrimSuffix(templFileName, ".templ") + "_templ.go"
+	goFileInfo, err := os.Stat(goFileName)
+	if err != nil {
+		return false
+	}
+	return goFileInfo.ModTime().After(templFileLastMod)
+}
+
 func (h *FSEventHandler) SetError(fileName string, hasError bool) (previouslyHadError bool, errorCount int) {
 	h.fileNameToErrorMutex.Lock()
 	defer h.fileNameToErrorMutex.Unlock()
@@ -170,19 +188,20 @@ func (h *FSEventHandler) SetError(fileName string, hasError bool) (previouslyHad
 	return previouslyHadError, len(h.fileNameToError)
 }
 
-func (h *FSEventHandler) UpsertLastModTime(fileName string) (updated bool) {
+func (h *FSEventHandler) UpsertLastModTime(fileName string) (modTime time.Time, updated bool) {
 	fileInfo, err := os.Stat(fileName)
 	if err != nil {
-		return false
+		return modTime, false
 	}
 	h.fileNameToLastModTimeMutex.Lock()
 	defer h.fileNameToLastModTimeMutex.Unlock()
-	lastModTime := h.fileNameToLastModTime[fileName]
-	if !fileInfo.ModTime().After(lastModTime) {
-		return false
+	previousModTime := h.fileNameToLastModTime[fileName]
+	currentModTime := fileInfo.ModTime()
+	if !currentModTime.After(previousModTime) {
+		return currentModTime, false
 	}
-	h.fileNameToLastModTime[fileName] = fileInfo.ModTime()
-	return true
+	h.fileNameToLastModTime[fileName] = currentModTime
+	return currentModTime, true
 }
 
 func (h *FSEventHandler) UpsertHash(fileName string, hash [sha256.Size]byte) (updated bool) {

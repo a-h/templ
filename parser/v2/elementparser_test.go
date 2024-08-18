@@ -1538,6 +1538,29 @@ func TestElementParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "element: can contain text that starts with for",
+			input: `<div>for which any 
+amount is charged</div>`,
+			expected: Element{
+				Name:           "div",
+				IndentChildren: true,
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				Children: []Node{
+					Text{
+						Value:         "for which any ",
+						TrailingSpace: SpaceVertical,
+					},
+					Text{
+						Value:         "amount is charged",
+						TrailingSpace: SpaceNone,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
