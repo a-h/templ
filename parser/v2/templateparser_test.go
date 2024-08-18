@@ -806,6 +806,44 @@ func TestTemplateParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "template: void element closers are ignored",
+			input: `templ Name() {
+	<br></br><br>
+}`,
+			expected: HTMLTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 31, Line: 2, Col: 1},
+				},
+				Expression: Expression{
+					Value: "Name()",
+					Range: Range{
+						From: Position{Index: 6, Line: 0, Col: 6},
+						To:   Position{Index: 12, Line: 0, Col: 12},
+					},
+				},
+				Children: []Node{
+					Whitespace{Value: "\t"},
+					Element{
+						Name: "br",
+						NameRange: Range{
+							From: Position{Index: 17, Line: 1, Col: 2},
+							To:   Position{Index: 19, Line: 1, Col: 4},
+						},
+						TrailingSpace: SpaceNone,
+					},
+					Element{
+						Name: "br",
+						NameRange: Range{
+							From: Position{Index: 26, Line: 1, Col: 11},
+							To:   Position{Index: 28, Line: 1, Col: 13},
+						},
+						TrailingSpace: SpaceVertical,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
