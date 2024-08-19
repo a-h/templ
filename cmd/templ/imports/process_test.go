@@ -2,10 +2,13 @@ package imports
 
 import (
 	"bytes"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/a-h/templ/cmd/templ/testproject"
 	"github.com/a-h/templ/parser/v2"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/txtar"
@@ -59,4 +62,73 @@ func clean(b []byte) string {
 	b = bytes.ReplaceAll(b, []byte("$\n"), []byte("\n"))
 	b = bytes.TrimSuffix(b, []byte("\n"))
 	return string(b)
+}
+
+func TestImport(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+		return
+	}
+	// Create test project.
+	dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
+	if err != nil {
+		t.Fatalf("failed to create test project: %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	// Load the templates.templ file.
+	filePath := path.Join(dir, "templates.templ")
+	err = os.WriteFile(filePath, []byte(`package main
+
+import "fmt"
+import "github.com/a-h/templ/cmd/templ/testproject/css-classes"
+
+templ Page(count int) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<title>templ test page</title>
+		</head>
+		<body>
+			<h1>Count</h1>
+			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>
+			<div data-testid="modification">Original</div>
+			<div class={ cssclasses.Header }>Header</div>
+		</body>
+	</html>
+}
+
+var nihao = "你好"
+
+type Struct struct {
+	Count int
+}
+
+var s = Struct{}
+`), 0660)
+	if err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+
+	// Parse the new file.
+	template, err := parser.Parse(filePath)
+	if err != nil {
+		t.Fatalf("failed to parse %v", err)
+	}
+	template.Filepath = filePath
+	tf, err := Process(template)
+	if err != nil {
+		t.Fatalf("failed to process file: %v", err)
+	}
+
+	// Assert that the import has been added.
+	buf := new(strings.Builder)
+	if err := tf.Write(buf); err != nil {
+		t.Fatalf("failed to write template file: %v", err)
+	}
+
+	// Check that there's only one import.
+	if count := strings.Count(buf.String(), "github.com/a-h/templ/cmd/templ/testproject/css-classes"); count > 1 {
+		t.Errorf("expected a single import, got %d", count)
+	}
 }
