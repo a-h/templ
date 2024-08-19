@@ -104,6 +104,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		cmd.Args.GenerateSourceMapVisualisations,
 		cmd.Args.KeepOrphanedFiles,
 		cmd.Args.FileWriter,
+		cmd.Args.Lazy,
 	)
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
@@ -189,6 +190,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			cmd.Args.GenerateSourceMapVisualisations,
 			cmd.Args.KeepOrphanedFiles,
 			cmd.Args.FileWriter,
+			cmd.Args.Lazy,
 		)
 		errorCount.Store(0)
 		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {

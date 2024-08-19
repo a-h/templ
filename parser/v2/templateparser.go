@@ -61,6 +61,10 @@ type templateNodeParser[TUntil any] struct {
 
 var rawElements = parse.Any(styleElement, scriptElement)
 
+var templateNodeSkipParsers = []parse.Parser[Node]{
+	voidElementCloser, // </br>, </img> etc. - should be ignored.
+}
+
 var templateNodeParsers = []parse.Parser[Node]{
 	docType,                // <!DOCTYPE html>
 	htmlComment,            // <!--
@@ -80,6 +84,7 @@ var templateNodeParsers = []parse.Parser[Node]{
 }
 
 func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, ok bool, err error) {
+outer:
 	for {
 		// Check if we've reached the end.
 		if p.until != nil {
@@ -91,6 +96,17 @@ func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, ok bool, err er
 			if ok {
 				pi.Seek(start)
 				return op, true, nil
+			}
+		}
+
+		// Skip any nodes that we don't care about.
+		for _, p := range templateNodeSkipParsers {
+			_, matched, err := p.Parse(pi)
+			if err != nil {
+				return Nodes{}, false, err
+			}
+			if matched {
+				continue outer
 			}
 		}
 

@@ -25,6 +25,11 @@ var textParser = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 	t.Range = NewRange(from, pi.Position())
 
+	// Elide any void element closing tags.
+	if _, _, err = voidElementCloser.Parse(pi); err != nil {
+		return
+	}
+
 	// Parse trailing whitespace.
 	ws, _, err := parse.Whitespace.Parse(pi)
 	if err != nil {

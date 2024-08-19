@@ -1,0 +1,18 @@
+package benchmarktestdata
+
+templ Benchmark() {
+				<div>Hello</div>
+				<br>
+				<br>
+				<br>
+				</br>
+				<div>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>
+				<br>
+				<br>
+				<ul>
+				<li>Item 1</li>
+				<li>Item 2</li>
+				<li>Item 3</li>
+				</ul>
+}
+

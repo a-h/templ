@@ -55,6 +55,8 @@ Args:
     The address the proxy will listen on. (default 127.0.0.1)
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
+  -lazy
+    Only generate .go files if the source .templ file is newer.	
   -pprof
     Port to run the pprof server on.
   -keep-orphaned-files

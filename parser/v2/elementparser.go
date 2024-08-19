@@ -375,6 +375,34 @@ var (
 	})
 )
 
+// Void element closer.
+var voidElementCloser voidElementCloserParser
+
+type voidElementCloserParser struct{}
+
+var voidElementCloseTags = []string{"</area>", "</base>", "</br>", "</col>", "</command>", "</embed>", "</hr>", "</img>", "</input>", "</keygen>", "</link>", "</meta>", "</param>", "</source>", "</track>", "</wbr>"}
+
+func (voidElementCloserParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+	var ve string
+	for _, ve = range voidElementCloseTags {
+		s, canPeekLen := pi.Peek(len(ve))
+		if !canPeekLen {
+			continue
+		}
+		if !strings.EqualFold(s, ve) {
+			continue
+		}
+		// Found a match.
+		ok = true
+		break
+	}
+	if !ok {
+		return nil, false, nil
+	}
+	pi.Take(len(ve))
+	return nil, true, nil
+}
+
 // Element.
 var element elementParser
 
@@ -396,28 +424,19 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 
 	// Once we've got an open tag, the rest must be present.
 	l := pi.Position().Line
-	endOfOpenTag := pi.Index()
 
 	// If the element is self-closing, even if it's not really a void element (br, hr etc.), we can return early.
-	if ot.Void {
+	if ot.Void || r.IsVoidElement() {
 		// Escape early, no need to try to parse children for self-closing elements.
 		return addTrailingSpaceAndValidate(start, r, pi)
 	}
 
-	// Void elements _might_ have children, even though it's invalid.
-	// We want to allow this to be parsed.
+	// Parse children.
 	closer := StripType(parse.All(parse.String("</"), parse.String(ot.Name), parse.Rune('>')))
-	tnp := newTemplateNodeParser[any](closer, fmt.Sprintf("<%s>: close tag", ot.Name))
+	tnp := newTemplateNodeParser(closer, fmt.Sprintf("<%s>: close tag", ot.Name))
 	nodes, _, err := tnp.Parse(pi)
 	if err != nil {
 		notFoundErr, isNotFoundError := err.(UntilNotFoundError)
-		if r.IsVoidElement() && isNotFoundError {
-			// Void elements shouldn't have children, or a close tag, so this is expected.
-			// When the template is reformatted, we won't reach here, because <hr> will be converted to <hr/>.
-			// Return the element as we have it.
-			pi.Seek(endOfOpenTag)
-			return addTrailingSpaceAndValidate(start, r, pi)
-		}
 		if isNotFoundError {
 			err = notFoundErr.ParseError
 		}
@@ -443,6 +462,10 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 }
 
 func addTrailingSpaceAndValidate(start parse.Position, e Element, pi *parse.Input) (n Node, ok bool, err error) {
+	// Elide any void close tags.
+	if _, _, err = voidElementCloser.Parse(pi); err != nil {
+		return e, false, err
+	}
 	// Add trailing space.
 	ws, _, err := parse.Whitespace.Parse(pi)
 	if err != nil {

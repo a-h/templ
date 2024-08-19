@@ -28,6 +28,7 @@ type Arguments struct {
 	// PPROFPort is the port to run the pprof server on.
 	PPROFPort         int
 	KeepOrphanedFiles bool
+	Lazy              bool
 }
 
 func Run(ctx context.Context, log *slog.Logger, args Arguments) (err error) {

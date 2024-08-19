@@ -20,6 +20,7 @@ templ input(value, validation string) {
 	<img></img>
 	<input>
 	<input></input>
+	<input>Text
 	<input>Text</input>
 	<keygen>
 	<keygen></keygen>
@@ -59,7 +60,8 @@ templ input(value, validation string) {
 	<img/>
 	<input/>
 	<input/>
-	<input>Text</input>
+	<input/>Text
+	<input/>Text
 	<keygen/>
 	<keygen/>
 	<link/>

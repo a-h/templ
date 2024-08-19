@@ -134,21 +134,6 @@ templ template () {
 }`,
 			want: nil,
 		},
-		{
-			name: "voidElementWithChildrenDiagnoser: with diagnostics",
-			template: `
-package main
-
-templ template () {
-	<div>
-	  <input>Child content</input>
-	</div>
-}`,
-			want: []Diagnostic{{
-				Message: "void element <input> should not have child content",
-				Range:   Range{Position{46, 5, 4}, Position{51, 5, 9}},
-			}},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
