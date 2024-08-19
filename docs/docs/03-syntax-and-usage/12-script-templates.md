@@ -155,7 +155,7 @@ Pass data from the server to the client by embedding it in the HTML as a JSON ob
 
 ```templ title="input.templ"
 templ body(data any) {
-  <button id="alerter" alert-data={ templ.JSONString(attributeData) }>Show alert</button>
+  <button id="alerter" alert-data={ templ.JSONString(data) }>Show alert</button>
 }
 ```
 
@@ -402,4 +402,26 @@ After building and running the executable, running `curl http://localhost:8080/`
 		<script type="text/javascript">__templ_printToConsole_5a85("Again: 2023-11-11 01:01:40.983381358 +0000 UTC")</script>
 	</body>
 </html>
+```
+
+The `JSExpression` type is used to pass arbitrary JavaScript expressions to a templ script template.
+
+A common use case is to pass the `event` or `this` objects to an event handler.
+
+```templ
+package main
+
+script showButtonWasClicked(event templ.JSExpression) {
+	const originalButtonText = event.target.innerText
+	event.target.innerText = "I was Clicked!"
+	setTimeout(() => event.target.innerText = originalButtonText, 2000)
+}
+
+templ page() {
+	<html>
+		<body>
+			<button type="button" onclick={ showButtonWasClicked(templ.JSExpression("event")) }>Click Me</button>
+		</body>
+	</html>
+}
 ```

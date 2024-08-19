@@ -137,8 +137,20 @@ go run ./cmd/templ fmt .
 
 ### lint
 
+Run the lint operations that are run as part of the CI.
+
 ```sh
 golangci-lint run --verbose
+```
+
+### ensure-generated
+
+Ensure that templ files have been generated with the local version of templ, and that those files have been added to git.
+
+Requires: generate
+
+```sh
+git diff --exit-code
 ```
 
 ### push-release-tag

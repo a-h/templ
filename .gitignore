@@ -26,3 +26,6 @@ result
 
 # Go workspace.
 go.work
+
+# direnv
+.direnv
