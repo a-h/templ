@@ -69,66 +69,86 @@ func TestImport(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 		return
 	}
-	// Create test project.
-	dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
-	if err != nil {
-		t.Fatalf("failed to create test project: %v", err)
-	}
-	defer os.RemoveAll(dir)
 
-	// Load the templates.templ file.
-	filePath := path.Join(dir, "templates.templ")
-	err = os.WriteFile(filePath, []byte(`package main
+	tests := []struct {
+		name       string
+		src        string
+		assertions func(t *testing.T, updated string)
+	}{
+		{
+			name: "un-named imports are removed",
+			src: `package main
 
 import "fmt"
 import "github.com/a-h/templ/cmd/templ/testproject/css-classes"
 
 templ Page(count int) {
-	<!DOCTYPE html>
-	<html>
-		<head>
-			<title>templ test page</title>
-		</head>
-		<body>
-			<h1>Count</h1>
-			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>
-			<div data-testid="modification">Original</div>
-			<div class={ cssclasses.Header }>Header</div>
-		</body>
-	</html>
+	{ fmt.Sprintf("%d", count) }
+	{ cssclasses.Header }
 }
+`,
+			assertions: func(t *testing.T, updated string) {
+				if count := strings.Count(updated, "github.com/a-h/templ/cmd/templ/testproject/css-classes"); count != 0 {
+					t.Errorf("expected un-named import to be removed, but got %d instance of it", count)
+				}
+			},
+		},
+		{
+			name: "named imports are retained",
+			src: `package main
 
-var nihao = "你好"
+import "fmt"
+import  cssclasses "github.com/a-h/templ/cmd/templ/testproject/css-classes"
 
-type Struct struct {
-	Count int
+templ Page(count int) {
+	{ fmt.Sprintf("%d", count) }
+	{ cssclasses.Header }
 }
-
-var s = Struct{}
-`), 0660)
-	if err != nil {
-		t.Fatalf("failed to write file: %v", err)
+`,
+			assertions: func(t *testing.T, updated string) {
+				if count := strings.Count(updated, "cssclasses \"github.com/a-h/templ/cmd/templ/testproject/css-classes\""); count != 1 {
+					t.Errorf("expected named import to be retained, got %d instances of it", count)
+				}
+				if count := strings.Count(updated, "github.com/a-h/templ/cmd/templ/testproject/css-classes"); count != 1 {
+					t.Errorf("expected one import, got %d", count)
+				}
+			},
+		},
 	}
 
-	// Parse the new file.
-	template, err := parser.Parse(filePath)
-	if err != nil {
-		t.Fatalf("failed to parse %v", err)
-	}
-	template.Filepath = filePath
-	tf, err := Process(template)
-	if err != nil {
-		t.Fatalf("failed to process file: %v", err)
-	}
+	for _, test := range tests {
+		// Create test project.
+		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
+		if err != nil {
+			t.Fatalf("failed to create test project: %v", err)
+		}
+		defer os.RemoveAll(dir)
 
-	// Assert that the import has been added.
-	buf := new(strings.Builder)
-	if err := tf.Write(buf); err != nil {
-		t.Fatalf("failed to write template file: %v", err)
-	}
+		// Load the templates.templ file.
+		filePath := path.Join(dir, "templates.templ")
+		err = os.WriteFile(filePath, []byte(test.src), 0660)
+		if err != nil {
+			t.Fatalf("failed to write file: %v", err)
+		}
 
-	// Check that there's only one import.
-	if count := strings.Count(buf.String(), "github.com/a-h/templ/cmd/templ/testproject/css-classes"); count > 1 {
-		t.Errorf("expected a single import, got %d", count)
+		// Parse the new file.
+		template, err := parser.Parse(filePath)
+		if err != nil {
+			t.Fatalf("failed to parse %v", err)
+		}
+		template.Filepath = filePath
+		tf, err := Process(template)
+		if err != nil {
+			t.Fatalf("failed to process file: %v", err)
+		}
+
+		// Assert that the import has been added.
+		buf := new(strings.Builder)
+		if err := tf.Write(buf); err != nil {
+			t.Fatalf("failed to write template file: %v", err)
+		}
+
+		// Check that there's only one import.
+		test.assertions(t, buf.String())
 	}
 }

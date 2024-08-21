@@ -147,14 +147,6 @@ func getImportDetails(imp *ast.ImportSpec) (name, importPath string, err error) 
 			err = fmt.Errorf("failed to unquote package path %s: %w", imp.Path.Value, err)
 			return
 		}
-		// No need to provide a name for packages with hyphens.
-		basePath := path.Base(importPath)
-		if strings.Contains(basePath, "-") {
-			updatedName := strings.ReplaceAll(basePath, "-", "")
-			if name == updatedName {
-				name = ""
-			}
-		}
 	}
 	return name, importPath, nil
 }
