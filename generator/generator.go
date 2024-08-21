@@ -403,6 +403,22 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context\n"); err != nil {
 			return err
 		}
+		if _, err = g.w.WriteIndent(indentLevel, "ctxErr := ctx.Err()\n"); err != nil {
+			return err
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "if ctxErr != nil {\n"); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			if _, err = g.w.WriteIndent(indentLevel, "return ctxErr"); err != nil {
+				return err
+			}
+			indentLevel--
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+			return err
+		}
 		if err := g.writeTemplBuffer(indentLevel); err != nil {
 			return err
 		}
