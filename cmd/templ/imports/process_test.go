@@ -142,13 +142,13 @@ templ Page(count int) {
 			t.Fatalf("failed to process file: %v", err)
 		}
 
-		// Assert that the import has been added.
+		// Write it back out after processing.
 		buf := new(strings.Builder)
 		if err := tf.Write(buf); err != nil {
 			t.Fatalf("failed to write template file: %v", err)
 		}
 
-		// Check that there's only one import.
+		// Assert.
 		test.assertions(t, buf.String())
 	}
 }
