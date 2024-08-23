@@ -1,6 +1,6 @@
 # Components
 
-templ Components are markup and code that is compiled into functions that return a `templ.Component` interface by running the `templ generate` command.
+templ Components are markup and code that is compiled into functions that return a `templ.Component` interface by running the `templ generate` command. A `templ.Component` can be rendered rendered by calling its `Render` function. A `templ.Component` *may* return a partial rendering on error.
 
 Components can contain templ elements that render HTML, text, expressions that output text or include other templates, and branching statements such as `if` and `switch`, and `for` loops.
 
