@@ -12,7 +12,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     xc = {
-      url = "github:joerdav/xc";
+      url = "github:joerdav/xc/v0.8.4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
