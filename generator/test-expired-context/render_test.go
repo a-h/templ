@@ -8,7 +8,8 @@ import (
 )
 
 func Test(t *testing.T) {
-	ctx, _ := context.WithDeadline(context.Background(), time.Now())
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
+	defer cancel()
 	component := DummyComponent()
 	err := component.Render(ctx, io.Discard)
 	if err == nil {
