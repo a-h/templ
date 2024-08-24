@@ -1,6 +1,6 @@
 # Components
 
-templ Components are markup and code that is compiled into functions that return a `templ.Component` interface by running the `templ generate` command. A `templ.Component` can be rendered rendered by calling its `Render` function. A `templ.Component` *may* return a partial rendering on error.
+templ Components are markup and code that is compiled into functions that return a `templ.Component` interface by running the `templ generate` command.
 
 Components can contain templ elements that render HTML, text, expressions that output text or include other templates, and branching statements such as `if` and `switch`, and `for` loops.
 
@@ -14,15 +14,33 @@ templ headerTemplate(name string) {
 }
 ```
 
+The generated code is a Go function that returns a `templ.Component`.
+
+```go title="header_templ.go"
+func headerTemplate(name string) templ.Component {
+  // Generated contents
+}
+```
+
+`templ.Component` is an interface that has a `Render` method on it that is used to render the component to an `io.Writer`.
+
+```go
+type Component interface {
+	Render(ctx context.Context, w io.Writer) error
+}
+```
+
 :::tip
 Since templ produces Go code, you can share templates the same way that you share Go code - by sharing your Go module.
 
 templ follows the same rules as Go. If a `templ` block starts with an uppercase letter, then it is public, otherwise, it is private.
+
+A `templ.Component` may write partial output to the `io.Writer` if it returns an error. If you want to ensure you only get complete output or nothing, write to a buffer first and then write the buffer to an `io.Writer`.
 :::
 
 ## Code-only components
 
-Since templ Components ultimately implement the `templ.Component`, any code that implements the interface can be used in place of a templ component generated from a `*.templ` file.
+Since templ Components ultimately implement the `templ.Component` interface, any code that implements the interface can be used in place of a templ component generated from a `*.templ` file.
 
 ```go
 package main
