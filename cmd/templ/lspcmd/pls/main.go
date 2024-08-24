@@ -37,12 +37,11 @@ func FindGopls() (location string, err error) {
 		executableName = "gopls.exe"
 	}
 
-	executableName, err = exec.LookPath(executableName)
+	pathLocation, err := exec.LookPath(executableName)
 	if err == nil {
 		// Found on the path.
-		return executableName, nil
+		return pathLocation, nil
 	}
-
 	// Unexpected error.
 	if !errors.Is(err, exec.ErrNotFound) {
 		return "", fmt.Errorf("unexpected error looking for gopls: %w", err)
