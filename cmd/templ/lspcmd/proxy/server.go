@@ -954,8 +954,11 @@ func (p *Server) References(ctx context.Context, params *lsp.ReferenceParams) (r
 	// Rewrite the response.
 	for i := 0; i < len(result); i++ {
 		r := result[i]
-		r.URI = templURI
-		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+		if strings.HasSuffix(r.URI.Filename(), "_templ.go") {
+			r.URI = templURI
+			r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+		}
+		p.Log.Info(fmt.Sprintf("references-%d: %+v", i, r))
 		result[i] = r
 	}
 	return result, err
