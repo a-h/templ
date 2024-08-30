@@ -41,12 +41,15 @@ func main() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "%d", os.Getpid())
 		})
-		http.ListenAndServe("127.0.0.1:7777", nil)
+		err := http.ListenAndServe("127.0.0.1:7777", nil)
+		if err != nil {
+			fmt.Printf("Error running web server: %v\n", err)
+		}
 	}()
 
 	sigs := make(chan os.Signal, 1)
 	if !*badlyBehavedFlag {
-		signal.Notify(sigs, os.Interrupt, syscall.SIGTERM, os.Kill)
+		signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
 	}
 	for {
 		select {
