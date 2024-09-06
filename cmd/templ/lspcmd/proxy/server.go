@@ -939,7 +939,6 @@ func (p *Server) RangeFormatting(ctx context.Context, params *lsp.DocumentRangeF
 func (p *Server) References(ctx context.Context, params *lsp.ReferenceParams) (result []lsp.Location, err error) {
 	p.Log.Info("client -> server: References")
 	defer p.Log.Info("client -> server: References end")
-	templURI := params.TextDocument.URI
 	// Rewrite the request.
 	var ok bool
 	ok, params.TextDocument.URI, params.Position = p.updatePosition(params.TextDocument.URI, params.Position)
@@ -954,8 +953,12 @@ func (p *Server) References(ctx context.Context, params *lsp.ReferenceParams) (r
 	// Rewrite the response.
 	for i := 0; i < len(result); i++ {
 		r := result[i]
-		r.URI = templURI
-		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+		isTemplURI, templURI := convertTemplGoToTemplURI(r.URI)
+		if isTemplURI {
+			p.Log.Info(fmt.Sprintf("references-%d - range conversion for %s", i, r.URI))
+			r.URI, r.Range = templURI, p.convertGoRangeToTemplRange(templURI, r.Range)
+		}
+		p.Log.Info(fmt.Sprintf("references-%d: %+v", i, r))
 		result[i] = r
 	}
 	return result, err
