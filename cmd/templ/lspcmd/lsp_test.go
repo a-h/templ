@@ -387,6 +387,33 @@ func TestReferences(t *testing.T) {
 				return "", true
 			},
 		},
+		{
+			// this is the definition of the struct in the templates.templ file.
+			line:      21,
+			character: 9,
+			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
+				expectedReference := []protocol.Location{
+					{
+						// This is the useage of the struct in the templates.templ file.
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint32(24),
+								Character: uint32(8),
+							},
+							End: protocol.Position{
+								Line:      uint32(24),
+								Character: uint32(14),
+							},
+						},
+					},
+				}
+				if diff := lspdiff.References(expectedReference, actual); diff != "" {
+					return fmt.Sprintf("Expected: %+v\nActual: %+v", expectedReference, actual), false
+				}
+				return "", true
+			},
+		},
 	}
 
 	for i, test := range tests {
