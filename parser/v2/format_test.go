@@ -5,17 +5,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/a-h/templ/cfg"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/txtar"
 )
 
 func TestFormatting(t *testing.T) {
-	oldFlags := cfg.Experiment
-	t.Cleanup(func() {
-		cfg.Experiment = oldFlags
-	})
-	cfg.Experiment.RawGo = true
 	files, _ := filepath.Glob("formattestdata/*.txt")
 	if len(files) == 0 {
 		t.Errorf("no test files found")

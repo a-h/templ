@@ -4,17 +4,10 @@ import (
 	"testing"
 
 	"github.com/a-h/parse"
-	"github.com/a-h/templ/cfg"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestGoCodeParser(t *testing.T) {
-	flagVal := cfg.Experiment.RawGo
-	cfg.Experiment.RawGo = true
-	defer func() {
-		cfg.Experiment.RawGo = flagVal
-	}()
-
 	tests := []struct {
 		name     string
 		input    string
