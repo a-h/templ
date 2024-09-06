@@ -78,11 +78,11 @@ Many modern web frameworks use a concept called "Suspense" to handle the loading
 
 This usually involves displaying placeholder content while the data is loading, and then rendering the component when the data is available.
 
-With JavaScript frontends like React, the lifecycle is usually that the HTML is rendered, the JS loaded, the initial render that displays the placeholder is done, an API call is made back to the server to fetch data, and then the component is rendered.
+With JavaScript SSR solutions within ecosystems like React, the lifecycle is usually that within the streamed HTML response there're chunks of JavaScript that are responsible for either injecting out of order chunks in proper places or resolving client-side created promises.
 
-This involves a lot of extra HTTP requests, and means that we have to wait until JavaScript is loaded before we can start fetching data.
+This is usually handled at a framework level, however it's still additional JavaScript that needs to run and can potentnially fail.
 
-Combining templ's streaming capability with a new feature in web browsers called "Declarative Shadow DOM" means that we can perform the same action in a single HTTP request.
+Combining templ's streaming capability with a new feature in web browsers called "Declarative Shadow DOM" means that we can perform similiar action without requiring any JavaScript.
 
 ### Declarative Shadow DOM
 
