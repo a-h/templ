@@ -6,10 +6,7 @@ import (
 	"strings"
 )
 
-type Flags struct {
-	// RawGo will enable the support of arbibrary Go code in templates.
-	RawGo bool
-}
+type Flags struct{}
 
 var Experiment = parse()
 
@@ -19,7 +16,5 @@ func parse() *Flags {
 		m[strings.ToLower(f)] = true
 	}
 
-	return &Flags{
-		RawGo: m["rawgo"],
-	}
+	return &Flags{}
 }

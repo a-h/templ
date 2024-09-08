@@ -2,14 +2,10 @@ package parser
 
 import (
 	"github.com/a-h/parse"
-	"github.com/a-h/templ/cfg"
 	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
 var goCode = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
-	if !cfg.Experiment.RawGo {
-		return
-	}
 	// Check the prefix first.
 	if _, ok, err = parse.Or(parse.String("{{ "), parse.String("{{")).Parse(pi); err != nil || !ok {
 		return
