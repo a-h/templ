@@ -53,6 +53,8 @@ func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagno
 	}
 }
 
+var preLoadURIs = []*lsp.DidOpenTextDocumentParams{}
+
 // updatePosition maps positions and filenames from source templ files into the target *.go files.
 func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) (ok bool, goURI lsp.DocumentURI, updated lsp.Position) {
 	log := p.Log.With(zap.String("uri", string(templURI)))
@@ -240,7 +242,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 				return err
 			}
 			uri := uri.URI("file://" + path)
-			isTemplFile, _ := convertTemplToGoURI(uri)
+			isTemplFile, goURI := convertTemplToGoURI(uri)
 			if isTemplFile {
 				b, err := os.ReadFile(path)
 				if err != nil {
@@ -270,6 +272,16 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 				// Set the Go contents.
 				p.GoSource[string(uri)] = w.String()
 
+				didOpenParams := &lsp.DidOpenTextDocumentParams{
+					TextDocument: lsp.TextDocumentItem{
+						URI:        goURI,
+						Text:       w.String(),
+						Version:    1,
+						LanguageID: "go",
+					},
+				}
+
+				preLoadURIs = append(preLoadURIs, didOpenParams)
 			}
 			return nil
 		})
@@ -287,7 +299,16 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 func (p *Server) Initialized(ctx context.Context, params *lsp.InitializedParams) (err error) {
 	p.Log.Info("client -> server: Initialized")
 	defer p.Log.Info("client -> server: Initialized end")
-	return p.Target.Initialized(ctx, params)
+	goInitErr := p.Target.Initialized(ctx, params)
+
+	for _, doParams := range preLoadURIs {
+		doErr := p.Target.DidOpen(ctx, doParams)
+		if doErr != nil {
+			return doErr
+		}
+	}
+
+	return goInitErr
 }
 
 func (p *Server) Shutdown(ctx context.Context) (err error) {
@@ -514,8 +535,8 @@ func getPackageFromItemDetail(pkg string) string {
 }
 
 type importInsert struct {
-	LineIndex int
 	Text      string
+	LineIndex int
 }
 
 var nonImportKeywordRegexp = regexp.MustCompile(`^(?:templ|func|css|script|var|const|type)\s`)
