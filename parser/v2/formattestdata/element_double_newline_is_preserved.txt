@@ -1,0 +1,28 @@
+-- in --
+package main
+
+templ x() {
+  <div>
+    <span>Hello
+
+    World
+    </span>
+
+
+
+    <span>Foo Bar </span>
+  </div>
+}
+-- out --
+package main
+
+templ x() {
+	<div>
+		<span>
+			Hello
+			World
+		</span>
+
+		<span>Foo Bar </span>
+	</div>
+}

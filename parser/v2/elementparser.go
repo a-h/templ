@@ -471,7 +471,7 @@ func addTrailingSpaceAndValidate(start parse.Position, e Element, pi *parse.Inpu
 	if err != nil {
 		return e, false, err
 	}
-	e.TrailingSpace, err = NewTrailingSpace(ws)
+	e.TrailingSpace, err = NewTrailingSpace(ws, true)
 	if err != nil {
 		return e, false, err
 	}

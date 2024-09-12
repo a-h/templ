@@ -375,17 +375,27 @@ func (t HTMLTemplate) Write(w io.Writer, indent int) error {
 type TrailingSpace string
 
 const (
-	SpaceNone       TrailingSpace = ""
-	SpaceHorizontal TrailingSpace = " "
-	SpaceVertical   TrailingSpace = "\n"
+	SpaceNone           TrailingSpace = ""
+	SpaceHorizontal     TrailingSpace = " "
+	SpaceVertical       TrailingSpace = "\n"
+	SpaceVerticalDouble TrailingSpace = "\n\n"
 )
 
 var ErrNonSpaceCharacter = errors.New("non space character found")
 
-func NewTrailingSpace(s string) (ts TrailingSpace, err error) {
+func NewTrailingSpace(s string, allowMulti bool) (ts TrailingSpace, err error) {
 	var hasHorizontalSpace bool
-	for _, r := range s {
+
+	runes := []rune(s)
+
+	for i, r := range s {
 		if r == '\n' {
+			if allowMulti && i < len(runes)-1 {
+				next := runes[i+1]
+				if next == '\n' {
+					return SpaceVerticalDouble, nil
+				}
+			}
 			return SpaceVertical, nil
 		}
 		if unicode.IsSpace(r) {
@@ -621,7 +631,9 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 		}
 		// Put a newline after the last node in indentation mode.
 		if indent && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(nodes[i])) {
-			trailing = SpaceVertical
+			if !strings.Contains(string(trailing), string(SpaceVertical)) {
+				trailing = SpaceVertical
+			}
 		}
 		switch trailing {
 		case SpaceNone:

@@ -36,7 +36,7 @@ var goCode = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	if err != nil {
 		return r, false, err
 	}
-	r.TrailingSpace, err = NewTrailingSpace(ws)
+	r.TrailingSpace, err = NewTrailingSpace(ws, true)
 	if err != nil {
 		return r, false, err
 	}
