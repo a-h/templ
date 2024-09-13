@@ -604,7 +604,7 @@ func (g *generator) writeWhitespaceTrailer(indentLevel int, n parser.TrailingSpa
 	}
 	// Normalize whitespace for minified output. In HTML, a single space is equivalent to
 	// any number of spaces, tabs, or newlines.
-	if n == parser.SpaceVertical {
+	if n == parser.SpaceVertical || n == parser.SpaceVerticalDouble {
 		n = parser.SpaceHorizontal
 	}
 	if _, err = g.w.WriteStringLiteral(indentLevel, string(n)); err != nil {

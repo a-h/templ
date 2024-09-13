@@ -630,10 +630,8 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 			trailing = wst.Trailing()
 		}
 		// Put a newline after the last node in indentation mode.
-		if indent && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(nodes[i])) {
-			if !strings.Contains(string(trailing), string(SpaceVertical)) {
-				trailing = SpaceVertical
-			}
+		if indent && trailing != SpaceVerticalDouble && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(nodes[i])) {
+			trailing = SpaceVertical
 		}
 		switch trailing {
 		case SpaceNone:
@@ -641,6 +639,8 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 		case SpaceHorizontal:
 			level = 0
 		case SpaceVertical:
+			level = startLevel
+		case SpaceVerticalDouble:
 			level = startLevel
 		}
 		if _, err := w.Write([]byte(trailing)); err != nil {

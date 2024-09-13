@@ -1,0 +1,25 @@
+-- in --
+package main
+
+templ x() {
+	<div>
+		<a></a><span></span>
+
+		// This line is indented incorrectly
+<a></a>
+
+	</div>
+}
+
+-- out --
+package main
+
+templ x() {
+	<div>
+		<a></a><span></span>
+
+		// This line is indented incorrectly
+		<a></a>
+
+	</div>
+}

@@ -1,0 +1,25 @@
+-- in --
+package main
+
+// The below template caused the generated code to not strip newlines, causing error
+templ x() {
+	<div>
+		<a></a>
+
+
+
+		<a>
+		</a>
+	</div>
+}
+-- out --
+package main
+
+// The below template caused the generated code to not strip newlines, causing error
+templ x() {
+	<div>
+		<a></a>
+
+		<a></a>
+	</div>
+}
