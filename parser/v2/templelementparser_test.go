@@ -32,6 +32,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -53,6 +54,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -80,6 +82,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -190,8 +193,8 @@ func TestTemplElementExpressionParser(t *testing.T) {
 								To:   Position{28, 1, 11},
 							},
 						},
+						TrailingSpace: SpaceVertical,
 					},
-					Whitespace{Value: "\n\t\t\t"},
 				},
 			},
 		},
@@ -215,6 +218,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceHorizontal,
 			},
 		},
 		{

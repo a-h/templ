@@ -626,8 +626,8 @@ func TestTemplateParser(t *testing.T) {
 										},
 									},
 								},
+								TrailingSpace: SpaceHorizontal,
 							},
-							Whitespace{Value: " "},
 							Text{
 								Value: "Home",
 								Range: Range{

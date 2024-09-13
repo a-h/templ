@@ -13,7 +13,11 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 		return
 	}
 
-	var r TemplElementExpression
+	r := TemplElementExpression{
+		// Default behavior is always a trailing space
+		TrailingSpace: SpaceVertical,
+	}
+
 	// Parse the Go expression.
 	if r.Expression, err = parseGo("templ element", pi, goexpression.TemplExpression); err != nil {
 		return r, false, err
@@ -26,6 +30,16 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 		return
 	}
 	if !hasOpenBrace {
+		// Parse trailing whitespace after expression.
+		ws, _, err := parse.Whitespace.Parse(pi)
+		if err != nil {
+			return r, false, err
+		}
+		r.TrailingSpace, err = NewTrailingSpace(ws, true)
+		if err != nil {
+			return r, false, err
+		}
+
 		return r, true, nil
 	}
 
@@ -44,6 +58,16 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
 		err = parse.Error("@"+r.Expression.Value+": missing end (expected '}')", pi.Position())
 		return
+	}
+
+	// Parse trailing whitespace after closing brace.
+	ws, _, err := parse.Whitespace.Parse(pi)
+	if err != nil {
+		return r, false, err
+	}
+	r.TrailingSpace, err = NewTrailingSpace(ws, true)
+	if err != nil {
+		return r, false, err
 	}
 
 	return r, true, nil

@@ -956,6 +956,12 @@ type TemplElementExpression struct {
 	Expression Expression
 	// Children returns the elements in a block element.
 	Children []Node
+	// TrailingSpace lists what happens after the element.
+	TrailingSpace TrailingSpace
+}
+
+func (t TemplElementExpression) Trailing() TrailingSpace {
+	return t.TrailingSpace
 }
 
 func (tee TemplElementExpression) ChildNodes() []Node {
