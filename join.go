@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-//Pass any number of templ.Components to get a single templ.Component with the components rendered 
+// Pass any number of templ.Components to get a single templ.Component with the components rendered
 func Join(components ...Component) Component {
 	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		for _, c := range components {

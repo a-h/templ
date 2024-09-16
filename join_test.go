@@ -24,7 +24,7 @@ func TestJoin(t *testing.T) {
 		return nil
 	})
 	components := []templ.Component{hello, world}
-  emptyComponents := []templ.Component{}
+	emptyComponents := []templ.Component{}
 
 	tests := []struct {
 		name              string

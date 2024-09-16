@@ -259,16 +259,8 @@ func main() {
   
   actions := []templ.Component{hello, world}
  
- templ showAll() {
-    @Modal() {
-       <div>Inserted from the top</div>
-    }
-  } 
- templ Modal(actions []templ.Component) {
+  templ Modal(actions []templ.Component) {
    <div>
-    <div class="main-content">
-     {...children}
-    </div>
     <div class="hello-world">
      templ.Join(actions...)
     <div>
@@ -277,11 +269,6 @@ func main() {
 }
 ```
 ```html title="output"
-<div id="wrapper">
- <div>
-  Inserted from the top
- </div>
-</div>
 <div class="hello-world">
  <div>
   Hello
