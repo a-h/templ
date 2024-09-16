@@ -87,6 +87,13 @@ templ fmt .
 templ fmt
 ```
 
+Alternatively, you can run `fmt` in CI to ensure that invalidly formatted templatess do not pass CI. This will cause the command
+to exit with unix error-code `1` if any templates needed to be modified.
+
+```
+templ fmt -fail-if-changed .
+```
+
 ## Language Server for IDE integration
 
 `templ lsp` provides a Language Server Protocol (LSP) implementation to support IDE integrations.

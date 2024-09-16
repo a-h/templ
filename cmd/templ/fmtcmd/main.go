@@ -17,6 +17,7 @@ import (
 )
 
 type Arguments struct {
+	FailIfChanged bool
 	ToStdout      bool
 	StdinFilepath string
 	Files         []string
@@ -26,9 +27,10 @@ type Arguments struct {
 func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (err error) {
 	// If no files are provided, read from stdin and write to stdout.
 	if len(args.Files) == 0 {
-		return format(writeToWriter(stdout), readFromReader(stdin, args.StdinFilepath), true)
+		out, _ := format(writeToWriter(stdout), readFromReader(stdin, args.StdinFilepath), true)
+		return out
 	}
-	process := func(fileName string) error {
+	process := func(fileName string) (error, bool) {
 		read := readFromFile(fileName)
 		write := writeToFile
 		if args.ToStdout {
@@ -38,22 +40,24 @@ func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (e
 		return format(write, read, writeIfUnchanged)
 	}
 	dir := args.Files[0]
-	return NewFormatter(log, dir, process, args.WorkerCount).Run()
+	return NewFormatter(log, dir, process, args.WorkerCount, args.FailIfChanged).Run()
 }
 
 type Formatter struct {
-	Log         *slog.Logger
-	Dir         string
-	Process     func(fileName string) error
-	WorkerCount int
+	Log          *slog.Logger
+	Dir          string
+	Process      func(fileName string) (error, bool)
+	WorkerCount  int
+	FailIfChange bool
 }
 
-func NewFormatter(log *slog.Logger, dir string, process func(fileName string) error, workerCount int) *Formatter {
+func NewFormatter(log *slog.Logger, dir string, process func(fileName string) (error, bool), workerCount int, failIfChange bool) *Formatter {
 	f := &Formatter{
-		Log:         log,
-		Dir:         dir,
-		Process:     process,
-		WorkerCount: workerCount,
+		Log:          log,
+		Dir:          dir,
+		Process:      process,
+		WorkerCount:  workerCount,
+		FailIfChange: failIfChange,
 	}
 	if f.WorkerCount == 0 {
 		f.WorkerCount = runtime.NumCPU()
@@ -62,12 +66,16 @@ func NewFormatter(log *slog.Logger, dir string, process func(fileName string) er
 }
 
 func (f *Formatter) Run() (err error) {
+	changesMade := 0
 	start := time.Now()
 	results := make(chan processor.Result)
 	f.Log.Debug("Walking directory", slog.String("path", f.Dir))
 	go processor.Process(f.Dir, f.Process, f.WorkerCount, results)
 	var successCount, errorCount int
 	for r := range results {
+		if r.ChangesMade {
+			changesMade += 1
+		}
 		if r.Error != nil {
 			f.Log.Error(r.FileName, slog.Any("error", r.Error))
 			errorCount++
@@ -76,10 +84,18 @@ func (f *Formatter) Run() (err error) {
 		f.Log.Debug(r.FileName, slog.Duration("duration", r.Duration))
 		successCount++
 	}
-	f.Log.Info("Format complete", slog.Int("count", successCount+errorCount), slog.Int("errors", errorCount), slog.Duration("duration", time.Since(start)))
+
+	if f.FailIfChange && changesMade > 0 {
+		f.Log.Error("Templates were valid but not properly formatted", slog.Int("count", successCount+errorCount), slog.Int("changed", changesMade), slog.Int("errors", errorCount), slog.Duration("duration", time.Since(start)))
+		return fmt.Errorf("templates were not formatted properly")
+	}
+
+	f.Log.Info("Format Complete", slog.Int("count", successCount+errorCount), slog.Int("errors", errorCount), slog.Int("changed", changesMade), slog.Duration("duration", time.Since(start)))
+
 	if errorCount > 0 {
 		return fmt.Errorf("formatting failed")
 	}
+
 	return
 }
 
@@ -122,26 +138,30 @@ func writeToFile(fileName, tgt string) error {
 	return atomic.WriteFile(fileName, bytes.NewBufferString(tgt))
 }
 
-func format(write writer, read reader, writeIfUnchanged bool) (err error) {
+// TODO DO CHANGE TRACKING HERE
+func format(write writer, read reader, writeIfUnchanged bool) (err error, fileChanged bool) {
 	fileName, src, err := read()
 	if err != nil {
-		return err
+		return err, false
 	}
 	t, err := parser.ParseString(src)
 	if err != nil {
-		return err
+		return err, false
 	}
 	t.Filepath = fileName
 	t, err = imports.Process(t)
 	if err != nil {
-		return err
+		return err, false
 	}
 	w := new(bytes.Buffer)
 	if err = t.Write(w); err != nil {
-		return fmt.Errorf("formatting error: %w", err)
+		return fmt.Errorf("formatting error: %w", err), false
 	}
-	if !writeIfUnchanged && src == w.String() {
-		return nil
+
+	fileChanged = (src != w.String())
+
+	if !writeIfUnchanged && !fileChanged {
+		return nil, fileChanged
 	}
-	return write(fileName, w.String())
+	return write(fileName, w.String()), fileChanged
 }
