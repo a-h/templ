@@ -72,7 +72,6 @@ func ProcessChannel(templates <-chan string, dir string, f func(fileName string)
 					Error:       outErr,
 					Duration:    time.Since(start),
 					ChangesMade: outChanged,
-					// TODO get this working
 				}
 			}
 		}()

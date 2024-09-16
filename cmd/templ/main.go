@@ -297,7 +297,7 @@ Args:
   -log-level
     Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
   -w
-    Number of workers to use when formatting code. (default runtime.NumCPUs).\
+    Number of workers to use when formatting code. (default runtime.NumCPUs).
   -fail-if-changed
     Fails with an error exit code if files are changed for use in CI.
   -help

@@ -138,7 +138,6 @@ func writeToFile(fileName, tgt string) error {
 	return atomic.WriteFile(fileName, bytes.NewBufferString(tgt))
 }
 
-// TODO DO CHANGE TRACKING HERE
 func format(write writer, read reader, writeIfUnchanged bool) (err error, fileChanged bool) {
 	fileName, src, err := read()
 	if err != nil {
