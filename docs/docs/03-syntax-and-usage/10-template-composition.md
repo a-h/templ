@@ -235,6 +235,62 @@ func main() {
 	<p>Dynamic contents</p>
 </div>
 ```
+## Joining Components
+With your templ components you can use `templ.Join` to generate a single `templ.Component` from your components.
+```templ
+package main
+
+import (
+  "context"
+  "os"
+
+  "github.com/a-h/templ"
+)
+
+func main() {
+  hello := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+    _, err := io.WriteString(w, "<div>Hello</div>")
+    return err
+  })
+  world := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+    _, err := io.WriteString(w, "<div>World</div>")
+    return err
+  })
+  
+  actions := []templ.Component{hello, world}
+ 
+ templ showAll() {
+    @Modal() {
+       <div>Inserted from the top</div>
+    }
+  } 
+ templ Modal(actions []templ.Component) {
+   <div>
+    <div class="main-content">
+     {...children}
+    </div>
+    <div class="hello-world">
+     templ.Join(actions...)
+    <div>
+   <div>
+  }
+}
+```
+```html title="output"
+<div id="wrapper">
+ <div>
+  Inserted from the top
+ </div>
+</div>
+<div class="hello-world">
+ <div>
+  Hello
+ </div>
+ <div>
+  World
+ </div>
+</div>
+```
 
 ## Sharing and re-using components
 
