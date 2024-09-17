@@ -91,7 +91,7 @@ Alternatively, you can run `fmt` in CI to ensure that invalidly formatted templa
 to exit with unix error-code `1` if any templates needed to be modified.
 
 ```
-templ fmt -fail-if-changed .
+templ fmt -fail .
 ```
 
 ## Language Server for IDE integration
