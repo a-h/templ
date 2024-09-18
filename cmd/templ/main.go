@@ -299,7 +299,7 @@ Args:
   -w
     Number of workers to use when formatting code. (default runtime.NumCPUs).
   -fail
-    Fails with an error exit code if files are changed for use in CI.
+    Fails with exit code 1 if files are changed. (e.g. in CI)
   -help
     Print help and exit.
 `
