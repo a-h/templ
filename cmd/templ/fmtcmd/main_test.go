@@ -84,6 +84,7 @@ func TestFormat(t *testing.T) {
 			Files: []string{
 				tp.testFiles["a.templ"].name,
 			},
+			FailIfChanged: false,
 		}); err != nil {
 			t.Fatalf("failed to run format command: %v", err)
 		}
@@ -101,6 +102,7 @@ func TestFormat(t *testing.T) {
 			Files: []string{
 				tp.testFiles["a.templ"].name,
 			},
+			FailIfChanged: false,
 		}); err != nil {
 			t.Fatalf("failed to run format command: %v", err)
 		}
@@ -109,6 +111,52 @@ func TestFormat(t *testing.T) {
 			t.Fatalf("failed to read file: %v", err)
 		}
 		if diff := cmp.Diff(tp.testFiles["a.templ"].expected, string(data)); diff != "" {
+			t.Error(diff)
+		}
+	})
+
+	t.Run("fails when fail flag used and change occurs", func(t *testing.T) {
+		tp, err := setupProjectDir()
+		if err != nil {
+			t.Fatalf("failed to setup project dir: %v", err)
+		}
+		defer tp.cleanup()
+		if err = Run(log, nil, nil, Arguments{
+			Files: []string{
+				tp.testFiles["a.templ"].name,
+			},
+			FailIfChanged: true,
+		}); err == nil {
+			t.Fatal("command should have exited with an error and did not")
+		}
+		data, err := os.ReadFile(tp.testFiles["a.templ"].name)
+		if err != nil {
+			t.Fatalf("failed to read file: %v", err)
+		}
+		if diff := cmp.Diff(tp.testFiles["a.templ"].expected, string(data)); diff != "" {
+			t.Error(diff)
+		}
+	})
+
+	t.Run("passes when fail flag used and no change occurs", func(t *testing.T) {
+		tp, err := setupProjectDir()
+		if err != nil {
+			t.Fatalf("failed to setup project dir: %v", err)
+		}
+		defer tp.cleanup()
+		if err = Run(log, nil, nil, Arguments{
+			Files: []string{
+				tp.testFiles["c.templ"].name,
+			},
+			FailIfChanged: true,
+		}); err != nil {
+			t.Fatalf("failed to run format command: %v", err)
+		}
+		data, err := os.ReadFile(tp.testFiles["c.templ"].name)
+		if err != nil {
+			t.Fatalf("failed to read file: %v", err)
+		}
+		if diff := cmp.Diff(tp.testFiles["c.templ"].expected, string(data)); diff != "" {
 			t.Error(diff)
 		}
 	})

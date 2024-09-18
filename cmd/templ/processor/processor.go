@@ -10,12 +10,13 @@ import (
 )
 
 type Result struct {
-	FileName string
-	Duration time.Duration
-	Error    error
+	FileName    string
+	Duration    time.Duration
+	Error       error
+	ChangesMade bool
 }
 
-func Process(dir string, f func(fileName string) error, workerCount int, results chan<- Result) {
+func Process(dir string, f func(fileName string) (error, bool), workerCount int, results chan<- Result) {
 	templates := make(chan string)
 	go func() {
 		defer close(templates)
@@ -56,7 +57,7 @@ func FindTemplates(srcPath string, output chan<- string) (err error) {
 	})
 }
 
-func ProcessChannel(templates <-chan string, dir string, f func(fileName string) error, workerCount int, results chan<- Result) {
+func ProcessChannel(templates <-chan string, dir string, f func(fileName string) (error, bool), workerCount int, results chan<- Result) {
 	defer close(results)
 	var wg sync.WaitGroup
 	wg.Add(workerCount)
@@ -65,10 +66,12 @@ func ProcessChannel(templates <-chan string, dir string, f func(fileName string)
 			defer wg.Done()
 			for sourceFileName := range templates {
 				start := time.Now()
+				outErr, outChanged := f(sourceFileName)
 				results <- Result{
-					FileName: sourceFileName,
-					Error:    f(sourceFileName),
-					Duration: time.Since(start),
+					FileName:    sourceFileName,
+					Error:       outErr,
+					Duration:    time.Since(start),
+					ChangesMade: outChanged,
 				}
 			}
 		}()
