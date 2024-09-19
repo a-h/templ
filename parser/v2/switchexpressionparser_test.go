@@ -33,6 +33,7 @@ func TestSwitchExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -111,6 +112,7 @@ default:
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -188,6 +190,7 @@ default:
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -296,6 +299,7 @@ default:
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 	}

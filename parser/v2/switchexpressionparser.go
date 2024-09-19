@@ -10,7 +10,10 @@ var switchExpression parse.Parser[Node] = switchExpressionParser{}
 type switchExpressionParser struct{}
 
 func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	var r SwitchExpression
+	r := SwitchExpression{
+		// Default behavior is always a trailing space
+		TrailingSpace: SpaceVertical,
+	}
 	start := pi.Index()
 
 	// Check the prefix first.
@@ -49,6 +52,16 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
 		err = parse.Error("switch: "+unterminatedMissingEnd, pi.Position())
 		return
+	}
+
+	// Parse trailing whitespace.
+	if _, _, err := addTrailingSpace(&r, pi, true); err != nil {
+		return r, false, err
+	}
+
+	// If the trailing space is not vertical, set it to vertical.
+	if r.TrailingSpace != SpaceVertical && r.TrailingSpace != SpaceVerticalDouble {
+		r.TrailingSpace = SpaceVertical
 	}
 
 	return r, true, nil

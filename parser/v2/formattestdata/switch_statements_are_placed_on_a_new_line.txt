@@ -7,7 +7,7 @@ templ input(items []string) {
 <div>{ items[0] }</div>
 	case "b":
 <div>{ items[1] }</div>
-}</div>
+}<span>After closing bracket</span></div>
 }
 -- out --
 package test
@@ -22,5 +22,6 @@ templ input(items []string) {
 			case "b":
 				<div>{ items[1] }</div>
 		}
+		<span>After closing bracket</span>
 	</div>
 }

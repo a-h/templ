@@ -434,6 +434,30 @@ var (
 	_ WhitespaceTrailer = Element{}
 	_ WhitespaceTrailer = Text{}
 	_ WhitespaceTrailer = StringExpression{}
+	_ WhitespaceTrailer = TemplElementExpression{}
+	_ WhitespaceTrailer = GoCode{}
+	_ WhitespaceTrailer = IfExpression{}
+	_ WhitespaceTrailer = ForExpression{}
+	_ WhitespaceTrailer = SwitchExpression{}
+	_ WhitespaceTrailer = HTMLComment{}
+	_ WhitespaceTrailer = CallTemplateExpression{}
+)
+
+type TrailingSpaceSetter interface {
+	SetTrailingSpace(ts TrailingSpace)
+}
+
+var (
+	_ TrailingSpaceSetter = &Element{}
+	_ TrailingSpaceSetter = &Text{}
+	_ TrailingSpaceSetter = &StringExpression{}
+	_ TrailingSpaceSetter = &TemplElementExpression{}
+	_ TrailingSpaceSetter = &GoCode{}
+	_ TrailingSpaceSetter = &IfExpression{}
+	_ TrailingSpaceSetter = &ForExpression{}
+	_ TrailingSpaceSetter = &SwitchExpression{}
+	_ TrailingSpaceSetter = &HTMLComment{}
+	_ TrailingSpaceSetter = &CallTemplateExpression{}
 )
 
 // Text node within the document.
@@ -448,6 +472,10 @@ type Text struct {
 
 func (t Text) Trailing() TrailingSpace {
 	return t.TrailingSpace
+}
+
+func (t *Text) SetTrailingSpace(ts TrailingSpace) {
+	t.TrailingSpace = ts
 }
 
 func (t Text) IsNode() bool { return true }
@@ -468,6 +496,10 @@ type Element struct {
 
 func (e Element) Trailing() TrailingSpace {
 	return e.TrailingSpace
+}
+
+func (e *Element) SetTrailingSpace(ts TrailingSpace) {
+	e.TrailingSpace = ts
 }
 
 var voidElements = map[string]struct{}{
@@ -923,6 +955,16 @@ func (c GoComment) Write(w io.Writer, indent int) error {
 // HTMLComment.
 type HTMLComment struct {
 	Contents string
+	// TrailingSpace lists what happens after the element.
+	TrailingSpace TrailingSpace
+}
+
+func (c HTMLComment) Trailing() TrailingSpace {
+	return c.TrailingSpace
+}
+
+func (c *HTMLComment) SetTrailingSpace(ts TrailingSpace) {
+	c.TrailingSpace = ts
 }
 
 func (c HTMLComment) IsNode() bool { return true }
@@ -939,6 +981,16 @@ func (c HTMLComment) Write(w io.Writer, indent int) error {
 type CallTemplateExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
+}
+
+func (cte CallTemplateExpression) Trailing() TrailingSpace {
+	return cte.TrailingSpace
+}
+
+func (cte *CallTemplateExpression) SetTrailingSpace(ts TrailingSpace) {
+	cte.TrailingSpace = ts
 }
 
 func (cte CallTemplateExpression) IsNode() bool { return true }
@@ -962,6 +1014,10 @@ type TemplElementExpression struct {
 
 func (t TemplElementExpression) Trailing() TrailingSpace {
 	return t.TrailingSpace
+}
+
+func (t *TemplElementExpression) SetTrailingSpace(ts TrailingSpace) {
+	t.TrailingSpace = ts
 }
 
 func (tee TemplElementExpression) ChildNodes() []Node {
@@ -1034,11 +1090,21 @@ type IfExpression struct {
 	Then       []Node
 	ElseIfs    []ElseIfExpression
 	Else       []Node
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
 }
 
 type ElseIfExpression struct {
 	Expression Expression
 	Then       []Node
+}
+
+func (n IfExpression) Trailing() TrailingSpace {
+	return n.TrailingSpace
+}
+
+func (n *IfExpression) SetTrailingSpace(ts TrailingSpace) {
+	n.TrailingSpace = ts
 }
 
 func (n IfExpression) ChildNodes() []Node {
@@ -1089,7 +1155,17 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 //	}
 type SwitchExpression struct {
 	Expression Expression
-	Cases      []CaseExpression
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
+	Cases         []CaseExpression
+}
+
+func (se SwitchExpression) Trailing() TrailingSpace {
+	return se.TrailingSpace
+}
+
+func (se *SwitchExpression) SetTrailingSpace(ts TrailingSpace) {
+	se.TrailingSpace = ts
 }
 
 func (se SwitchExpression) ChildNodes() []Node {
@@ -1132,7 +1208,17 @@ type CaseExpression struct {
 //	}
 type ForExpression struct {
 	Expression Expression
-	Children   []Node
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
+	Children      []Node
+}
+
+func (fe ForExpression) Trailing() TrailingSpace {
+	return fe.TrailingSpace
+}
+
+func (fe *ForExpression) SetTrailingSpace(ts TrailingSpace) {
+	fe.TrailingSpace = ts
 }
 
 func (fe ForExpression) ChildNodes() []Node {
@@ -1165,6 +1251,10 @@ func (gc GoCode) Trailing() TrailingSpace {
 	return gc.TrailingSpace
 }
 
+func (gc *GoCode) SetTrailingSpace(ts TrailingSpace) {
+	gc.TrailingSpace = ts
+}
+
 func (gc GoCode) IsNode() bool { return true }
 func (gc GoCode) Write(w io.Writer, indent int) error {
 	if isWhitespace(gc.Expression.Value) {
@@ -1195,7 +1285,12 @@ func (se StringExpression) Trailing() TrailingSpace {
 	return se.TrailingSpace
 }
 
-func (se StringExpression) IsNode() bool                  { return true }
+func (se *StringExpression) SetTrailingSpace(ts TrailingSpace) {
+	se.TrailingSpace = ts
+}
+
+func (se StringExpression) IsNode() bool { return true }
+
 func (se StringExpression) IsStyleDeclarationValue() bool { return true }
 func (se StringExpression) Write(w io.Writer, indent int) error {
 	if isWhitespace(se.Expression.Value) {

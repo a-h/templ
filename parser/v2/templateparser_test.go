@@ -430,9 +430,7 @@ func TestTemplateParser(t *testing.T) {
 								TrailingSpace:  SpaceVertical,
 							},
 						},
-					},
-					Whitespace{
-						Value: "\n",
+						TrailingSpace: SpaceVertical,
 					},
 				},
 			},
@@ -736,10 +734,8 @@ func TestTemplateParser(t *testing.T) {
 				},
 				Children: []Node{
 					Whitespace{Value: "\t"},
-					HTMLComment{Contents: " Single line "},
-					Whitespace{Value: "\n\t"},
-					HTMLComment{Contents: " \n\t\tMultiline\n\t"},
-					Whitespace{Value: "\n"},
+					HTMLComment{Contents: " Single line ", TrailingSpace: SpaceVertical},
+					HTMLComment{Contents: " \n\t\tMultiline\n\t", TrailingSpace: SpaceVertical},
 				},
 			},
 		},

@@ -64,6 +64,7 @@ func TestForExpressionParser(t *testing.T) {
 						TrailingSpace: SpaceVertical,
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -117,6 +118,7 @@ func TestForExpressionParser(t *testing.T) {
 						TrailingSpace: SpaceVertical,
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 	}

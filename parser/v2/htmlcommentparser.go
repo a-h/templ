@@ -35,5 +35,10 @@ func (p htmlCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 
+	// Parse trailing whitespace.
+	if _, _, err := addTrailingSpace(&c, pi, true); err != nil {
+		return c, false, err
+	}
+
 	return c, true, nil
 }

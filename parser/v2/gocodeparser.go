@@ -32,12 +32,7 @@ var goCode = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 
 	// Parse trailing whitespace.
-	ws, _, err := parse.Whitespace.Parse(pi)
-	if err != nil {
-		return r, false, err
-	}
-	r.TrailingSpace, err = NewTrailingSpace(ws, true)
-	if err != nil {
+	if _, _, err := addTrailingSpace(&r, pi, true); err != nil {
 		return r, false, err
 	}
 

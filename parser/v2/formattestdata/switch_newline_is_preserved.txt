@@ -1,0 +1,43 @@
+-- in --
+package main
+
+templ x() {
+	<div>
+	<span></span>
+
+		switch items[0] {
+
+
+			case "a":
+				<div>{ items[0] }</div>
+
+
+			case "b":
+				<div>{ items[1] }</div>
+
+		}
+
+
+
+		<span>Foo Bar </span>
+	</div>
+}
+-- out --
+package main
+
+templ x() {
+	<div>
+		<span></span>
+
+		switch items[0] {
+			case "a":
+				<div>{ items[0] }</div>
+
+			case "b":
+				<div>{ items[1] }</div>
+
+		}
+
+		<span>Foo Bar </span>
+	</div>
+}
