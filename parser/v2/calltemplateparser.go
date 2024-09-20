@@ -30,7 +30,8 @@ func (p callTemplateExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	}
 
 	// Parse trailing whitespace.
-	if _, _, err := addTrailingSpace(&r, pi, true); err != nil {
+	r.TrailingSpace, err = parseTrailingSpace(pi, true, false)
+	if err != nil {
 		return r, false, err
 	}
 

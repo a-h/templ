@@ -31,7 +31,8 @@ var textParser = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 
 	// Parse trailing whitespace.
-	if _, _, err := addTrailingSpace(&t, pi, false); err != nil {
+	t.TrailingSpace, err = parseTrailingSpace(pi, false, false)
+	if err != nil {
 		return t, false, err
 	}
 

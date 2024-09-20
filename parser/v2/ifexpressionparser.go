@@ -64,13 +64,9 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 
 	// Parse trailing whitespace.
-	if _, _, err := addTrailingSpace(&r, pi, true); err != nil {
+	r.TrailingSpace, err = parseTrailingSpace(pi, true, true)
+	if err != nil {
 		return r, false, err
-	}
-
-	// If the trailing space is not vertical, set it to vertical.
-	if r.TrailingSpace != SpaceVertical && r.TrailingSpace != SpaceVerticalDouble {
-		r.TrailingSpace = SpaceVertical
 	}
 
 	return r, true, nil

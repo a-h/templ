@@ -2,20 +2,24 @@ package parser
 
 import "github.com/a-h/parse"
 
-func addTrailingSpace[TNode TrailingSpaceSetter](e TNode, pi *parse.Input, allowMulti bool) (n TNode, ok bool, err error) {
+func parseTrailingSpace(pi *parse.Input, allowMulti bool, forceVertical bool) (space TrailingSpace, err error) {
 	// Add trailing space.
 	ws, _, err := parse.Whitespace.Parse(pi)
 	if err != nil {
-		return e, false, err
+		return "", err
 	}
-	trailingSpace, err := NewTrailingSpace(ws, allowMulti)
+
+	trailing, err := NewTrailingSpace(ws, allowMulti)
 	if err != nil {
-		return e, false, err
+		return "", err
 	}
 
-	e.SetTrailingSpace(trailingSpace)
+	// If the trailing space is not vertical, set it to vertical.
+	if forceVertical && trailing != SpaceVertical && trailing != SpaceVerticalDouble {
+		return SpaceVertical, nil
+	}
 
-	return e, true, nil
+	return trailing, nil
 }
 
 // Eat any whitespace.

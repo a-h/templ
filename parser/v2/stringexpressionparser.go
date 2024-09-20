@@ -26,7 +26,8 @@ var stringExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err er
 	}
 
 	// Parse trailing whitespace.
-	if _, _, err := addTrailingSpace(&r, pi, false); err != nil {
+	r.TrailingSpace, err = parseTrailingSpace(pi, false, false)
+	if err != nil {
 		return r, false, err
 	}
 

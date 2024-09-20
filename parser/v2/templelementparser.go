@@ -31,7 +31,8 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	}
 	if !hasOpenBrace {
 		// Parse trailing whitespace after expression.
-		if _, _, err := addTrailingSpace(&r, pi, true); err != nil {
+		r.TrailingSpace, err = parseTrailingSpace(pi, true, false)
+		if err != nil {
 			return r, false, err
 		}
 
@@ -56,7 +57,8 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	}
 
 	// Parse trailing whitespace after closing brace.
-	if _, _, err := addTrailingSpace(&r, pi, true); err != nil {
+	r.TrailingSpace, err = parseTrailingSpace(pi, true, false)
+	if err != nil {
 		return r, false, err
 	}
 
