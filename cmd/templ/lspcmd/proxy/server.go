@@ -40,6 +40,7 @@ type Server struct {
 	DiagnosticCache *DiagnosticCache
 	TemplSource     *DocumentContents
 	GoSource        map[string]string
+	preLoadURIs     []*lsp.DidOpenTextDocumentParams
 }
 
 func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server) {
@@ -52,8 +53,6 @@ func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagno
 		GoSource:        make(map[string]string),
 	}
 }
-
-var preLoadURIs = []*lsp.DidOpenTextDocumentParams{}
 
 // updatePosition maps positions and filenames from source templ files into the target *.go files.
 func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) (ok bool, goURI lsp.DocumentURI, updated lsp.Position) {
@@ -281,7 +280,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 					},
 				}
 
-				preLoadURIs = append(preLoadURIs, didOpenParams)
+				p.preLoadURIs = append(p.preLoadURIs, didOpenParams)
 			}
 			return nil
 		})
@@ -301,11 +300,12 @@ func (p *Server) Initialized(ctx context.Context, params *lsp.InitializedParams)
 	defer p.Log.Info("client -> server: Initialized end")
 	goInitErr := p.Target.Initialized(ctx, params)
 
-	for _, doParams := range preLoadURIs {
+	for i, doParams := range p.preLoadURIs {
 		doErr := p.Target.DidOpen(ctx, doParams)
 		if doErr != nil {
 			return doErr
 		}
+		p.preLoadURIs[i] = nil
 	}
 
 	return goInitErr
