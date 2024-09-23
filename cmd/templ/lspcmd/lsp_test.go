@@ -335,35 +335,19 @@ func TestReferences(t *testing.T) {
 	defer teardown(t)
 	defer cancel()
 
-	templFile, err := os.ReadFile(appDir + "/templates.templ")
-	if err != nil {
-		t.Fatalf("failed to read file %q: %v", appDir+"/templates.templ", err)
-		return
-
-	}
-	err = server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
-		TextDocument: protocol.TextDocumentItem{
-			URI:        uri.URI("file://" + appDir + "/templates.templ"),
-			LanguageID: "templ",
-			Version:    1,
-			Text:       string(templFile),
-		},
-	})
-	if err != nil {
-		t.Errorf("failed to register open file: %v", err)
-		return
-	}
 	log.Info("Calling References")
 
 	tests := []struct {
 		line      int
 		character int
+		filename  string
 		assert    func(t *testing.T, l []protocol.Location) (msg string, ok bool)
 	}{
 		{
 			// this is the definition of the templ function in the templates.templ file.
 			line:      5,
 			character: 9,
+			filename:  "/templates.templ",
 			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
 				expectedReference := []protocol.Location{
 					{
@@ -391,6 +375,7 @@ func TestReferences(t *testing.T) {
 			// this is the definition of the struct in the templates.templ file.
 			line:      21,
 			character: 9,
+			filename:  "/templates.templ",
 			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
 				expectedReference := []protocol.Location{
 					{
@@ -404,6 +389,46 @@ func TestReferences(t *testing.T) {
 							End: protocol.Position{
 								Line:      uint32(24),
 								Character: uint32(14),
+							},
+						},
+					},
+				}
+				if diff := lspdiff.References(expectedReference, actual); diff != "" {
+					return fmt.Sprintf("Expected: %+v\nActual: %+v", expectedReference, actual), false
+				}
+				return "", true
+			},
+		},
+		{
+			// this test is for inclusions from a remote file that has not been explicitly called with didOpen
+			line:      3,
+			character: 9,
+			filename:  "/remoteChild.templ",
+			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
+				expectedReference := []protocol.Location{
+					{
+						URI: uri.URI("file://" + appDir + "/remoteParent.templ"),
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint32(3),
+								Character: uint32(2),
+							},
+							End: protocol.Position{
+								Line:      uint32(3),
+								Character: uint32(8),
+							},
+						},
+					},
+					{
+						URI: uri.URI("file://" + appDir + "/remoteParent.templ"),
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint32(7),
+								Character: uint32(2),
+							},
+							End: protocol.Position{
+								Line:      uint32(7),
+								Character: uint32(8),
 							},
 						},
 					},
@@ -429,7 +454,7 @@ func TestReferences(t *testing.T) {
 				actual, err := server.References(ctx, &protocol.ReferenceParams{
 					TextDocumentPositionParams: protocol.TextDocumentPositionParams{
 						TextDocument: protocol.TextDocumentIdentifier{
-							URI: uri.URI("file://" + appDir + "/templates.templ"),
+							URI: uri.URI("file://" + appDir + test.filename),
 						},
 						// Positions are zero indexed.
 						Position: protocol.Position{
