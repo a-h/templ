@@ -3,17 +3,20 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/protocol"
+	"go.lsp.dev/uri"
+	"go.uber.org/zap"
+
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/imports"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
-	"go.lsp.dev/uri"
-	"go.uber.org/zap"
 )
 
 // Server is responsible for rewriting messages that are
@@ -37,6 +40,7 @@ type Server struct {
 	DiagnosticCache *DiagnosticCache
 	TemplSource     *DocumentContents
 	GoSource        map[string]string
+	preLoadURIs     []*lsp.DidOpenTextDocumentParams
 }
 
 func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server) {
@@ -81,6 +85,7 @@ func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.
 	var sourceMap *parser.SourceMap
 	sourceMap, ok = p.SourceMapCache.Get(string(templURI))
 	if !ok {
+		p.Log.Warn("templ->go: sourcemap not found in cache")
 		return
 	}
 	// Map from the source position to target Go position.
@@ -101,6 +106,7 @@ func (p *Server) convertGoRangeToTemplRange(templURI lsp.DocumentURI, input lsp.
 	output = input
 	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
 	if !ok {
+		p.Log.Warn("go->templ: sourcemap not found in cache")
 		return
 	}
 	// Map from the source position to target Go position.
@@ -228,6 +234,62 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 		Save:              &lsp.SaveOptions{IncludeText: true},
 	}
 
+	for _, c := range params.WorkspaceFolders {
+		path := strings.TrimPrefix(c.URI, "file://")
+		werr := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			p.Log.Info("found file", zap.String("path", path))
+			uri := uri.URI("file://" + path)
+			isTemplFile, goURI := convertTemplToGoURI(uri)
+
+			if !isTemplFile {
+				p.Log.Info("not a templ file", zap.String("uri", string(uri)))
+				return nil
+			}
+
+			b, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			p.TemplSource.Set(string(uri), NewDocument(p.Log, string(b)))
+			// Parse the template.
+			template, ok, err := p.parseTemplate(ctx, uri, string(b))
+			if err != nil {
+				p.Log.Error("parseTemplate failure", zap.Error(err))
+			}
+			if !ok {
+				p.Log.Info("parsing template did not succeed", zap.String("uri", string(uri)))
+				return nil
+			}
+			w := new(strings.Builder)
+			sm, _, err := generator.Generate(template, w)
+			if err != nil {
+				return fmt.Errorf("generate failure: %w", err)
+			}
+			p.Log.Info("setting source map cache contents", zap.String("uri", string(uri)))
+			p.SourceMapCache.Set(string(uri), sm)
+			// Set the Go contents.
+			p.GoSource[string(uri)] = w.String()
+
+			didOpenParams := &lsp.DidOpenTextDocumentParams{
+				TextDocument: lsp.TextDocumentItem{
+					URI:        goURI,
+					Text:       w.String(),
+					Version:    1,
+					LanguageID: "go",
+				},
+			}
+
+			p.preLoadURIs = append(p.preLoadURIs, didOpenParams)
+			return nil
+		})
+		if werr != nil {
+			p.Log.Error("walk error", zap.Error(werr))
+		}
+	}
+
 	result.ServerInfo.Name = "templ-lsp"
 	result.ServerInfo.Version = templ.Version()
 
@@ -237,7 +299,17 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 func (p *Server) Initialized(ctx context.Context, params *lsp.InitializedParams) (err error) {
 	p.Log.Info("client -> server: Initialized")
 	defer p.Log.Info("client -> server: Initialized end")
-	return p.Target.Initialized(ctx, params)
+	goInitErr := p.Target.Initialized(ctx, params)
+
+	for i, doParams := range p.preLoadURIs {
+		doErr := p.Target.DidOpen(ctx, doParams)
+		if doErr != nil {
+			return doErr
+		}
+		p.preLoadURIs[i] = nil
+	}
+
+	return goInitErr
 }
 
 func (p *Server) Shutdown(ctx context.Context) (err error) {
@@ -464,8 +536,8 @@ func getPackageFromItemDetail(pkg string) string {
 }
 
 type importInsert struct {
-	LineIndex int
 	Text      string
+	LineIndex int
 }
 
 var nonImportKeywordRegexp = regexp.MustCompile(`^(?:templ|func|css|script|var|const|type)\s`)
