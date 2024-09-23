@@ -240,48 +240,49 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 			if err != nil {
 				return err
 			}
+			p.Log.Info("found file", zap.String("path", path))
 			uri := uri.URI("file://" + path)
 			isTemplFile, goURI := convertTemplToGoURI(uri)
-			if isTemplFile {
-				b, err := os.ReadFile(path)
-				if err != nil {
-					return err
-				}
-				p.Log.Info("found file", zap.String("path", path))
-				if !isTemplFile {
-					return fmt.Errorf("not a templ file")
-				}
-				p.TemplSource.Set(string(uri), NewDocument(p.Log, string(b)))
-				// Parse the template.
-				template, ok, err := p.parseTemplate(ctx, uri, string(b))
-				if err != nil {
-					p.Log.Error("parseTemplate failure", zap.Error(err))
-				}
-				if !ok {
-					p.Log.Info("parsing template did not succeed", zap.String("uri", string(uri)))
-					return nil
-				}
-				w := new(strings.Builder)
-				sm, _, err := generator.Generate(template, w)
-				if err != nil {
-					return fmt.Errorf("generate failure: %w", err)
-				}
-				p.Log.Info("setting source map cache contents", zap.String("uri", string(uri)))
-				p.SourceMapCache.Set(string(uri), sm)
-				// Set the Go contents.
-				p.GoSource[string(uri)] = w.String()
 
-				didOpenParams := &lsp.DidOpenTextDocumentParams{
-					TextDocument: lsp.TextDocumentItem{
-						URI:        goURI,
-						Text:       w.String(),
-						Version:    1,
-						LanguageID: "go",
-					},
-				}
-
-				p.preLoadURIs = append(p.preLoadURIs, didOpenParams)
+			if !isTemplFile {
+				p.Log.Info("not a templ file", zap.String("uri", string(uri)))
+				return nil
 			}
+
+			b, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			p.TemplSource.Set(string(uri), NewDocument(p.Log, string(b)))
+			// Parse the template.
+			template, ok, err := p.parseTemplate(ctx, uri, string(b))
+			if err != nil {
+				p.Log.Error("parseTemplate failure", zap.Error(err))
+			}
+			if !ok {
+				p.Log.Info("parsing template did not succeed", zap.String("uri", string(uri)))
+				return nil
+			}
+			w := new(strings.Builder)
+			sm, _, err := generator.Generate(template, w)
+			if err != nil {
+				return fmt.Errorf("generate failure: %w", err)
+			}
+			p.Log.Info("setting source map cache contents", zap.String("uri", string(uri)))
+			p.SourceMapCache.Set(string(uri), sm)
+			// Set the Go contents.
+			p.GoSource[string(uri)] = w.String()
+
+			didOpenParams := &lsp.DidOpenTextDocumentParams{
+				TextDocument: lsp.TextDocumentItem{
+					URI:        goURI,
+					Text:       w.String(),
+					Version:    1,
+					LanguageID: "go",
+				},
+			}
+
+			p.preLoadURIs = append(p.preLoadURIs, didOpenParams)
 			return nil
 		})
 		if werr != nil {
