@@ -29,6 +29,10 @@ func References(expected, actual []protocol.Location) string {
 	return cmp.Diff(expected, actual)
 }
 
+func Definitions(expected, actual []protocol.Location) string {
+	return cmp.Diff(expected, actual)
+}
+
 func CompletionListContainsText(cl *protocol.CompletionList, text string) bool {
 	if cl == nil {
 		return false
