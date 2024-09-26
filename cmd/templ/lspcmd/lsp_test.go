@@ -403,11 +403,11 @@ func TestReferences(t *testing.T) {
 			// this test is for inclusions from a remote file that has not been explicitly called with didOpen
 			line:      3,
 			character: 9,
-			filename:  "/remoteChild.templ",
+			filename:  "/remotechild.templ",
 			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
 				expectedReference := []protocol.Location{
 					{
-						URI: uri.URI("file://" + appDir + "/remoteParent.templ"),
+						URI: uri.URI("file://" + appDir + "/remoteparent.templ"),
 						Range: protocol.Range{
 							Start: protocol.Position{
 								Line:      uint32(3),
@@ -420,7 +420,7 @@ func TestReferences(t *testing.T) {
 						},
 					},
 					{
-						URI: uri.URI("file://" + appDir + "/remoteParent.templ"),
+						URI: uri.URI("file://" + appDir + "/remoteparent.templ"),
 						Range: protocol.Range{
 							Start: protocol.Position{
 								Line:      uint32(7),
