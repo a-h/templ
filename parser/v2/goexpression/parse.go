@@ -256,7 +256,7 @@ func Func(content string) (name, expr string, err error) {
 			err = errors.New("parser error: function identifier")
 			return false
 		}
-		expr = src[start:end]
+		expr = strings.Clone(src[start:end])
 		name = fn.Name.Name
 		return false
 	})
