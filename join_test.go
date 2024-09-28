@@ -50,7 +50,7 @@ func TestJoin(t *testing.T) {
 			name:              "component returns an error",
 			input:             []templ.Component{err},
 			expectedComponent: "",
-      expectedErr: compErr,
+			expectedErr:       compErr,
 		},
 	}
 
