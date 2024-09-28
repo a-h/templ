@@ -3,6 +3,7 @@ package templ_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"testing"
 
@@ -11,6 +12,8 @@ import (
 )
 
 func TestJoin(t *testing.T) {
+	compErr := errors.New("component error")
+
 	hello := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
 		if _, err := io.WriteString(w, "Hello"); err != nil {
 			t.Fatalf("failed to write string: %v", err)
@@ -23,23 +26,31 @@ func TestJoin(t *testing.T) {
 		}
 		return nil
 	})
-	components := []templ.Component{hello, world}
-	emptyComponents := []templ.Component{}
+	err := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		return compErr
+	})
 
 	tests := []struct {
 		name              string
 		input             []templ.Component
 		expectedComponent string
+		expectedErr       error
 	}{
 		{
 			name:              "render hello world",
-			input:             components,
+			input:             []templ.Component{hello, world},
 			expectedComponent: "HelloWorld",
 		},
 		{
 			name:              "pass an empty array",
-			input:             emptyComponents,
+			input:             []templ.Component{},
 			expectedComponent: "",
+		},
+		{
+			name:              "component returns an error",
+			input:             []templ.Component{err},
+			expectedComponent: "",
+      expectedErr: compErr,
 		},
 	}
 
@@ -48,11 +59,11 @@ func TestJoin(t *testing.T) {
 			got := templ.Join(tt.input...)
 			b := new(bytes.Buffer)
 			err := got.Render(context.Background(), b)
-			if err != nil {
-				t.Fatalf("failure in rendering %s", err)
-			}
 			if diff := cmp.Diff(tt.expectedComponent, b.String()); diff != "" {
 				t.Error(diff)
+			}
+			if err != tt.expectedErr {
+				t.Fatalf("failure in rendering %s", err)
 			}
 		})
 	}

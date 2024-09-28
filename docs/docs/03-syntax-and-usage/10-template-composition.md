@@ -236,47 +236,36 @@ func main() {
 </div>
 ```
 ## Joining Components
-With your templ components you can use `templ.Join` to generate a single `templ.Component` from your components.
+Components can be aggregated into a single Component using `templ.Join`
 ```templ
 package main
 
-import (
-  "context"
-  "os"
+templ hello() {
+	<span>hello</span>
+}
 
-  "github.com/a-h/templ"
+templ world() {
+	<span>world</span>
+}
+
+templ helloWorld() {
+	@templ.Join(hello(), world())
+}
+```
+```go title="main.go"
+package main
+
+import (
+	"context"
+	"os"
 )
 
 func main() {
-  hello := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-    _, err := io.WriteString(w, "<div>Hello</div>")
-    return err
-  })
-  world := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
-    _, err := io.WriteString(w, "<div>World</div>")
-    return err
-  })
-  
-  actions := []templ.Component{hello, world}
- 
-  templ Modal(actions []templ.Component) {
-   <div>
-    <div class="hello-world">
-     templ.Join(actions...)
-    <div>
-   <div>
-  }
+	helloWorld().Render(context.Background(), os.Stdout)
 }
 ```
 ```html title="output"
-<div class="hello-world">
- <div>
-  Hello
- </div>
- <div>
-  World
- </div>
-</div>
+<span>hello</span><span>world</span>
 ```
 
 ## Sharing and re-using components
