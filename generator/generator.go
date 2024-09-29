@@ -529,6 +529,7 @@ func (g *generator) writeNodes(indentLevel int, nodes []parser.Node, next parser
 
 func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.Node) (err error) {
 	maybeWhitespace := true
+	forceWhitespace := false
 
 	switch n := current.(type) {
 	case parser.DocType:
@@ -548,6 +549,14 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeCallTemplateExpression(indentLevel, n)
 	case parser.TemplElementExpression:
 		err = g.writeTemplElementExpression(indentLevel, n)
+
+		// TemplElementExpression with block should always have whitespace if the next element is also
+		// a TemplElementExpression
+		if len(n.Children) > 0 {
+			if _, ok := next.(parser.TemplElementExpression); ok {
+				forceWhitespace = true
+			}
+		}
 	case parser.IfExpression:
 		maybeWhitespace = false
 		err = g.writeIfExpression(indentLevel, n, next)
@@ -572,7 +581,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 	// If the next node is inline or text, we might need it.
 	// If the current node is a block element, we don't need it.
 	// If, switch and for as current node skip whitespace, but not always when next node.
-	neededWhitespace := maybeWhitespace && isInlineOrText(current) && isInlineOrText(next)
+	neededWhitespace := forceWhitespace || (maybeWhitespace && isInlineOrText(current) && isInlineOrText(next))
+
 	if ws, ok := current.(parser.WhitespaceTrailer); ok && neededWhitespace {
 		if err := g.writeWhitespaceTrailer(indentLevel, ws.Trailing()); err != nil {
 			return err
