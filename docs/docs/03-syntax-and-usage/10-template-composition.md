@@ -236,6 +236,43 @@ func main() {
 </div>
 ```
 
+## Joining Components
+
+Components can be aggregated into a single Component using `templ.Join`.
+
+```templ
+package main
+
+templ hello() {
+	<span>hello</span>
+}
+
+templ world() {
+	<span>world</span>
+}
+
+templ helloWorld() {
+	@templ.Join(hello(), world())
+}
+```
+
+```go title="main.go"
+package main
+
+import (
+	"context"
+	"os"
+)
+
+func main() {
+	helloWorld().Render(context.Background(), os.Stdout)
+}
+```
+
+```html title="output"
+<span>hello</span><span>world</span>
+```
+
 ## Sharing and re-using components
 
 Since templ components are compiled into Go functions by the `go generate` command, templ components follow the rules of Go, and are shared in exactly the same way as Go code.
