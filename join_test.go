@@ -31,26 +31,37 @@ func TestJoin(t *testing.T) {
 	})
 
 	tests := []struct {
-		name              string
-		input             []templ.Component
-		expectedComponent string
-		expectedErr       error
+		name           string
+		input          []templ.Component
+		expectedOutput string
+		expectedErr    error
 	}{
 		{
-			name:              "render hello world",
-			input:             []templ.Component{hello, world},
-			expectedComponent: "HelloWorld",
+			name:           "a nil slice of components produces no output",
+			input:          nil,
+			expectedOutput: "",
 		},
 		{
-			name:              "pass an empty array",
-			input:             []templ.Component{},
-			expectedComponent: "",
+			name:           "an empty list of components produces no output",
+			input:          []templ.Component{},
+			expectedOutput: "",
 		},
 		{
-			name:              "component returns an error",
-			input:             []templ.Component{err},
-			expectedComponent: "",
-			expectedErr:       compErr,
+			name:           "components are rendered in order",
+			input:          []templ.Component{hello, world},
+			expectedOutput: "HelloWorld",
+		},
+		{
+			name:           "components are rendered in order, and errors returned",
+			input:          []templ.Component{hello, err},
+			expectedOutput: "Hello",
+			expectedErr:    compErr,
+		},
+		{
+			name:           "no further components are rendered after an error",
+			input:          []templ.Component{err, hello},
+			expectedOutput: "",
+			expectedErr:    compErr,
 		},
 	}
 
@@ -59,11 +70,11 @@ func TestJoin(t *testing.T) {
 			got := templ.Join(tt.input...)
 			b := new(bytes.Buffer)
 			err := got.Render(context.Background(), b)
-			if diff := cmp.Diff(tt.expectedComponent, b.String()); diff != "" {
-				t.Error(diff)
-			}
 			if err != tt.expectedErr {
-				t.Fatalf("failure in rendering %s", err)
+				t.Fatalf("failed to render component: %v", err)
+			}
+			if diff := cmp.Diff(tt.expectedOutput, b.String()); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}

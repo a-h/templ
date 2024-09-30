@@ -235,8 +235,11 @@ func main() {
 	<p>Dynamic contents</p>
 </div>
 ```
+
 ## Joining Components
-Components can be aggregated into a single Component using `templ.Join`
+
+Components can be aggregated into a single Component using `templ.Join`.
+
 ```templ
 package main
 
@@ -252,6 +255,7 @@ templ helloWorld() {
 	@templ.Join(hello(), world())
 }
 ```
+
 ```go title="main.go"
 package main
 
@@ -264,6 +268,7 @@ func main() {
 	helloWorld().Render(context.Background(), os.Stdout)
 }
 ```
+
 ```html title="output"
 <span>hello</span><span>world</span>
 ```
