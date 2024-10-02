@@ -170,6 +170,20 @@ templ component(p Person) {
 }
 ```
 
+:::tip
+In templ, all attributes are HTML-escaped. This means that:
+
+- `&` characters in the URL are escaped to `&amp;`.
+- `"` characters are escaped to `&quot;`.
+- `'` characters are escaped to `&#39;`.
+
+This done to prevent XSS attacks. For example, without escaping, if a string contained `http://google.com" onclick="alert('hello')"`, the browser would interpret this as a URL followed by an `onclick` attribute, which would execute JavaScript code.
+
+The escaping does not change the URL's functionality.
+
+Sanitization is the process of examining the URL scheme (protocol) and structure to ensure that it's safe to use, e.g. that it doesn't contain `javascript:` or other potentially harmful schemes. If a URL is not safe, templ will replace the URL with `about:invalid#TemplFailedSanitizationURL`.
+:::
+
 The `templ.URL` function only supports standard HTML elements and attributes (`<a href=""` and `<form action=""`).
 
 For use on non-standard HTML elements (e.g. HTMX's `hx-*` attributes), convert the `templ.URL` to a `string` after sanitization.
