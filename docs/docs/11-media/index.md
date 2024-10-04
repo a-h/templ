@@ -1,5 +1,15 @@
 # Media and talks
 
+# Go Podcast 2024
+
+https://gopodcast.dev/episodes/adrian-hesketh-and-joe-davidson-on-templ
+
+# Gophercon 2024
+
+Go Full Stack Server-Side Rendering vs SPAs - Fernando J. Villamarin Diaz, JPMC
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/X30eAwuUgrE?si=agO05C0M_d2TlkdZ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 # Big Sky Dev Con 2024
 
 Covers the reason for creating templ, how it works, and how to use it.
