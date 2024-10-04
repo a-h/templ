@@ -12,7 +12,10 @@ var untilElseIfElseOrEnd = parse.Any(StripType(elseIfExpression), StripType(else
 type ifExpressionParser struct{}
 
 func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	var r IfExpression
+	r := IfExpression{
+		// Default behavior is always a trailing space
+		TrailingSpace: SpaceVertical,
+	}
 	start := pi.Index()
 
 	if !peekPrefix(pi, "if ") {
@@ -58,6 +61,12 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
 		err = parse.Error("if: "+unterminatedMissingEnd, pi.Position())
 		return
+	}
+
+	// Parse trailing whitespace.
+	r.TrailingSpace, err = parseTrailingSpace(pi, true, true)
+	if err != nil {
+		return r, false, err
 	}
 
 	return r, true, nil
