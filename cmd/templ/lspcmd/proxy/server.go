@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -825,9 +826,57 @@ func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLi
 func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolParams) (result []interface{} /* []SymbolInformation | []DocumentSymbol */, err error) {
 	p.Log.Info("client -> server: DocumentSymbol")
 	defer p.Log.Info("client -> server: DocumentSymbol end")
-	// TODO: Rewrite the request and response, but for now, ignore it.
-	// return p.Target.DocumentSymbol(ctx params)
-	return
+	symbols, err := p.Target.DocumentSymbol(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	requireDocumentSymbols := false
+	for _, s := range symbols {
+		if m, ok := s.(map[string]interface{}); ok {
+			s, err = mapToSymbol(m)
+			if err != nil {
+				return nil, err
+			}
+		}
+		switch s.(type) {
+		case lsp.DocumentSymbol:
+			requireDocumentSymbols = true
+		case lsp.SymbolInformation:
+		}
+		result = append(result, s)
+	}
+
+	// TODO: it looks like we only have SymbolInformation in the result. We should handle DocumentSymbol as well.
+	_ = requireDocumentSymbols
+
+	templSymbols := []interface{}{}
+	doc, ok := p.TemplSource.Get(string(params.TextDocument.URI))
+	if ok {
+		template, err := parser.ParseString(doc.String())
+		if err == nil {
+			for _, s := range template.Nodes {
+				switch s := s.(type) {
+				case parser.TemplateFileGoExpression:
+				case parser.HTMLTemplate:
+					templSymbols = append(templSymbols, lsp.SymbolInformation{
+						Name: s.Expression.Value,
+						Kind: lsp.SymbolKindFunction,
+						Location: lsp.Location{
+							URI:   params.TextDocument.URI,
+							Range: parserRangeToLspRange(s.Expression.Range),
+						},
+					})
+				case parser.CSSTemplate:
+				case parser.ScriptTemplate:
+				}
+			}
+		}
+	}
+	// Put the templ symbols first.
+	if len(templSymbols) > 0 {
+		result = append(templSymbols, result...)
+	}
+	return result, err
 }
 
 func (p *Server) ExecuteCommand(ctx context.Context, params *lsp.ExecuteCommandParams) (result interface{}, err error) {
@@ -1215,4 +1264,38 @@ func (p *Server) Request(ctx context.Context, method string, params interface{})
 	p.Log.Info("client -> server: Request")
 	defer p.Log.Info("client -> server: Request end")
 	return p.Target.Request(ctx, method, params)
+}
+
+func mapToSymbol(m map[string]interface{}) (interface{}, error) {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, ok := m["selectionRange"]; ok {
+		var s lsp.DocumentSymbol
+		if err := json.Unmarshal(b, &s); err != nil {
+			return nil, err
+		}
+		return s, nil
+	}
+
+	var s lsp.SymbolInformation
+	if err := json.Unmarshal(b, &s); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func parserRangeToLspRange(r parser.Range) lsp.Range {
+	return lsp.Range{
+		Start: lsp.Position{
+			Line:      r.From.Line,
+			Character: r.From.Col,
+		},
+		End: lsp.Position{
+			Line:      r.To.Line,
+			Character: r.To.Col,
+		},
+	}
 }
