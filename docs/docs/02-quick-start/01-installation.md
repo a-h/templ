@@ -61,23 +61,23 @@ This flake exposes an overlay, so you can add it to your own Flake and/or NixOS 
     });
     templ = system: inputs.templ.packages.${system}.templ;
   in {
-    packages = forAllSystems ({ pkgs, system }): {
+    packages = forAllSystems ({ pkgs, system }: {
       myNewPackage = pkgs.buildGoModule {
         ...
         preBuild = ''
           ${templ system}/bin/templ generate
         '';
       };
-    };
+    });
 
-    devShell = forAllSystems ({ pkgs, system }):
+    devShell = forAllSystems ({ pkgs, system }:
       pkgs.mkShell {
         buildInputs = with pkgs; [
           go
           (templ system)
         ];
       };
-  };
+  });
 }
 ```
 
