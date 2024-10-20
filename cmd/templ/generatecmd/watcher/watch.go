@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"context"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -36,18 +37,24 @@ func Recursive(
 // WalkFiles walks the file tree rooted at path, sending a Create event for each
 // file it encounters.
 func WalkFiles(ctx context.Context, path string, out chan fsnotify.Event) (err error) {
-	return filepath.WalkDir(path, func(path string, info os.DirEntry, err error) error {
+	rootPath := path
+	fileSystem := os.DirFS(rootPath)
+	return fs.WalkDir(fileSystem, ".", func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
-		if info.IsDir() && shouldSkipDir(path) {
+		absPath, err := filepath.Abs(filepath.Join(rootPath, path))
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() && shouldSkipDir(absPath) {
 			return filepath.SkipDir
 		}
-		if !shouldIncludeFile(path) {
+		if !shouldIncludeFile(absPath) {
 			return nil
 		}
 		out <- fsnotify.Event{
-			Name: path,
+			Name: absPath,
 			Op:   fsnotify.Create,
 		}
 		return nil

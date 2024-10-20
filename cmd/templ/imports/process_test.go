@@ -2,10 +2,13 @@ package imports
 
 import (
 	"bytes"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/a-h/templ/cmd/templ/testproject"
 	"github.com/a-h/templ/parser/v2"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/txtar"
@@ -59,4 +62,93 @@ func clean(b []byte) string {
 	b = bytes.ReplaceAll(b, []byte("$\n"), []byte("\n"))
 	b = bytes.TrimSuffix(b, []byte("\n"))
 	return string(b)
+}
+
+func TestImport(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+		return
+	}
+
+	tests := []struct {
+		name       string
+		src        string
+		assertions func(t *testing.T, updated string)
+	}{
+		{
+			name: "un-named imports are removed",
+			src: `package main
+
+import "fmt"
+import "github.com/a-h/templ/cmd/templ/testproject/css-classes"
+
+templ Page(count int) {
+	{ fmt.Sprintf("%d", count) }
+	{ cssclasses.Header }
+}
+`,
+			assertions: func(t *testing.T, updated string) {
+				if count := strings.Count(updated, "github.com/a-h/templ/cmd/templ/testproject/css-classes"); count != 0 {
+					t.Errorf("expected un-named import to be removed, but got %d instance of it", count)
+				}
+			},
+		},
+		{
+			name: "named imports are retained",
+			src: `package main
+
+import "fmt"
+import  cssclasses "github.com/a-h/templ/cmd/templ/testproject/css-classes"
+
+templ Page(count int) {
+	{ fmt.Sprintf("%d", count) }
+	{ cssclasses.Header }
+}
+`,
+			assertions: func(t *testing.T, updated string) {
+				if count := strings.Count(updated, "cssclasses \"github.com/a-h/templ/cmd/templ/testproject/css-classes\""); count != 1 {
+					t.Errorf("expected named import to be retained, got %d instances of it", count)
+				}
+				if count := strings.Count(updated, "github.com/a-h/templ/cmd/templ/testproject/css-classes"); count != 1 {
+					t.Errorf("expected one import, got %d", count)
+				}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		// Create test project.
+		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
+		if err != nil {
+			t.Fatalf("failed to create test project: %v", err)
+		}
+		defer os.RemoveAll(dir)
+
+		// Load the templates.templ file.
+		filePath := path.Join(dir, "templates.templ")
+		err = os.WriteFile(filePath, []byte(test.src), 0660)
+		if err != nil {
+			t.Fatalf("failed to write file: %v", err)
+		}
+
+		// Parse the new file.
+		template, err := parser.Parse(filePath)
+		if err != nil {
+			t.Fatalf("failed to parse %v", err)
+		}
+		template.Filepath = filePath
+		tf, err := Process(template)
+		if err != nil {
+			t.Fatalf("failed to process file: %v", err)
+		}
+
+		// Write it back out after processing.
+		buf := new(strings.Builder)
+		if err := tf.Write(buf); err != nil {
+			t.Fatalf("failed to write template file: %v", err)
+		}
+
+		// Assert.
+		test.assertions(t, buf.String())
+	}
 }

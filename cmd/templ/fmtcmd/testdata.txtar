@@ -22,13 +22,33 @@ templ b() {
 	<div><p>B
 </p></div>
 }
--- a.templ --
+-- b.templ --
 package test
 
 templ b() {
 	<div>
 		<p>
 			B
+		</p>
+	</div>
+}
+-- c.templ --
+package test
+
+templ c() {
+	<div>
+		<p>
+			C
+		</p>
+	</div>
+}
+-- c.templ --
+package test
+
+templ c() {
+	<div>
+		<p>
+			C
 		</p>
 	</div>
 }

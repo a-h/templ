@@ -64,6 +64,81 @@ The use of the `{ children... }` expression in the child component.
 </div>
 ```
 
+### Using children in code components
+
+Children are passed to a component using the Go context. To pass children to a component using Go code, use the `templ.WithChildren` function.
+
+```templ
+package main
+
+import (
+  "context"
+  "os"
+
+  "github.com/a-h/templ"
+)
+
+templ wrapChildren() {
+	<div id="wrapper">
+		{ children... }
+	</div>
+}
+
+func main() {
+  contents := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+    _, err := io.WriteString(w, "<div>Inserted from Go code</div>")
+    return err
+  })
+  ctx := templ.WithChildren(context.Background(), contents)
+  wrapChildren().Render(ctx, os.Stdout)
+}
+```
+
+```html title="output"
+<div id="wrapper">
+ <div>
+  Inserted from Go code
+ </div>
+</div>
+```
+
+To get children from the context, use the `templ.GetChildren` function.
+
+```templ
+package main
+
+import (
+  "context"
+  "os"
+
+  "github.com/a-h/templ"
+)
+
+func main() {
+  contents := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+    _, err := io.WriteString(w, "<div>Inserted from Go code</div>")
+    return err
+  })
+  wrapChildren := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+    children := templ.GetChildren(ctx)
+    ctx = templ.ClearChildren(ctx)
+    _, err := io.WriteString(w, "<div id=\"wrapper\">")
+    if err != nil {
+      return err
+    }
+    err = children.Render(ctx, w)
+    if err != nil {
+      return err
+    }
+    _, err = io.WriteString(w, "</div>")
+    return err
+  })
+```
+
+:::note
+The `templ.ClearChildren` function is used to stop passing the children down the tree.
+:::
+
 ## Components as parameters
 
 Components can also be passed as parameters and rendered using the `@component` expression.
@@ -159,6 +234,43 @@ func main() {
 <div id="contents">
 	<p>Dynamic contents</p>
 </div>
+```
+
+## Joining Components
+
+Components can be aggregated into a single Component using `templ.Join`.
+
+```templ
+package main
+
+templ hello() {
+	<span>hello</span>
+}
+
+templ world() {
+	<span>world</span>
+}
+
+templ helloWorld() {
+	@templ.Join(hello(), world())
+}
+```
+
+```go title="main.go"
+package main
+
+import (
+	"context"
+	"os"
+)
+
+func main() {
+	helloWorld().Render(context.Background(), os.Stdout)
+}
+```
+
+```html title="output"
+<span>hello</span><span>world</span>
 ```
 
 ## Sharing and re-using components

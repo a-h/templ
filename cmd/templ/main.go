@@ -298,6 +298,8 @@ Args:
     Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
   -w
     Number of workers to use when formatting code. (default runtime.NumCPUs).
+  -fail
+    Fails with exit code 1 if files are changed. (e.g. in CI)
   -help
     Print help and exit.
 `
@@ -308,6 +310,7 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
+	failIfChanged := cmd.Bool("fail", false, "")
 	stdoutFlag := cmd.Bool("stdout", false, "")
 	stdinFilepath := cmd.String("stdin-filepath", "", "")
 	err := cmd.Parse(args)
@@ -327,6 +330,7 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 		Files:         cmd.Args(),
 		WorkerCount:   *workerCountFlag,
 		StdinFilepath: *stdinFilepath,
+		FailIfChanged: *failIfChanged,
 	})
 	if err != nil {
 		return 1

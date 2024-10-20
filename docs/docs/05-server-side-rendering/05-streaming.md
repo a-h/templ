@@ -84,6 +84,10 @@ This involves a lot of extra HTTP requests, and means that we have to wait until
 
 Combining templ's streaming capability with a new feature in web browsers called "Declarative Shadow DOM" means that we can perform the same action in a single HTTP request.
 
+:::note:::
+React SSR solutions such as Next.js can do this on the server, just like templ can, see https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming#what-is-streaming
+:::
+
 ### Declarative Shadow DOM
 
 First, we need to define a new templ component called `Slot`.

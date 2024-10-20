@@ -62,10 +62,10 @@
       devShell = forAllSystems ({ system, pkgs }:
         pkgs.mkShell {
           buildInputs = with pkgs; [
-            (golangci-lint.override { buildGoModule = buildGo121Module; })
+            golangci-lint
             cosign # Used to sign container images.
             esbuild # Used to package JS examples.
-            go_1_21
+            go_1_22
             gomod2nix.legacyPackages.${system}.gomod2nix
             gopls
             goreleaser

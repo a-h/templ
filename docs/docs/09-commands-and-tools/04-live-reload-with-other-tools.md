@@ -50,7 +50,7 @@ This assumes that your http server is running on `http://localhost:8080`. `--ope
 Tailwind requires a `tailwind.config.js` file at the root of your project, alongside an `input.css` file.
 
 ```shell
-npx tailwindcss -i ./input.css -o ./assets/styles.css --minify --watch
+npx --yes tailwindcss -i ./input.css -o ./assets/styles.css --minify --watch
 ```
 
 This will watch `input.css` as well as your `.templ` files and re-generate `assets/styles.css` whenever there's a change.
@@ -60,7 +60,7 @@ This will watch `input.css` as well as your `.templ` files and re-generate `asse
 To bundle JavaScript, TypeScript, JSX, or TSX files, you can use `esbuild`:
 
 ```shell
-npx esbuild js/index.ts --bundle --outdir=assets/ --watch
+npx --yes esbuild js/index.ts --bundle --outdir=assets/ --watch
 ```
 
 This will watch `js/index.ts` and relevant files, and re-generate `assets/index.js` whenever there's a change.
@@ -184,11 +184,11 @@ live/server:
 
 # run tailwindcss to generate the styles.css bundle in watch mode.
 live/tailwind:
-	npx tailwindcss -i ./input.css -o ./assets/styles.css --minify --watch
+	npx --yes tailwindcss -i ./input.css -o ./assets/styles.css --minify --watch
 
 # run esbuild to generate the index.js bundle in watch mode.
 live/esbuild:
-	npx esbuild js/index.ts --bundle --outdir=assets/ --watch
+	npx --yes esbuild js/index.ts --bundle --outdir=assets/ --watch
 
 # watch for any js or css change in the assets/ folder, then reload the browser via templ proxy.
 live/sync_assets:

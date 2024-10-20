@@ -137,16 +137,16 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 	return t, nil
 }
 
-func getImportDetails(imp *ast.ImportSpec) (name, path string, err error) {
+func getImportDetails(imp *ast.ImportSpec) (name, importPath string, err error) {
 	if imp.Name != nil {
 		name = imp.Name.Name
 	}
 	if imp.Path != nil {
-		path, err = strconv.Unquote(imp.Path.Value)
+		importPath, err = strconv.Unquote(imp.Path.Value)
 		if err != nil {
 			err = fmt.Errorf("failed to unquote package path %s: %w", imp.Path.Value, err)
 			return
 		}
 	}
-	return name, path, nil
+	return name, importPath, nil
 }

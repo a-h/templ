@@ -4,31 +4,52 @@ package run
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 )
 
-var m = &sync.Mutex{}
-var running = map[string]*exec.Cmd{}
+var (
+	m       = &sync.Mutex{}
+	running = map[string]*exec.Cmd{}
+)
 
 func KillAll() (err error) {
 	m.Lock()
 	defer m.Unlock()
+	var errs []error
 	for _, cmd := range running {
-		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
-		if err != nil {
-			return err
+		if err := kill(cmd); err != nil {
+			errs = append(errs, fmt.Errorf("failed to kill process %d: %w", cmd.Process.Pid, err))
 		}
 	}
 	running = map[string]*exec.Cmd{}
-	return
+	return errors.Join(errs...)
 }
 
-func Stop(cmd *exec.Cmd) (err error) {
-	return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+func kill(cmd *exec.Cmd) (err error) {
+	errs := make([]error, 4)
+	errs[0] = ignoreExited(cmd.Process.Signal(syscall.SIGINT))
+	errs[1] = ignoreExited(cmd.Process.Signal(syscall.SIGTERM))
+	errs[2] = ignoreExited(cmd.Wait())
+	errs[3] = ignoreExited(syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL))
+	return errors.Join(errs...)
+}
+
+func ignoreExited(err error) error {
+	if errors.Is(err, syscall.ESRCH) {
+		return nil
+	}
+	// Ignore *exec.ExitError
+	if _, ok := err.(*exec.ExitError); ok {
+		return nil
+	}
+	return err
 }
 
 func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err error) {
@@ -36,9 +57,10 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 	defer m.Unlock()
 	cmd, ok := running[input]
 	if ok {
-		if err = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
-			return cmd, err
+		if err := kill(cmd); err != nil {
+			return cmd, fmt.Errorf("failed to kill process %d: %w", cmd.Process.Pid, err)
 		}
+
 		delete(running, input)
 	}
 	parts := strings.Fields(input)
@@ -48,7 +70,9 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 		args = append(args, parts[1:]...)
 	}
 
-	cmd = exec.Command(executable, args...)
+	cmd = exec.CommandContext(ctx, executable, args...)
+	// Wait for the process to finish gracefully before termination.
+	cmd.WaitDelay = time.Second * 3
 	cmd.Env = os.Environ()
 	cmd.Dir = workingDir
 	cmd.Stdout = os.Stdout
