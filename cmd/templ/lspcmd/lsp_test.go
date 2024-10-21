@@ -659,18 +659,18 @@ func TestDocumentSymbol(t *testing.T) {
 			cursor:      `                                 ^`,
 			expect: []any{
 				protocol.SymbolInformation{
-					Name: "Page(count int)",
+					Name: "Page",
 					Kind: protocol.SymbolKindFunction,
 					Location: protocol.Location{
 						URI: uri.URI("file://" + appDir + "/templates.templ"),
 						Range: protocol.Range{
 							Start: protocol.Position{
-								Line:      4,
-								Character: 6,
+								Line:      11,
+								Character: 0,
 							},
 							End: protocol.Position{
-								Line:      4,
-								Character: 21,
+								Line:      50,
+								Character: 1,
 							},
 						},
 					},

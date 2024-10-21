@@ -826,11 +826,27 @@ func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLi
 func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolParams) (result []interface{} /* []SymbolInformation | []DocumentSymbol */, err error) {
 	p.Log.Info("client -> server: DocumentSymbol")
 	defer p.Log.Info("client -> server: DocumentSymbol end")
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return p.Target.DocumentSymbol(ctx, params)
+	}
+	templURI := params.TextDocument.URI
+	params.TextDocument.URI = goURI
 	symbols, err := p.Target.DocumentSymbol(ctx, params)
 	if err != nil {
 		return nil, err
 	}
-	requireDocumentSymbols := false
+
+	// recursively convert the ranges of the symbols and their children
+	var convertRange func(s *lsp.DocumentSymbol)
+	convertRange = func(s *lsp.DocumentSymbol) {
+		s.Range = p.convertGoRangeToTemplRange(templURI, s.Range)
+		s.SelectionRange = p.convertGoRangeToTemplRange(templURI, s.SelectionRange)
+		for i := 0; i < len(s.Children); i++ {
+			convertRange(&s.Children[i])
+		}
+	}
+
 	for _, s := range symbols {
 		if m, ok := s.(map[string]interface{}); ok {
 			s, err = mapToSymbol(m)
@@ -838,44 +854,19 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 				return nil, err
 			}
 		}
-		switch s.(type) {
+		switch s := s.(type) {
 		case lsp.DocumentSymbol:
-			requireDocumentSymbols = true
+			convertRange(&s)
+			result = append(result, s)
 		case lsp.SymbolInformation:
-		}
-		result = append(result, s)
-	}
-
-	// TODO: it looks like we only have SymbolInformation in the result. We should handle DocumentSymbol as well.
-	_ = requireDocumentSymbols
-
-	templSymbols := []interface{}{}
-	doc, ok := p.TemplSource.Get(string(params.TextDocument.URI))
-	if ok {
-		template, err := parser.ParseString(doc.String())
-		if err == nil {
-			for _, s := range template.Nodes {
-				switch s := s.(type) {
-				case parser.TemplateFileGoExpression:
-				case parser.HTMLTemplate:
-					templSymbols = append(templSymbols, lsp.SymbolInformation{
-						Name: s.Expression.Value,
-						Kind: lsp.SymbolKindFunction,
-						Location: lsp.Location{
-							URI:   params.TextDocument.URI,
-							Range: parserRangeToLspRange(s.Expression.Range),
-						},
-					})
-				case parser.CSSTemplate:
-				case parser.ScriptTemplate:
-				}
-			}
+			// p.Log.Info("symbole range before", zap.Any("range", s.Location.Range), zap.String("uri", string(s.Location.URI)))
+			s.Location.URI = templURI
+			s.Location.Range = p.convertGoRangeToTemplRange(templURI, s.Location.Range)
+			// p.Log.Info("symbole range after", zap.Any("range", s.Location.Range), zap.String("uri", string(s.Location.URI)))
+			result = append(result, s)
 		}
 	}
-	// Put the templ symbols first.
-	if len(templSymbols) > 0 {
-		result = append(templSymbols, result...)
-	}
+
 	return result, err
 }
 
