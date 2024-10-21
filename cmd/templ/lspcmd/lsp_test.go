@@ -611,11 +611,7 @@ func TestDocumentSymbol(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log := zap.NewNop()
-	// log, err := zap.NewDevelopment()
-	// if err != nil {
-	// 	t.Fatalf("failed to create logger: %v", err)
-	// }
+	log, _ := zap.NewProduction()
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -624,54 +620,20 @@ func TestDocumentSymbol(t *testing.T) {
 	defer teardown(t)
 	defer cancel()
 
-	templFile, err := os.ReadFile(appDir + "/templates.templ")
-	if err != nil {
-		t.Fatalf("failed to read file %q: %v", appDir+"/templates.templ", err)
-	}
-	err = server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
-		TextDocument: protocol.TextDocumentItem{
-			URI:        uri.URI("file://" + appDir + "/templates.templ"),
-			LanguageID: "templ",
-			Version:    1,
-			Text:       string(templFile),
-		},
-	})
-	if err != nil {
-		t.Errorf("failed to register open file: %v", err)
-		return
-	}
-	log.Info("Calling hover")
-
-	// Edit the file.
-	// Replace:
-	// <div data-testid="count">{ fmt.Sprintf("%d", count) }</div>
-	// With various tests:
-	// <div data-testid="count">{ f
 	tests := []struct {
-		line        int
-		replacement string
-		cursor      string
-		expect      []any
+		uri    string
+		expect []any
 	}{
 		{
-			line:        13,
-			replacement: `			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`,
-			cursor:      `                                 ^`,
+			uri: "file://" + appDir + "/templates.templ",
 			expect: []any{
 				protocol.SymbolInformation{
 					Name: "Page",
 					Kind: protocol.SymbolKindFunction,
 					Location: protocol.Location{
-						URI: uri.URI("file://" + appDir + "/templates.templ"),
 						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      11,
-								Character: 0,
-							},
-							End: protocol.Position{
-								Line:      50,
-								Character: 1,
-							},
+							Start: protocol.Position{Line: 11, Character: 0},
+							End:   protocol.Position{Line: 50, Character: 1},
 						},
 					},
 				},
@@ -679,16 +641,9 @@ func TestDocumentSymbol(t *testing.T) {
 					Name: "nihao",
 					Kind: protocol.SymbolKindVariable,
 					Location: protocol.Location{
-						URI: uri.URI("file://" + appDir + "/templates.templ"),
 						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      18,
-								Character: 4,
-							},
-							End: protocol.Position{
-								Line:      18,
-								Character: 16,
-							},
+							Start: protocol.Position{Line: 18, Character: 4},
+							End:   protocol.Position{Line: 18, Character: 16},
 						},
 					},
 				},
@@ -696,16 +651,9 @@ func TestDocumentSymbol(t *testing.T) {
 					Name: "Struct",
 					Kind: protocol.SymbolKindStruct,
 					Location: protocol.Location{
-						URI: uri.URI("file://" + appDir + "/templates.templ"),
 						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      20,
-								Character: 5,
-							},
-							End: protocol.Position{
-								Line:      22,
-								Character: 1,
-							},
+							Start: protocol.Position{Line: 20, Character: 5},
+							End:   protocol.Position{Line: 22, Character: 1},
 						},
 					},
 				},
@@ -713,16 +661,34 @@ func TestDocumentSymbol(t *testing.T) {
 					Name: "s",
 					Kind: protocol.SymbolKindVariable,
 					Location: protocol.Location{
-						URI: uri.URI("file://" + appDir + "/templates.templ"),
 						Range: protocol.Range{
-							Start: protocol.Position{
-								Line:      24,
-								Character: 4,
-							},
-							End: protocol.Position{
-								Line:      24,
-								Character: 16,
-							},
+							Start: protocol.Position{Line: 24, Character: 4},
+							End:   protocol.Position{Line: 24, Character: 16},
+						},
+					},
+				},
+			},
+		},
+		{
+			uri: "file://" + appDir + "/remoteparent.templ",
+			expect: []any{
+				protocol.SymbolInformation{
+					Name: "RemoteInclusionTest",
+					Kind: protocol.SymbolKindFunction,
+					Location: protocol.Location{
+						Range: protocol.Range{
+							Start: protocol.Position{Line: 9, Character: 0},
+							End:   protocol.Position{Line: 35, Character: 1},
+						},
+					},
+				},
+				protocol.SymbolInformation{
+					Name: "Remote2",
+					Kind: protocol.SymbolKindFunction,
+					Location: protocol.Location{
+						Range: protocol.Range{
+							Start: protocol.Position{Line: 37, Character: 0},
+							End:   protocol.Position{Line: 63, Character: 1},
 						},
 					},
 				},
@@ -732,35 +698,24 @@ func TestDocumentSymbol(t *testing.T) {
 
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
-			// Put the file back to the initial point.
-			err = server.DidChange(ctx, &protocol.DidChangeTextDocumentParams{
-				TextDocument: protocol.VersionedTextDocumentIdentifier{
-					TextDocumentIdentifier: protocol.TextDocumentIdentifier{
-						URI: uri.URI("file://" + appDir + "/templates.templ"),
-					},
-					Version: int32(i + 2),
-				},
-				ContentChanges: []protocol.TextDocumentContentChangeEvent{
-					{
-						Range: nil,
-						Text:  string(templFile),
-					},
-				},
-			})
-			if err != nil {
-				t.Errorf("failed to change file: %v", err)
-				return
-			}
-
-			// Give CI/CD pipeline executors some time because they're often quite slow.
 			actual, err := server.DocumentSymbol(ctx, &protocol.DocumentSymbolParams{
 				TextDocument: protocol.TextDocumentIdentifier{
-					URI: uri.URI("file://" + appDir + "/templates.templ"),
+					URI: uri.URI(test.uri),
 				},
 			})
 			if err != nil {
 				t.Errorf("failed to get document symbol: %v", err)
 			}
+
+			// set expected URI
+			for i := range test.expect {
+				switch v := test.expect[i].(type) {
+				case protocol.SymbolInformation:
+					v.Location.URI = uri.URI(test.uri)
+					test.expect[i] = v
+				}
+			}
+
 			expectdSlice, err := sliceToAnySlice(test.expect)
 			if err != nil {
 				t.Errorf("failed to convert expect to any slice: %v", err)
