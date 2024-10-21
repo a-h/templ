@@ -1277,16 +1277,3 @@ func mapToSymbol(m map[string]interface{}) (interface{}, error) {
 	}
 	return s, nil
 }
-
-func parserRangeToLspRange(r parser.Range) lsp.Range {
-	return lsp.Range{
-		Start: lsp.Position{
-			Line:      r.From.Line,
-			Character: r.From.Col,
-		},
-		End: lsp.Position{
-			Line:      r.To.Line,
-			Character: r.To.Col,
-		},
-	}
-}
