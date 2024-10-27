@@ -74,14 +74,17 @@ func New(conf ...StorybookConfig) *Storybook {
 		Handlers: map[string]http.Handler{},
 		Log:      logger,
 	}
-	for _, sc := range conf {
-		sc(sh)
-	}
-	sh.StaticHandler = http.FileServer(http.Dir(path.Join(sh.Path, "storybook-static")))
 	sh.Server = http.Server{
 		Handler: sh,
 		Addr:    ":60606",
 	}
+	for _, sc := range conf {
+		sc(sh)
+	}
+
+	// Depends on the correct Path, so must be set after additional config
+	sh.StaticHandler = http.FileServer(http.Dir(path.Join(sh.Path, "storybook-static")))
+
 	return sh
 }
 
