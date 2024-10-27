@@ -85,12 +85,13 @@ func New(conf ...StorybookConfig) *Storybook {
 	return sh
 }
 
-func (sh *Storybook) AddComponent(name string, componentConstructor interface{}, args ...Arg) {
+func (sh *Storybook) AddComponent(name string, componentConstructor interface{}, args ...Arg) *Conf {
 	//TODO: Check that the component constructor is a function that returns a templ.Component.
 	c := NewConf(name, args...)
 	sh.Config[name] = c
 	h := NewHandler(name, componentConstructor, args...)
 	sh.Handlers[name] = h
+	return c
 }
 
 var storybookPreviewMatcher = pathvars.NewExtractor("/storybook_preview/{name}")
@@ -346,7 +347,7 @@ func (c *Conf) AddStory(name string, args ...Arg) {
 	}
 	c.Stories = append(c.Stories, Story{
 		Name: name,
-		Args: NewSortedMap(),
+		Args: m,
 	})
 }
 
@@ -504,6 +505,6 @@ func (sm *SortedMap) MarshalJSON() (output []byte, err error) {
 }
 
 type Story struct {
-	Name string `json:"name"`
-	Args *SortedMap
+	Name string     `json:"name"`
+	Args *SortedMap `json:"args"`
 }
