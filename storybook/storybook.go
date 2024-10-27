@@ -55,6 +55,12 @@ func WithHeader(header string) StorybookConfig {
 	}
 }
 
+func WithPath(path string) StorybookConfig {
+	return func(sb *Storybook) {
+		sb.Path = path
+	}
+}
+
 func New(conf ...StorybookConfig) *Storybook {
 	cfg := zap.NewProductionConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
@@ -68,13 +74,13 @@ func New(conf ...StorybookConfig) *Storybook {
 		Handlers: map[string]http.Handler{},
 		Log:      logger,
 	}
+	for _, sc := range conf {
+		sc(sh)
+	}
 	sh.StaticHandler = http.FileServer(http.Dir(path.Join(sh.Path, "storybook-static")))
 	sh.Server = http.Server{
 		Handler: sh,
 		Addr:    ":60606",
-	}
-	for _, sc := range conf {
-		sc(sh)
 	}
 	return sh
 }
