@@ -6,7 +6,11 @@ import (
 
 func Storybook() *storybook.Storybook {
 	s := storybook.New()
-	s.AddComponent("headerTemplate", headerTemplate, storybook.TextArg("name", "Page Name"))
+
+	header := s.AddComponent("headerTemplate", headerTemplate, storybook.TextArg("name", "Page Name"))
+	header.AddStory("Long Name", storybook.TextArg("name", "A Very Long Page Name"))
+
 	s.AddComponent("footerTemplate", footerTemplate)
+
 	return s
 }
