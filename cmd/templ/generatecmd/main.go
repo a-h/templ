@@ -17,6 +17,7 @@ type Arguments struct {
 	Command                         string
 	ProxyBind                       string
 	ProxyPort                       int
+	ProxyOpen                       bool
 	Proxy                           string
 	NotifyProxy                     bool
 	WorkerCount                     int

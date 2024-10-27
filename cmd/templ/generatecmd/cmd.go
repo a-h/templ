@@ -374,8 +374,10 @@ func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err erro
 			)
 			time.Sleep(d)
 		}
-		if err := browser.OpenURL(p.URL); err != nil {
-			cmd.Log.Error("Failed to open browser", slog.Any("error", err))
+		if cmd.Args.ProxyOpen {
+			if err := browser.OpenURL(p.URL); err != nil {
+				cmd.Log.Error("Failed to open browser", slog.Any("error", err))
+			}
 		}
 	}()
 	return p, nil

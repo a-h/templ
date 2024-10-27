@@ -211,6 +211,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	proxyFlag := cmd.String("proxy", "", "")
 	proxyPortFlag := cmd.Int("proxyport", 7331, "")
 	proxyBindFlag := cmd.String("proxybind", "127.0.0.1", "")
+	proxyOpenFlag := cmd.Bool("proxyopen", true, "")
 	notifyProxyFlag := cmd.Bool("notify-proxy", false, "")
 	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
 	pprofPortFlag := cmd.Int("pprof", 0, "")
@@ -255,6 +256,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 		Proxy:                           *proxyFlag,
 		ProxyPort:                       *proxyPortFlag,
 		ProxyBind:                       *proxyBindFlag,
+		ProxyOpen:                       *proxyOpenFlag,
 		NotifyProxy:                     *notifyProxyFlag,
 		WorkerCount:                     *workerCountFlag,
 		GenerateSourceMapVisualisations: *sourceMapVisualisationsFlag,
