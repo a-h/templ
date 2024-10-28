@@ -35,10 +35,11 @@ type Storybook struct {
 	// Handlers for each of the components.
 	Handlers map[string]http.Handler
 	// Handler used to serve Storybook, defaults to filesystem at ./storybook-server/storybook-static.
-	StaticHandler http.Handler
-	Header        string
-	Server        http.Server
-	Log           *zap.Logger
+	StaticHandler      http.Handler
+	Header             string
+	Server             http.Server
+	Log                *zap.Logger
+	AdditionalPrefixJS string
 }
 
 type StorybookConfig func(*Storybook)
@@ -58,6 +59,14 @@ func WithHeader(header string) StorybookConfig {
 func WithPath(path string) StorybookConfig {
 	return func(sb *Storybook) {
 		sb.Path = path
+	}
+}
+
+// WithAdditionalPreviewJS / WithAdditionalPreviewJS allows to add content to the generated .storybook/preview.js file.
+// For example this can be used to include custom CSS.
+func WithAdditionalPreviewJS(content string) StorybookConfig {
+	return func(sb *Storybook) {
+		sb.AdditionalPrefixJS = content
 	}
 }
 
@@ -243,7 +252,7 @@ func (sh *Storybook) configureStorybook() (configHasChanged bool, err error) {
 	}
 	configHasChanged = before != after
 	// Configure storybook Preview URL.
-	err = os.WriteFile(filepath.Join(sh.Path, ".storybook/preview.js"), []byte(previewJS), os.ModePerm)
+	err = os.WriteFile(filepath.Join(sh.Path, ".storybook/preview.js"), []byte(fmt.Sprintf("%s\n%s", sh.AdditionalPrefixJS, previewJS)), os.ModePerm)
 	if err != nil {
 		return
 	}
