@@ -31,6 +31,8 @@ Altogether, to setup live reload on an app that listens on port 8080, run the fo
 templ generate --watch --proxy="http://localhost:8080" --cmd="go run ."
 ```
 
+This will start the proxy server on port `7331` and open it in your default browser. If you'd like to prevent it from opening in your browser add the flag `--open-browser=false`.
+
 ```go title="main.go"
 package main
 
