@@ -613,11 +613,14 @@ func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (
 	p.Log.Info("client -> server: Definition")
 	defer p.Log.Info("client -> server: Definition end")
 	// Rewrite the request.
+	originalRequestFromTempl, _ := convertTemplToGoURI(params.TextDocument.URI)
 	templURI := params.TextDocument.URI
 	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
-	if !ok {
-		return result, nil
+	if originalRequestFromTempl {
+		ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+		if !ok {
+			return result, nil
+		}
 	}
 	// Call gopls and get the result.
 	result, err = p.Target.Definition(ctx, params)
@@ -632,6 +635,17 @@ func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (
 			result[i].URI = templURI
 			result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
 		}
+	}
+	if !originalRequestFromTempl {
+		// If the requst came from outside of a templ file, we only care about the templ file references
+		// The attached gopls will return the others to the IDE
+		filteredResult := []lsp.Location{}
+		for i := 0; i < len(result); i++ {
+			if isTemplFile, _ := convertTemplToGoURI(result[i].URI); isTemplFile {
+				filteredResult = append(filteredResult, result[i])
+			}
+		}
+		result = filteredResult
 	}
 	return
 }
