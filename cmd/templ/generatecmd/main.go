@@ -23,6 +23,8 @@ type Arguments struct {
 	GenerateSourceMapVisualisations bool
 	IncludeVersion                  bool
 	IncludeTimestamp                bool
+	MinifyJS                        bool
+	MinifyCSS                       bool
 	// PPROFPort is the port to run the pprof server on.
 	PPROFPort         int
 	KeepOrphanedFiles bool
