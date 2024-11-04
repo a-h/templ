@@ -859,10 +859,8 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 			convertRange(&s)
 			result = append(result, s)
 		case lsp.SymbolInformation:
-			// p.Log.Info("symbole range before", zap.Any("range", s.Location.Range), zap.String("uri", string(s.Location.URI)))
 			s.Location.URI = templURI
 			s.Location.Range = p.convertGoRangeToTemplRange(templURI, s.Location.Range)
-			// p.Log.Info("symbole range after", zap.Any("range", s.Location.Range), zap.String("uri", string(s.Location.URI)))
 			result = append(result, s)
 		}
 	}
