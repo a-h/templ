@@ -569,3 +569,28 @@ func TestNonce(t *testing.T) {
 		}
 	})
 }
+
+func TestContextManipulations(t *testing.T) {
+	t.Run("reinitializing an already initialized context returns the same instance", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		if ctx != templ.InitializeContext(ctx) {
+			t.Error("expected reinitialization of an already initialized context to return the same instance")
+		}
+	})
+
+	t.Run("reset context allows reinitialization to create a new instance", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		resetCtx := templ.ResetContext(ctx)
+		if ctx == templ.InitializeContext(resetCtx) {
+			t.Error("expected reinitialization of a reset context to return a new instance")
+		}
+	})
+
+	t.Run("reset context clears existing state", func(t *testing.T) {
+		ctx := templ.WithNonce(context.Background(), "abc123")
+		ctx = templ.ResetContext(ctx)
+		if templ.GetNonce(ctx) != "" {
+			t.Error("expected reset context to have an empty state, but found a non-empty nonce")
+		}
+	})
+}
