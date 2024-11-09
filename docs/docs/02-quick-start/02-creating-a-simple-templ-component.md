@@ -34,7 +34,11 @@ templ hello(name string) {
 
 ## Generate Go code from the templ file
 
-Run the `templ generate` command. If it fails under windows run `where templ.exe` to find out the path of `templ.exe` and make sure that it is on your `PATH` environment variable (see `echo %PATH%`)
+Run the `templ generate` command. 
+
+:::tip
+Windows: Use `templ.exe` in Powershell and Windows Command Line, use `templ.exe` in WSL.
+:::
 
 ```sh
 templ generate
