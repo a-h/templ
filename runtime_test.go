@@ -15,6 +15,30 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestCSSID(t *testing.T) {
+	// NOTE: See issue #978. Minimum recommended hs (Hash Suffix) length is 6. Else, naming conflicts become too common.
+
+	// Check for minimum hs length
+	name := "classA"
+	css := "background-color:white;"
+	id := templ.CSSID(name, css)
+	minLength := len(name) + 1 + 6
+
+	if len(id) < minLength {
+		t.Errorf("Expected total length of id to be at least %d, got %d", minLength, len(id))
+	}
+
+	// Check for specific failure case when len(hs) == 4
+	css1 := "grid-column:1;grid-row:1;"  // After hash: f781266f
+	css2 := "grid-column:13;grid-row:6;" // After hash: f781f18b
+	id1 := templ.CSSID(name, css1)
+	id2 := templ.CSSID(name, css2)
+
+	if id1 == id2 {
+		t.Errorf("Different class instances are expected to have distinct names. Got same name for both (%s).", id1)
+	}
+}
+
 func TestCSSHandler(t *testing.T) {
 	tests := []struct {
 		name             string
