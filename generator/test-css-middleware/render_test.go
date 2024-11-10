@@ -16,7 +16,7 @@ import (
 //go:embed expected.html
 var expected string
 
-var expectedCSS = `.red_050e{color:red;}
+var expectedCSS = `.red_050e5e03{color:red;}
 `
 
 func Test(t *testing.T) {

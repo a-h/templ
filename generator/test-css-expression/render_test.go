@@ -8,8 +8,8 @@ import (
 )
 
 var expected = templ.ComponentCSSClass{
-	ID:    "className_34fc",
-	Class: templ.SafeCSS(`.className_34fc{background-color:#ffffff;max-height:calc(100vh - 170px);color:#ff0000;}`),
+	ID:    "className_34fc0328",
+	Class: templ.SafeCSS(`.className_34fc0328{background-color:#ffffff;max-height:calc(100vh - 170px);color:#ff0000;}`),
 }
 
 func TestCSSExpression(t *testing.T) {
