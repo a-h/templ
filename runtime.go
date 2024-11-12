@@ -256,11 +256,11 @@ func (css ComponentCSSClass) ClassName() string {
 // CSSID calculates an ID.
 func CSSID(name string, css string) string {
 	sum := sha256.Sum256([]byte(css))
-	hp := hex.EncodeToString(sum[:])[0:4]
+	hs := hex.EncodeToString(sum[:])[0:8] // NOTE: See issue #978. Minimum recommended hs length is 6.
 	// Benchmarking showed this was fastest, and with fewest allocations (1).
 	// Using strings.Builder (2 allocs).
 	// Using fmt.Sprintf (3 allocs).
-	return name + "_" + hp
+	return name + "_" + hs
 }
 
 // NewCSSMiddleware creates HTTP middleware that renders a global stylesheet of ComponentCSSClass
