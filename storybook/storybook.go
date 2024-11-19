@@ -156,14 +156,18 @@ func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) 
 func (sh *Storybook) previewHandler(w http.ResponseWriter, r *http.Request) {
 	prefix := path.Join(sh.RoutePrefix, "/storybook_preview/")
 	if !strings.HasPrefix(r.URL.Path, prefix) {
-		sh.Log.Info("URL does not match preview prefix", zap.String("url", r.URL.String()))
+		sh.Log.Warn("URL does not match preview prefix", zap.String("url", r.URL.String()))
 		http.NotFound(w, r)
 		return
 	}
 
-	name := strings.TrimPrefix(r.URL.Path, prefix)
+	name, err := url.PathUnescape(strings.TrimPrefix(r.URL.Path, prefix))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to unescape URL: %v", err), http.StatusBadRequest)
+		return
+	}
 	if name == "" {
-		sh.Log.Info("URL does not contain component name", zap.String("url", r.URL.String()))
+		sh.Log.Warn("URL does not contain component name", zap.String("url", r.URL.String()))
 		http.NotFound(w, r)
 		return
 	}
