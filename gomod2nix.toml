@@ -10,9 +10,6 @@ schema = 3
   [mod."github.com/a-h/parse"]
     version = "v0.0.0-20240121214402-3caf7543159a"
     hash = "sha256-ee/g6xwwhtF7vVt3griUSh96Kz4z0hM5/tpXxHW6PZk="
-  [mod."github.com/a-h/pathvars"]
-    version = "v0.0.14"
-    hash = "sha256-2NytUpcO0zbzE5XunCLcK3jDqxYzmyb3WqtYDEudAYg="
   [mod."github.com/a-h/protocol"]
     version = "v0.0.0-20240704131721-1e461c188041"
     hash = "sha256-KSw8m+kVIubEi+nuS3dMdBw2ZZTlmcKD/hGbVRFaE5Q="

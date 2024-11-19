@@ -18,7 +18,6 @@ import (
 
 	"golang.org/x/mod/sumdb/dirhash"
 
-	"github.com/a-h/pathvars"
 	"github.com/a-h/templ"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
@@ -86,8 +85,6 @@ func (sh *Storybook) AddComponent(name string, componentConstructor interface{},
 	h := NewHandler(name, componentConstructor, args...)
 	sh.Handlers[name] = h
 }
-
-var storybookPreviewMatcher = pathvars.NewExtractor("/storybook_preview/{name}")
 
 func (sh *Storybook) Build(ctx context.Context) (err error) {
 	defer func() {
@@ -157,18 +154,24 @@ func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) 
 }
 
 func (sh *Storybook) previewHandler(w http.ResponseWriter, r *http.Request) {
-	values, ok := storybookPreviewMatcher.Extract(r.URL)
-	if !ok {
-		sh.Log.Info("URL not matched", zap.String("url", r.URL.String()))
+	prefix := path.Join(sh.RoutePrefix, "/storybook_preview/")
+	if !strings.HasPrefix(r.URL.Path, prefix) {
+		sh.Log.Warn("URL does not match preview prefix", zap.String("url", r.URL.String()))
 		http.NotFound(w, r)
 		return
 	}
-	name, ok := values["name"]
-	if !ok {
-		sh.Log.Info("URL does not contain component name", zap.String("url", r.URL.String()))
+
+	name, err := url.PathUnescape(strings.TrimPrefix(r.URL.Path, prefix))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to unescape URL: %v", err), http.StatusBadRequest)
+		return
+	}
+	if name == "" {
+		sh.Log.Warn("URL does not contain component name", zap.String("url", r.URL.String()))
 		http.NotFound(w, r)
 		return
 	}
+
 	h, found := sh.Handlers[name]
 	if !found {
 		sh.Log.Info("Component name not found", zap.String("name", name), zap.String("url", r.URL.String()))
