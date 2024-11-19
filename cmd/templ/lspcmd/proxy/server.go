@@ -210,7 +210,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (result *lsp.InitializeResult, err error) {
 	p.Log.Info("client -> server: Initialize")
 	defer p.Log.Info("client -> server: Initialize end")
-	params.ClientInfo.Name += ";templ" // e.g. "Visual Studio Code;templ"
+	params.ClientInfo.Name = "templ" // see https://github.com/golang/go/issues/70205
 	result, err = p.Target.Initialize(ctx, params)
 	if err != nil {
 		p.Log.Error("Initialize failed", zap.Error(err))
