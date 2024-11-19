@@ -112,7 +112,7 @@ To avoid a continous reloading files ending with `_templ.go` should be skipped v
 
 ## Alternative 2: air
 
-Air can handle `*.go` files, but doesn't ship with a proxy to automatically reload pages, and requires a `toml` configuration file for operation.
+Air can handle `*.go` files and also ships with a proxy since version [1.52.0](https://github.com/air-verse/air/releases/tag/v1.52.0). It requires a `toml` configuration file for operation.
 
 See https://github.com/cosmtrek/air for details.
 
@@ -151,4 +151,9 @@ tmp_dir = "tmp"
 
 [misc]
   clean_on_exit = false
+
+[proxy]
+  enabled = true
+  proxy_port = 8383
+  app_port = 8282
 ```
