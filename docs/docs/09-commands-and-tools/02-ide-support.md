@@ -90,7 +90,7 @@ vim.filetype.add({ extension = { templ = "templ" } })
 
 These LSPs can be used *in conjunction* with the templ lsp and tree-sitter. Here's how to set them up.
 
-[html-lsp](https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#html) - First make sure you have it installed `:LspInstall html` or find it on the `:Mason` list. 
+[html-lsp](https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md#html) - First make sure you have it installed `:LspInstall html` or find it on the `:Mason` list. 
 
 ```lua
 lspconfig.html.setup({
@@ -100,7 +100,7 @@ lspconfig.html.setup({
 })
 ```
 
-[htmx-lsp](https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#htmx) - First make sure you have it installed `:LspInstall htmx` or find it on the `:Mason` list. Note with this LSP, it activates after you type `hx-` in an html attribute, because that's how all htmx attributes are written.
+[htmx-lsp](https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md#htmx) - First make sure you have it installed `:LspInstall htmx` or find it on the `:Mason` list. Note with this LSP, it activates after you type `hx-` in an html attribute, because that's how all htmx attributes are written.
 
 ```lua
 lspconfig.htmx.setup({
@@ -110,7 +110,7 @@ lspconfig.htmx.setup({
 })
 ```
 
-[tailwindcss](https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#tailwindcss) - First make sure you have it installed `:LspInstall tailwindcss` or find it on the `:Mason` list.
+[tailwindcss](https://github.com/neovim/nvim-lspconfig/blob/master/doc/configs.md#tailwindcss) - First make sure you have it installed `:LspInstall tailwindcss` or find it on the `:Mason` list.
 
 ```lua
 lspconfig.tailwindcss.setup({
