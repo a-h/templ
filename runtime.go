@@ -550,7 +550,7 @@ func (v *contextValue) hasClassBeenRendered(s string) (ok bool) {
 
 // InitializeContext initializes context used to store internal state used during rendering.
 func InitializeContext(ctx context.Context) context.Context {
-	if _, ok := ctx.Value(contextKey).(*contextValue); ok {
+	if v, ok := ctx.Value(contextKey).(*contextValue); ok && v != nil {
 		return ctx
 	}
 	v := &contextValue{}
@@ -558,9 +558,14 @@ func InitializeContext(ctx context.Context) context.Context {
 	return ctx
 }
 
+// ResetContext resets context to prevent further usage of context state.
+func ResetContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, contextKey, nil)
+}
+
 func getContext(ctx context.Context) (context.Context, *contextValue) {
 	v, ok := ctx.Value(contextKey).(*contextValue)
-	if !ok {
+	if !ok || v == nil {
 		ctx = InitializeContext(ctx)
 		v = ctx.Value(contextKey).(*contextValue)
 	}
