@@ -76,6 +76,28 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "call: can parse the initial expression and leave the text",
+			input: `{!Other(p.Test)} Home`,
+			expected: CallTemplateExpression{
+				Expression: Expression{
+					Value: "Other(p.Test)",
+					Range: Range{
+						From: Position{
+							Index: 2,
+							Line:  0,
+							Col:   2,
+						},
+						To: Position{
+							Index: 15,
+							Line:  0,
+							Col:   15,
+						},
+					},
+				},
+				TrailingSpace: SpaceHorizontal,
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

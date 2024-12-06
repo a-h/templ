@@ -4,7 +4,7 @@ package test
 templ input(items []string) {
 <div>{ "the" }<div>{ "other" }</div>for _, item := range items {
 <div>{ item }</div>
-}</div>
+}<span>After closing bracket</span></div>
 }
 -- out --
 package test
@@ -16,5 +16,6 @@ templ input(items []string) {
 		for _, item := range items {
 			<div>{ item }</div>
 		}
+		<span>After closing bracket</span>
 	</div>
 }

@@ -1539,6 +1539,43 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
+			name: "element: with multiple newlines, should collapse to two",
+			input: `<div>
+	<span></span>
+
+
+
+	<span></span>
+</div>`,
+			expected: Element{
+				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				IndentChildren: true,
+				Children: []Node{
+					Whitespace{Value: "\n\t"},
+					Element{
+						Name: "span",
+						NameRange: Range{
+							From: Position{Index: 8, Line: 1, Col: 2},
+							To:   Position{Index: 12, Line: 1, Col: 6},
+						},
+						TrailingSpace: SpaceVerticalDouble,
+					},
+					Element{
+						Name: "span",
+						NameRange: Range{
+							From: Position{Index: 26, Line: 5, Col: 2},
+							To:   Position{Index: 30, Line: 5, Col: 6},
+						},
+						TrailingSpace: SpaceVertical,
+					},
+				},
+			},
+		},
+		{
 			name: "element: can contain text that starts with for",
 			input: `<div>for which any 
 amount is charged</div>`,
