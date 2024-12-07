@@ -188,6 +188,42 @@ The data in the script tag can then be accessed from client-side JavaScript.
 const data = JSON.parse(document.getElementById('id').textContent);
 ```
 
+Alternatively, you can add a helper that defines a constant, making it accessible in JavaScript scripts as a `const` variable.
+
+```templ
+// helper/helper.go
+package helper
+
+import (
+	"fmt"
+	"github.com/a-h/templ"
+)
+
+func AddScriptVar(k string, v string) templ.Component {
+	raw_script := fmt.Sprintf(`<script>const %s="%s"</script>`, k, v)
+	return templ.Raw(raw_script)
+}
+
+
+// layout/base.templ
+import "helper"
+
+const HEADER = "xyztt"
+templ Base() {
+	<html>
+		<head>...</head>
+		<body>
+			...
+			@helper.AddScriptVar("HX_header", HEADER)
+			<script>
+				console.log(HX_header) // xyztt
+				...
+			</script>
+		</body>
+	</html>
+}
+```
+
 ## Working with NPM projects
 
 https://github.com/a-h/templ/tree/main/examples/typescript contains a TypeScript example that uses `esbuild` to transpile TypeScript into plain JavaScript, along with any required `npm` modules.
