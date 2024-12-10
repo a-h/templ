@@ -703,6 +703,9 @@ func (e RawElement) Write(w io.Writer, indent int) error {
 }
 
 type Attribute interface {
+	// GetName returns the attribute name if possible, otherwise empty string
+	// eg. ConditionalAttribute or SpreadAttributes may contain many names
+	GetName() string
 	// Write out the string.
 	Write(w io.Writer, indent int) error
 }
@@ -711,6 +714,10 @@ type Attribute interface {
 type BoolConstantAttribute struct {
 	Name      string
 	NameRange Range
+}
+
+func (bca BoolConstantAttribute) GetName() string {
+	return bca.Name
 }
 
 func (bca BoolConstantAttribute) String() string {
@@ -727,6 +734,10 @@ type ConstantAttribute struct {
 	Value       string
 	SingleQuote bool
 	NameRange   Range
+}
+
+func (ca ConstantAttribute) GetName() string {
+	return ca.Name
 }
 
 func (ca ConstantAttribute) String() string {
@@ -748,6 +759,10 @@ type BoolExpressionAttribute struct {
 	NameRange  Range
 }
 
+func (bea BoolExpressionAttribute) GetName() string {
+	return bea.Name
+}
+
 func (bea BoolExpressionAttribute) String() string {
 	return bea.Name + `?={ ` + bea.Expression.Value + ` }`
 }
@@ -761,6 +776,10 @@ type ExpressionAttribute struct {
 	Name       string
 	Expression Expression
 	NameRange  Range
+}
+
+func (ea ExpressionAttribute) GetName() string {
+	return ea.Name
 }
 
 func (ea ExpressionAttribute) String() string {
@@ -820,6 +839,10 @@ type SpreadAttributes struct {
 	Expression Expression
 }
 
+func (sa SpreadAttributes) GetName() string {
+	return ""
+}
+
 func (sa SpreadAttributes) String() string {
 	return `{ ` + sa.Expression.Value + `... }`
 }
@@ -836,6 +859,10 @@ type ConditionalAttribute struct {
 	Expression Expression
 	Then       []Attribute
 	Else       []Attribute
+}
+
+func (ca ConditionalAttribute) GetName() string {
+	return ""
 }
 
 func (ca ConditionalAttribute) String() string {
