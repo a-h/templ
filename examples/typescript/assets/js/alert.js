@@ -1,0 +1,2 @@
+function a(){const t=document.querySelector("#attributeAlerter");t&&t.addEventListener("click",n=>{const e=t?.getAttribute("alert-data")??"{}",r=JSON.parse(e);alert(r.msg)})}function c(){const t=document.querySelector("#scriptAlerter");t&&t.addEventListener("click",n=>{const e=document?.getElementById("scriptData")?.textContent??"{}",r=JSON.parse(e);alert(r.msg)})}a(),c();
+//# sourceMappingURL=index.js.map
