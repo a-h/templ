@@ -60,13 +60,13 @@ func showAll() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			return templ_7745c5c3_Err
+			return nil
 		})
 		templ_7745c5c3_Err = wrapChildren().Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -95,7 +95,7 @@ func a() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -128,7 +128,7 @@ func b(child templ.Component) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -170,7 +170,7 @@ func c(text string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -199,7 +199,7 @@ func d() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -228,7 +228,7 @@ func e() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -265,7 +265,7 @@ func showOne(component templ.Component) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -302,7 +302,7 @@ func wrapChildren() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 

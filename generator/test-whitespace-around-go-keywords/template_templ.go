@@ -54,7 +54,7 @@ func WhitespaceIsConsistentInIf(firstIf, secondIf bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -97,7 +97,7 @@ func WhitespaceIsConsistentInFalseIf() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -144,7 +144,7 @@ func WhitespaceIsConsistentInSwitch(i int) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -187,7 +187,7 @@ func WhitespaceIsConsistentInSwitchNoDefault() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -241,7 +241,7 @@ func WhitespaceIsConsistentInFor(i int) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 

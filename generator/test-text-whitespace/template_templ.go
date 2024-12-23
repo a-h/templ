@@ -42,7 +42,7 @@ func WhitespaceIsAddedWithinTemplStatements() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -73,7 +73,7 @@ func InlineElementsAreNotPadded() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -104,7 +104,7 @@ func WhiteSpaceInHTMLIsNormalised() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -148,7 +148,7 @@ func WhiteSpaceAroundValues() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -207,7 +207,7 @@ func WhiteSpaceAroundTemplatedValues(prefix, statement string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 

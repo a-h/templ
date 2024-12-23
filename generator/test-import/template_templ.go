@@ -40,7 +40,7 @@ func listItem() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -77,7 +77,7 @@ func list() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
@@ -130,7 +130,7 @@ func main() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				return templ_7745c5c3_Err
+				return nil
 			})
 			templ_7745c5c3_Err = listItem().Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
@@ -156,7 +156,7 @@ func main() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				return templ_7745c5c3_Err
+				return nil
 			})
 			templ_7745c5c3_Err = listItem().Render(templ.WithChildren(ctx, templ_7745c5c3_Var6), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
@@ -182,19 +182,19 @@ func main() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				return templ_7745c5c3_Err
+				return nil
 			})
 			templ_7745c5c3_Err = listItem().Render(templ.WithChildren(ctx, templ_7745c5c3_Var7), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			return templ_7745c5c3_Err
+			return nil
 		})
 		templ_7745c5c3_Err = list().Render(templ.WithChildren(ctx, templ_7745c5c3_Var4), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
