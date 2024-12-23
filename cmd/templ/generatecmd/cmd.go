@@ -210,7 +210,6 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				defer func() { <-sem }()
 				goUpdated, textUpdated, err := fseh.HandleEvent(ctx, event)
 				if err != nil {
-					cmd.Log.Error("Event handler failed", slog.Any("error", err))
 					errs <- err
 				}
 				if goUpdated || textUpdated {
