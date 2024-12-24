@@ -36,10 +36,11 @@ type Storybook struct {
 	// Handlers for each of the components.
 	Handlers map[string]http.Handler
 	// Handler used to serve Storybook, defaults to filesystem at ./storybook-server/storybook-static.
-	StaticHandler http.Handler
-	Header        string
-	Server        http.Server
-	Log           *zap.Logger
+	StaticHandler      http.Handler
+	Header             string
+	Server             http.Server
+	Log                *zap.Logger
+	AdditionalPrefixJS string
 }
 
 type StorybookConfig func(*Storybook)
@@ -56,6 +57,20 @@ func WithHeader(header string) StorybookConfig {
 	}
 }
 
+func WithPath(path string) StorybookConfig {
+	return func(sb *Storybook) {
+		sb.Path = path
+	}
+}
+
+// WithAdditionalPreviewJS / WithAdditionalPreviewJS allows to add content to the generated .storybook/preview.js file.
+// For example this can be used to include custom CSS.
+func WithAdditionalPreviewJS(content string) StorybookConfig {
+	return func(sb *Storybook) {
+		sb.AdditionalPrefixJS = content
+	}
+}
+
 func New(conf ...StorybookConfig) *Storybook {
 	cfg := zap.NewProductionConfig()
 	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
@@ -69,7 +84,6 @@ func New(conf ...StorybookConfig) *Storybook {
 		Handlers: map[string]http.Handler{},
 		Log:      logger,
 	}
-	sh.StaticHandler = http.FileServer(http.Dir(path.Join(sh.Path, "storybook-static")))
 	sh.Server = http.Server{
 		Handler: sh,
 		Addr:    ":60606",
@@ -77,15 +91,20 @@ func New(conf ...StorybookConfig) *Storybook {
 	for _, sc := range conf {
 		sc(sh)
 	}
+
+	// Depends on the correct Path, so must be set after additional config
+	sh.StaticHandler = http.FileServer(http.Dir(path.Join(sh.Path, "storybook-static")))
+
 	return sh
 }
 
-func (sh *Storybook) AddComponent(name string, componentConstructor interface{}, args ...Arg) {
+func (sh *Storybook) AddComponent(name string, componentConstructor interface{}, args ...Arg) *Conf {
 	//TODO: Check that the component constructor is a function that returns a templ.Component.
 	c := NewConf(name, args...)
 	sh.Config[name] = c
 	h := NewHandler(name, componentConstructor, args...)
 	sh.Handlers[name] = h
+	return c
 }
 
 func (sh *Storybook) Build(ctx context.Context) (err error) {
@@ -256,7 +275,7 @@ func (sh *Storybook) configureStorybook() (configHasChanged bool, err error) {
 	}
 	configHasChanged = before != after
 	// Configure storybook Preview URL.
-	err = os.WriteFile(filepath.Join(sh.Path, ".storybook/preview.js"), []byte(previewJS), os.ModePerm)
+	err = os.WriteFile(filepath.Join(sh.Path, ".storybook/preview.js"), []byte(fmt.Sprintf("%s\n%s", sh.AdditionalPrefixJS, previewJS)), os.ModePerm)
 	if err != nil {
 		return
 	}
@@ -363,7 +382,7 @@ func (c *Conf) AddStory(name string, args ...Arg) {
 	}
 	c.Stories = append(c.Stories, Story{
 		Name: name,
-		Args: NewSortedMap(),
+		Args: m,
 	})
 }
 
@@ -521,6 +540,6 @@ func (sm *SortedMap) MarshalJSON() (output []byte, err error) {
 }
 
 type Story struct {
-	Name string `json:"name"`
-	Args *SortedMap
+	Name string     `json:"name"`
+	Args *SortedMap `json:"args"`
 }
