@@ -8,6 +8,7 @@ import (
 	"io"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +17,7 @@ import (
 	_ "embed"
 
 	"github.com/a-h/templ/parser/v2"
+	"github.com/tdewolff/minify/v2/minify"
 )
 
 type GenerateOpt func(g *generator) error
@@ -53,6 +55,20 @@ func WithExtractStrings() GenerateOpt {
 		g.w.literalWriter = &watchLiteralWriter{
 			builder: &strings.Builder{},
 		}
+		return nil
+	}
+}
+
+func WithJsMinification() GenerateOpt {
+	return func(g *generator) error {
+		g.minifyJS = true
+		return nil
+	}
+}
+
+func WithCSSMinification() GenerateOpt {
+	return func(g *generator) error {
+		g.minifyCSS = true
 		return nil
 	}
 }
@@ -99,6 +115,10 @@ type generator struct {
 	generatedDate string
 	// fileName to include in error messages if string expressions return an error.
 	fileName string
+	// minifyJS bool to set js minification on or off
+	minifyJS bool
+	// minifyCSS bool to set css minification on or off
+	minifyCSS bool
 	// skipCodeGeneratedComment skips the code generated comment at the top of the file.
 	skipCodeGeneratedComment bool
 }
@@ -1316,6 +1336,19 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		}
 	}
 	// Contents.
+	if n.Name == "script" && g.minifyJS {
+		if err := minifyScriptElementContents(&n); err != nil {
+			return err
+		}
+	}
+
+	if n.Name == "style" && g.minifyCSS {
+		var err error
+		if n.Contents, err = minify.Default.String("text/css", n.Contents); err != nil {
+			return err
+		}
+	}
+
 	if err = g.writeText(indentLevel, parser.Text{Value: n.Contents}); err != nil {
 		return err
 	}
@@ -1473,6 +1506,13 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
 		body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
 		suffix := "}"
+
+		if g.minifyJS {
+			if body, err = minify.JS(body); err != nil {
+				return nil
+			}
+		}
+
 		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+body+suffix)+",\n"); err != nil {
 			return err
 		}
@@ -1524,4 +1564,45 @@ func stripTypes(parameters string) string {
 		variableNames = append(variableNames, strings.TrimSpace(p[0]))
 	}
 	return strings.Join(variableNames, ", ")
+}
+
+func minifyScriptElementContents(element *parser.RawElement) error {
+	if element.Name != "script" {
+		return nil
+	}
+
+	mimetype := "text/javascript"
+	for _, attr := range element.Attributes {
+		switch attr.GetName() {
+		case "type":
+			// Warning: this is build on the assumption that
+			// the script attribute 'type' is not defined by a expressive/conditional
+			// statement but a constant one. This may cause unexpected
+			// behaviour when the type is set using a spread, expressive
+			// or conditional attribute
+
+			// Check if this is a ConstantAttribute
+			if a, ok := attr.(parser.ConstantAttribute); ok {
+				typeVal := strings.ToLower(strings.Trim(a.Value, " "))
+				r := regexp.MustCompile(`^(application|text)/(x-)?(java|ecma|j|live)script(1\.[0-5])?$|^module$`)
+				if r.Match([]byte(typeVal)) || typeVal == "application/json" {
+					mimetype = typeVal
+					continue
+				}
+
+				// Unsupported script type
+				return nil
+			}
+		case "src":
+			// Lets not minify remote scripts
+			return nil
+		}
+	}
+
+	var err error
+	if element.Contents, err = minify.Default.String(mimetype, element.Contents); err == nil {
+		return err
+	}
+
+	return nil
 }

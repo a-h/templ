@@ -155,6 +155,10 @@ Args:
     Set to false to skip inclusion of the templ version in the generated code. (default true)
   -include-timestamp
     Set to true to include the current time in the generated code.
+  -minify-js
+    Minify Javascript script blocks and tags. (default false)
+  -minify-css
+    Minify CSS style blocks and tags. (default false)
   -watch
     Set to true to watch the path for changes and regenerate code.
   -cmd <cmd>
@@ -219,6 +223,8 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	logLevelFlag := cmd.String("log-level", "info", "")
 	lazyFlag := cmd.Bool("lazy", false, "")
 	helpFlag := cmd.Bool("help", false, "")
+	minifyJSFlag := cmd.Bool("minify-js", false, "")
+	minifyCSSFlag := cmd.Bool("minify-css", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
 		fmt.Fprint(stderr, generateUsageText)
@@ -262,6 +268,8 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 		IncludeTimestamp:                *includeTimestampFlag,
 		PPROFPort:                       *pprofPortFlag,
 		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
+		MinifyJS:                        *minifyJSFlag,
+		MinifyCSS:                       *minifyCSSFlag,
 		Lazy:                            *lazyFlag,
 	})
 	if err != nil {

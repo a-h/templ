@@ -84,6 +84,12 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	if cmd.Args.IncludeTimestamp {
 		opts = append(opts, generator.WithTimestamp(time.Now()))
 	}
+	if cmd.Args.MinifyJS {
+		opts = append(opts, generator.WithJsMinification())
+	}
+	if cmd.Args.MinifyCSS {
+		opts = append(opts, generator.WithCSSMinification())
+	}
 
 	// Check the version of the templ module.
 	if err := modcheck.Check(cmd.Args.Path); err != nil {
