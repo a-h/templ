@@ -18,6 +18,8 @@ import (
 
 	"golang.org/x/mod/sumdb/dirhash"
 
+	_ "embed"
+
 	"github.com/a-h/templ"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
@@ -171,15 +173,29 @@ func (sh *Storybook) previewHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	name = strings.TrimPrefix(name, "/")
 
 	h, found := sh.Handlers[name]
 	if !found {
-		sh.Log.Info("Component name not found", zap.String("name", name), zap.String("url", r.URL.String()))
+		sh.Log.Info("Component name not found", zap.String("name", name), zap.String("url", r.URL.String()), zap.Strings("available", keysOfMap(sh.Handlers)))
 		http.NotFound(w, r)
 		return
 	}
 	h.ServeHTTP(w, r)
 }
+
+func keysOfMap[K comparable, V any](handler map[K]V) (keys []K) {
+	keys = make([]K, len(handler))
+	var i int
+	for k := range handler {
+		keys[i] = k
+		i++
+	}
+	return keys
+}
+
+//go:embed _package.json
+var packageJSON string
 
 func (sh *Storybook) installStorybook() (err error) {
 	_, err = os.Stat(sh.Path)
@@ -192,6 +208,10 @@ func (sh *Storybook) installStorybook() (err error) {
 		if err != nil {
 			return fmt.Errorf("templ-storybook: error creating @storybook/server directory: %w", err)
 		}
+		err = os.WriteFile(filepath.Join(sh.Path, "package.json"), []byte(packageJSON), 0644)
+		if err != nil {
+			return fmt.Errorf("templ-storybook: error writing package.json: %w", err)
+		}
 	}
 	var cmd exec.Cmd
 	cmd.Dir = sh.Path
@@ -201,7 +221,7 @@ func (sh *Storybook) installStorybook() (err error) {
 	if err != nil {
 		return fmt.Errorf("templ-storybook: cannot install storybook, cannot find npx on the path, check that Node.js is installed: %w", err)
 	}
-	cmd.Args = []string{"npx", "sb", "init", "-t", "server"}
+	cmd.Args = []string{"npx", "sb", "init", "-t", "server", "--no-dev"}
 	return cmd.Run()
 }
 
