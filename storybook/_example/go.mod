@@ -2,7 +2,7 @@ module github.com/a-h/templ/storybook/example
 
 go 1.21
 
-toolchain go1.22.6
+toolchain go1.23.3
 
 replace github.com/a-h/templ => ../../
 
@@ -19,7 +19,6 @@ require (
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
-	github.com/a-h/pathvars v0.0.14 // indirect
 	github.com/rs/cors v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect

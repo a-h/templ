@@ -143,11 +143,6 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	start := time.Now()
 	goUpdated, textUpdated, diag, err := h.generate(ctx, event.Name)
 	if err != nil {
-		h.Log.Error(
-			"Error generating code",
-			slog.String("file", event.Name),
-			slog.Any("error", err),
-		)
 		h.SetError(event.Name, true)
 		return goUpdated, textUpdated, fmt.Errorf("failed to generate code for %q: %w", event.Name, err)
 	}

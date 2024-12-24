@@ -6,7 +6,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/a-h/htmlformat v0.0.0-20231108124658-5bd994fe268e
 	github.com/a-h/parse v0.0.0-20240121214402-3caf7543159a
-	github.com/a-h/pathvars v0.0.14
 	github.com/a-h/protocol v0.0.0-20240704131721-1e461c188041
 	github.com/andybalholm/brotli v1.1.0
 	github.com/cenkalti/backoff/v4 v4.3.0

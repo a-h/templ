@@ -1,8 +1,6 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Masterminds/semver/v3 v3.1.1 h1:hLg3sBzpNErnxhQtUy/mmLR2I9foDujNK030IGemrRc=
 github.com/Masterminds/semver/v3 v3.1.1/go.mod h1:VPu/7SZ7ePZ3QOrcuXROw5FAcLl4a0cBrbBpGY/8hQs=
-github.com/a-h/pathvars v0.0.14 h1:5/C0U5zuUtvAfVQCR5vow4E4MIRU7QIOLz8z26EeeQw=
-github.com/a-h/pathvars v0.0.14/go.mod h1:7rLTtvDVyKneR/N65hC0lh2sZ2KRyAmWFaOvv00uxb0=
 github.com/aws/aws-cdk-go/awscdk/v2 v2.25.0 h1:lTVj41TEVZBfKQ7btNSvBkCYuLw7Y60XXYpNBlhtjkM=
 github.com/aws/aws-cdk-go/awscdk/v2 v2.25.0/go.mod h1:7XCtayiRILOHD/BkEyvxuqdrAHBt6dMXhSNcLm0ihU8=
 github.com/aws/aws-cdk-go/awscdkapigatewayv2alpha/v2 v2.25.0-alpha.0 h1:5hqUcKS5O1p8LkYLFg0Mv0lA+t3+wz49AdDSSokBv3c=

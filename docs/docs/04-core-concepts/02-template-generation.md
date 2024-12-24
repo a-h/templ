@@ -40,7 +40,7 @@ Args:
   -stdout
     Prints to stdout instead of writing generated files to the filesystem.
     Only applicable when -f is used.
-  -sourceMapVisualisations
+  -source-map-visualisations
     Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
   -include-version
     Set to false to skip inclusion of the templ version in the generated code. (default true)

@@ -1,4 +1,4 @@
-# Command-line tools
+# CLI
 
 `templ` provides a command line interface. Most users will only need to run the `templ generate` command to generate Go code from `*.templ` files.
 
@@ -33,7 +33,7 @@ Args:
     Generates code for all files in path. (default .)
   -f <file>
     Optionally generates code for a single file, e.g. -f header.templ
-  -sourceMapVisualisations
+  -source-map-visualisations
     Set to true to generate HTML files to visualise the templ code and its corresponding Go code.
   -include-version
     Set to false to skip inclusion of the templ version in the generated code. (default true)
