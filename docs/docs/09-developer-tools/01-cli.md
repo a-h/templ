@@ -1,4 +1,4 @@
-# Command-line tools
+# CLI
 
 `templ` provides a command line interface. Most users will only need to run the `templ generate` command to generate Go code from `*.templ` files.
 
