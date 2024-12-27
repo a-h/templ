@@ -252,26 +252,25 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (updated
 	}
 
 	// Add the txt file if it has changed.
-	if len(generatorOutput.Literals) > 0 {
+	if os.Getenv("TEMPL_DEV_MODE") == "true" {
 		txtFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.txt"
-		txtHash := sha256.Sum256([]byte(generatorOutput.Literals))
+		joined := strings.Join(generatorOutput.Literals, "\n")
+		txtHash := sha256.Sum256([]byte(joined))
 		if h.UpsertHash(txtFileName, txtHash) {
 			textUpdated = true
-			if err = os.WriteFile(txtFileName, []byte(generatorOutput.Literals), 0o644); err != nil {
+			if err = os.WriteFile(txtFileName, []byte(joined), 0o644); err != nil {
 				return false, false, false, nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
 			}
-		}
-	}
 
-	// Check whether the change would require a recompilation to take effect.
-	if os.Getenv("TEMPL_DEV_MODE") == "true" {
-		h.fileNameToOutputMutex.Lock()
-		defer h.fileNameToOutputMutex.Unlock()
-		previous := h.fileNameToOutput[fileName]
-		if generator.HasChanged(previous, generatorOutput) {
-			goUpdated = true
+			// Check whether the change would require a recompilation to take effect.
+			h.fileNameToOutputMutex.Lock()
+			defer h.fileNameToOutputMutex.Unlock()
+			previous := h.fileNameToOutput[fileName]
+			if generator.HasChanged(previous, generatorOutput) {
+				goUpdated = true
+			}
+			h.fileNameToOutput[fileName] = generatorOutput
 		}
-		h.fileNameToOutput[fileName] = generatorOutput
 	}
 
 	parsedDiagnostics, err := parser.Diagnose(t)
