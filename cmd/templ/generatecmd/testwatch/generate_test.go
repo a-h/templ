@@ -370,11 +370,7 @@ func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err e
 			command += " -gzip true"
 		}
 
-		//log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource: true,
-			Level:     slog.LevelDebug,
-		}))
+		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
 
 		cmdErr = generatecmd.Run(ctx, log, generatecmd.Arguments{
 			Path:                            appDir,
