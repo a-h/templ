@@ -16,7 +16,7 @@ This example, demonstrates setting up a live reload environment that integrates:
 
 ## How does it work
 
-templ's built-in proxy server automatically refreshes the browser when a file changes. The proxy server injects a script that reloads the page in the browser if a "reload" event is sent to the browser by the proxy. See [Live Reload page](/commands-and-tools/live-reload) for a detailed explanation.
+templ's built-in proxy server automatically refreshes the browser when a file changes. The proxy server injects a script that reloads the page in the browser if a "reload" event is sent to the browser by the proxy. See [Live Reload page](/developer-tools/live-reload) for a detailed explanation.
 
 :::tip
 The live reload JavaScript is only injected by the templ proxy if your HTML file contains a closing `</body>` tag.
