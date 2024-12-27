@@ -50,7 +50,7 @@ func template(input string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 

@@ -452,8 +452,8 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		if err = g.writeNodes(indentLevel, stripWhitespace(t.Children), nil); err != nil {
 			return err
 		}
-		// return templ_7745c5c3_Err
-		if _, err = g.w.WriteIndent(indentLevel, "return templ_7745c5c3_Err\n"); err != nil {
+		// return nil
+		if _, err = g.w.WriteIndent(indentLevel, "return nil\n"); err != nil {
 			return err
 		}
 		indentLevel--
@@ -760,7 +760,7 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n parser.T
 		return err
 	}
 	// return nil
-	if _, err = g.w.WriteIndent(indentLevel, "return templ_7745c5c3_Err\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "return nil\n"); err != nil {
 		return err
 	}
 	indentLevel--
