@@ -43,7 +43,7 @@ func (w *literalWriter) closeLiteral(indent int) string {
 	literal := w.builder.String()
 	defer w.builder.Reset()
 	w.Literals = append(w.Literals, literal)
-	sb.WriteString(literal)
+	sb.WriteString(strconv.Quote(literal))
 	sb.WriteString(`)`)
 	sb.WriteString("\n")
 	return sb.String()
