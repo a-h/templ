@@ -63,7 +63,7 @@ func TestErrorLocationMapping(t *testing.T) {
 		}
 
 		event := fsnotify.Event{Name: file.Name(), Op: fsnotify.Write}
-		_, _, err = fseh.HandleEvent(context.Background(), event)
+		_, _, _, err = fseh.HandleEvent(context.Background(), event)
 		if err == nil {
 			t.Errorf("%s: no error was thrown", test.name)
 			break

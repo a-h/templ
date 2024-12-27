@@ -15,12 +15,14 @@ func NewSourceMap() *SourceMap {
 }
 
 type SourceMap struct {
+	Expressions         []string
 	SourceLinesToTarget map[uint32]map[uint32]Position
 	TargetLinesToSource map[uint32]map[uint32]Position
 }
 
 // Add an item to the lookup.
 func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
+	sm.Expressions = append(sm.Expressions, src.Value)
 	srcIndex := src.Range.From.Index
 	tgtIndex := tgt.From.Index
 

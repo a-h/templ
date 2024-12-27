@@ -265,12 +265,12 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 				return nil
 			}
 			w := new(strings.Builder)
-			sm, _, err := generator.Generate(template, w)
+			generatorOutput, err := generator.Generate(template, w)
 			if err != nil {
 				return fmt.Errorf("generate failure: %w", err)
 			}
 			p.Log.Info("setting source map cache contents", zap.String("uri", string(uri)))
-			p.SourceMapCache.Set(string(uri), sm)
+			p.SourceMapCache.Set(string(uri), generatorOutput.SourceMap)
 			// Set the Go contents.
 			p.GoSource[string(uri)] = w.String()
 
@@ -667,14 +667,14 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	//
 	// This change would increase the surface area of gopls that we use, so may surface a number of issues
 	// if enabled.
-	sm, _, err := generator.Generate(template, w)
+	generatorOutput, err := generator.Generate(template, w)
 	if err != nil {
 		p.Log.Error("generate failure", zap.Error(err))
 		return
 	}
 	// Cache the sourcemap.
 	p.Log.Info("setting cache", zap.String("uri", string(params.TextDocument.URI)))
-	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
+	p.SourceMapCache.Set(string(params.TextDocument.URI), generatorOutput.SourceMap)
 	p.GoSource[string(params.TextDocument.URI)] = w.String()
 	// Change the path.
 	params.TextDocument.URI = goURI
@@ -740,12 +740,12 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	// Generate the output code and cache the source map and Go contents to use during completion
 	// requests.
 	w := new(strings.Builder)
-	sm, _, err := generator.Generate(template, w)
+	generatorOutput, err := generator.Generate(template, w)
 	if err != nil {
 		return
 	}
 	p.Log.Info("setting source map cache contents", zap.String("uri", string(params.TextDocument.URI)))
-	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
+	p.SourceMapCache.Set(string(params.TextDocument.URI), generatorOutput.SourceMap)
 	// Set the Go contents.
 	params.TextDocument.Text = w.String()
 	p.GoSource[string(params.TextDocument.URI)] = params.TextDocument.Text

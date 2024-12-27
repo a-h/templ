@@ -96,5 +96,5 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 }
 
 func TestCallTemplateParserAllocsSkip(t *testing.T) {
-	RunParserAllocTest[Node](t, callTemplateExpression, false, 0, ``)
+	RunParserAllocTest(t, callTemplateExpression, false, 0, ``)
 }

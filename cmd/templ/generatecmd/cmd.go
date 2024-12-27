@@ -43,6 +43,7 @@ type Generate struct {
 
 type GenerationEvent struct {
 	Event       fsnotify.Event
+	Updated     bool
 	GoUpdated   bool
 	TextUpdated bool
 }
@@ -103,7 +104,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
 	if cmd.Args.FileName != "" {
-		_, _, err = fseh.HandleEvent(ctx, fsnotify.Event{
+		_, _, _, err = fseh.HandleEvent(ctx, fsnotify.Event{
 			Name: cmd.Args.FileName,
 			Op:   fsnotify.Create,
 		})
@@ -208,13 +209,14 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				cmd.Log.Debug("Processing file", slog.String("file", event.Name))
 				defer eventsWG.Done()
 				defer func() { <-sem }()
-				goUpdated, textUpdated, err := fseh.HandleEvent(ctx, event)
+				updated, goUpdated, textUpdated, err := fseh.HandleEvent(ctx, event)
 				if err != nil {
 					errs <- err
 				}
 				if goUpdated || textUpdated {
 					postGeneration <- &GenerationEvent{
 						Event:       event,
+						Updated:     updated,
 						GoUpdated:   goUpdated,
 						TextUpdated: textUpdated,
 					}
