@@ -2,6 +2,8 @@ package watcher
 
 import (
 	"context"
+	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
@@ -10,14 +12,16 @@ import (
 
 func TestWatchDebouncesDuplicates(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	rw := &RecursiveWatcher{
-		ctx: ctx,
-		w: &fsnotify.Watcher{
-			Events: make(chan fsnotify.Event),
-		},
-		Events: make(chan fsnotify.Event, 2),
-		timers: make(map[timerKey]*time.Timer),
+	w := &fsnotify.Watcher{
+		Events: make(chan fsnotify.Event),
 	}
+	events := make(chan fsnotify.Event, 2)
+	errors := make(chan error)
+	watchPattern, err := regexp.Compile(".*")
+	if err != nil {
+		t.Fatal(fmt.Errorf("failed to compile watch pattern: %w", err))
+	}
+	rw := NewRecursiveWatcher(ctx, w, watchPattern, events, errors)
 	go func() {
 		rw.w.Events <- fsnotify.Event{Name: "test.templ"}
 		rw.w.Events <- fsnotify.Event{Name: "test.templ"}
@@ -60,14 +64,16 @@ func TestWatchDoesNotDebounceDifferentEvents(t *testing.T) {
 	}
 	for _, test := range tests {
 		ctx, cancel := context.WithCancel(context.Background())
-		rw := &RecursiveWatcher{
-			ctx: ctx,
-			w: &fsnotify.Watcher{
-				Events: make(chan fsnotify.Event),
-			},
-			Events: make(chan fsnotify.Event, 2),
-			timers: make(map[timerKey]*time.Timer),
+		w := &fsnotify.Watcher{
+			Events: make(chan fsnotify.Event),
 		}
+		events := make(chan fsnotify.Event, 2)
+		errors := make(chan error)
+		watchPattern, err := regexp.Compile(".*")
+		if err != nil {
+			t.Fatal(fmt.Errorf("failed to compile watch pattern: %w", err))
+		}
+		rw := NewRecursiveWatcher(ctx, w, watchPattern, events, errors)
 		go func() {
 			rw.w.Events <- test.event1
 			rw.w.Events <- test.event2
@@ -93,14 +99,16 @@ func TestWatchDoesNotDebounceDifferentEvents(t *testing.T) {
 
 func TestWatchDoesNotDebounceSeparateEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	rw := &RecursiveWatcher{
-		ctx: ctx,
-		w: &fsnotify.Watcher{
-			Events: make(chan fsnotify.Event),
-		},
-		Events: make(chan fsnotify.Event, 2),
-		timers: make(map[timerKey]*time.Timer),
+	w := &fsnotify.Watcher{
+		Events: make(chan fsnotify.Event),
 	}
+	events := make(chan fsnotify.Event, 2)
+	errors := make(chan error)
+	watchPattern, err := regexp.Compile(".*")
+	if err != nil {
+		t.Fatal(fmt.Errorf("failed to compile watch pattern: %w", err))
+	}
+	rw := NewRecursiveWatcher(ctx, w, watchPattern, events, errors)
 	go func() {
 		rw.w.Events <- fsnotify.Event{Name: "test.templ"}
 		<-time.After(200 * time.Millisecond)
