@@ -239,7 +239,10 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (updated
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
 		err = remapErrorList(err, generatorOutput.SourceMap, fileName)
-		return false, false, false, nil, fmt.Errorf("% source formatting error %w", fileName, err)
+		if fileName == "/Users/adrian/github.com/a-h/templ/generator/test-whitespace-around-go-keywords/template.templ" {
+			fmt.Println(string(b.Bytes()))
+		}
+		return false, false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
