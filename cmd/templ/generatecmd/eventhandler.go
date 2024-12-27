@@ -241,9 +241,6 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (updated
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
 		err = remapErrorList(err, generatorOutput.SourceMap, fileName)
-		if fileName == "/Users/adrian/github.com/a-h/templ/generator/test-whitespace-around-go-keywords/template.templ" {
-			fmt.Println(string(b.Bytes()))
-		}
 		return false, false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
 	}
 
