@@ -59,6 +59,7 @@ func NewFSEventHandler(
 		fileNameToErrorMutex:       &sync.Mutex{},
 		fileNameToOutput:           make(map[string]generator.GeneratorOutput),
 		fileNameToOutputMutex:      &sync.Mutex{},
+		devMode:                    devMode,
 		hashes:                     make(map[string][sha256.Size]byte),
 		hashesMutex:                &sync.Mutex{},
 		genOpts:                    genOpts,
@@ -80,6 +81,7 @@ type FSEventHandler struct {
 	fileNameToErrorMutex       *sync.Mutex
 	fileNameToOutput           map[string]generator.GeneratorOutput
 	fileNameToOutputMutex      *sync.Mutex
+	devMode                    bool
 	hashes                     map[string][sha256.Size]byte
 	hashesMutex                *sync.Mutex
 	genOpts                    []generator.GenerateOpt
@@ -109,7 +111,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	}
 	// Handle _templ.txt files.
 	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.txt") {
-		if os.Getenv("TEMPL_DEV_MODE") == "true" {
+		if h.devMode {
 			// Don't delete the file if we're in dev mode, but mark that text was updated.
 			return false, false, true, nil
 		}
@@ -255,7 +257,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (updated
 	}
 
 	// Add the txt file if it has changed.
-	if os.Getenv("TEMPL_DEV_MODE") == "true" {
+	if h.devMode {
 		txtFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.txt"
 		joined := strings.Join(generatorOutput.Literals, "\n")
 		txtHash := sha256.Sum256([]byte(joined))
