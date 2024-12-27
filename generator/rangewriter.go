@@ -37,7 +37,7 @@ func (w *literalWriter) closeLiteral(indent int) string {
 	w.index++
 	var sb strings.Builder
 	sb.WriteString(strings.Repeat("\t", indent))
-	sb.WriteString(`templ_7745c5c3_Err = templ.WriteString(templ_7745c3_Buffer, `)
+	sb.WriteString(`templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, `)
 	sb.WriteString(strconv.Itoa(w.index))
 	sb.WriteString(`, `)
 	literal := w.builder.String()
