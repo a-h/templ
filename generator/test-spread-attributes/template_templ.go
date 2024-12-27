@@ -28,7 +28,7 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div><a")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 1, "<div><a")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -36,7 +36,7 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">text</a><div")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 2, ">text</a><div")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -46,7 +46,7 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">text2</div><div")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 3, ">text2</div><div")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -56,7 +56,7 @@ func BasicTemplate(spread templ.Attributes) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(">text3</div></div>")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 4, ">text3</div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

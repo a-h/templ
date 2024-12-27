@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -63,7 +64,14 @@ func main() {
 
 		count++
 		c := Page(count)
-		templ.Handler(c).ServeHTTP(w, r)
+		h := templ.Handler(c)
+		h.ErrorHandler = func(r *http.Request, err error) http.Handler {
+			slog.Error("failed to render template", slog.Any("error", err))
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			})
+		}
+		h.ServeHTTP(w, r)
 	})
 	err := http.ListenAndServe(fmt.Sprintf("localhost:%d", *flagPort), nil)
 	if err != nil {

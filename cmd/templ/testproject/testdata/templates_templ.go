@@ -30,7 +30,7 @@ func Page(count int) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<!doctype html><html><head><title>templ test page</title></head><body><h1>Count</h1><div data-testid=\"count\">")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html><head><title>templ test page</title></head><body><h1>Count</h1><div data-testid=\"count\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -43,7 +43,7 @@ func Page(count int) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</div><div data-testid=\"modification\">Original</div></body></html>")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 2, "</div><div data-testid=\"modification\">Original</div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

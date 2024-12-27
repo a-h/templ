@@ -37,7 +37,7 @@ func Stop(cmd *exec.Cmd) (err error) {
 	return kill.Run()
 }
 
-func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err error) {
+func Run(ctx context.Context, workingDir string, env []string, input string) (cmd *exec.Cmd, err error) {
 	m.Lock()
 	defer m.Unlock()
 	cmd, ok := running[input]
@@ -59,7 +59,7 @@ func Run(ctx context.Context, workingDir, input string) (cmd *exec.Cmd, err erro
 	}
 
 	cmd = exec.Command(executable, args...)
-	cmd.Env = os.Environ()
+	cmd.Env = append(env, os.Environ()...)
 	cmd.Dir = workingDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

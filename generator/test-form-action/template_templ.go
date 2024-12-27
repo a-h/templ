@@ -28,7 +28,7 @@ func render() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<form action=\"javascript:alert(&#39;unaffected&#39;);\">Ignored</form><form action=\"")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 1, "<form action=\"javascript:alert(&#39;unaffected&#39;);\">Ignored</form><form action=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -37,7 +37,7 @@ func render() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">Sanitized</form><form action=\"")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 2, "\">Sanitized</form><form action=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -46,7 +46,7 @@ func render() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("\">Unsanitized</form>")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 3, "\">Unsanitized</form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

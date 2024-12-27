@@ -32,7 +32,7 @@ func render() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<ul><li>")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 1, "<ul><li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -45,28 +45,28 @@ func render() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</li>")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 2, "</li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if ctx.Value(contextKeyName).(string) == "test" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>the if passed</li>")
+			templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 3, "<li>the if passed</li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if ctx.Value(contextKeyName).(string) != "test" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>the else if failed</li>")
+			templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 4, "<li>the else if failed</li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if ctx.Value(contextKeyName).(string) == "test" {
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<li>the else if passed</li>")
+			templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 5, "<li>the else if passed</li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("</ul>")
+		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 6, "</ul>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

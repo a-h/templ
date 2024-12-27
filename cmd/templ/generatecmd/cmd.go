@@ -264,7 +264,11 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				postGenerationEventsWG.Add(1)
 				if cmd.Args.Command != "" && goUpdated {
 					cmd.Log.Debug("Executing command", slog.String("command", cmd.Args.Command))
-					if _, err := run.Run(ctx, cmd.Args.Path, cmd.Args.Command); err != nil {
+					var env []string
+					if cmd.Args.Watch {
+						env = append(env, "TEMPL_DEV_MODE=true")
+					}
+					if _, err := run.Run(ctx, cmd.Args.Path, env, cmd.Args.Command); err != nil {
 						cmd.Log.Error("Error executing command", slog.Any("error", err))
 					}
 				}
