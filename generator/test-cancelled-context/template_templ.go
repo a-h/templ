@@ -28,7 +28,7 @@ func EmptyComponent() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 
