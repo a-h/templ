@@ -22,7 +22,27 @@ var WriteString = func(w io.Writer, index int, s string) error {
 func init() {
 	if developmentMode {
 		WriteString = func(w io.Writer, index int, _ string) error {
-			return WriteWatchModeString(w, index)
+			_, path, _, _ := runtime.Caller(1)
+			if !strings.HasSuffix(path, "_templ.go") {
+				return errors.New("templ: attempt to use WriteString from a non templ file")
+			}
+			txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
+
+			literals, err := getWatchedStrings(txtFilePath)
+			if err != nil {
+				return fmt.Errorf("templ: failed to cache strings: %w", err)
+			}
+
+			if index > len(literals) {
+				return errors.New("templ: failed to find line " + strconv.Itoa(index) + " in " + txtFilePath)
+			}
+
+			s, err := strconv.Unquote(`"` + literals[index-1] + `"`)
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, s)
+			return err
 		}
 	}
 }
