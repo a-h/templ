@@ -531,6 +531,19 @@ if test {
 				},
 			},
 		},
+		{
+			name:   "unquoted attributes are supported",
+			input:  ` data=123`,
+			parser: StripType(constantAttributeParser),
+			expected: ConstantAttribute{
+				Name:  "data",
+				Value: "123",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

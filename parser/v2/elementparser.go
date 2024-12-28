@@ -102,7 +102,9 @@ var (
 var (
 	attributeConstantValueParser            = parse.StringUntil(parse.Rune('"'))
 	attributeConstantValueSingleQuoteParser = parse.StringUntil(parse.Rune('\''))
-	constantAttributeParser                 = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
+	// A valid unquoted attribute value in HTML is any string of text that is not the empty string and that doesn’t contain spaces, tabs, line feeds, form feeds, carriage returns, ", ', `, =, <, or >.
+	attributeConstantValueUnquotedParser = parse.StringUntil(parse.Or(parse.RuneIn(" \t\n\r\"'`=<>/"), parse.EOF[string]()))
+	constantAttributeParser              = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
 		start := pi.Index()
 
 		// Optional whitespace leader.
@@ -118,19 +120,44 @@ var (
 		attr.NameRange = NewRange(pi.PositionAt(pi.Index()-len(attr.Name)), pi.Position())
 
 		// ="
-		result, ok, err := parse.Or(parse.String(`="`), parse.String(`='`)).Parse(pi)
-		if err != nil || !ok {
+		var index int
+		attributeEquals := []parse.Parser[string]{
+			parse.String(`="`),
+			parse.String(`='`),
+			parse.String(`=`),
+		}
+		valueParsers := []parse.Parser[string]{
+			attributeConstantValueParser,
+			attributeConstantValueSingleQuoteParser,
+			attributeConstantValueUnquotedParser,
+		}
+		attributeClosers := []parse.Parser[string]{
+			parse.String(`"`),
+			parse.String(`'`),
+			parse.Func(func(pi *parse.Input) (n string, ok bool, err error) {
+				return "", true, nil
+			}),
+		}
+		singleQuoteSetting := []bool{
+			false,
+			true,
+			false,
+		}
+		var matched bool
+		for index = 0; index < len(attributeEquals); index++ {
+			if _, ok, err = attributeEquals[index].Parse(pi); err != nil || ok {
+				matched = true
+				break
+			}
+		}
+		if err != nil || !matched {
 			pi.Seek(start)
 			return
 		}
 
-		valueParser := attributeConstantValueParser
-		closeParser := parse.String(`"`)
-		if result.B.OK {
-			valueParser = attributeConstantValueSingleQuoteParser
-			closeParser = parse.String(`'`)
-			attr.SingleQuote = true
-		}
+		attr.SingleQuote = singleQuoteSetting[index]
+		valueParser := valueParsers[index]
+		closeParser := attributeClosers[index]
 
 		// Attribute value.
 		if attr.Value, ok, err = valueParser.Parse(pi); err != nil || !ok {
