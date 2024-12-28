@@ -14,43 +14,38 @@ import (
 
 var developmentMode = os.Getenv("TEMPL_DEV_MODE") == "true"
 
-var WriteString = func(w io.Writer, index int, s string) error {
-	_, err := io.WriteString(w, s)
-	return err
-}
-
-func init() {
+// WriteString writes the string to the writer. If development mode is enabled
+// s is replaced with the string at the index in the _templ.txt file.
+func WriteString(w io.Writer, index int, s string) (err error) {
 	if developmentMode {
-		WriteString = func(w io.Writer, index int, _ string) error {
-			_, path, _, _ := runtime.Caller(1)
-			if !strings.HasSuffix(path, "_templ.go") {
-				return errors.New("templ: attempt to use WriteString from a non templ file")
-			}
-			txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
+		_, path, _, _ := runtime.Caller(1)
+		if !strings.HasSuffix(path, "_templ.go") {
+			return errors.New("templ: attempt to use WriteString from a non templ file")
+		}
+		txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
 
-			literals, err := getWatchedStrings(txtFilePath)
-			if err != nil {
-				return fmt.Errorf("templ: failed to cache strings: %w", err)
-			}
+		literals, err := getWatchedStrings(txtFilePath)
+		if err != nil {
+			return fmt.Errorf("templ: failed to cache strings: %w", err)
+		}
 
-			if index > len(literals) {
-				return errors.New("templ: failed to find line " + strconv.Itoa(index) + " in " + txtFilePath)
-			}
+		if index > len(literals) {
+			return fmt.Errorf("templ: failed to find line %d in %s", index, txtFilePath)
+		}
 
-			s, err := strconv.Unquote(`"` + literals[index-1] + `"`)
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, s)
+		s, err = strconv.Unquote(`"` + literals[index-1] + `"`)
+		if err != nil {
 			return err
 		}
 	}
+	_, err = io.WriteString(w, s)
+	return err
 }
 
 // WriteWatchModeString is used when rendering templates in development mode.
 // the generator would have written non-go code to the _templ.txt file, which
 // is then read by this function and written to the output.
-// Deprecated: use GetString instead.
+// Deprecated: since templ v0.3.x generated code uses WriteString.
 func WriteWatchModeString(w io.Writer, lineNum int) error {
 	_, path, _, _ := runtime.Caller(1)
 	if !strings.HasSuffix(path, "_templ.go") {
@@ -64,7 +59,7 @@ func WriteWatchModeString(w io.Writer, lineNum int) error {
 	}
 
 	if lineNum > len(literals) {
-		return errors.New("templ: failed to find line " + strconv.Itoa(lineNum) + " in " + txtFilePath)
+		return fmt.Errorf("templ: failed to find line %d in %s", lineNum, txtFilePath)
 	}
 
 	s, err := strconv.Unquote(`"` + literals[lineNum-1] + `"`)
