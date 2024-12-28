@@ -86,8 +86,8 @@ func (ep *ExpressionParser) Insert(
 	// if reaches end of file, terminate reading
 	if tok == token.EOF {
 		// if EOF reached, but function stack expected
-		if ep.Fns.Peek() != 0 {
-			return true, ErrUnbalanced{tok}
+		if !ep.isTopLevel() {
+			return true, ErrUnbalanced{ep.Stack.Pop()}
 		}
 		return true, nil
 	}
