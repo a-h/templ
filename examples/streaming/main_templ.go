@@ -97,7 +97,7 @@ func Page(data chan string) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				return templ_7745c5c3_Err
+				return nil
 			})
 			templ_7745c5c3_Err = templ.Flush().Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
@@ -108,7 +108,7 @@ func Page(data chan string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		return templ_7745c5c3_Err
+		return nil
 	})
 }
 

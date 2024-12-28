@@ -4,14 +4,15 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "build": "docusaurus build",
+    "start": "npm run generate-llms-md && docusaurus start",
+    "build": "npm run generate-llms-md && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
-    "write-heading-ids": "docusaurus write-heading-ids"
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "generate-llms-md": "find docs | grep '.*md$' | xargs cat > ./static/llms.md"
   },
   "dependencies": {
     "@docusaurus/core": "^3.5.2",
