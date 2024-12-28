@@ -124,7 +124,7 @@ func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (o
 	}
 	op.Options = g.options
 	op.SourceMap = g.sourceMap
-	op.Literals = g.w.literalWriter.Literals
+	op.Literals = g.w.Literals
 	return op, nil
 }
 
@@ -262,13 +262,15 @@ func (g *generator) writeTemplateNodes() error {
 
 func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	var r parser.Range
+	var tgtSymbolRange parser.Range
 	var err error
 	var indentLevel int
 
 	// func
-	if _, err = g.w.Write("func "); err != nil {
+	if r, err = g.w.Write("func "); err != nil {
 		return err
 	}
+	tgtSymbolRange.From = r.From
 	if r, err = g.w.Write(n.Expression.Value); err != nil {
 		return err
 	}
@@ -331,17 +333,25 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 		indentLevel--
 	}
 	// }
-	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
+	if r, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
 		return err
 	}
+
+	// Keep a track of symbol ranges for the LSP.
+	tgtSymbolRange.To = r.To
+	g.sourceMap.AddSymbolRange(n.Range, tgtSymbolRange)
+
 	return nil
 }
 
 func (g *generator) writeGoExpression(n parser.TemplateFileGoExpression) (err error) {
+	var tgtSymbolRange parser.Range
+
 	r, err := g.w.Write(n.Expression.Value)
 	if err != nil {
 		return err
 	}
+	tgtSymbolRange.From = r.From
 	g.sourceMap.Add(n.Expression, r)
 	v := n.Expression.Value
 	lineSlice := strings.Split(v, "\n")
@@ -352,9 +362,14 @@ func (g *generator) writeGoExpression(n parser.TemplateFileGoExpression) (err er
 		}
 		return err
 	}
-	if _, err = g.w.WriteIndent(0, "\n\n"); err != nil {
+	if r, err = g.w.WriteIndent(0, "\n\n"); err != nil {
 		return err
 	}
+
+	// Keep a track of symbol ranges for the LSP.
+	tgtSymbolRange.To = r.To
+	g.sourceMap.AddSymbolRange(n.Expression.Range, tgtSymbolRange)
+
 	return err
 }
 
@@ -412,13 +427,15 @@ func (g *generator) writeTemplBuffer(indentLevel int) (err error) {
 
 func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 	var r parser.Range
+	var tgtSymbolRange parser.Range
 	var err error
 	var indentLevel int
 
 	// func
-	if _, err = g.w.Write("func "); err != nil {
+	if r, err = g.w.Write("func "); err != nil {
 		return err
 	}
+	tgtSymbolRange.From = r.From
 	// (r *Receiver) Name(params []string)
 	if r, err = g.w.Write(t.Expression.Value); err != nil {
 		return err
@@ -507,9 +524,14 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		closingBrace = "}\n"
 	}
 
-	if _, err = g.w.WriteIndent(indentLevel, closingBrace); err != nil {
+	if r, err = g.w.WriteIndent(indentLevel, closingBrace); err != nil {
 		return err
 	}
+
+	// Keep a track of symbol ranges for the LSP.
+	tgtSymbolRange.To = r.To
+	g.sourceMap.AddSymbolRange(t.Range, tgtSymbolRange)
+
 	return nil
 }
 
@@ -1467,13 +1489,15 @@ func createGoString(s string) string {
 
 func (g *generator) writeScript(t parser.ScriptTemplate) error {
 	var r parser.Range
+	var tgtSymbolRange parser.Range
 	var err error
 	var indentLevel int
 
 	// func
-	if _, err = g.w.Write("func "); err != nil {
+	if r, err = g.w.Write("func "); err != nil {
 		return err
 	}
+	tgtSymbolRange.From = r.From
 	if r, err = g.w.Write(t.Name.Value); err != nil {
 		return err
 	}
@@ -1527,9 +1551,14 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 	}
 	indentLevel--
 	// }
-	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
+	if r, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
 		return err
 	}
+
+	// Keep track of the symbol range for the LSP.
+	tgtSymbolRange.To = r.To
+	g.sourceMap.AddSymbolRange(t.Range, tgtSymbolRange)
+
 	return nil
 }
 

@@ -111,15 +111,18 @@ func (p *Server) convertGoRangeToTemplRange(templURI lsp.DocumentURI, input lsp.
 		return
 	}
 	// Map from the source position to target Go position.
-	start, ok := sourceMap.SourcePositionFromTarget(input.Start.Line, input.Start.Character)
-	if ok {
+	start, startPositionMapped := sourceMap.SourcePositionFromTarget(input.Start.Line, input.Start.Character)
+	if startPositionMapped {
 		output.Start.Line = start.Line
 		output.Start.Character = start.Col
 	}
-	end, ok := sourceMap.SourcePositionFromTarget(input.End.Line, input.End.Character)
-	if ok {
+	end, endPositionMapped := sourceMap.SourcePositionFromTarget(input.End.Line, input.End.Character)
+	if endPositionMapped {
 		output.End.Line = end.Line
 		output.End.Character = end.Col
+	}
+	if !startPositionMapped || !endPositionMapped {
+		p.Log.Warn("go->templ: range not found in sourcemap", zap.Any("range", input))
 	}
 	return
 }
@@ -837,16 +840,6 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 		return nil, err
 	}
 
-	// recursively convert the ranges of the symbols and their children
-	var convertRange func(s *lsp.DocumentSymbol)
-	convertRange = func(s *lsp.DocumentSymbol) {
-		s.Range = p.convertGoRangeToTemplRange(templURI, s.Range)
-		s.SelectionRange = p.convertGoRangeToTemplRange(templURI, s.SelectionRange)
-		for i := 0; i < len(s.Children); i++ {
-			convertRange(&s.Children[i])
-		}
-	}
-
 	for _, s := range symbols {
 		if m, ok := s.(map[string]interface{}); ok {
 			s, err = mapToSymbol(m)
@@ -856,7 +849,7 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 		}
 		switch s := s.(type) {
 		case lsp.DocumentSymbol:
-			convertRange(&s)
+			p.convertSymbolRange(templURI, &s)
 			result = append(result, s)
 		case lsp.SymbolInformation:
 			s.Location.URI = templURI
@@ -866,6 +859,54 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 	}
 
 	return result, err
+}
+
+func (p *Server) convertSymbolRange(templURI lsp.DocumentURI, s *lsp.DocumentSymbol) {
+	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
+	if !ok {
+		p.Log.Warn("go->templ: sourcemap not found in cache")
+		return
+	}
+	src, ok := sourceMap.SymbolSourceRangeFromTarget(s.Range.Start.Line, s.Range.Start.Character)
+	if !ok {
+		p.Log.Warn("go->templ: symbol range not found", zap.Any("symbol", s), zap.Any("choices", sourceMap.TargetSymbolRangeToSource))
+		return
+	}
+	s.Range = lsp.Range{
+		Start: lsp.Position{
+			Line:      uint32(src.From.Line),
+			Character: uint32(src.From.Col),
+		},
+		End: lsp.Position{
+			Line:      uint32(src.To.Line),
+			Character: uint32(src.To.Col),
+		},
+	}
+	// Within the symbol, we can select sub-sections.
+	// These are Go expressions, in the standard source map.
+	s.SelectionRange = p.convertGoRangeToTemplRange(templURI, s.SelectionRange)
+	for i := 0; i < len(s.Children); i++ {
+		p.convertSymbolRange(templURI, &s.Children[i])
+		if !isRangeWithin(s.Range, s.Children[i].Range) {
+			p.Log.Error("child symbol range not within parent range", zap.Any("symbol", s.Children[i]), zap.Int("index", i))
+		}
+	}
+	if !isRangeWithin(s.Range, s.SelectionRange) {
+		p.Log.Error("selection range not within range", zap.Any("symbol", s))
+	}
+}
+
+func isRangeWithin(parent, child lsp.Range) bool {
+	if child.Start.Line < parent.Start.Line || child.End.Line > parent.End.Line {
+		return false
+	}
+	if child.Start.Line == parent.Start.Line && child.Start.Character < parent.Start.Character {
+		return false
+	}
+	if child.End.Line == parent.End.Line && child.End.Character > parent.End.Character {
+		return false
+	}
+	return true
 }
 
 func (p *Server) ExecuteCommand(ctx context.Context, params *lsp.ExecuteCommandParams) (result interface{}, err error) {

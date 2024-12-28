@@ -11,10 +11,8 @@ import (
 
 func NewRangeWriter(w io.Writer) *RangeWriter {
 	return &RangeWriter{
-		w: w,
-		literalWriter: &literalWriter{
-			builder: &strings.Builder{},
-		},
+		w:       w,
+		builder: &strings.Builder{},
 	}
 }
 
@@ -24,38 +22,28 @@ type RangeWriter struct {
 	w         io.Writer
 
 	// Extract strings.
-	literalWriter *literalWriter
-}
-
-type literalWriter struct {
 	index    int
 	builder  *strings.Builder
 	Literals []string
 }
 
-func (w *literalWriter) closeLiteral(indent int) string {
-	w.index++
+func (rw *RangeWriter) closeLiteral(indent int) (r parser.Range, err error) {
+	rw.inLiteral = false
+	rw.index++
+
 	var sb strings.Builder
 	sb.WriteString(strings.Repeat("\t", indent))
 	sb.WriteString(`templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, `)
-	sb.WriteString(strconv.Itoa(w.index))
+	sb.WriteString(strconv.Itoa(rw.index))
 	sb.WriteString(`, "`)
-	literal := w.builder.String()
-	defer w.builder.Reset()
-	w.Literals = append(w.Literals, literal)
+	literal := rw.builder.String()
+	rw.Literals = append(rw.Literals, literal)
 	sb.WriteString(literal)
+	rw.builder.Reset()
 	sb.WriteString(`")`)
 	sb.WriteString("\n")
-	return sb.String()
-}
 
-func (w *literalWriter) writeLiteral(s string) {
-	w.builder.WriteString(s)
-}
-
-func (rw *RangeWriter) closeLiteral(indent int) (r parser.Range, err error) {
-	rw.inLiteral = false
-	if _, err := rw.write(rw.literalWriter.closeLiteral(indent)); err != nil {
+	if _, err := rw.write(sb.String()); err != nil {
 		return r, err
 	}
 
@@ -77,8 +65,8 @@ func (rw *RangeWriter) WriteIndent(level int, s string) (r parser.Range, err err
 }
 
 func (rw *RangeWriter) WriteStringLiteral(level int, s string) (r parser.Range, err error) {
-	rw.literalWriter.writeLiteral(s)
 	rw.inLiteral = true
+	rw.builder.WriteString(s)
 	return
 }
 
