@@ -67,6 +67,33 @@ func TestTemplateParser(t *testing.T) {
 			},
 		},
 		{
+			name: "template: with bad receiver",
+			input: `templ (data Data Name() {
+}`,
+			expected: HTMLTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 28, Line: 1, Col: 1},
+				},
+				Expression: Expression{
+					Value: "(data Data) Name()",
+					Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  0,
+							Col:   6,
+						},
+						To: Position{
+							Index: 24,
+							Line:  0,
+							Col:   24,
+						},
+					},
+				},
+			},
+		},
+
+		{
 			name: "template: no spaces",
 			input: `templ Name(){
 }`,
