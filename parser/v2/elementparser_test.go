@@ -1786,3 +1786,21 @@ func TestBigElement(t *testing.T) {
 		t.Errorf("unexpected failure to parse")
 	}
 }
+
+func FuzzElement(f *testing.F) {
+	seeds := []string{
+		`<br>`,
+		`<a href="test" unquoted=unquoted/>`,
+		`<input value={ "test" }/>`,
+		`<div>{ "test" }</div>`,
+		`<a unquoted=unquoted href="test" unquoted=unquoted>Test</a>`,
+	}
+
+	for _, tc := range seeds {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		_, _, _ = element.Parse(parse.NewInput(input))
+	})
+}

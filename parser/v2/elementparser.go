@@ -98,13 +98,41 @@ var (
 	})
 )
 
+type attributeValueParser struct {
+	EqualsAndQuote parse.Parser[string]
+	Suffix         parse.Parser[string]
+	UseSingleQuote bool
+}
+
+func (avp attributeValueParser) Parse(pi *parse.Input) (value string, ok bool, err error) {
+	start := pi.Index()
+	if _, ok, err = avp.EqualsAndQuote.Parse(pi); err != nil || !ok {
+		return
+	}
+	if value, ok, err = parse.StringUntil(avp.Suffix).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+	if _, ok, err = avp.Suffix.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+	return value, true, nil
+}
+
 // Constant attribute.
 var (
-	attributeConstantValueParser            = parse.StringUntil(parse.Rune('"'))
-	attributeConstantValueSingleQuoteParser = parse.StringUntil(parse.Rune('\''))
-	// A valid unquoted attribute value in HTML is any string of text that is not an empty string and that doesn’t contain spaces, tabs, line feeds, form feeds, carriage returns, ", ', `, =, <, or >.
-	attributeConstantValueUnquotedParser = parse.StringUntil(parse.Or(parse.RuneIn(" \t\n\r\"'`=<>/"), parse.EOF[string]()))
-	constantAttributeParser              = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
+	attributeValueParsers = []attributeValueParser{
+		// Double quoted.
+		{EqualsAndQuote: parse.String(`="`), Suffix: parse.String(`"`), UseSingleQuote: false},
+		// Single quoted.
+		{EqualsAndQuote: parse.String(`='`), Suffix: parse.String(`'`), UseSingleQuote: true},
+		// Unquoted.
+		// A valid unquoted attribute value in HTML is any string of text that is not an empty string,
+		// and that doesn’t contain spaces, tabs, line feeds, form feeds, carriage returns, ", ', `, =, <, or >.
+		{EqualsAndQuote: parse.String("="), Suffix: parse.Any(parse.RuneIn(" \t\n\r\"'`=<>/"), parse.EOF[string]()), UseSingleQuote: false},
+	}
+	constantAttributeParser = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
 		start := pi.Index()
 
 		// Optional whitespace leader.
@@ -119,63 +147,30 @@ var (
 		}
 		attr.NameRange = NewRange(pi.PositionAt(pi.Index()-len(attr.Name)), pi.Position())
 
-		// ="
-		var index int
-		attributeEquals := []parse.Parser[string]{
-			parse.String(`="`),
-			parse.String(`='`),
-			parse.String(`=`),
-		}
-		valueParsers := []parse.Parser[string]{
-			attributeConstantValueParser,
-			attributeConstantValueSingleQuoteParser,
-			attributeConstantValueUnquotedParser,
-		}
-		attributeClosers := []parse.Parser[string]{
-			parse.String(`"`),
-			parse.String(`'`),
-			parse.Func(func(pi *parse.Input) (n string, ok bool, err error) {
-				return "", true, nil
-			}),
-		}
-		singleQuoteSetting := []bool{
-			false,
-			true,
-			false,
-		}
-		var matched bool
-		for index = 0; index < len(attributeEquals); index++ {
-			if _, ok, err = attributeEquals[index].Parse(pi); err != nil || ok {
-				matched = true
+		for _, p := range attributeValueParsers {
+			attr.Value, ok, err = p.Parse(pi)
+			if err != nil {
+				pos := pi.Position()
+				if pErr, isParseError := err.(parse.ParseError); isParseError {
+					pos = pErr.Pos
+				}
+				return attr, false, parse.Error(fmt.Sprintf("%s: %v", attr.Name, err), pos)
+			}
+			if ok {
+				attr.SingleQuote = p.UseSingleQuote
 				break
 			}
 		}
-		if err != nil || !matched {
-			pi.Seek(start)
-			return
-		}
 
-		attr.SingleQuote = singleQuoteSetting[index]
-		valueParser := valueParsers[index]
-		closeParser := attributeClosers[index]
-
-		// Attribute value.
-		if attr.Value, ok, err = valueParser.Parse(pi); err != nil || !ok {
+		if !ok {
 			pi.Seek(start)
-			return
+			return attr, false, nil
 		}
 
 		attr.Value = html.UnescapeString(attr.Value)
-		// Only use single quotes if actually required, due to double quote in the value (prefer double quotes).
-		if attr.SingleQuote && !strings.Contains(attr.Value, "\"") {
-			attr.SingleQuote = false
-		}
 
-		// " - closing quote.
-		if _, ok, err = closeParser.Parse(pi); err != nil || !ok {
-			err = parse.Error(fmt.Sprintf("missing closing quote on attribute %q", attr.Name), pi.Position())
-			return
-		}
+		// Only use single quotes if actually required, due to double quote in the value (prefer double quotes).
+		attr.SingleQuote = attr.SingleQuote && strings.Contains(attr.Value, "\"")
 
 		return attr, true, nil
 	})
