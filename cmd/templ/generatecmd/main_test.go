@@ -107,7 +107,6 @@ func TestDefaultWatchPattern(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			test := test
 			t.Parallel()
 			if wpRegexp.MatchString(test.input) != test.matches {
 				t.Fatalf("expected match of %q to be %v", test.input, test.matches)
