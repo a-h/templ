@@ -32,7 +32,7 @@ func Page(attributeData Data, scriptData Data) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html><head><title>Script usage</title><script src=\"/assets/js/index.js\" defer></script></head><body><button id=\"attributeAlerter\" alert-data=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html><head><title>Script usage</title><script src=\"/assets/js/index.js\" defer></script></head><body><button id=\"attributeAlerter\" alert-data=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -45,7 +45,7 @@ func Page(attributeData Data, scriptData Data) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 2, "\">Show alert from data in alert-data attribute</button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">Show alert from data in alert-data attribute</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -53,7 +53,7 @@ func Page(attributeData Data, scriptData Data) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, 3, "<button id=\"scriptAlerter\">Show alert from data in script</button></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<button id=\"scriptAlerter\">Show alert from data in script</button></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

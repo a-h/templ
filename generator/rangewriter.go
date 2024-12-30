@@ -33,7 +33,7 @@ func (rw *RangeWriter) closeLiteral(indent int) (r parser.Range, err error) {
 
 	var sb strings.Builder
 	sb.WriteString(strings.Repeat("\t", indent))
-	sb.WriteString(`templ_7745c5c3_Err = templ.WriteString(templ_7745c5c3_Buffer, `)
+	sb.WriteString(`templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, `)
 	sb.WriteString(strconv.Itoa(rw.index))
 	sb.WriteString(`, "`)
 	literal := rw.builder.String()

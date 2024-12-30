@@ -68,7 +68,7 @@ func TestGoRun(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			cmd, err := run.Run(ctx, dir, []string{"TEMPL_DEV_MODE=true"}, tt.cmd)
+			cmd, err := run.Run(ctx, dir, tt.cmd)
 			if err != nil {
 				t.Fatalf("failed to run program: %v", err)
 			}

@@ -92,60 +92,70 @@ type FSEventHandler struct {
 	lazy                       bool
 }
 
-func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (updated, goUpdated, textUpdated bool, err error) {
+type GenerateResult struct {
+	// Updated indicates that the file was updated.
+	Updated bool
+	// GoUpdated indicates that Go expressions were updated.
+	GoUpdated bool
+	// TextUpdated indicates that text literals were updated.
+	TextUpdated bool
+}
+
+func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (result GenerateResult, err error) {
 	// Handle _templ.go files.
 	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.go") {
 		_, err = os.Stat(strings.TrimSuffix(event.Name, "_templ.go") + ".templ")
 		if !os.IsNotExist(err) {
-			return false, false, false, err
+			return GenerateResult{}, err
 		}
 		// File is orphaned.
 		if h.keepOrphanedFiles {
-			return false, false, false, nil
+			return GenerateResult{}, nil
 		}
 		h.Log.Debug("Deleting orphaned Go file", slog.String("file", event.Name))
 		if err = os.Remove(event.Name); err != nil {
 			h.Log.Warn("Failed to remove orphaned file", slog.Any("error", err))
 		}
-		return true, true, false, nil
+		return GenerateResult{Updated: true, GoUpdated: true, TextUpdated: false}, nil
 	}
 	// Handle _templ.txt files.
 	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.txt") {
 		if h.devMode {
 			// Don't delete the file if we're in dev mode, but mark that text was updated.
-			return false, false, true, nil
+			return GenerateResult{Updated: false, GoUpdated: false, TextUpdated: true}, nil
 		}
 		h.Log.Debug("Deleting watch mode file", slog.String("file", event.Name))
 		if err = os.Remove(event.Name); err != nil {
 			h.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
-			return false, false, false, nil
+			return GenerateResult{}, nil
 		}
-		return false, false, false, nil
+		return GenerateResult{}, nil
 	}
 
 	// Handle .templ files.
 	if !strings.HasSuffix(event.Name, ".templ") {
-		return false, false, false, nil
+		return GenerateResult{}, nil
 	}
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
 	lastModTime, updatedModTime := h.UpsertLastModTime(event.Name)
 	if !updatedModTime {
 		h.Log.Debug("Skipping file because it wasn't updated", slog.String("file", event.Name))
-		return false, false, false, nil
+		return GenerateResult{}, nil
 	}
 	// If the go file is newer than the templ file, skip generation, because it's up-to-date.
 	if h.lazy && goFileIsUpToDate(event.Name, lastModTime) {
 		h.Log.Debug("Skipping file because the Go file is up-to-date", slog.String("file", event.Name))
-		return false, false, false, nil
+		return GenerateResult{}, nil
 	}
 
 	// Start a processor.
 	start := time.Now()
-	updated, goUpdated, textUpdated, diag, err := h.generate(ctx, event.Name)
+	var diag []parser.Diagnostic
+	result, diag, err = h.generate(ctx, event.Name)
 	if err != nil {
 		h.SetError(event.Name, true)
-		return updated, goUpdated, textUpdated, fmt.Errorf("failed to generate code for %q: %w", event.Name, err)
+		return result, fmt.Errorf("failed to generate code for %q: %w", event.Name, err)
 	}
 	if len(diag) > 0 {
 		for _, d := range diag {
@@ -154,14 +164,14 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 				slog.String("to", fmt.Sprintf("%d:%d", d.Range.To.Line, d.Range.To.Col)),
 			)
 		}
-		return
+		return result, nil
 	}
 	if errorCleared, errorCount := h.SetError(event.Name, false); errorCleared {
 		h.Log.Info("Error cleared", slog.String("file", event.Name), slog.Int("errors", errorCount))
 	}
 	h.Log.Debug("Generated code", slog.String("file", event.Name), slog.Duration("in", time.Since(start)))
 
-	return updated, goUpdated, textUpdated, nil
+	return result, nil
 }
 
 func goFileIsUpToDate(templFileName string, templFileLastMod time.Time) (upToDate bool) {
@@ -213,21 +223,21 @@ func (h *FSEventHandler) UpsertHash(fileName string, hash [sha256.Size]byte) (up
 
 // generate Go code for a single template.
 // If a basePath is provided, the filename included in error messages is relative to it.
-func (h *FSEventHandler) generate(ctx context.Context, fileName string) (updated, goUpdated, textUpdated bool, diagnostics []parser.Diagnostic, err error) {
+func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result GenerateResult, diagnostics []parser.Diagnostic, err error) {
 	t, err := parser.Parse(fileName)
 	if err != nil {
-		return false, false, false, nil, fmt.Errorf("%s parsing error: %w", fileName, err)
+		return GenerateResult{}, nil, fmt.Errorf("%s parsing error: %w", fileName, err)
 	}
 	targetFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.go"
 
 	// Only use relative filenames to the basepath for filenames in runtime error messages.
 	absFilePath, err := filepath.Abs(fileName)
 	if err != nil {
-		return false, false, false, nil, fmt.Errorf("failed to get absolute path for %q: %w", fileName, err)
+		return GenerateResult{}, nil, fmt.Errorf("failed to get absolute path for %q: %w", fileName, err)
 	}
 	relFilePath, err := filepath.Rel(h.dir, absFilePath)
 	if err != nil {
-		return false, false, false, nil, fmt.Errorf("failed to get relative path for %q: %w", fileName, err)
+		return GenerateResult{}, nil, fmt.Errorf("failed to get relative path for %q: %w", fileName, err)
 	}
 	// Convert Windows file paths to Unix-style for consistency.
 	relFilePath = filepath.ToSlash(relFilePath)
@@ -235,21 +245,21 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (updated
 	var b bytes.Buffer
 	generatorOutput, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath))...)
 	if err != nil {
-		return false, false, false, nil, fmt.Errorf("%s generation error: %w", fileName, err)
+		return GenerateResult{}, nil, fmt.Errorf("%s generation error: %w", fileName, err)
 	}
 
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
 		err = remapErrorList(err, generatorOutput.SourceMap, fileName)
-		return false, false, false, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
+		return GenerateResult{}, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
 	goCodeHash := sha256.Sum256(formattedGoCode)
 	if h.UpsertHash(targetFileName, goCodeHash) {
-		updated = true
+		result.Updated = true
 		if err = h.writer(targetFileName, formattedGoCode); err != nil {
-			return false, false, false, nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
+			return result, nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
 		}
 	}
 
@@ -259,9 +269,9 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (updated
 		joined := strings.Join(generatorOutput.Literals, "\n")
 		txtHash := sha256.Sum256([]byte(joined))
 		if h.UpsertHash(txtFileName, txtHash) {
-			textUpdated = true
+			result.TextUpdated = true
 			if err = os.WriteFile(txtFileName, []byte(joined), 0o644); err != nil {
-				return false, false, false, nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
+				return result, nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
 			}
 
 			// Check whether the change would require a recompilation to take effect.
@@ -269,7 +279,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (updated
 			defer h.fileNameToOutputMutex.Unlock()
 			previous := h.fileNameToOutput[fileName]
 			if generator.HasChanged(previous, generatorOutput) {
-				goUpdated = true
+				result.GoUpdated = true
 			}
 			h.fileNameToOutput[fileName] = generatorOutput
 		}
@@ -277,14 +287,14 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (updated
 
 	parsedDiagnostics, err := parser.Diagnose(t)
 	if err != nil {
-		return updated, goUpdated, textUpdated, nil, fmt.Errorf("%s diagnostics error: %w", fileName, err)
+		return result, nil, fmt.Errorf("%s diagnostics error: %w", fileName, err)
 	}
 
 	if h.genSourceMapVis {
 		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, generatorOutput.SourceMap)
 	}
 
-	return updated, goUpdated, textUpdated, parsedDiagnostics, err
+	return result, parsedDiagnostics, err
 }
 
 // Takes an error from the formatter and attempts to convert the positions reported in the target file to their positions

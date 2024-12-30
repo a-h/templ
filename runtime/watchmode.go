@@ -1,4 +1,4 @@
-package templ
+package runtime
 
 import (
 	"errors"
@@ -12,30 +12,31 @@ import (
 	"time"
 )
 
-// WriteWatchModeString is used when rendering templates in development mode.
-// the generator would have written non-go code to the _templ.txt file, which
-// is then read by this function and written to the output.
-//
-// Deprecated: since templ v0.3.x generated code uses WriteString.
-func WriteWatchModeString(w io.Writer, lineNum int) error {
-	_, path, _, _ := runtime.Caller(1)
-	if !strings.HasSuffix(path, "_templ.go") {
-		return errors.New("templ: WriteWatchModeString can only be called from _templ.go")
-	}
-	txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
+var developmentMode = os.Getenv("TEMPL_DEV_MODE") == "true"
 
-	literals, err := getWatchedStrings(txtFilePath)
-	if err != nil {
-		return fmt.Errorf("templ: failed to cache strings: %w", err)
-	}
+// WriteString writes the string to the writer. If development mode is enabled
+// s is replaced with the string at the index in the _templ.txt file.
+func WriteString(w io.Writer, index int, s string) (err error) {
+	if developmentMode {
+		_, path, _, _ := runtime.Caller(1)
+		if !strings.HasSuffix(path, "_templ.go") {
+			return errors.New("templ: attempt to use WriteString from a non templ file")
+		}
+		txtFilePath := strings.Replace(path, "_templ.go", "_templ.txt", 1)
 
-	if lineNum > len(literals) {
-		return fmt.Errorf("templ: failed to find line %d in %s", lineNum, txtFilePath)
-	}
+		literals, err := getWatchedStrings(txtFilePath)
+		if err != nil {
+			return fmt.Errorf("templ: failed to cache strings: %w", err)
+		}
 
-	s, err := strconv.Unquote(`"` + literals[lineNum-1] + `"`)
-	if err != nil {
-		return err
+		if index > len(literals) {
+			return fmt.Errorf("templ: failed to find line %d in %s", index, txtFilePath)
+		}
+
+		s, err = strconv.Unquote(`"` + literals[index-1] + `"`)
+		if err != nil {
+			return err
+		}
 	}
 	_, err = io.WriteString(w, s)
 	return err
