@@ -13,6 +13,7 @@ type Arguments struct {
 	FileWriter                      FileWriterFunc
 	Path                            string
 	Watch                           bool
+	WatchPattern                    string
 	OpenBrowser                     bool
 	Command                         string
 	ProxyBind                       string
@@ -30,5 +31,9 @@ type Arguments struct {
 }
 
 func Run(ctx context.Context, log *slog.Logger, args Arguments) (err error) {
-	return NewGenerate(log, args).Run(ctx)
+	g, err := NewGenerate(log, args)
+	if err != nil {
+		return err
+	}
+	return g.Run(ctx)
 }

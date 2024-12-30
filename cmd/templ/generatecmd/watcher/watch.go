@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ import (
 func Recursive(
 	ctx context.Context,
 	path string,
+	watchPattern *regexp.Regexp,
 	out chan fsnotify.Event,
 	errors chan error,
 ) (w *RecursiveWatcher, err error) {
@@ -23,20 +25,25 @@ func Recursive(
 	if err != nil {
 		return nil, err
 	}
-	w = &RecursiveWatcher{
-		ctx:    ctx,
-		w:      fsnw,
-		Events: out,
-		Errors: errors,
-		timers: make(map[timerKey]*time.Timer),
-	}
+	w = NewRecursiveWatcher(ctx, fsnw, watchPattern, out, errors)
 	go w.loop()
 	return w, w.Add(path)
 }
 
+func NewRecursiveWatcher(ctx context.Context, w *fsnotify.Watcher, watchPattern *regexp.Regexp, events chan fsnotify.Event, errors chan error) *RecursiveWatcher {
+	return &RecursiveWatcher{
+		ctx:          ctx,
+		w:            w,
+		WatchPattern: watchPattern,
+		Events:       events,
+		Errors:       errors,
+		timers:       make(map[timerKey]*time.Timer),
+	}
+}
+
 // WalkFiles walks the file tree rooted at path, sending a Create event for each
 // file it encounters.
-func WalkFiles(ctx context.Context, path string, out chan fsnotify.Event) (err error) {
+func WalkFiles(ctx context.Context, path string, watchPattern *regexp.Regexp, out chan fsnotify.Event) (err error) {
 	rootPath := path
 	fileSystem := os.DirFS(rootPath)
 	return fs.WalkDir(fileSystem, ".", func(path string, info os.DirEntry, err error) error {
@@ -50,7 +57,7 @@ func WalkFiles(ctx context.Context, path string, out chan fsnotify.Event) (err e
 		if info.IsDir() && shouldSkipDir(absPath) {
 			return filepath.SkipDir
 		}
-		if !shouldIncludeFile(absPath) {
+		if !watchPattern.MatchString(absPath) {
 			return nil
 		}
 		out <- fsnotify.Event{
@@ -61,26 +68,14 @@ func WalkFiles(ctx context.Context, path string, out chan fsnotify.Event) (err e
 	})
 }
 
-func shouldIncludeFile(name string) bool {
-	if strings.HasSuffix(name, ".templ") {
-		return true
-	}
-	if strings.HasSuffix(name, "_templ.go") {
-		return true
-	}
-	if strings.HasSuffix(name, "_templ.txt") {
-		return true
-	}
-	return false
-}
-
 type RecursiveWatcher struct {
-	ctx     context.Context
-	w       *fsnotify.Watcher
-	Events  chan fsnotify.Event
-	Errors  chan error
-	timerMu sync.Mutex
-	timers  map[timerKey]*time.Timer
+	ctx          context.Context
+	w            *fsnotify.Watcher
+	WatchPattern *regexp.Regexp
+	Events       chan fsnotify.Event
+	Errors       chan error
+	timerMu      sync.Mutex
+	timers       map[timerKey]*time.Timer
 }
 
 type timerKey struct {
@@ -114,7 +109,7 @@ func (w *RecursiveWatcher) loop() {
 				}
 			}
 			// Only notify on templ related files.
-			if !shouldIncludeFile(event.Name) {
+			if !w.WatchPattern.MatchString(event.Name) {
 				continue
 			}
 			tk := timerKeyFromEvent(event)
