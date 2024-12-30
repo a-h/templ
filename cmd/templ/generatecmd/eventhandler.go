@@ -121,8 +121,9 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	// Handle _templ.txt files.
 	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.txt") {
 		if h.devMode {
-			// Don't delete the file if we're in dev mode, but mark that text was updated.
-			return GenerateResult{Updated: false, GoUpdated: false, TextUpdated: true}, nil
+			// Don't delete the file in dev mode, ignore changes to it, since the .templ file
+			// must have been updated in order to trigger a change in the _templ.txt file.
+			return GenerateResult{Updated: false, GoUpdated: false, TextUpdated: false}, nil
 		}
 		h.Log.Debug("Deleting watch mode file", slog.String("file", event.Name))
 		if err = os.Remove(event.Name); err != nil {
