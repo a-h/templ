@@ -102,7 +102,7 @@ var (
 var (
 	attributeConstantValueParser            = parse.StringUntil(parse.Rune('"'))
 	attributeConstantValueSingleQuoteParser = parse.StringUntil(parse.Rune('\''))
-	// A valid unquoted attribute value in HTML is any string of text that is not the empty string and that doesn’t contain spaces, tabs, line feeds, form feeds, carriage returns, ", ', `, =, <, or >.
+	// A valid unquoted attribute value in HTML is any string of text that is not an empty string and that doesn’t contain spaces, tabs, line feeds, form feeds, carriage returns, ", ', `, =, <, or >.
 	attributeConstantValueUnquotedParser = parse.StringUntil(parse.Or(parse.RuneIn(" \t\n\r\"'`=<>/"), parse.EOF[string]()))
 	constantAttributeParser              = parse.Func(func(pi *parse.Input) (attr ConstantAttribute, ok bool, err error) {
 		start := pi.Index()
