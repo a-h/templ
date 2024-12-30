@@ -118,6 +118,13 @@ go tool cover -func coverage.out | grep total
 gotestsum --watch -- -coverprofile=coverage.out
 ```
 
+### test-fuzz
+
+```sh
+./parser/v2/fuzz.sh
+./parser/v2/goexpression/fuzz.sh
+```
+
 ### benchmark
 
 Run benchmarks.
