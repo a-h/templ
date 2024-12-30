@@ -25,5 +25,5 @@ func main() {
 	}
 
 	// The current commit isn't the one we're about to commit.
-	fmt.Printf("0.2.%d", count+1)
+	fmt.Printf("0.3.%d", count+1)
 }

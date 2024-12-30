@@ -354,6 +354,18 @@ var expressionTests = []testInput{
 		name:  "string concat",
 		input: `direction + "newest"`,
 	},
+	{
+		name: "function call",
+		input: `SplitRule(types.GroupMember{
+    UserID:   uuid.NewString(),
+    Username: "user me",
+}, []types.GroupMember{
+    {
+    UserID:   uuid.NewString(),
+    Username: "user 1",
+    },
+})`,
+	},
 }
 
 func TestExpression(t *testing.T) {

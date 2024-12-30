@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -26,7 +27,9 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func NewGenerate(log *slog.Logger, args Arguments) (g *Generate) {
+const defaultWatchPattern = `(.+\.go$)|(.+\.templ$)|(.+_templ\.txt$)`
+
+func NewGenerate(log *slog.Logger, args Arguments) (g *Generate, err error) {
 	g = &Generate{
 		Log:  log,
 		Args: &args,
@@ -34,12 +37,20 @@ func NewGenerate(log *slog.Logger, args Arguments) (g *Generate) {
 	if g.Args.WorkerCount == 0 {
 		g.Args.WorkerCount = runtime.NumCPU()
 	}
-	return g
+	if g.Args.WatchPattern == "" {
+		g.Args.WatchPattern = defaultWatchPattern
+	}
+	g.WatchPattern, err = regexp.Compile(g.Args.WatchPattern)
+	if err != nil {
+		return nil, fmt.Errorf("failed to compile watch pattern %q: %w", g.Args.WatchPattern, err)
+	}
+	return g, nil
 }
 
 type Generate struct {
-	Log  *slog.Logger
-	Args *Arguments
+	Log          *slog.Logger
+	Args         *Arguments
+	WatchPattern *regexp.Regexp
 }
 
 type GenerationEvent struct {
@@ -145,7 +156,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			slog.String("path", cmd.Args.Path),
 			slog.Bool("devMode", cmd.Args.Watch),
 		)
-		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {
+		if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, events); err != nil {
 			cmd.Log.Error("WalkFiles failed, exiting", slog.Any("error", err))
 			errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
 			return
@@ -155,7 +166,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			return
 		}
 		cmd.Log.Info("Watching files")
-		rw, err := watcher.Recursive(ctx, cmd.Args.Path, events, errs)
+		rw, err := watcher.Recursive(ctx, cmd.Args.Path, cmd.WatchPattern, events, errs)
 		if err != nil {
 			cmd.Log.Error("Recursive watcher setup failed, exiting", slog.Any("error", err))
 			errs <- FatalError{Err: fmt.Errorf("failed to setup recursive watcher: %w", err)}
@@ -189,7 +200,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			cmd.Args.Lazy,
 		)
 		errorCount.Store(0)
-		if err := watcher.WalkFiles(ctx, cmd.Args.Path, events); err != nil {
+		if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, events); err != nil {
 			cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
 			errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
 			return

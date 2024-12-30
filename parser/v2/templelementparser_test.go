@@ -449,3 +449,36 @@ func TestTemplElementExpressionParser(t *testing.T) {
 		})
 	}
 }
+
+func TestTemplElementExpressionParserFailures(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name: "templelement: missing closing brace",
+			input: `@SplitRule(types.GroupMember{
+    UserID:   uuid.NewString(),
+    Username: "user me",
+}, []types.GroupMember{
+    {
+    UserID:   uuid.NewString(),
+    Username: "user 1",
+    },
+`,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			input := parse.NewInput(tt.input)
+			_, ok, err := templElementExpression.Parse(input)
+			if err == nil {
+				t.Fatalf("expected an error")
+			}
+			if ok {
+				t.Fatalf("expected a failure")
+			}
+		})
+	}
+}

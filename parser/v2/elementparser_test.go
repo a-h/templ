@@ -531,6 +531,19 @@ if test {
 				},
 			},
 		},
+		{
+			name:   "unquoted attributes are supported",
+			input:  ` data=123`,
+			parser: StripType(constantAttributeParser),
+			expected: ConstantAttribute{
+				Name:  "data",
+				Value: "123",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -1569,6 +1582,77 @@ amount is charged</div>`,
 				},
 			},
 		},
+		{
+			name:  "element: self-closing with unquoted attribute",
+			input: `<hr noshade=noshade/>`,
+			expected: Element{
+				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "noshade",
+						Value: "noshade",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:  "element: self-closing with unquoted and other attributes",
+			input: `<hr noshade=noshade disabled other-attribute={ false } />`,
+			expected: Element{
+				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
+				Attributes: []Attribute{
+					ConstantAttribute{
+						Name:  "noshade",
+						Value: "noshade",
+						NameRange: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
+					},
+					BoolConstantAttribute{
+						Name: "disabled",
+						NameRange: Range{
+							From: Position{Index: 20, Line: 0, Col: 20},
+							To:   Position{Index: 28, Line: 0, Col: 28},
+						},
+					},
+					ExpressionAttribute{
+						Name: "other-attribute",
+						NameRange: Range{
+							From: Position{Index: 29, Line: 0, Col: 29},
+							To:   Position{Index: 44, Line: 0, Col: 44},
+						},
+						Expression: Expression{
+							Value: "false",
+							Range: Range{
+								From: Position{
+									Index: 47,
+									Line:  0,
+									Col:   47,
+								},
+								To: Position{
+									Index: 52,
+									Line:  0,
+									Col:   52,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -1701,4 +1785,22 @@ func TestBigElement(t *testing.T) {
 	if !ok {
 		t.Errorf("unexpected failure to parse")
 	}
+}
+
+func FuzzElement(f *testing.F) {
+	seeds := []string{
+		`<br>`,
+		`<a href="test" unquoted=unquoted/>`,
+		`<input value={ "test" }/>`,
+		`<div>{ "test" }</div>`,
+		`<a unquoted=unquoted href="test" unquoted=unquoted>Test</a>`,
+	}
+
+	for _, tc := range seeds {
+		f.Add(tc)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		_, _, _ = element.Parse(parse.NewInput(input))
+	})
 }

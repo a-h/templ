@@ -82,6 +82,16 @@ func (ep *ExpressionParser) Insert(
 	defer func() {
 		ep.Previous = tok
 	}()
+
+	// If we've reach the end of the file, terminate reading.
+	if tok == token.EOF {
+		// If the EOF was reached, but we're not at the top level, we must have an unbalanced expression.
+		if !ep.isTopLevel() {
+			return true, ErrUnbalanced{ep.Stack.Pop()}
+		}
+		return true, nil
+	}
+
 	// Handle function literals e.g. func() { fmt.Println("Hello") }
 	// By pushing the current depth onto the stack, we prevent stopping
 	// until we've closed the function.
