@@ -111,15 +111,18 @@ func (p *Server) convertGoRangeToTemplRange(templURI lsp.DocumentURI, input lsp.
 		return
 	}
 	// Map from the source position to target Go position.
-	start, ok := sourceMap.SourcePositionFromTarget(input.Start.Line, input.Start.Character)
-	if ok {
+	start, startPositionMapped := sourceMap.SourcePositionFromTarget(input.Start.Line, input.Start.Character)
+	if startPositionMapped {
 		output.Start.Line = start.Line
 		output.Start.Character = start.Col
 	}
-	end, ok := sourceMap.SourcePositionFromTarget(input.End.Line, input.End.Character)
-	if ok {
+	end, endPositionMapped := sourceMap.SourcePositionFromTarget(input.End.Line, input.End.Character)
+	if endPositionMapped {
 		output.End.Line = end.Line
 		output.End.Character = end.Col
+	}
+	if !startPositionMapped || !endPositionMapped {
+		p.Log.Warn("go->templ: range not found in sourcemap", zap.Any("range", input))
 	}
 	return
 }
@@ -265,12 +268,12 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 				return nil
 			}
 			w := new(strings.Builder)
-			sm, _, err := generator.Generate(template, w)
+			generatorOutput, err := generator.Generate(template, w)
 			if err != nil {
 				return fmt.Errorf("generate failure: %w", err)
 			}
 			p.Log.Info("setting source map cache contents", zap.String("uri", string(uri)))
-			p.SourceMapCache.Set(string(uri), sm)
+			p.SourceMapCache.Set(string(uri), generatorOutput.SourceMap)
 			// Set the Go contents.
 			p.GoSource[string(uri)] = w.String()
 
@@ -667,14 +670,14 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	//
 	// This change would increase the surface area of gopls that we use, so may surface a number of issues
 	// if enabled.
-	sm, _, err := generator.Generate(template, w)
+	generatorOutput, err := generator.Generate(template, w)
 	if err != nil {
 		p.Log.Error("generate failure", zap.Error(err))
 		return
 	}
 	// Cache the sourcemap.
 	p.Log.Info("setting cache", zap.String("uri", string(params.TextDocument.URI)))
-	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
+	p.SourceMapCache.Set(string(params.TextDocument.URI), generatorOutput.SourceMap)
 	p.GoSource[string(params.TextDocument.URI)] = w.String()
 	// Change the path.
 	params.TextDocument.URI = goURI
@@ -740,12 +743,12 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	// Generate the output code and cache the source map and Go contents to use during completion
 	// requests.
 	w := new(strings.Builder)
-	sm, _, err := generator.Generate(template, w)
+	generatorOutput, err := generator.Generate(template, w)
 	if err != nil {
 		return
 	}
 	p.Log.Info("setting source map cache contents", zap.String("uri", string(params.TextDocument.URI)))
-	p.SourceMapCache.Set(string(params.TextDocument.URI), sm)
+	p.SourceMapCache.Set(string(params.TextDocument.URI), generatorOutput.SourceMap)
 	// Set the Go contents.
 	params.TextDocument.Text = w.String()
 	p.GoSource[string(params.TextDocument.URI)] = params.TextDocument.Text
@@ -837,16 +840,6 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 		return nil, err
 	}
 
-	// recursively convert the ranges of the symbols and their children
-	var convertRange func(s *lsp.DocumentSymbol)
-	convertRange = func(s *lsp.DocumentSymbol) {
-		s.Range = p.convertGoRangeToTemplRange(templURI, s.Range)
-		s.SelectionRange = p.convertGoRangeToTemplRange(templURI, s.SelectionRange)
-		for i := 0; i < len(s.Children); i++ {
-			convertRange(&s.Children[i])
-		}
-	}
-
 	for _, s := range symbols {
 		if m, ok := s.(map[string]interface{}); ok {
 			s, err = mapToSymbol(m)
@@ -856,7 +849,7 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 		}
 		switch s := s.(type) {
 		case lsp.DocumentSymbol:
-			convertRange(&s)
+			p.convertSymbolRange(templURI, &s)
 			result = append(result, s)
 		case lsp.SymbolInformation:
 			s.Location.URI = templURI
@@ -866,6 +859,54 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 	}
 
 	return result, err
+}
+
+func (p *Server) convertSymbolRange(templURI lsp.DocumentURI, s *lsp.DocumentSymbol) {
+	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
+	if !ok {
+		p.Log.Warn("go->templ: sourcemap not found in cache")
+		return
+	}
+	src, ok := sourceMap.SymbolSourceRangeFromTarget(s.Range.Start.Line, s.Range.Start.Character)
+	if !ok {
+		p.Log.Warn("go->templ: symbol range not found", zap.Any("symbol", s), zap.Any("choices", sourceMap.TargetSymbolRangeToSource))
+		return
+	}
+	s.Range = lsp.Range{
+		Start: lsp.Position{
+			Line:      uint32(src.From.Line),
+			Character: uint32(src.From.Col),
+		},
+		End: lsp.Position{
+			Line:      uint32(src.To.Line),
+			Character: uint32(src.To.Col),
+		},
+	}
+	// Within the symbol, we can select sub-sections.
+	// These are Go expressions, in the standard source map.
+	s.SelectionRange = p.convertGoRangeToTemplRange(templURI, s.SelectionRange)
+	for i := 0; i < len(s.Children); i++ {
+		p.convertSymbolRange(templURI, &s.Children[i])
+		if !isRangeWithin(s.Range, s.Children[i].Range) {
+			p.Log.Error("child symbol range not within parent range", zap.Any("symbol", s.Children[i]), zap.Int("index", i))
+		}
+	}
+	if !isRangeWithin(s.Range, s.SelectionRange) {
+		p.Log.Error("selection range not within range", zap.Any("symbol", s))
+	}
+}
+
+func isRangeWithin(parent, child lsp.Range) bool {
+	if child.Start.Line < parent.Start.Line || child.End.Line > parent.End.Line {
+		return false
+	}
+	if child.Start.Line == parent.Start.Line && child.Start.Character < parent.Start.Character {
+		return false
+	}
+	if child.End.Line == parent.End.Line && child.End.Character > parent.End.Character {
+		return false
+	}
+	return true
 }
 
 func (p *Server) ExecuteCommand(ctx context.Context, params *lsp.ExecuteCommandParams) (result interface{}, err error) {

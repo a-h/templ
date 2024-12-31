@@ -9,18 +9,49 @@ import (
 // parsed template.
 func NewSourceMap() *SourceMap {
 	return &SourceMap{
-		SourceLinesToTarget: make(map[uint32]map[uint32]Position),
-		TargetLinesToSource: make(map[uint32]map[uint32]Position),
+		SourceLinesToTarget:       make(map[uint32]map[uint32]Position),
+		TargetLinesToSource:       make(map[uint32]map[uint32]Position),
+		SourceSymbolRangeToTarget: make(map[uint32]map[uint32]Range),
+		TargetSymbolRangeToSource: make(map[uint32]map[uint32]Range),
 	}
 }
 
 type SourceMap struct {
-	SourceLinesToTarget map[uint32]map[uint32]Position
-	TargetLinesToSource map[uint32]map[uint32]Position
+	Expressions               []string
+	SourceLinesToTarget       map[uint32]map[uint32]Position
+	TargetLinesToSource       map[uint32]map[uint32]Position
+	SourceSymbolRangeToTarget map[uint32]map[uint32]Range
+	TargetSymbolRangeToSource map[uint32]map[uint32]Range
+}
+
+func (sm *SourceMap) AddSymbolRange(src Range, tgt Range) {
+	sm.SourceSymbolRangeToTarget[src.From.Line] = make(map[uint32]Range)
+	sm.SourceSymbolRangeToTarget[src.From.Line][src.From.Col] = tgt
+	sm.TargetSymbolRangeToSource[tgt.From.Line] = make(map[uint32]Range)
+	sm.TargetSymbolRangeToSource[tgt.From.Line][tgt.From.Col] = src
+}
+
+func (sm *SourceMap) SymbolTargetRangeFromSource(line, col uint32) (tgt Range, ok bool) {
+	lm, ok := sm.SourceSymbolRangeToTarget[line]
+	if !ok {
+		return
+	}
+	tgt, ok = lm[col]
+	return
+}
+
+func (sm *SourceMap) SymbolSourceRangeFromTarget(line, col uint32) (src Range, ok bool) {
+	lm, ok := sm.TargetSymbolRangeToSource[line]
+	if !ok {
+		return
+	}
+	src, ok = lm[col]
+	return
 }
 
 // Add an item to the lookup.
 func (sm *SourceMap) Add(src Expression, tgt Range) (updatedFrom Position) {
+	sm.Expressions = append(sm.Expressions, src.Value)
 	srcIndex := src.Range.From.Index
 	tgtIndex := tgt.From.Index
 
