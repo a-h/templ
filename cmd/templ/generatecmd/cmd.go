@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -54,6 +55,7 @@ type Generate struct {
 
 type GenerationEvent struct {
 	Event       fsnotify.Event
+	Updated     bool
 	GoUpdated   bool
 	TextUpdated bool
 }
@@ -114,7 +116,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
 	if cmd.Args.FileName != "" {
-		_, _, err = fseh.HandleEvent(ctx, fsnotify.Event{
+		_, err = fseh.HandleEvent(ctx, fsnotify.Event{
 			Name: cmd.Args.FileName,
 			Op:   fsnotify.Create,
 		})
@@ -219,15 +221,16 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				cmd.Log.Debug("Processing file", slog.String("file", event.Name))
 				defer eventsWG.Done()
 				defer func() { <-sem }()
-				goUpdated, textUpdated, err := fseh.HandleEvent(ctx, event)
+				r, err := fseh.HandleEvent(ctx, event)
 				if err != nil {
 					errs <- err
 				}
-				if goUpdated || textUpdated {
+				if r.GoUpdated || r.TextUpdated {
 					postGeneration <- &GenerationEvent{
 						Event:       event,
-						GoUpdated:   goUpdated,
-						TextUpdated: textUpdated,
+						Updated:     r.Updated,
+						GoUpdated:   r.GoUpdated,
+						TextUpdated: r.TextUpdated,
 					}
 				}
 			}(event)
@@ -273,6 +276,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				postGenerationEventsWG.Add(1)
 				if cmd.Args.Command != "" && goUpdated {
 					cmd.Log.Debug("Executing command", slog.String("command", cmd.Args.Command))
+					if cmd.Args.Watch {
+						os.Setenv("TEMPL_DEV_MODE", "true")
+					}
 					if _, err := run.Run(ctx, cmd.Args.Path, cmd.Args.Command); err != nil {
 						cmd.Log.Error("Error executing command", slog.Any("error", err))
 					}

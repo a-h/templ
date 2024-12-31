@@ -394,12 +394,12 @@ func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err e
 	if err = waitForURL(args.AppURL); err != nil {
 		cancel()
 		wg.Wait()
-		return args, teardown, fmt.Errorf("failed to start app server: %v", err)
+		return args, teardown, fmt.Errorf("failed to start app server, command error %v: %w", cmdErr, err)
 	}
 	if err = waitForURL(args.ProxyURL); err != nil {
 		cancel()
 		wg.Wait()
-		return args, teardown, fmt.Errorf("failed to start proxy server: %v", err)
+		return args, teardown, fmt.Errorf("failed to start proxy server, command error %v: %w", cmdErr, err)
 	}
 
 	// Wait for exit.

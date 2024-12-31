@@ -23,7 +23,7 @@ type GenerateOpt func(g *generator) error
 // WithVersion enables the version to be included in the generated code.
 func WithVersion(v string) GenerateOpt {
 	return func(g *generator) error {
-		g.version = v
+		g.options.Version = v
 		return nil
 	}
 }
@@ -31,7 +31,7 @@ func WithVersion(v string) GenerateOpt {
 // WithTimestamp enables the generated date to be included in the generated code.
 func WithTimestamp(d time.Time) GenerateOpt {
 	return func(g *generator) error {
-		g.generatedDate = d.Format(time.RFC3339)
+		g.options.GeneratedDate = d.Format(time.RFC3339)
 		return nil
 	}
 }
@@ -40,19 +40,10 @@ func WithTimestamp(d time.Time) GenerateOpt {
 func WithFileName(name string) GenerateOpt {
 	return func(g *generator) error {
 		if filepath.IsAbs(name) {
-			_, g.fileName = filepath.Split(name)
+			_, g.options.FileName = filepath.Split(name)
 			return nil
 		}
-		g.fileName = name
-		return nil
-	}
-}
-
-func WithExtractStrings() GenerateOpt {
-	return func(g *generator) error {
-		g.w.literalWriter = &watchLiteralWriter{
-			builder: &strings.Builder{},
-		}
+		g.options.FileName = name
 		return nil
 	}
 }
@@ -62,14 +53,61 @@ func WithExtractStrings() GenerateOpt {
 // wish to skip generation of this comment so that gopls provides expected results.
 func WithSkipCodeGeneratedComment() GenerateOpt {
 	return func(g *generator) error {
-		g.skipCodeGeneratedComment = true
+		g.options.SkipCodeGeneratedComment = true
 		return nil
 	}
 }
 
+type GeneratorOutput struct {
+	Options   GeneratorOptions  `json:"meta"`
+	SourceMap *parser.SourceMap `json:"sourceMap"`
+	Literals  []string          `json:"literals"`
+}
+
+type GeneratorOptions struct {
+	// Version of templ.
+	Version string
+	// FileName to include in error messages if string expressions return an error.
+	FileName string
+	// SkipCodeGeneratedComment skips the code generated comment at the top of the file.
+	SkipCodeGeneratedComment bool
+	// GeneratedDate to include as a comment.
+	GeneratedDate string
+}
+
+// HasChanged returns true if the generated file should be written to disk, and therefore, also
+// requires a recompilation.
+func HasChanged(previous, updated GeneratorOutput) bool {
+	// If generator options have changed, we need to recompile.
+	if previous.Options.Version != updated.Options.Version {
+		return true
+	}
+	if previous.Options.FileName != updated.Options.FileName {
+		return true
+	}
+	if previous.Options.SkipCodeGeneratedComment != updated.Options.SkipCodeGeneratedComment {
+		return true
+	}
+	// We don't check the generated date as it's not used for determining if the file has changed.
+	// If the number of literals has changed, we need to recompile.
+	if len(previous.Literals) != len(updated.Literals) {
+		return true
+	}
+	// If the Go code has changed, we need to recompile.
+	if len(previous.SourceMap.Expressions) != len(updated.SourceMap.Expressions) {
+		return true
+	}
+	for i, prev := range previous.SourceMap.Expressions {
+		if prev != updated.SourceMap.Expressions[i] {
+			return true
+		}
+	}
+	return false
+}
+
 // Generate generates Go code from the input template file to w, and returns a map of the location of Go expressions in the template
 // to the location of the generated Go code in the output.
-func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (sm *parser.SourceMap, literals string, err error) {
+func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (op GeneratorOutput, err error) {
 	g := &generator{
 		tf:        template,
 		w:         NewRangeWriter(w),
@@ -81,9 +119,13 @@ func Generate(template parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (s
 		}
 	}
 	err = g.generate()
-	sm = g.sourceMap
-	literals = g.w.literalWriter.literals()
-	return
+	if err != nil {
+		return op, err
+	}
+	op.Options = g.options
+	op.SourceMap = g.sourceMap
+	op.Literals = g.w.Literals
+	return op, nil
 }
 
 type generator struct {
@@ -93,14 +135,7 @@ type generator struct {
 	variableID  int
 	childrenVar string
 
-	// version of templ.
-	version string
-	// generatedDate to include as a comment.
-	generatedDate string
-	// fileName to include in error messages if string expressions return an error.
-	fileName string
-	// skipCodeGeneratedComment skips the code generated comment at the top of the file.
-	skipCodeGeneratedComment bool
+	options GeneratorOptions
 }
 
 func (g *generator) generate() (err error) {
@@ -135,7 +170,7 @@ func (g *generator) generate() (err error) {
 // Automatically generated files have a comment in the header that instructs the LSP
 // to stop operating.
 func (g *generator) writeCodeGeneratedComment() (err error) {
-	if g.skipCodeGeneratedComment {
+	if g.options.SkipCodeGeneratedComment {
 		// Write an empty comment so that the file is the same shape.
 		_, err = g.w.Write("//\n\n")
 		return err
@@ -145,15 +180,15 @@ func (g *generator) writeCodeGeneratedComment() (err error) {
 }
 
 func (g *generator) writeVersionComment() (err error) {
-	if g.version != "" {
-		_, err = g.w.Write("// templ: version: " + g.version + "\n")
+	if g.options.Version != "" {
+		_, err = g.w.Write("// templ: version: " + g.options.Version + "\n")
 	}
 	return err
 }
 
 func (g *generator) writeGeneratedDateComment() (err error) {
-	if g.generatedDate != "" {
-		_, err = g.w.Write("// templ: generated: " + g.generatedDate + "\n")
+	if g.options.GeneratedDate != "" {
+		_, err = g.w.Write("// templ: generated: " + g.options.GeneratedDate + "\n")
 	}
 	return err
 }
@@ -227,13 +262,15 @@ func (g *generator) writeTemplateNodes() error {
 
 func (g *generator) writeCSS(n parser.CSSTemplate) error {
 	var r parser.Range
+	var tgtSymbolRange parser.Range
 	var err error
 	var indentLevel int
 
 	// func
-	if _, err = g.w.Write("func "); err != nil {
+	if r, err = g.w.Write("func "); err != nil {
 		return err
 	}
+	tgtSymbolRange.From = r.From
 	if r, err = g.w.Write(n.Expression.Value); err != nil {
 		return err
 	}
@@ -296,17 +333,25 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 		indentLevel--
 	}
 	// }
-	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
+	if r, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
 		return err
 	}
+
+	// Keep a track of symbol ranges for the LSP.
+	tgtSymbolRange.To = r.To
+	g.sourceMap.AddSymbolRange(n.Range, tgtSymbolRange)
+
 	return nil
 }
 
 func (g *generator) writeGoExpression(n parser.TemplateFileGoExpression) (err error) {
+	var tgtSymbolRange parser.Range
+
 	r, err := g.w.Write(n.Expression.Value)
 	if err != nil {
 		return err
 	}
+	tgtSymbolRange.From = r.From
 	g.sourceMap.Add(n.Expression, r)
 	v := n.Expression.Value
 	lineSlice := strings.Split(v, "\n")
@@ -317,9 +362,14 @@ func (g *generator) writeGoExpression(n parser.TemplateFileGoExpression) (err er
 		}
 		return err
 	}
-	if _, err = g.w.WriteIndent(0, "\n\n"); err != nil {
+	if r, err = g.w.WriteIndent(0, "\n\n"); err != nil {
 		return err
 	}
+
+	// Keep a track of symbol ranges for the LSP.
+	tgtSymbolRange.To = r.To
+	g.sourceMap.AddSymbolRange(n.Expression.Range, tgtSymbolRange)
+
 	return err
 }
 
@@ -377,13 +427,15 @@ func (g *generator) writeTemplBuffer(indentLevel int) (err error) {
 
 func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 	var r parser.Range
+	var tgtSymbolRange parser.Range
 	var err error
 	var indentLevel int
 
 	// func
-	if _, err = g.w.Write("func "); err != nil {
+	if r, err = g.w.Write("func "); err != nil {
 		return err
 	}
+	tgtSymbolRange.From = r.From
 	// (r *Receiver) Name(params []string)
 	if r, err = g.w.Write(t.Expression.Value); err != nil {
 		return err
@@ -472,9 +524,14 @@ func (g *generator) writeTemplate(nodeIdx int, t parser.HTMLTemplate) error {
 		closingBrace = "}\n"
 	}
 
-	if _, err = g.w.WriteIndent(indentLevel, closingBrace); err != nil {
+	if r, err = g.w.WriteIndent(indentLevel, closingBrace); err != nil {
 		return err
 	}
+
+	// Keep a track of symbol ranges for the LSP.
+	tgtSymbolRange.To = r.To
+	g.sourceMap.AddSymbolRange(t.Range, tgtSymbolRange)
+
 	return nil
 }
 
@@ -878,7 +935,7 @@ func (g *generator) writeExpressionErrorHandler(indentLevel int, expression pars
 	indentLevel++
 	line := int(expression.Range.To.Line + 1)
 	col := int(expression.Range.To.Col)
-	_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, FileName: "+createGoString(g.fileName)+", Line: "+strconv.Itoa(line)+", Col: "+strconv.Itoa(col)+"}\n")
+	_, err = g.w.WriteIndent(indentLevel, "return	templ.Error{Err: templ_7745c5c3_Err, FileName: "+createGoString(g.options.FileName)+", Line: "+strconv.Itoa(line)+", Col: "+strconv.Itoa(col)+"}\n")
 	if err != nil {
 		return err
 	}
@@ -1432,13 +1489,15 @@ func createGoString(s string) string {
 
 func (g *generator) writeScript(t parser.ScriptTemplate) error {
 	var r parser.Range
+	var tgtSymbolRange parser.Range
 	var err error
 	var indentLevel int
 
 	// func
-	if _, err = g.w.Write("func "); err != nil {
+	if r, err = g.w.Write("func "); err != nil {
 		return err
 	}
+	tgtSymbolRange.From = r.From
 	if r, err = g.w.Write(t.Name.Value); err != nil {
 		return err
 	}
@@ -1492,9 +1551,14 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 	}
 	indentLevel--
 	// }
-	if _, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
+	if r, err = g.w.WriteIndent(indentLevel, "}\n\n"); err != nil {
 		return err
 	}
+
+	// Keep track of the symbol range for the LSP.
+	tgtSymbolRange.To = r.To
+	g.sourceMap.AddSymbolRange(t.Range, tgtSymbolRange)
+
 	return nil
 }
 
