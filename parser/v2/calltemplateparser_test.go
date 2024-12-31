@@ -89,12 +89,12 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 				t.Errorf("failed to parse at %d", input.Index())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}
 }
 
 func TestCallTemplateParserAllocsSkip(t *testing.T) {
-	RunParserAllocTest[Node](t, callTemplateExpression, false, 0, ``)
+	RunParserAllocTest(t, callTemplateExpression, false, 0, ``)
 }

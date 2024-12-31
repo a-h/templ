@@ -75,10 +75,10 @@ func TestCSSHandler(t *testing.T) {
 			h := templ.NewCSSHandler(tt.input...)
 			h.ServeHTTP(w, &http.Request{})
 			if diff := cmp.Diff(tt.expectedMIMEType, w.Header().Get("Content-Type")); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 			if diff := cmp.Diff(tt.expectedBody, w.Body.String()); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}
@@ -134,10 +134,10 @@ func TestCSSMiddleware(t *testing.T) {
 			w := httptest.NewRecorder()
 			tt.handler.ServeHTTP(w, tt.input)
 			if diff := cmp.Diff(tt.expectedMIMEType, w.Header().Get("Content-Type")); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 			if diff := cmp.Diff(tt.expectedBody, w.Body.String()); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}
@@ -149,28 +149,28 @@ var cssInputs = []any{
 	templ.ConstantCSSClass("d"), // ConstantCSSClass
 	templ.ComponentCSSClass{ID: "e", Class: ".e{color:red}"}, // ComponentCSSClass
 	map[string]bool{"f": true, "ff": false},                  // map[string]bool
-	templ.KV[string, bool]("g", true),                        // KeyValue[string, bool]
-	templ.KV[string, bool]("gg", false),                      // KeyValue[string, bool]
+	templ.KV("g", true),                                      // KeyValue[string, bool]
+	templ.KV("gg", false),                                    // KeyValue[string, bool]
 	[]templ.KeyValue[string, bool]{
 		templ.KV("h", true),
 		templ.KV("hh", false),
 	}, // []KeyValue[string, bool]
-	templ.KV[templ.CSSClass, bool](templ.ConstantCSSClass("i"), true),   // KeyValue[CSSClass, bool]
-	templ.KV[templ.CSSClass, bool](templ.ConstantCSSClass("ii"), false), // KeyValue[CSSClass, bool]
-	templ.KV[templ.ComponentCSSClass, bool](templ.ComponentCSSClass{
+	templ.KV(templ.ConstantCSSClass("i"), true),   // KeyValue[CSSClass, bool]
+	templ.KV(templ.ConstantCSSClass("ii"), false), // KeyValue[CSSClass, bool]
+	templ.KV(templ.ComponentCSSClass{
 		ID:    "j",
 		Class: ".j{color:red}",
 	}, true), // KeyValue[ComponentCSSClass, bool]
-	templ.KV[templ.ComponentCSSClass, bool](templ.ComponentCSSClass{
+	templ.KV(templ.ComponentCSSClass{
 		ID:    "jj",
 		Class: ".jj{color:red}",
 	}, false), // KeyValue[ComponentCSSClass, bool]
-	templ.CSSClasses{templ.ConstantCSSClass("k")},                             // CSSClasses
-	func() templ.CSSClass { return templ.ConstantCSSClass("l") },              // func() CSSClass
-	templ.CSSClass(templ.ConstantCSSClass("m")),                               // CSSClass
-	customClass{name: "n"},                                                    // CSSClass
-	[]templ.CSSClass{customClass{name: "n"}},                                  // []CSSClass
-	templ.KV[templ.ConstantCSSClass, bool](templ.ConstantCSSClass("o"), true), // KeyValue[ConstantCSSClass, bool]
+	templ.CSSClasses{templ.ConstantCSSClass("k")},                // CSSClasses
+	func() templ.CSSClass { return templ.ConstantCSSClass("l") }, // func() CSSClass
+	templ.CSSClass(templ.ConstantCSSClass("m")),                  // CSSClass
+	customClass{name: "n"},                                       // CSSClass
+	[]templ.CSSClass{customClass{name: "n"}},                     // []CSSClass
+	templ.KV(templ.ConstantCSSClass("o"), true),                  // KeyValue[ConstantCSSClass, bool]
 	[]templ.KeyValue[templ.ConstantCSSClass, bool]{
 		templ.KV(templ.ConstantCSSClass("p"), true),
 		templ.KV(templ.ConstantCSSClass("pp"), false),

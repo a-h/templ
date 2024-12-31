@@ -45,7 +45,7 @@ var dblCloseBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, dblClose
 var openBracket = parse.String("(")
 var closeBracket = parse.String(")")
 
-var stringUntilNewLine = parse.StringUntil[string](parse.NewLine)
+var stringUntilNewLine = parse.StringUntil(parse.NewLine)
 var newLineOrEOF = parse.Or(parse.NewLine, parse.EOF[string]())
 var stringUntilNewLineOrEOF = parse.StringUntil(newLineOrEOF)
 

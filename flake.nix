@@ -4,10 +4,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    gomod2nix = {
-      url = "github:nix-community/gomod2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -18,7 +14,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, gomod2nix, gitignore, xc }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, xc }:
     let
       allSystems = [
         "x86_64-linux" # 64-bit Intel/AMD Linux
@@ -34,19 +30,14 @@
     in
     {
       packages = forAllSystems ({ system, pkgs, ... }:
-        let
-          buildGoApplication = gomod2nix.legacyPackages.${system}.buildGoApplication;
-        in
         rec {
           default = templ;
 
-          templ = buildGoApplication {
+          templ = pkgs.buildGo123Module {
             name = "templ";
-            src = gitignore.lib.gitignoreSource ./.;
-            go = pkgs.go;
-            # Must be added due to bug https://github.com/nix-community/gomod2nix/issues/120
-            pwd = ./.;
             subPackages = [ "cmd/templ" ];
+            src = gitignore.lib.gitignoreSource ./.;
+            vendorHash = "sha256-ipLn52MsgX7KQOJixYcwMR9TCeHz55kQQ7fgkIgnu7w=";
             CGO_ENABLED = 0;
             flags = [
               "-trimpath"
@@ -67,7 +58,6 @@
             pkgs.cosign # Used to sign container images.
             pkgs.esbuild # Used to package JS examples.
             pkgs.go
-            gomod2nix.legacyPackages.${system}.gomod2nix
             pkgs-unstable.gopls
             pkgs.goreleaser
             pkgs.gotestsum

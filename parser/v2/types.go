@@ -973,7 +973,7 @@ func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
 			return err
 		}
 		if string(sourceLines[i]) != string(reformattedSourceLines[i]) {
-			if _, err := io.WriteString(w, string(sourceLines[i])); err != nil {
+			if _, err := w.Write(sourceLines[i]); err != nil {
 				return err
 			}
 			continue

@@ -41,16 +41,16 @@ func TestChildrenExpressionParser(t *testing.T) {
 				t.Errorf("failed to parse at %d", input.Index())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}
 }
 
 func TestChildrenExpressionParserAllocsOK(t *testing.T) {
-	RunParserAllocTest[Node](t, childrenExpression, true, 2, `{ children... }`)
+	RunParserAllocTest(t, childrenExpression, true, 2, `{ children... }`)
 }
 
 func TestChildrenExpressionParserAllocsSkip(t *testing.T) {
-	RunParserAllocTest[Node](t, childrenExpression, false, 2, ``)
+	RunParserAllocTest(t, childrenExpression, false, 2, ``)
 }

@@ -283,7 +283,7 @@ if test {
 		{
 			name:   "attribute parsing handles boolean expression attributes",
 			input:  ` noshade?={ true }`,
-			parser: StripType[Attribute](attributeParser{}),
+			parser: StripType(attributeParser{}),
 			expected: BoolExpressionAttribute{
 				Name: "noshade",
 				NameRange: Range{
@@ -464,7 +464,7 @@ if test {
 		{
 			name:   "bool constant attributes can end with a Unix newline",
 			input:  "<input\n\t\trequired\n\t/>",
-			parser: StripType[Node](element),
+			parser: StripType(element),
 			expected: Element{
 				Name:        "input",
 				IndentAttrs: true,
@@ -486,7 +486,7 @@ if test {
 		{
 			name:   "bool constant attributes can end with a Windows newline",
 			input:  "<input\r\n\t\trequired\r\n\t/>",
-			parser: StripType[Node](element),
+			parser: StripType(element),
 			expected: Element{
 				Name:        "input",
 				IndentAttrs: true,
@@ -557,7 +557,7 @@ if test {
 				t.Errorf("failed to parse at %v", input.Position())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}
@@ -1666,7 +1666,7 @@ amount is charged</div>`,
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}
