@@ -21,13 +21,13 @@ To render static HTML files using templ component, first create a new Go project
 
 Create a new directory.
 
-```sh
+```bash
 mkdir static-generator
 ```
 
 Initialize a new Go project within it.
 
-```sh
+```bash
 cd static-generator
 go mod init github.com/a-h/templ-examples/static-generator
 ```
@@ -50,7 +50,7 @@ templ hello(name string) {
 
 Run the `templ generate` command.
 
-```sh
+```bash
 templ generate
 ```
 
@@ -94,7 +94,7 @@ func main() {
 
 Running the code will create a file called `hello.html` containing the component's HTML.
 
-```sh
+```bash
 go run *.go
 ```
 

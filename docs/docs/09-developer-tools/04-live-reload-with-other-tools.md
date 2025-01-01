@@ -39,7 +39,7 @@ A `Makefile` can be used to run all of the necessary commands in parallel. This 
 
 To start the `templ` proxy server in watch mode, run:
 
-```shell
+```bash
 templ generate --watch --proxy="http://localhost:8080" --open-browser=false
 ```
 
@@ -49,7 +49,7 @@ This assumes that your http server is running on `http://localhost:8080`. `--ope
 
 Tailwind requires a `tailwind.config.js` file at the root of your project, alongside an `input.css` file.
 
-```shell
+```bash
 npx --yes tailwindcss -i ./input.css -o ./assets/styles.css --minify --watch
 ```
 
@@ -59,7 +59,7 @@ This will watch `input.css` as well as your `.templ` files and re-generate `asse
 
 To bundle JavaScript, TypeScript, JSX, or TSX files, you can use `esbuild`:
 
-```shell
+```bash
 npx --yes esbuild js/index.ts --bundle --outdir=assets/ --watch
 ```
 
@@ -69,7 +69,7 @@ This will watch `js/index.ts` and relevant files, and re-generate `assets/index.
 
 To watch and restart your Go server, when only the `go` files change you can use `air`:
 
-```shell
+```bash
 go run github.com/cosmtrek/air@v1.51.0 \
   --build.cmd "go build -o tmp/bin/main" --build.bin "tmp/bin/main" --build.delay "100" \
   --build.exclude_dir "node_modules" \
@@ -96,7 +96,7 @@ We also want the browser to automatically reload when the:
 
 To trigger the event, we can use the `air` command to use a different set of options, using the `templ` CLI to send a reload event to the browser.
 
-```shell
+```bash
 go run github.com/cosmtrek/air@v1.51.0 \
   --build.cmd "templ generate --notify-proxy" \
   --build.bin "true" \
