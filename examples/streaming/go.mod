@@ -1,6 +1,8 @@
 module githbu.com/a-h/templ/examples/streaming
 
-go 1.21.5
+go 1.23
+
+toolchain go1.23.3
 
 replace github.com/a-h/templ => ../../
 
