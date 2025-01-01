@@ -355,7 +355,7 @@ Templ support requires the [tree-sitter parser for Templ](https://github.com/vri
 
 ### Check that go, gopls and templ are installed and are present in the path
 
-```shell
+```bash
 which go gopls templ
 ```
 

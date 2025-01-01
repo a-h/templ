@@ -4,7 +4,7 @@
 
 With Go 1.20 or greater installed, run:
 
-```sh
+```bash
 go install github.com/a-h/templ/cmd/templ@latest
 ```
 
@@ -16,13 +16,13 @@ Download the latest release from https://github.com/a-h/templ/releases/latest
 
 templ provides a Nix flake with an exported package containing the binary at https://github.com/a-h/templ/blob/main/flake.nix
 
-```sh
+```bash
 nix run github:a-h/templ
 ```
 
 templ also provides a development shell which includes all of the tools required to build templ, e.g. go, gopls etc. but not templ itself.
 
-```sh
+```bash
 nix develop github:a-h/templ
 ```
 

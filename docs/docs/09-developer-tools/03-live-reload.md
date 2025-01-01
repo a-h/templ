@@ -88,13 +88,13 @@ sequenceDiagram
 
 If you want to trigger a live reload from outside `templ generate --watch` (e.g. if you're using `air`, `wgo` or another tool to build, but you want to use the templ live reload proxy), you can use the `--notify-proxy` argument.
 
-```shell
+```bash
 templ generate --notify-proxy
 ```
 
 This will default to the default templ proxy address of `localhost:7331`, but can be changed with the `--proxybind` and `--proxyport` arguments.
 
-```shell
+```bash
 templ generate --notify-proxy --proxybind="localhost" --proxyport="8080"
 ```
 

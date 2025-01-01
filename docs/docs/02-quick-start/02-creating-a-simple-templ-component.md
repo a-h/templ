@@ -6,13 +6,13 @@ To create a templ component, first create a new Go project.
 
 Create a new directory containing our project.
 
-```sh
+```bash
 mkdir hello-world
 ```
 
 Initialize a new Go project within it.
 
-```sh
+```bash
 cd hello-world
 go mod init github.com/a-h/templ-examples/hello-world
 go get github.com/a-h/templ
@@ -36,7 +36,7 @@ templ hello(name string) {
 
 Run the `templ generate` command.
 
-```sh
+```bash
 templ generate
 ```
 
@@ -72,7 +72,7 @@ func main() {
 
 Running the code will render the component's HTML to stdout.
 
-```sh
+```bash
 go run .
 ```
 
