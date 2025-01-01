@@ -25,7 +25,7 @@ export default function prismIncludeLanguages(PrismObject) {
 
     var space = /(?:\s|\/\/.*(?!.)|\/\*(?:[^*]|\*(?!\/))\*\/)/.source;
     var braces = /(?:\{(?:\{(?:\{[^{}]*\}|[^{}])*\}|[^{}])*\})/.source;
-    var spread = /(?:\{<S>*\.{3}(?:[^{}]|<BRACES>)*\})/.source;
+    var spread = /(?:\{<S>*\.{3}(?:(?!\{)[^{}]|<BRACES>)*\})/.source;
 
     /**
      * @param {string} source
