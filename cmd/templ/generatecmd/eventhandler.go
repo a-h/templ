@@ -133,17 +133,25 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		return GenerateResult{}, nil
 	}
 
-	// Handle .templ files.
-	if !strings.HasSuffix(event.Name, ".templ") {
-		return GenerateResult{}, nil
-	}
-
 	// If the file hasn't been updated since the last time we processed it, ignore it.
 	lastModTime, updatedModTime := h.UpsertLastModTime(event.Name)
 	if !updatedModTime {
 		h.Log.Debug("Skipping file because it wasn't updated", slog.String("file", event.Name))
 		return GenerateResult{}, nil
 	}
+
+	// Process anything that isn't a templ file.
+	if !strings.HasSuffix(event.Name, ".templ") {
+		// If it's a Go file, mark it as updated.
+		if strings.HasSuffix(event.Name, ".go") {
+			result.GoUpdated = true
+		}
+		result.Updated = true
+		return result, nil
+	}
+
+	// Handle templ files.
+
 	// If the go file is newer than the templ file, skip generation, because it's up-to-date.
 	if h.lazy && goFileIsUpToDate(event.Name, lastModTime) {
 		h.Log.Debug("Skipping file because the Go file is up-to-date", slog.String("file", event.Name))

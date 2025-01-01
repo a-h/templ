@@ -185,26 +185,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		)
 		postGenerationEventsWG.Wait()
 		cmd.Log.Debug(
-			"All post-generation events processed, running walk again, but in production mode",
+			"All post-generation events processed",
 			slog.Int64("errorCount", errorCount.Load()),
 		)
-		// Reset to reprocess all files in production mode.
-		fseh = NewFSEventHandler(
-			cmd.Log,
-			cmd.Args.Path,
-			false, // Force production mode.
-			opts,
-			cmd.Args.GenerateSourceMapVisualisations,
-			cmd.Args.KeepOrphanedFiles,
-			cmd.Args.FileWriter,
-			cmd.Args.Lazy,
-		)
-		errorCount.Store(0)
-		if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, events); err != nil {
-			cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
-			errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
-			return
-		}
 	}()
 
 	// Start process to handle events.

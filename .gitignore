@@ -29,3 +29,6 @@ go.work
 
 # direnv
 .direnv
+
+# templ txt files.
+*_templ.txt

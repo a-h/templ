@@ -208,6 +208,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	includeVersionFlag := cmd.Bool("include-version", true, "")
 	includeTimestampFlag := cmd.Bool("include-timestamp", false, "")
 	watchFlag := cmd.Bool("watch", false, "")
+	watchPatternFlag := cmd.String("watch-pattern", "(.+\\.go$)|(.+\\.templ$)|(.+_templ\\.txt$)", "")
 	openBrowserFlag := cmd.Bool("open-browser", true, "")
 	cmdFlag := cmd.String("cmd", "", "")
 	proxyFlag := cmd.String("proxy", "", "")
@@ -252,6 +253,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 		Path:                            *pathFlag,
 		FileWriter:                      fw,
 		Watch:                           *watchFlag,
+		WatchPattern:                    *watchPatternFlag,
 		OpenBrowser:                     *openBrowserFlag,
 		Command:                         *cmdFlag,
 		Proxy:                           *proxyFlag,
