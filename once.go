@@ -51,11 +51,10 @@ type OnceHandle struct {
 // Once returns a component that renders its children once per context.
 func (o *OnceHandle) Once() Component {
 	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
-		_, v := getContext(ctx)
-		if v.getHasBeenRendered(o) {
+		ctx, v := getContext(ctx)
+		if !v.shouldRenderOnce(o) {
 			return nil
 		}
-		v.setHasBeenRendered(o)
 		if o.c != nil {
 			return o.c.Render(ctx, w)
 		}
