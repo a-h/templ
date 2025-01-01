@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -98,7 +99,7 @@ func New(conf ...StorybookConfig) *Storybook {
 	return sh
 }
 
-func (sh *Storybook) AddComponent(name string, componentConstructor interface{}, args ...Arg) *Conf {
+func (sh *Storybook) AddComponent(name string, componentConstructor any, args ...Arg) *Conf {
 	//TODO: Check that the component constructor is a function that returns a templ.Component.
 	c := NewConf(name, args...)
 	sh.Config[name] = c
@@ -313,9 +314,9 @@ func (sh *Storybook) buildStorybook() (err error) {
 	return cmd.Run()
 }
 
-func NewHandler(name string, f interface{}, args ...Arg) http.Handler {
+func NewHandler(name string, f any, args ...Arg) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		argv := make([]interface{}, len(args))
+		argv := make([]any, len(args))
 		q := r.URL.Query()
 		for i, arg := range args {
 			argv[i] = arg.Get(q)
@@ -329,7 +330,7 @@ func NewHandler(name string, f interface{}, args ...Arg) http.Handler {
 	})
 }
 
-func executeTemplate(name string, fn interface{}, values []interface{}) (output templ.Component, err error) {
+func executeTemplate(name string, fn any, values []any) (output templ.Component, err error) {
 	v := reflect.ValueOf(fn)
 	t := v.Type()
 	argv := make([]reflect.Value, t.NumIn())
@@ -357,7 +358,7 @@ func NewConf(title string, args ...Arg) *Conf {
 	c := &Conf{
 		Title: title,
 		Parameters: StoryParameters{
-			Server: map[string]interface{}{
+			Server: map[string]any{
 				"id": title,
 			},
 		},
@@ -367,7 +368,7 @@ func NewConf(title string, args ...Arg) *Conf {
 	}
 	for _, arg := range args {
 		c.Args.Add(arg.Name, arg.Value)
-		c.ArgTypes.Add(arg.Name, map[string]interface{}{
+		c.ArgTypes.Add(arg.Name, map[string]any{
 			"control": arg.Control,
 		})
 	}
@@ -390,17 +391,17 @@ func (c *Conf) AddStory(name string, args ...Arg) {
 // See https://storybook.js.org/docs/react/essentials/controls
 type Arg struct {
 	Name    string
-	Value   interface{}
-	Control interface{}
-	Get     func(q url.Values) interface{}
+	Value   any
+	Control any
+	Get     func(q url.Values) any
 }
 
-func ObjectArg(name string, value interface{}, valuePtr interface{}) Arg {
+func ObjectArg(name string, value any, valuePtr any) Arg {
 	return Arg{
 		Name:    name,
 		Value:   value,
 		Control: "object",
-		Get: func(q url.Values) interface{} {
+		Get: func(q url.Values) any {
 			err := json.Unmarshal([]byte(q.Get(name)), valuePtr)
 			if err != nil {
 				return err
@@ -415,7 +416,7 @@ func TextArg(name, value string) Arg {
 		Name:    name,
 		Value:   value,
 		Control: "text",
-		Get: func(q url.Values) interface{} {
+		Get: func(q url.Values) any {
 			return q.Get(name)
 		},
 	}
@@ -426,7 +427,7 @@ func BooleanArg(name string, value bool) Arg {
 		Name:    name,
 		Value:   value,
 		Control: "boolean",
-		Get: func(q url.Values) interface{} {
+		Get: func(q url.Values) any {
 			return q.Get(name) == "true"
 		},
 	}
@@ -435,7 +436,7 @@ func BooleanArg(name string, value bool) Arg {
 type IntArgConf struct{ Min, Max, Step *int }
 
 func IntArg(name string, value int, conf IntArgConf) Arg {
-	control := map[string]interface{}{
+	control := map[string]any{
 		"type": "number",
 	}
 	if conf.Min != nil {
@@ -451,9 +452,12 @@ func IntArg(name string, value int, conf IntArgConf) Arg {
 		Name:    name,
 		Value:   value,
 		Control: control,
-		Get: func(q url.Values) interface{} {
-			i, _ := strconv.ParseInt(q.Get(name), 10, 64)
-			return int(i)
+		Get: func(q url.Values) any {
+			i64, err := strconv.ParseInt(q.Get(name), 10, 64)
+			if err != nil || i64 < math.MinInt || i64 > math.MaxInt {
+				return 0
+			}
+			return int(i64)
 		},
 	}
 	return arg
@@ -463,13 +467,13 @@ func FloatArg(name string, value float64, min, max, step float64) Arg {
 	return Arg{
 		Name:  name,
 		Value: value,
-		Control: map[string]interface{}{
+		Control: map[string]any{
 			"type": "number",
 			"min":  min,
 			"max":  max,
 			"step": step,
 		},
-		Get: func(q url.Values) interface{} {
+		Get: func(q url.Values) any {
 			i, _ := strconv.ParseFloat(q.Get(name), 64)
 			return i
 		},
@@ -485,24 +489,24 @@ type Conf struct {
 }
 
 type StoryParameters struct {
-	Server map[string]interface{} `json:"server"`
+	Server map[string]any `json:"server"`
 }
 
 func NewSortedMap() *SortedMap {
 	return &SortedMap{
 		m:        new(sync.Mutex),
-		internal: map[string]interface{}{},
+		internal: map[string]any{},
 		keys:     []string{},
 	}
 }
 
 type SortedMap struct {
 	m        *sync.Mutex
-	internal map[string]interface{}
+	internal map[string]any
 	keys     []string
 }
 
-func (sm *SortedMap) Add(key string, value interface{}) {
+func (sm *SortedMap) Add(key string, value any) {
 	sm.m.Lock()
 	defer sm.m.Unlock()
 	sm.keys = append(sm.keys, key)
