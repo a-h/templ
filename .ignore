@@ -5,3 +5,5 @@ examples/counter/assets/js/htmx.min.js
 examples/counter-basic/assets/css/bulma.*
 examples/typescript/assets/index.js
 package-lock.json
+go.sum
+docs/static/llms.md
