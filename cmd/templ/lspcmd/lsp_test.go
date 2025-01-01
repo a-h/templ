@@ -330,7 +330,6 @@ func TestReferences(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	log, _ := zap.NewProduction()
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
@@ -339,6 +338,7 @@ func TestReferences(t *testing.T) {
 		return
 	}
 	defer teardown(t)
+	defer cancel()
 
 	log.Info("Calling References")
 
