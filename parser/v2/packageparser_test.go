@@ -47,7 +47,7 @@ func TestPackageParserErrors(t *testing.T) {
 				t.Errorf("expected parsing to fail, but it succeeded")
 			}
 			if diff := cmp.Diff(tt.expected, err); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}

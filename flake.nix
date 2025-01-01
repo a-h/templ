@@ -2,11 +2,8 @@
   description = "templ";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/release-24.05";
-    gomod2nix = {
-      url = "github:nix-community/gomod2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -17,7 +14,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, gomod2nix, gitignore, xc }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, xc }:
     let
       allSystems = [
         "x86_64-linux" # 64-bit Intel/AMD Linux
@@ -28,24 +25,19 @@
       forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f {
         inherit system;
         pkgs = import nixpkgs { inherit system; };
+        pkgs-unstable = import nixpkgs-unstable { inherit system; };
       });
     in
     {
       packages = forAllSystems ({ system, pkgs, ... }:
-        let
-          buildGoApplication = gomod2nix.legacyPackages.${system}.buildGoApplication;
-        in
         rec {
           default = templ;
 
-          templ = buildGoApplication {
+          templ = pkgs.buildGo123Module {
             name = "templ";
-            src = gitignore.lib.gitignoreSource ./.;
-            # Update to latest Go version when https://nixpk.gs/pr-tracker.html?pr=324123 is backported to release-24.05.
-            go = pkgs.go;
-            # Must be added due to bug https://github.com/nix-community/gomod2nix/issues/120
-            pwd = ./.;
             subPackages = [ "cmd/templ" ];
+            src = gitignore.lib.gitignoreSource ./.;
+            vendorHash = "sha256-ipLn52MsgX7KQOJixYcwMR9TCeHz55kQQ7fgkIgnu7w=";
             CGO_ENABLED = 0;
             flags = [
               "-trimpath"
@@ -59,19 +51,18 @@
         });
 
       # `nix develop` provides a shell containing development tools.
-      devShell = forAllSystems ({ system, pkgs }:
+      devShell = forAllSystems ({ system, pkgs, pkgs-unstable, ... }:
         pkgs.mkShell {
-          buildInputs = with pkgs; [
-            golangci-lint
-            cosign # Used to sign container images.
-            esbuild # Used to package JS examples.
-            go_1_22
-            gomod2nix.legacyPackages.${system}.gomod2nix
-            gopls
-            goreleaser
-            gotestsum
-            ko # Used to build Docker images.
-            nodejs # Used to build templ-docs.
+          buildInputs = [
+            pkgs.golangci-lint
+            pkgs.cosign # Used to sign container images.
+            pkgs.esbuild # Used to package JS examples.
+            pkgs.go
+            pkgs-unstable.gopls
+            pkgs.goreleaser
+            pkgs.gotestsum
+            pkgs.ko # Used to build Docker images.
+            pkgs.nodejs # Used to build templ-docs.
             xc.packages.${system}.xc
           ];
         });

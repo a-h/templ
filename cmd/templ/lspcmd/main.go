@@ -95,7 +95,7 @@ func run(ctx context.Context, log *zap.Logger, templStream jsonrpc2.Stream, args
 
 	log.Info("creating gopls client")
 	clientProxy, clientInit := proxy.NewClient(log, cache, diagnosticCache)
-	_, goplsConn, goplsServer := protocol.NewClient(context.Background(), clientProxy, jsonrpc2.NewStream(rwc), log)
+	_, goplsConn, goplsServer := protocol.NewClient(ctx, clientProxy, jsonrpc2.NewStream(rwc), log)
 	defer goplsConn.Close()
 
 	log.Info("creating proxy")

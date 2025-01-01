@@ -859,7 +859,7 @@ func TestTemplateParser(t *testing.T) {
 			case tt.expectError && ok:
 				t.Errorf("Success=%v want=%v", ok, !tt.expectError)
 			case !tt.expectError && diff != "":
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}
@@ -891,7 +891,7 @@ func TestTemplateParserErrors(t *testing.T) {
 				t.Error("expected failure, but got success")
 			}
 			if diff := cmp.Diff(tt.expected, err.Error()); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}

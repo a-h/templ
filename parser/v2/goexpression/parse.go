@@ -313,11 +313,11 @@ func extract(content string, extractor Extractor) (start, end int, err error) {
 		if !ok {
 			return true
 		}
-		if fn.Name.Name != "templ_container" {
+		if fn.Name == nil || fn.Name.Name != "templ_container" {
 			err = ErrContainerFuncNotFound
 			return false
 		}
-		if fn.Body.List == nil || len(fn.Body.List) == 0 {
+		if fn.Body == nil || len(fn.Body.List) == 0 {
 			err = ErrExpectedNodeNotFound
 			return false
 		}

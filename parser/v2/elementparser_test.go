@@ -557,7 +557,7 @@ if test {
 				t.Errorf("failed to parse at %v", input.Position())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}
@@ -1666,7 +1666,7 @@ amount is charged</div>`,
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
-				t.Errorf(diff)
+				t.Error(diff)
 			}
 		})
 	}

@@ -1,6 +1,8 @@
 module github.com/a-h/templ/examples/integration-gofiber
 
-go 1.21
+go 1.23
+
+toolchain go1.23.3
 
 require (
 	github.com/a-h/templ v0.2.747
@@ -18,7 +20,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.55.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
 )
 
 replace github.com/a-h/templ => ../../

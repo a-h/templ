@@ -216,7 +216,7 @@ func TestHover(t *testing.T) {
 				expectedHover := protocol.Hover{
 					Contents: protocol.MarkupContent{
 						Kind:  "markdown",
-						Value: "```go\npackage fmt\n```\n\n[`fmt` on pkg.go.dev](https://pkg.go.dev/fmt)",
+						Value: "```go\npackage fmt\n```\n\n---\n\n[`fmt` on pkg.go.dev](https://pkg.go.dev/fmt)",
 					},
 				}
 				if diff := lspdiff.Hover(expectedHover, *actual); diff != "" {
@@ -233,8 +233,11 @@ func TestHover(t *testing.T) {
 				expectedHover := protocol.Hover{
 					Contents: protocol.MarkupContent{
 						Kind:  "markdown",
-						Value: "```go\nfunc fmt.Sprintf(format string, a ...any) string\n```\n\nSprintf formats according to a format specifier and returns the resulting string.\n\n\n[`fmt.Sprintf` on pkg.go.dev](https://pkg.go.dev/fmt#Sprintf)",
+						Value: "```go\nfunc fmt.Sprintf(format string, a ...any) string\n```\n\n---\n\nSprintf formats according to a format specifier and returns the resulting string.\n\n\n---\n\n[`fmt.Sprintf` on pkg.go.dev](https://pkg.go.dev/fmt#Sprintf)",
 					},
+				}
+				if actual == nil {
+					return "expected hover to be non-nil", false
 				}
 				if diff := lspdiff.Hover(expectedHover, *actual); diff != "" {
 					return fmt.Sprintf("unexpected hover: %v", diff), false

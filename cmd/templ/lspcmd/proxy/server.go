@@ -249,7 +249,6 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 			isTemplFile, goURI := convertTemplToGoURI(uri)
 
 			if !isTemplFile {
-				p.Log.Info("not a templ file", zap.String("uri", string(uri)))
 				return nil
 			}
 

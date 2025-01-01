@@ -1,6 +1,8 @@
 module github.com/a-h/templ/examples/internationalization
 
-go 1.21.5
+go 1.23
+
+toolchain go1.23.3
 
 require (
 	github.com/a-h/templ v0.2.731
