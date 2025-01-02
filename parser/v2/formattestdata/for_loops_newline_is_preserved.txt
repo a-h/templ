@@ -1,0 +1,33 @@
+-- in --
+package main
+
+templ x() {
+	<div>
+	<span></span>
+
+		for _, item := range items {
+
+			<div>{ item }</div>
+
+		}
+
+
+
+		<span>Foo Bar </span>
+	</div>
+}
+-- out --
+package main
+
+templ x() {
+	<div>
+		<span></span>
+
+		for _, item := range items {
+			<div>{ item }</div>
+
+		}
+
+		<span>Foo Bar </span>
+	</div>
+}

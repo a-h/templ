@@ -1,0 +1,29 @@
+-- in --
+package main
+
+templ x() {
+	<div>
+		@Hero()
+		<span></span>
+
+
+		@Hero()
+
+
+
+		<span></span>
+	</div>
+}
+-- out --
+package main
+
+templ x() {
+	<div>
+		@Hero()
+		<span></span>
+
+		@Hero()
+
+		<span></span>
+	</div>
+}

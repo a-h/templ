@@ -375,17 +375,27 @@ func (t HTMLTemplate) Write(w io.Writer, indent int) error {
 type TrailingSpace string
 
 const (
-	SpaceNone       TrailingSpace = ""
-	SpaceHorizontal TrailingSpace = " "
-	SpaceVertical   TrailingSpace = "\n"
+	SpaceNone           TrailingSpace = ""
+	SpaceHorizontal     TrailingSpace = " "
+	SpaceVertical       TrailingSpace = "\n"
+	SpaceVerticalDouble TrailingSpace = "\n\n"
 )
 
 var ErrNonSpaceCharacter = errors.New("non space character found")
 
-func NewTrailingSpace(s string) (ts TrailingSpace, err error) {
+func NewTrailingSpace(s string, allowMulti bool) (ts TrailingSpace, err error) {
 	var hasHorizontalSpace bool
-	for _, r := range s {
+
+	runes := []rune(s)
+
+	for i, r := range s {
 		if r == '\n' {
+			if allowMulti && i < len(runes)-1 {
+				next := runes[i+1]
+				if next == '\n' {
+					return SpaceVerticalDouble, nil
+				}
+			}
 			return SpaceVertical, nil
 		}
 		if unicode.IsSpace(r) {
@@ -424,6 +434,13 @@ var (
 	_ WhitespaceTrailer = Element{}
 	_ WhitespaceTrailer = Text{}
 	_ WhitespaceTrailer = StringExpression{}
+	_ WhitespaceTrailer = TemplElementExpression{}
+	_ WhitespaceTrailer = GoCode{}
+	_ WhitespaceTrailer = IfExpression{}
+	_ WhitespaceTrailer = ForExpression{}
+	_ WhitespaceTrailer = SwitchExpression{}
+	_ WhitespaceTrailer = HTMLComment{}
+	_ WhitespaceTrailer = CallTemplateExpression{}
 )
 
 // Text node within the document.
@@ -620,7 +637,7 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 			trailing = wst.Trailing()
 		}
 		// Put a newline after the last node in indentation mode.
-		if indent && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(nodes[i])) {
+		if indent && trailing != SpaceVerticalDouble && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(nodes[i])) {
 			trailing = SpaceVertical
 		}
 		switch trailing {
@@ -629,6 +646,8 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 		case SpaceHorizontal:
 			level = 0
 		case SpaceVertical:
+			level = startLevel
+		case SpaceVerticalDouble:
 			level = startLevel
 		}
 		if _, err := w.Write([]byte(trailing)); err != nil {
@@ -911,6 +930,12 @@ func (c GoComment) Write(w io.Writer, indent int) error {
 // HTMLComment.
 type HTMLComment struct {
 	Contents string
+	// TrailingSpace lists what happens after the element.
+	TrailingSpace TrailingSpace
+}
+
+func (c HTMLComment) Trailing() TrailingSpace {
+	return c.TrailingSpace
 }
 
 func (c HTMLComment) IsNode() bool { return true }
@@ -927,6 +952,12 @@ func (c HTMLComment) Write(w io.Writer, indent int) error {
 type CallTemplateExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
+}
+
+func (cte CallTemplateExpression) Trailing() TrailingSpace {
+	return cte.TrailingSpace
 }
 
 func (cte CallTemplateExpression) IsNode() bool { return true }
@@ -944,6 +975,12 @@ type TemplElementExpression struct {
 	Expression Expression
 	// Children returns the elements in a block element.
 	Children []Node
+	// TrailingSpace lists what happens after the element.
+	TrailingSpace TrailingSpace
+}
+
+func (t TemplElementExpression) Trailing() TrailingSpace {
+	return t.TrailingSpace
 }
 
 func (tee TemplElementExpression) ChildNodes() []Node {
@@ -1016,11 +1053,17 @@ type IfExpression struct {
 	Then       []Node
 	ElseIfs    []ElseIfExpression
 	Else       []Node
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
 }
 
 type ElseIfExpression struct {
 	Expression Expression
 	Then       []Node
+}
+
+func (n IfExpression) Trailing() TrailingSpace {
+	return n.TrailingSpace
 }
 
 func (n IfExpression) ChildNodes() []Node {
@@ -1071,7 +1114,13 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 //	}
 type SwitchExpression struct {
 	Expression Expression
-	Cases      []CaseExpression
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
+	Cases         []CaseExpression
+}
+
+func (se SwitchExpression) Trailing() TrailingSpace {
+	return se.TrailingSpace
 }
 
 func (se SwitchExpression) ChildNodes() []Node {
@@ -1114,7 +1163,13 @@ type CaseExpression struct {
 //	}
 type ForExpression struct {
 	Expression Expression
-	Children   []Node
+	// TrailingSpace lists what happens after the expression.
+	TrailingSpace TrailingSpace
+	Children      []Node
+}
+
+func (fe ForExpression) Trailing() TrailingSpace {
+	return fe.TrailingSpace
 }
 
 func (fe ForExpression) ChildNodes() []Node {
@@ -1177,7 +1232,8 @@ func (se StringExpression) Trailing() TrailingSpace {
 	return se.TrailingSpace
 }
 
-func (se StringExpression) IsNode() bool                  { return true }
+func (se StringExpression) IsNode() bool { return true }
+
 func (se StringExpression) IsStyleDeclarationValue() bool { return true }
 func (se StringExpression) Write(w io.Writer, indent int) error {
 	if isWhitespace(se.Expression.Value) {
