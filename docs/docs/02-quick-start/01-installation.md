@@ -2,7 +2,7 @@
 
 ## go install
 
-With Go 1.20 or greater installed, run:
+With Go 1.23 or greater installed, run:
 
 ```bash
 go install github.com/a-h/templ/cmd/templ@latest

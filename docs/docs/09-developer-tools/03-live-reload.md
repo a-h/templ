@@ -15,11 +15,9 @@ If the `*.go` files change, #3 and #4 must be ran.
 
 `templ generate --watch` watches the current directory for changes and generates Go code if changes are detected.
 
-`templ generate --watch` generates Go code that loads strings from a `_templ.txt` file on disk to reduce the number of times that Go code needs to be re-generated, and therefore reduces the number of time your app needs to be recompiled and restarted.
-
 To re-run your app automatically, add the `--cmd` argument to `templ generate`, and templ will start or restart your app using the command provided once template code generation is complete (#3).
 
-Finally, to trigger your web browser to reload automatically (without pressing F5), set the `--proxy` argument (#4).
+To trigger your web browser to reload automatically (without pressing F5), set the `--proxy` argument (#4) to point at your app, and browse to the proxy address (default `http://localhost:7331`).
 
 The `--proxy` argument starts a HTTP proxy which proxies requests to your app. For example, if your app runs on port 8080, you would use `--proxy="http://localhost:8080"`. The proxy inserts client-side JavaScript before the `</body>` tag that will cause the browser to reload the window when the app is restarted instead of you having to reload the page manually. Note that the html being served by the webserver MUST have a `<body>` tag, otherwise there will be no javascript injection thus making the browser not reload automatically.
 
@@ -112,7 +110,9 @@ To avoid a continous reloading files ending with `_templ.go` should be skipped v
 
 ## Alternative 2: air
 
-Air can handle `*.go` files, but doesn't ship with a proxy to automatically reload pages, and requires a `toml` configuration file for operation.
+Air can also monitor the filesystem for changes, and provides a proxy to automatically reload pages.
+
+It uses a `toml` configuration file.
 
 See https://github.com/cosmtrek/air for details.
 
@@ -151,4 +151,9 @@ tmp_dir = "tmp"
 
 [misc]
   clean_on_exit = false
+
+[proxy]
+  enabled = true
+  proxy_port = 8383
+  app_port = 8282
 ```
