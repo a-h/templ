@@ -104,21 +104,33 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 	if err := eg.Wait(); err != nil {
 		return t, err
 	}
-
-	// Delete all the existing imports.
+	// Delete unused imports.
 	for _, imp := range firstGoNodeInTemplate.Imports {
-		name, path, err := getImportDetails(imp)
+		if !containsImport(updatedImports, imp) {
+			name, path, err := getImportDetails(imp)
+			if err != nil {
+				return t, err
+			}
+			astutil.DeleteNamedImport(fset, firstGoNodeInTemplate, name, path)
+		}
+	}
+	// Add imports, if there are any to add.
+	for _, imp := range updatedImports {
+		if !containsImport(firstGoNodeInTemplate.Imports, imp) {
+			name, path, err := getImportDetails(imp)
+			if err != nil {
+				return t, err
+			}
+			astutil.AddNamedImport(fset, firstGoNodeInTemplate, name, path)
+		}
+	}
+	// Edge case: reinsert the import to use import syntax without parentheses.
+	if len(firstGoNodeInTemplate.Imports) == 1 {
+		name, path, err := getImportDetails(firstGoNodeInTemplate.Imports[0])
 		if err != nil {
 			return t, err
 		}
 		astutil.DeleteNamedImport(fset, firstGoNodeInTemplate, name, path)
-	}
-	// Add imports, if there are any to add.
-	for _, imp := range updatedImports {
-		name, path, err := getImportDetails(imp)
-		if err != nil {
-			return t, err
-		}
 		astutil.AddNamedImport(fset, firstGoNodeInTemplate, name, path)
 	}
 	// Write out the Go code with the imports.
@@ -149,4 +161,14 @@ func getImportDetails(imp *ast.ImportSpec) (name, importPath string, err error) 
 		}
 	}
 	return name, importPath, nil
+}
+
+func containsImport(imports []*ast.ImportSpec, spec *ast.ImportSpec) bool {
+	for _, imp := range imports {
+		if imp.Path.Value == spec.Path.Value {
+			return true
+		}
+	}
+
+	return false
 }

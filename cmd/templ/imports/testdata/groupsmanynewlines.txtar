@@ -1,0 +1,21 @@
+-- fmt.templ --
+package test
+
+import (
+	"fmt"
+
+
+	"strconv"
+)
+
+var _, _ = fmt.Print(strconv.Quote("Hello"))
+-- fmt.templ --
+package test
+
+import (
+	"fmt"
+
+	"strconv"
+)
+
+var _, _ = fmt.Print(strconv.Quote("Hello"))
