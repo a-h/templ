@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
+	"regexp"
 	"strings"
 )
 
@@ -103,41 +105,47 @@ type JSExpression string
 
 // SafeScript encodes unknown parameters for safety for inside HTML attributes.
 func SafeScript(functionName string, params ...any) string {
-	encodedParams := safeEncodeScriptParams(true, params)
+	if !jsFunctionName.MatchString(functionName) {
+		functionName = "__templ_invalid_js_function_name"
+	}
 	sb := new(strings.Builder)
-	sb.WriteString(functionName)
+	sb.WriteString(html.EscapeString(functionName))
 	sb.WriteRune('(')
-	sb.WriteString(strings.Join(encodedParams, ","))
+	for i, p := range params {
+		sb.WriteString(EscapeString(jsonEncodeParam(p)))
+		if i < len(params)-1 {
+			sb.WriteRune(',')
+		}
+	}
 	sb.WriteRune(')')
 	return sb.String()
 }
 
 // SafeScript encodes unknown parameters for safety for inline scripts.
 func SafeScriptInline(functionName string, params ...any) string {
-	encodedParams := safeEncodeScriptParams(false, params)
+	if !jsFunctionName.MatchString(functionName) {
+		functionName = "__templ_invalid_js_function_name"
+	}
 	sb := new(strings.Builder)
 	sb.WriteString(functionName)
 	sb.WriteRune('(')
-	sb.WriteString(strings.Join(encodedParams, ","))
+	for i, p := range params {
+		sb.WriteString(jsonEncodeParam(p))
+		if i < len(params)-1 {
+			sb.WriteRune(',')
+		}
+	}
 	sb.WriteRune(')')
 	return sb.String()
 }
 
-func safeEncodeScriptParams(escapeHTML bool, params []any) []string {
-	encodedParams := make([]string, len(params))
-	for i := 0; i < len(encodedParams); i++ {
-		if val, ok := params[i].(JSExpression); ok {
-			encodedParams[i] = string(val)
-			continue
-		}
-
-		enc, _ := json.Marshal(params[i])
-		if !escapeHTML {
-			encodedParams[i] = string(enc)
-			continue
-		}
-		encodedParams[i] = EscapeString(string(enc))
+func jsonEncodeParam(param any) string {
+	if val, ok := param.(JSExpression); ok {
+		return string(val)
 	}
-
-	return encodedParams
+	enc, _ := json.Marshal(param)
+	return string(enc)
 }
+
+// isValidJSFunctionName returns true if the given string is a valid JavaScript function name, e.g. console.log, alert, etc.
+var jsFunctionName = regexp.MustCompile(`^([$_a-zA-Z][$_a-zA-Z0-9]+\.?)+$`)

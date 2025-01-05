@@ -16,7 +16,7 @@ func Test(t *testing.T) {
 
 	ctx := context.WithValue(context.Background(), contextKeyName, "test")
 
-	diff, err := htmldiff.DiffCtx(ctx, component, expected)
+	_, diff, err := htmldiff.DiffCtx(ctx, component, expected)
 	if err != nil {
 		t.Fatal(err)
 	}
