@@ -92,6 +92,12 @@ This will output a `<script>` tag that calls the `functionToCall` function with 
 </script>
 ```
 
+:::tip
+If you want to write out an arbitrary string containing JavaScript, and are sure it is safe, you can use `templ.JSUnsafeFuncCall` to bypass script sanitization.
+
+Whatever string you pass to `templ.JSUnsafeFuncCall` will be output directly to the HTML, so be sure to validate the input.
+:::
+
 ### Pass server-side data to the client in a HTML attribute
 
 A common approach used by libraries like alpine.js is to pass data to the client in a HTML attribute.
