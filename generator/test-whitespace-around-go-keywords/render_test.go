@@ -36,32 +36,32 @@ func TestTextWhitespace(t *testing.T) {
 			expected: WhitespaceIsConsistentInFalseIfExpected,
 		},
 		{
-			name:     "whitespace is consistent in a switch statment with a true case",
+			name:     "whitespace is consistent in a switch statement with a true case",
 			input:    WhitespaceIsConsistentInSwitch(1),
 			expected: WhitespaceIsConsistentInOneSwitchExpected,
 		},
 		{
-			name:     "whitespace is consistent in a switch statment with a default case",
+			name:     "whitespace is consistent in a switch statement with a default case",
 			input:    WhitespaceIsConsistentInSwitch(2),
 			expected: WhitespaceIsConsistentInDefaultSwitchExpected,
 		},
 		{
-			name:     "whitespace is consistent in a switch statment with no default case and no true cases",
+			name:     "whitespace is consistent in a switch statement with no default case and no true cases",
 			input:    WhitespaceIsConsistentInSwitchNoDefault(),
 			expected: WhitespaceIsConsistentInSwitchNoDefaultExpected,
 		},
 		{
-			name:     "whitespace is consistent in a for statment that runs 0 times",
+			name:     "whitespace is consistent in a for statement that runs 0 times",
 			input:    WhitespaceIsConsistentInFor(0),
 			expected: WhitespaceIsConsistentInForZeroExpected,
 		},
 		{
-			name:     "whitespace is consistent in a for statment that runs 1 times",
+			name:     "whitespace is consistent in a for statement that runs 1 times",
 			input:    WhitespaceIsConsistentInFor(1),
 			expected: WhitespaceIsConsistentInForOneExpected,
 		},
 		{
-			name:     "whitespace is consistent in a for statment that runs 3 times",
+			name:     "whitespace is consistent in a for statement that runs 3 times",
 			input:    WhitespaceIsConsistentInFor(3),
 			expected: WhitespaceIsConsistentInForThreeExpected,
 		},

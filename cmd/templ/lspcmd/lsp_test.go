@@ -356,7 +356,7 @@ func TestReferences(t *testing.T) {
 			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
 				expectedReference := []protocol.Location{
 					{
-						// This is the useage of the templ function in the main.go file.
+						// This is the usage of the templ function in the main.go file.
 						URI: uri.URI("file://" + appDir + "/main.go"),
 						Range: protocol.Range{
 							Start: protocol.Position{
@@ -384,7 +384,7 @@ func TestReferences(t *testing.T) {
 			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
 				expectedReference := []protocol.Location{
 					{
-						// This is the useage of the struct in the templates.templ file.
+						// This is the usage of the struct in the templates.templ file.
 						URI: uri.URI("file://" + appDir + "/templates.templ"),
 						Range: protocol.Range{
 							Start: protocol.Position{
