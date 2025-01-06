@@ -1,0 +1,27 @@
+package testjsusage
+
+import "time"
+
+var onceHandle = templ.NewOnceHandle()
+
+templ TestComponent() {
+	<button onClick={ templ.JSFuncCall("alert", "Hello, World!") }>Click me</button>
+	@onceHandle.Once() {
+		<script type="text/javascript">
+			function customAlert(msg, date) {
+				alert(msg + " " + date);
+			}
+		</script>
+	}
+	<button onClick={ templ.JSFuncCall("customAlert", "Hello, custom alert 1: ", time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)) }>Click me</button>
+	<button onClick={ templ.JSFuncCall("customAlert", "Hello, custom alert 2: ", time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)) }>Click me</button>
+	@templ.JSFuncCall("customAlert", "Runs on page load", time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))
+	<script>
+		function onClickEventHandler(event, data) {
+			alert(event.type);
+			alert(data)
+			event.preventDefault();
+		}
+	</script>
+	<button onclick={ templ.JSFuncCall("onClickEventHandler", templ.JSExpression("event"), "1234") }>Pass event handler</button>
+}

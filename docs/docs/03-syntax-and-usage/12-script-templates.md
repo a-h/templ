@@ -15,15 +15,149 @@ templ body() {
 }
 ```
 
-To pass data from the server to client-side scripts, see [Passing server-side data to scripts](#passing-server-side-data-to-scripts).
-
-## Adding client side behaviours to components
-
-To ensure that a `<script>` tag within a templ component is only rendered once per HTTP response, use a [templ.OnceHandle](18-render-once.md).
+:::tip
+To ensure that a `<script>` tag within a templ component is only rendered once per HTTP response (or context), use a [templ.OnceHandle](18-render-once.md).
 
 Using a `templ.OnceHandle` allows a component to define global client-side scripts that it needs to run without including the scripts multiple times in the response.
+:::
 
-The example below also demonstrates applying behaviour that's defined in a multiline script to its sibling element.
+## Pass Go data to JavaScript
+
+### Pass Go data to a JavaScript event handler
+
+Use `templ.JSFuncCall` to pass server-side data to client-side scripts by calling a JavaScript function.
+
+```templ title="input.templ"
+templ Component(data CustomType) {
+	<button onclick={ templ.JSFuncCall("alert", data.Message) }>Show alert</button>
+}
+```
+
+The data passed to the `alert` function is JSON encoded, so if `data.Message` was the string value of `Hello, from the JSFuncCall data`, the output would be:
+
+```html title="output.html"
+<button onclick="alert('Hello, from the JSFuncCall data')">Show alert</button>
+```
+
+### Pass event objects to an Event Handler
+
+HTML element `on*` attributes pass an event object to the function. To pass the event object to a function, use `templ.JSExpression`.
+
+
+:::warning
+`templ.JSExpression` bypasses JSON encoding, so the string value is output directly to the HTML - this can be a security risk if the data is not trusted, e.g. the data is user input, not a compile-time constant.
+:::
+
+```templ title="input.templ"
+<script type="text/javascript">
+	function clickHandler(event, message) {
+		alert(message);
+		event.preventDefault();
+	}
+</script>
+<button onclick={ templ.JSFuncCall("clickHandler", templ.JSExpression("event"), "message from Go") }>Show event</button>
+```
+
+The output would be:
+
+```html title="output.html"
+<script type="text/javascript">
+	function clickHandler(event, message) {
+		alert(message);
+		event.preventDefault();
+	}
+</script>
+<button onclick="clickHandler(event, 'message from Go')">Show event</button>
+```
+
+### Call client side functions with server side data
+
+Use `templ.JSFuncCall` to call a client-side function with server-side data.
+
+`templ.JSFuncCall` takes a function name and a variadic list of arguments. The arguments are JSON encoded and passed to the function.
+
+In the case that the function name is invalid (e.g. contains `</script>` or is a JavaScript expression, not a function name), the function name will be sanitized to `__templ_invalid_function_name`.
+
+```templ title="components.templ"
+templ InitializeClientSideScripts(data CustomType) {
+  @templ.JSFuncCall("functionToCall", data.Name, data.Age)
+}
+```
+
+This will output a `<script>` tag that calls the `functionToCall` function with the `Name` and `Age` properties of the `data` object.
+
+```html title="output.html"
+<script type="text/javascript">
+  functionToCall("John", 42);
+</script>
+```
+
+:::tip
+If you want to write out an arbitrary string containing JavaScript, and are sure it is safe, you can use `templ.JSUnsafeFuncCall` to bypass script sanitization.
+
+Whatever string you pass to `templ.JSUnsafeFuncCall` will be output directly to the HTML, so be sure to validate the input.
+:::
+
+### Pass server-side data to the client in a HTML attribute
+
+A common approach used by libraries like alpine.js is to pass data to the client in a HTML attribute.
+
+To pass server-side data to the client in a HTML attribute, use `templ.JSONString` to encode the data as a JSON string.
+
+```templ title="input.templ"
+templ body(data any) {
+  <button id="alerter" alert-data={ templ.JSONString(data) }>Show alert</button>
+}
+```
+
+```html title="output.html"
+<button id="alerter" alert-data="{&quot;msg&quot;:&quot;Hello, from the attribute data&quot;}">Show alert</button>
+```
+
+The data in the attribute can then be accessed from client-side JavaScript.
+
+```javascript
+const button = document.getElementById('alerter');
+const data = JSON.parse(button.getAttribute('alert-data'));
+```
+
+[alpine.js](https://alpinejs.dev/) uses `x-*` attributes to pass data to the client:
+
+```templ
+templ DataDisplay(data DataType) {
+  <div x-data={ templ.JSONString(data) }>
+      ...
+  </div>
+}
+```
+
+### Pass server-side data to the client in a script element
+
+In addition to passing data in HTML attributes, you can also pass data to the client in a `<script>` element.
+
+```templ title="input.templ"
+templ body(data any) {
+  @templ.JSONScript("id", data)
+}
+```
+
+```html title="output.html"
+<script id="id" type="application/json">{"msg":"Hello, from the script data"}</script>
+```
+
+The data in the script tag can then be accessed from client-side JavaScript.
+
+```javascript
+const data = JSON.parse(document.getElementById('id').textContent);
+```
+
+## Avoiding inline event handlers
+
+According to Mozilla, [inline event handlers are considered bad practice](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Events#inline_event_handlers_%E2%80%94_dont_use_these).
+
+This example demonstrates how to add client-side behaviour to a component using a script tag.
+
+The example uses a `templ.OnceHandle` to define global client-side scripts that are required, without rendering the scripts multiple times in the response.
 
 ```templ title="component.templ"
 package main
@@ -147,47 +281,6 @@ http.ListenAndServe("localhost:8080", mux)
 ```
 :::
 
-## Passing server-side data to scripts
-
-Pass data from the server to the client by embedding it in the HTML as a JSON object in an attribute or script tag.
-
-### Pass server-side data to the client in a HTML attribute
-
-```templ title="input.templ"
-templ body(data any) {
-  <button id="alerter" alert-data={ templ.JSONString(data) }>Show alert</button>
-}
-```
-
-```html title="output.html"
-<button id="alerter" alert-data="{&quot;msg&quot;:&quot;Hello, from the attribute data&quot;}">Show alert</button>
-```
-
-The data in the attribute can then be accessed from client-side JavaScript.
-
-```javascript
-const button = document.getElementById('alerter');
-const data = JSON.parse(button.getAttribute('alert-data'));
-```
-
-### Pass server-side data to the client in a script element
-
-```templ title="input.templ"
-templ body(data any) {
-  @templ.JSONScript("id", data)
-}
-```
-
-```html title="output.html"
-<script id="id" type="application/json">{"msg":"Hello, from the script data"}</script>
-```
-
-The data in the script tag can then be accessed from client-side JavaScript.
-
-```javascript
-const data = JSON.parse(document.getElementById('id').textContent);
-```
-
 ## Working with NPM projects
 
 https://github.com/a-h/templ/tree/main/examples/typescript contains a TypeScript example that uses `esbuild` to transpile TypeScript into plain JavaScript, along with any required `npm` modules.
@@ -272,7 +365,9 @@ func main() {
 ## Script templates
 
 :::warning
-Script templates are a legacy feature and are not recommended for new projects. Use standard `<script>` tags to import a standalone JavaScript file, optionally created by a bundler like `esbuild`.
+Script templates are a legacy feature and are not recommended for new projects.
+
+Use the `templ.JSFuncCall`, `templ.JSONString` and other features of templ alongside standard `<script>` tags to import standalone JavaScript files, optionally created by a bundler like `esbuild`.
 :::
 
 If you need to pass Go data to scripts, you can use a script template.

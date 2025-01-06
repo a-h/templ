@@ -1,11 +1,9 @@
-package testscriptusage
+package testjsusage
 
 import (
-	"context"
 	_ "embed"
 	"testing"
 
-	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator/htmldiff"
 )
 
@@ -13,10 +11,9 @@ import (
 var expected string
 
 func Test(t *testing.T) {
-	component := ThreeButtons()
+	component := TestComponent()
 
-	ctx := templ.WithNonce(context.Background(), "nonce1")
-	_, diff, err := htmldiff.DiffCtx(ctx, component, expected)
+	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,0 +1,6 @@
+package testjsunsafeusage
+
+templ TestComponent() {
+	<button onClick={ templ.JSUnsafeFuncCall("anythingILike('blah')") }>Click me</button>
+	@templ.JSUnsafeFuncCall("// Arbitrary JS code")
+}
