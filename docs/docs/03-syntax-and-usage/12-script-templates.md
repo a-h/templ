@@ -55,7 +55,7 @@ HTML element `on*` attributes pass an event object to the function. To pass the 
 		event.preventDefault();
 	}
 </script>
-<button onclick={ templ.JSFuncCall("clickHandler", JSExpression("event"), "message from Go") }>Show event</button>
+<button onclick={ templ.JSFuncCall("clickHandler", templ.JSExpression("event"), "message from Go") }>Show event</button>
 ```
 
 The output would be:
