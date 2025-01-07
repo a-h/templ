@@ -24,7 +24,7 @@ templ component(o Order) {
 }
 ```
 
-See [URL Attribures](/syntax-and-usage/attributes#url-attributes) for more information.
+See [URL Attributes](/syntax-and-usage/attributes#url-attributes) for more information.
 
 ## Feedback
 

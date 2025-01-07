@@ -8,6 +8,6 @@ Use the #templ channel in the Gopher Slack community.
 
 https://invite.slack.golangbridge.org/
 
-## Github Discussion
+## GitHub Discussion
 
 https://github.com/a-h/templ/discussions
