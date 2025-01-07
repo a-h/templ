@@ -489,11 +489,7 @@ func addTrailingSpaceAndValidate(start parse.Position, e Element, pi *parse.Inpu
 		return e, false, err
 	}
 	// Add trailing space.
-	ws, _, err := parse.Whitespace.Parse(pi)
-	if err != nil {
-		return e, false, err
-	}
-	e.TrailingSpace, err = NewTrailingSpace(ws)
+	e.TrailingSpace, err = parseTrailingSpace(pi, true, false)
 	if err != nil {
 		return e, false, err
 	}
