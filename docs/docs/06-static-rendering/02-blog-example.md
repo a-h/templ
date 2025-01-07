@@ -76,7 +76,7 @@ Top New Year Activities in the UK include:
 	{
 		Date:  time.Date(2023, time.May, 1, 0, 0, 0, 0, time.UTC),
 		Title: "May Day",
-		Content: `May Day is an ancient spring festival celebrated on the first of May in the United Kingdom, embracing the arrival of warmer whether and the renewal of life.
+		Content: `May Day is an ancient spring festival celebrated on the first of May in the United Kingdom, embracing the arrival of warmer weather and the renewal of life.
 
 Top May Day Activities in the UK:
 
@@ -219,7 +219,7 @@ While each content page contains the HTML generated from the markdown, and the s
 </h1>
 <div class="content">
  <p>
-  May Day is an ancient spring festival celebrated on the first of May in the United Kingdom, embracing the arrival of warmer whether and the renewal of life.
+  May Day is an ancient spring festival celebrated on the first of May in the United Kingdom, embracing the arrival of warmer weather and the renewal of life.
  </p>
  <p>
   Top May Day Activities in the UK:
