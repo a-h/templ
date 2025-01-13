@@ -80,7 +80,7 @@ func TestTextParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "Multiline text is colected line by line",
+			name:  "Multiline text is collected line by line",
 			input: "Line 1\nLine 2",
 			expected: Text{
 				Value: "Line 1",
@@ -92,7 +92,7 @@ func TestTextParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "Multiline text is colected line by line (Windows)",
+			name:  "Multiline text is collected line by line (Windows)",
 			input: "Line 1\r\nLine 2",
 			expected: Text{
 				Value: "Line 1",

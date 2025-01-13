@@ -156,7 +156,7 @@ git diff --exit-code
 
 ### push-release-tag
 
-Push a semantic version number to Github to trigger the release process.
+Push a semantic version number to GitHub to trigger the release process.
 
 ```sh
 ./push-tag.sh

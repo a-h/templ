@@ -719,11 +719,11 @@ func TestDocumentSymbol(t *testing.T) {
 				}
 			}
 
-			expectdSlice, err := sliceToAnySlice(test.expect)
+			expectedSlice, err := sliceToAnySlice(test.expect)
 			if err != nil {
 				t.Errorf("failed to convert expect to any slice: %v", err)
 			}
-			diff := cmp.Diff(expectdSlice, actual)
+			diff := cmp.Diff(expectedSlice, actual)
 			if diff != "" {
 				t.Errorf("unexpected document symbol: %v", diff)
 			}
@@ -843,7 +843,7 @@ func Setup(ctx context.Context, log *zap.Logger) (clientCtx context.Context, app
 	var wg sync.WaitGroup
 	var cmdErr error
 
-	// Copy from the LSP to the CLient, and vice versa.
+	// Copy from the LSP to the Client, and vice versa.
 	fromClient, toLSP := io.Pipe()
 	fromLSP, toClient := io.Pipe()
 	clientStream := jsonrpc2.NewStream(newStdRwc(log, "clientStream", toLSP, fromLSP))

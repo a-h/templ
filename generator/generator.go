@@ -1013,7 +1013,7 @@ func (g *generator) writeAttributeCSS(indentLevel int, attr parser.ExpressionAtt
 	}
 	// Create a class name for the style.
 	// The expression can either be expecting a templ.Classes call, or an expression that returns
-	// var templ_7745c5c3_CSSClassess = []any{
+	// var templ_7745c5c3_CSSClasses = []any{
 	classesName := g.createVariableName()
 	if _, err = g.w.WriteIndent(indentLevel, "var "+classesName+" = []any{"); err != nil {
 		return
@@ -1028,7 +1028,7 @@ func (g *generator) writeAttributeCSS(indentLevel int, attr parser.ExpressionAtt
 		return
 	}
 	// Render the CSS before the element if required.
-	// templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_CSSClassess...)
+	// templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_CSSClasses...)
 	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, "+classesName+"...)\n"); err != nil {
 		return
 	}

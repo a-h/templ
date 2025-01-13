@@ -106,7 +106,7 @@ templ generate --notify-proxy --proxybind="localhost" --proxyport="8080"
 wgo -file=.go -file=.templ -xfile=_templ.go templ generate :: go run main.go
 ```
 
-To avoid a continous reloading files ending with `_templ.go` should be skipped via `-xfile`.
+To avoid a continuous reloading files ending with `_templ.go` should be skipped via `-xfile`.
 
 ## Alternative 2: air
 

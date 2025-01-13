@@ -54,8 +54,8 @@ templ KVCanBeUsedToConditionallySetClasses() {
 }
 
 // Pseudo attributes can be used without any special syntax.
-templ PsuedoAttributesAndComplexClassNamesAreSupported() {
-	<div class={ "bg-violet-500", "hover:bg-red-600", "hover:bg-sky-700", "text-[#50d71e]", "w-[calc(100%-4rem)" }>Psuedo attributes and complex class names are supported.</div>
+templ PseudoAttributesAndComplexClassNamesAreSupported() {
+	<div class={ "bg-violet-500", "hover:bg-red-600", "hover:bg-sky-700", "text-[#50d71e]", "w-[calc(100%-4rem)" }>Pseudo attributes and complex class names are supported.</div>
 }
 
 // Class names are HTML escaped.
@@ -89,7 +89,7 @@ templ TestComponent() {
 	@CSSComponentsAndConstantsAreSupported()
 	@MapsCanBeUsedToConditionallySetClasses()
 	@KVCanBeUsedToConditionallySetClasses()
-	@PsuedoAttributesAndComplexClassNamesAreSupported()
+	@PseudoAttributesAndComplexClassNamesAreSupported()
 	@ClassNamesAreHTMLEscaped()
 	@CSSComponentsCanBeUsedWithArguments()
 	@Rotate(45)
