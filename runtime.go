@@ -53,29 +53,8 @@ func GetNonce(ctx context.Context) (nonce string) {
 	return v.nonce
 }
 
-func WithChildren(ctx context.Context, children Component) context.Context {
-	ctx, v := getContext(ctx)
-	v.children = &children
-	return ctx
-}
-
-func ClearChildren(ctx context.Context) context.Context {
-	_, v := getContext(ctx)
-	v.children = nil
-	return ctx
-}
-
 // NopComponent is a component that doesn't render anything.
 var NopComponent = ComponentFunc(func(ctx context.Context, w io.Writer) error { return nil })
-
-// GetChildren from the context.
-func GetChildren(ctx context.Context) Component {
-	_, v := getContext(ctx)
-	if v.children == nil {
-		return NopComponent
-	}
-	return *v.children
-}
 
 // EscapeString escapes HTML text within templates.
 func EscapeString(s string) string {
@@ -286,7 +265,7 @@ func (cssm CSSMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Add registered classes to the context.
 	ctx, v := getContext(r.Context())
 	for _, c := range cssm.CSSHandler.Classes {
-		v.addClass(c.ID)
+		v.shouldRenderClass(c.ID)
 	}
 	// Serve the request. Templ components will use the updated context
 	// to know to skip rendering <style> elements for any component CSS
@@ -353,9 +332,8 @@ func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...an
 	for _, c := range classes {
 		switch ccc := c.(type) {
 		case ComponentCSSClass:
-			if !v.hasClassBeenRendered(ccc.ID) {
+			if v.shouldRenderClass(ccc.ID) {
 				sb.WriteString(string(ccc.Class))
-				v.addClass(ccc.ID)
 			}
 		case KeyValue[ComponentCSSClass, bool]:
 			if !ccc.Value {
@@ -493,55 +471,52 @@ type contextKeyType int
 const contextKey = contextKeyType(0)
 
 type contextValue struct {
+	m           *sync.Mutex
 	ss          map[string]struct{}
 	onceHandles map[*OnceHandle]struct{}
-	children    *Component
 	nonce       string
 }
 
-func (v *contextValue) setHasBeenRendered(h *OnceHandle) {
+func (v *contextValue) shouldRenderOnce(h *OnceHandle) (render bool) {
+	v.m.Lock()
+	defer v.m.Unlock()
 	if v.onceHandles == nil {
-		v.onceHandles = map[*OnceHandle]struct{}{}
+		v.onceHandles = make(map[*OnceHandle]struct{})
+	}
+	_, rendered := v.onceHandles[h]
+	if rendered {
+		return false
 	}
 	v.onceHandles[h] = struct{}{}
+	return true
 }
 
-func (v *contextValue) getHasBeenRendered(h *OnceHandle) (ok bool) {
-	if v.onceHandles == nil {
-		v.onceHandles = map[*OnceHandle]struct{}{}
-	}
-	_, ok = v.onceHandles[h]
-	return
-}
-
-func (v *contextValue) addScript(s string) {
+func (v *contextValue) shouldRenderScript(s string) (render bool) {
+	v.m.Lock()
+	defer v.m.Unlock()
 	if v.ss == nil {
-		v.ss = map[string]struct{}{}
+		v.ss = make(map[string]struct{})
+	}
+	_, rendered := v.ss["script_"+s]
+	if rendered {
+		return false
 	}
 	v.ss["script_"+s] = struct{}{}
+	return true
 }
 
-func (v *contextValue) hasScriptBeenRendered(s string) (ok bool) {
+func (v *contextValue) shouldRenderClass(s string) (render bool) {
+	v.m.Lock()
+	defer v.m.Unlock()
 	if v.ss == nil {
-		v.ss = map[string]struct{}{}
+		v.ss = make(map[string]struct{})
 	}
-	_, ok = v.ss["script_"+s]
-	return
-}
-
-func (v *contextValue) addClass(s string) {
-	if v.ss == nil {
-		v.ss = map[string]struct{}{}
+	_, rendered := v.ss["class_"+s]
+	if rendered {
+		return false
 	}
 	v.ss["class_"+s] = struct{}{}
-}
-
-func (v *contextValue) hasClassBeenRendered(s string) (ok bool) {
-	if v.ss == nil {
-		v.ss = map[string]struct{}{}
-	}
-	_, ok = v.ss["class_"+s]
-	return
+	return true
 }
 
 // InitializeContext initializes context used to store internal state used during rendering.
@@ -549,7 +524,9 @@ func InitializeContext(ctx context.Context) context.Context {
 	if _, ok := ctx.Value(contextKey).(*contextValue); ok {
 		return ctx
 	}
-	v := &contextValue{}
+	v := &contextValue{
+		m: &sync.Mutex{},
+	}
 	ctx = context.WithValue(ctx, contextKey, v)
 	return ctx
 }
