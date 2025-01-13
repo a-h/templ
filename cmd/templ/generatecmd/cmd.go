@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -185,9 +186,26 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		)
 		postGenerationEventsWG.Wait()
 		cmd.Log.Debug(
-			"All post-generation events processed",
+			"All post-generation events processed, deleting watch mode text files",
 			slog.Int64("errorCount", errorCount.Load()),
 		)
+
+		fileEvents := make(chan fsnotify.Event)
+		go func() {
+			if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, fileEvents); err != nil {
+				cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
+				errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
+				return
+			}
+			close(fileEvents)
+		}()
+		for event := range fileEvents {
+			if strings.HasSuffix(event.Name, "_templ.txt") {
+				if err = os.Remove(event.Name); err != nil {
+					cmd.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
+				}
+			}
+		}
 	}()
 
 	// Start process to handle events.

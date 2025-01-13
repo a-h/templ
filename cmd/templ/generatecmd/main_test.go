@@ -8,8 +8,10 @@ import (
 	"path"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/a-h/templ/cmd/templ/testproject"
+	"golang.org/x/sync/errgroup"
 )
 
 func TestGenerate(t *testing.T) {
@@ -40,6 +42,58 @@ func TestGenerate(t *testing.T) {
 		_, err = os.Stat(path.Join(dir, "templates_templ.go"))
 		if err != nil {
 			t.Fatalf("templates_templ.go was not created: %v", err)
+		}
+	})
+	t.Run("can generate a file in watch mode", func(t *testing.T) {
+		// templ generate -f templates.templ
+		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
+		if err != nil {
+			t.Fatalf("failed to create test project: %v", err)
+		}
+		defer os.RemoveAll(dir)
+
+		// Delete the templates_templ.go file to ensure it is generated.
+		err = os.Remove(path.Join(dir, "templates_templ.go"))
+		if err != nil {
+			t.Fatalf("failed to remove templates_templ.go: %v", err)
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+
+		var eg errgroup.Group
+		eg.Go(func() error {
+			// Run the generate command.
+			return Run(ctx, log, Arguments{
+				Path:  dir,
+				Watch: true,
+			})
+		})
+
+		// Check the templates_templ.go file was created, with backoff.
+		for i := 0; i < 5; i++ {
+			time.Sleep(time.Second * time.Duration(i))
+			_, err = os.Stat(path.Join(dir, "templates_templ.go"))
+			if err != nil {
+				continue
+			}
+			_, err = os.Stat(path.Join(dir, "templates_templ.txt"))
+			if err != nil {
+				continue
+			}
+			break
+		}
+		if err != nil {
+			t.Fatalf("template files were not created: %v", err)
+		}
+
+		cancel()
+		if err := eg.Wait(); err != nil {
+			t.Fatalf("generate command failed: %v", err)
+		}
+
+		// Check the templates_templ.txt file was removed.
+		_, err = os.Stat(path.Join(dir, "templates_templ.txt"))
+		if err == nil {
+			t.Fatalf("templates_templ.txt was not removed")
 		}
 	})
 }
