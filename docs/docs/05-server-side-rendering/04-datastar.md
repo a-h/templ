@@ -2,7 +2,7 @@
 
 [Datastar](https://data-star.dev) is a hypermedia framework that is similar to [HTMX](htmx).
 
-Datastar can be used to selectively replace content within a web page by combining fine grained reactive signals with SSE. It's geared primarily to real time applications where you'd normally reach for a SPA framework such as React/Vue/Svelte.
+Datastar can selectively replace content within a web page by combining fine-grained reactive signals with SSE. It's geared primarily to real-time applications where you'd normally reach for a SPA framework such as React/Vue/Svelte.
 
 ## Usage
 
@@ -13,7 +13,7 @@ Using Datastar requires:
 
 ## Installation
 
-Datastar comes out of the box with templ components to speed up development. You can use `@datastar.ScriptCDNLatest()` or `ScriptCDNVersion(version string)` to include the latest version of the Datastar library in your HTML.
+Datastar is included with Templ components out of the box to speed up development. You can use `@datastar.ScriptCDNLatest()` or `ScriptCDNVersion(version string)` to include the latest version of the Datastar library in your HTML.
 
 :::info
 Advanced Datastar installation and usage help is covered in the user guide at https://data-star.dev.
@@ -35,12 +35,14 @@ We are going to modify the [templ counter example](example-counter-application) 
 
 ### Frontend
 
-First, define a HTML some with two buttons. One to update a global state, and one to update a per-user state.
+First, define some HTML with two buttons. One to update a global state, and one to update a per-user state.
 
 ```templ title="components.templ"
 package site
 
-type TemplCounterStore struct {
+import datastar "github.com/starfederation/datastar/sdk/go"
+
+type TemplCounterSignals struct {
 	Global uint32 `json:"global"`
 	User   uint32 `json:"user"`
 }
@@ -48,12 +50,13 @@ type TemplCounterStore struct {
 templ templCounterExampleButtons() {
 	<div>
 		<button
-			data-on-click="$$post('/examples/templ_counter/increment/global')"
+			data-on-click="@post('/examples/templ_counter/increment/global')" 
 		>
 			Increment Global
 		</button>
 		<button
-			data-on-click="$$post('/examples/templ_counter/increment/user')"
+			data-on-click={ datastar.PostSSE('/examples/templ_counter/increment/user') }
+			<!-- Alternative: Using Datastar SDK sugar--> 
 		>
 			Increment User
 		</button>
@@ -73,10 +76,10 @@ templ templCounterExampleCounts() {
 	</div>
 }
 
-templ templCounterExampleInitialContents(store TemplCounterStore) {
+templ templCounterExampleInitialContents(signals TemplCounterSignals) {
 	<div
 		id="container"
-		data-store={ templ.JSONString(store) }
+		data-signals={ templ.JSONString(signals) }
 	>
 		@templCounterExampleButtons()
 		@templCounterExampleCounts()
@@ -85,13 +88,13 @@ templ templCounterExampleInitialContents(store TemplCounterStore) {
 ```
 
 :::tip
-Note that Datastar doesn't promote the use of forms, because they are ill-suited to nested reactive contents. Instead it sends all[^1] reactive state (as JSON) to the server on each request. This means far less bookkeeping and more predictable state management.
+Note that Datastar doesn't promote the use of forms because they are ill-suited to nested reactive content. Instead, it sends all[^1] reactive state (as JSON) to the server on each request. This means far less bookkeeping and more predictable state management.
 :::
 
 :::note
-`data-store` is a special attribute that Datastar uses to store the initial state of the page. The contents will turn into signals that can be used to update the page.
+`data-signals` is a special attribute that Datastar uses to merge one or more signals into the existing signals. In the example, we store $global and $user when we initially render the container. 
 
-`data-on-click="$$post('/examples/templ_counter/increment/global')"` is an attribute expression that says "when this element is clicked, send a POST request to the server to the specified URL". The `$$post` is an action that is a sandboxed function that knows about things like signals.
+`data-on-click="@post('/examples/templ_counter/increment/global')"` is an attribute expression that says "When this element is clicked, send a POST request to the server to the specified URL". The `@post` is an action that is a sandboxed function that knows about things like signals.
 
 `data-text="$global"` is an attribute expression that says "replace the contents of this element with the value of the `global` signal in the store". This is a reactive signal that will update the page when the value changes, which we'll see in a moment.
 :::
@@ -108,12 +111,13 @@ import (
 	"sync/atomic"
 
 	"github.com/Jeffail/gabs/v2"
-	"github.com/delaneyj/datastar"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/sessions"
+	datastar "github.com/starfederation/datastar/sdk/go"
 )
 
-func setupExamplesTemplCounter(examplesRouter chi.Router, sessionStore sessions.Store) error {
+func setupExamplesTemplCounter(examplesRouter chi.Router, sessionSignals sessions.Store) error {
+
 	var globalCounter atomic.Uint32
 	const (
 		sessionKey = "templ_counter"
@@ -121,7 +125,7 @@ func setupExamplesTemplCounter(examplesRouter chi.Router, sessionStore sessions.
 	)
 
 	userVal := func(r *http.Request) (uint32, *sessions.Session, error) {
-		sess, err := sessionStore.Get(r, sessionKey)
+		sess, err := sessionSignals.Get(r, sessionKey)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -139,17 +143,17 @@ func setupExamplesTemplCounter(examplesRouter chi.Router, sessionStore sessions.
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
-		store := TemplCounterStore{
+		signals := TemplCounterSignals{
 			Global: globalCounter.Load(),
 			User:   userVal,
 		}
 
-		sse := datastar.NewSSE(w, r)
-		datastar.RenderFragmentTempl(sse, templCounterExampleInitialContents(store))
+		c := templCounterExampleInitialContents(signals)
+		datastar.NewSSE(w, r).MergeFragmentTempl(c)
 	})
 
-	updateGlobal := func(store *gabs.Container) {
-		store.Set(globalCounter.Add(1), "global")
+	updateGlobal := func(signals *gabs.Container) {
+		signals.Set(globalCounter.Add(1), "global")
 	}
 
 	examplesRouter.Route("/templ_counter/increment", func(incrementRouter chi.Router) {
@@ -157,8 +161,7 @@ func setupExamplesTemplCounter(examplesRouter chi.Router, sessionStore sessions.
 			update := gabs.New()
 			updateGlobal(update)
 
-			sse := datastar.NewSSE(w, r)
-			datastar.PatchStore(sse, update)
+			datastar.NewSSE(w, r).MarshalAndMergeSignals(update)
 		})
 
 		incrementRouter.Post("/user", func(w http.ResponseWriter, r *http.Request) {
@@ -177,30 +180,28 @@ func setupExamplesTemplCounter(examplesRouter chi.Router, sessionStore sessions.
 			updateGlobal(update)
 			update.Set(val, "user")
 
-			sse := datastar.NewSSE(w, r)
-			datastar.PatchStore(sse, update)
+			datastar.NewSSE(w, r).MarshalAndMergeSignals(update)
 		})
 	})
 
 	return nil
-}
-```
+}```
 
-The `atomic.Uint32` type is used to store the global state. The `userVal` function is a helper that retrieves the user's session state. The `updateGlobal` function increments the global state.
+The `atomic.Uint32` type stores the global state. The `userVal` function is a helper that retrieves the user's session state. The `updateGlobal` function increments the global state.
 
 :::note
-In this example, the global state is stored in RAM, and will be lost when the web server reboots. To support load-balanced web servers, and stateless function deployments, consider storing the state in a data store such as [NATS KV](https://docs.nats.io/using-nats/developer/develop_jetstream/kv).
+In this example, the global state is stored in RAM and will be lost when the web server reboots. To support load-balanced web servers and stateless function deployments, consider storing the state in a data store such as [NATS KV](https://docs.nats.io/using-nats/developer/develop_jetstream/kv).
 :::
 
 ### Per-user session state
 
-In a HTTP application, per-user state information is partitioned by a HTTP cookie. Cookies that identify a user while they're using a site are known as "session cookies". When the HTTP handler receives a request, it can read the session ID of the user from the cookie and retrieve any required state.
+In an HTTP application, per-user state information is partitioned by an HTTP cookie. Cookies that identify a user while they're using a site are known as "session cookies". When the HTTP handler receives a request, it can read the session ID of the user from the cookie and retrieve any required state.
 
-### Signal only patching
+### Signal-only patching
 
-Since the page's elements aren't changing dynamically, we can use the `datastar.PatchStore` function to send only the signals that have changed. This is a more efficient way to update the page without even needing to send HTML fragments.
+Since the page's elements aren't changing dynamically, we can use the `MarshalAndMergeSignals` function to send only the signals that have changed. This is a more efficient way to update the page without even needing to send HTML fragments.
 
 :::tip
-Datastar will merge updates to the store similar to a JSON merge patch. This means you can do dynamic partial updates to the store and the page will update accordingly. [Gabs](https://pkg.go.dev/github.com/Jeffail/gabs/v2#section-readme) is used here to handle dynamic JSON in Go.
+Datastar will merge updates to signals similar to a JSON merge patch. This means you can do dynamic partial updates to the store and the page will update accordingly. [Gabs](https://pkg.go.dev/github.com/Jeffail/gabs/v2#section-readme) is used here to handle dynamic JSON in Go.
 
-[^1]: You can control the data that is sent to the server by prefixing local signals with `_`. This will prevent them from being sent to the server on every request.
+[^1]: You can control the data sent to the server by prefixing local signals with `_`. This will prevent them from being sent to the server on every request.
