@@ -189,8 +189,8 @@ func TestHandler(t *testing.T) {
 		}
 		// Expect the status code to be 201, not 400, because in streaming mode,
 		// we have to write the header before we can call the error handler.
-		if actualRepsonseCode := w.Result().StatusCode; http.StatusCreated != actualRepsonseCode {
-			t.Errorf("expected status %d, got %d", http.StatusCreated, actualRepsonseCode)
+		if actualResponseCode := w.Result().StatusCode; http.StatusCreated != actualResponseCode {
+			t.Errorf("expected status %d, got %d", http.StatusCreated, actualResponseCode)
 		}
 		// Expect the body to be "BodyError message", not just "Error message" because
 		// in streaming mode, we've already written part of the body to the response, unlike in

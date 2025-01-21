@@ -172,7 +172,7 @@ func TestSanitizeCSS(t *testing.T) {
 			expectedValue:    InnocuousPropertyValue,
 		},
 		{
-			name:             "background-image invalid sufix",
+			name:             "background-image invalid suffix",
 			inputProperty:    "background-image",
 			expectedProperty: "background-image",
 			inputValue:       `url("/img.png`,

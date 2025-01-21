@@ -19,7 +19,7 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return r, false, nil
 	}
 
-	// Parse the Go if expresion.
+	// Parse the Go if expression.
 	if r.Expression, err = parseGo("if", pi, goexpression.If); err != nil {
 		return r, false, err
 	}
@@ -78,7 +78,7 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, ok boo
 
 	// Rewind to the start of the `if` statement.
 	pi.Seek(pi.Index() - 2)
-	// Parse the Go if expresion.
+	// Parse the Go if expression.
 	if r.Expression, err = parseGo("else if", pi, goexpression.If); err != nil {
 		return r, false, err
 	}

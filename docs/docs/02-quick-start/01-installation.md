@@ -8,7 +8,7 @@ With Go 1.23 or greater installed, run:
 go install github.com/a-h/templ/cmd/templ@latest
 ```
 
-## Github binaries
+## GitHub binaries
 
 Download the latest release from https://github.com/a-h/templ/releases/latest
 

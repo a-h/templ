@@ -19,7 +19,7 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error
 		return
 	}
 
-	// Parse the Go switch expresion.
+	// Parse the Go switch expression.
 	if r.Expression, err = parseGo("switch", pi, goexpression.Switch); err != nil {
 		return r, false, err
 	}
@@ -67,7 +67,7 @@ var caseExpressionStartParser = parse.Func(func(pi *parse.Input) (r Expression, 
 		pi.Seek(start)
 		return r, false, nil
 	}
-	// Parse the Go expresion.
+	// Parse the Go expression.
 	if r, err = parseGo("case", pi, goexpression.Case); err != nil {
 		return r, false, err
 	}
