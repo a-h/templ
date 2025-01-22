@@ -75,12 +75,12 @@ func main() {
 ```
 
 ```html title="Output"
-<script type="text/javascript" nonce="randomly generated nonce">
+<script nonce="randomly generated nonce">
   function __templ_onLoad_5a85() {
     alert("Hello, world!")
   }
 </script>
-<script type="text/javascript" nonce="randomly generated nonce">
+<script nonce="randomly generated nonce">
   __templ_onLoad_5a85()
 </script>
 ```

@@ -68,7 +68,7 @@ func TestJSFuncCall(t *testing.T) {
 				Call:       "doSomething()",
 				CallInline: "doSomething()",
 			},
-			expectedComponentOutput: `<script type="text/javascript">doSomething()</script>`,
+			expectedComponentOutput: `<script>doSomething()</script>`,
 		},
 		{
 			name:         "single argument is supported",
@@ -80,7 +80,7 @@ func TestJSFuncCall(t *testing.T) {
 				Call:       "alert(&#34;hello&#34;)",
 				CallInline: `alert("hello")`,
 			},
-			expectedComponentOutput: `<script type="text/javascript">alert("hello")</script>`,
+			expectedComponentOutput: `<script>alert("hello")</script>`,
 		},
 		{
 			name:         "multiple arguments are supported",
@@ -92,7 +92,7 @@ func TestJSFuncCall(t *testing.T) {
 				Call:       "console.log(&#34;hello&#34;,&#34;world&#34;)",
 				CallInline: `console.log("hello","world")`,
 			},
-			expectedComponentOutput: `<script type="text/javascript">console.log("hello","world")</script>`,
+			expectedComponentOutput: `<script>console.log("hello","world")</script>`,
 		},
 		{
 			name:         "attribute injection fails",
@@ -104,7 +104,7 @@ func TestJSFuncCall(t *testing.T) {
 				Call:       "__templ_invalid_js_function_name()",
 				CallInline: "__templ_invalid_js_function_name()",
 			},
-			expectedComponentOutput: `<script type="text/javascript">__templ_invalid_js_function_name()</script>`,
+			expectedComponentOutput: `<script>__templ_invalid_js_function_name()</script>`,
 		},
 		{
 			name:         "closing the script and injecting HTML fails",
@@ -116,7 +116,7 @@ func TestJSFuncCall(t *testing.T) {
 				Call:       "__templ_invalid_js_function_name()",
 				CallInline: "__templ_invalid_js_function_name()",
 			},
-			expectedComponentOutput: `<script type="text/javascript">__templ_invalid_js_function_name()</script>`,
+			expectedComponentOutput: `<script>__templ_invalid_js_function_name()</script>`,
 		},
 	}
 	for _, tt := range tests {

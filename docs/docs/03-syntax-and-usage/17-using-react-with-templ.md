@@ -188,7 +188,7 @@ import "fmt"
 
 templ Hello(name string) {
 	<div data-name={ name }>
-		<script type="text/javascript">
+		<script>
 			bundle.renderHello(document.currentScript.closest('div'));
 		</script>
 	</div>
@@ -243,19 +243,19 @@ The HTML that's rendered is:
     <script src="static/index.js"></script>
 
     <div data-name="Alice">
-      <script type="text/javascript">
+      <script>
         // Place the React component into the parent div.
         bundle.renderHello(document.currentScript.closest('div'));
       </script>
     </div>
     <div data-name="Bob">
-      <script type="text/javascript">
+      <script>
         // Place the React component into the parent div.
 	bundle.renderHello(document.currentScript.closest('div'));
       </script>
     </div>
     <div data-name="Charlie">
-      <script type="text/javascript">
+      <script>
         // Place the React component into the parent div.
 	bundle.renderHello(document.currentScript.closest('div'));
       </script>

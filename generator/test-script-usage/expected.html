@@ -1,4 +1,4 @@
-<script type="text/javascript">
+<script>
 	function __templ_withParameters_1056(a, b, c){console.log(a, b, c);
 }function __templ_withoutParameters_6bbf(){alert("hello");
 }
@@ -7,22 +7,22 @@
 <button onClick="__templ_withParameters_1056(&#34;test&#34;,&#34;B&#34;,123)" onMouseover="__templ_withoutParameters_6bbf()" type="button">B</button>
 <button onMouseover="console.log(&#39;mouseover&#39;)" type="button">Button C</button>
 <button hx-on::click="alert('clicked inline')" type="button">Button D</button>
-<script type="text/javascript">
+<script>
   function __templ_onClick_657d(){alert("clicked");
 }
 </script>
 <button hx-on::click="__templ_onClick_657d()" type="button">Button E</button>
-<script type="text/javascript">
+<script>
   function __templ_whenButtonIsClicked_253e(event){console.log(event.target)
 }
 </script>
 <button onclick="__templ_whenButtonIsClicked_253e(event)">Button F</button>
-<script type="text/javascript">
+<script>
   function __templ_conditionalScript_de41(){alert("conditional");
 }
 </script>
 <input type="button" value="Click me" onclick="__templ_conditionalScript_de41()" />
-<script type="text/javascript">
+<script>
   function __templ_alertTest_eadf(){alert('testing');
 }
 </script>

@@ -61,7 +61,7 @@ func TestComponent() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<script type=\"text/javascript\">\n\t\t\tfunction customAlert(msg, date) {\n\t\t\t\talert(msg + \" \" + date);\n\t\t\t}\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<script>\n\t\t\tfunction customAlert(msg, date) {\n\t\t\t\talert(msg + \" \" + date);\n\t\t\t}\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

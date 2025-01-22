@@ -225,7 +225,7 @@ templ Button(text string) {
 ```
 
 ```html title="Output"
-<script type="text/javascript">
+<script>
  function __templ_withParameters_1056(a, b, c){console.log(a, b, c);}function __templ_withoutParameters_6bbf(){alert("hello");}
 </script>
 <button onclick="__templ_withParameters_1056("test","Say hello",123)" onmouseover="__templ_withoutParameters_6bbf()" type="button">
