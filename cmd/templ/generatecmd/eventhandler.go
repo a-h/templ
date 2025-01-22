@@ -106,7 +106,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.go") {
 		_, err = os.Stat(strings.TrimSuffix(event.Name, "_templ.go") + ".templ")
 		if !os.IsNotExist(err) {
-			return GenerateResult{}, err
+			return GenerateResult{GoUpdated: true}, err
 		}
 		// File is orphaned.
 		if h.keepOrphanedFiles {
