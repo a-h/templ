@@ -973,7 +973,7 @@ func (g *generator) writeElement(indentLevel int, n parser.Element) (err error) 
 		if err = g.writeElementCSS(indentLevel, attrs); err != nil {
 			return err
 		}
-		// <script type="text/javascript"></script>
+		// <script></script>
 		if err = g.writeElementScript(indentLevel, attrs); err != nil {
 			return err
 		}
@@ -1356,7 +1356,7 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 			return err
 		}
 	} else {
-		// <script type="text/javascript"></script>
+		// <script></script>
 		if err = g.writeElementScript(indentLevel, n.Attributes); err != nil {
 			return err
 		}

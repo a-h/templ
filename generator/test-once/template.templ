@@ -4,7 +4,7 @@ var helloHandle = templ.NewOnceHandle()
 
 templ hello(label, name string) {
 	@helloHandle.Once() {
-		<script type="text/javascript">
+		<script>
 			function hello(name) {
 				alert('Hello, ' + name + '!');
 			}

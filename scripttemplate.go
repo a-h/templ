@@ -49,7 +49,7 @@ func writeScriptHeader(ctx context.Context, w io.Writer) (err error) {
 	if nonce := GetNonce(ctx); nonce != "" {
 		nonceAttr = " nonce=\"" + EscapeString(nonce) + "\""
 	}
-	_, err = fmt.Fprintf(w, `<script type="text/javascript"%s>`, nonceAttr)
+	_, err = fmt.Fprintf(w, `<script%s>`, nonceAttr)
 	return err
 }
 

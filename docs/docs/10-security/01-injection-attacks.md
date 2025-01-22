@@ -6,7 +6,7 @@ templ is designed to prevent user-provided data from being used to inject vulner
 
 ```html
 templ Example() {
-  <script type="text/javascript">
+  <script>
     function showAlert() {
       alert("hello");
     }

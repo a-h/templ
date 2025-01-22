@@ -28,7 +28,7 @@ func TestRenderScriptItems(t *testing.T) {
 			name:     "if none are ignored, everything is rendered",
 			toIgnore: nil,
 			toRender: []templ.ComponentScript{s1, s2},
-			expected: `<script type="text/javascript">` + s1.Function + s2.Function + `</script>`,
+			expected: `<script>` + s1.Function + s2.Function + `</script>`,
 		},
 		{
 			name: "if something outside the expected is ignored, if has no effect",
@@ -39,13 +39,13 @@ func TestRenderScriptItems(t *testing.T) {
 				},
 			},
 			toRender: []templ.ComponentScript{s1, s2},
-			expected: `<script type="text/javascript">` + s1.Function + s2.Function + `</script>`,
+			expected: `<script>` + s1.Function + s2.Function + `</script>`,
 		},
 		{
 			name:     "if one is ignored, it's not rendered",
 			toIgnore: []templ.ComponentScript{s1},
 			toRender: []templ.ComponentScript{s1, s2},
-			expected: `<script type="text/javascript">` + s2.Function + `</script>`,
+			expected: `<script>` + s2.Function + `</script>`,
 		},
 		{
 			name: "if all are ignored, not even style tags are rendered",

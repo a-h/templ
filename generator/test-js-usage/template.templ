@@ -7,7 +7,7 @@ var onceHandle = templ.NewOnceHandle()
 templ TestComponent() {
 	<button onClick={ templ.JSFuncCall("alert", "Hello, World!") }>Click me</button>
 	@onceHandle.Once() {
-		<script type="text/javascript">
+		<script>
 			function customAlert(msg, date) {
 				alert(msg + " " + date);
 			}

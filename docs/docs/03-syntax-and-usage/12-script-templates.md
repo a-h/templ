@@ -6,7 +6,7 @@ Use standard `<script>` tags, and standard HTML attributes to run JavaScript on 
 
 ```templ
 templ body() {
-  <script type="text/javascript">
+  <script>
     function handleClick(event) {
       alert(event + ' clicked');
     }
@@ -49,7 +49,7 @@ HTML element `on*` attributes pass an event object to the function. To pass the 
 :::
 
 ```templ title="input.templ"
-<script type="text/javascript">
+<script>
 	function clickHandler(event, message) {
 		alert(message);
 		event.preventDefault();
@@ -61,7 +61,7 @@ HTML element `on*` attributes pass an event object to the function. To pass the 
 The output would be:
 
 ```html title="output.html"
-<script type="text/javascript">
+<script>
 	function clickHandler(event, message) {
 		alert(message);
 		event.preventDefault();
@@ -87,7 +87,7 @@ templ InitializeClientSideScripts(data CustomType) {
 This will output a `<script>` tag that calls the `functionToCall` function with the `Name` and `Age` properties of the `data` object.
 
 ```html title="output.html"
-<script type="text/javascript">
+<script>
   functionToCall("John", 42);
 </script>
 ```
@@ -169,7 +169,7 @@ var helloHandle = templ.NewOnceHandle()
 templ hello(label, name string) {
   // This script is only rendered once per HTTP request.
   @helloHandle.Once() {
-    <script type="text/javascript">
+    <script>
       function hello(name) {
         alert('Hello, ' + name + '!');
       }
@@ -177,7 +177,7 @@ templ hello(label, name string) {
   }
   <div>
     <input type="button" value={ label } data-name={ name }/>
-    <script type="text/javascript">
+    <script>
       // To prevent the variables from leaking into the global scope,
       // this script is wrapped in an IIFE (Immediately Invoked Function Expression).
       (() => {
@@ -213,7 +213,7 @@ var surrealHandle = templ.NewOnceHandle()
 
 templ hello(label, name string) {
   @helloHandle.Once() {
-    <script type="text/javascript">
+    <script>
       function hello(name) {
         alert('Hello, ' + name + '!');
       }
@@ -224,7 +224,7 @@ templ hello(label, name string) {
   }
   <div>
     <input type="button" value={ label } data-name={ name }/>
-    <script type="text/javascript">
+    <script>
       // me("-") returns the previous sibling element.
       me("-").addEventListener('click', function() {
         let name = this.getAttribute('data-name');
@@ -492,9 +492,9 @@ After building and running the executable, running `curl http://localhost:8080/`
 ```html title="Output"
 <html>
 	<body>
-		<script type="text/javascript">function __templ_printToConsole_5a85(content){console.log(content)}</script>
-		<script type="text/javascript">__templ_printToConsole_5a85("2023-11-11 01:01:40.983381358 +0000 UTC")</script>
-		<script type="text/javascript">__templ_printToConsole_5a85("Again: 2023-11-11 01:01:40.983381358 +0000 UTC")</script>
+		<script>function __templ_printToConsole_5a85(content){console.log(content)}</script>
+		<script>__templ_printToConsole_5a85("2023-11-11 01:01:40.983381358 +0000 UTC")</script>
+		<script>__templ_printToConsole_5a85("Again: 2023-11-11 01:01:40.983381358 +0000 UTC")</script>
 	</body>
 </html>
 ```
