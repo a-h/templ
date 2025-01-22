@@ -6,6 +6,7 @@ To access a Go web application that uses templ in a web browser, a few things mu
 2. The Go code must start a web server on a port, e.g. (`http.ListenAndServe("localhost:8080", nil)`.
 3. The Go program must be ran, e.g. by running `go run .`.
 4. The web browser must access or reload the page, e.g. `http://localhost:8080`.
+5. Content-Type must be text/html. 
 
 If the `*.templ` files change, #1 and #2 must be ran.
 
@@ -19,7 +20,7 @@ To re-run your app automatically, add the `--cmd` argument to `templ generate`, 
 
 To trigger your web browser to reload automatically (without pressing F5), set the `--proxy` argument (#4) to point at your app, and browse to the proxy address (default `http://localhost:7331`).
 
-The `--proxy` argument starts a HTTP proxy which proxies requests to your app. For example, if your app runs on port 8080, you would use `--proxy="http://localhost:8080"`. The proxy inserts client-side JavaScript before the `</body>` tag that will cause the browser to reload the window when the app is restarted instead of you having to reload the page manually. Note that the html being served by the webserver MUST have a `<body>` tag, otherwise there will be no javascript injection thus making the browser not reload automatically.
+The `--proxy` argument starts a HTTP proxy which proxies requests to your app. For example, if your app runs on port 8080, you would use `--proxy="http://localhost:8080"`. The proxy inserts client-side JavaScript before the `</body>` tag that will cause the browser to reload the window when the app is restarted instead of you having to reload the page manually. Note that the html being served by the webserver MUST have a `<body>` tag, otherwise there will be no javascript injection thus making the browser not reload automatically. In addition, the script might not be inserted if templ cannot read and modify the http response, e.g. due to middleware implementation.   
 
 By default, the proxy binds to `127.0.0.1`. You can use `--proxybind` to bind to another address, e.g., `--proxybind="0.0.0.0"`.
 
