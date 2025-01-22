@@ -622,8 +622,18 @@ func TestIncompleteIf(t *testing.T) {
 	t.Run("no opening brace", func(t *testing.T) {
 		input := parse.NewInput(`if a tree falls in the woods`)
 		_, _, err := ifExpression.Parse(input)
-		if err.Error() != "if: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements: line 0, col 0" {
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+		pe, isParseError := err.(parse.ParseError)
+		if !isParseError {
+			t.Fatalf("expected a parse error, got %T", err)
+		}
+		if pe.Msg != "if: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements" {
 			t.Fatalf("unexpected error: %v", err)
+		}
+		if pe.Pos.Line != 0 {
+			t.Fatalf("unexpected line: %d", pe.Pos.Line)
 		}
 	})
 	t.Run("capitalised If", func(t *testing.T) {

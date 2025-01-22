@@ -876,7 +876,7 @@ func TestTemplateParserErrors(t *testing.T) {
 			input: `templ Name(p Parameter) {
 <span
 }`,
-			expected: "<span>: malformed open element: line 2, col 0",
+			expected: "<span>: malformed open element: line 3, col 0",
 		},
 	}
 	for _, tt := range tests {
