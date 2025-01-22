@@ -226,14 +226,18 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				if err != nil {
 					errs <- err
 				}
-				if r.GoUpdated || r.TextUpdated {
-					postGeneration <- &GenerationEvent{
-						Event:       event,
-						Updated:     r.Updated,
-						GoUpdated:   r.GoUpdated,
-						TextUpdated: r.TextUpdated,
-					}
+				if !(r.GoUpdated || r.TextUpdated) {
+					cmd.Log.Debug("File not updated", slog.String("file", event.Name))
+					return
 				}
+				e := &GenerationEvent{
+					Event:       event,
+					Updated:     r.Updated,
+					GoUpdated:   r.GoUpdated,
+					TextUpdated: r.TextUpdated,
+				}
+				cmd.Log.Debug("File updated", slog.String("file", event.Name))
+				postGeneration <- e
 			}(event)
 		}
 		// Wait for all events to be processed before closing.

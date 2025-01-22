@@ -282,16 +282,16 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 			if err = os.WriteFile(txtFileName, []byte(joined), 0o644); err != nil {
 				return result, nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
 			}
-
-			// Check whether the change would require a recompilation to take effect.
-			h.fileNameToOutputMutex.Lock()
-			defer h.fileNameToOutputMutex.Unlock()
-			previous := h.fileNameToOutput[fileName]
-			if generator.HasChanged(previous, generatorOutput) {
-				result.GoUpdated = true
-			}
-			h.fileNameToOutput[fileName] = generatorOutput
 		}
+
+		// Check whether the change would require a recompilation to take effect.
+		h.fileNameToOutputMutex.Lock()
+		defer h.fileNameToOutputMutex.Unlock()
+		previous := h.fileNameToOutput[fileName]
+		if generator.HasChanged(previous, generatorOutput) {
+			result.GoUpdated = true
+		}
+		h.fileNameToOutput[fileName] = generatorOutput
 	}
 
 	parsedDiagnostics, err := parser.Diagnose(t)
