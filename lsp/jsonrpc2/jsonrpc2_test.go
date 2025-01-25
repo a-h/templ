@@ -27,8 +27,8 @@ const (
 
 type callTest struct {
 	method string
-	params interface{}
-	expect interface{}
+	params any
+	expect any
 }
 
 var callTests = []callTest{
@@ -55,10 +55,10 @@ var callTests = []callTest{
 	// TODO: expand the test cases
 }
 
-func (test *callTest) newResults() interface{} {
+func (test *callTest) newResults() any {
 	switch e := test.expect.(type) {
-	case []interface{}:
-		var r []interface{}
+	case []any:
+		var r []any
 		for _, v := range e {
 			r = append(r, reflect.New(reflect.TypeOf(v)).Interface())
 		}
@@ -72,7 +72,7 @@ func (test *callTest) newResults() interface{} {
 	}
 }
 
-func (test *callTest) verifyResults(t *testing.T, results interface{}) {
+func (test *callTest) verifyResults(t *testing.T, results any) {
 	t.Helper()
 
 	if results == nil {

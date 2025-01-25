@@ -17,7 +17,7 @@ type Handler func(ctx context.Context, reply Replier, req Request) error
 // Replier is passed to handlers to allow them to reply to the request.
 //
 // If err is set then result will be ignored.
-type Replier func(ctx context.Context, result interface{}, err error) error
+type Replier func(ctx context.Context, result any, err error) error
 
 // MethodNotFoundHandler is a Handler that replies to all call requests with the
 // standard method not found response.
@@ -32,7 +32,7 @@ func MethodNotFoundHandler(ctx context.Context, reply Replier, req Request) erro
 func ReplyHandler(handler Handler) (h Handler) {
 	h = Handler(func(ctx context.Context, reply Replier, req Request) error {
 		called := false
-		err := handler(ctx, func(ctx context.Context, result interface{}, err error) error {
+		err := handler(ctx, func(ctx context.Context, result any, err error) error {
 			if called {
 				panic(fmt.Errorf("request %q replied to more than once", req.Method()))
 			}
@@ -65,7 +65,7 @@ func CancelHandler(handler Handler) (h Handler, canceller func(id ID)) {
 			mu.Unlock()
 
 			innerReply := reply
-			reply = func(ctx context.Context, result interface{}, err error) error {
+			reply = func(ctx context.Context, result any, err error) error {
 				mu.Lock()
 				delete(handling, call.ID())
 				mu.Unlock()
@@ -104,7 +104,7 @@ func AsyncHandler(handler Handler) (h Handler) {
 		nextRequest = make(chan struct{})
 		unlockNext := nextRequest
 		innerReply := reply
-		reply = func(ctx context.Context, result interface{}, err error) error {
+		reply = func(ctx context.Context, result any, err error) error {
 			close(unlockNext)
 			return innerReply(ctx, result, err)
 		}

@@ -48,7 +48,7 @@ func NewError(c Code, message string) *Error {
 }
 
 // Errorf builds a Error struct for the suppied code, format and args.
-func Errorf(c Code, format string, args ...interface{}) *Error {
+func Errorf(c Code, format string, args ...any) *Error {
 	return &Error{
 		Code:    c,
 		Message: fmt.Sprintf(format, args...),

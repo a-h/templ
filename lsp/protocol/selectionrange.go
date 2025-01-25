@@ -4,7 +4,7 @@
 package protocol
 
 // SelectionRangeProviderOptions selection range provider options interface.
-type SelectionRangeProviderOptions interface{}
+type SelectionRangeProviderOptions any
 
 // SelectionRange represents a selection range represents a part of a selection hierarchy.
 //
@@ -26,7 +26,7 @@ type EnableSelectionRange bool
 var _ SelectionRangeProviderOptions = (*EnableSelectionRange)(nil)
 
 // Value implements SelectionRangeProviderOptions interface.
-func (v EnableSelectionRange) Value() interface{} {
+func (v EnableSelectionRange) Value() any {
 	return bool(v)
 }
 
@@ -46,7 +46,7 @@ type SelectionRangeOptions struct {
 var _ SelectionRangeProviderOptions = (*EnableSelectionRange)(nil)
 
 // Value implements SelectionRangeProviderOptions interface.
-func (v *SelectionRangeOptions) Value() interface{} {
+func (v *SelectionRangeOptions) Value() any {
 	return v
 }
 
@@ -72,7 +72,7 @@ type SelectionRangeRegistrationOptions struct {
 var _ SelectionRangeProviderOptions = (*SelectionRangeRegistrationOptions)(nil)
 
 // Value implements SelectionRangeProviderOptions interface.
-func (v *SelectionRangeRegistrationOptions) Value() interface{} {
+func (v *SelectionRangeRegistrationOptions) Value() any {
 	return v
 }
 

@@ -25,7 +25,7 @@ type ConnectionLogger struct {
 	next jsonrpc2.Conn
 }
 
-func (cl *ConnectionLogger) Call(ctx context.Context, method string, params, result interface{}) (jsonrpc2.ID, error) {
+func (cl *ConnectionLogger) Call(ctx context.Context, method string, params, result any) (jsonrpc2.ID, error) {
 	io.WriteString(cl.w, fmt.Sprintf("-> %s\n", method))
 	cl.enc.Encode(params)
 	var res json.RawMessage
@@ -42,7 +42,7 @@ func (cl *ConnectionLogger) Call(ctx context.Context, method string, params, res
 	return id, err
 }
 
-func (cl *ConnectionLogger) Notify(ctx context.Context, method string, params interface{}) error {
+func (cl *ConnectionLogger) Notify(ctx context.Context, method string, params any) error {
 	io.WriteString(cl.w, fmt.Sprintf("-> %s\n", method))
 	cl.enc.Encode(params)
 	return cl.next.Notify(ctx, method, params)

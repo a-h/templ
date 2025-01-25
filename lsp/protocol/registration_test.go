@@ -22,7 +22,7 @@ func TestRegistration(t *testing.T) {
 	wantTypeStringInterface := Registration{
 		ID:     "1",
 		Method: "testMethod",
-		RegisterOptions: map[string]interface{}{
+		RegisterOptions: map[string]any{
 			"foo": "bar",
 		},
 	}
@@ -36,7 +36,7 @@ func TestRegistration(t *testing.T) {
 	wantTypeInterfaces := Registration{
 		ID:     "1",
 		Method: "testMethod",
-		RegisterOptions: []interface{}{
+		RegisterOptions: []any{
 			"foo",
 			"bar",
 		},
@@ -175,7 +175,7 @@ func TestRegistrationParams(t *testing.T) {
 			{
 				ID:     "1",
 				Method: "testMethod",
-				RegisterOptions: map[string]interface{}{
+				RegisterOptions: map[string]any{
 					"foo": "bar",
 				},
 			},

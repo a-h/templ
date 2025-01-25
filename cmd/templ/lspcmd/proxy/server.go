@@ -901,7 +901,7 @@ func isRangeWithin(parent, child lsp.Range) bool {
 	return true
 }
 
-func (p *Server) ExecuteCommand(ctx context.Context, params *lsp.ExecuteCommandParams) (result interface{}, err error) {
+func (p *Server) ExecuteCommand(ctx context.Context, params *lsp.ExecuteCommandParams) (result any, err error) {
 	p.Log.Info("client -> server: ExecuteCommand")
 	defer p.Log.Info("client -> server: ExecuteCommand end")
 	return p.Target.ExecuteCommand(ctx, params)
@@ -1236,7 +1236,7 @@ func (p *Server) SemanticTokensFull(ctx context.Context, params *lsp.SemanticTok
 	return p.Target.SemanticTokensFull(ctx, params)
 }
 
-func (p *Server) SemanticTokensFullDelta(ctx context.Context, params *lsp.SemanticTokensDeltaParams) (result interface{} /* SemanticTokens | SemanticTokensDelta */, err error) {
+func (p *Server) SemanticTokensFullDelta(ctx context.Context, params *lsp.SemanticTokensDeltaParams) (result any /* SemanticTokens | SemanticTokensDelta */, err error) {
 	p.Log.Info("client -> server: SemanticTokensFullDelta")
 	defer p.Log.Info("client -> server: SemanticTokensFullDelta end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
@@ -1282,7 +1282,7 @@ func (p *Server) Moniker(ctx context.Context, params *lsp.MonikerParams) (result
 	return p.Target.Moniker(ctx, params)
 }
 
-func (p *Server) Request(ctx context.Context, method string, params interface{}) (result interface{}, err error) {
+func (p *Server) Request(ctx context.Context, method string, params any) (result any, err error) {
 	p.Log.Info("client -> server: Request")
 	defer p.Log.Info("client -> server: Request end")
 	return p.Target.Request(ctx, method, params)

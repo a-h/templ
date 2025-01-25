@@ -178,7 +178,7 @@ type CompletionItem struct {
 
 	// Data an data entry field that is preserved on a completion item between
 	// a completion and a completion resolve request.
-	Data interface{} `json:"data,omitempty"`
+	Data any `json:"data,omitempty"`
 
 	// Deprecated indicates if this item is deprecated.
 	Deprecated bool `json:"deprecated,omitempty"`
@@ -188,7 +188,7 @@ type CompletionItem struct {
 	Detail string `json:"detail,omitempty"`
 
 	// Documentation a human-readable string that represents a doc-comment.
-	Documentation interface{} `json:"documentation,omitempty"`
+	Documentation any `json:"documentation,omitempty"`
 
 	// FilterText a string that should be used when filtering a set of
 	// completion items. When `falsy` the label is used.
@@ -604,7 +604,7 @@ type SignatureInformation struct {
 	// in the UI but can be omitted.
 	//
 	// @since 3.16.0.
-	Documentation interface{} `json:"documentation,omitempty"` // string | *MarkupContent
+	Documentation any `json:"documentation,omitempty"` // string | *MarkupContent
 
 	// Parameters is the parameters of this signature.
 	//
@@ -633,7 +633,7 @@ type ParameterInformation struct {
 
 	// Documentation is the human-readable doc-comment of this parameter. Will be shown
 	// in the UI but can be omitted.
-	Documentation interface{} `json:"documentation,omitempty"` // string | MarkupContent
+	Documentation any `json:"documentation,omitempty"` // string | MarkupContent
 }
 
 // SignatureHelpRegistrationOptions SignatureHelp Registration options.
@@ -1103,7 +1103,7 @@ type CodeAction struct {
 	// a "textDocument/codeAction" and a "codeAction/resolve" request.
 	//
 	// @since 3.16.0.
-	Data interface{} `json:"data,omitempty"`
+	Data any `json:"data,omitempty"`
 }
 
 // CodeActionDisable Disable in CodeAction.
@@ -1147,7 +1147,7 @@ type CodeLens struct {
 
 	// Data is a data entry field that is preserved on a code lens item between
 	// a code lens and a code lens resolve request.
-	Data interface{} `json:"data,omitempty"`
+	Data any `json:"data,omitempty"`
 }
 
 // CodeLensRegistrationOptions CodeLens Registration options.
@@ -1187,7 +1187,7 @@ type DocumentLink struct {
 
 	// Data is a data entry field that is preserved on a document link between a
 	// DocumentLinkRequest and a DocumentLinkResolveRequest.
-	Data interface{} `json:"data,omitempty"`
+	Data any `json:"data,omitempty"`
 }
 
 // DocumentColorParams params of Document Color request.
@@ -1289,7 +1289,7 @@ type FormattingOptions struct {
 	TrimFinalNewlines bool `json:"trimFinalNewlines,omitempty"`
 
 	// Key is the signature for further properties.
-	Key map[string]interface{} `json:"key,omitempty"` // bool | int32 | string
+	Key map[string]any `json:"key,omitempty"` // bool | int32 | string
 }
 
 // DocumentRangeFormattingParams params of Document Range Formatting request.

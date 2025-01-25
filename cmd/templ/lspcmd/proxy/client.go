@@ -112,7 +112,7 @@ func (p Client) ShowMessageRequest(ctx context.Context, params *lsp.ShowMessageR
 	return p.Target.ShowMessageRequest(ctx, params)
 }
 
-func (p Client) Telemetry(ctx context.Context, params interface{}) (err error) {
+func (p Client) Telemetry(ctx context.Context, params any) (err error) {
 	p.Log.Info("client <- server: Telemetry")
 	return p.Target.Telemetry(ctx, params)
 }
@@ -132,7 +132,7 @@ func (p Client) ApplyEdit(ctx context.Context, params *lsp.ApplyWorkspaceEditPar
 	return p.Target.ApplyEdit(ctx, params)
 }
 
-func (p Client) Configuration(ctx context.Context, params *lsp.ConfigurationParams) (result []interface{}, err error) {
+func (p Client) Configuration(ctx context.Context, params *lsp.ConfigurationParams) (result []any, err error) {
 	p.Log.Info("client <- server: Configuration")
 	return p.Target.Configuration(ctx, params)
 }

@@ -37,7 +37,7 @@ type WorkspaceFoldersChangeEvent struct {
 // DidChangeConfigurationParams params of DidChangeConfiguration notification.
 type DidChangeConfigurationParams struct {
 	// Settings is the actual changed settings
-	Settings interface{} `json:"settings,omitempty"`
+	Settings any `json:"settings,omitempty"`
 }
 
 // ConfigurationParams params of Configuration request.
@@ -171,7 +171,7 @@ type ExecuteCommandParams struct {
 	Command string `json:"command"`
 
 	// Arguments that the command should be invoked with.
-	Arguments []interface{} `json:"arguments,omitempty"`
+	Arguments []any `json:"arguments,omitempty"`
 }
 
 // ExecuteCommandRegistrationOptions execute command registration options.

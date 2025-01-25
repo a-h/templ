@@ -793,7 +793,7 @@ func (tc TestClient) ShowMessageRequest(ctx context.Context, params *protocol.Sh
 	return nil, nil
 }
 
-func (tc TestClient) Telemetry(ctx context.Context, params interface{}) (err error) {
+func (tc TestClient) Telemetry(ctx context.Context, params any) (err error) {
 	tc.log.Info("client: Received Telemetry", slog.Any("params", params))
 	return nil
 }
@@ -814,7 +814,7 @@ func (tc TestClient) ApplyEdit(ctx context.Context, params *protocol.ApplyWorksp
 	return nil, nil
 }
 
-func (tc TestClient) Configuration(ctx context.Context, params *protocol.ConfigurationParams) (result []interface{}, err error) {
+func (tc TestClient) Configuration(ctx context.Context, params *protocol.ConfigurationParams) (result []any, err error) {
 	tc.log.Info("client: Received Configuration", slog.Any("params", params))
 	return nil, nil
 }

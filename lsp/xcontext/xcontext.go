@@ -19,4 +19,4 @@ type detachedContext struct{ parent context.Context }
 func (v detachedContext) Deadline() (time.Time, bool)       { return time.Time{}, false }
 func (v detachedContext) Done() <-chan struct{}             { return nil }
 func (v detachedContext) Err() error                        { return nil }
-func (v detachedContext) Value(key interface{}) interface{} { return v.parent.Value(key) }
+func (v detachedContext) Value(key any) any { return v.parent.Value(key) }

@@ -11,7 +11,7 @@ func TestForExpressionParser(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected interface{}
+		expected any
 	}{
 		{
 			name: "for: simple",

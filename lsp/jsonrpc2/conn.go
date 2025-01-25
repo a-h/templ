@@ -27,13 +27,13 @@ type Conn interface {
 	//
 	// The id returned will be unique from this connection, and can be used for
 	// logging or tracking.
-	Call(ctx context.Context, method string, params, result interface{}) (ID, error)
+	Call(ctx context.Context, method string, params, result any) (ID, error)
 
 	// Notify invokes the target method but does not wait for a response.
 	//
 	// The params will be marshaled to JSON before sending over the wire, and will
 	// be handed to the method invoked.
-	Notify(ctx context.Context, method string, params interface{}) error
+	Notify(ctx context.Context, method string, params any) error
 
 	// Go starts a goroutine to handle the connection.
 	//
@@ -83,7 +83,7 @@ func NewConn(s Stream) Conn {
 }
 
 // Call implements Conn.
-func (c *conn) Call(ctx context.Context, method string, params, result interface{}) (id ID, err error) {
+func (c *conn) Call(ctx context.Context, method string, params, result any) (id ID, err error) {
 	// generate a new request identifier
 	id = NewNumberID(atomic.AddInt32(&c.seq, 1))
 	call, err := NewCall(id, method, params)
@@ -139,7 +139,7 @@ func (c *conn) Call(ctx context.Context, method string, params, result interface
 }
 
 // Notify implements Conn.
-func (c *conn) Notify(ctx context.Context, method string, params interface{}) (err error) {
+func (c *conn) Notify(ctx context.Context, method string, params any) (err error) {
 	notify, err := NewNotification(method, params)
 	if err != nil {
 		return fmt.Errorf("marshaling notify parameters: %w", err)
@@ -151,7 +151,7 @@ func (c *conn) Notify(ctx context.Context, method string, params interface{}) (e
 }
 
 func (c *conn) replier(req Message) Replier {
-	return func(ctx context.Context, result interface{}, err error) error {
+	return func(ctx context.Context, result any, err error) error {
 		call, ok := req.(*Call)
 		if !ok {
 			// request was a notify, no need to respond

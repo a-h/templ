@@ -53,7 +53,7 @@ type CallHierarchyItem struct {
 
 	// Data is a data entry field that is preserved between a call hierarchy prepare and
 	// incoming calls or outgoing calls requests.
-	Data interface{} `json:"data,omitempty"`
+	Data any `json:"data,omitempty"`
 }
 
 // CallHierarchyIncomingCallsParams params of CallHierarchyIncomingCalls.

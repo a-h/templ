@@ -113,7 +113,7 @@ type Command struct {
 	Command string `json:"command"`
 
 	// Arguments that the command handler should be invoked with.
-	Arguments []interface{} `json:"arguments,omitempty"`
+	Arguments []any `json:"arguments,omitempty"`
 }
 
 // TextEdit is a textual edit applicable to a text document.

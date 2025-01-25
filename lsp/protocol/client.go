@@ -131,7 +131,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 	case MethodTelemetryEvent: // notification
 		defer logger.Debug(MethodTelemetryEvent, slog.Any("error", err))
 
-		var params interface{}
+		var params any
 		if err := dec.Decode(&params); err != nil {
 			return true, replyParseError(ctx, reply, err)
 		}
@@ -212,11 +212,11 @@ type Client interface {
 	PublishDiagnostics(ctx context.Context, params *PublishDiagnosticsParams) (err error)
 	ShowMessage(ctx context.Context, params *ShowMessageParams) (err error)
 	ShowMessageRequest(ctx context.Context, params *ShowMessageRequestParams) (result *MessageActionItem, err error)
-	Telemetry(ctx context.Context, params interface{}) (err error)
+	Telemetry(ctx context.Context, params any) (err error)
 	RegisterCapability(ctx context.Context, params *RegistrationParams) (err error)
 	UnregisterCapability(ctx context.Context, params *UnregistrationParams) (err error)
 	ApplyEdit(ctx context.Context, params *ApplyWorkspaceEditParams) (result *ApplyWorkspaceEditResponse, err error)
-	Configuration(ctx context.Context, params *ConfigurationParams) (result []interface{}, err error)
+	Configuration(ctx context.Context, params *ConfigurationParams) (result []any, err error)
 	WorkspaceFolders(ctx context.Context) (result []WorkspaceFolder, err error)
 }
 
@@ -339,7 +339,7 @@ func (c *client) ShowMessageRequest(ctx context.Context, params *ShowMessageRequ
 }
 
 // Telemetry sends the notification from the server to the client to ask the client to log a telemetry event.
-func (c *client) Telemetry(ctx context.Context, params interface{}) (err error) {
+func (c *client) Telemetry(ctx context.Context, params any) (err error) {
 	c.logger.Debug("call " + MethodTelemetryEvent)
 	defer c.logger.Debug("end "+MethodTelemetryEvent, slog.Any("error", err))
 
@@ -384,11 +384,11 @@ func (c *client) ApplyEdit(ctx context.Context, params *ApplyWorkspaceEditParams
 // The request can fetch several configuration settings in one roundtrip.
 // The order of the returned configuration settings correspond to the order of the
 // passed ConfigurationItems (e.g. the first item in the response is the result for the first configuration item in the params).
-func (c *client) Configuration(ctx context.Context, params *ConfigurationParams) (_ []interface{}, err error) {
+func (c *client) Configuration(ctx context.Context, params *ConfigurationParams) (_ []any, err error) {
 	c.logger.Debug("call " + MethodWorkspaceConfiguration)
 	defer c.logger.Debug("end "+MethodWorkspaceConfiguration, slog.Any("error", err))
 
-	var result []interface{}
+	var result []any
 	if err := Call(ctx, c.Conn, MethodWorkspaceConfiguration, params, &result); err != nil {
 		return nil, err
 	}

@@ -1201,7 +1201,7 @@ func TestExecuteCommandParams(t *testing.T) {
 			WorkDoneToken: NewProgressToken(wantWorkDoneToken),
 		},
 		Command: "testCommand",
-		Arguments: []interface{}{
+		Arguments: []any{
 			"testArguments",
 		},
 	}

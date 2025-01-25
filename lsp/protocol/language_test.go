@@ -720,7 +720,7 @@ func TestCompletionItem(t *testing.T) {
 		Command: &Command{
 			Title:     "exec echo",
 			Command:   "echo",
-			Arguments: []interface{}{"hello"},
+			Arguments: []any{"hello"},
 		},
 		CommitCharacters: []string{"a"},
 		Tags: []CompletionItemTag{
@@ -773,7 +773,7 @@ func TestCompletionItem(t *testing.T) {
 		Command: &Command{
 			Title:     "exec echo",
 			Command:   "echo",
-			Arguments: []interface{}{"hello"},
+			Arguments: []any{"hello"},
 		},
 		CommitCharacters: []string{"a"},
 		Tags: []CompletionItemTag{
@@ -3478,7 +3478,7 @@ func TestCodeAction(t *testing.T) {
 		Command: &Command{
 			Title:     "rewrite",
 			Command:   "rewriter",
-			Arguments: []interface{}{"-w"},
+			Arguments: []any{"-w"},
 		},
 		Data: "testData",
 	}
@@ -3813,7 +3813,7 @@ func TestCodeLens(t *testing.T) {
 		Command: &Command{
 			Title:     "rewrite",
 			Command:   "rewriter",
-			Arguments: []interface{}{"-w"},
+			Arguments: []any{"-w"},
 		},
 		Data: "testData",
 	}
@@ -5022,7 +5022,7 @@ func TestFormattingOptions(t *testing.T) {
 		TrimTrailingWhitespace: true,
 		InsertFinalNewline:     true,
 		TrimFinalNewlines:      true,
-		Key: map[string]interface{}{
+		Key: map[string]any{
 			"test": "key",
 		},
 	}

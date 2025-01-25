@@ -25,7 +25,7 @@ func CancelHandler(handler jsonrpc2.Handler) jsonrpc2.Handler {
 			// be careful about racing between the two paths.
 			// TODO(iancottrell): Add a test that watches the stream and verifies the response
 			// for the cancelled request flows.
-			reply := func(ctx context.Context, resp interface{}, err error) error {
+			reply := func(ctx context.Context, resp any, err error) error {
 				// https://microsoft.github.io/language-server-protocol/specifications/specification-current/#cancelRequest
 				if ctx.Err() != nil && err == nil {
 					err = ErrRequestCancelled
@@ -68,7 +68,7 @@ func Handlers(handler jsonrpc2.Handler) jsonrpc2.Handler {
 }
 
 // Call calls method to params and result.
-func Call(ctx context.Context, conn jsonrpc2.Conn, method string, params, result interface{}) error {
+func Call(ctx context.Context, conn jsonrpc2.Conn, method string, params, result any) error {
 	id, err := conn.Call(ctx, method, params, result)
 	if ctx.Err() != nil {
 		notifyCancel(ctx, conn, id)

@@ -67,7 +67,7 @@ type InitializeParams struct {
 	RootURI DocumentURI `json:"rootUri,omitempty"`
 
 	// InitializationOptions user provided initialization options.
-	InitializationOptions interface{} `json:"initializationOptions,omitempty"`
+	InitializationOptions any `json:"initializationOptions,omitempty"`
 
 	// Capabilities is the capabilities provided by the client (editor or tool)
 	Capabilities ClientCapabilities `json:"capabilities"`

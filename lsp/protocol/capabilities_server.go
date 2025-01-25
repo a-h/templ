@@ -13,13 +13,13 @@ type ServerCapabilities struct {
 	// or for backwards compatibility the TextDocumentSyncKind number.
 	//
 	// If omitted it defaults to TextDocumentSyncKind.None`
-	TextDocumentSync interface{} `json:"textDocumentSync,omitempty"` // *TextDocumentSyncOptions | TextDocumentSyncKind
+	TextDocumentSync any `json:"textDocumentSync,omitempty"` // *TextDocumentSyncOptions | TextDocumentSyncKind
 
 	// CompletionProvider is The server provides completion support.
 	CompletionProvider *CompletionOptions `json:"completionProvider,omitempty"`
 
 	// HoverProvider is the server provides hover support.
-	HoverProvider interface{} `json:"hoverProvider,omitempty"` // TODO(zchee): bool | *HoverOptions
+	HoverProvider any `json:"hoverProvider,omitempty"` // TODO(zchee): bool | *HoverOptions
 
 	// SignatureHelpProvider is the server provides signature help support.
 	SignatureHelpProvider *SignatureHelpOptions `json:"signatureHelpProvider,omitempty"`
@@ -27,35 +27,35 @@ type ServerCapabilities struct {
 	// DeclarationProvider is the server provides Goto Declaration support.
 	//
 	// @since 3.14.0.
-	DeclarationProvider interface{} `json:"declarationProvider,omitempty"` // TODO(zchee): bool | *DeclarationOptions | *DeclarationRegistrationOptions
+	DeclarationProvider any `json:"declarationProvider,omitempty"` // TODO(zchee): bool | *DeclarationOptions | *DeclarationRegistrationOptions
 
 	// DefinitionProvider is the server provides Goto definition support.
-	DefinitionProvider interface{} `json:"definitionProvider,omitempty"` // TODO(zchee): bool | *DefinitionOptions
+	DefinitionProvider any `json:"definitionProvider,omitempty"` // TODO(zchee): bool | *DefinitionOptions
 
 	// TypeDefinitionProvider is the provides Goto Type Definition support.
 	//
 	// @since 3.6.0.
-	TypeDefinitionProvider interface{} `json:"typeDefinitionProvider,omitempty"` // TODO(zchee): bool | *TypeDefinitionOptions | *TypeDefinitionRegistrationOptions
+	TypeDefinitionProvider any `json:"typeDefinitionProvider,omitempty"` // TODO(zchee): bool | *TypeDefinitionOptions | *TypeDefinitionRegistrationOptions
 
 	// ImplementationProvider is the provides Goto Implementation support.
 	//
 	// @since 3.6.0.
-	ImplementationProvider interface{} `json:"implementationProvider,omitempty"` // TODO(zchee): bool | *ImplementationOptions | *ImplementationRegistrationOptions
+	ImplementationProvider any `json:"implementationProvider,omitempty"` // TODO(zchee): bool | *ImplementationOptions | *ImplementationRegistrationOptions
 
 	// ReferencesProvider is the server provides find references support.
-	ReferencesProvider interface{} `json:"referencesProvider,omitempty"` // TODO(zchee): bool | *ReferenceOptions
+	ReferencesProvider any `json:"referencesProvider,omitempty"` // TODO(zchee): bool | *ReferenceOptions
 
 	// DocumentHighlightProvider is the server provides document highlight support.
-	DocumentHighlightProvider interface{} `json:"documentHighlightProvider,omitempty"` // TODO(zchee): bool | *DocumentHighlightOptions
+	DocumentHighlightProvider any `json:"documentHighlightProvider,omitempty"` // TODO(zchee): bool | *DocumentHighlightOptions
 
 	// DocumentSymbolProvider is the server provides document symbol support.
-	DocumentSymbolProvider interface{} `json:"documentSymbolProvider,omitempty"` // TODO(zchee): bool | *DocumentSymbolOptions
+	DocumentSymbolProvider any `json:"documentSymbolProvider,omitempty"` // TODO(zchee): bool | *DocumentSymbolOptions
 
 	// CodeActionProvider is the server provides code actions.
 	//
 	// CodeActionOptions may only be specified if the client states that it supports CodeActionLiteralSupport in its
 	// initial Initialize request.
-	CodeActionProvider interface{} `json:"codeActionProvider,omitempty"` // TODO(zchee): bool | *CodeActionOptions
+	CodeActionProvider any `json:"codeActionProvider,omitempty"` // TODO(zchee): bool | *CodeActionOptions
 
 	// CodeLensProvider is the server provides code lens.
 	CodeLensProvider *CodeLensOptions `json:"codeLensProvider,omitempty"`
@@ -66,16 +66,16 @@ type ServerCapabilities struct {
 	// ColorProvider is the server provides color provider support.
 	//
 	// @since 3.6.0.
-	ColorProvider interface{} `json:"colorProvider,omitempty"` // TODO(zchee): bool | *DocumentColorOptions | *DocumentColorRegistrationOptions
+	ColorProvider any `json:"colorProvider,omitempty"` // TODO(zchee): bool | *DocumentColorOptions | *DocumentColorRegistrationOptions
 
 	// WorkspaceSymbolProvider is the server provides workspace symbol support.
-	WorkspaceSymbolProvider interface{} `json:"workspaceSymbolProvider,omitempty"` // TODO(zchee): bool | *WorkspaceSymbolOptions
+	WorkspaceSymbolProvider any `json:"workspaceSymbolProvider,omitempty"` // TODO(zchee): bool | *WorkspaceSymbolOptions
 
 	// DocumentFormattingProvider is the server provides document formatting.
-	DocumentFormattingProvider interface{} `json:"documentFormattingProvider,omitempty"` // TODO(zchee): bool | *DocumentFormattingOptions
+	DocumentFormattingProvider any `json:"documentFormattingProvider,omitempty"` // TODO(zchee): bool | *DocumentFormattingOptions
 
 	// DocumentRangeFormattingProvider is the server provides document range formatting.
-	DocumentRangeFormattingProvider interface{} `json:"documentRangeFormattingProvider,omitempty"` // TODO(zchee): bool | *DocumentRangeFormattingOptions
+	DocumentRangeFormattingProvider any `json:"documentRangeFormattingProvider,omitempty"` // TODO(zchee): bool | *DocumentRangeFormattingOptions
 
 	// DocumentOnTypeFormattingProvider is the server provides document formatting on typing.
 	DocumentOnTypeFormattingProvider *DocumentOnTypeFormattingOptions `json:"documentOnTypeFormattingProvider,omitempty"`
@@ -84,17 +84,17 @@ type ServerCapabilities struct {
 	//
 	// RenameOptions may only be specified if the client states that it supports PrepareSupport in its
 	// initial Initialize request.
-	RenameProvider interface{} `json:"renameProvider,omitempty"` // TODO(zchee): bool | *RenameOptions
+	RenameProvider any `json:"renameProvider,omitempty"` // TODO(zchee): bool | *RenameOptions
 
 	// FoldingRangeProvider is the server provides folding provider support.
 	//
 	// @since 3.10.0.
-	FoldingRangeProvider interface{} `json:"foldingRangeProvider,omitempty"` // TODO(zchee): bool | *FoldingRangeOptions | *FoldingRangeRegistrationOptions
+	FoldingRangeProvider any `json:"foldingRangeProvider,omitempty"` // TODO(zchee): bool | *FoldingRangeOptions | *FoldingRangeRegistrationOptions
 
 	// SelectionRangeProvider is the server provides selection range support.
 	//
 	// @since 3.15.0.
-	SelectionRangeProvider interface{} `json:"selectionRangeProvider,omitempty"` // TODO(zchee): bool | *SelectionRangeOptions | *SelectionRangeRegistrationOptions
+	SelectionRangeProvider any `json:"selectionRangeProvider,omitempty"` // TODO(zchee): bool | *SelectionRangeOptions | *SelectionRangeRegistrationOptions
 
 	// ExecuteCommandProvider is the server provides execute command support.
 	ExecuteCommandProvider *ExecuteCommandOptions `json:"executeCommandProvider,omitempty"`
@@ -102,17 +102,17 @@ type ServerCapabilities struct {
 	// CallHierarchyProvider is the server provides call hierarchy support.
 	//
 	// @since 3.16.0.
-	CallHierarchyProvider interface{} `json:"callHierarchyProvider,omitempty"` // TODO(zchee): bool | *CallHierarchyOptions | *CallHierarchyRegistrationOptions
+	CallHierarchyProvider any `json:"callHierarchyProvider,omitempty"` // TODO(zchee): bool | *CallHierarchyOptions | *CallHierarchyRegistrationOptions
 
 	// LinkedEditingRangeProvider is the server provides linked editing range support.
 	//
 	// @since 3.16.0.
-	LinkedEditingRangeProvider interface{} `json:"linkedEditingRangeProvider,omitempty"` // TODO(zchee): bool | *LinkedEditingRangeOptions | *LinkedEditingRangeRegistrationOptions
+	LinkedEditingRangeProvider any `json:"linkedEditingRangeProvider,omitempty"` // TODO(zchee): bool | *LinkedEditingRangeOptions | *LinkedEditingRangeRegistrationOptions
 
 	// SemanticTokensProvider is the server provides semantic tokens support.
 	//
 	// @since 3.16.0.
-	SemanticTokensProvider interface{} `json:"semanticTokensProvider,omitempty"` // TODO(zchee): *SemanticTokensOptions | *SemanticTokensRegistrationOptions
+	SemanticTokensProvider any `json:"semanticTokensProvider,omitempty"` // TODO(zchee): *SemanticTokensOptions | *SemanticTokensRegistrationOptions
 
 	// Workspace is the window specific server capabilities.
 	Workspace *ServerCapabilitiesWorkspace `json:"workspace,omitempty"`
@@ -120,10 +120,10 @@ type ServerCapabilities struct {
 	// MonikerProvider is the server provides moniker support.
 	//
 	// @since 3.16.0.
-	MonikerProvider interface{} `json:"monikerProvider,omitempty"` // TODO(zchee): bool | *MonikerOptions | *MonikerRegistrationOptions
+	MonikerProvider any `json:"monikerProvider,omitempty"` // TODO(zchee): bool | *MonikerOptions | *MonikerRegistrationOptions
 
 	// Experimental server capabilities.
-	Experimental interface{} `json:"experimental,omitempty"`
+	Experimental any `json:"experimental,omitempty"`
 }
 
 // TextDocumentSyncOptions TextDocumentSync options.
@@ -469,7 +469,7 @@ type ServerCapabilitiesWorkspaceFolders struct {
 	// under which the notification is registered on the client
 	// side. The ID can be used to unregister for these events
 	// using the `client/unregisterCapability` request.
-	ChangeNotifications interface{} `json:"changeNotifications,omitempty"` // string | boolean
+	ChangeNotifications any `json:"changeNotifications,omitempty"` // string | boolean
 }
 
 // ServerCapabilitiesWorkspaceFileOperations is the server is interested in file notifications/requests.

@@ -60,7 +60,7 @@ var (
 
 // NewCall constructs a new Call message for the supplied ID, method and
 // parameters.
-func NewCall(id ID, method string, params interface{}) (*Call, error) {
+func NewCall(id ID, method string, params any) (*Call, error) {
 	p, merr := marshalInterface(params)
 	req := &Call{
 		id:     id,
@@ -140,7 +140,7 @@ var (
 
 // NewResponse constructs a new Response message that is a reply to the
 // supplied. If err is set result may be ignored.
-func NewResponse(id ID, result interface{}, err error) (*Response, error) {
+func NewResponse(id ID, result any, err error) (*Response, error) {
 	r, merr := marshalInterface(result)
 	resp := &Response{
 		id:     id,
@@ -241,7 +241,7 @@ var (
 
 // NewNotification constructs a new Notification message for the supplied
 // method and parameters.
-func NewNotification(method string, params interface{}) (*Notification, error) {
+func NewNotification(method string, params any) (*Notification, error) {
 	p, merr := marshalInterface(params)
 	notify := &Notification{
 		method: method,
@@ -345,7 +345,7 @@ func DecodeMessage(data []byte) (Message, error) {
 }
 
 // marshalInterface marshal obj to json.RawMessage.
-func marshalInterface(obj interface{}) (json.RawMessage, error) {
+func marshalInterface(obj any) (json.RawMessage, error) {
 	data, err := json.Marshal(obj)
 	if err != nil {
 		return json.RawMessage{}, fmt.Errorf("failed to marshal json: %w", err)
