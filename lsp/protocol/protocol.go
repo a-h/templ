@@ -5,16 +5,15 @@ package protocol
 
 import (
 	"context"
-
-	"go.uber.org/zap"
+	"log/slog"
 
 	"github.com/a-h/templ/lsp/jsonrpc2"
 )
 
 // NewServer returns the context in which client is embedded, jsonrpc2.Conn, and the Client.
-func NewServer(ctx context.Context, server Server, stream jsonrpc2.Stream, logger *zap.Logger) (context.Context, jsonrpc2.Conn, Client) {
+func NewServer(ctx context.Context, server Server, stream jsonrpc2.Stream, logger *slog.Logger) (context.Context, jsonrpc2.Conn, Client) {
 	conn := jsonrpc2.NewConn(stream)
-	cliint := ClientDispatcher(conn, logger.Named("client"))
+	cliint := ClientDispatcher(conn, logger.With(slog.String("name", "client")))
 	ctx = WithClient(ctx, cliint)
 
 	conn.Go(ctx,
@@ -27,7 +26,7 @@ func NewServer(ctx context.Context, server Server, stream jsonrpc2.Stream, logge
 }
 
 // NewClient returns the context in which Client is embedded, jsonrpc2.Conn, and the Server.
-func NewClient(ctx context.Context, client Client, stream jsonrpc2.Stream, logger *zap.Logger) (context.Context, jsonrpc2.Conn, Server) {
+func NewClient(ctx context.Context, client Client, stream jsonrpc2.Stream, logger *slog.Logger) (context.Context, jsonrpc2.Conn, Server) {
 	ctx = WithClient(ctx, client)
 
 	conn := jsonrpc2.NewConn(stream)
@@ -36,7 +35,7 @@ func NewClient(ctx context.Context, client Client, stream jsonrpc2.Stream, logge
 			ClientHandler(client, jsonrpc2.MethodNotFoundHandler),
 		),
 	)
-	server := ServerDispatcher(conn, logger.Named("server"))
+	server := ServerDispatcher(conn, logger.With(slog.String("name", "server")))
 
 	return ctx, conn, server
 }

@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -11,7 +12,6 @@ import (
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/templ/lsp/protocol"
 	"github.com/a-h/templ/lsp/uri"
-	"go.uber.org/zap"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/imports"
@@ -34,7 +34,7 @@ import (
 // inverse operation - to put the file names back, and readjust any
 // character positions.
 type Server struct {
-	Log             *zap.Logger
+	Log             *slog.Logger
 	Target          lsp.Server
 	SourceMapCache  *SourceMapCache
 	DiagnosticCache *DiagnosticCache
@@ -43,7 +43,7 @@ type Server struct {
 	preLoadURIs     []*lsp.DidOpenTextDocumentParams
 }
 
-func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server) {
+func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server) {
 	return &Server{
 		Log:             log,
 		Target:          target,
@@ -56,7 +56,7 @@ func NewServer(log *zap.Logger, target lsp.Server, cache *SourceMapCache, diagno
 
 // updatePosition maps positions and filenames from source templ files into the target *.go files.
 func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) (ok bool, goURI lsp.DocumentURI, updated lsp.Position) {
-	log := p.Log.With(zap.String("uri", string(templURI)))
+	log := p.Log.With(slog.String("uri", string(templURI)))
 	var isTemplFile bool
 	if isTemplFile, goURI = convertTemplToGoURI(templURI); !isTemplFile {
 		return false, templURI, current
@@ -69,11 +69,11 @@ func (p *Server) updatePosition(templURI lsp.DocumentURI, current lsp.Position) 
 	// Map from the source position to target Go position.
 	to, ok := sourceMap.TargetPositionFromSource(current.Line, current.Character)
 	if !ok {
-		log.Info("updatePosition: not found", zap.String("from", fmt.Sprintf("%d:%d", current.Line, current.Character)))
+		log.Info("updatePosition: not found", slog.String("from", fmt.Sprintf("%d:%d", current.Line, current.Character)))
 		return false, templURI, current
 	}
-	log.Info("updatePosition: found", zap.String("fromTempl", fmt.Sprintf("%d:%d", current.Line, current.Character)),
-		zap.String("toGo", fmt.Sprintf("%d:%d", to.Line, to.Col)))
+	log.Info("updatePosition: found", slog.String("fromTempl", fmt.Sprintf("%d:%d", current.Line, current.Character)),
+		slog.String("toGo", fmt.Sprintf("%d:%d", to.Line, to.Col)))
 	updated.Line = to.Line
 	updated.Character = to.Col
 
@@ -121,7 +121,7 @@ func (p *Server) convertGoRangeToTemplRange(templURI lsp.DocumentURI, input lsp.
 		output.End.Character = end.Col
 	}
 	if !startPositionMapped || !endPositionMapped {
-		p.Log.Warn("go->templ: range not found in sourcemap", zap.Any("range", input))
+		p.Log.Warn("go->templ: range not found in sourcemap", slog.Any("range", input))
 	}
 	return
 }
@@ -156,7 +156,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
 		err = lsp.ClientFromContext(ctx).PublishDiagnostics(ctx, msg)
 		if err != nil {
-			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
+			p.Log.Error("failed to publish error diagnostics", slog.Any("error", err))
 		}
 		return
 	}
@@ -191,7 +191,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		msg.Diagnostics = p.DiagnosticCache.AddGoDiagnostics(string(uri), msg.Diagnostics)
 		err = lsp.ClientFromContext(ctx).PublishDiagnostics(ctx, msg)
 		if err != nil {
-			p.Log.Error("failed to publish error diagnostics", zap.Error(err))
+			p.Log.Error("failed to publish error diagnostics", slog.Any("error", err))
 		}
 		return
 	}
@@ -203,7 +203,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		Diagnostics: []lsp.Diagnostic{},
 	})
 	if err != nil {
-		p.Log.Error("failed to publish diagnostics", zap.Error(err))
+		p.Log.Error("failed to publish diagnostics", slog.Any("error", err))
 		return
 	}
 	return
@@ -214,7 +214,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	defer p.Log.Info("client -> server: Initialize end")
 	result, err = p.Target.Initialize(ctx, params)
 	if err != nil {
-		p.Log.Error("Initialize failed", zap.Error(err))
+		p.Log.Error("Initialize failed", slog.Any("error", err))
 	}
 	// Add the '<' and '{' trigger so that we can do snippets for tags.
 	if result.Capabilities.CompletionProvider == nil {
@@ -243,7 +243,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 			if err != nil {
 				return err
 			}
-			p.Log.Info("found file", zap.String("path", path))
+			p.Log.Info("found file", slog.String("path", path))
 			uri := uri.URI("file://" + path)
 			isTemplFile, goURI := convertTemplToGoURI(uri)
 
@@ -259,10 +259,10 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 			// Parse the template.
 			template, ok, err := p.parseTemplate(ctx, uri, string(b))
 			if err != nil {
-				p.Log.Error("parseTemplate failure", zap.Error(err))
+				p.Log.Error("parseTemplate failure", slog.Any("error", err))
 			}
 			if !ok {
-				p.Log.Info("parsing template did not succeed", zap.String("uri", string(uri)))
+				p.Log.Info("parsing template did not succeed", slog.String("uri", string(uri)))
 				return nil
 			}
 			w := new(strings.Builder)
@@ -270,7 +270,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 			if err != nil {
 				return fmt.Errorf("generate failure: %w", err)
 			}
-			p.Log.Info("setting source map cache contents", zap.String("uri", string(uri)))
+			p.Log.Info("setting source map cache contents", slog.String("uri", string(uri)))
 			p.SourceMapCache.Set(string(uri), generatorOutput.SourceMap)
 			// Set the Go contents.
 			p.GoSource[string(uri)] = w.String()
@@ -288,7 +288,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 			return nil
 		})
 		if werr != nil {
-			p.Log.Error("walk error", zap.Error(werr))
+			p.Log.Error("walk error", slog.Any("error", werr))
 		}
 	}
 
@@ -333,7 +333,7 @@ func (p *Server) WorkDoneProgressCancel(ctx context.Context, params *lsp.WorkDon
 }
 
 func (p *Server) LogTrace(ctx context.Context, params *lsp.LogTraceParams) (err error) {
-	p.Log.Info("client -> server: LogTrace", zap.String("message", params.Message))
+	p.Log.Info("client -> server: LogTrace", slog.String("message", params.Message))
 	defer p.Log.Info("client -> server: LogTrace end")
 	return p.Target.LogTrace(ctx, params)
 }
@@ -347,7 +347,7 @@ func (p *Server) SetTrace(ctx context.Context, params *lsp.SetTraceParams) (err 
 var supportedCodeActions = map[string]bool{}
 
 func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (result []lsp.CodeAction, err error) {
-	p.Log.Info("client -> server: CodeAction", zap.Any("params", params))
+	p.Log.Info("client -> server: CodeAction", slog.Any("params", params))
 	defer p.Log.Info("client -> server: CodeAction end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
@@ -482,14 +482,14 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	// Call the target.
 	result, err = p.Target.Completion(ctx, params)
 	if err != nil {
-		p.Log.Warn("completion: got gopls error", zap.Error(err))
+		p.Log.Warn("completion: got gopls error", slog.Any("error", err))
 		return
 	}
 	if result == nil {
 		return
 	}
 	// Rewrite the result positions.
-	p.Log.Info("completion: received items", zap.Int("count", len(result.Items)))
+	p.Log.Info("completion: received items", slog.Int("count", len(result.Items)))
 
 	for i := 0; i < len(result.Items); i++ {
 		item := result.Items[i]
@@ -639,7 +639,7 @@ func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (
 }
 
 func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumentParams) (err error) {
-	p.Log.Info("client -> server: DidChange", zap.Any("params", params))
+	p.Log.Info("client -> server: DidChange", slog.Any("params", params))
 	defer p.Log.Info("client -> server: DidChange end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
@@ -649,14 +649,14 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	// Apply content changes to the cached template.
 	d, err := p.TemplSource.Apply(string(params.TextDocument.URI), params.ContentChanges)
 	if err != nil {
-		p.Log.Error("error applying changes", zap.Error(err))
+		p.Log.Error("error applying changes", slog.Any("error", err))
 		return
 	}
 	// Update the Go code.
 	p.Log.Info("parsing template")
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, d.String())
 	if err != nil {
-		p.Log.Error("parseTemplate failure", zap.Error(err))
+		p.Log.Error("parseTemplate failure", slog.Any("error", err))
 	}
 	if !ok {
 		return
@@ -670,11 +670,11 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	// if enabled.
 	generatorOutput, err := generator.Generate(template, w)
 	if err != nil {
-		p.Log.Error("generate failure", zap.Error(err))
+		p.Log.Error("generate failure", slog.Any("error", err))
 		return
 	}
 	// Cache the sourcemap.
-	p.Log.Info("setting cache", zap.String("uri", string(params.TextDocument.URI)))
+	p.Log.Info("setting cache", slog.String("uri", string(params.TextDocument.URI)))
 	p.SourceMapCache.Set(string(params.TextDocument.URI), generatorOutput.SourceMap)
 	p.GoSource[string(params.TextDocument.URI)] = w.String()
 	// Change the path.
@@ -721,7 +721,7 @@ func (p *Server) DidClose(ctx context.Context, params *lsp.DidCloseTextDocumentP
 }
 
 func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentParams) (err error) {
-	p.Log.Info("client -> server: DidOpen", zap.String("uri", string(params.TextDocument.URI)))
+	p.Log.Info("client -> server: DidOpen", slog.String("uri", string(params.TextDocument.URI)))
 	defer p.Log.Info("client -> server: DidOpen end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
@@ -732,10 +732,10 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	// Parse the template.
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, params.TextDocument.Text)
 	if err != nil {
-		p.Log.Error("parseTemplate failure", zap.Error(err))
+		p.Log.Error("parseTemplate failure", slog.Any("error", err))
 	}
 	if !ok {
-		p.Log.Info("parsing template did not succeed", zap.String("uri", string(params.TextDocument.URI)))
+		p.Log.Info("parsing template did not succeed", slog.String("uri", string(params.TextDocument.URI)))
 		return nil
 	}
 	// Generate the output code and cache the source map and Go contents to use during completion
@@ -745,7 +745,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	if err != nil {
 		return
 	}
-	p.Log.Info("setting source map cache contents", zap.String("uri", string(params.TextDocument.URI)))
+	p.Log.Info("setting source map cache contents", slog.String("uri", string(params.TextDocument.URI)))
 	p.SourceMapCache.Set(string(params.TextDocument.URI), generatorOutput.SourceMap)
 	// Set the Go contents.
 	params.TextDocument.Text = w.String()
@@ -793,7 +793,7 @@ func (p *Server) DocumentHighlight(ctx context.Context, params *lsp.DocumentHigh
 }
 
 func (p *Server) DocumentLink(ctx context.Context, params *lsp.DocumentLinkParams) (result []lsp.DocumentLink, err error) {
-	p.Log.Info("client -> server: DocumentLink", zap.String("uri", string(params.TextDocument.URI)))
+	p.Log.Info("client -> server: DocumentLink", slog.String("uri", string(params.TextDocument.URI)))
 	defer p.Log.Info("client -> server: DocumentLink end")
 	return
 }
@@ -861,7 +861,7 @@ func (p *Server) convertSymbolRange(templURI lsp.DocumentURI, s *lsp.DocumentSym
 	}
 	src, ok := sourceMap.SymbolSourceRangeFromTarget(s.Range.Start.Line, s.Range.Start.Character)
 	if !ok {
-		p.Log.Warn("go->templ: symbol range not found", zap.Any("symbol", s), zap.Any("choices", sourceMap.TargetSymbolRangeToSource))
+		p.Log.Warn("go->templ: symbol range not found", slog.Any("symbol", s), slog.Any("choices", sourceMap.TargetSymbolRangeToSource))
 		return
 	}
 	s.Range = lsp.Range{
@@ -880,11 +880,11 @@ func (p *Server) convertSymbolRange(templURI lsp.DocumentURI, s *lsp.DocumentSym
 	for i := 0; i < len(s.Children); i++ {
 		p.convertSymbolRange(templURI, &s.Children[i])
 		if !isRangeWithin(s.Range, s.Children[i].Range) {
-			p.Log.Error("child symbol range not within parent range", zap.Any("symbol", s.Children[i]), zap.Int("index", i))
+			p.Log.Error("child symbol range not within parent range", slog.Any("symbol", s.Children[i]), slog.Int("index", i))
 		}
 	}
 	if !isRangeWithin(s.Range, s.SelectionRange) {
-		p.Log.Error("selection range not within range", zap.Any("symbol", s))
+		p.Log.Error("selection range not within range", slog.Any("symbol", s))
 	}
 }
 
@@ -922,22 +922,22 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 	d, _ := p.TemplSource.Get(string(params.TextDocument.URI))
 	template, ok, err := p.parseTemplate(ctx, params.TextDocument.URI, d.String())
 	if err != nil {
-		p.Log.Error("parseTemplate failure", zap.Error(err))
+		p.Log.Error("parseTemplate failure", slog.Any("error", err))
 		return
 	}
 	if !ok {
 		return
 	}
-	p.Log.Info("attempting to organise imports", zap.String("uri", template.Filepath))
+	p.Log.Info("attempting to organise imports", slog.String("uri", template.Filepath))
 	template, err = imports.Process(template)
 	if err != nil {
-		p.Log.Error("organise imports failure", zap.Error(err))
+		p.Log.Error("organise imports failure", slog.Any("error", err))
 		return
 	}
 	w := new(strings.Builder)
 	err = template.Write(w)
 	if err != nil {
-		p.Log.Error("handleFormatting: faled to write template", zap.Error(err))
+		p.Log.Error("handleFormatting: faled to write template", slog.Any("error", err))
 		return
 	}
 	// Replace everything.
