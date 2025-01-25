@@ -6,8 +6,8 @@ package protocol
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"encoding/json"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestRegistration(t *testing.T) {

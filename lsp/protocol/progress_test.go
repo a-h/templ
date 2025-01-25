@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"encoding/json"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestWorkDoneProgressBegin(t *testing.T) {

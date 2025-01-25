@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"encoding/json"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"encoding/json"
 
 	"github.com/a-h/templ/lsp/uri"
 )

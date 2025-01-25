@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"encoding/json"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestShowMessageParams(t *testing.T) {

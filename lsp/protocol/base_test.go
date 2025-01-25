@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"testing"
 
+	"encoding/json"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"encoding/json"
 )
 
 func TestCancelParams(t *testing.T) {
