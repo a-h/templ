@@ -8,11 +8,11 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/a-h/protocol"
+	"github.com/a-h/templ/lsp/protocol"
 	"github.com/a-h/templ/cmd/templ/lspcmd/httpdebug"
 	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
-	"go.lsp.dev/jsonrpc2"
+	"github.com/a-h/templ/lsp/jsonrpc2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 

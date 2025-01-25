@@ -4,7 +4,7 @@ import (
 	"path"
 	"strings"
 
-	lsp "github.com/a-h/protocol"
+	lsp "github.com/a-h/templ/lsp/protocol"
 )
 
 func convertTemplToGoURI(templURI lsp.DocumentURI) (isTemplFile bool, goURI lsp.DocumentURI) {

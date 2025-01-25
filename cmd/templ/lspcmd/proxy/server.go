@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/a-h/parse"
-	lsp "github.com/a-h/protocol"
-	"go.lsp.dev/uri"
+	lsp "github.com/a-h/templ/lsp/protocol"
+	"github.com/a-h/templ/lsp/uri"
 	"go.uber.org/zap"
 
 	"github.com/a-h/templ"
@@ -825,7 +824,7 @@ func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLi
 	return
 }
 
-func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolParams) (result []interface{} /* []SymbolInformation | []DocumentSymbol */, err error) {
+func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolParams) (result []lsp.SymbolInformationOrDocumentSymbol, err error) {
 	p.Log.Info("client -> server: DocumentSymbol")
 	defer p.Log.Info("client -> server: DocumentSymbol end")
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
@@ -840,19 +839,13 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 	}
 
 	for _, s := range symbols {
-		if m, ok := s.(map[string]interface{}); ok {
-			s, err = mapToSymbol(m)
-			if err != nil {
-				return nil, err
-			}
-		}
-		switch s := s.(type) {
-		case lsp.DocumentSymbol:
-			p.convertSymbolRange(templURI, &s)
+		if s.DocumentSymbol != nil {
+			p.convertSymbolRange(templURI, s.DocumentSymbol)
 			result = append(result, s)
-		case lsp.SymbolInformation:
-			s.Location.URI = templURI
-			s.Location.Range = p.convertGoRangeToTemplRange(templURI, s.Location.Range)
+		}
+		if s.SymbolInformation != nil {
+			s.SymbolInformation.Location.URI = templURI
+			s.SymbolInformation.Location.Range = p.convertGoRangeToTemplRange(templURI, s.SymbolInformation.Location.Range)
 			result = append(result, s)
 		}
 	}
@@ -1293,25 +1286,4 @@ func (p *Server) Request(ctx context.Context, method string, params interface{})
 	p.Log.Info("client -> server: Request")
 	defer p.Log.Info("client -> server: Request end")
 	return p.Target.Request(ctx, method, params)
-}
-
-func mapToSymbol(m map[string]interface{}) (interface{}, error) {
-	b, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, ok := m["selectionRange"]; ok {
-		var s lsp.DocumentSymbol
-		if err := json.Unmarshal(b, &s); err != nil {
-			return nil, err
-		}
-		return s, nil
-	}
-
-	var s lsp.SymbolInformation
-	if err := json.Unmarshal(b, &s); err != nil {
-		return nil, err
-	}
-	return s, nil
 }

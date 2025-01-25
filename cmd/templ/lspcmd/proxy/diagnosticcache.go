@@ -3,7 +3,7 @@ package proxy
 import (
 	"sync"
 
-	lsp "github.com/a-h/protocol"
+	lsp "github.com/a-h/templ/lsp/protocol"
 )
 
 func NewDiagnosticCache() *DiagnosticCache {

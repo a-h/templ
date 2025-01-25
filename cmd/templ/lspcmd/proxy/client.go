@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	lsp "github.com/a-h/protocol"
+	lsp "github.com/a-h/templ/lsp/protocol"
 	"go.uber.org/zap"
 )
 

@@ -1,6 +1,6 @@
 package proxy
 
-import lsp "github.com/a-h/protocol"
+import lsp "github.com/a-h/templ/lsp/protocol"
 
 var htmlSnippets = []lsp.CompletionItem{
 	{

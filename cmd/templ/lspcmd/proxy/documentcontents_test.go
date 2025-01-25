@@ -3,7 +3,7 @@ package proxy
 import (
 	"testing"
 
-	lsp "github.com/a-h/protocol"
+	lsp "github.com/a-h/templ/lsp/protocol"
 	"github.com/google/go-cmp/cmp"
 	"go.uber.org/zap"
 )

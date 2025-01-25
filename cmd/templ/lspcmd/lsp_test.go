@@ -2,7 +2,6 @@ package lspcmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -11,13 +10,13 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/a-h/protocol"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"github.com/a-h/templ/cmd/templ/lspcmd/lspdiff"
 	"github.com/a-h/templ/cmd/templ/testproject"
+	"github.com/a-h/templ/lsp/jsonrpc2"
+	"github.com/a-h/templ/lsp/protocol"
+	"github.com/a-h/templ/lsp/uri"
 	"github.com/google/go-cmp/cmp"
-	"go.lsp.dev/jsonrpc2"
-	"go.lsp.dev/uri"
 	"go.uber.org/zap"
 )
 
@@ -625,48 +624,56 @@ func TestDocumentSymbol(t *testing.T) {
 
 	tests := []struct {
 		uri    string
-		expect []any
+		expect []protocol.SymbolInformationOrDocumentSymbol
 	}{
 		{
 			uri: "file://" + appDir + "/templates.templ",
-			expect: []any{
-				protocol.SymbolInformation{
-					Name: "Page",
-					Kind: protocol.SymbolKindFunction,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 11, Character: 0},
-							End:   protocol.Position{Line: 50, Character: 1},
+			expect: []protocol.SymbolInformationOrDocumentSymbol{
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "Page",
+						Kind: protocol.SymbolKindFunction,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 11, Character: 0},
+								End:   protocol.Position{Line: 50, Character: 1},
+							},
 						},
 					},
 				},
-				protocol.SymbolInformation{
-					Name: "nihao",
-					Kind: protocol.SymbolKindVariable,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 18, Character: 4},
-							End:   protocol.Position{Line: 18, Character: 16},
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "nihao",
+						Kind: protocol.SymbolKindVariable,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 18, Character: 4},
+								End:   protocol.Position{Line: 18, Character: 16},
+							},
 						},
 					},
 				},
-				protocol.SymbolInformation{
-					Name: "Struct",
-					Kind: protocol.SymbolKindStruct,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 20, Character: 5},
-							End:   protocol.Position{Line: 22, Character: 1},
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "Struct",
+						Kind: protocol.SymbolKindStruct,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 20, Character: 5},
+								End:   protocol.Position{Line: 22, Character: 1},
+							},
 						},
 					},
 				},
-				protocol.SymbolInformation{
-					Name: "s",
-					Kind: protocol.SymbolKindVariable,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 24, Character: 4},
-							End:   protocol.Position{Line: 24, Character: 16},
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "s",
+						Kind: protocol.SymbolKindVariable,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 24, Character: 4},
+								End:   protocol.Position{Line: 24, Character: 16},
+							},
 						},
 					},
 				},
@@ -674,24 +681,28 @@ func TestDocumentSymbol(t *testing.T) {
 		},
 		{
 			uri: "file://" + appDir + "/remoteparent.templ",
-			expect: []any{
-				protocol.SymbolInformation{
-					Name: "RemoteInclusionTest",
-					Kind: protocol.SymbolKindFunction,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 9, Character: 0},
-							End:   protocol.Position{Line: 35, Character: 1},
+			expect: []protocol.SymbolInformationOrDocumentSymbol{
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "RemoteInclusionTest",
+						Kind: protocol.SymbolKindFunction,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 9, Character: 0},
+								End:   protocol.Position{Line: 35, Character: 1},
+							},
 						},
 					},
 				},
-				protocol.SymbolInformation{
-					Name: "Remote2",
-					Kind: protocol.SymbolKindFunction,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 37, Character: 0},
-							End:   protocol.Position{Line: 63, Character: 1},
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "Remote2",
+						Kind: protocol.SymbolKindFunction,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 37, Character: 0},
+								End:   protocol.Position{Line: 63, Character: 1},
+							},
 						},
 					},
 				},
@@ -710,35 +721,23 @@ func TestDocumentSymbol(t *testing.T) {
 				t.Errorf("failed to get document symbol: %v", err)
 			}
 
-			// set expected URI
-			for i := range test.expect {
-				switch v := test.expect[i].(type) {
-				case protocol.SymbolInformation:
-					v.Location.URI = uri.URI(test.uri)
+			// Set expected URI.
+			for i, v := range test.expect {
+				if v.SymbolInformation != nil {
+					v.SymbolInformation.Location.URI = uri.URI(test.uri)
 					test.expect[i] = v
 				}
 			}
 
-			expectedSlice, err := sliceToAnySlice(test.expect)
 			if err != nil {
 				t.Errorf("failed to convert expect to any slice: %v", err)
 			}
-			diff := cmp.Diff(expectedSlice, actual)
+			diff := cmp.Diff(test.expect, actual)
 			if diff != "" {
 				t.Errorf("unexpected document symbol: %v", diff)
 			}
 		})
 	}
-}
-
-func sliceToAnySlice(in []any) ([]any, error) {
-	b, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]any, 0, len(in))
-	err = json.Unmarshal(b, &out)
-	return out, err
 }
 
 func runeIndexToUTF8ByteIndex(s string, runeIndex int) (lspChar uint32, err error) {
