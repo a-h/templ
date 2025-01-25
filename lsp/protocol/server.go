@@ -27,14 +27,14 @@ func ServerDispatcher(conn jsonrpc2.Conn, logger *slog.Logger) Server {
 // ServerHandler jsonrpc2.Handler of Language Server Prococol Server.
 //
 //nolint:unparam
-func ServerHandler(server Server, handler jsonrpc2.Handler) jsonrpc2.Handler {
+func ServerHandler(log *slog.Logger, server Server, handler jsonrpc2.Handler) jsonrpc2.Handler {
 	h := func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
 		if ctx.Err() != nil {
 			xctx := xcontext.Detach(ctx)
 
 			return reply(xctx, nil, ErrRequestCancelled)
 		}
-		handled, err := serverDispatch(ctx, server, reply, req)
+		handled, err := serverDispatch(ctx, log, server, reply, req)
 		if handled || err != nil {
 			return err
 		}
@@ -58,13 +58,12 @@ func ServerHandler(server Server, handler jsonrpc2.Handler) jsonrpc2.Handler {
 // serverDispatch implements jsonrpc2.Handler.
 //
 //nolint:gocognit,funlen,gocyclo,cyclop
-func serverDispatch(ctx context.Context, server Server, reply jsonrpc2.Replier, req jsonrpc2.Request) (handled bool, err error) {
+func serverDispatch(ctx context.Context, logger *slog.Logger, server Server, reply jsonrpc2.Replier, req jsonrpc2.Request) (handled bool, err error) {
 	if ctx.Err() != nil {
 		return true, reply(ctx, nil, ErrRequestCancelled)
 	}
 
 	dec := json.NewDecoder(bytes.NewReader(req.Params()))
-	logger := LoggerFromContext(ctx)
 
 	switch req.Method() {
 	case MethodInitialize: // request

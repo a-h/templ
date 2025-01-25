@@ -25,7 +25,7 @@ func ClientDispatcher(conn jsonrpc2.Conn, logger *slog.Logger) Client {
 }
 
 // ClientHandler handler of LSP client.
-func ClientHandler(client Client, handler jsonrpc2.Handler) jsonrpc2.Handler {
+func ClientHandler(log *slog.Logger, client Client, handler jsonrpc2.Handler) jsonrpc2.Handler {
 	h := func(ctx context.Context, reply jsonrpc2.Replier, req jsonrpc2.Request) error {
 		if ctx.Err() != nil {
 			xctx := xcontext.Detach(ctx)
@@ -33,7 +33,7 @@ func ClientHandler(client Client, handler jsonrpc2.Handler) jsonrpc2.Handler {
 			return reply(xctx, nil, ErrRequestCancelled)
 		}
 
-		handled, err := clientDispatch(ctx, client, reply, req)
+		handled, err := clientDispatch(ctx, log, client, reply, req)
 		if handled || err != nil {
 			return err
 		}
@@ -47,17 +47,16 @@ func ClientHandler(client Client, handler jsonrpc2.Handler) jsonrpc2.Handler {
 // clientDispatch implements jsonrpc2.Handler.
 //
 //nolint:funlen,cyclop
-func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, req jsonrpc2.Request) (handled bool, err error) {
+func clientDispatch(ctx context.Context, log *slog.Logger, client Client, reply jsonrpc2.Replier, req jsonrpc2.Request) (handled bool, err error) {
 	if ctx.Err() != nil {
 		return true, reply(ctx, nil, ErrRequestCancelled)
 	}
 
 	dec := json.NewDecoder(bytes.NewReader(req.Params()))
-	logger := LoggerFromContext(ctx)
 
 	switch req.Method() {
 	case MethodProgress: // notification
-		defer logger.Debug(MethodProgress, slog.Any("error", err))
+		defer log.Debug(MethodProgress, slog.Any("error", err))
 
 		var params ProgressParams
 		if err := dec.Decode(&params); err != nil {
@@ -69,7 +68,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, nil, err)
 
 	case MethodWorkDoneProgressCreate: // request
-		defer logger.Debug(MethodWorkDoneProgressCreate, slog.Any("error", err))
+		defer log.Debug(MethodWorkDoneProgressCreate, slog.Any("error", err))
 
 		var params WorkDoneProgressCreateParams
 		if err := dec.Decode(&params); err != nil {
@@ -81,7 +80,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, nil, err)
 
 	case MethodWindowLogMessage: // notification
-		defer logger.Debug(MethodWindowLogMessage, slog.Any("error", err))
+		defer log.Debug(MethodWindowLogMessage, slog.Any("error", err))
 
 		var params LogMessageParams
 		if err := dec.Decode(&params); err != nil {
@@ -93,7 +92,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, nil, err)
 
 	case MethodTextDocumentPublishDiagnostics: // notification
-		defer logger.Debug(MethodTextDocumentPublishDiagnostics, slog.Any("error", err))
+		defer log.Debug(MethodTextDocumentPublishDiagnostics, slog.Any("error", err))
 
 		var params PublishDiagnosticsParams
 		if err := dec.Decode(&params); err != nil {
@@ -105,7 +104,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, nil, err)
 
 	case MethodWindowShowMessage: // notification
-		defer logger.Debug(MethodWindowShowMessage, slog.Any("error", err))
+		defer log.Debug(MethodWindowShowMessage, slog.Any("error", err))
 
 		var params ShowMessageParams
 		if err := dec.Decode(&params); err != nil {
@@ -117,7 +116,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, nil, err)
 
 	case MethodWindowShowMessageRequest: // request
-		defer logger.Debug(MethodWindowShowMessageRequest, slog.Any("error", err))
+		defer log.Debug(MethodWindowShowMessageRequest, slog.Any("error", err))
 
 		var params ShowMessageRequestParams
 		if err := dec.Decode(&params); err != nil {
@@ -129,7 +128,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, resp, err)
 
 	case MethodTelemetryEvent: // notification
-		defer logger.Debug(MethodTelemetryEvent, slog.Any("error", err))
+		defer log.Debug(MethodTelemetryEvent, slog.Any("error", err))
 
 		var params any
 		if err := dec.Decode(&params); err != nil {
@@ -141,7 +140,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, nil, err)
 
 	case MethodClientRegisterCapability: // request
-		defer logger.Debug(MethodClientRegisterCapability, slog.Any("error", err))
+		defer log.Debug(MethodClientRegisterCapability, slog.Any("error", err))
 
 		var params RegistrationParams
 		if err := dec.Decode(&params); err != nil {
@@ -153,7 +152,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, nil, err)
 
 	case MethodClientUnregisterCapability: // request
-		defer logger.Debug(MethodClientUnregisterCapability, slog.Any("error", err))
+		defer log.Debug(MethodClientUnregisterCapability, slog.Any("error", err))
 
 		var params UnregistrationParams
 		if err := dec.Decode(&params); err != nil {
@@ -165,7 +164,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, nil, err)
 
 	case MethodWorkspaceApplyEdit: // request
-		defer logger.Debug(MethodWorkspaceApplyEdit, slog.Any("error", err))
+		defer log.Debug(MethodWorkspaceApplyEdit, slog.Any("error", err))
 
 		var params ApplyWorkspaceEditParams
 		if err := dec.Decode(&params); err != nil {
@@ -177,7 +176,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, resp, err)
 
 	case MethodWorkspaceConfiguration: // request
-		defer logger.Debug(MethodWorkspaceConfiguration, slog.Any("error", err))
+		defer log.Debug(MethodWorkspaceConfiguration, slog.Any("error", err))
 
 		var params ConfigurationParams
 		if err := dec.Decode(&params); err != nil {
@@ -189,7 +188,7 @@ func clientDispatch(ctx context.Context, client Client, reply jsonrpc2.Replier, 
 		return true, reply(ctx, resp, err)
 
 	case MethodWorkspaceWorkspaceFolders: // request
-		defer logger.Debug(MethodWorkspaceWorkspaceFolders, slog.Any("error", err))
+		defer log.Debug(MethodWorkspaceWorkspaceFolders, slog.Any("error", err))
 
 		if len(req.Params()) > 0 {
 			return true, reply(ctx, nil, fmt.Errorf("expected no params: %w", jsonrpc2.ErrInvalidParams))

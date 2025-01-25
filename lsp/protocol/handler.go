@@ -80,7 +80,7 @@ func Call(ctx context.Context, conn jsonrpc2.Conn, method string, params, result
 func notifyCancel(ctx context.Context, conn jsonrpc2.Conn, id jsonrpc2.ID) {
 	ctx = xcontext.Detach(ctx)
 	// Note that only *jsonrpc2.ID implements json.Marshaler.
-	conn.Notify(ctx, MethodCancelRequest, &CancelParams{ID: &id})
+	_ = conn.Notify(ctx, MethodCancelRequest, &CancelParams{ID: &id})
 }
 
 func replyParseError(ctx context.Context, reply jsonrpc2.Replier, err error) error {

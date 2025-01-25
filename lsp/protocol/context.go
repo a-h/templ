@@ -5,28 +5,11 @@ package protocol
 
 import (
 	"context"
-	"log/slog"
 )
 
-var (
-	ctxLogger struct{}
-	ctxClient struct{}
-)
+type ctxClientKey int
 
-// WithLogger returns the context with slog.Logger value.
-func WithLogger(ctx context.Context, logger *slog.Logger) context.Context {
-	return context.WithValue(ctx, ctxLogger, logger)
-}
-
-// LoggerFromContext extracts slog.Logger from context.
-func LoggerFromContext(ctx context.Context) *slog.Logger {
-	logger, ok := ctx.Value(ctxLogger).(*slog.Logger)
-	if !ok {
-		return slog.Default()
-	}
-
-	return logger
-}
+var ctxClient ctxClientKey = 0
 
 // WithClient returns the context with Client value.
 func WithClient(ctx context.Context, client Client) context.Context {

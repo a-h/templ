@@ -18,7 +18,7 @@ func NewServer(ctx context.Context, server Server, stream jsonrpc2.Stream, logge
 
 	conn.Go(ctx,
 		Handlers(
-			ServerHandler(server, jsonrpc2.MethodNotFoundHandler),
+			ServerHandler(logger, server, jsonrpc2.MethodNotFoundHandler),
 		),
 	)
 
@@ -32,7 +32,7 @@ func NewClient(ctx context.Context, client Client, stream jsonrpc2.Stream, logge
 	conn := jsonrpc2.NewConn(stream)
 	conn.Go(ctx,
 		Handlers(
-			ClientHandler(client, jsonrpc2.MethodNotFoundHandler),
+			ClientHandler(logger, client, jsonrpc2.MethodNotFoundHandler),
 		),
 	)
 	server := ServerDispatcher(conn, logger.With(slog.String("name", "server")))
