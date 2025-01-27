@@ -16,15 +16,15 @@ import (
 // <script>var value = { test: 123 };</script>
 
 // Inside a templ definition expression.
-// { templ Name(data map[string]interface{}) }
+// { templ Name(data map[string]any) }
 
 // Inside a templ script.
-// { script Name(data map[string]interface{}) }
+// { script Name(data map[string]any) }
 //   { something }
 // { endscript }
 
 // Inside a call to a template, passing some data.
-// {! localisations(map[string]interface{} { "key": 123 }) }
+// {! localisations(map[string]any { "key": 123 }) }
 
 // Inside a string.
 // {! localisations("\"value{'data'}") }
@@ -138,10 +138,10 @@ func TestExpressions(t *testing.T) {
 		},
 		{
 			name:            "templ: map parameter",
-			input:           `{ templ TemplName(data map[string]interface{}) }`,
+			input:           `{ templ TemplName(data map[string]any) }`,
 			prefix:          "{ templ ",
 			startBraceCount: 1,
-			expected:        `TemplName(data map[string]interface{})`,
+			expected:        `TemplName(data map[string]any)`,
 		},
 		{
 			name:            "call: string parameter",
@@ -166,17 +166,17 @@ func TestExpressions(t *testing.T) {
 		},
 		{
 			name:            "call: map literal",
-			input:           `{! Header(map[string]interface{}{ "test": 123 }) }`,
+			input:           `{! Header(map[string]any{ "test": 123 }) }`,
 			prefix:          "{! ",
 			startBraceCount: 1,
-			expected:        `Header(map[string]interface{}{ "test": 123 })`,
+			expected:        `Header(map[string]any{ "test": 123 })`,
 		},
 		{
 			name:            "call: rune and map literal",
-			input:           `{! Header('\"', map[string]interface{}{ "test": 123 }) }`,
+			input:           `{! Header('\"', map[string]any{ "test": 123 }) }`,
 			prefix:          "{! ",
 			startBraceCount: 1,
-			expected:        `Header('\"', map[string]interface{}{ "test": 123 })`,
+			expected:        `Header('\"', map[string]any{ "test": 123 })`,
 		},
 		{
 			name:            "if: function call",

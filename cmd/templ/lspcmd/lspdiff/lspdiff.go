@@ -1,7 +1,7 @@
 package lspdiff
 
 import (
-	"github.com/a-h/protocol"
+	"github.com/a-h/templ/lsp/protocol"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )

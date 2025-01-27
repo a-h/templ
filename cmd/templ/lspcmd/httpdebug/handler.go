@@ -3,18 +3,18 @@ package httpdebug
 import (
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
 	"github.com/a-h/templ/cmd/templ/visualize"
-	"go.uber.org/zap"
 )
 
-var log *zap.Logger
+var log *slog.Logger
 
-func NewHandler(l *zap.Logger, s *proxy.Server) http.Handler {
+func NewHandler(l *slog.Logger, s *proxy.Server) http.Handler {
 	m := http.NewServeMux()
 	log = l
 	m.HandleFunc("/templ", func(w http.ResponseWriter, r *http.Request) {
@@ -112,19 +112,19 @@ func JSON(w http.ResponseWriter, v any) {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(v); err != nil {
-		log.Error("failed to write JSON response", zap.Error(err))
+		log.Error("failed to write JSON response", slog.Any("error", err))
 	}
 }
 
 func String(w http.ResponseWriter, s string) {
 	if _, err := io.WriteString(w, s); err != nil {
-		log.Error("failed to write string response", zap.Error(err))
+		log.Error("failed to write string response", slog.Any("error", err))
 	}
 }
 
 func Error(w http.ResponseWriter, msg string, status int) {
 	w.WriteHeader(status)
 	if _, err := io.WriteString(w, msg); err != nil {
-		log.Error("failed to write error response", zap.Error(err))
+		log.Error("failed to write error response", slog.Any("error", err))
 	}
 }

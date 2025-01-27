@@ -10,7 +10,7 @@ import (
 )
 
 func TestJSONScriptElement(t *testing.T) {
-	data := map[string]interface{}{"foo": "bar"}
+	data := map[string]any{"foo": "bar"}
 	tests := []struct {
 		name     string
 		ctx      context.Context

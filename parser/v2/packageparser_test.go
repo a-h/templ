@@ -57,7 +57,7 @@ func TestPackageParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected interface{}
+		expected any
 	}{
 		{
 			name:  "package: standard",

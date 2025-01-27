@@ -17,7 +17,7 @@ func (e FatalError) Is(target error) bool {
 	return ok
 }
 
-func (e FatalError) As(target interface{}) bool {
+func (e FatalError) As(target any) bool {
 	_, ok := target.(*FatalError)
 	return ok
 }

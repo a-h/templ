@@ -3,12 +3,11 @@ package lspcmd
 import (
 	"errors"
 	"io"
-
-	"go.uber.org/zap"
+	"log/slog"
 )
 
 // stdrwc (standard read/write closer) reads from stdin, and writes to stdout.
-func newStdRwc(log *zap.Logger, name string, w io.Writer, r io.Reader) stdrwc {
+func newStdRwc(log *slog.Logger, name string, w io.Writer, r io.Reader) stdrwc {
 	return stdrwc{
 		log:  log,
 		name: name,
@@ -18,7 +17,7 @@ func newStdRwc(log *zap.Logger, name string, w io.Writer, r io.Reader) stdrwc {
 }
 
 type stdrwc struct {
-	log  *zap.Logger
+	log  *slog.Logger
 	name string
 	w    io.Writer
 	r    io.Reader
@@ -33,17 +32,17 @@ func (s stdrwc) Write(p []byte) (int, error) {
 }
 
 func (s stdrwc) Close() error {
-	s.log.Info("rwc: closing", zap.String("name", s.name))
+	s.log.Info("rwc: closing", slog.String("name", s.name))
 	var errs []error
 	if closer, isCloser := s.r.(io.Closer); isCloser {
 		if err := closer.Close(); err != nil {
-			s.log.Error("rwc: error closing reader", zap.String("name", s.name), zap.Error(err))
+			s.log.Error("rwc: error closing reader", slog.String("name", s.name), slog.Any("error", err))
 			errs = append(errs, err)
 		}
 	}
 	if closer, isCloser := s.w.(io.Closer); isCloser {
 		if err := closer.Close(); err != nil {
-			s.log.Error("rwc: error closing writer", zap.String("name", s.name), zap.Error(err))
+			s.log.Error("rwc: error closing writer", slog.String("name", s.name), slog.Any("error", err))
 			errs = append(errs, err)
 		}
 	}

@@ -20,11 +20,10 @@ import (
 	"golang.org/x/mod/sumdb/dirhash"
 
 	_ "embed"
+	"log/slog"
 
 	"github.com/a-h/templ"
 	"github.com/rs/cors"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 type Storybook struct {
@@ -40,7 +39,7 @@ type Storybook struct {
 	StaticHandler      http.Handler
 	Header             string
 	Server             http.Server
-	Log                *zap.Logger
+	Log                *slog.Logger
 	AdditionalPrefixJS string
 }
 
@@ -73,12 +72,7 @@ func WithAdditionalPreviewJS(content string) StorybookConfig {
 }
 
 func New(conf ...StorybookConfig) *Storybook {
-	cfg := zap.NewProductionConfig()
-	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-	logger, err := cfg.Build()
-	if err != nil {
-		panic("templ-storybook: zap configuration failed: " + err.Error())
-	}
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	sh := &Storybook{
 		Path:     "./storybook-server",
 		Config:   map[string]*Conf{},
@@ -109,9 +103,6 @@ func (sh *Storybook) AddComponent(name string, componentConstructor any, args ..
 }
 
 func (sh *Storybook) Build(ctx context.Context) (err error) {
-	defer func() {
-		_ = sh.Log.Sync()
-	}()
 	// Download Storybook to the directory required.
 	sh.Log.Info("Installing storybook.")
 	err = sh.installStorybook()
@@ -166,7 +157,7 @@ func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) 
 		return
 	}
 	go func() {
-		sh.Log.Info("Starting Go server", zap.String("address", sh.Server.Addr))
+		sh.Log.Info("Starting Go server", slog.String("address", sh.Server.Addr))
 		err = sh.Server.ListenAndServe()
 	}()
 	<-ctx.Done()
@@ -178,7 +169,7 @@ func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) 
 func (sh *Storybook) previewHandler(w http.ResponseWriter, r *http.Request) {
 	prefix := path.Join(sh.RoutePrefix, "/storybook_preview/")
 	if !strings.HasPrefix(r.URL.Path, prefix) {
-		sh.Log.Warn("URL does not match preview prefix", zap.String("url", r.URL.String()))
+		sh.Log.Warn("URL does not match preview prefix", slog.String("url", r.URL.String()))
 		http.NotFound(w, r)
 		return
 	}
@@ -189,7 +180,7 @@ func (sh *Storybook) previewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if name == "" {
-		sh.Log.Warn("URL does not contain component name", zap.String("url", r.URL.String()))
+		sh.Log.Warn("URL does not contain component name", slog.String("url", r.URL.String()))
 		http.NotFound(w, r)
 		return
 	}
@@ -197,7 +188,7 @@ func (sh *Storybook) previewHandler(w http.ResponseWriter, r *http.Request) {
 
 	h, found := sh.Handlers[name]
 	if !found {
-		sh.Log.Info("Component name not found", zap.String("name", name), zap.String("url", r.URL.String()), zap.Strings("available", keysOfMap(sh.Handlers)))
+		sh.Log.Info("Component name not found", slog.String("name", name), slog.String("url", r.URL.String()), slog.Any("available", keysOfMap(sh.Handlers)))
 		http.NotFound(w, r)
 		return
 	}

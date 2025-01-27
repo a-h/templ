@@ -2,15 +2,15 @@ package proxy
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 
-	lsp "github.com/a-h/protocol"
-	"go.uber.org/zap"
+	lsp "github.com/a-h/templ/lsp/protocol"
 )
 
 // newDocumentContents creates a document content processing tool.
-func newDocumentContents(log *zap.Logger) *DocumentContents {
+func newDocumentContents(log *slog.Logger) *DocumentContents {
 	return &DocumentContents{
 		m:             new(sync.Mutex),
 		uriToContents: make(map[string]*Document),
@@ -21,7 +21,7 @@ func newDocumentContents(log *zap.Logger) *DocumentContents {
 type DocumentContents struct {
 	m             *sync.Mutex
 	uriToContents map[string]*Document
-	log           *zap.Logger
+	log           *slog.Logger
 }
 
 // Set the contents of a document.
@@ -74,7 +74,7 @@ func (dc *DocumentContents) Apply(uri string, changes []lsp.TextDocumentContentC
 	return
 }
 
-func NewDocument(log *zap.Logger, s string) *Document {
+func NewDocument(log *slog.Logger, s string) *Document {
 	return &Document{
 		Log:   log,
 		Lines: strings.Split(s, "\n"),
@@ -82,7 +82,7 @@ func NewDocument(log *zap.Logger, s string) *Document {
 }
 
 type Document struct {
-	Log   *zap.Logger
+	Log   *slog.Logger
 	Lines []string
 }
 

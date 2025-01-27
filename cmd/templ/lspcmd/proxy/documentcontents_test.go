@@ -1,11 +1,12 @@
 package proxy
 
 import (
+	"log/slog"
+	"os"
 	"testing"
 
-	lsp "github.com/a-h/protocol"
+	lsp "github.com/a-h/templ/lsp/protocol"
 	"github.com/google/go-cmp/cmp"
-	"go.uber.org/zap"
 )
 
 func TestDocument(t *testing.T) {
@@ -555,9 +556,9 @@ d`,
 	}
 
 	for _, tt := range tests {
+		logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 		t.Run(tt.name, func(t *testing.T) {
-			log := zap.NewExample()
-			d := NewDocument(log, tt.start)
+			d := NewDocument(logger, tt.start)
 			for _, f := range tt.operations {
 				f(d)
 			}

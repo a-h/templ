@@ -4,17 +4,16 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 
-	"github.com/a-h/protocol"
 	"github.com/a-h/templ/cmd/templ/lspcmd/httpdebug"
 	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
-	"go.lsp.dev/jsonrpc2"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/a-h/templ/lsp/jsonrpc2"
+	"github.com/a-h/templ/lsp/protocol"
 
 	_ "net/http/pprof"
 )
@@ -52,31 +51,27 @@ func Run(stdin io.Reader, stdout, stderr io.Writer, args Arguments) (err error) 
 		<-signalChan // Second signal, hard exit.
 		os.Exit(2)
 	}()
-	log := zap.NewNop()
+	log := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	if args.Log != "" {
-		cfg := zap.NewProductionConfig()
-		cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-		cfg.OutputPaths = []string{
-			args.Log,
-		}
-		log, err = cfg.Build()
+		file, err := os.OpenFile(args.Log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
-			_, _ = fmt.Fprintf(stderr, "failed to create logger: %v\n", err)
-			os.Exit(1)
+			return fmt.Errorf("failed to open log file: %w", err)
 		}
+		defer file.Close()
+
+		// Create a new logger with a file writer
+		log = slog.New(slog.NewJSONHandler(file, nil))
+		log.Debug("Logging to file", slog.String("file", args.Log))
 	}
-	defer func() {
-		_ = log.Sync()
-	}()
 	templStream := jsonrpc2.NewStream(newStdRwc(log, "templStream", stdout, stdin))
 	return run(ctx, log, templStream, args)
 }
 
-func run(ctx context.Context, log *zap.Logger, templStream jsonrpc2.Stream, args Arguments) (err error) {
+func run(ctx context.Context, log *slog.Logger, templStream jsonrpc2.Stream, args Arguments) (err error) {
 	log.Info("lsp: starting up...")
 	defer func() {
 		if r := recover(); r != nil {
-			log.Fatal("handled panic", zap.Any("recovered", r))
+			log.Error("handled panic", slog.Any("recovered", r))
 		}
 	}()
 
@@ -86,7 +81,7 @@ func run(ctx context.Context, log *zap.Logger, templStream jsonrpc2.Stream, args
 		RPCTrace: args.GoplsRPCTrace,
 	})
 	if err != nil {
-		log.Error("failed to start gopls", zap.Error(err))
+		log.Error("failed to start gopls", slog.Any("error", err))
 		os.Exit(1)
 	}
 
@@ -112,11 +107,11 @@ func run(ctx context.Context, log *zap.Logger, templStream jsonrpc2.Stream, args
 
 	// Start the web server if required.
 	if args.HTTPDebug != "" {
-		log.Info("starting debug http server", zap.String("addr", args.HTTPDebug))
+		log.Info("starting debug http server", slog.String("addr", args.HTTPDebug))
 		h := httpdebug.NewHandler(log, serverProxy)
 		go func() {
 			if err := http.ListenAndServe(args.HTTPDebug, h); err != nil {
-				log.Error("web server failed", zap.Error(err))
+				log.Error("web server failed", slog.Any("error", err))
 			}
 		}()
 	}

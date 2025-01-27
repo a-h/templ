@@ -2,23 +2,22 @@ package lspcmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"sync"
 	"testing"
 	"time"
 	"unicode/utf8"
 
-	"github.com/a-h/protocol"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"github.com/a-h/templ/cmd/templ/lspcmd/lspdiff"
 	"github.com/a-h/templ/cmd/templ/testproject"
+	"github.com/a-h/templ/lsp/jsonrpc2"
+	"github.com/a-h/templ/lsp/protocol"
+	"github.com/a-h/templ/lsp/uri"
 	"github.com/google/go-cmp/cmp"
-	"go.lsp.dev/jsonrpc2"
-	"go.lsp.dev/uri"
-	"go.uber.org/zap"
 )
 
 func TestCompletion(t *testing.T) {
@@ -27,7 +26,7 @@ func TestCompletion(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log, _ := zap.NewProduction()
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -170,7 +169,7 @@ func TestHover(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log := zap.NewNop()
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -330,7 +329,7 @@ func TestReferences(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log, _ := zap.NewProduction()
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -491,7 +490,7 @@ func TestCodeAction(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log, _ := zap.NewProduction()
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -614,7 +613,7 @@ func TestDocumentSymbol(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log, _ := zap.NewProduction()
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -625,48 +624,56 @@ func TestDocumentSymbol(t *testing.T) {
 
 	tests := []struct {
 		uri    string
-		expect []any
+		expect []protocol.SymbolInformationOrDocumentSymbol
 	}{
 		{
 			uri: "file://" + appDir + "/templates.templ",
-			expect: []any{
-				protocol.SymbolInformation{
-					Name: "Page",
-					Kind: protocol.SymbolKindFunction,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 11, Character: 0},
-							End:   protocol.Position{Line: 50, Character: 1},
+			expect: []protocol.SymbolInformationOrDocumentSymbol{
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "Page",
+						Kind: protocol.SymbolKindFunction,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 11, Character: 0},
+								End:   protocol.Position{Line: 50, Character: 1},
+							},
 						},
 					},
 				},
-				protocol.SymbolInformation{
-					Name: "nihao",
-					Kind: protocol.SymbolKindVariable,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 18, Character: 4},
-							End:   protocol.Position{Line: 18, Character: 16},
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "nihao",
+						Kind: protocol.SymbolKindVariable,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 18, Character: 4},
+								End:   protocol.Position{Line: 18, Character: 16},
+							},
 						},
 					},
 				},
-				protocol.SymbolInformation{
-					Name: "Struct",
-					Kind: protocol.SymbolKindStruct,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 20, Character: 5},
-							End:   protocol.Position{Line: 22, Character: 1},
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "Struct",
+						Kind: protocol.SymbolKindStruct,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 20, Character: 5},
+								End:   protocol.Position{Line: 22, Character: 1},
+							},
 						},
 					},
 				},
-				protocol.SymbolInformation{
-					Name: "s",
-					Kind: protocol.SymbolKindVariable,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 24, Character: 4},
-							End:   protocol.Position{Line: 24, Character: 16},
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "s",
+						Kind: protocol.SymbolKindVariable,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 24, Character: 4},
+								End:   protocol.Position{Line: 24, Character: 16},
+							},
 						},
 					},
 				},
@@ -674,24 +681,28 @@ func TestDocumentSymbol(t *testing.T) {
 		},
 		{
 			uri: "file://" + appDir + "/remoteparent.templ",
-			expect: []any{
-				protocol.SymbolInformation{
-					Name: "RemoteInclusionTest",
-					Kind: protocol.SymbolKindFunction,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 9, Character: 0},
-							End:   protocol.Position{Line: 35, Character: 1},
+			expect: []protocol.SymbolInformationOrDocumentSymbol{
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "RemoteInclusionTest",
+						Kind: protocol.SymbolKindFunction,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 9, Character: 0},
+								End:   protocol.Position{Line: 35, Character: 1},
+							},
 						},
 					},
 				},
-				protocol.SymbolInformation{
-					Name: "Remote2",
-					Kind: protocol.SymbolKindFunction,
-					Location: protocol.Location{
-						Range: protocol.Range{
-							Start: protocol.Position{Line: 37, Character: 0},
-							End:   protocol.Position{Line: 63, Character: 1},
+				{
+					SymbolInformation: &protocol.SymbolInformation{
+						Name: "Remote2",
+						Kind: protocol.SymbolKindFunction,
+						Location: protocol.Location{
+							Range: protocol.Range{
+								Start: protocol.Position{Line: 37, Character: 0},
+								End:   protocol.Position{Line: 63, Character: 1},
+							},
 						},
 					},
 				},
@@ -710,35 +721,23 @@ func TestDocumentSymbol(t *testing.T) {
 				t.Errorf("failed to get document symbol: %v", err)
 			}
 
-			// set expected URI
-			for i := range test.expect {
-				switch v := test.expect[i].(type) {
-				case protocol.SymbolInformation:
-					v.Location.URI = uri.URI(test.uri)
+			// Set expected URI.
+			for i, v := range test.expect {
+				if v.SymbolInformation != nil {
+					v.SymbolInformation.Location.URI = uri.URI(test.uri)
 					test.expect[i] = v
 				}
 			}
 
-			expectedSlice, err := sliceToAnySlice(test.expect)
 			if err != nil {
 				t.Errorf("failed to convert expect to any slice: %v", err)
 			}
-			diff := cmp.Diff(expectedSlice, actual)
+			diff := cmp.Diff(test.expect, actual)
 			if diff != "" {
 				t.Errorf("unexpected document symbol: %v", diff)
 			}
 		})
 	}
-}
-
-func sliceToAnySlice(in []any) ([]any, error) {
-	b, err := json.Marshal(in)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]any, 0, len(in))
-	err = json.Unmarshal(b, &out)
-	return out, err
 }
 
 func runeIndexToUTF8ByteIndex(s string, runeIndex int) (lspChar uint32, err error) {
@@ -755,38 +754,38 @@ func runeIndexToUTF8ByteIndex(s string, runeIndex int) (lspChar uint32, err erro
 	return lspChar, nil
 }
 
-func NewTestClient(log *zap.Logger) TestClient {
+func NewTestClient(log *slog.Logger) TestClient {
 	return TestClient{
 		log: log,
 	}
 }
 
 type TestClient struct {
-	log *zap.Logger
+	log *slog.Logger
 }
 
 func (tc TestClient) Progress(ctx context.Context, params *protocol.ProgressParams) (err error) {
-	tc.log.Info("client: Received Progress", zap.Any("params", params))
+	tc.log.Info("client: Received Progress", slog.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) WorkDoneProgressCreate(ctx context.Context, params *protocol.WorkDoneProgressCreateParams) (err error) {
-	tc.log.Info("client: Received WorkDoneProgressCreate", zap.Any("params", params))
+	tc.log.Info("client: Received WorkDoneProgressCreate", slog.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) LogMessage(ctx context.Context, params *protocol.LogMessageParams) (err error) {
-	tc.log.Info("client: Received LogMessage", zap.Any("params", params))
+	tc.log.Info("client: Received LogMessage", slog.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) PublishDiagnostics(ctx context.Context, params *protocol.PublishDiagnosticsParams) (err error) {
-	tc.log.Info("client: Received PublishDiagnostics", zap.Any("params", params))
+	tc.log.Info("client: Received PublishDiagnostics", slog.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) ShowMessage(ctx context.Context, params *protocol.ShowMessageParams) (err error) {
-	tc.log.Info("client: Received ShowMessage", zap.Any("params", params))
+	tc.log.Info("client: Received ShowMessage", slog.Any("params", params))
 	return nil
 }
 
@@ -794,29 +793,29 @@ func (tc TestClient) ShowMessageRequest(ctx context.Context, params *protocol.Sh
 	return nil, nil
 }
 
-func (tc TestClient) Telemetry(ctx context.Context, params interface{}) (err error) {
-	tc.log.Info("client: Received Telemetry", zap.Any("params", params))
+func (tc TestClient) Telemetry(ctx context.Context, params any) (err error) {
+	tc.log.Info("client: Received Telemetry", slog.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) RegisterCapability(ctx context.Context, params *protocol.RegistrationParams,
 ) (err error) {
-	tc.log.Info("client: Received RegisterCapability", zap.Any("params", params))
+	tc.log.Info("client: Received RegisterCapability", slog.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) UnregisterCapability(ctx context.Context, params *protocol.UnregistrationParams) (err error) {
-	tc.log.Info("client: Received UnregisterCapability", zap.Any("params", params))
+	tc.log.Info("client: Received UnregisterCapability", slog.Any("params", params))
 	return nil
 }
 
 func (tc TestClient) ApplyEdit(ctx context.Context, params *protocol.ApplyWorkspaceEditParams) (result *protocol.ApplyWorkspaceEditResponse, err error) {
-	tc.log.Info("client: Received ApplyEdit", zap.Any("params", params))
+	tc.log.Info("client: Received ApplyEdit", slog.Any("params", params))
 	return nil, nil
 }
 
-func (tc TestClient) Configuration(ctx context.Context, params *protocol.ConfigurationParams) (result []interface{}, err error) {
-	tc.log.Info("client: Received Configuration", zap.Any("params", params))
+func (tc TestClient) Configuration(ctx context.Context, params *protocol.ConfigurationParams) (result []any, err error) {
+	tc.log.Info("client: Received Configuration", slog.Any("params", params))
 	return nil, nil
 }
 
@@ -825,7 +824,7 @@ func (tc TestClient) WorkspaceFolders(ctx context.Context) (result []protocol.Wo
 	return nil, nil
 }
 
-func Setup(ctx context.Context, log *zap.Logger) (clientCtx context.Context, appDir string, client protocol.Client, server protocol.Server, teardown func(t *testing.T), err error) {
+func Setup(ctx context.Context, log *slog.Logger) (clientCtx context.Context, appDir string, client protocol.Client, server protocol.Server, teardown func(t *testing.T), err error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return ctx, appDir, client, server, teardown, fmt.Errorf("could not find working dir: %w", err)
@@ -860,7 +859,7 @@ func Setup(ctx context.Context, log *zap.Logger) (clientCtx context.Context, app
 		// Create the server that the client needs.
 		cmdErr = run(ctx, log, serverStream, Arguments{})
 		if cmdErr != nil {
-			log.Error("Failed to run", zap.Error(cmdErr))
+			log.Error("Failed to run", slog.Any("error", cmdErr))
 		}
 		log.Info("Stopped")
 	}()
@@ -929,7 +928,7 @@ func Setup(ctx context.Context, log *zap.Logger) (clientCtx context.Context, app
 		},
 	})
 	if err != nil {
-		log.Error("Failed to init", zap.Error(err))
+		log.Error("Failed to init", slog.Any("error", err))
 	}
 	if ir.ServerInfo.Name != "templ-lsp" {
 		return ctx, appDir, client, server, teardown, fmt.Errorf("expected server name to be templ-lsp, got %q", ir.ServerInfo.Name)
