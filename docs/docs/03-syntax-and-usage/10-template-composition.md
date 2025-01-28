@@ -152,7 +152,7 @@ templ heading() {
 
 templ layout(contents templ.Component) {
 	<div id="heading">
-		@heading()
+		@heading
 	</div>
 	<div id="contents">
 		@contents
