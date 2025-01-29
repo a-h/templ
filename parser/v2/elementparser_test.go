@@ -1709,26 +1709,6 @@ func TestElementParserErrors(t *testing.T) {
 				}),
 		},
 		{
-			name:  "element: attempted use of expression for style attribute (open/close)",
-			input: `<a style={ value }></a>`,
-			expected: parse.Error(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
-				parse.Position{
-					Index: 0,
-					Line:  0,
-					Col:   0,
-				}),
-		},
-		{
-			name:  "element: attempted use of expression for style attribute (self-closing)",
-			input: `<a style={ value }/>`,
-			expected: parse.Error(`<a>: invalid style attribute: style attributes cannot be a templ expression`,
-				parse.Position{
-					Index: 0,
-					Line:  0,
-					Col:   0,
-				}),
-		},
-		{
 			name:  "element: script tags cannot contain non-text nodes",
 			input: `<script>{ "value" }</script>`,
 			expected: parse.Error("<script>: invalid node contents: script and style attributes must only contain text",
