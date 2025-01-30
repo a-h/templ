@@ -101,7 +101,6 @@ func processSafeCSS(sb *strings.Builder, v templ.SafeCSS) error {
 	sb.WriteString(html.EscapeString(string(v)))
 	if !strings.HasSuffix(string(v), ";") {
 		sb.WriteRune(';')
-		v += ";"
 	}
 	return nil
 }

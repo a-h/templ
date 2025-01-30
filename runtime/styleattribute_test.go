@@ -306,7 +306,9 @@ func TestSanitizeStyleAttribute(t *testing.T) {
 
 func benchmarkSanitizeAttributeValues(b *testing.B, input ...any) {
 	for n := 0; n < b.N; n++ {
-		SanitizeStyleAttributeValues(input...)
+		if _, err := SanitizeStyleAttributeValues(input...); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
