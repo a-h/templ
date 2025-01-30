@@ -42,7 +42,7 @@ The style attribute supports use of the following types:
 * `map[string]templ.SafeCSSProperty` - A map of string keys to values, where the values will not be sanitized.
 * `templ.KeyValue[string, string]` - A single CSS key/value.
 * `templ.KeyValue[string, templ.SafeCSSProperty` - A CSS key/value, but the value will not be sanitized.
-* `templ.KeyValue[string, bool]` - A map where the CSS in the key is onlyl included in the output if the boolean value is true.
+* `templ.KeyValue[string, bool]` - A map where the CSS in the key is only included in the output if the boolean value is true.
 * `templ.KeyValue[templ.SafeCSS, bool]` - A map where the CSS in the key is only included if the boolean value is true.
 
 Finally, a function value that returns any of the above types can be used.
