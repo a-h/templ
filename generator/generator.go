@@ -1167,94 +1167,141 @@ func (g *generator) writeBoolExpressionAttribute(indentLevel int, attr parser.Bo
 	return nil
 }
 
+func (g *generator) writeExpressionAttributeValueURL(indentLevel int, attr parser.ExpressionAttribute) (err error) {
+	vn := g.createVariableName()
+	// var vn templ.SafeURL =
+	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.SafeURL = "); err != nil {
+		return err
+	}
+	// p.Name()
+	var r parser.Range
+	if r, err = g.w.Write(attr.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(attr.Expression, r)
+	if _, err = g.w.Write("\n"); err != nil {
+		return err
+	}
+	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string("+vn+")))\n"); err != nil {
+		return err
+	}
+	return g.writeErrorHandler(indentLevel)
+}
+
+func (g *generator) writeExpressionAttributeValueScript(indentLevel int, attr parser.ExpressionAttribute) (err error) {
+	// It's a JavaScript handler, and requires special handling, because we expect a JavaScript expression.
+	vn := g.createVariableName()
+	// var vn templ.ComponentScript =
+	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.ComponentScript = "); err != nil {
+		return err
+	}
+	// p.Name()
+	var r parser.Range
+	if r, err = g.w.Write(attr.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(attr.Expression, r)
+	if _, err = g.w.Write("\n"); err != nil {
+		return err
+	}
+	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+vn+".Call)\n"); err != nil {
+		return err
+	}
+	return g.writeErrorHandler(indentLevel)
+}
+
+func (g *generator) writeExpressionAttributeValueDefault(indentLevel int, attr parser.ExpressionAttribute) (err error) {
+	var r parser.Range
+	vn := g.createVariableName()
+	// var vn string
+	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
+		return err
+	}
+	// vn, templ_7745c5c3_Err = templ.JoinStringErrs(
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
+		return err
+	}
+	// p.Name()
+	if r, err = g.w.Write(attr.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(attr.Expression, r)
+	// )
+	if _, err = g.w.Write(")\n"); err != nil {
+		return err
+	}
+	// Attribute expression error handler.
+	err = g.writeExpressionErrorHandler(indentLevel, attr.Expression)
+	if err != nil {
+		return err
+	}
+
+	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
+	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
+		return err
+	}
+	return g.writeErrorHandler(indentLevel)
+}
+
+func (g *generator) writeExpressionAttributeValueStyle(indentLevel int, attr parser.ExpressionAttribute) (err error) {
+	var r parser.Range
+	vn := g.createVariableName()
+	// var vn string
+	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
+		return err
+	}
+	// vn, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("); err != nil {
+		return err
+	}
+	// value
+	if r, err = g.w.Write(attr.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(attr.Expression, r)
+	// )
+	if _, err = g.w.Write(")\n"); err != nil {
+		return err
+	}
+	// Attribute expression error handler.
+	err = g.writeExpressionErrorHandler(indentLevel, attr.Expression)
+	if err != nil {
+		return err
+	}
+
+	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(vn))
+	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
+		return err
+	}
+	return g.writeErrorHandler(indentLevel)
+}
+
 func (g *generator) writeExpressionAttribute(indentLevel int, elementName string, attr parser.ExpressionAttribute) (err error) {
 	attrName := html.EscapeString(attr.Name)
 	// Name
 	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s=`, attrName)); err != nil {
 		return err
 	}
-	// Value.
 	// Open quote.
 	if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
 		return err
 	}
+	// Value.
 	if (elementName == "a" && attr.Name == "href") || (elementName == "form" && attr.Name == "action") {
-		vn := g.createVariableName()
-		// var vn templ.SafeURL =
-		if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.SafeURL = "); err != nil {
+		if err := g.writeExpressionAttributeValueURL(indentLevel, attr); err != nil {
 			return err
 		}
-		// p.Name()
-		var r parser.Range
-		if r, err = g.w.Write(attr.Expression.Value); err != nil {
+	} else if isScriptAttribute(attr.Name) {
+		if err := g.writeExpressionAttributeValueScript(indentLevel, attr); err != nil {
 			return err
 		}
-		g.sourceMap.Add(attr.Expression, r)
-		if _, err = g.w.Write("\n"); err != nil {
-			return err
-		}
-		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string("+vn+")))\n"); err != nil {
-			return err
-		}
-		if err = g.writeErrorHandler(indentLevel); err != nil {
+	} else if attr.Name == "style" {
+		if err := g.writeExpressionAttributeValueStyle(indentLevel, attr); err != nil {
 			return err
 		}
 	} else {
-		if isScriptAttribute(attr.Name) {
-			// It's a JavaScript handler, and requires special handling, because we expect a JavaScript expression.
-			vn := g.createVariableName()
-			// var vn templ.ComponentScript =
-			if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.ComponentScript = "); err != nil {
-				return err
-			}
-			// p.Name()
-			var r parser.Range
-			if r, err = g.w.Write(attr.Expression.Value); err != nil {
-				return err
-			}
-			g.sourceMap.Add(attr.Expression, r)
-			if _, err = g.w.Write("\n"); err != nil {
-				return err
-			}
-			if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+vn+".Call)\n"); err != nil {
-				return err
-			}
-			if err = g.writeErrorHandler(indentLevel); err != nil {
-				return err
-			}
-		} else {
-			var r parser.Range
-			vn := g.createVariableName()
-			// var vn string
-			if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
-				return err
-			}
-			// vn, templ_7745c5c3_Err = templ.JoinStringErrs(
-			if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
-				return err
-			}
-			// p.Name()
-			if r, err = g.w.Write(attr.Expression.Value); err != nil {
-				return err
-			}
-			g.sourceMap.Add(attr.Expression, r)
-			// )
-			if _, err = g.w.Write(")\n"); err != nil {
-				return err
-			}
-			// Attribute expression error handler.
-			err = g.writeExpressionErrorHandler(indentLevel, attr.Expression)
-			if err != nil {
-				return err
-			}
-
-			// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
-			if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
-				return err
-			}
-			if err = g.writeErrorHandler(indentLevel); err != nil {
-				return err
-			}
+		if err := g.writeExpressionAttributeValueDefault(indentLevel, attr); err != nil {
+			return err
 		}
 	}
 	// Close quote.

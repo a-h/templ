@@ -1,0 +1,10 @@
+package teststyleattribute
+
+templ Button[T any](style T, text string) {
+	<button style={ style }>{ text }</button>
+	<button style={ getFunctionResult() }>{ text }</button>
+}
+
+func getFunctionResult() (string, error) {
+	return "background-color: red", nil
+}

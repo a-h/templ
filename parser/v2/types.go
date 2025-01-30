@@ -492,14 +492,6 @@ func (e Element) IsBlockElement() bool {
 
 // Validate that no invalid expressions have been used.
 func (e Element) Validate() (msgs []string, ok bool) {
-	// Validate that style attributes are constant.
-	for _, attr := range e.Attributes {
-		if exprAttr, isExprAttr := attr.(ExpressionAttribute); isExprAttr {
-			if strings.EqualFold(exprAttr.Name, "style") {
-				msgs = append(msgs, "invalid style attribute: style attributes cannot be a templ expression")
-			}
-		}
-	}
 	// Validate that script and style tags don't contain expressions.
 	if strings.EqualFold(e.Name, "script") || strings.EqualFold(e.Name, "style") {
 		if containsNonTextNodes(e.Children) {

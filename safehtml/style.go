@@ -9,6 +9,8 @@
 package safehtml
 
 import (
+	"bytes"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -166,3 +168,32 @@ var safeRegularPropertyValuePattern = regexp.MustCompile(`^(?:[*/]?(?:[0-9a-zA-Z
 // safeEnumPropertyValuePattern matches strings that are safe to use as enumerated property values.
 // Specifically, it matches strings that contain only alphabetic and '-' runes.
 var safeEnumPropertyValuePattern = regexp.MustCompile(`^[a-zA-Z-]*$`)
+
+// SanitizeStyleValue escapes s so that it is safe to put between "" to form a CSS <string-token>.
+// See syntax at https://www.w3.org/TR/css-syntax-3/#string-token-diagram.
+//
+// On top of the escape sequences required in <string-token>, this function also escapes
+// control runes to minimize the risk of these runes triggering browser-specific bugs.
+// Taken from cssEscapeString in safehtml package.
+func SanitizeStyleValue(s string) string {
+	var b bytes.Buffer
+	b.Grow(len(s))
+	for _, c := range s {
+		switch {
+		case c == '\u0000':
+			// Replace the NULL byte according to https://www.w3.org/TR/css-syntax-3/#input-preprocessing.
+			// We take this extra precaution in case the user agent fails to handle NULL properly.
+			b.WriteString("\uFFFD")
+		case c == '<', // Prevents breaking out of a style element with `</style>`. Escape this in case the Style user forgets to.
+			c == '"', c == '\\', // Must be CSS-escaped in <string-token>. U+000A line feed is handled in the next case.
+			c <= '\u001F', c == '\u007F', // C0 control codes
+			c >= '\u0080' && c <= '\u009F', // C1 control codes
+			c == '\u2028', c == '\u2029':   // Unicode newline characters
+			// See CSS escape sequence syntax at https://www.w3.org/TR/css-syntax-3/#escape-diagram.
+			fmt.Fprintf(&b, "\\%06X", c)
+		default:
+			b.WriteRune(c)
+		}
+	}
+	return b.String()
+}
