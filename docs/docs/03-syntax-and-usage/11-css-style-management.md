@@ -26,7 +26,7 @@ templ button(style, text string) {
 }
 ```
 
-You can pass multiple values to the `style` attribute. The results are alll added to the output.
+You can pass multiple values to the `style` attribute. The results are all added to the output.
 
 ```templ
 templ button(style1, style2 string, text string) {
