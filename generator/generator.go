@@ -1269,7 +1269,7 @@ func (g *generator) writeExpressionAttributeValueStyle(indentLevel int, attr par
 		return err
 	}
 
-	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
+	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(vn))
 	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
 		return err
 	}
