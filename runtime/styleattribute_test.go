@@ -303,3 +303,29 @@ func TestSanitizeStyleAttribute(t *testing.T) {
 		})
 	}
 }
+
+func benchmarkSanitizeAttributeValues(b *testing.B, input ...any) {
+	for n := 0; n < b.N; n++ {
+		SanitizeStyleAttributeValues(input...)
+	}
+}
+
+func BenchmarkSanitizeAttributeValuesErr(b *testing.B) { benchmarkSanitizeAttributeValues(b, err1) }
+func BenchmarkSanitizeAttributeValuesString(b *testing.B) {
+	benchmarkSanitizeAttributeValues(b, "color:red;background-color:blue;")
+}
+func BenchmarkSanitizeAttributeValuesStringSanitized(b *testing.B) {
+	benchmarkSanitizeAttributeValues(b, "</style><script>alert('xss')</script>")
+}
+func BenchmarkSanitizeAttributeValuesSafeCSS(b *testing.B) {
+	benchmarkSanitizeAttributeValues(b, templ.SafeCSS("color:red;background-color:blue;"))
+}
+func BenchmarkSanitizeAttributeValuesMap(b *testing.B) {
+	benchmarkSanitizeAttributeValues(b, map[string]string{"color": "red", "background-color": "blue"})
+}
+func BenchmarkSanitizeAttributeValuesKV(b *testing.B) {
+	benchmarkSanitizeAttributeValues(b, templ.KV("color", "red"), templ.KV("background-color", "blue"))
+}
+func BenchmarkSanitizeAttributeValuesFunc(b *testing.B) {
+	benchmarkSanitizeAttributeValues(b, func() string { return "color:red" })
+}

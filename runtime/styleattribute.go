@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"maps"
 	"reflect"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -34,99 +35,101 @@ func SanitizeStyleAttributeValues(values ...any) (string, error) {
 	if err := getJoinedErrorsFromValues(values...); err != nil {
 		return "", err
 	}
-	var sb strings.Builder
+	sb := new(strings.Builder)
 	for _, v := range values {
 		if v == nil {
 			continue
 		}
-		s, err := sanitizeStyleAttributeValue(v)
-		if err != nil {
+		if err := sanitizeStyleAttributeValue(sb, v); err != nil {
 			return "", err
 		}
-		sb.WriteString(s)
 	}
 	return sb.String(), nil
 }
 
-func sanitizeStyleAttributeValue(v any) (string, error) {
+func sanitizeStyleAttributeValue(sb *strings.Builder, v any) error {
 	// Process concrete types.
 	switch v := v.(type) {
 	case string:
-		return processString(v), nil
+		return processString(sb, v)
 
 	case templ.SafeCSS:
-		return processSafeCSS(v), nil
+		return processSafeCSS(sb, v)
 
 	case map[string]string:
-		return processStringMap(v), nil
+		return processStringMap(sb, v)
 
 	case map[string]templ.SafeCSSProperty:
-		return processSafeCSSPropertyMap(v), nil
+		return processSafeCSSPropertyMap(sb, v)
 
 	case templ.KeyValue[string, string]:
-		return processStringKV(v), nil
+		return processStringKV(sb, v)
 
 	case templ.KeyValue[string, bool]:
 		if v.Value {
-			return processString(v.Key), nil
+			return processString(sb, v.Key)
 		}
-		return "", nil
+		return nil
 
 	case templ.KeyValue[templ.SafeCSS, bool]:
 		if v.Value {
-			return processSafeCSS(v.Key), nil
+			return processSafeCSS(sb, v.Key)
 		}
-		return "", nil
+		return nil
 	}
 
 	// Fall back to reflection.
 
 	// Handle functions first using reflection.
-	if handled, result, err := handleFuncWithReflection(v); handled {
-		return result, err
+	if handled, err := handleFuncWithReflection(sb, v); handled {
+		return err
 	}
 
 	// Handle slices using reflection before concrete types.
-	if handled, result, err := handleSliceWithReflection(v); handled {
-		return result, err
+	if handled, err := handleSliceWithReflection(sb, v); handled {
+		return err
 	}
 
-	return TemplUnsupportedStyleAttributeValue, nil
+	_, err := sb.WriteString(TemplUnsupportedStyleAttributeValue)
+	return err
 }
 
-func processSafeCSS(v templ.SafeCSS) string {
+func processSafeCSS(sb *strings.Builder, v templ.SafeCSS) error {
 	if v == "" {
-		return ""
+		return nil
 	}
+	sb.WriteString(html.EscapeString(string(v)))
 	if !strings.HasSuffix(string(v), ";") {
+		sb.WriteRune(';')
 		v += ";"
 	}
-	return html.EscapeString(string(v))
+	return nil
 }
 
-func processString(v string) string {
+func processString(sb *strings.Builder, v string) error {
 	if v == "" {
-		return ""
+		return nil
 	}
 	sanitized := strings.TrimSpace(safehtml.SanitizeStyleValue(v))
+	sb.WriteString(html.EscapeString(sanitized))
 	if !strings.HasSuffix(sanitized, ";") {
-		sanitized += ";"
+		sb.WriteRune(';')
 	}
-	return html.EscapeString(sanitized)
+	return nil
 }
 
 var ErrInvalidStyleAttributeFunctionSignature = errors.New("invalid function signature, should be in the form func() (string, error)")
 
 // handleFuncWithReflection handles functions using reflection.
-func handleFuncWithReflection(v any) (bool, string, error) {
+func handleFuncWithReflection(sb *strings.Builder, v any) (bool, error) {
 	rv := reflect.ValueOf(v)
 	if rv.Kind() != reflect.Func {
-		return false, "", nil
+		return false, nil
 	}
 
 	t := rv.Type()
 	if t.NumIn() != 0 || (t.NumOut() != 1 && t.NumOut() != 2) {
-		return false, "", ErrInvalidStyleAttributeFunctionSignature
+		return false, ErrInvalidStyleAttributeFunctionSignature
 	}
 
 	// Check the types of the return values
@@ -134,79 +137,70 @@ func handleFuncWithReflection(v any) (bool, string, error) {
 		// Ensure the second return value is of type `error`
 		secondReturnType := t.Out(1)
 		if !secondReturnType.Implements(reflect.TypeOf((*error)(nil)).Elem()) {
-			return false, "", fmt.Errorf("second return value must be of type error, got %v", secondReturnType)
+			return false, fmt.Errorf("second return value must be of type error, got %v", secondReturnType)
 		}
 	}
 
 	results := rv.Call(nil)
-	var result any
-	var err error
 
 	if t.NumOut() == 2 {
 		// Check if the second return value is an error
 		if errVal := results[1].Interface(); errVal != nil {
-			var ok bool
-			err, ok = errVal.(error)
-			if ok && err != nil {
-				return true, "", err
+			if err, ok := errVal.(error); ok && err != nil {
+				return true, err
 			}
 		}
 	}
 
-	result = results[0].Interface()
-
-	s, err := sanitizeStyleAttributeValue(result)
-	return true, s, err
+	return true, sanitizeStyleAttributeValue(sb, results[0].Interface())
 }
 
 // handleSliceWithReflection handles slices using reflection.
-func handleSliceWithReflection(v any) (bool, string, error) {
+func handleSliceWithReflection(sb *strings.Builder, v any) (bool, error) {
 	rv := reflect.ValueOf(v)
 	if rv.Kind() != reflect.Slice {
-		return false, "", nil
+		return false, nil
 	}
-
-	var sb strings.Builder
 	for i := 0; i < rv.Len(); i++ {
 		elem := rv.Index(i).Interface()
-		s, err := sanitizeStyleAttributeValue(elem)
-		if err != nil {
-			return true, "", err
+		if err := sanitizeStyleAttributeValue(sb, elem); err != nil {
+			return true, err
 		}
-		sb.WriteString(s)
 	}
-	return true, sb.String(), nil
+	return true, nil
 }
 
 // processStringMap processes a map[string]string.
-func processStringMap(m map[string]string) string {
-	var sb strings.Builder
-	for _, name := range sortKeys(m) {
+func processStringMap(sb *strings.Builder, m map[string]string) error {
+	for _, name := range slices.Sorted(maps.Keys(m)) {
 		name, value := safehtml.SanitizeCSS(name, m[name])
-		sb.WriteString(name)
-		sb.WriteString(":")
-		sb.WriteString(value)
-		sb.WriteString(";")
+		sb.WriteString(html.EscapeString(name))
+		sb.WriteRune(':')
+		sb.WriteString(html.EscapeString(value))
+		sb.WriteRune(';')
 	}
-	return html.EscapeString(sb.String())
+	return nil
 }
 
 // processSafeCSSPropertyMap processes a map[string]templ.SafeCSSProperty.
-func processSafeCSSPropertyMap(m map[string]templ.SafeCSSProperty) string {
-	var sb strings.Builder
-	for _, name := range sortKeys(m) {
-		sb.WriteString(safehtml.SanitizeCSSProperty(name))
-		sb.WriteString(":")
-		sb.WriteString(string(m[name]))
-		sb.WriteString(";")
+func processSafeCSSPropertyMap(sb *strings.Builder, m map[string]templ.SafeCSSProperty) error {
+	for _, name := range slices.Sorted(maps.Keys(m)) {
+		sb.WriteString(html.EscapeString(safehtml.SanitizeCSSProperty(name)))
+		sb.WriteRune(':')
+		sb.WriteString(html.EscapeString(string(m[name])))
+		sb.WriteRune(';')
 	}
-	return html.EscapeString(sb.String())
+	return nil
 }
 
 // processStringKV processes a templ.KeyValue[string, string].
-func processStringKV(kv templ.KeyValue[string, string]) string {
+func processStringKV(sb *strings.Builder, kv templ.KeyValue[string, string]) error {
 	name, value := safehtml.SanitizeCSS(kv.Key, kv.Value)
-	return html.EscapeString(fmt.Sprintf("%s:%s;", name, value))
+	sb.WriteString(html.EscapeString(name))
+	sb.WriteRune(':')
+	sb.WriteString(html.EscapeString(value))
+	sb.WriteRune(';')
+	return nil
 }
 
 // getJoinedErrorsFromValues collects and joins errors from the input values.
@@ -218,20 +212,6 @@ func getJoinedErrorsFromValues(values ...any) error {
 		}
 	}
 	return errors.Join(errs...)
-}
-
-// sortKeys sorts the keys of a map.
-func sortKeys[K ~string, V any](m map[K]V) []K {
-	keys := make([]K, len(m))
-	var i int
-	for k := range m {
-		keys[i] = k
-		i++
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
-	return keys
 }
 
 // TemplUnsupportedStyleAttributeValue is the default value returned for unsupported types.

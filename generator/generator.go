@@ -1254,7 +1254,7 @@ func (g *generator) writeExpressionAttributeValueStyle(indentLevel int, attr par
 	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("); err != nil {
 		return err
 	}
-	// p.Name()
+	// value
 	if r, err = g.w.Write(attr.Expression.Value); err != nil {
 		return err
 	}
@@ -1287,16 +1287,22 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 		return err
 	}
 	// Value.
-	valueWriter := g.writeExpressionAttributeValueDefault
 	if (elementName == "a" && attr.Name == "href") || (elementName == "form" && attr.Name == "action") {
-		valueWriter = g.writeExpressionAttributeValueURL
+		if err := g.writeExpressionAttributeValueURL(indentLevel, attr); err != nil {
+			return err
+		}
 	} else if isScriptAttribute(attr.Name) {
-		valueWriter = g.writeExpressionAttributeValueScript
+		if err := g.writeExpressionAttributeValueScript(indentLevel, attr); err != nil {
+			return err
+		}
 	} else if attr.Name == "style" {
-		valueWriter = g.writeExpressionAttributeValueStyle
-	}
-	if err := valueWriter(indentLevel, attr); err != nil {
-		return err
+		if err := g.writeExpressionAttributeValueStyle(indentLevel, attr); err != nil {
+			return err
+		}
+	} else {
+		if err := g.writeExpressionAttributeValueDefault(indentLevel, attr); err != nil {
+			return err
+		}
 	}
 	// Close quote.
 	if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
