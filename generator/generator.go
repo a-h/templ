@@ -1250,7 +1250,7 @@ func (g *generator) writeExpressionAttributeValueStyle(indentLevel int, attr par
 	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
 		return err
 	}
-	// vn, templ_7745c5c3_Err = templ.SanitizeStyleAttributeValues(
+	// vn, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(
 	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("); err != nil {
 		return err
 	}
