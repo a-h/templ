@@ -154,6 +154,9 @@ func (g *generator) generate() (err error) {
 	if err = g.writePackage(); err != nil {
 		return
 	}
+	if err = g.writeDirectives(); err != nil {
+		return
+	}
 	if err = g.writeImports(); err != nil {
 		return
 	}
@@ -213,6 +216,14 @@ func (g *generator) writePackage() error {
 		return err
 	}
 	g.sourceMap.Add(g.tf.Package.Expression, r)
+	return nil
+}
+
+func (g *generator) writeDirectives() error {
+	var err error
+	if _, err = g.w.Write(fmt.Sprintf("//go:generate go run -mod=mod github.com/a-h/templ/cmd/templ@%s generate -f %s\n", g.options.Version, filepath.Base(g.options.FileName))); err != nil {
+		return err
+	}
 	if _, err = g.w.Write("//lint:file-ignore SA4006 This context is only used if a nested component is present.\n\n"); err != nil {
 		return err
 	}
