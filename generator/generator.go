@@ -3,6 +3,7 @@ package generator
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -596,6 +597,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeChildrenExpression(indentLevel)
 	case parser.RawElement:
 		err = g.writeRawElement(indentLevel, n)
+	case parser.ScriptElement:
+		err = g.writeScriptElement(indentLevel, n)
 	case parser.ForExpression:
 		err = g.writeForExpression(indentLevel, n, next)
 	case parser.CallTemplateExpression:
@@ -1428,6 +1431,122 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		return err
 	}
 	return err
+}
+
+func (g *generator) writeScriptElement(indentLevel int, n parser.ScriptElement) (err error) {
+	if len(n.Attributes) == 0 {
+		// <div>
+		if _, err = g.w.WriteStringLiteral(indentLevel, `<script>`); err != nil {
+			return err
+		}
+	} else {
+		// <script></script>
+		if err = g.writeElementScript(indentLevel, n.Attributes); err != nil {
+			return err
+		}
+		// <div
+		if _, err = g.w.WriteStringLiteral(indentLevel, "<script"); err != nil {
+			return err
+		}
+		if err = g.writeElementAttributes(indentLevel, "script", n.Attributes); err != nil {
+			return err
+		}
+		// >
+		if _, err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
+			return err
+		}
+	}
+	// Contents.
+	for _, c := range n.Contents {
+		if err = g.writeScriptContents(indentLevel, c); err != nil {
+			return err
+		}
+	}
+	// </div>
+	if _, err = g.w.WriteStringLiteral(indentLevel, "</script>"); err != nil {
+		return err
+	}
+	return err
+}
+
+func (g *generator) writeScriptContents(indentLevel int, c parser.ScriptContents) (err error) {
+	if c.Value != nil {
+		if *c.Value == "" {
+			return nil
+		}
+		// This is a JS expression and can be written directly to the output.
+		_, err := g.w.Write(*c.Value)
+		return err
+	}
+	if c.GoCode != nil {
+		// This is a Go code block. The code needs to be evaluated, and the result written to the output
+		// using the correct JS and HTML escaping based on whether the expression output is within a string
+		// or not.
+		var r parser.Range
+		vn := g.createVariableName()
+		// var vn string
+		if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
+			return err
+		}
+		// Here, we need to get the result, which might be any type. We can use templ.JoinErrs to get the result.
+		// vn, templ_7745c5c3_Err = templruntime.JoinErrs(
+		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templruntime.JoinErrs("); err != nil {
+			return err
+		}
+		// p.Name()
+		if r, err = g.w.Write(c.GoCode.Expression.Value); err != nil {
+			return err
+		}
+		g.sourceMap.Add(c.GoCode.Expression, r)
+		// )
+		if _, err = g.w.Write(")\n"); err != nil {
+			return err
+		}
+
+		// Expression error handler.
+		err = g.writeExpressionErrorHandler(indentLevel, c.GoCode.Expression)
+		if err != nil {
+			return err
+		}
+
+		// Then, we need to JSON marshal it, and if the expression is within a string, we need to unquote it.
+		jvn := g.createVariableName()
+		// var jvn string
+		if _, err = g.w.WriteIndent(indentLevel, "var "+jvn+" string\n"); err != nil {
+			return err
+		}
+		// jvn, templ_7745c5c3_Err = json.Marshal(vn)
+		if _, err = g.w.WriteIndent(indentLevel, jvn+", templ_7745c3_Err = templ.JSONString("+vn+")\n"); err != nil {
+			return err
+		}
+		// Expression error handler.
+		err = g.writeExpressionErrorHandler(indentLevel, c.GoCode.Expression)
+		if err != nil {
+			return err
+		}
+
+		// If we're in a string, unquote the result.
+		if c.Quoted {
+			// jvn, templ_7745c5c3_Err = strconv.Unquote(jvn)
+			if _, err = g.w.WriteIndent(indentLevel, jvn+", templ_7745c3_Err = strconv.Unquote("+jvn+")\n"); err != nil {
+				return err
+			}
+			// Expression error handler.
+			err = g.writeExpressionErrorHandler(indentLevel, c.GoCode.Expression)
+			if err != nil {
+				return err
+			}
+		}
+
+		// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(jvn)
+		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+jvn+"))\n"); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+	}
+	return errors.New("unknown script content")
 }
 
 func (g *generator) writeComment(indentLevel int, c parser.HTMLComment) (err error) {

@@ -492,10 +492,10 @@ func (e Element) IsBlockElement() bool {
 
 // Validate that no invalid expressions have been used.
 func (e Element) Validate() (msgs []string, ok bool) {
-	// Validate that script and style tags don't contain expressions.
-	if strings.EqualFold(e.Name, "script") || strings.EqualFold(e.Name, "style") {
+	// Validate that style tags don't contain expressions.
+	if strings.EqualFold(e.Name, "style") {
 		if containsNonTextNodes(e.Children) {
-			msgs = append(msgs, "invalid node contents: script and style attributes must only contain text")
+			msgs = append(msgs, "invalid node contents: style elements must only contain text")
 		}
 	}
 	return msgs, len(msgs) == 0
@@ -656,6 +656,80 @@ func isBlockNode(node Node) bool {
 		return n.IsBlockElement() || n.IndentChildren
 	}
 	return false
+}
+
+func NewScriptContentsJS(value string) ScriptContents {
+	return ScriptContents{
+		Value: &value,
+	}
+}
+
+func NewScriptContentsGo(code GoCode, quoted bool) ScriptContents {
+	return ScriptContents{
+		GoCode: &code,
+		Quoted: quoted,
+	}
+}
+
+type ScriptContents struct {
+	// Value is the raw script contents. This is nil if the Type is Go.
+	Value *string
+	// GoCode is the Go expression. This is nil if the Type is JS.
+	GoCode *GoCode
+	// Quote denotes how the result of any Go expression should be escaped in the output.
+	//  - Not quoted: JSON encoded.
+	//  - Quoted: JS escaped (newlines become \n, `"' becomes \`\"\' etc.), HTML escaped so that a string can't contain </script>.
+	Quoted bool
+}
+
+type ScriptElement struct {
+	Attributes []Attribute
+	Contents   []ScriptContents
+}
+
+func (se ScriptElement) IsNode() bool { return true }
+func (se ScriptElement) Write(w io.Writer, indent int) error {
+	// Start.
+	if err := writeIndent(w, indent, "<script"); err != nil {
+		return err
+	}
+	for i := 0; i < len(se.Attributes); i++ {
+		if _, err := w.Write([]byte(" ")); err != nil {
+			return err
+		}
+		a := se.Attributes[i]
+		// Don't indent the attributes, only the conditional attributes get indented.
+		if err := a.Write(w, 0); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte(">")); err != nil {
+		return err
+	}
+	// Contents.
+	for _, c := range se.Contents {
+		if c.Value != nil {
+			if _, err := w.Write([]byte(*c.Value)); err != nil {
+				return err
+			}
+			continue
+		}
+		// Write the expression.
+		if c.GoCode == nil {
+			return errors.New("script contents expression is nil")
+		}
+		if isWhitespace(c.GoCode.Expression.Value) {
+			c.GoCode.Expression.Value = ""
+		}
+		if err := writeIndent(w, indent, `{{ `, c.GoCode.Expression.Value, ` }}`); err != nil {
+			return err
+		}
+	}
+	// Close.
+	if _, err := w.Write([]byte("</script>")); err != nil {
+		return err
+	}
+	return nil
 }
 
 type RawElement struct {
