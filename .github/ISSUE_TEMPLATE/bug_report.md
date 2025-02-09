@@ -14,7 +14,7 @@ Please make sure you're using the latest version of the templ CLI (`go install g
 A clear and concise description of what the bug is.
 
 **To Reproduce**
-A small, self-container, complete reproduction, uploaded to a GitHub repo, containing the minimum amount of files required to reproduce the behaviour, along with a list of commands that need to be run. Keep it simple.
+A small, self-contained, complete reproduction, uploaded to a GitHub repo, containing the minimum amount of files required to reproduce the behaviour, along with a list of commands that need to be run. Keep it simple.
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
