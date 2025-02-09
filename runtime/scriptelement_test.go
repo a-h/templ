@@ -19,6 +19,24 @@ func TestScriptContent(t *testing.T) {
 			expectedOutsideStringLiteral: `"hello"`,
 		},
 		{
+			name:                         "string with single quotes",
+			input:                        "hello 'world'",
+			expectedInsideStringLiteral:  `hello \'world\'`,
+			expectedOutsideStringLiteral: `"hello 'world'"`,
+		},
+		{
+			name:                         "string with double quotes",
+			input:                        "hello \"world\"",
+			expectedInsideStringLiteral:  `hello \"world\"`,
+			expectedOutsideStringLiteral: `"hello \"world\""`,
+		},
+		{
+			name:                         "string with backticks",
+			input:                        "hello `world`",
+			expectedInsideStringLiteral:  "hello `world`",
+			expectedOutsideStringLiteral: "\"hello `world`\"",
+		},
+		{
 			name:                         "int",
 			input:                        1,
 			expectedInsideStringLiteral:  `1`,
@@ -45,7 +63,7 @@ func TestScriptContent(t *testing.T) {
 		{
 			name:                         "object",
 			input:                        struct{ Name string }{"Alice"},
-			expectedInsideStringLiteral:  `{"Name":"Alice"}`,
+			expectedInsideStringLiteral:  `{\"Name\":\"Alice\"}`,
 			expectedOutsideStringLiteral: `{"Name":"Alice"}`,
 		},
 	}

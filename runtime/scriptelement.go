@@ -3,7 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"errors"
-	"strings"
+	"html/template"
 )
 
 func ScriptContentInsideStringLiteral[T any](v T, errs ...error) (string, error) {
@@ -18,12 +18,15 @@ func scriptContent[T any](v T, insideStringLiteral bool, errs ...error) (string,
 	if errors.Join(errs...) != nil {
 		return "", errors.Join(errs...)
 	}
+	if vs, ok := any(v).(string); ok && insideStringLiteral {
+		return template.JSEscapeString(vs), nil
+	}
 	jd, err := json.Marshal(v)
 	if err != nil {
 		return "", err
 	}
 	if insideStringLiteral {
-		return strings.Trim(string(jd), "\""), nil
+		return template.JSEscapeString(string(jd)), nil
 	}
 	return string(jd), nil
 }
