@@ -14,17 +14,14 @@ func TestScriptElementParser(t *testing.T) {
 		expected ScriptElement
 	}{
 		{
-			name:  "script: no content",
-			input: `<script></script>`,
-			expected: ScriptElement{
-				Name: "script",
-			},
+			name:     "script: no content",
+			input:    `<script></script>`,
+			expected: ScriptElement{},
 		},
 		{
 			name:  "script: vbscript",
 			input: `<script type="vbscript">dim x = 1</script>`,
 			expected: ScriptElement{
-				Name: "script",
 				Attributes: []Attribute{
 					ConstantAttribute{
 						Name:  "type",
@@ -44,7 +41,6 @@ func TestScriptElementParser(t *testing.T) {
 			name:  "script: go expression",
 			input: `<script>{{ name }}</script>`,
 			expected: ScriptElement{
-				Name: "script",
 				Contents: []ScriptContents{
 					NewScriptContentsGo(GoCode{
 						Expression: Expression{
@@ -64,7 +60,6 @@ func TestScriptElementParser(t *testing.T) {
 {{ name }}
 </script>`,
 			expected: ScriptElement{
-				Name: "script",
 				Contents: []ScriptContents{
 					NewScriptContentsJS("\n"),
 					NewScriptContentsGo(GoCode{
@@ -84,7 +79,6 @@ func TestScriptElementParser(t *testing.T) {
 			name:  "script: go expression in single quoted string",
 			input: `<script>var x = '{{ name }}';</script>`,
 			expected: ScriptElement{
-				Name: "script",
 				Contents: []ScriptContents{
 					NewScriptContentsJS("var x = '"),
 					NewScriptContentsGo(GoCode{
@@ -104,7 +98,6 @@ func TestScriptElementParser(t *testing.T) {
 			name:  "script: go expression in double quoted string",
 			input: `<script>var x = "{{ name }}";</script>`,
 			expected: ScriptElement{
-				Name: "script",
 				Contents: []ScriptContents{
 					NewScriptContentsJS("var x = \""),
 					NewScriptContentsGo(GoCode{
@@ -126,7 +119,6 @@ func TestScriptElementParser(t *testing.T) {
 {{ name }} \
 to see if it works";</script>`,
 			expected: ScriptElement{
-				Name: "script",
 				Contents: []ScriptContents{
 					NewScriptContentsJS("var x = \"This is a test \\\n"),
 					NewScriptContentsGo(GoCode{
@@ -147,7 +139,6 @@ to see if it works";</script>`,
 			name:  "script: go expression in backtick quoted string",
 			input: `<script>var x = ` + "`" + "{{ name }}" + "`" + `;</script>`,
 			expected: ScriptElement{
-				Name: "script",
 				Contents: []ScriptContents{
 					NewScriptContentsJS("var x = `"),
 					NewScriptContentsGo(GoCode{
@@ -169,7 +160,6 @@ to see if it works";</script>`,
 // {{ name }}
 </script>`,
 			expected: ScriptElement{
-				Name: "script",
 				Contents: []ScriptContents{
 					NewScriptContentsJS("\n"),
 					NewScriptContentsJS("// {{ name }}\n"),
@@ -184,7 +174,6 @@ to see if it works";</script>`,
 but it's commented out */
 </script>`,
 			expected: ScriptElement{
-				Name: "script",
 				Contents: []ScriptContents{
 					NewScriptContentsJS("\n"),
 					NewScriptContentsJS("/* There's some content\n{{ name }}\nbut it's commented out */\n"),

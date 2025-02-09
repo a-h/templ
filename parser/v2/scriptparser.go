@@ -20,12 +20,13 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 
 	// Element name.
 	var e ScriptElement
-	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
+	var name string
+	if name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
 
-	if e.Name != "script" {
+	if name != "script" {
 		pi.Seek(start)
 		ok = false
 		return
@@ -50,7 +51,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 
 	// Parse the contents, we should get script text or Go expressions up until the closing tag.
 	var sb strings.Builder
-	var isQuoted bool
+	var isInsideStringLiteral bool
 loop:
 	for {
 		// Read and decide whether we're we've hit a:
@@ -70,12 +71,12 @@ loop:
 		}
 
 		var code Node
-		code, ok, err = goCode.Parse(pi)
+		code, ok, err = goCodeInJavaScript.Parse(pi)
 		if err != nil {
 			return nil, false, err
 		}
 		if ok {
-			e.Contents = append(e.Contents, NewScriptContentsGo(code.(GoCode), isQuoted))
+			e.Contents = append(e.Contents, NewScriptContentsGo(code.(GoCode), isInsideStringLiteral))
 			continue loop
 		}
 
@@ -100,7 +101,7 @@ loop:
 			if ok {
 				_, isEOF, _ := parse.EOF[string]().Parse(pi)
 				if c == `"` || c == "'" || c == "`" {
-					isQuoted = !isQuoted
+					isInsideStringLiteral = !isInsideStringLiteral
 				}
 				peeked, _ := pi.Peek(1)
 				peeked = c + peeked
@@ -116,7 +117,6 @@ loop:
 					continue loop
 				}
 				sb.WriteString(c)
-				continue
 			}
 			if _, ok, _ = parse.EOF[string]().Parse(pi); ok {
 				return nil, false, parse.Error("script: unclosed <script> element", pi.Position())

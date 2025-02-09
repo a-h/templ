@@ -664,10 +664,10 @@ func NewScriptContentsJS(value string) ScriptContents {
 	}
 }
 
-func NewScriptContentsGo(code GoCode, quoted bool) ScriptContents {
+func NewScriptContentsGo(code GoCode, insideStringLiteral bool) ScriptContents {
 	return ScriptContents{
-		GoCode: &code,
-		Quoted: quoted,
+		GoCode:              &code,
+		InsideStringLiteral: insideStringLiteral,
 	}
 }
 
@@ -676,10 +676,10 @@ type ScriptContents struct {
 	Value *string
 	// GoCode is the Go expression. This is nil if the Type is JS.
 	GoCode *GoCode
-	// Quote denotes how the result of any Go expression should be escaped in the output.
+	// InsideStringLiteral denotes how the result of any Go expression should be escaped in the output.
 	//  - Not quoted: JSON encoded.
-	//  - Quoted: JS escaped (newlines become \n, `"' becomes \`\"\' etc.), HTML escaped so that a string can't contain </script>.
-	Quoted bool
+	//  - InsideStringLiteral: JS escaped (newlines become \n, `"' becomes \`\"\' etc.), HTML escaped so that a string can't contain </script>.
+	InsideStringLiteral bool
 }
 
 type ScriptElement struct {
@@ -709,7 +709,7 @@ func (se ScriptElement) Write(w io.Writer, indent int) error {
 	// Contents.
 	for _, c := range se.Contents {
 		if c.Value != nil {
-			if _, err := w.Write([]byte(*c.Value)); err != nil {
+			if err := writeStrings(w, *c.Value); err != nil {
 				return err
 			}
 			continue
@@ -721,13 +721,22 @@ func (se ScriptElement) Write(w io.Writer, indent int) error {
 		if isWhitespace(c.GoCode.Expression.Value) {
 			c.GoCode.Expression.Value = ""
 		}
-		if err := writeIndent(w, indent, `{{ `, c.GoCode.Expression.Value, ` }}`); err != nil {
+		if err := writeStrings(w, `{{ `, c.GoCode.Expression.Value, ` }}`, string(c.GoCode.TrailingSpace)); err != nil {
 			return err
 		}
 	}
 	// Close.
 	if _, err := w.Write([]byte("</script>")); err != nil {
 		return err
+	}
+	return nil
+}
+
+func writeStrings(w io.Writer, ss ...string) error {
+	for _, s := range ss {
+		if _, err := io.WriteString(w, s); err != nil {
+			return err
+		}
 	}
 	return nil
 }

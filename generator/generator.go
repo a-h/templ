@@ -1475,22 +1475,20 @@ func (g *generator) writeScriptContents(indentLevel int, c parser.ScriptContents
 			return nil
 		}
 		// This is a JS expression and can be written directly to the output.
-		_, err := g.w.Write(*c.Value)
-		return err
+		return g.writeText(indentLevel, parser.Text{Value: *c.Value})
 	}
 	if c.GoCode != nil {
-		// This is a Go code block. The code needs to be evaluated, and the result written to the output
-		// using the correct JS and HTML escaping based on whether the expression output is within a string
-		// or not.
+		// This is a Go code block. The code needs to be evaluated, and the result written to the output.
+		// The variable is JSON encoded to ensure that it is safe to use within a script tag.
 		var r parser.Range
 		vn := g.createVariableName()
-		// var vn string
-		if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
-			return err
+		// Here, we need to get the result, which might be any type. We can use templ.ScriptContent to get the result.
+		// vn, templ_7745c5c3_Err := templruntime.ScriptContent(
+		fnCall := "templruntime.ScriptContentOutsideStringLiteral"
+		if c.InsideStringLiteral {
+			fnCall = "templruntime.ScriptContentInsideStringLiteral"
 		}
-		// Here, we need to get the result, which might be any type. We can use templ.JoinErrs to get the result.
-		// vn, templ_7745c5c3_Err = templruntime.JoinErrs(
-		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templruntime.JoinErrs("); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := "+fnCall+"("); err != nil {
 			return err
 		}
 		// p.Name()
@@ -1509,42 +1507,22 @@ func (g *generator) writeScriptContents(indentLevel int, c parser.ScriptContents
 			return err
 		}
 
-		// Then, we need to JSON marshal it, and if the expression is within a string, we need to unquote it.
-		jvn := g.createVariableName()
-		// var jvn string
-		if _, err = g.w.WriteIndent(indentLevel, "var "+jvn+" string\n"); err != nil {
-			return err
-		}
-		// jvn, templ_7745c5c3_Err = json.Marshal(vn)
-		if _, err = g.w.WriteIndent(indentLevel, jvn+", templ_7745c3_Err = templ.JSONString("+vn+")\n"); err != nil {
-			return err
-		}
-		// Expression error handler.
-		err = g.writeExpressionErrorHandler(indentLevel, c.GoCode.Expression)
-		if err != nil {
-			return err
-		}
-
-		// If we're in a string, unquote the result.
-		if c.Quoted {
-			// jvn, templ_7745c5c3_Err = strconv.Unquote(jvn)
-			if _, err = g.w.WriteIndent(indentLevel, jvn+", templ_7745c3_Err = strconv.Unquote("+jvn+")\n"); err != nil {
-				return err
-			}
-			// Expression error handler.
-			err = g.writeExpressionErrorHandler(indentLevel, c.GoCode.Expression)
-			if err != nil {
-				return err
-			}
-		}
-
 		// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(jvn)
-		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+jvn+"))\n"); err != nil {
+		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+vn+")\n"); err != nil {
 			return err
 		}
 		if err = g.writeErrorHandler(indentLevel); err != nil {
 			return err
 		}
+
+		// Write any trailing space.
+		if c.GoCode.TrailingSpace != "" {
+			if err = g.writeText(indentLevel, parser.Text{Value: string(c.GoCode.TrailingSpace)}); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 	return errors.New("unknown script content")
 }
