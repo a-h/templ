@@ -11,9 +11,9 @@
 <h1>string data with quotes</h1>
 <script>
 		var a = "hello 'world'"
-		var b = "hello \'world\'"
-		var c = 'hello \'world\''
-		var d = `hello \'world\'`
+		var b = "hello \u0027world\u0027"
+		var c = 'hello \u0027world\u0027'
+		var d = `hello \u0027world\u0027`
 </script>
 <script>
 		console.log("hello 'world'")
@@ -51,9 +51,9 @@
 <h1>object data</h1>
 <script>
 		var a = {"Name":"Alice","Age":30}
-		var b = "{\"Name\":\"Alice\",\"Age\":30}"
-		var c = '{\"Name\":\"Alice\",\"Age\":30}'
-		var d = `{\"Name\":\"Alice\",\"Age\":30}`
+		var b = "{\u0022Name\u0022:\u0022Alice\u0022,\u0022Age\u0022:30}"
+		var c = '{\u0022Name\u0022:\u0022Alice\u0022,\u0022Age\u0022:30}'
+		var d = `{\u0022Name\u0022:\u0022Alice\u0022,\u0022Age\u0022:30}`
 </script>
 <script>
 		console.log({"Name":"Alice","Age":30})
