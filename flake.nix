@@ -8,13 +8,17 @@
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    version = {
+      url = "github:a-h/version";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     xc = {
       url = "github:joerdav/xc";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, xc }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, version, xc }:
     let
       allSystems = [
         "x86_64-linux" # 64-bit Intel/AMD Linux
@@ -63,6 +67,7 @@
             pkgs.gotestsum
             pkgs.ko # Used to build Docker images.
             pkgs.nodejs # Used to build templ-docs.
+            version.packages.${system}.default # Used to apply version numbers to the repo.
             xc.packages.${system}.xc
           ];
         });
