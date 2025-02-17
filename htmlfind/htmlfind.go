@@ -15,6 +15,7 @@ func AllReader(r io.Reader, f Matcher) (nodes []*html.Node, err error) {
 	return All(root, f), nil
 }
 
+// All returns all nodes that match the given function.
 func All(n *html.Node, f Matcher) (nodes []*html.Node) {
 	if f(n) {
 		nodes = append(nodes, n)
@@ -25,16 +26,20 @@ func All(n *html.Node, f Matcher) (nodes []*html.Node) {
 	return nodes
 }
 
+// Matcher is a function that matches HTML nodes.
 type Matcher func(*html.Node) bool
 
+// Attribute is a key-value pair for an HTML element.
 type Attribute struct {
 	Name, Value string
 }
 
+// Attr is a constructor for Attribute.
 func Attr(name, value string) Attribute {
 	return Attribute{name, value}
 }
 
+// Element returns a Matcher that matches an HTML element with the given name and attributes.
 func Element(name string, attrs ...Attribute) Matcher {
 	return func(n *html.Node) bool {
 		if n.Type != html.ElementNode {
