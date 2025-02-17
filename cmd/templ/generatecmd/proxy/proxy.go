@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"html"
 	"io"
 	stdlog "log"
 	"log/slog"
@@ -17,9 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/a-h/templ/cmd/templ/generatecmd/sse"
+	"github.com/a-h/templ/htmlfind"
 	"github.com/andybalholm/brotli"
+	"golang.org/x/net/html"
 
 	_ "embed"
 )
@@ -35,28 +35,47 @@ type Handler struct {
 	sse    *sse.Handler
 }
 
-func getScriptTag(nonce string) string {
-	if nonce != "" {
-		var sb strings.Builder
-		sb.WriteString(`<script src="/_templ/reload/script.js" nonce="`)
-		sb.WriteString(html.EscapeString(nonce))
-		sb.WriteString(`"></script>`)
-		return sb.String()
+func reloadScript(nonce string) *html.Node {
+	script := &html.Node{
+		Type: html.ElementNode,
+		Data: "script",
+		Attr: []html.Attribute{
+			{Key: "src", Val: "/_templ/reload/script.js"},
+		},
 	}
-	return `<script src="/_templ/reload/script.js"></script>`
+	if nonce != "" {
+		script.Attr = append(script.Attr, html.Attribute{Key: "nonce", Val: nonce})
+	}
+	return script
 }
 
 func insertScriptTagIntoBody(nonce, body string) (updated string) {
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(body))
-	if err != nil {
-		return strings.Replace(body, "</body>", getScriptTag(nonce)+"</body>", -1)
+	script := reloadScript(nonce)
+	updated, ok := insertScriptTagIntoBodyUsingHTMLPackage(script, body)
+	if !ok {
+		// Use a simple string replacement fallback if the HTML package fails.
+		var buf bytes.Buffer
+		html.Render(&buf, script)
+		return strings.Replace(body, "</body>", buf.String()+"</body>", -1)
 	}
-	doc.Find("body").AppendHtml(getScriptTag(nonce))
-	r, err := doc.Html()
+	return updated
+}
+
+func insertScriptTagIntoBodyUsingHTMLPackage(script *html.Node, body string) (updated string, ok bool) {
+	n, err := html.Parse(strings.NewReader(body))
 	if err != nil {
-		return strings.Replace(body, "</body>", getScriptTag(nonce)+"</body>", -1)
+		return body, false
 	}
-	return r
+	bodyNodes := htmlfind.All(n, htmlfind.Element("body"))
+	if len(bodyNodes) == 0 {
+		return body, false
+	}
+	bodyNodes[0].AppendChild(script)
+	var buf bytes.Buffer
+	if err = html.Render(&buf, n); err != nil {
+		return body, false
+	}
+	return buf.String(), true
 }
 
 type passthroughWriteCloser struct {

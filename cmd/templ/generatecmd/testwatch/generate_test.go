@@ -18,9 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
+	"github.com/a-h/templ/htmlfind"
+	"golang.org/x/net/html"
 )
 
 //go:embed testdata/*
@@ -76,12 +77,13 @@ func getPort() (port int, err error) {
 	return
 }
 
-func getHTML(url string) (doc *goquery.Document, err error) {
+func getHTML(url string) (n *html.Node, err error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get %q: %w", url, err)
 	}
-	return goquery.NewDocumentFromReader(resp.Body)
+	defer resp.Body.Close()
+	return html.Parse(resp.Body)
 }
 
 func TestCanAccessDirect(t *testing.T) {
@@ -99,7 +101,11 @@ func TestCanAccessDirect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	countText := doc.Find(`div[data-testid="count"]`).Text()
+	countElements := htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "count")))
+	if len(countElements) != 1 {
+		t.Fatalf("expected 1 count element, got %d", len(countElements))
+	}
+	countText := countElements[0].FirstChild.Data
 	actualCount, err := strconv.Atoi(countText)
 	if err != nil {
 		t.Fatalf("got count %q instead of integer", countText)
@@ -124,7 +130,11 @@ func TestCanAccessViaProxy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	countText := doc.Find(`div[data-testid="count"]`).Text()
+	countElements := htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "count")))
+	if len(countElements) != 1 {
+		t.Fatalf("expected 1 count element, got %d", len(countElements))
+	}
+	countText := countElements[0].FirstChild.Data
 	actualCount, err := strconv.Atoi(countText)
 	if err != nil {
 		t.Fatalf("got count %q instead of integer", countText)
@@ -195,7 +205,11 @@ func TestFileModificationsResultInSSEWithGzip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Original" {
+	modified := htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "modification")))
+	if len(modified) != 1 {
+		t.Fatalf("expected 1 modification element, got %d", len(modified))
+	}
+	if text := modified[0].FirstChild.Data; text != "Original" {
 		t.Errorf("expected %q, got %q", "Original", text)
 	}
 
@@ -236,7 +250,11 @@ loop:
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Updated" {
+	modified = htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "modification")))
+	if len(modified) != 1 {
+		t.Fatalf("expected 1 modification element, got %d", len(modified))
+	}
+	if text := modified[0].FirstChild.Data; text != "Updated" {
 		t.Errorf("expected %q, got %q", "Updated", text)
 	}
 }
@@ -263,7 +281,11 @@ func TestFileModificationsResultInSSE(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Original" {
+	modified := htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "modification")))
+	if len(modified) != 1 {
+		t.Fatalf("expected 1 modification element, got %d", len(modified))
+	}
+	if text := modified[0].FirstChild.Data; text != "Original" {
 		t.Errorf("expected %q, got %q", "Original", text)
 	}
 
@@ -304,7 +326,11 @@ loop:
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Updated" {
+	modified = htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "modification")))
+	if len(modified) != 1 {
+		t.Fatalf("expected 1 modification element, got %d", len(modified))
+	}
+	if text := modified[0].FirstChild.Data; text != "Updated" {
 		t.Errorf("expected %q, got %q", "Updated", text)
 	}
 }

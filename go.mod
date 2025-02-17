@@ -5,7 +5,6 @@ go 1.23
 toolchain go1.23.3
 
 require (
-	github.com/PuerkitoBio/goquery v1.10.1
 	github.com/a-h/htmlformat v0.0.0-20231108124658-5bd994fe268e
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e
 	github.com/andybalholm/brotli v1.1.0
@@ -17,15 +16,14 @@ require (
 	github.com/natefinch/atomic v1.0.1
 	github.com/rs/cors v1.11.0
 	golang.org/x/mod v0.20.0
+	golang.org/x/net v0.33.0
 	golang.org/x/sync v0.10.0
 	golang.org/x/tools v0.24.0
 )
 
 require (
-	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 )
 

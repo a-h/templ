@@ -19,6 +19,7 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/net/html"
 )
 
 func TestRoundTripper(t *testing.T) {
@@ -47,6 +48,16 @@ func TestRoundTripper(t *testing.T) {
 			t.Errorf("expected templ-skip-modify header to be empty, got %v", resp.Header.Get("templ-skip-modify"))
 		}
 	})
+}
+
+func getScriptTag(t *testing.T, nonce string) string {
+	script := reloadScript(nonce)
+	var buf bytes.Buffer
+	err := html.Render(&buf, script)
+	if err != nil {
+		t.Fatalf("unexpected error rendering script tag: %v", err)
+	}
+	return buf.String()
 }
 
 func TestProxy(t *testing.T) {
@@ -137,7 +148,7 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Length", "26")
 
 		expectedString := insertScriptTagIntoBody("", `<html><body></body></html>`)
-		if !strings.Contains(expectedString, getScriptTag("")) {
+		if !strings.Contains(expectedString, getScriptTag(t, "")) {
 			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
 		}
 
@@ -179,7 +190,7 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Security-Policy", fmt.Sprintf("script-src 'nonce-%s'", nonce))
 
 		expectedString := insertScriptTagIntoBody(nonce, `<html><body></body></html>`)
-		if !strings.Contains(expectedString, getScriptTag(nonce)) {
+		if !strings.Contains(expectedString, getScriptTag(t, nonce)) {
 			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
 		}
 
@@ -219,7 +230,7 @@ func TestProxy(t *testing.T) {
 		r.Header.Set("Content-Length", "26")
 
 		expectedString := insertScriptTagIntoBody("", `<html><body><script>console.log("<body></body>")</script></body></html>`)
-		if !strings.Contains(expectedString, getScriptTag("")) {
+		if !strings.Contains(expectedString, getScriptTag(t, "")) {
 			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
 		}
 		if !strings.Contains(expectedString, `console.log("<body></body>")`) {
