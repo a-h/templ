@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "benchmark": "^2.1.4",
-    "esbuild": "0.19.2",
+    "esbuild": "0.25.0",
     "microtime": "^3.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
