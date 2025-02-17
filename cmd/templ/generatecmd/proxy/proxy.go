@@ -134,7 +134,6 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 	if err != nil {
 		log.Warn("Unable to insert reload script", slog.Any("error", err))
 		updated = string(body)
-		err = nil
 	}
 	if len(updated) == len(body) {
 		log.Debug("Reload script not inserted")
