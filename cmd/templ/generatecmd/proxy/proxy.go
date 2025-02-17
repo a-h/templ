@@ -49,33 +49,23 @@ func reloadScript(nonce string) *html.Node {
 	return script
 }
 
-func insertScriptTagIntoBody(nonce, body string) (updated string) {
-	script := reloadScript(nonce)
-	updated, ok := insertScriptTagIntoBodyUsingHTMLPackage(script, body)
-	if !ok {
-		// Use a simple string replacement fallback if the HTML package fails.
-		var buf bytes.Buffer
-		html.Render(&buf, script)
-		return strings.Replace(body, "</body>", buf.String()+"</body>", -1)
-	}
-	return updated
-}
+var ErrBodyNotFound = fmt.Errorf("body not found")
 
-func insertScriptTagIntoBodyUsingHTMLPackage(script *html.Node, body string) (updated string, ok bool) {
+func insertScriptTagIntoBody(nonce, body string) (updated string, err error) {
 	n, err := html.Parse(strings.NewReader(body))
 	if err != nil {
-		return body, false
+		return body, err
 	}
 	bodyNodes := htmlfind.All(n, htmlfind.Element("body"))
 	if len(bodyNodes) == 0 {
-		return body, false
+		return body, ErrBodyNotFound
 	}
-	bodyNodes[0].AppendChild(script)
-	var buf bytes.Buffer
-	if err = html.Render(&buf, n); err != nil {
-		return body, false
+	bodyNodes[0].AppendChild(reloadScript(nonce))
+	buf := new(bytes.Buffer)
+	if err = html.Render(buf, n); err != nil {
+		return body, err
 	}
-	return buf.String(), true
+	return buf.String(), nil
 }
 
 type passthroughWriteCloser struct {
@@ -140,13 +130,16 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 
 	// Update it.
 	csp := r.Header.Get("Content-Security-Policy")
-	updated := insertScriptTagIntoBody(parseNonce(csp), string(body))
-	if log.Enabled(r.Request.Context(), slog.LevelDebug) {
-		if len(updated) == len(body) {
-			log.Debug("Reload script not inserted")
-		} else {
-			log.Debug("Reload script inserted")
-		}
+	updated, err := insertScriptTagIntoBody(parseNonce(csp), string(body))
+	if err != nil {
+		log.Warn("Unable to insert reload script", slog.Any("error", err))
+		updated = string(body)
+		err = nil
+	}
+	if len(updated) == len(body) {
+		log.Debug("Reload script not inserted")
+	} else {
+		log.Debug("Reload script inserted")
 	}
 
 	// Encode the response.
