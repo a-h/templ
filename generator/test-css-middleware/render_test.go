@@ -2,6 +2,7 @@ package testcssmiddleware
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"net/http/httptest"
 	"strings"
@@ -20,7 +21,7 @@ var expectedCSS = `.red_050e5e03{color:red;}
 `
 
 func Test(t *testing.T) {
-	var errs []error
+	var errs [3]error
 	var wg sync.WaitGroup
 	wg.Add(3)
 
@@ -30,7 +31,7 @@ func Test(t *testing.T) {
 		e := new(strings.Builder)
 		err := htmlformat.Fragment(e, strings.NewReader(expected))
 		if err != nil {
-			errs = append(errs, fmt.Errorf("expected html formatting error: %w", err))
+			errs[0] = fmt.Errorf("expected html formatting error: %w", err)
 		}
 		expected = e.String()
 	}()
@@ -50,7 +51,7 @@ func Test(t *testing.T) {
 		a := new(strings.Builder)
 		err := htmlformat.Fragment(a, w.Body)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("actual html formatting error: %w", err))
+			errs[1] = fmt.Errorf("actual html formatting error: %w", err)
 		}
 		actual = a.String()
 	}()
@@ -65,13 +66,16 @@ func Test(t *testing.T) {
 		a := new(strings.Builder)
 		err := htmlformat.Fragment(a, w.Body)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("actual html formatting error: %w", err))
+			errs[2] = fmt.Errorf("actual html formatting error: %w", err)
 		}
 		actualCSS = a.String()
 	}()
 
 	wg.Wait()
 
+	if err := errors.Join(errs[:]...); err != nil {
+		t.Error(err)
+	}
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Error(diff)
 	}
