@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/a-h/templ"
-	"github.com/a-h/templ/htmlfind"
+	"github.com/a-h/templ/internal/htmlfind"
 	"golang.org/x/net/html"
 )
 

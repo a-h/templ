@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd/sse"
-	"github.com/a-h/templ/htmlfind"
+	"github.com/a-h/templ/internal/htmlfind"
 	"github.com/andybalholm/brotli"
 	"golang.org/x/net/html"
 
