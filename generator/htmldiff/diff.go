@@ -18,7 +18,7 @@ func DiffStrings(expected, actual string) (diff string, err error) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	var errs [2]error
+	errs := make([]error, 2)
 
 	// Format expected.
 	go func() {
@@ -57,7 +57,7 @@ func DiffCtx(ctx context.Context, input templ.Component, expected string) (forma
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	var errs [3]error
+	errs := make([]error, 3)
 
 	// Format the expected value.
 	go func() {

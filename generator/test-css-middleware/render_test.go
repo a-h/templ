@@ -21,7 +21,7 @@ var expectedCSS = `.red_050e5e03{color:red;}
 `
 
 func Test(t *testing.T) {
-	var errs [3]error
+	errs := make([]error, 3)
 	var wg sync.WaitGroup
 	wg.Add(3)
 
