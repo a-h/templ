@@ -151,6 +151,56 @@ The data in the script tag can then be accessed from client-side JavaScript.
 const data = JSON.parse(document.getElementById('id').textContent);
 ```
 
+### Interpolate Go data within JavaScript code in a script tag
+
+If you want to use Go data as variables within JavaScript, you can use a `{{ value }}` block to place Go data within the script.
+
+templ will automatically escape the Go data to prevent XSS attacks.
+
+Within strings, you can use `{{ value }}` to interpolate Go data.
+
+```templ title="input.templ"
+templ body(msg string) {
+  <script>
+    const message = "Your message: {{ msg }}";
+    alert(message);
+  </script>
+}
+```
+
+The output would be:
+
+```html title="output.html" msg="Hello"
+<script>
+  const message = "Your message: Hello";
+  alert(message);
+</script>
+```
+
+Outside JavaScript strings, data is JSON encoded so that it can be used as a JavaScript object.
+
+```templ title="input.templ"
+templ body(msg string) {
+  <script>
+    const message = {{ msg }};
+    alert(message);
+  </script>
+}
+```
+
+The output would be:
+
+```html title="output.html" msg="Hello"
+<script>
+  const message = "Hello";
+  alert(message);
+</script>
+```
+
+:::tip
+It's better to pass data to the client in a HTML attribute or a script tag, as this separates the data from the JavaScript code, making it easier to maintain and debug.
+:::
+
 ## Avoiding inline event handlers
 
 According to Mozilla, [inline event handlers are considered bad practice](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Events#inline_event_handlers_%E2%80%94_dont_use_these).

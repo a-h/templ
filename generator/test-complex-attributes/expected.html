@@ -1,18 +1,17 @@
 <div
-	x-data="{darkMode: localStorage.getItem('darkMode') || localStorage.setItem('darkMode', 'system')}"
-	x-init="$watch('darkMode', val => localStorage.setItem('darkMode', val))"
-	:class="{'dark': darkMode === 'dark' || (darkMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)}"
->
+  x-data="{darkMode: localStorage.getItem('darkMode') || localStorage.setItem('darkMode', 'system')}"
+  x-init="$watch('darkMode', val => localStorage.setItem('darkMode', val))"
+  :class="{'dark': darkMode === 'dark' || (darkMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)}"
+></div>
+<div x-data="{ count: 0 }">
+  <button
+    x-on:click="count++"
+  >Increment</button>
+  <span x-text="count"></span>
 </div>
 <div x-data="{ count: 0 }">
-	<button
-		x-on:click="count++"
-	>Increment</button>
-	<span x-text="count"></span>
-</div>
-<div x-data="{ count: 0 }">
-	<button
-		@click="count++"
-	>Increment</button>
-	<span x-text="count"></span>
+  <button
+    @click="count++"
+  >Increment</button>
+  <span x-text="count"></span>
 </div>

@@ -444,6 +444,12 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	r.IndentAttrs = ot.IndentAttrs
 	r.NameRange = ot.NameRange
 
+	if r.Name == "script" {
+		// Script elements have special handling.
+		pi.Seek(start.Index)
+		return n, false, nil
+	}
+
 	// Once we've got an open tag, the rest must be present.
 	l := pi.Position().Line
 
