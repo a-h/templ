@@ -18,7 +18,7 @@ func DiffStrings(expected, actual string) (diff string, err error) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	var errs []error
+	errs := make([]error, 2)
 
 	// Format expected.
 	go func() {
@@ -26,7 +26,7 @@ func DiffStrings(expected, actual string) (diff string, err error) {
 		e := new(strings.Builder)
 		err := htmlformat.Fragment(e, strings.NewReader(expected))
 		if err != nil {
-			errs = append(errs, fmt.Errorf("expected html formatting error: %w", err))
+			errs[0] = fmt.Errorf("expected html formatting error: %w", err)
 		}
 		expected = e.String()
 	}()
@@ -37,7 +37,7 @@ func DiffStrings(expected, actual string) (diff string, err error) {
 		a := new(strings.Builder)
 		err := htmlformat.Fragment(a, strings.NewReader(actual))
 		if err != nil {
-			errs = append(errs, fmt.Errorf("actual html formatting error: %w", err))
+			errs[1] = fmt.Errorf("actual html formatting error: %w", err)
 		}
 		actual = a.String()
 	}()
@@ -57,7 +57,7 @@ func DiffCtx(ctx context.Context, input templ.Component, expected string) (forma
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	var errs []error
+	errs := make([]error, 3)
 
 	// Format the expected value.
 	go func() {
@@ -65,7 +65,7 @@ func DiffCtx(ctx context.Context, input templ.Component, expected string) (forma
 		e := new(strings.Builder)
 		err := htmlformat.Fragment(e, strings.NewReader(expected))
 		if err != nil {
-			errs = append(errs, fmt.Errorf("expected html formatting error: %w", err))
+			errs[0] = fmt.Errorf("expected html formatting error: %w", err)
 		}
 		expected = e.String()
 	}()
@@ -77,14 +77,14 @@ func DiffCtx(ctx context.Context, input templ.Component, expected string) (forma
 		defer wg.Done()
 		err := htmlformat.Fragment(actual, r)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("actual html formatting error: %w", err))
+			errs[1] = fmt.Errorf("actual html formatting error: %w", err)
 		}
 	}()
 
 	// Render the component.
 	err = input.Render(ctx, w)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to render component: %w", err))
+		errs[2] = fmt.Errorf("failed to render component: %w", err)
 	}
 	w.Close()
 
