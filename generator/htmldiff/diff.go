@@ -45,7 +45,7 @@ func DiffStrings(expected, actual string) (diff string, err error) {
 	// Wait for processing.
 	wg.Wait()
 
-	return cmp.Diff(expected, actual), errors.Join(errs[:]...)
+	return cmp.Diff(expected, actual), errors.Join(errs...)
 }
 
 func Diff(input templ.Component, expected string) (diff string, err error) {
@@ -91,5 +91,5 @@ func DiffCtx(ctx context.Context, input templ.Component, expected string) (forma
 	// Wait for processing.
 	wg.Wait()
 
-	return actual.String(), cmp.Diff(expected, actual.String()), errors.Join(errs[:]...)
+	return actual.String(), cmp.Diff(expected, actual.String()), errors.Join(errs...)
 }

@@ -73,7 +73,7 @@ func Test(t *testing.T) {
 
 	wg.Wait()
 
-	if err := errors.Join(errs[:]...); err != nil {
+	if err := errors.Join(errs...); err != nil {
 		t.Error(err)
 	}
 	if diff := cmp.Diff(expected, actual); diff != "" {
