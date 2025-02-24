@@ -2,11 +2,20 @@
 
 ## go install
 
-With Go 1.23 or greater installed, run:
+With Go 1.24 or greater installed, run:
 
 ```bash
 go install github.com/a-h/templ/cmd/templ@latest
 ```
+
+To install templ locally in your project, run:
+
+```bash
+go get -tool github.com/a-h/templ/cmd/templ@latest
+```
+:::info 
+Since Go 1.24 the [tool directive](https://tip.golang.org/doc/modules/managing-dependencies#tools) has been added. 
+:::
 
 ## GitHub binaries
 
