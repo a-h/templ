@@ -70,6 +70,7 @@ func TestIfExpression(t *testing.T) {
 						TrailingSpace:  SpaceVertical,
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -136,6 +137,7 @@ func TestIfExpression(t *testing.T) {
 						TrailingSpace: SpaceVertical,
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -171,6 +173,7 @@ func TestIfExpression(t *testing.T) {
 						TrailingSpace: SpaceVertical,
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -230,6 +233,7 @@ func TestIfExpression(t *testing.T) {
 						TrailingSpace:  SpaceVertical,
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -296,6 +300,7 @@ func TestIfExpression(t *testing.T) {
 						TrailingSpace: SpaceVertical,
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -370,9 +375,10 @@ func TestIfExpression(t *testing.T) {
 								TrailingSpace: SpaceVertical,
 							},
 						},
+						TrailingSpace: SpaceVertical,
 					},
-					Whitespace{Value: "\n\t\t\t\t"},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -427,6 +433,7 @@ func TestIfExpression(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -505,6 +512,7 @@ func TestIfExpression(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 		{
@@ -597,6 +605,7 @@ func TestIfExpression(t *testing.T) {
 						TrailingSpace: SpaceVertical,
 					},
 				},
+				TrailingSpace: SpaceVertical,
 			},
 		},
 	}

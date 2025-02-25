@@ -585,6 +585,9 @@ func (g *generator) writeNodes(indentLevel int, nodes []parser.Node, next parser
 }
 
 func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.Node) (err error) {
+	maybeWhitespace := true
+	forceWhitespace := false
+
 	switch n := current.(type) {
 	case parser.DocType:
 		err = g.writeDocType(indentLevel, n)
@@ -597,14 +600,25 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 	case parser.RawElement:
 		err = g.writeRawElement(indentLevel, n)
 	case parser.ForExpression:
+		maybeWhitespace = false
 		err = g.writeForExpression(indentLevel, n, next)
 	case parser.CallTemplateExpression:
 		err = g.writeCallTemplateExpression(indentLevel, n)
 	case parser.TemplElementExpression:
 		err = g.writeTemplElementExpression(indentLevel, n)
+
+		// TemplElementExpression with block should always have whitespace if the next element is also
+		// a TemplElementExpression
+		if len(n.Children) > 0 {
+			if _, ok := next.(parser.TemplElementExpression); ok {
+				forceWhitespace = true
+			}
+		}
 	case parser.IfExpression:
+		maybeWhitespace = false
 		err = g.writeIfExpression(indentLevel, n, next)
 	case parser.SwitchExpression:
+		maybeWhitespace = false
 		err = g.writeSwitchExpression(indentLevel, n, next)
 	case parser.StringExpression:
 		err = g.writeStringExpression(indentLevel, n.Expression)
@@ -623,8 +637,10 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 	// Write trailing whitespace, if there is a next node that might need the space.
 	// If the next node is inline or text, we might need it.
 	// If the current node is a block element, we don't need it.
-	needed := (isInlineOrText(current) && isInlineOrText(next))
-	if ws, ok := current.(parser.WhitespaceTrailer); ok && needed {
+	// If, switch and for as current node skip whitespace, but not always when next node.
+	neededWhitespace := forceWhitespace || (maybeWhitespace && isInlineOrText(current) && isInlineOrText(next))
+
+	if ws, ok := current.(parser.WhitespaceTrailer); ok && neededWhitespace {
 		if err := g.writeWhitespaceTrailer(indentLevel, ws.Trailing()); err != nil {
 			return err
 		}
@@ -661,7 +677,7 @@ func (g *generator) writeWhitespaceTrailer(indentLevel int, n parser.TrailingSpa
 	}
 	// Normalize whitespace for minified output. In HTML, a single space is equivalent to
 	// any number of spaces, tabs, or newlines.
-	if n == parser.SpaceVertical {
+	if n == parser.SpaceVertical || n == parser.SpaceVerticalDouble {
 		n = parser.SpaceHorizontal
 	}
 	if _, err = g.w.WriteStringLiteral(indentLevel, string(n)); err != nil {

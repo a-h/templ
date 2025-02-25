@@ -10,7 +10,10 @@ var forExpression parse.Parser[Node] = forExpressionParser{}
 type forExpressionParser struct{}
 
 func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	var r ForExpression
+	r := ForExpression{
+		// Default behavior is always a trailing space
+		TrailingSpace: SpaceVertical,
+	}
 	start := pi.Index()
 
 	// Strip leading whitespace and look for `for `.
@@ -46,6 +49,12 @@ func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
 		err = parse.Error("for: "+unterminatedMissingEnd, pi.Position())
 		return
+	}
+
+	// Parse trailing whitespace.
+	r.TrailingSpace, err = parseTrailingSpace(pi, true, true)
+	if err != nil {
+		return r, false, err
 	}
 
 	return r, true, nil
