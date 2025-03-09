@@ -54,24 +54,6 @@ func TestRawElementParser(t *testing.T) {
 				Contents: ignoredContent,
 			},
 		},
-		{
-			name:  "script tag",
-			input: `<script type="vbscript">dim x = 1</script>`,
-			expected: RawElement{
-				Name: "script",
-				Attributes: []Attribute{
-					ConstantAttribute{
-						Name:  "type",
-						Value: "vbscript",
-						NameRange: Range{
-							From: Position{Index: 8, Line: 0, Col: 8},
-							To:   Position{Index: 12, Line: 0, Col: 12},
-						},
-					},
-				},
-				Contents: "dim x = 1",
-			},
-		},
 	}
 	for _, tt := range tests {
 		tt := tt

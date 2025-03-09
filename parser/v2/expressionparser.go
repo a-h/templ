@@ -39,6 +39,9 @@ var openBraceWithOptionalPadding = parse.Any(openBraceWithPadding, openBrace)
 var closeBrace = parse.String("}")
 var closeBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, closeBrace)
 
+var dblOpenBrace = parse.String("{{")
+var dblOpenBraceWithOptionalPadding = parse.StringFrom(dblOpenBrace, optionalSpaces)
+
 var dblCloseBrace = parse.String("}}")
 var dblCloseBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, dblCloseBrace)
 

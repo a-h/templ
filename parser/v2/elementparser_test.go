@@ -1691,27 +1691,7 @@ func TestElementParserErrors(t *testing.T) {
 		{
 			name:  "element: style must only contain text",
 			input: `<style><button /></style>`,
-			expected: parse.Error("<style>: invalid node contents: script and style attributes must only contain text",
-				parse.Position{
-					Index: 0,
-					Line:  0,
-					Col:   0,
-				}),
-		},
-		{
-			name:  "element: script must only contain text",
-			input: `<script><button /></script>`,
-			expected: parse.Error("<script>: invalid node contents: script and style attributes must only contain text",
-				parse.Position{
-					Index: 0,
-					Line:  0,
-					Col:   0,
-				}),
-		},
-		{
-			name:  "element: script tags cannot contain non-text nodes",
-			input: `<script>{ "value" }</script>`,
-			expected: parse.Error("<script>: invalid node contents: script and style attributes must only contain text",
+			expected: parse.Error("<style>: invalid node contents: style elements must only contain text",
 				parse.Position{
 					Index: 0,
 					Line:  0,
@@ -1721,7 +1701,7 @@ func TestElementParserErrors(t *testing.T) {
 		{
 			name:  "element: style tags cannot contain non-text nodes",
 			input: `<style>{ "value" }</style>`,
-			expected: parse.Error("<style>: invalid node contents: script and style attributes must only contain text",
+			expected: parse.Error("<style>: invalid node contents: style elements must only contain text",
 				parse.Position{
 					Index: 0,
 					Line:  0,

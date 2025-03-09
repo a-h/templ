@@ -1,0 +1,27 @@
+package testscriptexpressions
+
+templ Script[T any](name string, data T) {
+	<h1>{ name }</h1>
+	<script>
+		var a = {{ data }}
+		var b = "{{ data }}"
+		var c = '{{ data }}'
+		var d = `{{ data }}`
+	</script>
+	<script>
+		console.log({{ data }})
+	</script>
+}
+
+templ AllTests() {
+	@Script("string data", "hello")
+	@Script("string data with quotes", "hello 'world'")
+	@Script("numeric data", 123)
+	@Script("boolean data", true)
+	@Script("array data", []int{1, 2, 3})
+	@Script("object data", struct {
+		Name string
+		Age  int
+	}{"Alice", 30})
+	@Script[*string]("null data", nil)
+}

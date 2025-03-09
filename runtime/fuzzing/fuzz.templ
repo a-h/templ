@@ -1,0 +1,19 @@
+package fuzzing
+
+templ String(v any) {
+	<script>
+		function logValue() {
+			console.log("{{ v }}")
+			return "result_ok"
+		}
+	</script>
+}
+
+templ Any(v any) {
+	<script>
+		function logValue() {
+			console.log({{ v }})
+			return "result_ok"
+		}
+	</script>
+}
