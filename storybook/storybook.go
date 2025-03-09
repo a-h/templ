@@ -109,7 +109,7 @@ func (sh *Storybook) Build(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	if ctx.Err() != nil {
+	if err = ctx.Err(); err != nil {
 		return
 	}
 
@@ -119,7 +119,7 @@ func (sh *Storybook) Build(ctx context.Context) (err error) {
 	if err != nil {
 		return
 	}
-	if ctx.Err() != nil {
+	if err = ctx.Err(); err != nil {
 		return
 	}
 
@@ -133,7 +133,7 @@ func (sh *Storybook) Build(ctx context.Context) (err error) {
 	} else {
 		sh.Log.Info("Storybook is up-to-date, skipping build step.")
 	}
-	if ctx.Err() != nil {
+	if err = ctx.Err(); err != nil {
 		return
 	}
 
