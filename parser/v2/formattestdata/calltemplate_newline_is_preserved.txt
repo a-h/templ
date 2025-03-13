@@ -1,0 +1,34 @@
+-- in --
+package main
+
+templ test() {
+	<span></span>
+
+
+	{! Other(p.Test) }
+	{!Other(p.Test)} Home
+
+	<div>Some standard templ</div>
+
+{!Other(p.Test) }
+
+
+
+	<span></span>
+
+}
+-- out --
+package main
+
+templ test() {
+	<span></span>
+
+	@Other(p.Test)
+	@Other(p.Test) Home
+	<div>Some standard templ</div>
+
+	@Other(p.Test)
+
+	<span></span>
+
+}
