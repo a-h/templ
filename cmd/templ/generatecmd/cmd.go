@@ -17,6 +17,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	templruntime "github.com/a-h/templ/runtime"
+
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"github.com/a-h/templ/cmd/templ/generatecmd/proxy"
@@ -28,7 +30,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-const defaultWatchPattern = `(.+\.go$)|(.+\.templ$)|(.+_templ\.txt$)`
+const defaultWatchPattern = `(.+\.go$)|(.+\.templ$)`
 
 func NewGenerate(log *slog.Logger, args Arguments) (g *Generate, err error) {
 	g = &Generate{
@@ -104,6 +106,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		cmd.Log.Warn("templ version check: " + err.Error())
 	}
 
+	cmd.Log.Debug("Creating filesystem event handler")
 	fseh := NewFSEventHandler(
 		cmd.Log,
 		cmd.Args.Path,
@@ -189,7 +192,6 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			"All post-generation events processed, deleting watch mode text files",
 			slog.Int64("errorCount", errorCount.Load()),
 		)
-
 		fileEvents := make(chan fsnotify.Event)
 		go func() {
 			if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, fileEvents); err != nil {
@@ -200,8 +202,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			close(fileEvents)
 		}()
 		for event := range fileEvents {
-			if strings.HasSuffix(event.Name, "_templ.txt") {
-				if err = os.Remove(event.Name); err != nil {
+			if strings.HasSuffix(event.Name, "_templ.go") || strings.HasSuffix(event.Name, ".templ") {
+				watchModeFileName := templruntime.GetDevModeTextFileName(event.Name)
+				if err := os.Remove(watchModeFileName); err != nil && !errors.Is(err, os.ErrNotExist) {
 					cmd.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
 				}
 			}
