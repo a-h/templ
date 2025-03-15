@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/testproject"
+	"github.com/a-h/templ/runtime"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -69,13 +70,14 @@ func TestGenerate(t *testing.T) {
 		})
 
 		// Check the templates_templ.go file was created, with backoff.
+		devModeTextFileName := runtime.GetDevModeTextFileName(path.Join(dir, "templates_templ.go"))
 		for i := 0; i < 5; i++ {
 			time.Sleep(time.Second * time.Duration(i))
 			_, err = os.Stat(path.Join(dir, "templates_templ.go"))
 			if err != nil {
 				continue
 			}
-			_, err = os.Stat(path.Join(dir, "templates_templ.txt"))
+			_, err = os.Stat(devModeTextFileName)
 			if err != nil {
 				continue
 			}
@@ -91,7 +93,7 @@ func TestGenerate(t *testing.T) {
 		}
 
 		// Check the templates_templ.txt file was removed.
-		_, err = os.Stat(path.Join(dir, "templates_templ.txt"))
+		_, err = os.Stat(path.Join(dir, devModeTextFileName))
 		if err == nil {
 			t.Fatalf("templates_templ.txt was not removed")
 		}
@@ -110,14 +112,14 @@ func TestDefaultWatchPattern(t *testing.T) {
 			matches: false,
 		},
 		{
-			name:    "*_templ.txt matches, Windows",
+			name:    "*_templ.txt is no longer matched, Windows",
 			input:   `C:\Users\adrian\github.com\a-h\templ\cmd\templ\testproject\strings_templ.txt`,
-			matches: true,
+			matches: false,
 		},
 		{
-			name:    "*_templ.txt matches, Unix",
+			name:    "*_templ.txt is no longer matched, Unix",
 			input:   "/Users/adrian/github.com/a-h/templ/cmd/templ/testproject/strings_templ.txt",
-			matches: true,
+			matches: false,
 		},
 		{
 			name:    "*.templ files match, Windows",

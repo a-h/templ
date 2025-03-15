@@ -21,6 +21,7 @@ import (
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
+	"github.com/a-h/templ/runtime"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -117,20 +118,6 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 			h.Log.Warn("Failed to remove orphaned file", slog.Any("error", err))
 		}
 		return GenerateResult{Updated: true, GoUpdated: true, TextUpdated: false}, nil
-	}
-	// Handle _templ.txt files.
-	if !event.Has(fsnotify.Remove) && strings.HasSuffix(event.Name, "_templ.txt") {
-		if h.devMode {
-			// Don't delete the file in dev mode, ignore changes to it, since the .templ file
-			// must have been updated in order to trigger a change in the _templ.txt file.
-			return GenerateResult{Updated: false, GoUpdated: false, TextUpdated: false}, nil
-		}
-		h.Log.Debug("Deleting watch mode file", slog.String("file", event.Name))
-		if err = os.Remove(event.Name); err != nil {
-			h.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
-			return GenerateResult{}, nil
-		}
-		return GenerateResult{}, nil
 	}
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
@@ -274,7 +261,8 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 
 	// Add the txt file if it has changed.
 	if h.devMode {
-		txtFileName := strings.TrimSuffix(fileName, ".templ") + "_templ.txt"
+		txtFileName := runtime.GetDevModeTextFileName(fileName)
+		h.Log.Debug("Writing development mode text file", slog.String("file", fileName), slog.String("output", txtFileName))
 		joined := strings.Join(generatorOutput.Literals, "\n")
 		txtHash := sha256.Sum256([]byte(joined))
 		if h.UpsertHash(txtFileName, txtHash) {
