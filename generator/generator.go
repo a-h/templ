@@ -674,10 +674,15 @@ func (g *generator) writeWhitespaceTrailer(indentLevel int, n parser.TrailingSpa
 }
 
 func (g *generator) writeDocType(indentLevel int, n parser.DocType) (err error) {
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf("<!doctype %s>", n.Value)); err != nil {
+	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf("<!doctype %s>", escapeQuotes(n.Value))); err != nil {
 		return err
 	}
 	return nil
+}
+
+func escapeQuotes(s string) string {
+	quoted := strconv.Quote(s)
+	return quoted[1 : len(quoted)-1]
 }
 
 func (g *generator) writeIfExpression(indentLevel int, n parser.IfExpression, nextNode parser.Node) (err error) {
@@ -1132,8 +1137,7 @@ func (g *generator) writeBoolConstantAttribute(indentLevel int, attr parser.Bool
 func (g *generator) writeConstantAttribute(indentLevel int, attr parser.ConstantAttribute) (err error) {
 	name := html.EscapeString(attr.Name)
 	value := html.EscapeString(attr.Value)
-	value = strconv.Quote(value)
-	value = value[1 : len(value)-1]
+	value = escapeQuotes(value)
 	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s=\"%s\"`, name, value)); err != nil {
 		return err
 	}
@@ -1612,8 +1616,7 @@ func (g *generator) writeWhitespace(indentLevel int, n parser.Whitespace) (err e
 }
 
 func (g *generator) writeText(indentLevel int, n parser.Text) (err error) {
-	quoted := strconv.Quote(n.Value)
-	_, err = g.w.WriteStringLiteral(indentLevel, quoted[1:len(quoted)-1])
+	_, err = g.w.WriteStringLiteral(indentLevel, escapeQuotes(n.Value))
 	return err
 }
 
