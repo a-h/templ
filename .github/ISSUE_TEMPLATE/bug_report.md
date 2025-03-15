@@ -23,7 +23,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots or screen captures to help explain your problem.
 
 **Logs**
-If the issue is related to IDE support, run through the LSP troubleshooting section at https://templ.guide/commands-and-tools/ide-support/#troubleshooting-1 and include logs from templ
+If the issue is related to IDE support, run through the LSP troubleshooting section at https://templ.guide/developer-tools/ide-support/#troubleshooting-1 and include logs from templ
 
 **`templ info` output**
 Run `templ info` and include the output.
