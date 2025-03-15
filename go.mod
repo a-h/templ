@@ -1,8 +1,8 @@
 module github.com/a-h/templ
 
-go 1.23
+go 1.23.0
 
-toolchain go1.23.3
+toolchain go1.23.6
 
 require (
 	github.com/a-h/htmlformat v0.0.0-20250209131833-673be874c677
@@ -16,7 +16,7 @@ require (
 	github.com/natefinch/atomic v1.0.1
 	github.com/rs/cors v1.11.0
 	golang.org/x/mod v0.20.0
-	golang.org/x/net v0.34.0
+	golang.org/x/net v0.37.0
 	golang.org/x/sync v0.10.0
 	golang.org/x/tools v0.24.0
 )
@@ -24,7 +24,7 @@ require (
 require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	golang.org/x/sys v0.29.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 )
 
 // replace github.com/a-h/parse => /Users/adrian/github.com/a-h/parse
