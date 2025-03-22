@@ -4,13 +4,12 @@ import (
 	"context"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 
+	"github.com/a-h/templ/internal/skipdir"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -54,7 +53,7 @@ func WalkFiles(ctx context.Context, path string, watchPattern *regexp.Regexp, ou
 		if err != nil {
 			return nil
 		}
-		if info.IsDir() && shouldSkipDir(absPath) {
+		if info.IsDir() && skipdir.ShouldSkip(absPath) {
 			return filepath.SkipDir
 		}
 		if !watchPattern.MatchString(absPath) {
@@ -143,24 +142,9 @@ func (w *RecursiveWatcher) Add(dir string) error {
 		if !info.IsDir() {
 			return nil
 		}
-		if shouldSkipDir(dir) {
+		if skipdir.ShouldSkip(dir) {
 			return filepath.SkipDir
 		}
 		return w.w.Add(dir)
 	})
-}
-
-func shouldSkipDir(dir string) bool {
-	if dir == "." {
-		return false
-	}
-	if dir == "vendor" || dir == "node_modules" {
-		return true
-	}
-	_, name := path.Split(dir)
-	// These directories are ignored by the Go tool.
-	if strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") {
-		return true
-	}
-	return false
 }
