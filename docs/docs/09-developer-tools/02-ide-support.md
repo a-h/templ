@@ -432,8 +432,18 @@ The logs can be quite verbose, since almost every keypress results in additional
 
 ### Look at the web server
 
-The web server option provides an insight into the internal state of the language server. It may provide insight into what's going wrong.
+The LSP has a `http` argument that starts a web server that can show the internal state of the LSP - in particular, the mapping between templ files and Go source code. The default is `templ lsp -http=localhost:7474`. See the log options above for instructions on how to set it.
 
 ### Run templ info
 
 The `templ info` command outputs information that's useful for debugging issues.
+
+### "missing metadata for import" / "could not import"
+
+If you see an error like this coming from gopls:
+
+```
+could not import strconv (missing metadata for import of "strconv") compiler (BrokenImport)
+```
+
+Running `go mod tidy` in your project usually solves it.

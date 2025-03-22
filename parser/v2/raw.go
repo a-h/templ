@@ -10,10 +10,6 @@ var styleElement = rawElementParser{
 	name: "style",
 }
 
-var scriptElement = rawElementParser{
-	name: "script",
-}
-
 type rawElementParser struct {
 	name string
 }

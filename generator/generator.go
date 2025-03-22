@@ -3,6 +3,7 @@ package generator
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -596,6 +597,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeChildrenExpression(indentLevel)
 	case parser.RawElement:
 		err = g.writeRawElement(indentLevel, n)
+	case parser.ScriptElement:
+		err = g.writeScriptElement(indentLevel, n)
 	case parser.ForExpression:
 		err = g.writeForExpression(indentLevel, n, next)
 	case parser.CallTemplateExpression:
@@ -1432,6 +1435,100 @@ func (g *generator) writeRawElement(indentLevel int, n parser.RawElement) (err e
 		return err
 	}
 	return err
+}
+
+func (g *generator) writeScriptElement(indentLevel int, n parser.ScriptElement) (err error) {
+	if len(n.Attributes) == 0 {
+		// <div>
+		if _, err = g.w.WriteStringLiteral(indentLevel, `<script>`); err != nil {
+			return err
+		}
+	} else {
+		// <script></script>
+		if err = g.writeElementScript(indentLevel, n.Attributes); err != nil {
+			return err
+		}
+		// <div
+		if _, err = g.w.WriteStringLiteral(indentLevel, "<script"); err != nil {
+			return err
+		}
+		if err = g.writeElementAttributes(indentLevel, "script", n.Attributes); err != nil {
+			return err
+		}
+		// >
+		if _, err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
+			return err
+		}
+	}
+	// Contents.
+	for _, c := range n.Contents {
+		if err = g.writeScriptContents(indentLevel, c); err != nil {
+			return err
+		}
+	}
+	// </div>
+	if _, err = g.w.WriteStringLiteral(indentLevel, "</script>"); err != nil {
+		return err
+	}
+	return err
+}
+
+func (g *generator) writeScriptContents(indentLevel int, c parser.ScriptContents) (err error) {
+	if c.Value != nil {
+		if *c.Value == "" {
+			return nil
+		}
+		// This is a JS expression and can be written directly to the output.
+		return g.writeText(indentLevel, parser.Text{Value: *c.Value})
+	}
+	if c.GoCode != nil {
+		// This is a Go code block. The code needs to be evaluated, and the result written to the output.
+		// The variable is JSON encoded to ensure that it is safe to use within a script tag.
+		var r parser.Range
+		vn := g.createVariableName()
+		// Here, we need to get the result, which might be any type. We can use templ.ScriptContent to get the result.
+		// vn, templ_7745c5c3_Err := templruntime.ScriptContent(
+		fnCall := "templruntime.ScriptContentOutsideStringLiteral"
+		if c.InsideStringLiteral {
+			fnCall = "templruntime.ScriptContentInsideStringLiteral"
+		}
+		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := "+fnCall+"("); err != nil {
+			return err
+		}
+		// p.Name()
+		if r, err = g.w.Write(c.GoCode.Expression.Value); err != nil {
+			return err
+		}
+		g.sourceMap.Add(c.GoCode.Expression, r)
+		// )
+		if _, err = g.w.Write(")\n"); err != nil {
+			return err
+		}
+
+		// Expression error handler.
+		err = g.writeExpressionErrorHandler(indentLevel, c.GoCode.Expression)
+		if err != nil {
+			return err
+		}
+
+		// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(jvn)
+		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+vn+")\n"); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+
+		// Write any trailing space.
+		if c.GoCode.TrailingSpace != "" {
+			if err = g.writeText(indentLevel, parser.Text{Value: string(c.GoCode.TrailingSpace)}); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+	return errors.New("unknown script content")
 }
 
 func (g *generator) writeComment(indentLevel int, c parser.HTMLComment) (err error) {
