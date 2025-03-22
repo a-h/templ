@@ -71,6 +71,11 @@ loop:
 			break loop
 		}
 
+		if _, ok, err = endTagStart.Parse(pi); err != nil || ok {
+			// We've reached the end of the script, but the end tag is probably invalid.
+			break loop
+		}
+
 		var code Node
 		code, ok, err = goCodeInJavaScript.Parse(pi)
 		if err != nil {
@@ -134,6 +139,7 @@ loop:
 }
 
 var jsEndTag = parse.String("</script>")
+var endTagStart = parse.String("</")
 
 var jsCharacter = parse.Any(jsEscapedCharacter, parse.AnyRune)
 
@@ -142,7 +148,9 @@ var jsEscapedCharacter = parse.StringFrom(parse.String("\\"), parse.AnyRune)
 var jsComment = parse.Any(jsSingleLineComment, jsMultiLineComment)
 
 var jsStartSingleLineComment = parse.String("//")
-var jsSingleLineComment = parse.StringFrom(jsStartSingleLineComment, parse.StringUntil(parse.NewLine), parse.NewLine)
+var jsEndOfSingleLineComment = parse.StringFrom(parse.Or(parse.NewLine, parse.EOF[string]()))
+var jsSingleLineComment = parse.StringFrom(jsStartSingleLineComment, parse.StringUntil(jsEndOfSingleLineComment), jsEndOfSingleLineComment)
 
 var jsStartMultiLineComment = parse.String("/*")
-var jsMultiLineComment = parse.StringFrom(jsStartMultiLineComment, parse.StringUntil(parse.String("*/")), parse.String("*/"), parse.OptionalWhitespace)
+var jsEndOfMultiLineComment = parse.StringFrom(parse.Or(parse.String("*/"), parse.EOF[string]()))
+var jsMultiLineComment = parse.StringFrom(jsStartMultiLineComment, parse.StringUntil(jsEndOfMultiLineComment), jsEndOfMultiLineComment, parse.OptionalWhitespace)
