@@ -329,7 +329,7 @@ func executeTemplate(name string, fn any, values []any) (output templ.Component,
 		err = fmt.Errorf("templ-storybook: component %s expects %d argument, but %d were provided", fn, len(argv), len(values))
 		return
 	}
-	for i := 0; i < len(argv); i++ {
+	for i := range argv {
 		argv[i] = reflect.ValueOf(values[i])
 	}
 	result := v.Call(argv)

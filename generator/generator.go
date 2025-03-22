@@ -236,8 +236,8 @@ func (g *generator) writeImports() error {
 }
 
 func (g *generator) writeTemplateNodes() error {
-	for i := 0; i < len(g.tf.Nodes); i++ {
-		switch n := g.tf.Nodes[i].(type) {
+	for i, n := range g.tf.Nodes {
+		switch n := n.(type) {
 		case parser.TemplateFileGoExpression:
 			if err := g.writeGoExpression(n); err != nil {
 				return err
@@ -286,8 +286,8 @@ func (g *generator) writeCSS(n parser.CSSTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_CSSBuilder := templruntime.GetBuilder()\n"); err != nil {
 			return err
 		}
-		for i := 0; i < len(n.Properties); i++ {
-			switch p := n.Properties[i].(type) {
+		for _, p := range n.Properties {
+			switch p := p.(type) {
 			case parser.ConstantCSSProperty:
 				// Constant CSS property values are not sanitized.
 				if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_CSSBuilder.WriteString("+createGoString(p.String(true))+")\n"); err != nil {
@@ -546,8 +546,7 @@ func stripWhitespace(input []parser.Node) (output []parser.Node) {
 }
 
 func stripLeadingWhitespace(nodes []parser.Node) []parser.Node {
-	for i := 0; i < len(nodes); i++ {
-		n := nodes[i]
+	for i, n := range nodes {
 		if _, isWhiteSpace := n.(parser.Whitespace); !isWhiteSpace {
 			return nodes[i:]
 		}
@@ -1051,8 +1050,8 @@ func (g *generator) writeAttributeCSS(indentLevel int, attr parser.ExpressionAtt
 }
 
 func (g *generator) writeAttributesCSS(indentLevel int, attrs []parser.Attribute) (err error) {
-	for i := 0; i < len(attrs); i++ {
-		if attr, ok := attrs[i].(parser.ExpressionAttribute); ok {
+	for i, attr := range attrs {
+		if attr, ok := attr.(parser.ExpressionAttribute); ok {
 			attr, ok, err = g.writeAttributeCSS(indentLevel, attr)
 			if err != nil {
 				return err
@@ -1061,7 +1060,7 @@ func (g *generator) writeAttributesCSS(indentLevel int, attrs []parser.Attribute
 				attrs[i] = attr
 			}
 		}
-		if cattr, ok := attrs[i].(parser.ConditionalAttribute); ok {
+		if cattr, ok := attr.(parser.ConditionalAttribute); ok {
 			err = g.writeAttributesCSS(indentLevel, cattr.Then)
 			if err != nil {
 				return err
@@ -1382,8 +1381,8 @@ func (g *generator) writeConditionalAttribute(indentLevel int, elementName strin
 }
 
 func (g *generator) writeElementAttributes(indentLevel int, name string, attrs []parser.Attribute) (err error) {
-	for i := 0; i < len(attrs); i++ {
-		switch attr := attrs[i].(type) {
+	for _, attr := range attrs {
+		switch attr := attr.(type) {
 		case parser.BoolConstantAttribute:
 			err = g.writeBoolConstantAttribute(indentLevel, attr)
 		case parser.ConstantAttribute:
@@ -1397,7 +1396,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 		case parser.ConditionalAttribute:
 			err = g.writeConditionalAttribute(indentLevel, name, attr)
 		default:
-			err = fmt.Errorf("unknown attribute type %s", reflect.TypeOf(attrs[i]))
+			err = fmt.Errorf("unknown attribute type %T", attr)
 		}
 	}
 	return
@@ -1624,8 +1623,8 @@ func createGoString(s string) string {
 	var sb strings.Builder
 	sb.WriteRune('`')
 	sects := strings.Split(s, "`")
-	for i := 0; i < len(sects); i++ {
-		sb.WriteString(sects[i])
+	for i, sect := range sects {
+		sb.WriteString(sect)
 		if len(sects) > i+1 {
 			sb.WriteString("` + \"`\" + `")
 		}
@@ -1730,8 +1729,8 @@ func functionName(name string, body string) string {
 func stripTypes(parameters string) string {
 	variableNames := []string{}
 	params := strings.Split(parameters, ",")
-	for i := 0; i < len(params); i++ {
-		p := strings.Split(strings.TrimSpace(params[i]), " ")
+	for _, param := range params {
+		p := strings.Split(strings.TrimSpace(param), " ")
 		variableNames = append(variableNames, strings.TrimSpace(p[0]))
 	}
 	return strings.Join(variableNames, ", ")

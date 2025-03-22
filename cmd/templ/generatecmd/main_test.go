@@ -71,7 +71,7 @@ func TestGenerate(t *testing.T) {
 
 		// Check the templates_templ.go file was created, with backoff.
 		devModeTextFileName := runtime.GetDevModeTextFileName(path.Join(dir, "templates_templ.go"))
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			time.Sleep(time.Second * time.Duration(i))
 			_, err = os.Stat(path.Join(dir, "templates_templ.go"))
 			if err != nil {

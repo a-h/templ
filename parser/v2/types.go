@@ -138,8 +138,8 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	if _, err := io.WriteString(w, "\n\n"); err != nil {
 		return err
 	}
-	for i := 0; i < len(tf.Nodes); i++ {
-		if err := tf.Nodes[i].Write(w, indent); err != nil {
+	for i, n := range tf.Nodes {
+		if err := n.Write(w, indent); err != nil {
 			return err
 		}
 		if _, err := io.WriteString(w, getNodeWhitespace(tf.Nodes, i)); err != nil {
@@ -502,8 +502,7 @@ func (e Element) Validate() (msgs []string, ok bool) {
 }
 
 func containsNonTextNodes(nodes []Node) bool {
-	for i := 0; i < len(nodes); i++ {
-		n := nodes[i]
+	for _, n := range nodes {
 		switch n.(type) {
 		case Text:
 			continue
@@ -524,7 +523,7 @@ func (e Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<", e.Name); err != nil {
 		return err
 	}
-	for i := 0; i < len(e.Attributes); i++ {
+	for i := range e.Attributes {
 		a := e.Attributes[i]
 		// Only the conditional attributes get indented.
 		var attrIndent int
@@ -595,24 +594,22 @@ func writeNodesIndented(w io.Writer, level int, nodes []Node) error {
 
 func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 	startLevel := level
-	for i := 0; i < len(nodes); i++ {
-		_, isWhitespace := nodes[i].(Whitespace)
-
+	for i, n := range nodes {
 		// Skip whitespace nodes.
-		if isWhitespace {
+		if _, isWhitespace := n.(Whitespace); isWhitespace {
 			continue
 		}
-		if err := nodes[i].Write(w, level); err != nil {
+		if err := n.Write(w, level); err != nil {
 			return err
 		}
 
 		// Apply trailing whitespace if present.
 		trailing := SpaceVertical
-		if wst, isWhitespaceTrailer := nodes[i].(WhitespaceTrailer); isWhitespaceTrailer {
+		if wst, isWhitespaceTrailer := n.(WhitespaceTrailer); isWhitespaceTrailer {
 			trailing = wst.Trailing()
 		}
 		// Put a newline after the last node in indentation mode.
-		if indent && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(nodes[i])) {
+		if indent && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(n)) {
 			trailing = SpaceVertical
 		}
 		switch trailing {
@@ -693,7 +690,7 @@ func (se ScriptElement) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<script"); err != nil {
 		return err
 	}
-	for i := 0; i < len(se.Attributes); i++ {
+	for i := range se.Attributes {
 		if _, err := w.Write([]byte(" ")); err != nil {
 			return err
 		}
@@ -753,11 +750,10 @@ func (e RawElement) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<", e.Name); err != nil {
 		return err
 	}
-	for i := 0; i < len(e.Attributes); i++ {
+	for _, a := range e.Attributes {
 		if _, err := w.Write([]byte(" ")); err != nil {
 			return err
 		}
-		a := e.Attributes[i]
 		// Don't indent the attributes, only the conditional attributes get indented.
 		if err := a.Write(w, 0); err != nil {
 			return err
@@ -1162,8 +1158,7 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 		return err
 	}
 	indent++
-	for i := 0; i < len(se.Cases); i++ {
-		c := se.Cases[i]
+	for _, c := range se.Cases {
 		if err := writeIndent(w, indent, c.Expression.Value, "\n"); err != nil {
 			return err
 		}

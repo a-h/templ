@@ -45,7 +45,7 @@ func TestURL(t *testing.T) {
 }
 
 func BenchmarkURL(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		for _, test := range urlTests {
 			u := URL(test.url)
 			wasSanitized := u == FailedSanitizationURL

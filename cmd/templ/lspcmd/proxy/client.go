@@ -67,8 +67,7 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 	}
 	params.URI = lsp.DocumentURI(uri)
 	// Rewrite the positions.
-	for i := 0; i < len(params.Diagnostics); i++ {
-		item := params.Diagnostics[i]
+	for i, item := range params.Diagnostics {
 		start, ok := sourceMap.SourcePositionFromTarget(item.Range.Start.Line, item.Range.Start.Character)
 		if !ok {
 			continue

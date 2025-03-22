@@ -11,7 +11,7 @@ var benchmarkTemplate string
 
 func BenchmarkParse(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if _, err := ParseString(benchmarkTemplate); err != nil {
 			b.Fatal(err)
 		}
@@ -21,7 +21,7 @@ func BenchmarkParse(b *testing.B) {
 func BenchmarkFormat(b *testing.B) {
 	b.ReportAllocs()
 	sb := new(strings.Builder)
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		tf, err := ParseString(benchmarkTemplate)
 		if err != nil {
 			b.Fatal(err)

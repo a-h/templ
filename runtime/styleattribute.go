@@ -160,7 +160,7 @@ func handleSliceWithReflection(sb *strings.Builder, v any) (bool, error) {
 	if rv.Kind() != reflect.Slice {
 		return false, nil
 	}
-	for i := 0; i < rv.Len(); i++ {
+	for i := range rv.Len() {
 		elem := rv.Index(i).Interface()
 		if err := sanitizeStyleAttributeValue(sb, elem); err != nil {
 			return true, err

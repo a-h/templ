@@ -52,35 +52,35 @@ func TestStream(t *testing.T) {
 
 	// Append.
 	expectedAppends := 2
-	for i := 0; i < expectedAppends; i++ {
+	for range expectedAppends {
 		if err := Append(w, "appendTarget", contentTemplate); err != nil {
 			t.Fatalf("append failed: %v", err)
 		}
 	}
 	// Prepend.
 	expectedPrepends := 3
-	for i := 0; i < expectedPrepends; i++ {
+	for range expectedPrepends {
 		if err := Prepend(w, "prependTarget", contentTemplate); err != nil {
 			t.Fatalf("prepend failed: %v", err)
 		}
 	}
 	// Replace.
 	expectedReplaces := 4
-	for i := 0; i < expectedReplaces; i++ {
+	for range expectedReplaces {
 		if err := Replace(w, "replaceTarget", contentTemplate); err != nil {
 			t.Fatalf("replace failed: %v", err)
 		}
 	}
 	// Update.
 	expectedUpdates := 5
-	for i := 0; i < expectedUpdates; i++ {
+	for range expectedUpdates {
 		if err := Update(w, "updateTarget", contentTemplate); err != nil {
 			t.Fatalf("update failed: %v", err)
 		}
 	}
 	// Remove.
 	expectedRemoves := 6
-	for i := 0; i < expectedRemoves; i++ {
+	for range expectedRemoves {
 		if err := Remove(w, "removeTarget"); err != nil {
 			t.Fatalf("remove failed: %v", err)
 		}

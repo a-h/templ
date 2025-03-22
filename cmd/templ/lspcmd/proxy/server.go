@@ -370,21 +370,19 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 	// This command has a set of arguments, including Fix, Range and URI.
 	// However, these are just a map[string]any so for each command that we want to support,
 	// we need to know what the arguments are so that we can rewrite them.
-	for i := 0; i < len(result); i++ {
-		if !supportedCodeActions[result[i].Title] {
+	for _, r := range result {
+		if !supportedCodeActions[r.Title] {
 			continue
 		}
-		r := result[i]
 		// Rewrite the Diagnostics range field.
-		for di := 0; di < len(r.Diagnostics); di++ {
-			r.Diagnostics[di].Range = p.convertGoRangeToTemplRange(templURI, r.Diagnostics[di].Range)
+		for di, diag := range r.Diagnostics {
+			r.Diagnostics[di].Range = p.convertGoRangeToTemplRange(templURI, diag.Range)
 		}
 		// Rewrite the DocumentChanges.
 		if r.Edit != nil {
-			for dci := 0; dci < len(r.Edit.DocumentChanges); dci++ {
-				dc := r.Edit.DocumentChanges[0]
-				for ei := 0; ei < len(dc.Edits); ei++ {
-					dc.Edits[ei].Range = p.convertGoRangeToTemplRange(templURI, dc.Edits[ei].Range)
+			for dci, dc := range r.Edit.DocumentChanges {
+				for ei, edit := range dc.Edits {
+					dc.Edits[ei].Range = p.convertGoRangeToTemplRange(templURI, edit.Range)
 				}
 				dc.TextDocument.URI = templURI
 				r.Edit.DocumentChanges[dci] = dc
@@ -411,8 +409,7 @@ func (p *Server) CodeLens(ctx context.Context, params *lsp.CodeLensParams) (resu
 	if result == nil {
 		return
 	}
-	for i := 0; i < len(result); i++ {
-		cl := result[i]
+	for i, cl := range result {
 		cl.Range = p.convertGoRangeToTemplRange(templURI, cl.Range)
 		result[i] = cl
 	}
@@ -441,8 +438,7 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 	if result == nil {
 		return
 	}
-	for i := 0; i < len(result); i++ {
-		r := result[i]
+	for i, r := range result {
 		if r.TextEdit != nil {
 			r.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, r.TextEdit.Range)
 		}
@@ -491,8 +487,7 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	// Rewrite the result positions.
 	p.Log.Info("completion: received items", slog.Int("count", len(result.Items)))
 
-	for i := 0; i < len(result.Items); i++ {
-		item := result.Items[i]
+	for i, item := range result.Items {
 		if item.TextEdit != nil {
 			if item.TextEdit.TextEdit != nil {
 				item.TextEdit.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.TextEdit.Range)
@@ -602,10 +597,10 @@ func (p *Server) Declaration(ctx context.Context, params *lsp.DeclarationParams)
 	if result == nil {
 		return
 	}
-	for i := 0; i < len(result); i++ {
-		if isTemplGoFile, templURI := convertTemplGoToTemplURI(result[i].URI); isTemplGoFile {
+	for i, r := range result {
+		if isTemplGoFile, templURI := convertTemplGoToTemplURI(r.URI); isTemplGoFile {
 			result[i].URI = templURI
-			result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
+			result[i].Range = p.convertGoRangeToTemplRange(templURI, r.Range)
 		}
 	}
 	return
@@ -629,10 +624,10 @@ func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (
 	if result == nil {
 		return
 	}
-	for i := 0; i < len(result); i++ {
-		if isTemplGoFile, templURI := convertTemplGoToTemplURI(result[i].URI); isTemplGoFile {
+	for i, r := range result {
+		if isTemplGoFile, templURI := convertTemplGoToTemplURI(r.URI); isTemplGoFile {
 			result[i].URI = templURI
-			result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
+			result[i].Range = p.convertGoRangeToTemplRange(templURI, r.Range)
 		}
 	}
 	return
@@ -780,8 +775,8 @@ func (p *Server) DocumentColor(ctx context.Context, params *lsp.DocumentColorPar
 	if result == nil {
 		return
 	}
-	for i := 0; i < len(result); i++ {
-		result[i].Range = p.convertGoRangeToTemplRange(templURI, result[i].Range)
+	for i, r := range result {
+		result[i].Range = p.convertGoRangeToTemplRange(templURI, r.Range)
 	}
 	return
 }
@@ -877,7 +872,7 @@ func (p *Server) convertSymbolRange(templURI lsp.DocumentURI, s *lsp.DocumentSym
 	// Within the symbol, we can select sub-sections.
 	// These are Go expressions, in the standard source map.
 	s.SelectionRange = p.convertGoRangeToTemplRange(templURI, s.SelectionRange)
-	for i := 0; i < len(s.Children); i++ {
+	for i := range s.Children {
 		p.convertSymbolRange(templURI, &s.Children[i])
 		if !isRangeWithin(s.Range, s.Children[i].Range) {
 			p.Log.Error("child symbol range not within parent range", slog.Any("symbol", s.Children[i]), slog.Int("index", i))
@@ -995,8 +990,7 @@ func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationP
 		return
 	}
 	// Rewrite the response.
-	for i := 0; i < len(result); i++ {
-		r := result[i]
+	for i, r := range result {
 		r.URI = templURI
 		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
 		result[i] = r
@@ -1023,8 +1017,7 @@ func (p *Server) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTyp
 		return
 	}
 	// Rewrite the response.
-	for i := 0; i < len(result); i++ {
-		r := result[i]
+	for i, r := range result {
 		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
 		result[i] = r
 	}
@@ -1071,8 +1064,7 @@ func (p *Server) RangeFormatting(ctx context.Context, params *lsp.DocumentRangeF
 		return
 	}
 	// Rewrite the response.
-	for i := 0; i < len(result); i++ {
-		r := result[i]
+	for i, r := range result {
 		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
 		result[i] = r
 	}
@@ -1094,8 +1086,7 @@ func (p *Server) References(ctx context.Context, params *lsp.ReferenceParams) (r
 		return
 	}
 	// Rewrite the response.
-	for i := 0; i < len(result); i++ {
-		r := result[i]
+	for i, r := range result {
 		isTemplURI, templURI := convertTemplGoToTemplURI(r.URI)
 		if isTemplURI {
 			p.Log.Info(fmt.Sprintf("references-%d - range conversion for %s", i, r.URI))

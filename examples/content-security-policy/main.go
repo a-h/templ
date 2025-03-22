@@ -57,7 +57,7 @@ func (m *CSPMiddleware) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (m *CSPMiddleware) generateNonce() (string, error) {
 	const letters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-"
 	ret := make([]byte, m.Size)
-	for i := 0; i < m.Size; i++ {
+	for i := range m.Size {
 		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
 		if err != nil {
 			return "", err

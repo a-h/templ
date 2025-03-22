@@ -47,7 +47,7 @@ func ProcessChannel(templates <-chan string, dir string, f func(fileName string)
 	defer close(results)
 	var wg sync.WaitGroup
 	wg.Add(workerCount)
-	for i := 0; i < workerCount; i++ {
+	for range workerCount {
 		go func() {
 			defer wg.Done()
 			for sourceFileName := range templates {
