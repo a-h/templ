@@ -23,6 +23,8 @@ result
 # Editors
 ## nvim
 .null-ls*
+# vscode
+.vscode/
 
 # Go workspace.
 go.work

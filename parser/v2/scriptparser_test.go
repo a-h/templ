@@ -1,11 +1,54 @@
 package parser
 
 import (
+	"path/filepath"
 	"testing"
+
+	_ "embed"
 
 	"github.com/a-h/parse"
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/tools/txtar"
 )
+
+func TestScriptElementParserPlain(t *testing.T) {
+	files, _ := filepath.Glob("scriptparsertestdata/*.txt")
+	if len(files) == 0 {
+		t.Errorf("no test files found")
+	}
+	for _, file := range files {
+		t.Run(filepath.Base(file), func(t *testing.T) {
+			a, err := txtar.ParseFile(file)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(a.Files) != 2 {
+				t.Fatalf("expected 2 files, got %d", len(a.Files))
+			}
+
+			input := parse.NewInput(clean(a.Files[0].Data))
+			result, ok, err := scriptElement.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
+			}
+			if !ok {
+				t.Fatalf("failed to parse at %d", input.Index())
+			}
+
+			se, isScriptElement := result.(ScriptElement)
+			if !isScriptElement {
+				t.Fatalf("expected ScriptElement, got %T", result)
+			}
+			if len(se.Contents) != 1 {
+				t.Fatalf("expected 1 content, got %d", len(se.Contents))
+			}
+			expected := clean(a.Files[1].Data)
+			if diff := cmp.Diff(*se.Contents[0].Value, string(expected)); diff != "" {
+				t.Fatalf("%s:\n%s", file, diff)
+			}
+		})
+	}
+}
 
 func TestScriptElementParser(t *testing.T) {
 	tests := []struct {

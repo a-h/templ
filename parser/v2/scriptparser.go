@@ -52,6 +52,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	// Parse the contents, we should get script text or Go expressions up until the closing tag.
 	var sb strings.Builder
 	var isInsideStringLiteral bool
+
 loop:
 	for {
 		// Read and decide whether we're we've hit a:
@@ -91,6 +92,7 @@ loop:
 			continue loop
 		}
 
+		// Read JavaScript chracaters.
 		for {
 			before := pi.Index()
 			var c string
@@ -105,7 +107,11 @@ loop:
 				}
 				peeked, _ := pi.Peek(1)
 				peeked = c + peeked
-				if isEOF || peeked == "{{" || peeked == "</" || peeked == "//" || peeked == "/*" {
+
+				breakForGo := peeked == "{{"
+				breakForHTML := !isInsideStringLiteral && (peeked == "</" || peeked == "//" || peeked == "/*")
+
+				if isEOF || breakForGo || breakForHTML {
 					if sb.Len() > 0 {
 						e.Contents = append(e.Contents, NewScriptContentsJS(sb.String()))
 						sb.Reset()
