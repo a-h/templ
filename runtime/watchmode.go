@@ -25,7 +25,7 @@ func GetDevModeTextFileName(templFileName string) string {
 	if err != nil {
 		absFileName = templFileName
 	}
-	absFileName, err = filepath.EvalSymlinks(templFileName)
+	absFileName, err = filepath.EvalSymlinks(absFileName)
 	if err != nil {
 		absFileName = templFileName
 	}
