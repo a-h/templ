@@ -241,3 +241,24 @@ but it's commented out */
 		})
 	}
 }
+
+func FuzzScriptParser(f *testing.F) {
+	files, _ := filepath.Glob("scriptparsertestdata/*.txt")
+	if len(files) == 0 {
+		f.Errorf("no test files found")
+	}
+	for _, file := range files {
+		a, err := txtar.ParseFile(file)
+		if err != nil {
+			f.Fatal(err)
+		}
+		if len(a.Files) != 2 {
+			f.Fatalf("expected 2 files, got %d", len(a.Files))
+		}
+		f.Add(clean(a.Files[0].Data))
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		_, _, _ = scriptElement.Parse(parse.NewInput(input))
+	})
+}

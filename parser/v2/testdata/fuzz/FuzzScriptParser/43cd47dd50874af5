@@ -1,0 +1,2 @@
+go test fuzz v1
+string("<script>\n  function showSuccessMessage(responseText) {\n\t\t\tconst formRespo</scriptcument.getElementById('form-response');\n\t\t\tformResponse.innerHTML = `\n\t\t\t\t<div class=\"bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded\">\n\t\t\t\t\t${responseText}\n\t\t\t\t</div>`;\n\t\t}\nnse = do>")
