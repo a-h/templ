@@ -52,6 +52,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	// Parse the contents, we should get script text or Go expressions up until the closing tag.
 	var sb strings.Builder
 	var isInsideStringLiteral bool
+
 loop:
 	for {
 		// Read and decide whether we're we've hit a:
@@ -67,6 +68,11 @@ loop:
 
 		if _, ok, err = jsEndTag.Parse(pi); err != nil || ok {
 			// We've reached the end of the script.
+			break loop
+		}
+
+		if _, ok, err = endTagStart.Parse(pi); err != nil || ok {
+			// We've reached the end of the script, but the end tag is probably invalid.
 			break loop
 		}
 
@@ -91,6 +97,7 @@ loop:
 			continue loop
 		}
 
+		// Read JavaScript chracaters.
 		for {
 			before := pi.Index()
 			var c string
@@ -105,7 +112,11 @@ loop:
 				}
 				peeked, _ := pi.Peek(1)
 				peeked = c + peeked
-				if isEOF || peeked == "{{" || peeked == "</" || peeked == "//" || peeked == "/*" {
+
+				breakForGo := peeked == "{{"
+				breakForHTML := !isInsideStringLiteral && (peeked == "</" || peeked == "//" || peeked == "/*")
+
+				if isEOF || breakForGo || breakForHTML {
 					if sb.Len() > 0 {
 						e.Contents = append(e.Contents, NewScriptContentsJS(sb.String()))
 						sb.Reset()
@@ -128,6 +139,7 @@ loop:
 }
 
 var jsEndTag = parse.String("</script>")
+var endTagStart = parse.String("</")
 
 var jsCharacter = parse.Any(jsEscapedCharacter, parse.AnyRune)
 
@@ -136,7 +148,9 @@ var jsEscapedCharacter = parse.StringFrom(parse.String("\\"), parse.AnyRune)
 var jsComment = parse.Any(jsSingleLineComment, jsMultiLineComment)
 
 var jsStartSingleLineComment = parse.String("//")
-var jsSingleLineComment = parse.StringFrom(jsStartSingleLineComment, parse.StringUntil(parse.NewLine), parse.NewLine)
+var jsEndOfSingleLineComment = parse.StringFrom(parse.Or(parse.NewLine, parse.EOF[string]()))
+var jsSingleLineComment = parse.StringFrom(jsStartSingleLineComment, parse.StringUntil(jsEndOfSingleLineComment), jsEndOfSingleLineComment)
 
 var jsStartMultiLineComment = parse.String("/*")
-var jsMultiLineComment = parse.StringFrom(jsStartMultiLineComment, parse.StringUntil(parse.String("*/")), parse.String("*/"), parse.OptionalWhitespace)
+var jsEndOfMultiLineComment = parse.StringFrom(parse.Or(parse.String("*/"), parse.EOF[string]()))
+var jsMultiLineComment = parse.StringFrom(jsStartMultiLineComment, parse.StringUntil(jsEndOfMultiLineComment), jsEndOfMultiLineComment, parse.OptionalWhitespace)

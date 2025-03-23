@@ -1,0 +1,2 @@
+go test fuzz v1
+string("<script>/*/00000\x17I020000000////00000\x17000")

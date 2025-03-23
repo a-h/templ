@@ -1,3 +1,4 @@
+#!/bin/bash
 echo If
 go test -fuzz=FuzzIf -fuzztime=120s
 echo For

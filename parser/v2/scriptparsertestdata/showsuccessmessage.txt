@@ -1,0 +1,20 @@
+-- in --
+<script>
+  function showSuccessMessage(responseText) {
+			const formResponse = document.getElementById('form-response');
+			formResponse.innerHTML = `
+				<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+					${responseText}
+				</div>`;
+		}
+</script>
+-- out --
+
+  function showSuccessMessage(responseText) {
+			const formResponse = document.getElementById('form-response');
+			formResponse.innerHTML = `
+				<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+					${responseText}
+				</div>`;
+		}
+
