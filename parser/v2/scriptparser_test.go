@@ -2,6 +2,7 @@ package parser
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	_ "embed"
@@ -39,11 +40,20 @@ func TestScriptElementParserPlain(t *testing.T) {
 			if !isScriptElement {
 				t.Fatalf("expected ScriptElement, got %T", result)
 			}
-			if len(se.Contents) != 1 {
-				t.Fatalf("expected 1 content, got %d", len(se.Contents))
+
+			var actual strings.Builder
+			for _, content := range se.Contents {
+				if content.GoCode != nil {
+					t.Fatalf("expected plain text, got GoCode")
+				}
+				if content.Value == nil {
+					t.Fatalf("expected plain text, got nil")
+				}
+				actual.WriteString(*content.Value)
 			}
+
 			expected := clean(a.Files[1].Data)
-			if diff := cmp.Diff(*se.Contents[0].Value, string(expected)); diff != "" {
+			if diff := cmp.Diff(actual.String(), string(expected)); diff != "" {
 				t.Fatalf("%s:\n%s", file, diff)
 			}
 		})

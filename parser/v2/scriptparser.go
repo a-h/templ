@@ -8,6 +8,15 @@ import (
 
 var scriptElement = scriptElementParser{}
 
+type jsQuote string
+
+const (
+	jsQuoteNone     jsQuote = ""
+	jsQuoteSingle   jsQuote = `'`
+	jsQuoteDouble   jsQuote = `"`
+	jsQuoteBacktick jsQuote = "`"
+)
+
 type scriptElementParser struct{}
 
 func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
@@ -51,7 +60,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 
 	// Parse the contents, we should get script text or Go expressions up until the closing tag.
 	var sb strings.Builder
-	var isInsideStringLiteral bool
+	var stringLiteralDelimiter jsQuote
 
 loop:
 	for {
@@ -82,7 +91,7 @@ loop:
 			return nil, false, err
 		}
 		if ok {
-			e.Contents = append(e.Contents, NewScriptContentsGo(code.(GoCode), isInsideStringLiteral))
+			e.Contents = append(e.Contents, NewScriptContentsGo(code.(GoCode), stringLiteralDelimiter != jsQuoteNone))
 			continue loop
 		}
 
@@ -108,13 +117,18 @@ loop:
 			if ok {
 				_, isEOF, _ := parse.EOF[string]().Parse(pi)
 				if c == `"` || c == "'" || c == "`" {
-					isInsideStringLiteral = !isInsideStringLiteral
+					// Start or exit a string literal.
+					if stringLiteralDelimiter == jsQuoteNone {
+						stringLiteralDelimiter = jsQuote(c)
+					} else if stringLiteralDelimiter == jsQuote(c) {
+						stringLiteralDelimiter = jsQuoteNone
+					}
 				}
 				peeked, _ := pi.Peek(1)
 				peeked = c + peeked
 
 				breakForGo := peeked == "{{"
-				breakForHTML := !isInsideStringLiteral && (peeked == "</" || peeked == "//" || peeked == "/*")
+				breakForHTML := stringLiteralDelimiter == jsQuoteNone && (peeked == "</" || peeked == "//" || peeked == "/*")
 
 				if isEOF || breakForGo || breakForHTML {
 					if sb.Len() > 0 {
@@ -143,7 +157,21 @@ var endTagStart = parse.String("</")
 
 var jsCharacter = parse.Any(jsEscapedCharacter, parse.AnyRune)
 
-var jsEscapedCharacter = parse.StringFrom(parse.String("\\"), parse.AnyRune)
+// \uXXXX	Unicode code point escape	'\u0061' = 'a'
+var hexDigit = parse.Any(parse.ZeroToNine, parse.RuneIn("abcdef"), parse.RuneIn("ABCDEF"))
+var jsUnicodeEscape = parse.StringFrom(parse.String("\\u"), hexDigit, hexDigit, hexDigit, hexDigit)
+
+// \u{X...}	ES6+ extended Unicode escape	'\u{1F600}' = '😀'
+var jsExtendedUnicodeEscape = parse.StringFrom(parse.String("\\u{"), hexDigit, parse.StringFrom(parse.AtLeast(1, parse.ZeroOrMore(hexDigit))), parse.String("}"))
+
+// \xXX	Hex code (2-digit)	'\x41' = 'A'
+var jsHexEscape = parse.StringFrom(parse.String("\\x"), hexDigit, hexDigit)
+
+// \x Backslash escape	'\\' = '\'
+var jsBackslashEscape = parse.StringFrom(parse.String("\\"), parse.AnyRune)
+
+// All escapes.
+var jsEscapedCharacter = parse.Any(jsBackslashEscape, jsUnicodeEscape, jsHexEscape, jsExtendedUnicodeEscape)
 
 var jsComment = parse.Any(jsSingleLineComment, jsMultiLineComment)
 

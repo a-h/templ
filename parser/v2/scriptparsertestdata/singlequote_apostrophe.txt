@@ -1,0 +1,8 @@
+-- in --
+<script>
+window.alert('An unclosed " is allowed in single quotes');
+</script>
+-- out --
+
+window.alert('An unclosed " is allowed in single quotes');
+
