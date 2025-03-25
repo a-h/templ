@@ -1,0 +1,8 @@
+-- in --
+<script>
+window.alert('This is "quoted"');
+</script>
+-- out --
+
+window.alert('This is "quoted"');
+

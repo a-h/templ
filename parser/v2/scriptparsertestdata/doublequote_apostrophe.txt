@@ -1,0 +1,8 @@
+-- in --
+<script>
+window.alert("You can use isn't and other text");
+</script>
+-- out --
+
+window.alert("You can use isn't and other text");
+
