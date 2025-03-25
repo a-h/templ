@@ -60,8 +60,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 
 	// Parse the contents, we should get script text or Go expressions up until the closing tag.
 	var sb strings.Builder
-	var isInsideStringLiteral bool
-	var stringLiteral jsQuote
+	var stringLiteralDelimiter jsQuote
 
 loop:
 	for {
@@ -92,7 +91,7 @@ loop:
 			return nil, false, err
 		}
 		if ok {
-			e.Contents = append(e.Contents, NewScriptContentsGo(code.(GoCode), isInsideStringLiteral))
+			e.Contents = append(e.Contents, NewScriptContentsGo(code.(GoCode), stringLiteralDelimiter != jsQuoteNone))
 			continue loop
 		}
 
@@ -118,19 +117,18 @@ loop:
 			if ok {
 				_, isEOF, _ := parse.EOF[string]().Parse(pi)
 				if c == `"` || c == "'" || c == "`" {
-					if isInsideStringLiteral && c == string(stringLiteral) {
-						isInsideStringLiteral = false
-						stringLiteral = jsQuoteNone
-					} else if !isInsideStringLiteral {
-						isInsideStringLiteral = true
-						stringLiteral = jsQuote(c)
+					// Start or exit a string literal.
+					if stringLiteralDelimiter == jsQuoteNone {
+						stringLiteralDelimiter = jsQuote(c)
+					} else if stringLiteralDelimiter == jsQuote(c) {
+						stringLiteralDelimiter = jsQuoteNone
 					}
 				}
 				peeked, _ := pi.Peek(1)
 				peeked = c + peeked
 
 				breakForGo := peeked == "{{"
-				breakForHTML := !isInsideStringLiteral && (peeked == "</" || peeked == "//" || peeked == "/*")
+				breakForHTML := stringLiteralDelimiter == jsQuoteNone && (peeked == "</" || peeked == "//" || peeked == "/*")
 
 				if isEOF || breakForGo || breakForHTML {
 					if sb.Len() > 0 {
