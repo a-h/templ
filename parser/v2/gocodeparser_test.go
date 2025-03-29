@@ -11,12 +11,12 @@ func TestGoCodeParser(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected GoCode
+		expected *GoCode
 	}{
 		{
 			name:  "basic expression",
 			input: `{{ p := "this" }}`,
-			expected: GoCode{
+			expected: &GoCode{
 				Expression: Expression{
 					Value: `p := "this"`,
 					Range: Range{
@@ -37,7 +37,7 @@ func TestGoCodeParser(t *testing.T) {
 		{
 			name:  "basic expression, no space",
 			input: `{{p:="this"}}`,
-			expected: GoCode{
+			expected: &GoCode{
 				Expression: Expression{
 					Value: `p:="this"`,
 					Range: Range{
@@ -62,7 +62,7 @@ func TestGoCodeParser(t *testing.T) {
 					dosomething()
 				}
 			}}`,
-			expected: GoCode{
+			expected: &GoCode{
 				Expression: Expression{
 					Value: `
 				p := func() {
@@ -93,7 +93,7 @@ func TestGoCodeParser(t *testing.T) {
 	four := "four"
 	// Comment at end of expression.
 }}`,
-			expected: GoCode{
+			expected: &GoCode{
 				Expression: Expression{
 					Value: `
 	one := "one"
@@ -122,7 +122,7 @@ func TestGoCodeParser(t *testing.T) {
 			if !ok {
 				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
-			actual := an.(GoCode)
+			actual := an.(*GoCode)
 			if diff := cmp.Diff(tt.expected, actual); diff != "" {
 				t.Error(diff)
 			}
