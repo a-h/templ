@@ -26,6 +26,8 @@ type Arguments struct {
 	PPROF bool
 	// HTTPDebug sets the HTTP endpoint to listen on. Leave empty for no web debug.
 	HTTPDebug string
+	// NoPreload disables preloading of templ files on server startup (useful for large monorepos)
+	NoPreload bool
 }
 
 func Run(stdin io.Reader, stdout, stderr io.Writer, args Arguments) (err error) {
@@ -95,7 +97,7 @@ func run(ctx context.Context, log *slog.Logger, templStream jsonrpc2.Stream, arg
 
 	log.Info("creating proxy")
 	// Create the proxy to sit between.
-	serverProxy := proxy.NewServer(log, goplsServer, cache, diagnosticCache)
+	serverProxy := proxy.NewServer(log, goplsServer, cache, diagnosticCache, args.NoPreload)
 
 	// Create templ server.
 	log.Info("creating templ server")
