@@ -240,66 +240,70 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	}
 
 	if !p.NoPreload {
-		for _, c := range params.WorkspaceFolders {
-			path := strings.TrimPrefix(c.URI, "file://")
-			werr := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				p.Log.Info("found file", slog.String("path", path))
-				uri := uri.URI("file://" + path)
-				isTemplFile, goURI := convertTemplToGoURI(uri)
-
-				if !isTemplFile {
-					return nil
-				}
-
-				b, err := os.ReadFile(path)
-				if err != nil {
-					return err
-				}
-				p.TemplSource.Set(string(uri), NewDocument(p.Log, string(b)))
-				// Parse the template.
-				template, ok, err := p.parseTemplate(ctx, uri, string(b))
-				if err != nil {
-					p.Log.Error("parseTemplate failure", slog.Any("error", err))
-				}
-				if !ok {
-					p.Log.Info("parsing template did not succeed", slog.String("uri", string(uri)))
-					return nil
-				}
-				w := new(strings.Builder)
-				generatorOutput, err := generator.Generate(template, w)
-				if err != nil {
-					return fmt.Errorf("generate failure: %w", err)
-				}
-				p.Log.Info("setting source map cache contents", slog.String("uri", string(uri)))
-				p.SourceMapCache.Set(string(uri), generatorOutput.SourceMap)
-				// Set the Go contents.
-				p.GoSource[string(uri)] = w.String()
-
-				didOpenParams := &lsp.DidOpenTextDocumentParams{
-					TextDocument: lsp.TextDocumentItem{
-						URI:        goURI,
-						Text:       w.String(),
-						Version:    1,
-						LanguageID: "go",
-					},
-				}
-
-				p.preLoadURIs = append(p.preLoadURIs, didOpenParams)
-				return nil
-			})
-			if werr != nil {
-				p.Log.Error("walk error", slog.Any("error", werr))
-			}
-		}
+		p.preload(params.WorkspaceFolders)
 	}
 
 	result.ServerInfo.Name = "templ-lsp"
 	result.ServerInfo.Version = templ.Version()
 
 	return result, err
+}
+
+func (p *Server) preload(workspaceFolders []lsp.WorkspaceFolder) {
+	for _, c := range workspaceFolders {
+		path := strings.TrimPrefix(c.URI, "file://")
+		werr := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			p.Log.Info("found file", slog.String("path", path))
+			uri := uri.URI("file://" + path)
+			isTemplFile, goURI := convertTemplToGoURI(uri)
+
+			if !isTemplFile {
+				return nil
+			}
+
+			b, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			p.TemplSource.Set(string(uri), NewDocument(p.Log, string(b)))
+			// Parse the template.
+			template, ok, err := p.parseTemplate(ctx, uri, string(b))
+			if err != nil {
+				p.Log.Error("parseTemplate failure", slog.Any("error", err))
+			}
+			if !ok {
+				p.Log.Info("parsing template did not succeed", slog.String("uri", string(uri)))
+				return nil
+			}
+			w := new(strings.Builder)
+			generatorOutput, err := generator.Generate(template, w)
+			if err != nil {
+				return fmt.Errorf("generate failure: %w", err)
+			}
+			p.Log.Info("setting source map cache contents", slog.String("uri", string(uri)))
+			p.SourceMapCache.Set(string(uri), generatorOutput.SourceMap)
+			// Set the Go contents.
+			p.GoSource[string(uri)] = w.String()
+
+			didOpenParams := &lsp.DidOpenTextDocumentParams{
+				TextDocument: lsp.TextDocumentItem{
+					URI:        goURI,
+					Text:       w.String(),
+					Version:    1,
+					LanguageID: "go",
+				},
+			}
+
+			p.preLoadURIs = append(p.preLoadURIs, didOpenParams)
+			return nil
+		})
+		if werr != nil {
+			p.Log.Error("walk error", slog.Any("error", werr))
+		}
+	}
 }
 
 func (p *Server) Initialized(ctx context.Context, params *lsp.InitializedParams) (err error) {
