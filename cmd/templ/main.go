@@ -359,7 +359,7 @@ Args:
     Enable pprof web server (default address is localhost:9999)
   -http string
     Enable http debug server by setting a listen address (e.g. localhost:7474)
-  -noPreload
+  -no-preload
     Disable preloading of templ files on server startup (useful for large monorepos)
 `
 
@@ -371,7 +371,7 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	helpFlag := cmd.Bool("help", false, "")
 	pprofFlag := cmd.Bool("pprof", false, "")
 	httpDebugFlag := cmd.String("http", "", "")
-	noPreloadFlag := cmd.Bool("noPreload", false, "")
+	noPreloadFlag := cmd.Bool("no-preload", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
 		fmt.Fprint(stderr, lspUsageText)
