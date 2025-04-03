@@ -9,7 +9,7 @@ var expressionFuncEnd = parse.All(parse.Rune(')'), openBraceWithOptionalPadding)
 
 // Template
 
-var template = parse.Func(func(pi *parse.Input) (r HTMLTemplate, ok bool, err error) {
+var template = parse.Func(func(pi *parse.Input) (r *HTMLTemplate, ok bool, err error) {
 	start := pi.Position()
 
 	// templ FuncName(p Person, other Other) {
@@ -17,7 +17,9 @@ var template = parse.Func(func(pi *parse.Input) (r HTMLTemplate, ok bool, err er
 	if te, ok, err = templateExpressionParser.Parse(pi); err != nil || !ok {
 		return
 	}
-	r.Expression = te.Expression
+	r = &HTMLTemplate{
+		Expression: te.Expression,
+	}
 
 	// Once we're in a template, we should expect some template whitespace, if/switch/for,
 	// or node string expressions etc.

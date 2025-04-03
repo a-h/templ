@@ -14,7 +14,7 @@ func TestGeneratorSourceMap(t *testing.T) {
 		w:         NewRangeWriter(w),
 		sourceMap: parser.NewSourceMap(),
 	}
-	invalidExp := parser.TemplateFileGoExpression{
+	invalidExp := &parser.TemplateFileGoExpression{
 		Expression: parser.Expression{
 			Value: "line1\nline2",
 		},
@@ -32,7 +32,7 @@ func TestGeneratorSourceMap(t *testing.T) {
 		t.Errorf("unexpected target:\n%v", diff)
 	}
 
-	withCommentExp := parser.TemplateFileGoExpression{
+	withCommentExp := &parser.TemplateFileGoExpression{
 		Expression: parser.Expression{
 			Value: `package main
 

@@ -11,13 +11,13 @@ func TestSwitchExpressionParser(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected SwitchExpression
+		expected *SwitchExpression
 	}{
 		{
 			name: "switch: simple",
 			input: `switch "stringy" {
 }`,
-			expected: SwitchExpression{
+			expected: &SwitchExpression{
 				Expression: Expression{
 					Value: `"stringy"`,
 					Range: Range{
@@ -43,7 +43,7 @@ default:
 	  { "span content" }
 	</span>
 }`,
-			expected: SwitchExpression{
+			expected: &SwitchExpression{
 				Expression: Expression{
 					Value: `"stringy"`,
 					Range: Range{
@@ -77,16 +77,16 @@ default:
 							},
 						},
 						Children: []Node{
-							Whitespace{Value: "\t"},
-							Element{
+							&Whitespace{Value: "\t"},
+							&Element{
 								Name: "span",
 								NameRange: Range{
 									From: Position{Index: 30, Line: 2, Col: 2},
 									To:   Position{Index: 34, Line: 2, Col: 6},
 								},
 								Children: []Node{
-									Whitespace{Value: "\n\t  "},
-									StringExpression{
+									&Whitespace{Value: "\n\t  "},
+									&StringExpression{
 										Expression: Expression{
 											Value: `"span content"`,
 											Range: Range{
@@ -121,7 +121,7 @@ default:
   { "span content" }
 </span>
 }`,
-			expected: SwitchExpression{
+			expected: &SwitchExpression{
 				Expression: Expression{
 					Value: `"stringy"`,
 					Range: Range{
@@ -155,15 +155,15 @@ default:
 							},
 						},
 						Children: []Node{
-							Element{
+							&Element{
 								Name: "span",
 								NameRange: Range{
 									From: Position{Index: 37, Line: 2, Col: 1},
 									To:   Position{Index: 41, Line: 2, Col: 5},
 								},
 								Children: []Node{
-									Whitespace{Value: "\n  "},
-									StringExpression{
+									&Whitespace{Value: "\n  "},
+									&StringExpression{
 										Expression: Expression{
 											Value: `"span content"`,
 											Range: Range{
@@ -198,7 +198,7 @@ default:
 	case "b":
 		{ "B" }
 }`,
-			expected: SwitchExpression{
+			expected: &SwitchExpression{
 				Expression: Expression{
 					Value: `"stringy"`,
 					Range: Range{
@@ -232,10 +232,10 @@ default:
 							},
 						},
 						Children: []Node{
-							Whitespace{
+							&Whitespace{
 								Value: "\t\t",
 							},
-							StringExpression{
+							&StringExpression{
 								Expression: Expression{
 									Value: `"A"`,
 									Range: Range{
@@ -272,10 +272,10 @@ default:
 							},
 						},
 						Children: []Node{
-							Whitespace{
+							&Whitespace{
 								Value: "\t\t",
 							},
-							StringExpression{
+							&StringExpression{
 								Expression: Expression{
 									Value: `"B"`,
 									Range: Range{

@@ -12,13 +12,13 @@ func TestScriptTemplateParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected ScriptTemplate
+		expected *ScriptTemplate
 	}{
 		{
 			name: "script: no parameters, no content",
 			input: `script Name() {
 }`,
-			expected: ScriptTemplate{
+			expected: &ScriptTemplate{
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 17, Line: 1, Col: 1},
@@ -59,7 +59,7 @@ func TestScriptTemplateParser(t *testing.T) {
 			name: "script: no spaces",
 			input: `script Name(){
 }`,
-			expected: ScriptTemplate{
+			expected: &ScriptTemplate{
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 16, Line: 1, Col: 1},
@@ -101,7 +101,7 @@ func TestScriptTemplateParser(t *testing.T) {
 			input: `script Name() {
 var x = "x";
 }`,
-			expected: ScriptTemplate{
+			expected: &ScriptTemplate{
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 30, Line: 2, Col: 1},
@@ -144,7 +144,7 @@ var x = "x";
 			input: `script Name(value string) {
 console.log(value);
 }`,
-			expected: ScriptTemplate{
+			expected: &ScriptTemplate{
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 49, Line: 2, Col: 1},
@@ -187,7 +187,7 @@ console.log(value);
 			input: `script Name() {
 	//'
 }`,
-			expected: ScriptTemplate{
+			expected: &ScriptTemplate{
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 22, Line: 2, Col: 1},
@@ -230,7 +230,7 @@ console.log(value);
 			input: `script Name() {
   let x = '';
 }`,
-			expected: ScriptTemplate{
+			expected: &ScriptTemplate{
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 31, Line: 2, Col: 1},

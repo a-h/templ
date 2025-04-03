@@ -11,33 +11,33 @@ func TestDocTypeParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected DocType
+		expected *DocType
 	}{
 		{
 			name:  "HTML 5 doctype - uppercase",
 			input: `<!DOCTYPE html>`,
-			expected: DocType{
+			expected: &DocType{
 				Value: "html",
 			},
 		},
 		{
 			name:  "HTML 5 doctype - lowercase",
 			input: `<!doctype html>`,
-			expected: DocType{
+			expected: &DocType{
 				Value: "html",
 			},
 		},
 		{
 			name:  "HTML 4.01 doctype",
 			input: `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">`,
-			expected: DocType{
+			expected: &DocType{
 				Value: `HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"`,
 			},
 		},
 		{
 			name:  "XHTML 1.1",
 			input: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">`,
-			expected: DocType{
+			expected: &DocType{
 				Value: `html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"`,
 			},
 		},

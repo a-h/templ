@@ -12,9 +12,9 @@ type Diagnostic struct {
 	Range   Range
 }
 
-func walkTemplate(t TemplateFile, f func(Node) bool) {
+func walkTemplate(t *TemplateFile, f func(Node) bool) {
 	for _, n := range t.Nodes {
-		hn, ok := n.(HTMLTemplate)
+		hn, ok := n.(*HTMLTemplate)
 		if !ok {
 			continue
 		}
@@ -36,7 +36,7 @@ var diagnosers = []diagnoser{
 	useOfLegacyCallSyntaxDiagnoser,
 }
 
-func Diagnose(t TemplateFile) ([]Diagnostic, error) {
+func Diagnose(t *TemplateFile) ([]Diagnostic, error) {
 	var diags []Diagnostic
 	var errs error
 	walkTemplate(t, func(n Node) bool {
@@ -54,7 +54,7 @@ func Diagnose(t TemplateFile) ([]Diagnostic, error) {
 }
 
 func useOfLegacyCallSyntaxDiagnoser(n Node) ([]Diagnostic, error) {
-	if c, ok := n.(CallTemplateExpression); ok {
+	if c, ok := n.(*CallTemplateExpression); ok {
 		return []Diagnostic{{
 			Message: "`{! foo }` syntax is deprecated. Use `@foo` syntax instead. Run `templ fmt .` to fix all instances.",
 			Range:   c.Expression.Range,

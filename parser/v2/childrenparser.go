@@ -17,5 +17,5 @@ var childrenExpression = parse.Func(func(in *parse.Input) (n Node, ok bool, err 
 	if err != nil || !ok {
 		return
 	}
-	return ChildrenExpression{}, true, nil
+	return &ChildrenExpression{}, true, nil
 })

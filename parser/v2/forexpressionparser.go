@@ -10,7 +10,7 @@ var forExpression parse.Parser[Node] = forExpressionParser{}
 type forExpressionParser struct{}
 
 func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	var r ForExpression
+	r := &ForExpression{}
 	start := pi.Index()
 
 	// Strip leading whitespace and look for `for `.

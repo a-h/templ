@@ -10,7 +10,6 @@ var switchExpression parse.Parser[Node] = switchExpressionParser{}
 type switchExpressionParser struct{}
 
 func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	var r SwitchExpression
 	start := pi.Index()
 
 	// Check the prefix first.
@@ -20,6 +19,7 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error
 	}
 
 	// Parse the Go switch expression.
+	r := &SwitchExpression{}
 	if r.Expression, err = parseGo("switch", pi, goexpression.Switch); err != nil {
 		return r, false, err
 	}

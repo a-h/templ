@@ -11,22 +11,22 @@ func TestChildrenExpressionParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected ChildrenExpression
+		expected *ChildrenExpression
 	}{
 		{
 			name:     "standard",
 			input:    `{ children...}`,
-			expected: ChildrenExpression{},
+			expected: &ChildrenExpression{},
 		},
 		{
 			name:     "condensed",
 			input:    `{children...}`,
-			expected: ChildrenExpression{},
+			expected: &ChildrenExpression{},
 		},
 		{
 			name:     "extra spaces",
 			input:    `{  children...  }`,
-			expected: ChildrenExpression{},
+			expected: &ChildrenExpression{},
 		},
 	}
 	for _, tt := range tests {

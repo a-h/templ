@@ -11,12 +11,12 @@ func TestTextParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected Text
+		expected *Text
 	}{
 		{
 			name:  "Text ends at an element start",
 			input: `abcdef<a href="https://example.com">More</a>`,
-			expected: Text{
+			expected: &Text{
 				Value: "abcdef",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -27,7 +27,7 @@ func TestTextParser(t *testing.T) {
 		{
 			name:  "Text ends at a templ expression start",
 			input: `abcdef{ "test" }`,
-			expected: Text{
+			expected: &Text{
 				Value: "abcdef",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -38,7 +38,7 @@ func TestTextParser(t *testing.T) {
 		{
 			name:  "Text may contain spaces",
 			input: `abcdef ghijk{ "test" }`,
-			expected: Text{
+			expected: &Text{
 				Value: "abcdef ghijk",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -49,7 +49,7 @@ func TestTextParser(t *testing.T) {
 		{
 			name:  "Text may contain named references",
 			input: `abcdef&nbsp;ghijk{ "test" }`,
-			expected: Text{
+			expected: &Text{
 				Value: "abcdef&nbsp;ghijk",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -60,7 +60,7 @@ func TestTextParser(t *testing.T) {
 		{
 			name:  "Text may contain base 10 numeric references",
 			input: `abcdef&#32;ghijk{ "test" }`,
-			expected: Text{
+			expected: &Text{
 				Value: "abcdef&#32;ghijk",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -71,7 +71,7 @@ func TestTextParser(t *testing.T) {
 		{
 			name:  "Text may contain hexadecimal numeric references",
 			input: `abcdef&#x20;ghijk{ "test" }`,
-			expected: Text{
+			expected: &Text{
 				Value: "abcdef&#x20;ghijk",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -82,7 +82,7 @@ func TestTextParser(t *testing.T) {
 		{
 			name:  "Multiline text is collected line by line",
 			input: "Line 1\nLine 2",
-			expected: Text{
+			expected: &Text{
 				Value: "Line 1",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -94,7 +94,7 @@ func TestTextParser(t *testing.T) {
 		{
 			name:  "Multiline text is collected line by line (Windows)",
 			input: "Line 1\r\nLine 2",
-			expected: Text{
+			expected: &Text{
 				Value: "Line 1",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},

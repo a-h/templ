@@ -5,11 +5,11 @@ import (
 	"github.com/a-h/templ/parser/v2/goexpression"
 )
 
-var conditionalAttribute parse.Parser[ConditionalAttribute] = conditionalAttributeParser{}
+var conditionalAttribute parse.Parser[*ConditionalAttribute] = conditionalAttributeParser{}
 
 type conditionalAttributeParser struct{}
 
-func (conditionalAttributeParser) Parse(pi *parse.Input) (r ConditionalAttribute, ok bool, err error) {
+func (conditionalAttributeParser) Parse(pi *parse.Input) (r *ConditionalAttribute, ok bool, err error) {
 	start := pi.Index()
 
 	// Strip leading whitespace and look for `if `.
@@ -22,6 +22,7 @@ func (conditionalAttributeParser) Parse(pi *parse.Input) (r ConditionalAttribute
 	}
 
 	// Parse the Go if expression.
+	r = &ConditionalAttribute{}
 	if r.Expression, err = parseGo("if attribute", pi, goexpression.If); err != nil {
 		return
 	}

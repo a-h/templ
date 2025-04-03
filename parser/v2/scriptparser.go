@@ -28,7 +28,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	}
 
 	// Element name.
-	var e ScriptElement
+	e := &ScriptElement{}
 	var name string
 	if name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
@@ -91,7 +91,7 @@ loop:
 			return nil, false, err
 		}
 		if ok {
-			e.Contents = append(e.Contents, NewScriptContentsGo(code.(GoCode), stringLiteralDelimiter != jsQuoteNone))
+			e.Contents = append(e.Contents, NewScriptContentsGo(code.(*GoCode), stringLiteralDelimiter != jsQuoteNone))
 			continue loop
 		}
 

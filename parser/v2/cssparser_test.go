@@ -11,14 +11,14 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected ExpressionCSSProperty
+		expected *ExpressionCSSProperty
 	}{
 		{
 			name:  "css: single constant property",
 			input: `background-color: { constants.BackgroundColor };`,
-			expected: ExpressionCSSProperty{
+			expected: &ExpressionCSSProperty{
 				Name: "background-color",
-				Value: StringExpression{
+				Value: &StringExpression{
 					Expression: Expression{
 						Value: "constants.BackgroundColor",
 						Range: Range{
@@ -40,9 +40,9 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 		{
 			name:  "css: single constant property with windows newlines",
 			input: "background-color:\r\n{ constants.BackgroundColor };\r\n",
-			expected: ExpressionCSSProperty{
+			expected: &ExpressionCSSProperty{
 				Name: "background-color",
-				Value: StringExpression{
+				Value: &StringExpression{
 					Expression: Expression{
 						Value: "constants.BackgroundColor",
 						Range: Range{
@@ -84,12 +84,12 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected ConstantCSSProperty
+		expected *ConstantCSSProperty
 	}{
 		{
 			name:  "css: single constant property",
 			input: `background-color: #ffffff;`,
-			expected: ConstantCSSProperty{
+			expected: &ConstantCSSProperty{
 				Name:  "background-color",
 				Value: "#ffffff",
 			},
@@ -97,7 +97,7 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 		{
 			name:  "css: single constant webkit property",
 			input: `-webkit-text-stroke-color: #ffffff;`,
-			expected: ConstantCSSProperty{
+			expected: &ConstantCSSProperty{
 				Name:  "-webkit-text-stroke-color",
 				Value: "#ffffff",
 			},
@@ -125,13 +125,13 @@ func TestCSSParser(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected CSSTemplate
+		expected *CSSTemplate
 	}{
 		{
 			name: "css: no parameters, no content",
 			input: `css Name() {
 }`,
-			expected: CSSTemplate{
+			expected: &CSSTemplate{
 				Name: "Name",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -159,7 +159,7 @@ func TestCSSParser(t *testing.T) {
 			name: "css: without spaces",
 			input: `css Name() {
 }`,
-			expected: CSSTemplate{
+			expected: &CSSTemplate{
 				Name: "Name",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -188,7 +188,7 @@ func TestCSSParser(t *testing.T) {
 			input: `css Name() {
 background-color: #ffffff;
 }`,
-			expected: CSSTemplate{
+			expected: &CSSTemplate{
 				Name: "Name",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -210,7 +210,7 @@ background-color: #ffffff;
 					},
 				},
 				Properties: []CSSProperty{
-					ConstantCSSProperty{
+					&ConstantCSSProperty{
 						Name:  "background-color",
 						Value: "#ffffff",
 					},
@@ -222,7 +222,7 @@ background-color: #ffffff;
 			input: `css Name() {
 background-color: { constants.BackgroundColor };
 }`,
-			expected: CSSTemplate{
+			expected: &CSSTemplate{
 				Name: "Name",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -244,9 +244,9 @@ background-color: { constants.BackgroundColor };
 					},
 				},
 				Properties: []CSSProperty{
-					ExpressionCSSProperty{
+					&ExpressionCSSProperty{
 						Name: "background-color",
-						Value: StringExpression{
+						Value: &StringExpression{
 							Expression: Expression{
 								Value: "constants.BackgroundColor",
 								Range: Range{
@@ -272,7 +272,7 @@ background-color: { constants.BackgroundColor };
 			input: `css Name(prop string) {
 background-color: { prop };
 }`,
-			expected: CSSTemplate{
+			expected: &CSSTemplate{
 				Name: "Name",
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -294,9 +294,9 @@ background-color: { prop };
 					},
 				},
 				Properties: []CSSProperty{
-					ExpressionCSSProperty{
+					&ExpressionCSSProperty{
 						Name: "background-color",
-						Value: StringExpression{
+						Value: &StringExpression{
 							Expression: Expression{
 								Value: "prop",
 								Range: Range{

@@ -16,15 +16,15 @@ func TestRawElementParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected RawElement
+		expected *RawElement
 	}{
 		{
 			name:  "style tag",
 			input: `<style type="text/css">contents</style>`,
-			expected: RawElement{
+			expected: &RawElement{
 				Name: "style",
 				Attributes: []Attribute{
-					ConstantAttribute{
+					&ConstantAttribute{
 						Name:  "type",
 						Value: "text/css",
 						NameRange: Range{
@@ -39,10 +39,10 @@ func TestRawElementParser(t *testing.T) {
 		{
 			name:  "style tag containing mismatched braces",
 			input: `<style type="text/css">` + ignoredContent + "</style>",
-			expected: RawElement{
+			expected: &RawElement{
 				Name: "style",
 				Attributes: []Attribute{
-					ConstantAttribute{
+					&ConstantAttribute{
 						Name:  "type",
 						Value: "text/css",
 						NameRange: Range{

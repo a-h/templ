@@ -71,14 +71,14 @@ const y = "456"
 			}
 			t.Fatalf("expected 3 nodes, got %d nodes, %v", len(tf.Nodes), nodeTypes)
 		}
-		expr, isGoExpression := tf.Nodes[0].(TemplateFileGoExpression)
+		expr, isGoExpression := tf.Nodes[0].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
 		if expr.Expression.Value != `const x = "123"` {
 			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
 		}
-		expr, isGoExpression = tf.Nodes[2].(TemplateFileGoExpression)
+		expr, isGoExpression = tf.Nodes[2].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
 		}
@@ -107,14 +107,14 @@ const y = ` + "`456`"
 			}
 			t.Fatalf("expected 3 nodes, got %d nodes, %v", len(tf.Nodes), nodeTypes)
 		}
-		expr, isGoExpression := tf.Nodes[0].(TemplateFileGoExpression)
+		expr, isGoExpression := tf.Nodes[0].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
 		if expr.Expression.Value != `const x = "123"` {
 			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
 		}
-		expr, isGoExpression = tf.Nodes[2].(TemplateFileGoExpression)
+		expr, isGoExpression = tf.Nodes[2].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
 		}
@@ -143,14 +143,14 @@ templ template(
 			}
 			t.Fatalf("expected 2 nodes, got %d nodes, %v\n%#v", len(tf.Nodes), nodeTypes, tf)
 		}
-		expr, isGoExpression := tf.Nodes[0].(TemplateFileGoExpression)
+		expr, isGoExpression := tf.Nodes[0].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
 		if expr.Expression.Value != `var a = "a"` {
 			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
 		}
-		_, isGoExpression = tf.Nodes[1].(HTMLTemplate)
+		_, isGoExpression = tf.Nodes[1].(*HTMLTemplate)
 		if !isGoExpression {
 			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
 		}

@@ -11,12 +11,12 @@ var stringUntilLtOrGt = parse.StringUntil(untilLtOrGt)
 
 var docType = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 	start := pi.Position()
-	var r DocType
 	if _, ok, err = doctypeStartParser.Parse(pi); err != nil || !ok {
 		return
 	}
 
 	// Once a doctype has started, take everything until the end.
+	r := &DocType{}
 	if r.Value, ok, err = stringUntilLtOrGt.Parse(pi); err != nil || !ok {
 		err = parse.Error("unclosed DOCTYPE", start)
 		return

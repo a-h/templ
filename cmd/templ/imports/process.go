@@ -52,7 +52,7 @@ func updateImports(name, src string) (updated []*ast.ImportSpec, err error) {
 	return updated, nil
 }
 
-func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
+func Process(t *parser.TemplateFile) (*parser.TemplateFile, error) {
 	if t.Filepath == "" {
 		return t, nil
 	}
@@ -64,15 +64,15 @@ func Process(t parser.TemplateFile) (parser.TemplateFile, error) {
 	// The first node always contains existing imports.
 	// If there isn't one, create it.
 	if len(t.Nodes) == 0 {
-		t.Nodes = append(t.Nodes, parser.TemplateFileGoExpression{})
+		t.Nodes = append(t.Nodes, &parser.TemplateFileGoExpression{})
 	}
 	// If there is one, ensure it is a Go expression.
-	if _, ok := t.Nodes[0].(parser.TemplateFileGoExpression); !ok {
-		t.Nodes = append([]parser.TemplateFileNode{parser.TemplateFileGoExpression{}}, t.Nodes...)
+	if _, ok := t.Nodes[0].(*parser.TemplateFileGoExpression); !ok {
+		t.Nodes = append([]parser.TemplateFileNode{&parser.TemplateFileGoExpression{}}, t.Nodes...)
 	}
 
 	// Find all existing imports.
-	importsNode := t.Nodes[0].(parser.TemplateFileGoExpression)
+	importsNode := t.Nodes[0].(*parser.TemplateFileGoExpression)
 
 	// Generate code.
 	gw := bytes.NewBuffer(nil)

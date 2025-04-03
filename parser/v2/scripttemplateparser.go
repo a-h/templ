@@ -4,7 +4,7 @@ import (
 	"github.com/a-h/parse"
 )
 
-var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, ok bool, err error) {
+var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r *ScriptTemplate, ok bool, err error) {
 	start := pi.Position()
 
 	// Parse the name.
@@ -13,8 +13,10 @@ var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, o
 		pi.Seek(start.Index)
 		return
 	}
-	r.Name = se.Name
-	r.Parameters = se.Parameters
+	r = &ScriptTemplate{
+		Name:       se.Name,
+		Parameters: se.Parameters,
+	}
 
 	// Read code expression.
 	var e Expression

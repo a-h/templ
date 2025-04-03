@@ -11,12 +11,12 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected CallTemplateExpression
+		expected *CallTemplateExpression
 	}{
 		{
 			name:  "call: simple",
 			input: `{! Other(p.Test) }`,
-			expected: CallTemplateExpression{
+			expected: &CallTemplateExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{
@@ -37,7 +37,7 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 		{
 			name:  "call: simple, missing start space",
 			input: `{!Other(p.Test) }`,
-			expected: CallTemplateExpression{
+			expected: &CallTemplateExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{
@@ -58,7 +58,7 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 		{
 			name:  "call: simple, missing start and end space",
 			input: `{!Other(p.Test)}`,
-			expected: CallTemplateExpression{
+			expected: &CallTemplateExpression{
 				Expression: Expression{
 					Value: "Other(p.Test)",
 					Range: Range{

@@ -12,7 +12,7 @@ var untilElseIfElseOrEnd = parse.Any(StripType(elseIfExpression), StripType(else
 type ifExpressionParser struct{}
 
 func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	var r IfExpression
+	r := &IfExpression{}
 	start := pi.Index()
 
 	if !peekPrefix(pi, "if ") {

@@ -3,40 +3,41 @@ package parser
 // TemplateFileNodes are the top level nodes of a templ file.
 var (
 	// css name() { ... }
-	_ TemplateFileNode = CSSTemplate{}
+	_ TemplateFileNode = (*CSSTemplate)(nil)
 	// templ name() { ... }
-	_ TemplateFileNode = HTMLTemplate{}
+	_ TemplateFileNode = (*HTMLTemplate)(nil)
 	// script name() { ... }
-	_ TemplateFileNode = ScriptTemplate{}
+	_ TemplateFileNode = (*ScriptTemplate)(nil)
 	// Go code within a templ file.
-	_ TemplateFileNode = TemplateFileGoExpression{}
+	_ TemplateFileNode = (*TemplateFileGoExpression)(nil)
 )
 
 // Nodes are all the nodes you can find in a `templ` component.
 var (
-	_ Node = Text{}
-	_ Node = Element{}
-	_ Node = RawElement{}
-	_ Node = GoComment{}
-	_ Node = HTMLComment{}
-	_ Node = CallTemplateExpression{}
-	_ Node = TemplElementExpression{}
-	_ Node = ChildrenExpression{}
-	_ Node = IfExpression{}
-	_ Node = SwitchExpression{}
-	_ Node = ForExpression{}
-	_ Node = StringExpression{}
-	_ Node = GoCode{}
-	_ Node = Whitespace{}
-	_ Node = DocType{}
+	_ Node = (*Text)(nil)
+	_ Node = (*Element)(nil)
+	_ Node = (*ScriptElement)(nil)
+	_ Node = (*RawElement)(nil)
+	_ Node = (*GoComment)(nil)
+	_ Node = (*HTMLComment)(nil)
+	_ Node = (*CallTemplateExpression)(nil)
+	_ Node = (*TemplElementExpression)(nil)
+	_ Node = (*ChildrenExpression)(nil)
+	_ Node = (*IfExpression)(nil)
+	_ Node = (*SwitchExpression)(nil)
+	_ Node = (*ForExpression)(nil)
+	_ Node = (*StringExpression)(nil)
+	_ Node = (*GoCode)(nil)
+	_ Node = (*Whitespace)(nil)
+	_ Node = (*DocType)(nil)
 )
 
 // Element nodes can have the following attributes.
 var (
-	_ Attribute = BoolConstantAttribute{}
-	_ Attribute = ConstantAttribute{}
-	_ Attribute = BoolExpressionAttribute{}
-	_ Attribute = ExpressionAttribute{}
-	_ Attribute = SpreadAttributes{}
-	_ Attribute = ConditionalAttribute{}
+	_ Attribute = (*BoolConstantAttribute)(nil)
+	_ Attribute = (*ConstantAttribute)(nil)
+	_ Attribute = (*BoolExpressionAttribute)(nil)
+	_ Attribute = (*ExpressionAttribute)(nil)
+	_ Attribute = (*SpreadAttributes)(nil)
+	_ Attribute = (*ConditionalAttribute)(nil)
 )
