@@ -172,7 +172,7 @@ Args:
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
   -lazy
-    Only generate .go files if the source .templ file is newer.	
+    Only generate .go files if the source .templ file is newer. 
   -pprof
     Port to run the pprof server on.
   -keep-orphaned-files
@@ -359,6 +359,8 @@ Args:
     Enable pprof web server (default address is localhost:9999)
   -http string
     Enable http debug server by setting a listen address (e.g. localhost:7474)
+  -no-preload
+    Disable preloading of templ files on server startup (useful for large monorepos)
 `
 
 func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
@@ -369,6 +371,7 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	helpFlag := cmd.Bool("help", false, "")
 	pprofFlag := cmd.Bool("pprof", false, "")
 	httpDebugFlag := cmd.String("http", "", "")
+	noPreloadFlag := cmd.Bool("no-preload", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
 		fmt.Fprint(stderr, lspUsageText)
@@ -385,6 +388,7 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 		GoplsRPCTrace: *goplsRPCTrace,
 		PPROF:         *pprofFlag,
 		HTTPDebug:     *httpDebugFlag,
+		NoPreload:     *noPreloadFlag,
 	})
 	if err != nil {
 		fmt.Fprintln(stderr, err.Error())

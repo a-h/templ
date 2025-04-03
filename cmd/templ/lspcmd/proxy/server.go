@@ -40,10 +40,11 @@ type Server struct {
 	DiagnosticCache *DiagnosticCache
 	TemplSource     *DocumentContents
 	GoSource        map[string]string
+	NoPreload       bool
 	preLoadURIs     []*lsp.DidOpenTextDocumentParams
 }
 
-func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache) (s *Server) {
+func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache, noPreload bool) (s *Server) {
 	return &Server{
 		Log:             log,
 		Target:          target,
@@ -51,6 +52,7 @@ func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagn
 		DiagnosticCache: diagnosticCache,
 		TemplSource:     newDocumentContents(log),
 		GoSource:        make(map[string]string),
+		NoPreload:       noPreload,
 	}
 }
 
@@ -237,7 +239,18 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 		Save:              &lsp.SaveOptions{IncludeText: true},
 	}
 
-	for _, c := range params.WorkspaceFolders {
+	if !p.NoPreload {
+		p.preload(ctx, params.WorkspaceFolders)
+	}
+
+	result.ServerInfo.Name = "templ-lsp"
+	result.ServerInfo.Version = templ.Version()
+
+	return result, err
+}
+
+func (p *Server) preload(ctx context.Context, workspaceFolders []lsp.WorkspaceFolder) {
+	for _, c := range workspaceFolders {
 		path := strings.TrimPrefix(c.URI, "file://")
 		werr := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -291,11 +304,6 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 			p.Log.Error("walk error", slog.Any("error", werr))
 		}
 	}
-
-	result.ServerInfo.Name = "templ-lsp"
-	result.ServerInfo.Version = templ.Version()
-
-	return result, err
 }
 
 func (p *Server) Initialized(ctx context.Context, params *lsp.InitializedParams) (err error) {
