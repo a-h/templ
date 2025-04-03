@@ -240,7 +240,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	}
 
 	if !p.NoPreload {
-		p.preload(params.WorkspaceFolders)
+		p.preload(ctx, params.WorkspaceFolders)
 	}
 
 	result.ServerInfo.Name = "templ-lsp"
@@ -249,7 +249,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	return result, err
 }
 
-func (p *Server) preload(workspaceFolders []lsp.WorkspaceFolder) {
+func (p *Server) preload(ctx context.Context, workspaceFolders []lsp.WorkspaceFolder) {
 	for _, c := range workspaceFolders {
 		path := strings.TrimPrefix(c.URI, "file://")
 		werr := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
