@@ -238,13 +238,13 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	}
 
 	for _, c := range params.WorkspaceFolders {
-		path := strings.TrimPrefix(c.URI, "file://")
+		path := uri.New(c.URI).Filename()
 		werr := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
 			p.Log.Info("found file", slog.String("path", path))
-			uri := uri.URI("file://" + path)
+			uri := uri.New("file://" + path)
 			isTemplFile, goURI := convertTemplToGoURI(uri)
 
 			if !isTemplFile {
