@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"golang.org/x/tools/go/packages"
+
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/templ/lsp/protocol"
 	"github.com/a-h/templ/lsp/uri"
@@ -726,6 +728,74 @@ func (p *Server) DidClose(ctx context.Context, params *lsp.DidCloseTextDocumentP
 func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentParams) (err error) {
 	p.Log.Info("client -> server: DidOpen", slog.String("uri", string(params.TextDocument.URI)))
 	defer p.Log.Info("client -> server: DidOpen end")
+
+	if !p.NoPreload {
+		return p.didOpen(ctx, params)
+	}
+
+	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return p.Target.DidOpen(ctx, params)
+	}
+
+	query := "file=" + strings.TrimPrefix(string(goURI), "file://")
+	p.Log.Info("packages load", slog.String("query", query))
+	pkgs, err := packages.Load(&packages.Config{
+		Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
+	}, query)
+	if err != nil {
+		return err
+	}
+
+	p.Log.Info("packages load complete", slog.Int("pkgsLen", len(pkgs)))
+	for _, pkg := range pkgs {
+		if err := p.openTemplFiles(ctx, pkg, map[string]bool{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (p *Server) openTemplFiles(ctx context.Context, pkg *packages.Package, seen map[string]bool) error {
+	if seen[pkg.PkgPath] {
+		return nil
+	}
+	seen[pkg.PkgPath] = true
+
+	p.Log.Info("looking at imports", slog.String("pkgPath", pkg.PkgPath))
+	for _, imp := range pkg.Imports {
+		if err := p.openTemplFiles(ctx, imp, seen); err != nil {
+			return err
+		}
+	}
+
+	p.Log.Info("opening templ files", slog.String("pkgPath", pkg.PkgPath))
+	for _, otherFile := range pkg.OtherFiles {
+		if !strings.HasSuffix(otherFile, ".templ") {
+			continue
+		}
+
+		data, err := os.ReadFile(otherFile)
+		if err != nil {
+			return err
+		}
+
+		if err := p.didOpen(ctx, &lsp.DidOpenTextDocumentParams{
+			TextDocument: lsp.TextDocumentItem{
+				URI:        uri.URI("file://" + otherFile),
+				Text:       string(data),
+				Version:    1,
+				LanguageID: "go",
+			},
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p *Server) didOpen(ctx context.Context, params *lsp.DidOpenTextDocumentParams) (err error) {
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.DidOpen(ctx, params)
