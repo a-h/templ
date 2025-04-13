@@ -733,12 +733,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 		return p.didOpen(ctx, params)
 	}
 
-	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
-	if !isTemplFile {
-		return p.Target.DidOpen(ctx, params)
-	}
-
-	query := "file=" + strings.TrimPrefix(string(goURI), "file://")
+	query := "file=" + strings.TrimPrefix(string(params.TextDocument.URI), "file://")
 	p.Log.Info("packages load", slog.String("query", query))
 	pkgs, err := packages.Load(&packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
