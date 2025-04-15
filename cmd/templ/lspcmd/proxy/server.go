@@ -729,7 +729,7 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	p.Log.Info("client -> server: DidOpen", slog.String("uri", string(params.TextDocument.URI)))
 	defer p.Log.Info("client -> server: DidOpen end")
 
-	if !p.NoPreload {
+	if !p.NoPreload || os.Getenv("GOPACKAGESDRIVER") == "" {
 		return p.didOpen(ctx, params)
 	}
 
