@@ -360,7 +360,7 @@ Args:
   -http string
     Enable http debug server by setting a listen address (e.g. localhost:7474)
   -no-preload
-    Disable preloading of templ files on server startup and use custom GOPACKAGESDRIVER for lazy loading (useful for large monorepos. GOPACKAGESDRIVER environment variable must be set.
+    Disable preloading of templ files on server startup and use custom GOPACKAGESDRIVER for lazy loading (useful for large monorepos). GOPACKAGESDRIVER environment variable must be set.
 `
 
 func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
