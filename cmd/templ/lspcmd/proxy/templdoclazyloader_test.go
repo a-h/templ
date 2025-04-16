@@ -52,12 +52,12 @@ func TestNewTemplDocLazyLoader(t *testing.T) {
 func TestLoad(t *testing.T) {
 	var order []string
 	tests := []struct {
-		name   string
-		loader templDocLazyLoader
-		params *lsp.DidOpenTextDocumentParams
-		errStr string
-		order  []string
-		count  map[string]int
+		name              string
+		loader            templDocLazyLoader
+		params            *lsp.DidOpenTextDocumentParams
+		wantErrStr        string
+		wantOpenOrder     []string
+		wantDocsOpenCount map[string]int
 	}{
 		{
 			name: "err load package",
@@ -73,7 +73,7 @@ func TestLoad(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			errStr: "load packages for file \"/a.templ\": error",
+			wantErrStr: "load packages for file \"/a.templ\": error",
 		},
 		{
 			name: "err read file",
@@ -100,8 +100,8 @@ func TestLoad(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			errStr: "open topologically \"a\": read file \"/a.templ\": error",
-			count:  map[string]int{},
+			wantErrStr:        "open topologically \"a\": read file \"/a.templ\": error",
+			wantDocsOpenCount: map[string]int{},
 		},
 		{
 			name: "err did open",
@@ -133,8 +133,8 @@ func TestLoad(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			errStr: "open topologically \"a\": did open file \"/a.templ\": error",
-			count:  map[string]int{},
+			wantErrStr:        "open topologically \"a\": did open file \"/a.templ\": error",
+			wantDocsOpenCount: map[string]int{},
 		},
 		{
 			name: "success a->b->c",
@@ -183,8 +183,8 @@ func TestLoad(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			order: []string{"/c.templ", "/c_other.templ", "/b.templ", "/a.templ", "/a_other.templ"},
-			count: map[string]int{
+			wantOpenOrder: []string{"/c.templ", "/c_other.templ", "/b.templ", "/a.templ", "/a_other.templ"},
+			wantDocsOpenCount: map[string]int{
 				"/c.templ":       1,
 				"/c_other.templ": 1,
 				"/b.templ":       1,
@@ -245,8 +245,8 @@ func TestLoad(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			order: []string{"/c.templ", "/c_other.templ", "/b.templ", "/a.templ", "/a_other.templ"},
-			count: map[string]int{
+			wantOpenOrder: []string{"/c.templ", "/c_other.templ", "/b.templ", "/a.templ", "/a_other.templ"},
+			wantDocsOpenCount: map[string]int{
 				"/c.templ":       1,
 				"/c_other.templ": 1,
 				"/b.templ":       1,
@@ -304,8 +304,8 @@ func TestLoad(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			order: []string{"/b.templ", "/a.templ", "/a_other.templ"},
-			count: map[string]int{
+			wantOpenOrder: []string{"/b.templ", "/a.templ", "/a_other.templ"},
+			wantDocsOpenCount: map[string]int{
 				"/c.templ":       2,
 				"/c_other.templ": 2,
 				"/b.templ":       1,
@@ -319,20 +319,20 @@ func TestLoad(t *testing.T) {
 		order = nil
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.loader.load(context.Background(), tt.params)
-			if tt.errStr == "" && err != nil {
+			if tt.wantErrStr == "" && err != nil {
 				t.Errorf("expected nil error, got \"%s\"", err.Error())
-			} else if tt.errStr != "" && err == nil {
-				t.Errorf("expected error \"%s\", got nil", tt.errStr)
-			} else if tt.errStr != "" && err != nil && err.Error() != tt.errStr {
-				t.Errorf("expected error \"%s\", got \"%s\"", tt.errStr, err.Error())
+			} else if tt.wantErrStr != "" && err == nil {
+				t.Errorf("expected error \"%s\", got nil", tt.wantErrStr)
+			} else if tt.wantErrStr != "" && err != nil && err.Error() != tt.wantErrStr {
+				t.Errorf("expected error \"%s\", got \"%s\"", tt.wantErrStr, err.Error())
 			}
 
-			if !slices.Equal(tt.order, order) {
-				t.Errorf("expected order \"%v\", got \"%v\"", tt.order, order)
+			if !slices.Equal(tt.wantOpenOrder, order) {
+				t.Errorf("expected order \"%v\", got \"%v\"", tt.wantOpenOrder, order)
 			}
 
-			if !reflect.DeepEqual(tt.count, tt.loader.docsOpenCount) {
-				t.Errorf("expected count \"%v\", got \"%v\"", tt.count, tt.loader.docsOpenCount)
+			if !reflect.DeepEqual(tt.wantDocsOpenCount, tt.loader.docsOpenCount) {
+				t.Errorf("expected count \"%v\", got \"%v\"", tt.wantDocsOpenCount, tt.loader.docsOpenCount)
 			}
 		})
 	}
@@ -341,12 +341,12 @@ func TestLoad(t *testing.T) {
 func TestUnload(t *testing.T) {
 	var order []string
 	tests := []struct {
-		name   string
-		loader templDocLazyLoader
-		params *lsp.DidCloseTextDocumentParams
-		errStr string
-		order  []string
-		count  map[string]int
+		name              string
+		loader            templDocLazyLoader
+		params            *lsp.DidCloseTextDocumentParams
+		wantErrStr        string
+		wantCloseOrder    []string
+		wantDocsOpenCount map[string]int
 	}{
 		{
 			name: "err load package",
@@ -362,7 +362,7 @@ func TestUnload(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			errStr: "load packages for file \"/a.templ\": error",
+			wantErrStr: "load packages for file \"/a.templ\": error",
 		},
 		{
 			name: "err did close",
@@ -396,8 +396,8 @@ func TestUnload(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			errStr: "close topologically \"a\": did close file \"/a.templ\": error",
-			count: map[string]int{
+			wantErrStr: "close topologically \"a\": did close file \"/a.templ\": error",
+			wantDocsOpenCount: map[string]int{
 				"/a.templ": 1,
 			},
 		},
@@ -454,8 +454,8 @@ func TestUnload(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			order: []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
-			count: map[string]int{},
+			wantCloseOrder:    []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
+			wantDocsOpenCount: map[string]int{},
 		},
 		{
 			name: "success a->b->c->a",
@@ -516,8 +516,8 @@ func TestUnload(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			order: []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
-			count: map[string]int{},
+			wantCloseOrder:    []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
+			wantDocsOpenCount: map[string]int{},
 		},
 		{
 			name: "success a->b->c with b close",
@@ -566,8 +566,8 @@ func TestUnload(t *testing.T) {
 					URI: uri.URI("file:///b.templ"),
 				},
 			},
-			order: []string{},
-			count: map[string]int{
+			wantCloseOrder: []string{},
+			wantDocsOpenCount: map[string]int{
 				"/a.templ":       1,
 				"/a_other.templ": 1,
 				"/b.templ":       1,
@@ -581,21 +581,21 @@ func TestUnload(t *testing.T) {
 		order = nil
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.loader.unload(context.Background(), tt.params)
-			if tt.errStr == "" && err != nil {
+			if tt.wantErrStr == "" && err != nil {
 				t.Errorf("expected nil error, got \"%s\"", err.Error())
-			} else if tt.errStr != "" && err == nil {
-				t.Errorf("expected error \"%s\", got nil", tt.errStr)
-			} else if tt.errStr != "" && err != nil && err.Error() != tt.errStr {
-				t.Errorf("expected error \"%s\", got \"%s\"", tt.errStr, err.Error())
+			} else if tt.wantErrStr != "" && err == nil {
+				t.Errorf("expected error \"%s\", got nil", tt.wantErrStr)
+			} else if tt.wantErrStr != "" && err != nil && err.Error() != tt.wantErrStr {
+				t.Errorf("expected error \"%s\", got \"%s\"", tt.wantErrStr, err.Error())
 			}
 		})
 
-		if !slices.Equal(tt.order, order) {
-			t.Errorf("expected order \"%v\", got \"%v\"", tt.order, order)
+		if !slices.Equal(tt.wantCloseOrder, order) {
+			t.Errorf("expected order \"%v\", got \"%v\"", tt.wantCloseOrder, order)
 		}
 
-		if !reflect.DeepEqual(tt.count, tt.loader.docsOpenCount) {
-			t.Errorf("expected count \"%v\", got \"%v\"", tt.count, tt.loader.docsOpenCount)
+		if !reflect.DeepEqual(tt.wantDocsOpenCount, tt.loader.docsOpenCount) {
+			t.Errorf("expected count \"%v\", got \"%v\"", tt.wantDocsOpenCount, tt.loader.docsOpenCount)
 		}
 	}
 }
