@@ -172,7 +172,7 @@ Args:
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
   -lazy
-    Only generate .go files if the source .templ file is newer. 
+    Only generate .go files if the source .templ file is newer.
   -pprof
     Port to run the pprof server on.
   -keep-orphaned-files
@@ -360,7 +360,7 @@ Args:
   -http string
     Enable http debug server by setting a listen address (e.g. localhost:7474)
   -no-preload
-    Disable preloading of templ files on server startup (useful for large monorepos)
+    Disable preloading of templ files on server startup and use custom GOPACKAGESDRIVER for lazy loading (useful for large monorepos. GOPACKAGESDRIVER environment variable must be set.
 `
 
 func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
@@ -388,7 +388,7 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 		GoplsRPCTrace: *goplsRPCTrace,
 		PPROF:         *pprofFlag,
 		HTTPDebug:     *httpDebugFlag,
-		NoPreload:     *noPreloadFlag,
+		NoPreload:     *noPreloadFlag && os.Getenv("GOPACKAGESDRIVER") != "",
 	})
 	if err != nil {
 		fmt.Fprintln(stderr, err.Error())

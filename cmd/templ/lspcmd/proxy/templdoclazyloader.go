@@ -11,6 +11,7 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+// templDocLazyLoader is a loader that uses the packages API to lazily load templ documents in the dependency graph.
 type templDocLazyLoader struct {
 	templDocHooks templDocHooks
 	packageLoader packageLoader
@@ -57,6 +58,7 @@ func newTemplDocLazyLoader(templDocHooks templDocHooks) templDocLazyLoader {
 	}
 }
 
+// load loads all templ documents in the dependency graph topologically (dependencies are loaded before dependents).
 func (l *templDocLazyLoader) load(ctx context.Context, params *lsp.DidOpenTextDocumentParams) error {
 	pkgs, err := l.packageLoader.load(params.TextDocument.URI.Filename())
 	if err != nil {
@@ -72,6 +74,7 @@ func (l *templDocLazyLoader) load(ctx context.Context, params *lsp.DidOpenTextDo
 	return nil
 }
 
+// openTopologically opens templ files in dependency-first order (topological sort).
 func (l *templDocLazyLoader) openTopologically(ctx context.Context, pkg *packages.Package, visited map[string]bool) error {
 	if visited[pkg.PkgPath] {
 		return nil
@@ -113,6 +116,7 @@ func (l *templDocLazyLoader) openTopologically(ctx context.Context, pkg *package
 	return nil
 }
 
+// unload unloads all templ documents in the dependency graph topologically (dependents are unloaded before dependencies).
 func (l *templDocLazyLoader) unload(ctx context.Context, params *lsp.DidCloseTextDocumentParams) error {
 	pkgs, err := l.packageLoader.load(params.TextDocument.URI.Filename())
 	if err != nil {
@@ -128,6 +132,7 @@ func (l *templDocLazyLoader) unload(ctx context.Context, params *lsp.DidCloseTex
 	return nil
 }
 
+// closeTopologically closes templ files in dependent-first order (reverse topological sort).
 func (l *templDocLazyLoader) closeTopologically(ctx context.Context, pkg *packages.Package, visited map[string]bool) error {
 	if visited[pkg.PkgPath] {
 		return nil
