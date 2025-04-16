@@ -9,8 +9,6 @@ import (
 	"regexp"
 	"strings"
 
-	"golang.org/x/tools/go/packages"
-
 	"github.com/a-h/parse"
 	lsp "github.com/a-h/templ/lsp/protocol"
 	"github.com/a-h/templ/lsp/uri"
@@ -36,14 +34,15 @@ import (
 // inverse operation - to put the file names back, and readjust any
 // character positions.
 type Server struct {
-	Log             *slog.Logger
-	Target          lsp.Server
-	SourceMapCache  *SourceMapCache
-	DiagnosticCache *DiagnosticCache
-	TemplSource     *DocumentContents
-	GoSource        map[string]string
-	NoPreload       bool
-	preLoadURIs     []*lsp.DidOpenTextDocumentParams
+	Log                *slog.Logger
+	Target             lsp.Server
+	SourceMapCache     *SourceMapCache
+	DiagnosticCache    *DiagnosticCache
+	TemplSource        *DocumentContents
+	GoSource           map[string]string
+	NoPreload          bool
+	preLoadURIs        []*lsp.DidOpenTextDocumentParams
+	templDocLazyLoader templDocLazyLoader
 }
 
 func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache, noPreload bool) (s *Server) {
@@ -241,7 +240,14 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 		Save:              &lsp.SaveOptions{IncludeText: true},
 	}
 
-	if !p.NoPreload {
+	if p.NoPreload {
+		p.templDocLazyLoader = newTemplDocLazyLoader(
+			templDocHooks{
+				didOpen:  p.didOpen,
+				didClose: p.didClose,
+			},
+		)
+	} else {
 		p.preload(ctx, params.WorkspaceFolders)
 	}
 
@@ -713,6 +719,15 @@ func (p *Server) DidChangeWorkspaceFolders(ctx context.Context, params *lsp.DidC
 func (p *Server) DidClose(ctx context.Context, params *lsp.DidCloseTextDocumentParams) (err error) {
 	p.Log.Info("client -> server: DidClose")
 	defer p.Log.Info("client -> server: DidClose end")
+
+	if p.NoPreload {
+		return p.templDocLazyLoader.unload(ctx, params)
+	}
+
+	return p.didClose(ctx, params)
+}
+
+func (p *Server) didClose(ctx context.Context, params *lsp.DidCloseTextDocumentParams) (err error) {
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.DidClose(ctx, params)
@@ -729,65 +744,11 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	p.Log.Info("client -> server: DidOpen", slog.String("uri", string(params.TextDocument.URI)))
 	defer p.Log.Info("client -> server: DidOpen end")
 
-	if !p.NoPreload || os.Getenv("GOPACKAGESDRIVER") == "" {
-		return p.didOpen(ctx, params)
+	if p.NoPreload {
+		return p.templDocLazyLoader.load(ctx, params)
 	}
 
-	query := "file=" + strings.TrimPrefix(string(params.TextDocument.URI), "file://")
-	p.Log.Info("packages load", slog.String("query", query))
-	pkgs, err := packages.Load(&packages.Config{
-		Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
-	}, query)
-	if err != nil {
-		return err
-	}
-
-	p.Log.Info("packages load complete", slog.Int("pkgsLen", len(pkgs)))
-	for _, pkg := range pkgs {
-		if err := p.openTemplFiles(ctx, pkg, map[string]bool{}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (p *Server) openTemplFiles(ctx context.Context, pkg *packages.Package, seen map[string]bool) error {
-	if seen[pkg.PkgPath] {
-		return nil
-	}
-	seen[pkg.PkgPath] = true
-
-	p.Log.Info("looking at imports", slog.String("pkgPath", pkg.PkgPath))
-	for _, imp := range pkg.Imports {
-		if err := p.openTemplFiles(ctx, imp, seen); err != nil {
-			return err
-		}
-	}
-
-	p.Log.Info("opening templ files", slog.String("pkgPath", pkg.PkgPath))
-	for _, otherFile := range pkg.OtherFiles {
-		if !strings.HasSuffix(otherFile, ".templ") {
-			continue
-		}
-
-		data, err := os.ReadFile(otherFile)
-		if err != nil {
-			return err
-		}
-
-		if err := p.didOpen(ctx, &lsp.DidOpenTextDocumentParams{
-			TextDocument: lsp.TextDocumentItem{
-				URI:        uri.URI("file://" + otherFile),
-				Text:       string(data),
-				Version:    1,
-				LanguageID: "go",
-			},
-		}); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return p.didOpen(ctx, params)
 }
 
 func (p *Server) didOpen(ctx context.Context, params *lsp.DidOpenTextDocumentParams) (err error) {
