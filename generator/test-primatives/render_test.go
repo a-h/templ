@@ -1,4 +1,4 @@
-package testprimatives
+package testprimitives
 
 import (
 	_ "embed"
