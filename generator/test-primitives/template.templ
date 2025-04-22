@@ -18,5 +18,9 @@ templ render() {
 		<li>{ false }</li>
 		<li>{ complex64(10 + 11i) }</li>
 		<li>{ complex128(10 + 11i) }</li>
+		<li>{ "string value" }</li>
+		<li>{ stringish("stringish value") }</li>
 	</ul>
 }
+
+type stringish string
