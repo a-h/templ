@@ -1,0 +1,26 @@
+package testprimitives
+
+templ render() {
+	<ul>
+		<li>{ int(1) }</li>
+		<li>{ int8(1) }</li>
+		<li>{ int16(1) }</li>
+		<li>{ int32(1) }</li>
+		<li>{ int64(1) }</li>
+		<li>{ uint(1) }</li>
+		<li>{ uint8(1) }</li>
+		<li>{ uint16(1) }</li>
+		<li>{ uint32(1) }</li>
+		<li>{ uint64(1) }</li>
+		<li>{ float32(1) }</li>
+		<li>{ float64(1) }</li>
+		<li>{ true }</li>
+		<li>{ false }</li>
+		<li>{ complex64(10 + 11i) }</li>
+		<li>{ complex128(10 + 11i) }</li>
+		<li>{ "string value" }</li>
+		<li>{ stringish("stringish value") }</li>
+	</ul>
+}
+
+type stringish string

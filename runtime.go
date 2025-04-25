@@ -578,9 +578,29 @@ func ReleaseBuffer(b *bytes.Buffer) {
 	bufferPool.Put(b)
 }
 
+type ints interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64
+}
+
+type uints interface {
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
+type floats interface {
+	~float32 | ~float64
+}
+
+type complexNumbers interface {
+	~complex64 | ~complex128
+}
+
+type stringable interface {
+	ints | uints | floats | complexNumbers | ~string | ~bool
+}
+
 // JoinStringErrs joins an optional list of errors.
-func JoinStringErrs(s string, errs ...error) (string, error) {
-	return s, errors.Join(errs...)
+func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
+	return fmt.Sprint(s), errors.Join(errs...)
 }
 
 // Error returned during template rendering.
