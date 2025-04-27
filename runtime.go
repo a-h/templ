@@ -424,8 +424,10 @@ var _ Attributer = Attributes{}
 
 // Returns the items of the attributes map in key sorted order.
 func (a Attributes) Items() []KeyValue[string, any] {
-	items := make([]KeyValue[string, any], len(a))
-	var i int
+	var (
+		items = make([]KeyValue[string, any], len(a))
+		i     int
+	)
 	for k, v := range a {
 		items[i] = KeyValue[string, any]{Key: k, Value: v}
 		i++
