@@ -17,6 +17,7 @@ import (
 	"sync"
 
 	"github.com/a-h/templ/safehtml"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 // Types exposed by all components.
@@ -413,18 +414,80 @@ func SanitizeCSS[T ~string](property string, value T) SafeCSS {
 	return SafeCSS(p + ":" + v + ";")
 }
 
+type Attributer interface {
+	Keys() []string
+	Get(key string) (value any, exists bool)
+}
+
 // Attributes is an alias to map[string]any made for spread attributes.
 type Attributes map[string]any
 
-// sortedKeys returns the keys of a map in sorted order.
-func sortedKeys(m map[string]any) (keys []string) {
-	keys = make([]string, len(m))
+var _ Attributer = Attributes{}
+
+// Returns the keys of the attributes map in sorted order.
+func (a Attributes) Keys() []string {
+	keys := make([]string, len(a))
 	var i int
-	for k := range m {
+	for k := range a {
 		keys[i] = k
 		i++
 	}
 	sort.Strings(keys)
+	return keys
+}
+
+func (a Attributes) Get(key string) (value any, exists bool) {
+	value, exists = a[key]
+	return
+}
+
+// OrderedAttributes stores attributes in order of insertion.
+type OrderedAttributes struct {
+	m *orderedmap.OrderedMap[string, any]
+}
+
+var _ Attributer = OrderedAttributes{}
+
+func NewOrderedAttributes() OrderedAttributes {
+	return OrderedAttributes{
+		m: orderedmap.New[string, any](),
+	}
+}
+
+func (a OrderedAttributes) Set(key string, value any) {
+	if a.m == nil {
+		a.m = orderedmap.New[string, any]()
+	}
+	a.m.Set(key, value)
+}
+
+func (a OrderedAttributes) Get(key string) (value any, exists bool) {
+	if a.m == nil {
+		return nil, false
+	}
+	return a.m.Get(key)
+}
+
+func (a OrderedAttributes) Delete(key string) {
+	if a.m == nil {
+		return
+	}
+	a.m.Delete(key)
+}
+
+// Keys returns the keys of the attributes map from in order of insertion.
+func (a OrderedAttributes) Keys() []string {
+	if a.m == nil {
+		return nil
+	}
+	var (
+		keys = make([]string, a.m.Len())
+		i    int
+	)
+	for pair := a.m.Oldest(); pair != nil; pair = pair.Next() {
+		keys[i] = pair.Key
+		i++
+	}
 	return keys
 }
 
@@ -437,9 +500,13 @@ func writeStrings(w io.Writer, ss ...string) (err error) {
 	return nil
 }
 
-func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (err error) {
-	for _, key := range sortedKeys(attributes) {
-		value := attributes[key]
+// RenderAttributes renders the attributes to the writer.
+func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (err error) {
+	for _, key := range attributes.Keys() {
+		value, exists := attributes.Get(key)
+		if !exists {
+			continue
+		}
 		switch value := value.(type) {
 		case string:
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {
