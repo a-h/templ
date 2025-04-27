@@ -17,7 +17,6 @@ import (
 	"sync"
 
 	"github.com/a-h/templ/safehtml"
-	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 // Types exposed by all components.
@@ -442,50 +441,27 @@ func (a Attributes) Get(key string) (value any, exists bool) {
 }
 
 // OrderedAttributes stores attributes in order of insertion.
-type OrderedAttributes struct {
-	m *orderedmap.OrderedMap[string, any]
-}
+type OrderedAttributes []KeyValue[string, any]
 
 var _ Attributer = OrderedAttributes{}
 
-func NewOrderedAttributes() OrderedAttributes {
-	return OrderedAttributes{
-		m: orderedmap.New[string, any](),
-	}
-}
-
-func (a OrderedAttributes) Set(key string, value any) {
-	if a.m == nil {
-		a.m = orderedmap.New[string, any]()
-	}
-	a.m.Set(key, value)
-}
-
 func (a OrderedAttributes) Get(key string) (value any, exists bool) {
-	if a.m == nil {
-		return nil, false
+	for _, kv := range a {
+		if kv.Key == key {
+			return kv.Value, true
+		}
 	}
-	return a.m.Get(key)
+	return nil, false
 }
 
-func (a OrderedAttributes) Delete(key string) {
-	if a.m == nil {
-		return
-	}
-	a.m.Delete(key)
-}
-
-// Keys returns the keys of the attributes map from in order of insertion.
+// Keys returns the keys of the in order of insertion.
 func (a OrderedAttributes) Keys() []string {
-	if a.m == nil {
-		return nil
-	}
 	var (
-		keys = make([]string, a.m.Len())
+		keys = make([]string, len(a))
 		i    int
 	)
-	for pair := a.m.Oldest(); pair != nil; pair = pair.Next() {
-		keys[i] = pair.Key
+	for _, kv := range a {
+		keys[i] = kv.Key
 		i++
 	}
 	return keys
