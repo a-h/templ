@@ -456,7 +456,6 @@ func writeStrings(w io.Writer, ss ...string) (err error) {
 	return nil
 }
 
-// RenderAttributes renders the attributes to the writer.
 func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (err error) {
 	for _, item := range attributes.Items() {
 		key := item.Key
