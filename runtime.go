@@ -414,8 +414,7 @@ func SanitizeCSS[T ~string](property string, value T) SafeCSS {
 }
 
 type Attributer interface {
-	Keys() []string
-	Get(key string) (value any, exists bool)
+	Items() []KeyValue[string, any]
 }
 
 // Attributes is an alias to map[string]any made for spread attributes.
@@ -423,21 +422,18 @@ type Attributes map[string]any
 
 var _ Attributer = Attributes{}
 
-// Returns the keys of the attributes map in sorted order.
-func (a Attributes) Keys() []string {
-	keys := make([]string, len(a))
+// Returns the items of the attributes map in key sorted order.
+func (a Attributes) Items() []KeyValue[string, any] {
+	items := make([]KeyValue[string, any], len(a))
 	var i int
-	for k := range a {
-		keys[i] = k
+	for k, v := range a {
+		items[i] = KeyValue[string, any]{Key: k, Value: v}
 		i++
 	}
-	sort.Strings(keys)
-	return keys
-}
-
-func (a Attributes) Get(key string) (value any, exists bool) {
-	value, exists = a[key]
-	return
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Key < items[j].Key
+	})
+	return items
 }
 
 // OrderedAttributes stores attributes in order of insertion.
@@ -445,26 +441,8 @@ type OrderedAttributes []KeyValue[string, any]
 
 var _ Attributer = OrderedAttributes{}
 
-func (a OrderedAttributes) Get(key string) (value any, exists bool) {
-	for _, kv := range a {
-		if kv.Key == key {
-			return kv.Value, true
-		}
-	}
-	return nil, false
-}
-
-// Keys returns the keys of the in order of insertion.
-func (a OrderedAttributes) Keys() []string {
-	var (
-		keys = make([]string, len(a))
-		i    int
-	)
-	for _, kv := range a {
-		keys[i] = kv.Key
-		i++
-	}
-	return keys
+func (a OrderedAttributes) Items() []KeyValue[string, any] {
+	return a
 }
 
 func writeStrings(w io.Writer, ss ...string) (err error) {
@@ -478,11 +456,9 @@ func writeStrings(w io.Writer, ss ...string) (err error) {
 
 // RenderAttributes renders the attributes to the writer.
 func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (err error) {
-	for _, key := range attributes.Keys() {
-		value, exists := attributes.Get(key)
-		if !exists {
-			continue
-		}
+	for _, item := range attributes.Items() {
+		key := item.Key
+		value := item.Value
 		switch value := value.(type) {
 		case string:
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {
