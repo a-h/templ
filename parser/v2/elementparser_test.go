@@ -195,10 +195,12 @@ if test {
 						},
 					},
 					BoolConstantAttribute{
-						Name: "noshade",
-						NameRange: Range{
-							From: Position{Index: 31, Line: 3, Col: 1},
-							To:   Position{Index: 38, Line: 3, Col: 8},
+						Key: ConstantAttributeKey{
+							Name: "noshade",
+							NameRange: Range{
+								From: Position{Index: 31, Line: 3, Col: 1},
+								To:   Position{Index: 38, Line: 3, Col: 8},
+							},
 						},
 					},
 					ExpressionAttribute{
@@ -451,11 +453,46 @@ if test {
 				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
-						Name: "data",
+						Key: ConstantAttributeKey{
+							Name: "data",
 
-						NameRange: Range{
-							From: Position{Index: 5, Line: 0, Col: 5},
-							To:   Position{Index: 9, Line: 0, Col: 9},
+							NameRange: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 9, Line: 0, Col: 9},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "bool constant attribute with expression key",
+			input:  `<div { "foo" }>`,
+			parser: StripType(elementOpenTagParser),
+			expected: elementOpenTag{
+				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				Attributes: []Attribute{
+					BoolConstantAttribute{
+						Key: ExpressionAttributeKey{
+							Expression: Expression{
+								Value: `"foo"`,
+								Range: Range{
+									From: Position{
+										Index: 7,
+										Line:  0,
+										Col:   7,
+									},
+									To: Position{
+										Index: 12,
+										Line:  0,
+										Col:   12,
+									},
+								},
+							},
 						},
 					},
 				},
@@ -474,10 +511,12 @@ if test {
 				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
-						Name: "required",
-						NameRange: Range{
-							From: Position{Index: 9, Line: 1, Col: 2},
-							To:   Position{Index: 17, Line: 1, Col: 10},
+						Key: ConstantAttributeKey{
+							Name: "required",
+							NameRange: Range{
+								From: Position{Index: 9, Line: 1, Col: 2},
+								To:   Position{Index: 17, Line: 1, Col: 10},
+							},
 						},
 					},
 				},
@@ -496,10 +535,12 @@ if test {
 				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
-						Name: "required",
-						NameRange: Range{
-							From: Position{Index: 10, Line: 1, Col: 2},
-							To:   Position{Index: 18, Line: 1, Col: 10},
+						Key: ConstantAttributeKey{
+							Name: "required",
+							NameRange: Range{
+								From: Position{Index: 10, Line: 1, Col: 2},
+								To:   Position{Index: 18, Line: 1, Col: 10},
+							},
 						},
 					},
 				},
@@ -670,10 +711,12 @@ func TestElementParser(t *testing.T) {
 				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
-						Name: "noshade",
-						NameRange: Range{
-							From: Position{Index: 4, Line: 0, Col: 4},
-							To:   Position{Index: 11, Line: 0, Col: 11},
+						Key: ConstantAttributeKey{
+							Name: "noshade",
+							NameRange: Range{
+								From: Position{Index: 4, Line: 0, Col: 4},
+								To:   Position{Index: 11, Line: 0, Col: 11},
+							},
 						},
 					},
 				},
@@ -892,10 +935,12 @@ func TestElementParser(t *testing.T) {
 				},
 				Attributes: []Attribute{
 					BoolConstantAttribute{
-						Name: "optionA",
-						NameRange: Range{
-							From: Position{Index: 4, Line: 0, Col: 4},
-							To:   Position{Index: 11, Line: 0, Col: 11},
+						Key: ConstantAttributeKey{
+							Name: "optionA",
+							NameRange: Range{
+								From: Position{Index: 4, Line: 0, Col: 4},
+								To:   Position{Index: 11, Line: 0, Col: 11},
+							},
 						},
 					},
 					BoolExpressionAttribute{
@@ -1622,10 +1667,12 @@ amount is charged</div>`,
 						},
 					},
 					BoolConstantAttribute{
-						Name: "disabled",
-						NameRange: Range{
-							From: Position{Index: 20, Line: 0, Col: 20},
-							To:   Position{Index: 28, Line: 0, Col: 28},
+						Key: ConstantAttributeKey{
+							Name: "disabled",
+							NameRange: Range{
+								From: Position{Index: 20, Line: 0, Col: 20},
+								To:   Position{Index: 28, Line: 0, Col: 28},
+							},
 						},
 					},
 					ExpressionAttribute{

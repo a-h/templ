@@ -778,14 +778,34 @@ type Attribute interface {
 	Write(w io.Writer, indent int) error
 }
 
-// <hr noshade/>
-type BoolConstantAttribute struct {
+type AttributeKey interface {
+	fmt.Stringer
+}
+
+type ConstantAttributeKey struct {
 	Name      string
 	NameRange Range
 }
 
+func (c ConstantAttributeKey) String() string {
+	return c.Name
+}
+
+type ExpressionAttributeKey struct {
+	Expression Expression
+}
+
+func (e ExpressionAttributeKey) String() string {
+	return `{ ` + e.Expression.Value + ` }`
+}
+
+// <hr noshade/>
+type BoolConstantAttribute struct {
+	Key AttributeKey
+}
+
 func (bca BoolConstantAttribute) String() string {
-	return bca.Name
+	return bca.Key.String()
 }
 
 func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
@@ -794,10 +814,9 @@ func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
 
 // href=""
 type ConstantAttribute struct {
-	Name        string
+	Key         AttributeKey
 	Value       string
 	SingleQuote bool
-	NameRange   Range
 }
 
 func (ca ConstantAttribute) String() string {
@@ -805,7 +824,7 @@ func (ca ConstantAttribute) String() string {
 	if ca.SingleQuote {
 		quote = `'`
 	}
-	return ca.Name + `=` + quote + ca.Value + quote
+	return ca.Key.String() + `=` + quote + ca.Value + quote
 }
 
 func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
@@ -814,13 +833,12 @@ func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
 
 // noshade={ templ.Bool(...) }
 type BoolExpressionAttribute struct {
-	Name       string
+	Key        AttributeKey
 	Expression Expression
-	NameRange  Range
 }
 
 func (bea BoolExpressionAttribute) String() string {
-	return bea.Name + `?={ ` + bea.Expression.Value + ` }`
+	return bea.Key.String() + `?={ ` + bea.Expression.Value + ` }`
 }
 
 func (bea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
@@ -829,9 +847,8 @@ func (bea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
 
 // href={ ... }
 type ExpressionAttribute struct {
-	Name       string
+	Key        AttributeKey
 	Expression Expression
-	NameRange  Range
 }
 
 func (ea ExpressionAttribute) String() string {
@@ -872,10 +889,10 @@ func (ea ExpressionAttribute) formatExpression() (exp []string) {
 func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
 	lines := ea.formatExpression()
 	if len(lines) == 1 {
-		return writeIndent(w, indent, ea.Name, `={ `, lines[0], ` }`)
+		return writeIndent(w, indent, ea.Key.String(), `={ `, lines[0], ` }`)
 	}
 
-	if err = writeIndent(w, indent, ea.Name, "={\n"); err != nil {
+	if err = writeIndent(w, indent, ea.Key.String(), "={\n"); err != nil {
 		return err
 	}
 	for _, line := range lines {

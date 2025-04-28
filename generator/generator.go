@@ -1013,7 +1013,10 @@ func (g *generator) writeElement(indentLevel int, n parser.Element) (err error) 
 
 func (g *generator) writeAttributeCSS(indentLevel int, attr parser.ExpressionAttribute) (result parser.ExpressionAttribute, ok bool, err error) {
 	var r parser.Range
-	name := html.EscapeString(attr.Name)
+	var name string
+	if ckey, ok := attr.Key.(parser.ConstantAttributeKey); ok {
+		name = html.EscapeString(ckey.Name)
+	}
 	if name != "class" {
 		ok = false
 		return
@@ -1117,7 +1120,10 @@ func getAttributeScripts(attr parser.Attribute) (scripts []string) {
 		}
 	}
 	if attr, ok := attr.(parser.ExpressionAttribute); ok {
-		name := html.EscapeString(attr.Name)
+		var name string
+		if ckey, ok := attr.Key.(parser.ConstantAttributeKey); ok {
+			name = html.EscapeString(ckey.Name)
+		}
 		if isScriptAttribute(name) {
 			scripts = append(scripts, attr.Expression.Value)
 		}
@@ -1125,26 +1131,66 @@ func getAttributeScripts(attr parser.Attribute) (scripts []string) {
 	return scripts
 }
 
-func (g *generator) writeBoolConstantAttribute(indentLevel int, attr parser.BoolConstantAttribute) (err error) {
-	name := html.EscapeString(attr.Name)
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s`, name)); err != nil {
-		return err
+func (g *generator) writeAttributeKey(indentLevel int, attr parser.AttributeKey) (err error) {
+	if attr, ok := attr.(parser.ConstantAttributeKey); ok {
+		name := html.EscapeString(attr.Name)
+		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s`, name)); err != nil {
+			return err
+		}
+		return nil
+	}
+	if attr, ok := attr.(parser.ExpressionAttributeKey); ok {
+		var r parser.Range
+		vn := g.createVariableName()
+		// var vn string
+		if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
+			return err
+		}
+		// vn, templ_7745c5c3_Err = templ.JoinStringErrs(
+		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
+			return err
+		}
+		// p.Name()
+		if r, err = g.w.Write(attr.Expression.Value); err != nil {
+			return err
+		}
+		g.sourceMap.Add(attr.Expression, r)
+		// )
+		if _, err = g.w.Write(")\n"); err != nil {
+			return err
+		}
+		// Attribute expression error handler.
+		err = g.writeExpressionErrorHandler(indentLevel, attr.Expression)
+		if err != nil {
+			return err
+		}
+
+		// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
+		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(` `+"+vn+"))\n"); err != nil {
+			return err
+		}
+		return g.writeErrorHandler(indentLevel)
 	}
 	return nil
 }
 
+func (g *generator) writeBoolConstantAttribute(indentLevel int, attr parser.BoolConstantAttribute) (err error) {
+	return g.writeAttributeKey(indentLevel, attr.Key)
+}
+
 func (g *generator) writeConstantAttribute(indentLevel int, attr parser.ConstantAttribute) (err error) {
-	name := html.EscapeString(attr.Name)
+	if err = g.writeAttributeKey(indentLevel, attr.Key); err != nil {
+		return err
+	}
 	value := html.EscapeString(attr.Value)
 	value = escapeQuotes(value)
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s=\"%s\"`, name, value)); err != nil {
+	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`=\"%s\"`, value)); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (g *generator) writeBoolExpressionAttribute(indentLevel int, attr parser.BoolExpressionAttribute) (err error) {
-	name := html.EscapeString(attr.Name)
 	// if
 	if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
 		return err
@@ -1161,7 +1207,7 @@ func (g *generator) writeBoolExpressionAttribute(indentLevel int, attr parser.Bo
 	}
 	{
 		indentLevel++
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s`, name)); err != nil {
+		if err = g.writeAttributeKey(indentLevel, attr.Key); err != nil {
 			return err
 		}
 		indentLevel--
@@ -1283,25 +1329,27 @@ func (g *generator) writeExpressionAttributeValueStyle(indentLevel int, attr par
 }
 
 func (g *generator) writeExpressionAttribute(indentLevel int, elementName string, attr parser.ExpressionAttribute) (err error) {
-	attrName := html.EscapeString(attr.Name)
-	// Name
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s=`, attrName)); err != nil {
+	if err = g.writeAttributeKey(indentLevel, attr.Key); err != nil {
 		return err
 	}
-	// Open quote.
-	if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
+	var attrName string
+	if ckey, ok := attr.Key.(parser.ConstantAttributeKey); ok {
+		attrName = ckey.Name
+	}
+	// ="
+	if _, err = g.w.WriteStringLiteral(indentLevel, `=\"`); err != nil {
 		return err
 	}
 	// Value.
-	if (elementName == "a" && attr.Name == "href") || (elementName == "form" && attr.Name == "action") {
+	if (elementName == "a" && attrName == "href") || (elementName == "form" && attrName == "action") {
 		if err := g.writeExpressionAttributeValueURL(indentLevel, attr); err != nil {
 			return err
 		}
-	} else if isScriptAttribute(attr.Name) {
+	} else if isScriptAttribute(attrName) {
 		if err := g.writeExpressionAttributeValueScript(indentLevel, attr); err != nil {
 			return err
 		}
-	} else if attr.Name == "style" {
+	} else if attrName == "style" {
 		if err := g.writeExpressionAttributeValueStyle(indentLevel, attr); err != nil {
 			return err
 		}
