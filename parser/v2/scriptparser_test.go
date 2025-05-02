@@ -36,7 +36,7 @@ func TestScriptElementParserPlain(t *testing.T) {
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
 
-			se, isScriptElement := result.(ScriptElement)
+			se, isScriptElement := result.(*ScriptElement)
 			if !isScriptElement {
 				t.Fatalf("expected ScriptElement, got %T", result)
 			}
@@ -64,19 +64,19 @@ func TestScriptElementParser(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected ScriptElement
+		expected *ScriptElement
 	}{
 		{
 			name:     "script: no content",
 			input:    `<script></script>`,
-			expected: ScriptElement{},
+			expected: &ScriptElement{},
 		},
 		{
 			name:  "script: vbscript",
 			input: `<script type="vbscript">dim x = 1</script>`,
-			expected: ScriptElement{
+			expected: &ScriptElement{
 				Attributes: []Attribute{
-					ConstantAttribute{
+					&ConstantAttribute{
 						Name:  "type",
 						Value: "vbscript",
 						NameRange: Range{
@@ -93,9 +93,9 @@ func TestScriptElementParser(t *testing.T) {
 		{
 			name:  "script: go expression",
 			input: `<script>{{ name }}</script>`,
-			expected: ScriptElement{
+			expected: &ScriptElement{
 				Contents: []ScriptContents{
-					NewScriptContentsGo(GoCode{
+					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
 							Range: Range{
@@ -135,10 +135,10 @@ func TestScriptElementParser(t *testing.T) {
 			input: `<script>
 {{ name }}
 </script>`,
-			expected: ScriptElement{
+			expected: &ScriptElement{
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("\n"),
-					NewScriptContentsGo(GoCode{
+					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
 							Range: Range{
@@ -154,10 +154,10 @@ func TestScriptElementParser(t *testing.T) {
 		{
 			name:  "script: go expression in single quoted string",
 			input: `<script>var x = '{{ name }}';</script>`,
-			expected: ScriptElement{
+			expected: &ScriptElement{
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("var x = '"),
-					NewScriptContentsGo(GoCode{
+					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
 							Range: Range{
@@ -173,10 +173,10 @@ func TestScriptElementParser(t *testing.T) {
 		{
 			name:  "script: go expression in double quoted string",
 			input: `<script>var x = "{{ name }}";</script>`,
-			expected: ScriptElement{
+			expected: &ScriptElement{
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("var x = \""),
-					NewScriptContentsGo(GoCode{
+					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
 							Range: Range{
@@ -194,10 +194,10 @@ func TestScriptElementParser(t *testing.T) {
 			input: `<script>var x = "This is a test \
 {{ name }} \
 to see if it works";</script>`,
-			expected: ScriptElement{
+			expected: &ScriptElement{
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("var x = \"This is a test \\\n"),
-					NewScriptContentsGo(GoCode{
+					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
 							Range: Range{
@@ -214,10 +214,10 @@ to see if it works";</script>`,
 		{
 			name:  "script: go expression in backtick quoted string",
 			input: `<script>var x = ` + "`" + "{{ name }}" + "`" + `;</script>`,
-			expected: ScriptElement{
+			expected: &ScriptElement{
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("var x = `"),
-					NewScriptContentsGo(GoCode{
+					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
 							Range: Range{
@@ -235,7 +235,7 @@ to see if it works";</script>`,
 			input: `<script>
 // {{ name }}
 </script>`,
-			expected: ScriptElement{
+			expected: &ScriptElement{
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("\n"),
 					NewScriptContentsScriptCode("// {{ name }}\n"),
@@ -249,7 +249,7 @@ to see if it works";</script>`,
 {{ name }}
 but it's commented out */
 </script>`,
-			expected: ScriptElement{
+			expected: &ScriptElement{
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("\n"),
 					NewScriptContentsScriptCode("/* There's some content\n{{ name }}\nbut it's commented out */\n"),

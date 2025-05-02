@@ -130,7 +130,7 @@ func (p *Server) convertGoRangeToTemplRange(templURI lsp.DocumentURI, input lsp.
 }
 
 // parseTemplate parses the templ file content, and notifies the end user via the LSP about how it went.
-func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText string) (template parser.TemplateFile, ok bool, err error) {
+func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText string) (template *parser.TemplateFile, ok bool, err error) {
 	template, err = parser.ParseString(templateText)
 	if err != nil {
 		msg := &lsp.PublishDiagnosticsParams{

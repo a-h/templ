@@ -11,19 +11,19 @@ func TestHTMLCommentParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected HTMLComment
+		expected *HTMLComment
 	}{
 		{
 			name:  "comment - single line",
 			input: `<!-- single line comment -->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: " single line comment ",
 			},
 		},
 		{
 			name:  "comment - no whitespace",
 			input: `<!--no whitespace between sequence open and close-->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: "no whitespace between sequence open and close",
 			},
 		},
@@ -32,7 +32,7 @@ func TestHTMLCommentParser(t *testing.T) {
 			input: `<!-- multiline
 								comment
 					-->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: ` multiline
 								comment
 					`,
@@ -41,14 +41,14 @@ func TestHTMLCommentParser(t *testing.T) {
 		{
 			name:  "comment - with tag",
 			input: `<!-- <p class="test">tag</p> -->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: ` <p class="test">tag</p> `,
 			},
 		},
 		{
 			name:  "comments can contain tags",
 			input: `<!-- <div> hello world </div> -->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: ` <div> hello world </div> `,
 			},
 		},
