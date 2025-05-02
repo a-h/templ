@@ -86,7 +86,7 @@ func TestScriptElementParser(t *testing.T) {
 					},
 				},
 				Contents: []ScriptContents{
-					NewScriptContentsJS("dim x = 1"),
+					NewScriptContentsScriptCode("dim x = 1"),
 				},
 			},
 		},
@@ -108,13 +108,36 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "script: go expression with explicit type",
+			input: `<script type="text/javascript">{{ name }}</script>`,
+			expected: ScriptElement{
+				Attributes: []Attribute{ConstantAttribute{
+					Name: "type", Value: "text/javascript", NameRange: Range{
+						From: Position{Index: 8, Line: 0, Col: 8},
+						To:   Position{Index: 12, Line: 0, Col: 12},
+					},
+				}},
+				Contents: []ScriptContents{
+					NewScriptContentsGo(GoCode{
+						Expression: Expression{
+							Value: "name",
+							Range: Range{
+								From: Position{Index: 34, Line: 0, Col: 34},
+								To:   Position{Index: 38, Line: 0, Col: 38},
+							},
+						},
+					}, false),
+				},
+			},
+		},
+		{
 			name: "script: go expression - multiline 1",
 			input: `<script>
 {{ name }}
 </script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
-					NewScriptContentsJS("\n"),
+					NewScriptContentsScriptCode("\n"),
 					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
@@ -133,7 +156,7 @@ func TestScriptElementParser(t *testing.T) {
 			input: `<script>var x = '{{ name }}';</script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
-					NewScriptContentsJS("var x = '"),
+					NewScriptContentsScriptCode("var x = '"),
 					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
@@ -143,7 +166,7 @@ func TestScriptElementParser(t *testing.T) {
 							},
 						},
 					}, true),
-					NewScriptContentsJS("';"),
+					NewScriptContentsScriptCode("';"),
 				},
 			},
 		},
@@ -152,7 +175,7 @@ func TestScriptElementParser(t *testing.T) {
 			input: `<script>var x = "{{ name }}";</script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
-					NewScriptContentsJS("var x = \""),
+					NewScriptContentsScriptCode("var x = \""),
 					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
@@ -162,7 +185,7 @@ func TestScriptElementParser(t *testing.T) {
 							},
 						},
 					}, true),
-					NewScriptContentsJS("\";"),
+					NewScriptContentsScriptCode("\";"),
 				},
 			},
 		},
@@ -173,7 +196,7 @@ func TestScriptElementParser(t *testing.T) {
 to see if it works";</script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
-					NewScriptContentsJS("var x = \"This is a test \\\n"),
+					NewScriptContentsScriptCode("var x = \"This is a test \\\n"),
 					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
@@ -184,7 +207,7 @@ to see if it works";</script>`,
 						},
 						TrailingSpace: SpaceHorizontal,
 					}, true),
-					NewScriptContentsJS("\\\nto see if it works\";"),
+					NewScriptContentsScriptCode("\\\nto see if it works\";"),
 				},
 			},
 		},
@@ -193,7 +216,7 @@ to see if it works";</script>`,
 			input: `<script>var x = ` + "`" + "{{ name }}" + "`" + `;</script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
-					NewScriptContentsJS("var x = `"),
+					NewScriptContentsScriptCode("var x = `"),
 					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
@@ -203,7 +226,7 @@ to see if it works";</script>`,
 							},
 						},
 					}, true),
-					NewScriptContentsJS("`;"),
+					NewScriptContentsScriptCode("`;"),
 				},
 			},
 		},
@@ -214,8 +237,8 @@ to see if it works";</script>`,
 </script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
-					NewScriptContentsJS("\n"),
-					NewScriptContentsJS("// {{ name }}\n"),
+					NewScriptContentsScriptCode("\n"),
+					NewScriptContentsScriptCode("// {{ name }}\n"),
 				},
 			},
 		},
@@ -228,8 +251,25 @@ but it's commented out */
 </script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
-					NewScriptContentsJS("\n"),
-					NewScriptContentsJS("/* There's some content\n{{ name }}\nbut it's commented out */\n"),
+					NewScriptContentsScriptCode("\n"),
+					NewScriptContentsScriptCode("/* There's some content\n{{ name }}\nbut it's commented out */\n"),
+				},
+			},
+		},
+		{
+			name: "script: non js content is parsed raw",
+			input: `<script type="text/hyperscript">
+set tier_1 to #tier-1's value
+</script>`,
+			expected: ScriptElement{
+				Attributes: []Attribute{ConstantAttribute{
+					Name: "type", Value: "text/hyperscript", NameRange: Range{
+						From: Position{Index: 8, Line: 0, Col: 8},
+						To:   Position{Index: 12, Line: 0, Col: 12},
+					},
+				}},
+				Contents: []ScriptContents{
+					NewScriptContentsScriptCode("\nset tier_1 to #tier-1's value\n"),
 				},
 			},
 		},
