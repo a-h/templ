@@ -77,11 +77,13 @@ func TestScriptElementParser(t *testing.T) {
 			expected: ScriptElement{
 				Attributes: []Attribute{
 					ConstantAttribute{
-						Name:  "type",
 						Value: "vbscript",
-						NameRange: Range{
-							From: Position{Index: 8, Line: 0, Col: 8},
-							To:   Position{Index: 12, Line: 0, Col: 12},
+						Key: ConstantAttributeKey{
+							Name: "type",
+							NameRange: Range{
+								From: Position{Index: 8, Line: 0, Col: 8},
+								To:   Position{Index: 12, Line: 0, Col: 12},
+							},
 						},
 					},
 				},

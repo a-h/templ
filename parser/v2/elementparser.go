@@ -141,11 +141,10 @@ var (
 		}
 
 		// Attribute name.
-		if attr.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
+		if attr.Key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
 			pi.Seek(start)
 			return
 		}
-		attr.NameRange = NewRange(pi.PositionAt(pi.Index()-len(attr.Name)), pi.Position())
 
 		for _, p := range attributeValueParsers {
 			attr.Value, ok, err = p.Parse(pi)
@@ -154,7 +153,7 @@ var (
 				if pErr, isParseError := err.(parse.ParseError); isParseError {
 					pos = pErr.Pos
 				}
-				return attr, false, parse.Error(fmt.Sprintf("%s: %v", attr.Name, err), pos)
+				return attr, false, parse.Error(fmt.Sprintf("%s: %v", attr.Key, err), pos)
 			}
 			if ok {
 				attr.SingleQuote = p.UseSingleQuote
@@ -176,6 +175,41 @@ var (
 	})
 )
 
+var attributeKeyParser = parse.Func(func(pi *parse.Input) (k AttributeKey, ok bool, err error) {
+	start := pi.Index()
+	n, ok, err := attributeNameParser.Parse(pi)
+	if ok {
+		r := NewRange(pi.PositionAt(pi.Index()-len(n)), pi.Position())
+		k = ConstantAttributeKey{Name: n, NameRange: r}
+		return k, true, nil
+	}
+	if err != nil {
+		pi.Seek(start)
+		return
+	}
+
+	// Eat the first brace.
+	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil ||
+		!ok {
+		pi.Seek(start)
+		return
+	}
+	var ek ExpressionAttributeKey
+
+	// Expression.
+	if ek.Expression, err = parseGoSliceArgs(pi); err != nil {
+		return ek, false, err
+	}
+
+	// Eat the Final brace.
+	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		err = parse.Error("attribute key: missing closing brace", pi.Position())
+		pi.Seek(start)
+		return
+	}
+	return ek, true, nil
+})
+
 // BoolConstantAttribute.
 var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr BoolConstantAttribute, ok bool, err error) {
 	start := pi.Index()
@@ -186,11 +220,10 @@ var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr BoolCon
 	}
 
 	// Attribute name.
-	if attr.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
+	if attr.Key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
-	attr.NameRange = NewRange(pi.PositionAt(pi.Index()-len(attr.Name)), pi.Position())
 
 	// We have a name, but if we have an equals sign, it's not a constant boolean attribute.
 	next, ok := pi.Peek(1)
@@ -224,11 +257,10 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r BoolExpr
 	}
 
 	// Attribute name.
-	if r.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
+	if r.Key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
-	r.NameRange = NewRange(pi.PositionAt(pi.Index()-len(r.Name)), pi.Position())
 
 	// Check whether this is a boolean expression attribute.
 	if _, ok, err = boolExpressionStart.Parse(pi); err != nil || !ok {
@@ -260,11 +292,10 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr Expressio
 	}
 
 	// Attribute name.
-	if attr.Name, ok, err = attributeNameParser.Parse(pi); err != nil || !ok {
+	if attr.Key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
-	attr.NameRange = NewRange(pi.PositionAt(pi.Index()-len(attr.Name)), pi.Position())
 
 	// ={
 	if _, ok, err = parse.Or(parse.String("={ "), parse.String("={")).Parse(pi); err != nil || !ok {
@@ -334,6 +365,9 @@ var spreadAttributesParser = parse.Func(func(pi *parse.Input) (attr SpreadAttrib
 type attributeParser struct{}
 
 func (attributeParser) Parse(in *parse.Input) (out Attribute, ok bool, err error) {
+	if out, ok, err = spreadAttributesParser.Parse(in); err != nil || ok {
+		return
+	}
 	if out, ok, err = boolExpressionAttributeParser.Parse(in); err != nil || ok {
 		return
 	}
@@ -344,9 +378,6 @@ func (attributeParser) Parse(in *parse.Input) (out Attribute, ok bool, err error
 		return
 	}
 	if out, ok, err = boolConstantAttributeParser.Parse(in); err != nil || ok {
-		return
-	}
-	if out, ok, err = spreadAttributesParser.Parse(in); err != nil || ok {
 		return
 	}
 	if out, ok, err = constantAttributeParser.Parse(in); err != nil || ok {
