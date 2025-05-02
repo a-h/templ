@@ -1,0 +1,8 @@
+-- in --
+<script type="text/hyperscript">
+set foo to #foo's value
+</script>
+-- out --
+
+set foo to #foo's value
+

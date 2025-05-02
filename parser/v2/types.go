@@ -655,7 +655,7 @@ func isBlockNode(node Node) bool {
 	return false
 }
 
-func NewScriptContentsJS(value string) ScriptContents {
+func NewScriptContentsScriptCode(value string) ScriptContents {
 	return ScriptContents{
 		Value: &value,
 	}
