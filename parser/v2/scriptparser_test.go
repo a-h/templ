@@ -110,15 +110,15 @@ func TestScriptElementParser(t *testing.T) {
 		{
 			name:  "script: go expression with explicit type",
 			input: `<script type="text/javascript">{{ name }}</script>`,
-			expected: ScriptElement{
-				Attributes: []Attribute{ConstantAttribute{
+			expected: &ScriptElement{
+				Attributes: []Attribute{&ConstantAttribute{
 					Name: "type", Value: "text/javascript", NameRange: Range{
 						From: Position{Index: 8, Line: 0, Col: 8},
 						To:   Position{Index: 12, Line: 0, Col: 12},
 					},
 				}},
 				Contents: []ScriptContents{
-					NewScriptContentsGo(GoCode{
+					NewScriptContentsGo(&GoCode{
 						Expression: Expression{
 							Value: "name",
 							Range: Range{
@@ -261,8 +261,8 @@ but it's commented out */
 			input: `<script type="text/hyperscript">
 set tier_1 to #tier-1's value
 </script>`,
-			expected: ScriptElement{
-				Attributes: []Attribute{ConstantAttribute{
+			expected: &ScriptElement{
+				Attributes: []Attribute{&ConstantAttribute{
 					Name: "type", Value: "text/hyperscript", NameRange: Range{
 						From: Position{Index: 8, Line: 0, Col: 8},
 						To:   Position{Index: 12, Line: 0, Col: 12},
