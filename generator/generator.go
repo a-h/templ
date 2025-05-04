@@ -954,20 +954,6 @@ func (g *generator) writeExpressionErrorHandler(indentLevel int, expression pars
 	return err
 }
 
-func copyAttributes(attr []parser.Attribute) []parser.Attribute {
-	o := make([]parser.Attribute, len(attr))
-	for i, a := range attr {
-		if c, ok := a.(*parser.ConditionalAttribute); ok {
-			c.Then = copyAttributes(c.Then)
-			c.Else = copyAttributes(c.Else)
-			o[i] = c
-			continue
-		}
-		o[i] = a
-	}
-	return o
-}
-
 func (g *generator) writeElement(indentLevel int, n *parser.Element) (err error) {
 	if len(n.Attributes) == 0 {
 		// <div>
@@ -975,7 +961,7 @@ func (g *generator) writeElement(indentLevel int, n *parser.Element) (err error)
 			return err
 		}
 	} else {
-		attrs := copyAttributes(n.Attributes)
+		attrs := parser.CopyAttributes(n.Attributes)
 		// <style type="text/css"></style>
 		if err = g.writeElementCSS(indentLevel, attrs); err != nil {
 			return err

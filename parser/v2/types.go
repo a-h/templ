@@ -832,6 +832,7 @@ type Attribute interface {
 	// Write out the string*.
 	Write(w io.Writer, indent int) error
 	Visit(v Visitor) error
+	Copy() Attribute
 }
 
 // <hr noshade/>
@@ -850,6 +851,13 @@ func (bca *BoolConstantAttribute) Write(w io.Writer, indent int) error {
 
 func (bca *BoolConstantAttribute) Visit(v Visitor) error {
 	return v.VisitBoolConstantAttribute(bca)
+}
+
+func (bca *BoolConstantAttribute) Copy() Attribute {
+	return &BoolConstantAttribute{
+		Name:      bca.Name,
+		NameRange: bca.NameRange,
+	}
 }
 
 // href=""
@@ -876,6 +884,15 @@ func (ca *ConstantAttribute) Visit(v Visitor) error {
 	return v.VisitConstantAttribute(ca)
 }
 
+func (ca *ConstantAttribute) Copy() Attribute {
+	return &ConstantAttribute{
+		Name:        ca.Name,
+		Value:       ca.Value,
+		SingleQuote: ca.SingleQuote,
+		NameRange:   ca.NameRange,
+	}
+}
+
 // noshade={ templ.Bool(...) }
 type BoolExpressionAttribute struct {
 	Name       string
@@ -893,6 +910,14 @@ func (bea *BoolExpressionAttribute) Write(w io.Writer, indent int) error {
 
 func (bea *BoolExpressionAttribute) Visit(v Visitor) error {
 	return v.VisitBoolExpressionAttribute(bea)
+}
+
+func (bea *BoolExpressionAttribute) Copy() Attribute {
+	return &BoolExpressionAttribute{
+		Name:       bea.Name,
+		Expression: bea.Expression,
+		NameRange:  bea.NameRange,
+	}
 }
 
 // href={ ... }
@@ -958,6 +983,14 @@ func (ea *ExpressionAttribute) Visit(v Visitor) error {
 	return v.VisitExpressionAttribute(ea)
 }
 
+func (ea *ExpressionAttribute) Copy() Attribute {
+	return &ExpressionAttribute{
+		Name:       ea.Name,
+		Expression: ea.Expression,
+		NameRange:  ea.NameRange,
+	}
+}
+
 // <a { spread... } />
 type SpreadAttributes struct {
 	Expression Expression
@@ -973,6 +1006,12 @@ func (sa *SpreadAttributes) Write(w io.Writer, indent int) error {
 
 func (sa *SpreadAttributes) Visit(v Visitor) error {
 	return v.VisitSpreadAttributes(sa)
+}
+
+func (sa *SpreadAttributes) Copy() Attribute {
+	return &SpreadAttributes{
+		Expression: sa.Expression,
+	}
 }
 
 //	<a href="test" \
@@ -1043,6 +1082,22 @@ func (ca *ConditionalAttribute) Write(w io.Writer, indent int) error {
 
 func (ca *ConditionalAttribute) Visit(v Visitor) error {
 	return v.VisitConditionalAttribute(ca)
+}
+
+func (ca *ConditionalAttribute) Copy() Attribute {
+	return &ConditionalAttribute{
+		Expression: ca.Expression,
+		Then:       CopyAttributes(ca.Then),
+		Else:       CopyAttributes(ca.Else),
+	}
+}
+
+func CopyAttributes(attrs []Attribute) (copies []Attribute) {
+	copies = make([]Attribute, len(attrs))
+	for i, a := range attrs {
+		copies[i] = a.Copy()
+	}
+	return copies
 }
 
 // GoComment.
