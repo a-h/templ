@@ -23,7 +23,7 @@ func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 
 	// Element name.
-	var e RawElement
+	e := &RawElement{}
 	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return

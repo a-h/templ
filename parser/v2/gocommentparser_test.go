@@ -11,13 +11,13 @@ func TestGoCommentParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected GoComment
+		expected *GoComment
 	}{
 		{
 			name: "single line can have a newline at the end",
 			input: `// single line comment
 `,
-			expected: GoComment{
+			expected: &GoComment{
 				Contents:  " single line comment",
 				Multiline: false,
 			},
@@ -25,7 +25,7 @@ func TestGoCommentParser(t *testing.T) {
 		{
 			name:  "single line comments can terminate the file",
 			input: `// single line comment`,
-			expected: GoComment{
+			expected: &GoComment{
 				Contents:  " single line comment",
 				Multiline: false,
 			},
@@ -33,7 +33,7 @@ func TestGoCommentParser(t *testing.T) {
 		{
 			name:  "multiline comments can be on one line",
 			input: `/* multiline comment, on one line */`,
-			expected: GoComment{
+			expected: &GoComment{
 				Contents:  " multiline comment, on one line ",
 				Multiline: true,
 			},
@@ -42,7 +42,7 @@ func TestGoCommentParser(t *testing.T) {
 			name: "multiline comments can span lines",
 			input: `/* multiline comment,
 on multiple lines */`,
-			expected: GoComment{
+			expected: &GoComment{
 				Contents:  " multiline comment,\non multiple lines ",
 				Multiline: true,
 			},

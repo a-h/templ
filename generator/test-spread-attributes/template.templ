@@ -15,3 +15,19 @@ templ BasicTemplate(spread templ.Attributes) {
 		>text3</div>
 	</div>
 }
+
+templ BasicTemplateOrdered(spread templ.OrderedAttributes) {
+	<div>
+		<a { spread... }>text</a>
+		<div
+			if true {
+				{ spread... }
+			}
+		>text2</div>
+		<div
+			if false {
+				{ spread... }
+			}
+		>text3</div>
+	</div>
+}
