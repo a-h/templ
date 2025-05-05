@@ -47,6 +47,8 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download coverage
         uses: actions/download-artifact@v4
         with:
