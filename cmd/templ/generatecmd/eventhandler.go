@@ -94,8 +94,8 @@ type FSEventHandler struct {
 }
 
 type GenerateResult struct {
-	// Updated indicates that the file was updated.
-	Updated bool
+	// WatchfileUpdated indicates that a file matching the watch pattern was updated.
+	WatchfileUpdated bool
 	// GoUpdated indicates that Go expressions were updated.
 	GoUpdated bool
 	// TextUpdated indicates that text literals were updated.
@@ -117,7 +117,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		if err = os.Remove(event.Name); err != nil {
 			h.Log.Warn("Failed to remove orphaned file", slog.Any("error", err))
 		}
-		return GenerateResult{Updated: true, GoUpdated: true, TextUpdated: false}, nil
+		return GenerateResult{WatchfileUpdated: true, GoUpdated: true, TextUpdated: false}, nil
 	}
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
@@ -133,7 +133,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		if strings.HasSuffix(event.Name, ".go") {
 			result.GoUpdated = true
 		}
-		result.Updated = true
+		result.WatchfileUpdated = true
 		return result, nil
 	}
 
@@ -253,7 +253,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 	// Hash output, and write out the file if the goCodeHash has changed.
 	goCodeHash := sha256.Sum256(formattedGoCode)
 	if h.UpsertHash(targetFileName, goCodeHash) {
-		result.Updated = true
+		result.WatchfileUpdated = true
 		if err = h.writer(targetFileName, formattedGoCode); err != nil {
 			return result, nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
 		}
