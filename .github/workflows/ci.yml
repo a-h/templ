@@ -31,9 +31,27 @@ jobs:
       - name: Test
         run: nix develop --command xc test-cover
 
-      - name: Copy coverage.out to temp
-        run: cp coverage.out $RUNNER_TEMP
+      - name: Upload coverage artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
       
+      - name: Build
+        run: nix build
+
+  update-coverage:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage
+
       - name: Update coverage report
         uses: ncruces/go-coverage-report@57ac6f0f19874f7afbab596105154f08004f482e
         with:
@@ -43,9 +61,6 @@ jobs:
           reuse-go: 'true'
         if: |
           github.event_name == 'push'  
-
-      - name: Build
-        run: nix build
 
   lint:
     runs-on: ubuntu-latest
