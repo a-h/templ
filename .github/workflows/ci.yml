@@ -55,7 +55,7 @@ jobs:
       - name: Update coverage report
         uses: ncruces/go-coverage-report@57ac6f0f19874f7afbab596105154f08004f482e
         with:
-          coverage-file: ${{ runner.temp }}/coverage.out
+          coverage-file: coverage.out
           report: 'true'
           chart: 'true'
           reuse-go: 'true'
