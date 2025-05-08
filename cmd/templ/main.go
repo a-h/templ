@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"syscall"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
@@ -236,7 +237,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-signalChan
 		fmt.Fprintln(stderr, "Stopping...")
