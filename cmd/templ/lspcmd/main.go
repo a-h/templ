@@ -22,6 +22,7 @@ type Arguments struct {
 	Log           string
 	GoplsLog      string
 	GoplsRPCTrace bool
+	GoplsRemote   string
 	// PPROF sets whether to start a profiling server on localhost:9999
 	PPROF bool
 	// HTTPDebug sets the HTTP endpoint to listen on. Leave empty for no web debug.
@@ -81,6 +82,7 @@ func run(ctx context.Context, log *slog.Logger, templStream jsonrpc2.Stream, arg
 	rwc, err := pls.NewGopls(ctx, log, pls.Options{
 		Log:      args.GoplsLog,
 		RPCTrace: args.GoplsRPCTrace,
+		Remote:   args.GoplsRemote,
 	})
 	if err != nil {
 		log.Error("failed to start gopls", slog.Any("error", err))

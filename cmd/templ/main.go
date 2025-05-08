@@ -354,6 +354,8 @@ Args:
     The file to log gopls output, or leave empty to disable logging.
   -goplsRPCTrace
     Set gopls to log input and output messages.
+  -gopls-remote
+    Specify remote gopls instance to connect to.
   -help
     Print help and exit.
   -pprof
@@ -369,6 +371,7 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	logFlag := cmd.String("log", "", "")
 	goplsLog := cmd.String("goplsLog", "", "")
 	goplsRPCTrace := cmd.Bool("goplsRPCTrace", false, "")
+	goplsRemote := cmd.String("gopls-remote", "", "")
 	helpFlag := cmd.Bool("help", false, "")
 	pprofFlag := cmd.Bool("pprof", false, "")
 	httpDebugFlag := cmd.String("http", "", "")
@@ -387,6 +390,7 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 		Log:           *logFlag,
 		GoplsLog:      *goplsLog,
 		GoplsRPCTrace: *goplsRPCTrace,
+		GoplsRemote:   *goplsRemote,
 		PPROF:         *pprofFlag,
 		HTTPDebug:     *httpDebugFlag,
 		NoPreload:     *noPreloadFlag && os.Getenv("GOPACKAGESDRIVER") != "",
