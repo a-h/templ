@@ -114,3 +114,5 @@ templ component() {
 ```html title="Output"
 <div>&lt;/div&gt;&lt;script&gt;alert(&#39;hello!&#39;)&lt;/script&gt;&lt;div&gt;</div>
 ```
+
+Manual escaping can be done with the `templ.EscapeString` function, but then you will need to use `@templ.Raw` to avoid double-escaping. See [Rendering raw HTML](/syntax-and-usage/rendering-raw-html) for details.
