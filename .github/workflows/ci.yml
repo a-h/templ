@@ -42,6 +42,7 @@ jobs:
         run: nix build
 
   update-coverage:
+    if: github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -61,8 +62,6 @@ jobs:
           report: 'true'
           chart: 'true'
           reuse-go: 'true'
-        if: |
-          github.event_name == 'push'  
 
   lint:
     runs-on: ubuntu-latest
