@@ -179,7 +179,7 @@ var attributeKeyParser = parse.Func(func(pi *parse.Input) (k AttributeKey, ok bo
 	start := pi.Index()
 	n, ok, err := attributeNameParser.Parse(pi)
 	if ok {
-		r := NewRange(pi.PositionAt(pi.Index()-len(n)), pi.Position())
+		r := NewRange(pi.PositionAt(start), pi.Position())
 		k = ConstantAttributeKey{Name: n, NameRange: r}
 		return k, true, nil
 	}
