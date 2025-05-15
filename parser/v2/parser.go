@@ -26,6 +26,9 @@ var template = parse.Func(func(pi *parse.Input) (r *HTMLTemplate, ok bool, err e
 	var nodes Nodes
 	nodes, ok, err = newTemplateNodeParser(closeBraceWithOptionalPadding, "template closing brace").Parse(pi)
 	if err != nil {
+		// The LSP wants as many nodes as possible, so even though there was an error,
+		// we probably have some valid nodes that the LSP can use.
+		r.Children = nodes.Nodes
 		return
 	}
 	if !ok {

@@ -161,6 +161,10 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		if err != nil {
 			p.Log.Error("failed to publish error diagnostics", slog.Any("error", err))
 		}
+		// If the template was even partially parsed, it's still potentially useful.
+		if template != nil {
+			template.Filepath = string(uri)
+		}
 		return
 	}
 	template.Filepath = string(uri)
@@ -278,18 +282,18 @@ func (p *Server) preload(ctx context.Context, workspaceFolders []lsp.WorkspaceFo
 			}
 			p.TemplSource.Set(string(uri), NewDocument(p.Log, string(b)))
 			// Parse the template.
-			template, ok, err := p.parseTemplate(ctx, uri, string(b))
+			template, _, err := p.parseTemplate(ctx, uri, string(b))
 			if err != nil {
-				p.Log.Error("parseTemplate failure", slog.Any("error", err))
-			}
-			if !ok {
-				p.Log.Info("parsing template did not succeed", slog.String("uri", string(uri)))
-				return nil
+				// It's expected to have some failures while parsing the template, since
+				// you are likely to have invalid docs while you're typing.
+				p.Log.Info("parseTemplate failure", slog.Any("error", err))
 			}
 			w := new(strings.Builder)
 			generatorOutput, err := generator.Generate(template, w)
 			if err != nil {
-				return fmt.Errorf("generate failure: %w", err)
+				// It's expected to have some failures while generating code from the template, since
+				// you are likely to have invalid docs while you're typing.
+				p.Log.Info("generator failure", slog.Any("error", err))
 			}
 			p.Log.Info("setting source map cache contents", slog.String("uri", string(uri)))
 			p.SourceMapCache.Set(string(uri), generatorOutput.SourceMap)
@@ -670,8 +674,10 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 		p.Log.Error("parseTemplate failure", slog.Any("error", err))
 	}
 	if !ok {
-		return
+		p.Log.Info("parseTemplate not OK, but attempting to generate anyway")
 	}
+	// Even if the template isn't parsed successfully, attempt to generate, because we
+	// need the LSP to have an up-to-date view of completions.
 	w := new(strings.Builder)
 	// In future updates, we may pass `WithSkipCodeGeneratedComment` to the generator.
 	// This will enable a number of actions within gopls that it doesn't currently apply because

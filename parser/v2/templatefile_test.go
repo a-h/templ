@@ -155,6 +155,37 @@ templ template(
 			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
 		}
 	})
+	t.Run("as you type a templ file, it parses as much as it can, even if there's an error, so that the LSP functions", func(t *testing.T) {
+		input := `package main
+
+templ Hello(name string) {
+  if nam`
+		tf, err := ParseString(input)
+		if err == nil {
+			t.Fatalf("expected error, because the file is not valid, got nil")
+		}
+		if len(tf.Nodes) != 1 {
+			t.Fatalf("expected 1 node, got %d nodes", len(tf.Nodes))
+		}
+		hello, ok := tf.Nodes[0].(*HTMLTemplate)
+		if !ok {
+			t.Fatalf("expected HTML template, but was %T", tf.Nodes[0])
+		}
+		// Inside Hello, we expect an if expression.
+		if len(hello.Children) == 0 {
+			t.Fatalf("expected to find children, but didn't")
+		}
+		if len(hello.Children) != 2 {
+			t.Fatalf("expected 2 children (whitespace, if), got %d", len(hello.Children))
+		}
+		ie, ok := hello.Children[1].(*IfExpression)
+		if !ok {
+			t.Fatalf("expected if expression, but was %T", hello.Children[0])
+		}
+		if ie.Expression.Value != "nam" {
+			t.Errorf("expected Go expression %q, got %q", "nam", ie.Expression.Value)
+		}
+	})
 }
 
 func TestDefaultPackageName(t *testing.T) {

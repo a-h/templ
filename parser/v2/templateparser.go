@@ -103,7 +103,7 @@ outer:
 		for _, p := range templateNodeSkipParsers {
 			_, matched, err := p.Parse(pi)
 			if err != nil {
-				return Nodes{}, false, err
+				return op, false, err
 			}
 			if matched {
 				continue outer
@@ -117,7 +117,12 @@ outer:
 			var node Node
 			node, matched, err = p.Parse(pi)
 			if err != nil {
-				return Nodes{}, false, err
+				// Even if there's an error, we might have a node that the LSP can use,
+				// so return it.
+				if node != nil {
+					op.Nodes = append(op.Nodes, node)
+				}
+				return op, false, err
 			}
 			if matched {
 				op.Nodes = append(op.Nodes, node)
