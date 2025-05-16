@@ -8,7 +8,7 @@ import (
 )
 
 func TestTemplateParser(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name        string
 		input       string
 		expected    *HTMLTemplate
@@ -473,19 +473,23 @@ func TestTemplateParser(t *testing.T) {
 						},
 						Attributes: []Attribute{
 							&ConstantAttribute{
-								Name:  "type",
 								Value: "text",
-								NameRange: Range{
-									From: Position{Index: 34, Line: 1, Col: 8},
-									To:   Position{Index: 38, Line: 1, Col: 12},
+								Key: ConstantAttributeKey{
+									Name: "type",
+									NameRange: Range{
+										From: Position{Index: 34, Line: 1, Col: 8},
+										To:   Position{Index: 38, Line: 1, Col: 12},
+									},
 								},
 							},
 							&ConstantAttribute{
-								Name:  "value",
 								Value: "a",
-								NameRange: Range{
-									From: Position{Index: 46, Line: 1, Col: 20},
-									To:   Position{Index: 51, Line: 1, Col: 25},
+								Key: ConstantAttributeKey{
+									Name: "value",
+									NameRange: Range{
+										From: Position{Index: 46, Line: 1, Col: 20},
+										To:   Position{Index: 51, Line: 1, Col: 25},
+									},
 								},
 							},
 						},
@@ -499,19 +503,23 @@ func TestTemplateParser(t *testing.T) {
 						},
 						Attributes: []Attribute{
 							&ConstantAttribute{
-								Name:  "type",
 								Value: "text",
-								NameRange: Range{
-									From: Position{Index: 67, Line: 2, Col: 8},
-									To:   Position{Index: 71, Line: 2, Col: 12},
+								Key: ConstantAttributeKey{
+									Name: "type",
+									NameRange: Range{
+										From: Position{Index: 67, Line: 2, Col: 8},
+										To:   Position{Index: 71, Line: 2, Col: 12},
+									},
 								},
 							},
 							&ConstantAttribute{
-								Name:  "value",
 								Value: "b",
-								NameRange: Range{
-									From: Position{Index: 79, Line: 2, Col: 20},
-									To:   Position{Index: 84, Line: 2, Col: 25},
+								Key: ConstantAttributeKey{
+									Name: "value",
+									NameRange: Range{
+										From: Position{Index: 79, Line: 2, Col: 20},
+										To:   Position{Index: 84, Line: 2, Col: 25},
+									},
 								},
 							},
 						},
@@ -600,11 +608,13 @@ func TestTemplateParser(t *testing.T) {
 						},
 						Attributes: []Attribute{
 							&ConstantAttribute{
-								Name:  "href",
 								Value: "/",
-								NameRange: Range{
-									From: Position{Index: 16, Line: 1, Col: 4},
-									To:   Position{Index: 20, Line: 1, Col: 8},
+								Key: ConstantAttributeKey{
+									Name: "href",
+									NameRange: Range{
+										From: Position{Index: 16, Line: 1, Col: 4},
+										To:   Position{Index: 20, Line: 1, Col: 8},
+									},
 								},
 							},
 						},
@@ -866,7 +876,7 @@ func TestTemplateParser(t *testing.T) {
 }
 
 func TestTemplateParserErrors(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected string

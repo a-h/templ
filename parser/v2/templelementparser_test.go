@@ -139,18 +139,21 @@ func TestTemplElementExpressionParser(t *testing.T) {
 				},
 				Children: []Node{
 					&Whitespace{Value: "\n\t\t\t"},
-					&Element{Name: "a",
+					&Element{
+						Name: "a",
 						NameRange: Range{
 							From: Position{Index: 20, Line: 1, Col: 4},
 							To:   Position{Index: 21, Line: 1, Col: 5},
 						},
 						Attributes: []Attribute{
 							&ConstantAttribute{
-								Name:  "href",
 								Value: "someurl",
-								NameRange: Range{
-									From: Position{Index: 22, Line: 1, Col: 6},
-									To:   Position{Index: 26, Line: 1, Col: 10},
+								Key: ConstantAttributeKey{
+									Name: "href",
+									NameRange: Range{
+										From: Position{Index: 22, Line: 1, Col: 6},
+										To:   Position{Index: 26, Line: 1, Col: 10},
+									},
 								},
 							},
 						},
