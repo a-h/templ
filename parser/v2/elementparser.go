@@ -178,14 +178,14 @@ var (
 var attributeKeyParser = parse.Func(func(pi *parse.Input) (k AttributeKey, ok bool, err error) {
 	start := pi.Index()
 	n, ok, err := attributeNameParser.Parse(pi)
+	if err != nil {
+		pi.Seek(start)
+		return
+	}
 	if ok {
 		r := NewRange(pi.PositionAt(start), pi.Position())
 		k = ConstantAttributeKey{Name: n, NameRange: r}
 		return k, true, nil
-	}
-	if err != nil {
-		pi.Seek(start)
-		return
 	}
 
 	// Eat the first brace.
