@@ -1332,24 +1332,21 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	if err = g.writeAttributeKey(indentLevel, attr.Key); err != nil {
 		return err
 	}
-	var attrName string
-	if ckey, ok := attr.Key.(parser.ConstantAttributeKey); ok {
-		attrName = ckey.Name
-	}
 	// ="
 	if _, err = g.w.WriteStringLiteral(indentLevel, `=\"`); err != nil {
 		return err
 	}
+	attrKey := attr.Key.String()
 	// Value.
-	if (elementName == "a" && attrName == "href") || (elementName == "form" && attrName == "action") {
+	if (elementName == "a" && attrKey == "href") || (elementName == "form" && attrKey == "action") {
 		if err := g.writeExpressionAttributeValueURL(indentLevel, attr); err != nil {
 			return err
 		}
-	} else if isScriptAttribute(attrName) {
+	} else if isScriptAttribute(attrKey) {
 		if err := g.writeExpressionAttributeValueScript(indentLevel, attr); err != nil {
 			return err
 		}
-	} else if attrName == "style" {
+	} else if attrKey == "style" {
 		if err := g.writeExpressionAttributeValueStyle(indentLevel, attr); err != nil {
 			return err
 		}
