@@ -175,19 +175,8 @@ var (
 	})
 )
 
-var attributeKeyParser = parse.Func(func(pi *parse.Input) (k AttributeKey, ok bool, err error) {
+var expressionAttributeKeyParser = parse.Func(func(pi *parse.Input) (attr AttributeKey, ok bool, err error) {
 	start := pi.Index()
-	n, ok, err := attributeNameParser.Parse(pi)
-	if err != nil {
-		pi.Seek(start)
-		return
-	}
-	if ok {
-		r := NewRange(pi.PositionAt(start), pi.Position())
-		k = ConstantAttributeKey{Name: n, NameRange: r}
-		return k, true, nil
-	}
-
 	// Eat the first brace.
 	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
@@ -197,7 +186,7 @@ var attributeKeyParser = parse.Func(func(pi *parse.Input) (k AttributeKey, ok bo
 
 	// Expression.
 	if ek.Expression, err = parseGoSliceArgs(pi); err != nil {
-		return ek, false, err
+		return attr, false, err
 	}
 
 	// Eat the Final brace.
@@ -208,6 +197,20 @@ var attributeKeyParser = parse.Func(func(pi *parse.Input) (k AttributeKey, ok bo
 	}
 	return ek, true, nil
 })
+
+var constantAttributeKeyParser = parse.Func(func(pi *parse.Input) (k AttributeKey, ok bool, err error) {
+	start := pi.Index()
+	n, ok, err := attributeNameParser.Parse(pi)
+	if err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+	r := NewRange(pi.PositionAt(start), pi.Position())
+	k = ConstantAttributeKey{Name: n, NameRange: r}
+	return k, true, nil
+})
+
+var attributeKeyParser = parse.Any(constantAttributeKeyParser, expressionAttributeKeyParser)
 
 // BoolConstantAttribute.
 var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr BoolConstantAttribute, ok bool, err error) {
