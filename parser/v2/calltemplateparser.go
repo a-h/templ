@@ -18,7 +18,7 @@ func (p callTemplateExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	}
 
 	// Once we have a prefix, we must have an expression that returns a template.
-	var r CallTemplateExpression
+	r := &CallTemplateExpression{}
 	if r.Expression, err = parseGo("call template expression", pi, goexpression.Expression); err != nil {
 		return
 	}

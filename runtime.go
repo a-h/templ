@@ -413,19 +413,38 @@ func SanitizeCSS[T ~string](property string, value T) SafeCSS {
 	return SafeCSS(p + ":" + v + ";")
 }
 
+type Attributer interface {
+	Items() []KeyValue[string, any]
+}
+
 // Attributes is an alias to map[string]any made for spread attributes.
 type Attributes map[string]any
 
-// sortedKeys returns the keys of a map in sorted order.
-func sortedKeys(m map[string]any) (keys []string) {
-	keys = make([]string, len(m))
-	var i int
-	for k := range m {
-		keys[i] = k
+var _ Attributer = Attributes{}
+
+// Returns the items of the attributes map in key sorted order.
+func (a Attributes) Items() []KeyValue[string, any] {
+	var (
+		items = make([]KeyValue[string, any], len(a))
+		i     int
+	)
+	for k, v := range a {
+		items[i] = KeyValue[string, any]{Key: k, Value: v}
 		i++
 	}
-	sort.Strings(keys)
-	return keys
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Key < items[j].Key
+	})
+	return items
+}
+
+// OrderedAttributes stores attributes in order of insertion.
+type OrderedAttributes []KeyValue[string, any]
+
+var _ Attributer = OrderedAttributes{}
+
+func (a OrderedAttributes) Items() []KeyValue[string, any] {
+	return a
 }
 
 func writeStrings(w io.Writer, ss ...string) (err error) {
@@ -437,9 +456,10 @@ func writeStrings(w io.Writer, ss ...string) (err error) {
 	return nil
 }
 
-func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (err error) {
-	for _, key := range sortedKeys(attributes) {
-		value := attributes[key]
+func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (err error) {
+	for _, item := range attributes.Items() {
+		key := item.Key
+		value := item.Value
 		switch value := value.(type) {
 		case string:
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {

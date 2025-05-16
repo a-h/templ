@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"syscall"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/fmtcmd"
@@ -172,7 +173,7 @@ Args:
   -w
     Number of workers to use when generating code. (default runtime.NumCPUs)
   -lazy
-    Only generate .go files if the source .templ file is newer. 
+    Only generate .go files if the source .templ file is newer.
   -pprof
     Port to run the pprof server on.
   -keep-orphaned-files
@@ -236,7 +237,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-signalChan
 		fmt.Fprintln(stderr, "Stopping...")
@@ -353,6 +354,8 @@ Args:
     The file to log gopls output, or leave empty to disable logging.
   -goplsRPCTrace
     Set gopls to log input and output messages.
+  -gopls-remote
+    Specify remote gopls instance to connect to.
   -help
     Print help and exit.
   -pprof
@@ -360,7 +363,7 @@ Args:
   -http string
     Enable http debug server by setting a listen address (e.g. localhost:7474)
   -no-preload
-    Disable preloading of templ files on server startup (useful for large monorepos)
+    Disable preloading of templ files on server startup and use custom GOPACKAGESDRIVER for lazy loading (useful for large monorepos). GOPACKAGESDRIVER environment variable must be set.
 `
 
 func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
@@ -368,6 +371,7 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	logFlag := cmd.String("log", "", "")
 	goplsLog := cmd.String("goplsLog", "", "")
 	goplsRPCTrace := cmd.Bool("goplsRPCTrace", false, "")
+	goplsRemote := cmd.String("gopls-remote", "", "")
 	helpFlag := cmd.Bool("help", false, "")
 	pprofFlag := cmd.Bool("pprof", false, "")
 	httpDebugFlag := cmd.String("http", "", "")
@@ -386,9 +390,10 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 		Log:           *logFlag,
 		GoplsLog:      *goplsLog,
 		GoplsRPCTrace: *goplsRPCTrace,
+		GoplsRemote:   *goplsRemote,
 		PPROF:         *pprofFlag,
 		HTTPDebug:     *httpDebugFlag,
-		NoPreload:     *noPreloadFlag,
+		NoPreload:     *noPreloadFlag && os.Getenv("GOPACKAGESDRIVER") != "",
 	})
 	if err != nil {
 		fmt.Fprintln(stderr, err.Error())

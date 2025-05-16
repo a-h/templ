@@ -34,14 +34,15 @@ import (
 // inverse operation - to put the file names back, and readjust any
 // character positions.
 type Server struct {
-	Log             *slog.Logger
-	Target          lsp.Server
-	SourceMapCache  *SourceMapCache
-	DiagnosticCache *DiagnosticCache
-	TemplSource     *DocumentContents
-	GoSource        map[string]string
-	NoPreload       bool
-	preLoadURIs     []*lsp.DidOpenTextDocumentParams
+	Log                *slog.Logger
+	Target             lsp.Server
+	SourceMapCache     *SourceMapCache
+	DiagnosticCache    *DiagnosticCache
+	TemplSource        *DocumentContents
+	GoSource           map[string]string
+	NoPreload          bool
+	preLoadURIs        []*lsp.DidOpenTextDocumentParams
+	templDocLazyLoader templDocLazyLoader
 }
 
 func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache, noPreload bool) (s *Server) {
@@ -129,7 +130,7 @@ func (p *Server) convertGoRangeToTemplRange(templURI lsp.DocumentURI, input lsp.
 }
 
 // parseTemplate parses the templ file content, and notifies the end user via the LSP about how it went.
-func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText string) (template parser.TemplateFile, ok bool, err error) {
+func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText string) (template *parser.TemplateFile, ok bool, err error) {
 	template, err = parser.ParseString(templateText)
 	if err != nil {
 		msg := &lsp.PublishDiagnosticsParams{
@@ -239,7 +240,14 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 		Save:              &lsp.SaveOptions{IncludeText: true},
 	}
 
-	if !p.NoPreload {
+	if p.NoPreload {
+		p.templDocLazyLoader = newTemplDocLazyLoader(
+			templDocHooks{
+				didOpen:  p.didOpen,
+				didClose: p.didClose,
+			},
+		)
+	} else {
 		p.preload(ctx, params.WorkspaceFolders)
 	}
 
@@ -711,6 +719,15 @@ func (p *Server) DidChangeWorkspaceFolders(ctx context.Context, params *lsp.DidC
 func (p *Server) DidClose(ctx context.Context, params *lsp.DidCloseTextDocumentParams) (err error) {
 	p.Log.Info("client -> server: DidClose")
 	defer p.Log.Info("client -> server: DidClose end")
+
+	if p.NoPreload {
+		return p.templDocLazyLoader.unload(ctx, params)
+	}
+
+	return p.didClose(ctx, params)
+}
+
+func (p *Server) didClose(ctx context.Context, params *lsp.DidCloseTextDocumentParams) (err error) {
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.DidClose(ctx, params)
@@ -726,6 +743,15 @@ func (p *Server) DidClose(ctx context.Context, params *lsp.DidCloseTextDocumentP
 func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentParams) (err error) {
 	p.Log.Info("client -> server: DidOpen", slog.String("uri", string(params.TextDocument.URI)))
 	defer p.Log.Info("client -> server: DidOpen end")
+
+	if p.NoPreload {
+		return p.templDocLazyLoader.load(ctx, params)
+	}
+
+	return p.didOpen(ctx, params)
+}
+
+func (p *Server) didOpen(ctx context.Context, params *lsp.DidOpenTextDocumentParams) (err error) {
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.DidOpen(ctx, params)

@@ -11,7 +11,7 @@ func TestIfExpression(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected IfExpression
+		expected *IfExpression
 	}{
 		{
 			name: "if: simple expression",
@@ -21,7 +21,7 @@ func TestIfExpression(t *testing.T) {
 </span>
 }
 `,
-			expected: IfExpression{
+			expected: &IfExpression{
 				Expression: Expression{
 					Value: `p.Test`,
 					Range: Range{
@@ -38,7 +38,7 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					Element{
+					&Element{
 						Name: "span",
 						NameRange: Range{
 							From: Position{Index: 13, Line: 1, Col: 1},
@@ -46,8 +46,8 @@ func TestIfExpression(t *testing.T) {
 						},
 
 						Children: []Node{
-							Whitespace{Value: "\n  "},
-							StringExpression{
+							&Whitespace{Value: "\n  "},
+							&StringExpression{
 								Expression: Expression{
 									Value: `"span content"`,
 									Range: Range{
@@ -79,7 +79,7 @@ func TestIfExpression(t *testing.T) {
 } else {
 	{ "B" }
 }`,
-			expected: IfExpression{
+			expected: &IfExpression{
 				Expression: Expression{
 					Value: `p.A`,
 					Range: Range{
@@ -96,8 +96,8 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					Whitespace{Value: "\t"},
-					StringExpression{
+					&Whitespace{Value: "\t"},
+					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
 							Range: Range{
@@ -117,7 +117,7 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Else: []Node{
-					StringExpression{
+					&StringExpression{
 						Expression: Expression{
 							Value: `"B"`,
 							Range: Range{
@@ -140,11 +140,11 @@ func TestIfExpression(t *testing.T) {
 		},
 		{
 			name: "if: expressions can have a space after the opening brace",
-			input: `if p.Test { 
+			input: `if p.Test {` + " " + `
   text
 }
 `,
-			expected: IfExpression{
+			expected: &IfExpression{
 				Expression: Expression{
 					Value: `p.Test`,
 					Range: Range{
@@ -161,8 +161,8 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					Whitespace{Value: "  "},
-					Text{
+					&Whitespace{Value: "  "},
+					&Text{
 						Value: "text",
 						Range: Range{
 							From: Position{Index: 15, Line: 1, Col: 2},
@@ -181,7 +181,7 @@ func TestIfExpression(t *testing.T) {
 </span>
 }
 `,
-			expected: IfExpression{
+			expected: &IfExpression{
 				Expression: Expression{
 					Value: `p.Test`,
 					Range: Range{
@@ -198,7 +198,7 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					Element{
+					&Element{
 						Name: "span",
 						NameRange: Range{
 							From: Position{Index: 13, Line: 1, Col: 1},
@@ -206,8 +206,8 @@ func TestIfExpression(t *testing.T) {
 						},
 
 						Children: []Node{
-							Whitespace{Value: "\n  "},
-							StringExpression{
+							&Whitespace{Value: "\n  "},
+							&StringExpression{
 								Expression: Expression{
 									Value: `"span content"`,
 									Range: Range{
@@ -239,7 +239,7 @@ func TestIfExpression(t *testing.T) {
 } else {
 	{ "B" }
 }`,
-			expected: IfExpression{
+			expected: &IfExpression{
 				Expression: Expression{
 					Value: `p.A`,
 					Range: Range{
@@ -256,8 +256,8 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					Whitespace{Value: "\t"},
-					StringExpression{
+					&Whitespace{Value: "\t"},
+					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
 							Range: Range{
@@ -277,7 +277,7 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Else: []Node{
-					StringExpression{
+					&StringExpression{
 						Expression: Expression{
 							Value: `"B"`,
 							Range: Range{
@@ -305,7 +305,7 @@ func TestIfExpression(t *testing.T) {
 						<div>{ "B" }</div>
 					}
 				}`,
-			expected: IfExpression{
+			expected: &IfExpression{
 				Expression: Expression{
 					Value: `p.A`,
 					Range: Range{
@@ -322,8 +322,8 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					Whitespace{Value: "\t\t\t\t\t"},
-					IfExpression{
+					&Whitespace{Value: "\t\t\t\t\t"},
+					&IfExpression{
 						Expression: Expression{
 							Value: `p.B`,
 							Range: Range{
@@ -340,8 +340,8 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							Whitespace{Value: "\t\t\t\t\t\t"},
-							Element{
+							&Whitespace{Value: "\t\t\t\t\t\t"},
+							&Element{
 								Name: "div",
 								NameRange: Range{
 									From: Position{Index: 30, Line: 2, Col: 7},
@@ -349,7 +349,7 @@ func TestIfExpression(t *testing.T) {
 								},
 
 								Children: []Node{
-									StringExpression{
+									&StringExpression{
 										Expression: Expression{
 											Value: `"B"`,
 											Range: Range{
@@ -371,7 +371,7 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 					},
-					Whitespace{Value: "\n\t\t\t\t"},
+					&Whitespace{Value: "\n\t\t\t\t"},
 				},
 			},
 		},
@@ -382,7 +382,7 @@ func TestIfExpression(t *testing.T) {
 } else if p.B {
 	{ "B" }
 }`,
-			expected: IfExpression{
+			expected: &IfExpression{
 				Expression: Expression{
 					Value: `p.A`,
 					Range: Range{
@@ -391,8 +391,8 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					Whitespace{Value: "\t"},
-					StringExpression{
+					&Whitespace{Value: "\t"},
+					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
 							Range: Range{
@@ -413,8 +413,8 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							Whitespace{Value: "\t"},
-							StringExpression{
+							&Whitespace{Value: "\t"},
+							&StringExpression{
 								Expression: Expression{
 									Value: `"B"`,
 									Range: Range{
@@ -438,7 +438,7 @@ func TestIfExpression(t *testing.T) {
 } else if p.C {
 	{ "C" }
 }`,
-			expected: IfExpression{
+			expected: &IfExpression{
 				Expression: Expression{
 					Value: `p.A`,
 					Range: Range{
@@ -447,8 +447,8 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					Whitespace{Value: "\t"},
-					StringExpression{
+					&Whitespace{Value: "\t"},
+					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
 							Range: Range{
@@ -469,8 +469,8 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							Whitespace{Value: "\t"},
-							StringExpression{
+							&Whitespace{Value: "\t"},
+							&StringExpression{
 								Expression: Expression{
 									Value: `"B"`,
 									Range: Range{
@@ -491,8 +491,8 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							Whitespace{Value: "\t"},
-							StringExpression{
+							&Whitespace{Value: "\t"},
+							&StringExpression{
 								Expression: Expression{
 									Value: `"C"`,
 									Range: Range{
@@ -518,7 +518,7 @@ func TestIfExpression(t *testing.T) {
 } else {
 	{ "D" }
 }`,
-			expected: IfExpression{
+			expected: &IfExpression{
 				Expression: Expression{
 					Value: `p.A`,
 					Range: Range{
@@ -527,8 +527,8 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					Whitespace{Value: "\t"},
-					StringExpression{
+					&Whitespace{Value: "\t"},
+					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
 							Range: Range{
@@ -549,8 +549,8 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							Whitespace{Value: "\t"},
-							StringExpression{
+							&Whitespace{Value: "\t"},
+							&StringExpression{
 								Expression: Expression{
 									Value: `"B"`,
 									Range: Range{
@@ -571,8 +571,8 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							Whitespace{Value: "\t"},
-							StringExpression{
+							&Whitespace{Value: "\t"},
+							&StringExpression{
 								Expression: Expression{
 									Value: `"C"`,
 									Range: Range{
@@ -586,7 +586,7 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Else: []Node{
-					StringExpression{
+					&StringExpression{
 						Expression: Expression{
 							Value: `"D"`,
 							Range: Range{

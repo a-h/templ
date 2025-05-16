@@ -18,7 +18,7 @@ func TestForExpressionParser(t *testing.T) {
 			input: `for _, item := range p.Items {
 					<div>{ item }</div>
 				}`,
-			expected: ForExpression{
+			expected: &ForExpression{
 				Expression: Expression{
 					Value: `_, item := range p.Items`,
 					Range: Range{
@@ -35,15 +35,15 @@ func TestForExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					Whitespace{Value: "\t\t\t\t\t"},
-					Element{
+					&Whitespace{Value: "\t\t\t\t\t"},
+					&Element{
 						Name: "div",
 						NameRange: Range{
 							From: Position{Index: 37, Line: 1, Col: 6},
 							To:   Position{Index: 40, Line: 1, Col: 9},
 						},
 						Children: []Node{
-							StringExpression{
+							&StringExpression{
 								Expression: Expression{
 									Value: `item`,
 									Range: Range{
@@ -71,7 +71,7 @@ func TestForExpressionParser(t *testing.T) {
 			input: `for _, item := range p.Items{
 					<div>{ item }</div>
 				}`,
-			expected: ForExpression{
+			expected: &ForExpression{
 				Expression: Expression{
 					Value: `_, item := range p.Items`,
 					Range: Range{
@@ -88,15 +88,15 @@ func TestForExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					Whitespace{Value: "\t\t\t\t\t"},
-					Element{
+					&Whitespace{Value: "\t\t\t\t\t"},
+					&Element{
 						Name: "div",
 						NameRange: Range{
 							From: Position{Index: 36, Line: 1, Col: 6},
 							To:   Position{Index: 39, Line: 1, Col: 9},
 						},
 						Children: []Node{
-							StringExpression{
+							&StringExpression{
 								Expression: Expression{
 									Value: `item`,
 									Range: Range{

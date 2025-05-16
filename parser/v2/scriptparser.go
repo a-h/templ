@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/a-h/parse"
@@ -28,7 +29,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	}
 
 	// Element name.
-	var e ScriptElement
+	e := &ScriptElement{}
 	var name string
 	if name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
@@ -56,6 +57,21 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	if _, ok, err = gt.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
+	}
+
+	// If there's a type attribute and it's not text/javascript, we need to parse the contents as raw text.
+	if slices.ContainsFunc(e.Attributes, isNotJavascript) {
+		var contents string
+		if contents, ok, err = parse.StringUntil(jsEndTag).Parse(pi); err != nil || !ok {
+			err = parse.Error("<script>: expected end tag not present", pi.Position())
+			return
+		}
+		e.Contents = append(e.Contents, NewScriptContentsScriptCode(contents))
+
+		// Cut the end element.
+		_, _, _ = jsEndTag.Parse(pi)
+
+		return e, true, nil
 	}
 
 	// Parse the contents, we should get script text or Go expressions up until the closing tag.
@@ -91,7 +107,7 @@ loop:
 			return nil, false, err
 		}
 		if ok {
-			e.Contents = append(e.Contents, NewScriptContentsGo(code.(GoCode), stringLiteralDelimiter != jsQuoteNone))
+			e.Contents = append(e.Contents, NewScriptContentsGo(code.(*GoCode), stringLiteralDelimiter != jsQuoteNone))
 			continue loop
 		}
 
@@ -102,7 +118,7 @@ loop:
 			return nil, false, err
 		}
 		if ok {
-			e.Contents = append(e.Contents, NewScriptContentsJS(comment))
+			e.Contents = append(e.Contents, NewScriptContentsScriptCode(comment))
 			continue loop
 		}
 
@@ -132,7 +148,7 @@ loop:
 
 				if isEOF || breakForGo || breakForHTML {
 					if sb.Len() > 0 {
-						e.Contents = append(e.Contents, NewScriptContentsJS(sb.String()))
+						e.Contents = append(e.Contents, NewScriptContentsScriptCode(sb.String()))
 						sb.Reset()
 					}
 					if isEOF {
@@ -152,14 +168,25 @@ loop:
 	return e, true, nil
 }
 
-var jsEndTag = parse.String("</script>")
-var endTagStart = parse.String("</")
+func isNotJavascript(a Attribute) bool {
+	if ca, ok := a.(*ConstantAttribute); ok {
+		return ca.Name == "type" && !strings.EqualFold(ca.Value, "text/javascript")
+	}
+	return false
+}
+
+var (
+	jsEndTag    = parse.String("</script>")
+	endTagStart = parse.String("</")
+)
 
 var jsCharacter = parse.Any(jsEscapedCharacter, parse.AnyRune)
 
 // \uXXXX	Unicode code point escape	'\u0061' = 'a'
-var hexDigit = parse.Any(parse.ZeroToNine, parse.RuneIn("abcdef"), parse.RuneIn("ABCDEF"))
-var jsUnicodeEscape = parse.StringFrom(parse.String("\\u"), hexDigit, hexDigit, hexDigit, hexDigit)
+var (
+	hexDigit        = parse.Any(parse.ZeroToNine, parse.RuneIn("abcdef"), parse.RuneIn("ABCDEF"))
+	jsUnicodeEscape = parse.StringFrom(parse.String("\\u"), hexDigit, hexDigit, hexDigit, hexDigit)
+)
 
 // \u{X...}	ES6+ extended Unicode escape	'\u{1F600}' = '😀'
 var jsExtendedUnicodeEscape = parse.StringFrom(parse.String("\\u{"), hexDigit, parse.StringFrom(parse.AtLeast(1, parse.ZeroOrMore(hexDigit))), parse.String("}"))
@@ -175,10 +202,14 @@ var jsEscapedCharacter = parse.Any(jsBackslashEscape, jsUnicodeEscape, jsHexEsca
 
 var jsComment = parse.Any(jsSingleLineComment, jsMultiLineComment)
 
-var jsStartSingleLineComment = parse.String("//")
-var jsEndOfSingleLineComment = parse.StringFrom(parse.Or(parse.NewLine, parse.EOF[string]()))
-var jsSingleLineComment = parse.StringFrom(jsStartSingleLineComment, parse.StringUntil(jsEndOfSingleLineComment), jsEndOfSingleLineComment)
+var (
+	jsStartSingleLineComment = parse.String("//")
+	jsEndOfSingleLineComment = parse.StringFrom(parse.Or(parse.NewLine, parse.EOF[string]()))
+	jsSingleLineComment      = parse.StringFrom(jsStartSingleLineComment, parse.StringUntil(jsEndOfSingleLineComment), jsEndOfSingleLineComment)
+)
 
-var jsStartMultiLineComment = parse.String("/*")
-var jsEndOfMultiLineComment = parse.StringFrom(parse.Or(parse.String("*/"), parse.EOF[string]()))
-var jsMultiLineComment = parse.StringFrom(jsStartMultiLineComment, parse.StringUntil(jsEndOfMultiLineComment), jsEndOfMultiLineComment, parse.OptionalWhitespace)
+var (
+	jsStartMultiLineComment = parse.String("/*")
+	jsEndOfMultiLineComment = parse.StringFrom(parse.Or(parse.String("*/"), parse.EOF[string]()))
+	jsMultiLineComment      = parse.StringFrom(jsStartMultiLineComment, parse.StringUntil(jsEndOfMultiLineComment), jsEndOfMultiLineComment, parse.OptionalWhitespace)
+)

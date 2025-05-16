@@ -54,7 +54,7 @@ type Position struct {
 	Col   uint32
 }
 
-func (p Position) String() string {
+func (p *Position) String() string {
 	return fmt.Sprintf("line %d, col %d (index %d)", p.Line, p.Col, p.Index)
 }
 
@@ -116,7 +116,7 @@ type Expression struct {
 
 type TemplateFile struct {
 	// Header contains comments or whitespace at the top of the file.
-	Header []TemplateFileGoExpression
+	Header []*TemplateFileGoExpression
 	// Package expression.
 	Package Package
 	// Filepath is where the file was loaded from. It is not always available.
@@ -125,7 +125,7 @@ type TemplateFile struct {
 	Nodes []TemplateFileNode
 }
 
-func (tf TemplateFile) Write(w io.Writer) error {
+func (tf *TemplateFile) Write(w io.Writer) error {
 	for _, n := range tf.Header {
 		if err := n.Write(w, 0); err != nil {
 			return err
@@ -149,12 +149,16 @@ func (tf TemplateFile) Write(w io.Writer) error {
 	return nil
 }
 
+func (tf *TemplateFile) Visit(v Visitor) error {
+	return v.VisitTemplateFile(tf)
+}
+
 func getNodeWhitespace(nodes []TemplateFileNode, i int) string {
 	if i == len(nodes)-1 {
 		return "\n"
 	}
-	if _, nextIsTemplate := nodes[i+1].(HTMLTemplate); nextIsTemplate {
-		if e, isGo := nodes[i].(TemplateFileGoExpression); isGo && endsWithComment(e.Expression.Value) {
+	if _, nextIsTemplate := nodes[i+1].(*HTMLTemplate); nextIsTemplate {
+		if e, isGo := nodes[i].(*TemplateFileGoExpression); isGo && endsWithComment(e.Expression.Value) {
 			return "\n"
 		}
 	}
@@ -170,6 +174,7 @@ func endsWithComment(s string) bool {
 type TemplateFileNode interface {
 	IsTemplateFileNode() bool
 	Write(w io.Writer, indent int) error
+	Visit(v Visitor) error
 }
 
 // TemplateFileGoExpression within a TemplateFile
@@ -178,8 +183,8 @@ type TemplateFileGoExpression struct {
 	BeforePackage bool
 }
 
-func (exp TemplateFileGoExpression) IsTemplateFileNode() bool { return true }
-func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
+func (exp *TemplateFileGoExpression) IsTemplateFileNode() bool { return true }
+func (exp *TemplateFileGoExpression) Write(w io.Writer, indent int) error {
 	in := exp.Expression.Value
 
 	if exp.BeforePackage {
@@ -194,6 +199,10 @@ func (exp TemplateFileGoExpression) Write(w io.Writer, indent int) error {
 	}
 	_, err = w.Write(data)
 	return err
+}
+
+func (exp *TemplateFileGoExpression) Visit(v Visitor) error {
+	return v.VisitTemplateFileGoExpression(exp)
 }
 
 func writeIndent(w io.Writer, level int, s ...string) (err error) {
@@ -214,8 +223,12 @@ type Package struct {
 	Expression Expression
 }
 
-func (p Package) Write(w io.Writer, indent int) error {
+func (p *Package) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, p.Expression.Value)
+}
+
+func (p *Package) Visit(v Visitor) error {
+	return v.VisitPackage(p)
 }
 
 // Whitespace.
@@ -223,9 +236,9 @@ type Whitespace struct {
 	Value string
 }
 
-func (ws Whitespace) IsNode() bool { return true }
+func (ws *Whitespace) IsNode() bool { return true }
 
-func (ws Whitespace) Write(w io.Writer, indent int) error {
+func (ws *Whitespace) Write(w io.Writer, indent int) error {
 	if ws.Value == "" || !strings.Contains(ws.Value, "\n") {
 		return nil
 	}
@@ -244,6 +257,10 @@ func (ws Whitespace) Write(w io.Writer, indent int) error {
 	return err
 }
 
+func (ws *Whitespace) Visit(v Visitor) error {
+	return v.VisitWhitespace(ws)
+}
+
 // CSS definition.
 //
 //	css Name() {
@@ -258,8 +275,8 @@ type CSSTemplate struct {
 	Properties []CSSProperty
 }
 
-func (css CSSTemplate) IsTemplateFileNode() bool { return true }
-func (css CSSTemplate) Write(w io.Writer, indent int) error {
+func (css *CSSTemplate) IsTemplateFileNode() bool { return true }
+func (css *CSSTemplate) Write(w io.Writer, indent int) error {
 	source := formatFunctionArguments(css.Expression.Value)
 	if err := writeIndent(w, indent, "css ", string(source), " {\n"); err != nil {
 		return err
@@ -275,10 +292,15 @@ func (css CSSTemplate) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func (css *CSSTemplate) Visit(v Visitor) error {
+	return v.VisitCSSTemplate(css)
+}
+
 // CSSProperty is a CSS property and value pair.
 type CSSProperty interface {
 	IsCSSProperty() bool
 	Write(w io.Writer, indent int) error
+	Visit(v Visitor) error
 }
 
 // color: #ffffff;
@@ -287,8 +309,8 @@ type ConstantCSSProperty struct {
 	Value string
 }
 
-func (c ConstantCSSProperty) IsCSSProperty() bool { return true }
-func (c ConstantCSSProperty) Write(w io.Writer, indent int) error {
+func (c *ConstantCSSProperty) IsCSSProperty() bool { return true }
+func (c *ConstantCSSProperty) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, c.String(false)); err != nil {
 		return err
 	}
@@ -311,14 +333,18 @@ func (c ConstantCSSProperty) String(minified bool) string {
 	return sb.String()
 }
 
+func (c *ConstantCSSProperty) Visit(v Visitor) error {
+	return v.VisitConstantCSSProperty(c)
+}
+
 // background-color: { constants.BackgroundColor };
 type ExpressionCSSProperty struct {
 	Name  string
-	Value StringExpression
+	Value *StringExpression
 }
 
-func (c ExpressionCSSProperty) IsCSSProperty() bool { return true }
-func (c ExpressionCSSProperty) Write(w io.Writer, indent int) error {
+func (c *ExpressionCSSProperty) IsCSSProperty() bool { return true }
+func (c *ExpressionCSSProperty) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, c.Name, ": "); err != nil {
 		return err
 	}
@@ -331,14 +357,22 @@ func (c ExpressionCSSProperty) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func (c *ExpressionCSSProperty) Visit(v Visitor) error {
+	return v.VisitExpressionCSSProperty(c)
+}
+
 // <!DOCTYPE html>
 type DocType struct {
 	Value string
 }
 
-func (dt DocType) IsNode() bool { return true }
-func (dt DocType) Write(w io.Writer, indent int) error {
+func (dt *DocType) IsNode() bool { return true }
+func (dt *DocType) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, "<!DOCTYPE ", dt.Value, ">")
+}
+
+func (dt *DocType) Visit(v Visitor) error {
+	return v.VisitDocType(dt)
 }
 
 // HTMLTemplate definition.
@@ -354,9 +388,9 @@ type HTMLTemplate struct {
 	Children   []Node
 }
 
-func (t HTMLTemplate) IsTemplateFileNode() bool { return true }
+func (t *HTMLTemplate) IsTemplateFileNode() bool { return true }
 
-func (t HTMLTemplate) Write(w io.Writer, indent int) error {
+func (t *HTMLTemplate) Write(w io.Writer, indent int) error {
 	source := formatFunctionArguments(t.Expression.Value)
 	if err := writeIndent(w, indent, "templ ", string(source), " {\n"); err != nil {
 		return err
@@ -368,6 +402,10 @@ func (t HTMLTemplate) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+
+func (t *HTMLTemplate) Visit(v Visitor) error {
+	return v.VisitHTMLTemplate(t)
 }
 
 // TrailingSpace defines the whitespace that may trail behind the close of an element, a
@@ -407,8 +445,9 @@ type Nodes struct {
 // A Node appears within a template, e.g. an StringExpression, Element, IfExpression etc.
 type Node interface {
 	IsNode() bool
-	// Write out the string.
+	// Write out the string*.
 	Write(w io.Writer, indent int) error
+	Visit(v Visitor) error
 }
 
 type CompositeNode interface {
@@ -421,9 +460,9 @@ type WhitespaceTrailer interface {
 }
 
 var (
-	_ WhitespaceTrailer = Element{}
-	_ WhitespaceTrailer = Text{}
-	_ WhitespaceTrailer = StringExpression{}
+	_ WhitespaceTrailer = (*Element)(nil)
+	_ WhitespaceTrailer = (*Text)(nil)
+	_ WhitespaceTrailer = (*StringExpression)(nil)
 )
 
 // Text node within the document.
@@ -440,9 +479,13 @@ func (t Text) Trailing() TrailingSpace {
 	return t.TrailingSpace
 }
 
-func (t Text) IsNode() bool { return true }
-func (t Text) Write(w io.Writer, indent int) error {
+func (t *Text) IsNode() bool { return true }
+func (t *Text) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, t.Value)
+}
+
+func (t *Text) Visit(v Visitor) error {
+	return v.VisitText(t)
 }
 
 // <a .../> or <div ...>...</div>
@@ -460,6 +503,10 @@ func (e Element) Trailing() TrailingSpace {
 	return e.TrailingSpace
 }
 
+func (e *Element) Visit(v Visitor) error {
+	return v.VisitElement(e)
+}
+
 var voidElements = map[string]struct{}{
 	"area": {}, "base": {}, "br": {}, "col": {}, "command": {}, "embed": {}, "hr": {}, "img": {}, "input": {}, "keygen": {}, "link": {}, "meta": {}, "param": {}, "source": {}, "track": {}, "wbr": {},
 }
@@ -472,7 +519,7 @@ func (e Element) IsVoidElement() bool {
 
 func (e Element) hasNonWhitespaceChildren() bool {
 	for _, c := range e.Children {
-		if _, isWhitespace := c.(Whitespace); !isWhitespace {
+		if _, isWhitespace := c.(*Whitespace); !isWhitespace {
 			return true
 		}
 	}
@@ -504,9 +551,9 @@ func (e Element) Validate() (msgs []string, ok bool) {
 func containsNonTextNodes(nodes []Node) bool {
 	for _, n := range nodes {
 		switch n.(type) {
-		case Text:
+		case *Text:
 			continue
-		case Whitespace:
+		case *Whitespace:
 			continue
 		default:
 			return true
@@ -518,8 +565,8 @@ func containsNonTextNodes(nodes []Node) bool {
 func (e Element) ChildNodes() []Node {
 	return e.Children
 }
-func (e Element) IsNode() bool { return true }
-func (e Element) Write(w io.Writer, indent int) error {
+func (e *Element) IsNode() bool { return true }
+func (e *Element) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<", e.Name); err != nil {
 		return err
 	}
@@ -596,7 +643,7 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 	startLevel := level
 	for i, n := range nodes {
 		// Skip whitespace nodes.
-		if _, isWhitespace := n.(Whitespace); isWhitespace {
+		if _, isWhitespace := n.(*Whitespace); isWhitespace {
 			continue
 		}
 		if err := n.Write(w, level); err != nil {
@@ -628,7 +675,7 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 }
 
 func shouldAlwaysBreakAfter(node Node) bool {
-	if el, isElement := node.(Element); isElement {
+	if el, isElement := node.(*Element); isElement {
 		return strings.EqualFold(el.Name, "br") || strings.EqualFold(el.Name, "hr")
 	}
 	return false
@@ -643,27 +690,27 @@ func nextNodeIsBlock(nodes []Node, i int) bool {
 
 func isBlockNode(node Node) bool {
 	switch n := node.(type) {
-	case IfExpression:
+	case *IfExpression:
 		return true
-	case SwitchExpression:
+	case *SwitchExpression:
 		return true
-	case ForExpression:
+	case *ForExpression:
 		return true
-	case Element:
+	case *Element:
 		return n.IsBlockElement() || n.IndentChildren
 	}
 	return false
 }
 
-func NewScriptContentsJS(value string) ScriptContents {
+func NewScriptContentsScriptCode(value string) ScriptContents {
 	return ScriptContents{
 		Value: &value,
 	}
 }
 
-func NewScriptContentsGo(code GoCode, insideStringLiteral bool) ScriptContents {
+func NewScriptContentsGo(code *GoCode, insideStringLiteral bool) ScriptContents {
 	return ScriptContents{
-		GoCode:              &code,
+		GoCode:              code,
 		InsideStringLiteral: insideStringLiteral,
 	}
 }
@@ -684,8 +731,8 @@ type ScriptElement struct {
 	Contents   []ScriptContents
 }
 
-func (se ScriptElement) IsNode() bool { return true }
-func (se ScriptElement) Write(w io.Writer, indent int) error {
+func (se *ScriptElement) IsNode() bool { return true }
+func (se *ScriptElement) Write(w io.Writer, indent int) error {
 	// Start.
 	if err := writeIndent(w, indent, "<script"); err != nil {
 		return err
@@ -729,6 +776,10 @@ func (se ScriptElement) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func (se *ScriptElement) Visit(v Visitor) error {
+	return v.VisitScriptElement(se)
+}
+
 func writeStrings(w io.Writer, ss ...string) error {
 	for _, s := range ss {
 		if _, err := io.WriteString(w, s); err != nil {
@@ -744,8 +795,8 @@ type RawElement struct {
 	Contents   string
 }
 
-func (e RawElement) IsNode() bool { return true }
-func (e RawElement) Write(w io.Writer, indent int) error {
+func (e *RawElement) IsNode() bool { return true }
+func (e *RawElement) Write(w io.Writer, indent int) error {
 	// Start.
 	if err := writeIndent(w, indent, "<", e.Name); err != nil {
 		return err
@@ -773,9 +824,15 @@ func (e RawElement) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func (e *RawElement) Visit(v Visitor) error {
+	return v.VisitRawElement(e)
+}
+
 type Attribute interface {
-	// Write out the string.
+	// Write out the string*.
 	Write(w io.Writer, indent int) error
+	Visit(v Visitor) error
+	Copy() Attribute
 }
 
 type AttributeKey interface {
@@ -804,12 +861,23 @@ type BoolConstantAttribute struct {
 	Key AttributeKey
 }
 
-func (bca BoolConstantAttribute) String() string {
+func (bca *BoolConstantAttribute) String() string {
 	return bca.Key.String()
 }
 
-func (bca BoolConstantAttribute) Write(w io.Writer, indent int) error {
+func (bca *BoolConstantAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, bca.String())
+}
+
+func (bca *BoolConstantAttribute) Visit(v Visitor) error {
+	return v.VisitBoolConstantAttribute(bca)
+}
+
+func (bca *BoolConstantAttribute) Copy() Attribute {
+	return &BoolConstantAttribute{
+		Name:      bca.Name,
+		NameRange: bca.NameRange,
+	}
 }
 
 // href=""
@@ -819,7 +887,7 @@ type ConstantAttribute struct {
 	SingleQuote bool
 }
 
-func (ca ConstantAttribute) String() string {
+func (ca *ConstantAttribute) String() string {
 	quote := `"`
 	if ca.SingleQuote {
 		quote = `'`
@@ -827,8 +895,20 @@ func (ca ConstantAttribute) String() string {
 	return ca.Key.String() + `=` + quote + ca.Value + quote
 }
 
-func (ca ConstantAttribute) Write(w io.Writer, indent int) error {
+func (ca *ConstantAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, ca.String())
+}
+
+func (ca *ConstantAttribute) Visit(v Visitor) error {
+	return v.VisitConstantAttribute(ca)
+}
+
+func (ca *ConstantAttribute) Copy() Attribute {
+	return &ConstantAttribute{
+		Value:       ca.Value,
+		SingleQuote: ca.SingleQuote,
+		Key:         ca.Key.Copy(),
+	}
 }
 
 // noshade={ templ.Bool(...) }
@@ -837,12 +917,23 @@ type BoolExpressionAttribute struct {
 	Expression Expression
 }
 
-func (bea BoolExpressionAttribute) String() string {
+func (bea *BoolExpressionAttribute) String() string {
 	return bea.Key.String() + `?={ ` + bea.Expression.Value + ` }`
 }
 
-func (bea BoolExpressionAttribute) Write(w io.Writer, indent int) error {
+func (bea *BoolExpressionAttribute) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, bea.String())
+}
+
+func (bea *BoolExpressionAttribute) Visit(v Visitor) error {
+	return v.VisitBoolExpressionAttribute(bea)
+}
+
+func (bea *BoolExpressionAttribute) Copy() Attribute {
+	return &BoolExpressionAttribute{
+		Expression: bea.Expression,
+		Key:        bea.Key.Copy(),
+	}
 }
 
 // href={ ... }
@@ -851,13 +942,13 @@ type ExpressionAttribute struct {
 	Expression Expression
 }
 
-func (ea ExpressionAttribute) String() string {
+func (ea *ExpressionAttribute) String() string {
 	sb := new(strings.Builder)
 	_ = ea.Write(sb, 0)
 	return sb.String()
 }
 
-func (ea ExpressionAttribute) formatExpression() (exp []string) {
+func (ea *ExpressionAttribute) formatExpression() (exp []string) {
 	trimmed := strings.TrimSpace(ea.Expression.Value)
 	if !strings.Contains(trimmed, "\n") {
 		formatted, err := format.Source([]byte(trimmed))
@@ -886,7 +977,7 @@ func (ea ExpressionAttribute) formatExpression() (exp []string) {
 	return lines[1 : len(lines)-1]
 }
 
-func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
+func (ea *ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
 	lines := ea.formatExpression()
 	if len(lines) == 1 {
 		return writeIndent(w, indent, ea.Key.String(), `={ `, lines[0], ` }`)
@@ -903,17 +994,38 @@ func (ea ExpressionAttribute) Write(w io.Writer, indent int) (err error) {
 	return writeIndent(w, indent, "}")
 }
 
+func (ea *ExpressionAttribute) Visit(v Visitor) error {
+	return v.VisitExpressionAttribute(ea)
+}
+
+func (ea *ExpressionAttribute) Copy() Attribute {
+	return &ExpressionAttribute{
+		Expression: ea.Expression,
+		Key:        ea.Key.Copy(),
+	}
+}
+
 // <a { spread... } />
 type SpreadAttributes struct {
 	Expression Expression
 }
 
-func (sa SpreadAttributes) String() string {
+func (sa *SpreadAttributes) String() string {
 	return `{ ` + sa.Expression.Value + `... }`
 }
 
-func (sa SpreadAttributes) Write(w io.Writer, indent int) error {
+func (sa *SpreadAttributes) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, sa.String())
+}
+
+func (sa *SpreadAttributes) Visit(v Visitor) error {
+	return v.VisitSpreadAttributes(sa)
+}
+
+func (sa *SpreadAttributes) Copy() Attribute {
+	return &SpreadAttributes{
+		Expression: sa.Expression,
+	}
 }
 
 //	<a href="test" \
@@ -926,13 +1038,13 @@ type ConditionalAttribute struct {
 	Else       []Attribute
 }
 
-func (ca ConditionalAttribute) String() string {
+func (ca *ConditionalAttribute) String() string {
 	sb := new(strings.Builder)
 	_ = ca.Write(sb, 0)
 	return sb.String()
 }
 
-func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
+func (ca *ConditionalAttribute) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "if "); err != nil {
 		return err
 	}
@@ -982,18 +1094,42 @@ func (ca ConditionalAttribute) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func (ca *ConditionalAttribute) Visit(v Visitor) error {
+	return v.VisitConditionalAttribute(ca)
+}
+
+func (ca *ConditionalAttribute) Copy() Attribute {
+	return &ConditionalAttribute{
+		Expression: ca.Expression,
+		Then:       CopyAttributes(ca.Then),
+		Else:       CopyAttributes(ca.Else),
+	}
+}
+
+func CopyAttributes(attrs []Attribute) (copies []Attribute) {
+	copies = make([]Attribute, len(attrs))
+	for i, a := range attrs {
+		copies[i] = a.Copy()
+	}
+	return copies
+}
+
 // GoComment.
 type GoComment struct {
 	Contents  string
 	Multiline bool
 }
 
-func (c GoComment) IsNode() bool { return true }
-func (c GoComment) Write(w io.Writer, indent int) error {
+func (c *GoComment) IsNode() bool { return true }
+func (c *GoComment) Write(w io.Writer, indent int) error {
 	if c.Multiline {
 		return writeIndent(w, indent, "/*", c.Contents, "*/")
 	}
 	return writeIndent(w, indent, "//", c.Contents)
+}
+
+func (c *GoComment) Visit(v Visitor) error {
+	return v.VisitGoComment(c)
 }
 
 // HTMLComment.
@@ -1001,9 +1137,13 @@ type HTMLComment struct {
 	Contents string
 }
 
-func (c HTMLComment) IsNode() bool { return true }
-func (c HTMLComment) Write(w io.Writer, indent int) error {
+func (c *HTMLComment) IsNode() bool { return true }
+func (c *HTMLComment) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, "<!--", c.Contents, "-->")
+}
+
+func (c *HTMLComment) Visit(v Visitor) error {
+	return v.VisitHTMLComment(c)
 }
 
 // Nodes.
@@ -1017,10 +1157,14 @@ type CallTemplateExpression struct {
 	Expression Expression
 }
 
-func (cte CallTemplateExpression) IsNode() bool { return true }
-func (cte CallTemplateExpression) Write(w io.Writer, indent int) error {
+func (cte *CallTemplateExpression) IsNode() bool { return true }
+func (cte *CallTemplateExpression) Write(w io.Writer, indent int) error {
 	// Rewrite to new call syntax
 	return writeIndent(w, indent, `@`, cte.Expression.Value)
+}
+
+func (cte *CallTemplateExpression) Visit(v Visitor) error {
+	return v.VisitCallTemplateExpression(cte)
 }
 
 // TemplElementExpression can be used to create and render a template using data.
@@ -1037,8 +1181,8 @@ type TemplElementExpression struct {
 func (tee TemplElementExpression) ChildNodes() []Node {
 	return tee.Children
 }
-func (tee TemplElementExpression) IsNode() bool { return true }
-func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
+func (tee *TemplElementExpression) IsNode() bool { return true }
+func (tee *TemplElementExpression) Write(w io.Writer, indent int) error {
 	source, err := format.Source([]byte(tee.Expression.Value))
 	if err != nil {
 		source = []byte(tee.Expression.Value)
@@ -1085,16 +1229,24 @@ func (tee TemplElementExpression) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func (tee *TemplElementExpression) Visit(v Visitor) error {
+	return v.VisitTemplElementExpression(tee)
+}
+
 // ChildrenExpression can be used to rended the children of a templ element.
 // { children ... }
 type ChildrenExpression struct{}
 
-func (ChildrenExpression) IsNode() bool { return true }
-func (ChildrenExpression) Write(w io.Writer, indent int) error {
+func (*ChildrenExpression) IsNode() bool { return true }
+func (*ChildrenExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "{ children... }"); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (ce *ChildrenExpression) Visit(v Visitor) error {
+	return v.VisitChildrenExpression(ce)
 }
 
 // if p.Type == "test" && p.thing {
@@ -1120,8 +1272,8 @@ func (n IfExpression) ChildNodes() []Node {
 	}
 	return nodes
 }
-func (n IfExpression) IsNode() bool { return true }
-func (n IfExpression) Write(w io.Writer, indent int) error {
+func (n *IfExpression) IsNode() bool { return true }
+func (n *IfExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "if ", n.Expression.Value, " {\n"); err != nil {
 		return err
 	}
@@ -1154,6 +1306,10 @@ func (n IfExpression) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func (n *IfExpression) Visit(v Visitor) error {
+	return v.VisitIfExpression(n)
+}
+
 //	switch p.Type {
 //	 case "Something":
 //	}
@@ -1169,8 +1325,8 @@ func (se SwitchExpression) ChildNodes() []Node {
 	}
 	return nodes
 }
-func (se SwitchExpression) IsNode() bool { return true }
-func (se SwitchExpression) Write(w io.Writer, indent int) error {
+func (se *SwitchExpression) IsNode() bool { return true }
+func (se *SwitchExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "switch ", se.Expression.Value, " {\n"); err != nil {
 		return err
 	}
@@ -1190,6 +1346,10 @@ func (se SwitchExpression) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func (se *SwitchExpression) Visit(v Visitor) error {
+	return v.VisitSwitchExpression(se)
+}
+
 // case "Something":
 type CaseExpression struct {
 	Expression Expression
@@ -1207,8 +1367,8 @@ type ForExpression struct {
 func (fe ForExpression) ChildNodes() []Node {
 	return fe.Children
 }
-func (fe ForExpression) IsNode() bool { return true }
-func (fe ForExpression) Write(w io.Writer, indent int) error {
+func (fe *ForExpression) IsNode() bool { return true }
+func (fe *ForExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "for ", fe.Expression.Value, " {\n"); err != nil {
 		return err
 	}
@@ -1221,6 +1381,10 @@ func (fe ForExpression) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func (fe *ForExpression) Visit(v Visitor) error {
+	return v.VisitForExpression(fe)
+}
+
 // GoCode is used within HTML elements, and allows arbitrary go code.
 // {{ ... }}
 type GoCode struct {
@@ -1230,12 +1394,12 @@ type GoCode struct {
 	Multiline     bool
 }
 
-func (gc GoCode) Trailing() TrailingSpace {
+func (gc *GoCode) Trailing() TrailingSpace {
 	return gc.TrailingSpace
 }
 
-func (gc GoCode) IsNode() bool { return true }
-func (gc GoCode) Write(w io.Writer, indent int) error {
+func (gc *GoCode) IsNode() bool { return true }
+func (gc *GoCode) Write(w io.Writer, indent int) error {
 	if isWhitespace(gc.Expression.Value) {
 		gc.Expression.Value = ""
 	}
@@ -1252,6 +1416,10 @@ func (gc GoCode) Write(w io.Writer, indent int) error {
 	return writeIndent(w, indent, "}}")
 }
 
+func (gc *GoCode) Visit(v Visitor) error {
+	return v.VisitGoCode(gc)
+}
+
 // StringExpression is used within HTML elements, and for style values.
 // { ... }
 type StringExpression struct {
@@ -1260,17 +1428,21 @@ type StringExpression struct {
 	TrailingSpace TrailingSpace
 }
 
-func (se StringExpression) Trailing() TrailingSpace {
+func (se *StringExpression) Trailing() TrailingSpace {
 	return se.TrailingSpace
 }
 
-func (se StringExpression) IsNode() bool                  { return true }
-func (se StringExpression) IsStyleDeclarationValue() bool { return true }
-func (se StringExpression) Write(w io.Writer, indent int) error {
+func (se *StringExpression) IsNode() bool                  { return true }
+func (se *StringExpression) IsStyleDeclarationValue() bool { return true }
+func (se *StringExpression) Write(w io.Writer, indent int) error {
 	if isWhitespace(se.Expression.Value) {
 		se.Expression.Value = ""
 	}
 	return writeIndent(w, indent, `{ `, se.Expression.Value, ` }`)
+}
+
+func (se *StringExpression) Visit(v Visitor) error {
+	return v.VisitStringExpression(se)
 }
 
 // ScriptTemplate is a script block.
@@ -1281,8 +1453,8 @@ type ScriptTemplate struct {
 	Value      string
 }
 
-func (s ScriptTemplate) IsTemplateFileNode() bool { return true }
-func (s ScriptTemplate) Write(w io.Writer, indent int) error {
+func (s *ScriptTemplate) IsTemplateFileNode() bool { return true }
+func (s *ScriptTemplate) Write(w io.Writer, indent int) error {
 	source := formatFunctionArguments(s.Name.Value + "(" + s.Parameters.Value + ")")
 	if err := writeIndent(w, indent, "script ", string(source), " {\n"); err != nil {
 		return err
@@ -1294,6 +1466,10 @@ func (s ScriptTemplate) Write(w io.Writer, indent int) error {
 		return err
 	}
 	return nil
+}
+
+func (s *ScriptTemplate) Visit(v Visitor) error {
+	return v.VisitScriptTemplate(s)
 }
 
 // formatFunctionArguments formats the function arguments, if possible.

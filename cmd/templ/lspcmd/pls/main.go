@@ -16,6 +16,7 @@ import (
 type Options struct {
 	Log      string
 	RPCTrace bool
+	Remote   string
 }
 
 // AsArguments converts the options into command line arguments for gopls.
@@ -26,6 +27,9 @@ func (opts Options) AsArguments() []string {
 	}
 	if opts.RPCTrace {
 		args = append(args, "-rpc.trace")
+	}
+	if opts.Remote != "" {
+		args = append(args, "-remote", opts.Remote)
 	}
 	return args
 }
