@@ -999,10 +999,7 @@ func (g *generator) writeElement(indentLevel int, n *parser.Element) (err error)
 
 func (g *generator) writeAttributeCSS(indentLevel int, attr *parser.ExpressionAttribute) (result *parser.ExpressionAttribute, ok bool, err error) {
 	var r parser.Range
-	var name string
-	if ckey, ok := attr.Key.(parser.ConstantAttributeKey); ok {
-		name = html.EscapeString(ckey.Name)
-	}
+	name := html.EscapeString(attr.Key.String())
 	if name != "class" {
 		ok = false
 		return
@@ -1109,7 +1106,8 @@ func getAttributeScripts(attr parser.Attribute) (scripts []string) {
 		}
 	}
 	if attr, ok := attr.(*parser.ExpressionAttribute); ok {
-		if isScriptAttribute(attr.Key.String()) {
+		name := html.EscapeString(attr.Key.String())
+		if isScriptAttribute(name) {
 			scripts = append(scripts, attr.Expression.Value)
 		}
 	}
@@ -1321,7 +1319,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	if _, err = g.w.WriteStringLiteral(indentLevel, `=\"`); err != nil {
 		return err
 	}
-	attrKey := attr.Key.String()
+	attrKey := html.EscapeString(attr.Key.String())
 	// Value.
 	if (elementName == "a" && attrKey == "href") || (elementName == "form" && attrKey == "action") {
 		if err := g.writeExpressionAttributeValueURL(indentLevel, attr); err != nil {
