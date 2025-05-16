@@ -224,18 +224,6 @@ if test {` + " " + `
 								From: Position{Index: 40, Line: 4, Col: 1},
 								To:   Position{Index: 44, Line: 4, Col: 5},
 							},
-					&BoolConstantAttribute{
-						Name: "noshade",
-						NameRange: Range{
-							From: Position{Index: 31, Line: 3, Col: 1},
-							To:   Position{Index: 38, Line: 3, Col: 8},
-						},
-					},
-					&ExpressionAttribute{
-						Name: "name",
-						NameRange: Range{
-							From: Position{Index: 40, Line: 4, Col: 1},
-							To:   Position{Index: 44, Line: 4, Col: 5},
 						},
 						Expression: Expression{
 							Value: `"other"`,
@@ -524,7 +512,7 @@ if test {` + " " + `
 					To:   Position{Index: 4, Line: 0, Col: 4},
 				},
 				Attributes: []Attribute{
-					BoolConstantAttribute{
+					&BoolConstantAttribute{
 						Key: ExpressionAttributeKey{
 							Expression: Expression{
 								Value: `"foo"`,
@@ -1031,7 +1019,7 @@ func TestElementParser(t *testing.T) {
 							},
 						},
 					},
-					ConstantAttribute{
+					&ConstantAttribute{
 						Value: "other",
 						Key: ConstantAttributeKey{
 							Name: "optionC",

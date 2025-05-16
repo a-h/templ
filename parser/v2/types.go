@@ -875,8 +875,7 @@ func (bca *BoolConstantAttribute) Visit(v Visitor) error {
 
 func (bca *BoolConstantAttribute) Copy() Attribute {
 	return &BoolConstantAttribute{
-		Name:      bca.Name,
-		NameRange: bca.NameRange,
+		Key: bca.Key,
 	}
 }
 
@@ -907,7 +906,7 @@ func (ca *ConstantAttribute) Copy() Attribute {
 	return &ConstantAttribute{
 		Value:       ca.Value,
 		SingleQuote: ca.SingleQuote,
-		Key:         ca.Key.Copy(),
+		Key:         ca.Key,
 	}
 }
 
@@ -932,7 +931,7 @@ func (bea *BoolExpressionAttribute) Visit(v Visitor) error {
 func (bea *BoolExpressionAttribute) Copy() Attribute {
 	return &BoolExpressionAttribute{
 		Expression: bea.Expression,
-		Key:        bea.Key.Copy(),
+		Key:        bea.Key,
 	}
 }
 
@@ -1001,7 +1000,7 @@ func (ea *ExpressionAttribute) Visit(v Visitor) error {
 func (ea *ExpressionAttribute) Copy() Attribute {
 	return &ExpressionAttribute{
 		Expression: ea.Expression,
-		Key:        ea.Key.Copy(),
+		Key:        ea.Key,
 	}
 }
 

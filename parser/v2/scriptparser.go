@@ -170,7 +170,7 @@ loop:
 
 func isNotJavascript(a Attribute) bool {
 	if ca, ok := a.(*ConstantAttribute); ok {
-		return ca.Name == "type" && !strings.EqualFold(ca.Value, "text/javascript")
+		return ca.Key.String() == "type" && !strings.EqualFold(ca.Value, "text/javascript")
 	}
 	return false
 }

@@ -1033,8 +1033,7 @@ func (g *generator) writeAttributeCSS(indentLevel int, attr *parser.ExpressionAt
 	}
 	// Rewrite the ExpressionAttribute to point at the new variable.
 	newAttr := &parser.ExpressionAttribute{
-		Name:      attr.Name,
-		NameRange: attr.NameRange,
+		Key: attr.Key,
 		Expression: parser.Expression{
 			Value: "templ.CSSClasses(" + classesName + ").String()",
 		},
@@ -1117,7 +1116,7 @@ func getAttributeScripts(attr parser.Attribute) (scripts []string) {
 	return scripts
 }
 
-func (g *generator) writeAttributeKey(indentLevel int, attr *parser.AttributeKey) (err error) {
+func (g *generator) writeAttributeKey(indentLevel int, attr parser.AttributeKey) (err error) {
 	if attr, ok := attr.(parser.ConstantAttributeKey); ok {
 		name := html.EscapeString(attr.Name)
 		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s`, name)); err != nil {
