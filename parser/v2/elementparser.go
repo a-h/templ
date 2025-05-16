@@ -189,8 +189,7 @@ var attributeKeyParser = parse.Func(func(pi *parse.Input) (k AttributeKey, ok bo
 	}
 
 	// Eat the first brace.
-	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil ||
-		!ok {
+	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
