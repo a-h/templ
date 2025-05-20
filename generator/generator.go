@@ -1124,7 +1124,7 @@ func (g *generator) writeBoolConstantAttribute(indentLevel int, attr *parser.Boo
 }
 
 func (g *generator) writeConstantAttribute(indentLevel int, attr *parser.ConstantAttribute) (err error) {
-	// Since ConstantAttributes are parsed from the HTML template, they can be rendered as-is without escpaing.
+	// Since ConstantAttributes are parsed from the HTML template, they can be rendered as-is without escaping.
 	if err = g.w.WriteStringLiteral(indentLevel, ` `, escapeQuotes(attr.String())); err != nil {
 		return err
 	}
