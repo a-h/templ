@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"html"
 	"strings"
 
 	"github.com/a-h/parse"
@@ -168,8 +167,6 @@ var (
 			pi.Seek(start)
 			return attr, false, nil
 		}
-
-		attr.Value = html.UnescapeString(attr.Value)
 
 		// Only use single quotes if actually required, due to double quote in the value (prefer double quotes).
 		attr.SingleQuote = attr.SingleQuote && strings.Contains(attr.Value, "\"")

@@ -114,7 +114,6 @@ func TestFormat(t *testing.T) {
 			t.Error(diff)
 		}
 	})
-
 	t.Run("fails when fail flag used and change occurs", func(t *testing.T) {
 		tp, err := setupProjectDir()
 		if err != nil {
@@ -137,7 +136,6 @@ func TestFormat(t *testing.T) {
 			t.Error(diff)
 		}
 	})
-
 	t.Run("passes when fail flag used and no change occurs", func(t *testing.T) {
 		tp, err := setupProjectDir()
 		if err != nil {

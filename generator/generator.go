@@ -666,14 +666,14 @@ func (g *generator) writeWhitespaceTrailer(indentLevel int, n parser.TrailingSpa
 	if n == parser.SpaceVertical {
 		n = parser.SpaceHorizontal
 	}
-	if _, err = g.w.WriteStringLiteral(indentLevel, string(n)); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, string(n)); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (g *generator) writeDocType(indentLevel int, n *parser.DocType) (err error) {
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf("<!doctype %s>", escapeQuotes(n.Value))); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, "<!doctype ", escapeQuotes(n.Value), ">"); err != nil {
 		return err
 	}
 	return nil
@@ -957,7 +957,7 @@ func (g *generator) writeExpressionErrorHandler(indentLevel int, expression pars
 func (g *generator) writeElement(indentLevel int, n *parser.Element) (err error) {
 	if len(n.Attributes) == 0 {
 		// <div>
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s>`, html.EscapeString(n.Name))); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, `<`, html.EscapeString(n.Name), `>`); err != nil {
 			return err
 		}
 	} else {
@@ -971,14 +971,14 @@ func (g *generator) writeElement(indentLevel int, n *parser.Element) (err error)
 			return err
 		}
 		// <div
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s`, html.EscapeString(n.Name))); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, `<`, html.EscapeString(n.Name)); err != nil {
 			return err
 		}
 		if err = g.writeElementAttributes(indentLevel, n.Name, attrs); err != nil {
 			return err
 		}
 		// >
-		if _, err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
 			return err
 		}
 	}
@@ -991,7 +991,7 @@ func (g *generator) writeElement(indentLevel int, n *parser.Element) (err error)
 		return err
 	}
 	// </div>
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`</%s>`, html.EscapeString(n.Name))); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, `</`, html.EscapeString(n.Name), `>`); err != nil {
 		return err
 	}
 	return err
@@ -1117,17 +1117,15 @@ func getAttributeScripts(attr parser.Attribute) (scripts []string) {
 
 func (g *generator) writeBoolConstantAttribute(indentLevel int, attr *parser.BoolConstantAttribute) (err error) {
 	name := html.EscapeString(attr.Name)
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s`, name)); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, ` `, name); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (g *generator) writeConstantAttribute(indentLevel int, attr *parser.ConstantAttribute) (err error) {
-	name := html.EscapeString(attr.Name)
-	value := html.EscapeString(attr.Value)
-	value = escapeQuotes(value)
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s=\"%s\"`, name, value)); err != nil {
+	// Since ConstantAttributes are parsed from the HTML template, they can be rendered as-is without escpaing.
+	if err = g.w.WriteStringLiteral(indentLevel, ` `, escapeQuotes(attr.String())); err != nil {
 		return err
 	}
 	return nil
@@ -1151,7 +1149,7 @@ func (g *generator) writeBoolExpressionAttribute(indentLevel int, attr *parser.B
 	}
 	{
 		indentLevel++
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s`, name)); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, ` `, name); err != nil {
 			return err
 		}
 		indentLevel--
@@ -1275,11 +1273,11 @@ func (g *generator) writeExpressionAttributeValueStyle(indentLevel int, attr *pa
 func (g *generator) writeExpressionAttribute(indentLevel int, elementName string, attr *parser.ExpressionAttribute) (err error) {
 	attrName := html.EscapeString(attr.Name)
 	// Name
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(` %s=`, attrName)); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, ` `, attrName, `=`); err != nil {
 		return err
 	}
 	// Open quote.
-	if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
 		return err
 	}
 	// Value.
@@ -1301,7 +1299,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 		}
 	}
 	// Close quote.
-	if _, err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, `\"`); err != nil {
 		return err
 	}
 	return nil
@@ -1395,7 +1393,7 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 func (g *generator) writeRawElement(indentLevel int, n *parser.RawElement) (err error) {
 	if len(n.Attributes) == 0 {
 		// <div>
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s>`, html.EscapeString(n.Name))); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, `<`, html.EscapeString(n.Name), `>`); err != nil {
 			return err
 		}
 	} else {
@@ -1404,14 +1402,14 @@ func (g *generator) writeRawElement(indentLevel int, n *parser.RawElement) (err 
 			return err
 		}
 		// <div
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s`, html.EscapeString(n.Name))); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, `<`, html.EscapeString(n.Name)); err != nil {
 			return err
 		}
 		if err = g.writeElementAttributes(indentLevel, n.Name, n.Attributes); err != nil {
 			return err
 		}
 		// >
-		if _, err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
 			return err
 		}
 	}
@@ -1420,7 +1418,7 @@ func (g *generator) writeRawElement(indentLevel int, n *parser.RawElement) (err 
 		return err
 	}
 	// </div>
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`</%s>`, html.EscapeString(n.Name))); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, `</`, html.EscapeString(n.Name), `>`); err != nil {
 		return err
 	}
 	return err
@@ -1429,7 +1427,7 @@ func (g *generator) writeRawElement(indentLevel int, n *parser.RawElement) (err 
 func (g *generator) writeScriptElement(indentLevel int, n *parser.ScriptElement) (err error) {
 	if len(n.Attributes) == 0 {
 		// <div>
-		if _, err = g.w.WriteStringLiteral(indentLevel, `<script>`); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, `<script>`); err != nil {
 			return err
 		}
 	} else {
@@ -1438,14 +1436,14 @@ func (g *generator) writeScriptElement(indentLevel int, n *parser.ScriptElement)
 			return err
 		}
 		// <div
-		if _, err = g.w.WriteStringLiteral(indentLevel, "<script"); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, `<script`); err != nil {
 			return err
 		}
 		if err = g.writeElementAttributes(indentLevel, "script", n.Attributes); err != nil {
 			return err
 		}
 		// >
-		if _, err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
+		if err = g.w.WriteStringLiteral(indentLevel, `>`); err != nil {
 			return err
 		}
 	}
@@ -1456,7 +1454,7 @@ func (g *generator) writeScriptElement(indentLevel int, n *parser.ScriptElement)
 		}
 	}
 	// </div>
-	if _, err = g.w.WriteStringLiteral(indentLevel, "</script>"); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, `</script>`); err != nil {
 		return err
 	}
 	return err
@@ -1522,7 +1520,7 @@ func (g *generator) writeScriptContents(indentLevel int, c parser.ScriptContents
 
 func (g *generator) writeComment(indentLevel int, c *parser.HTMLComment) (err error) {
 	// <!--
-	if _, err = g.w.WriteStringLiteral(indentLevel, "<!--"); err != nil {
+	if err := g.w.WriteStringLiteral(indentLevel, "<!--"); err != nil {
 		return err
 	}
 	// Contents.
@@ -1530,7 +1528,7 @@ func (g *generator) writeComment(indentLevel int, c *parser.HTMLComment) (err er
 		return err
 	}
 	// -->
-	if _, err = g.w.WriteStringLiteral(indentLevel, "-->"); err != nil {
+	if err := g.w.WriteStringLiteral(indentLevel, "-->"); err != nil {
 		return err
 	}
 	return err
@@ -1598,15 +1596,14 @@ func (g *generator) writeWhitespace(indentLevel int, n *parser.Whitespace) (err 
 		return
 	}
 	// _, err = templ_7745c5c3_Buffer.WriteString(` `)
-	if _, err = g.w.WriteStringLiteral(indentLevel, " "); err != nil {
+	if err = g.w.WriteStringLiteral(indentLevel, " "); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (g *generator) writeText(indentLevel int, n *parser.Text) (err error) {
-	_, err = g.w.WriteStringLiteral(indentLevel, escapeQuotes(n.Value))
-	return err
+	return g.w.WriteStringLiteral(indentLevel, escapeQuotes(n.Value))
 }
 
 func createGoString(s string) string {

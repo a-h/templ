@@ -511,7 +511,7 @@ if test {` + " " + `
 			parser: StripType(constantAttributeParser),
 			expected: &ConstantAttribute{
 				Name:  "href",
-				Value: `<">`,
+				Value: `&lt;&quot;&gt;`,
 				NameRange: Range{
 					From: Position{Index: 1, Line: 0, Col: 1},
 					To:   Position{Index: 5, Line: 0, Col: 5},
@@ -1761,4 +1761,65 @@ func FuzzElement(f *testing.F) {
 	f.Fuzz(func(t *testing.T, input string) {
 		_, _, _ = element.Parse(parse.NewInput(input))
 	})
+}
+
+func TestElementFormatting(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "element can be formatted",
+			input:    `<div>Text</div>`,
+			expected: `<div>Text</div>`,
+		},
+		{
+			name:     "attribute escaping is not lost",
+			input:    `<div data-line-data="[{&quot;x&quot;: 0, &quot;y&quot;: 1 }]"></div>`,
+			expected: `<div data-line-data="[{&quot;x&quot;: 0, &quot;y&quot;: 1 }]"></div>`,
+		},
+		{
+			name:     "constant attributes are not re-escaped - single quote",
+			input:    `<div data-line-data='"'></div>`,
+			expected: `<div data-line-data='"'></div>`,
+		},
+		{
+			name:     "constant attributes are not re-escaped - double quote",
+			input:    `<div data-line-data='"'></div>`,
+			expected: `<div data-line-data='"'></div>`,
+		},
+		{
+			name:  "constant attributes are not re-escaped - backslash",
+			input: `<div data-line-data='\'></div>`,
+			// templ formatting prefers double quotes.
+			expected: `<div data-line-data="\"></div>`,
+		},
+		{
+			name:  "constant attributes are not re-escaped - ampersand",
+			input: `<div data-line-data='&'></div>`,
+			// templ formatting prefers double quotes.
+			expected: `<div data-line-data="&"></div>`,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			input := parse.NewInput(tt.input)
+			result, ok, err := element.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
+			}
+			if !ok {
+				t.Fatalf("failed to parse at %d", input.Index())
+			}
+			formatted := new(strings.Builder)
+			if err = result.Write(formatted, 0); err != nil {
+				t.Fatalf("failed to format: %v", err)
+			}
+			if diff := cmp.Diff(tt.expected, formatted.String()); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
 }

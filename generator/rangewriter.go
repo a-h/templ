@@ -64,10 +64,14 @@ func (rw *RangeWriter) WriteIndent(level int, s string) (r parser.Range, err err
 	return rw.write(s)
 }
 
-func (rw *RangeWriter) WriteStringLiteral(level int, s string) (r parser.Range, err error) {
+func (rw *RangeWriter) WriteStringLiteral(level int, ss ...string) (err error) {
 	rw.inLiteral = true
-	rw.builder.WriteString(s)
-	return
+	for _, s := range ss {
+		if _, err = rw.builder.WriteString(s); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (rw *RangeWriter) Write(s string) (r parser.Range, err error) {

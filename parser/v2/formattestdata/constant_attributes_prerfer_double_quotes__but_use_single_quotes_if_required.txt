@@ -5,6 +5,7 @@ templ nested() {
 	<div class="double">double</div>
 	<div class='single-not-required'>single-not-required</div>
 	<div data-value='{"data":"value"}'>single-required</div>
+	<div data-value="[{&quot;data&quot;:&quot;value&quot;}]">double-escaped</div>
 }
 
 -- out --
@@ -14,4 +15,5 @@ templ nested() {
 	<div class="double">double</div>
 	<div class="single-not-required">single-not-required</div>
 	<div data-value='{"data":"value"}'>single-required</div>
+	<div data-value="[{&quot;data&quot;:&quot;value&quot;}]">double-escaped</div>
 }

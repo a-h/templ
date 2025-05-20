@@ -140,7 +140,7 @@ func ThreeButtons() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<button onMouseover=\"console.log(&#39;mouseover&#39;)\" type=\"button\">Button C</button> <button hx-on::click=\"alert(&#39;clicked inline&#39;)\" type=\"button\">Button D</button> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<button onMouseover=\"console.log('mouseover')\" type=\"button\">Button C</button> <button hx-on::click=\"alert('clicked inline')\" type=\"button\">Button D</button> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
