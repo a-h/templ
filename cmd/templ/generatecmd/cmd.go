@@ -57,10 +57,10 @@ type Generate struct {
 }
 
 type GenerationEvent struct {
-	Event       fsnotify.Event
-	Updated     bool
-	GoUpdated   bool
-	TextUpdated bool
+	Event              fsnotify.Event
+	WatchedFileUpdated bool
+	GoUpdated          bool
+	TextUpdated        bool
 }
 
 func (cmd Generate) Run(ctx context.Context) (err error) {
@@ -229,15 +229,15 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				if err != nil {
 					errs <- err
 				}
-				if !(r.GoUpdated || r.TextUpdated) {
+				if !(r.GoUpdated || r.TextUpdated || r.WatchfileUpdated) {
 					cmd.Log.Debug("File not updated", slog.String("file", event.Name))
 					return
 				}
 				e := &GenerationEvent{
-					Event:       event,
-					Updated:     r.Updated,
-					GoUpdated:   r.GoUpdated,
-					TextUpdated: r.TextUpdated,
+					Event:              event,
+					WatchedFileUpdated: r.WatchfileUpdated,
+					GoUpdated:          r.GoUpdated,
+					TextUpdated:        r.TextUpdated,
 				}
 				cmd.Log.Debug("File updated", slog.String("file", event.Name))
 				postGeneration <- e
@@ -256,7 +256,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		defer postGenerationWG.Done()
 		cmd.Log.Debug("Starting post-generation handler")
 		timeout := time.NewTimer(time.Hour * 24 * 365)
-		var goUpdated, textUpdated bool
+		var goUpdated, textUpdated, watchedFileUpdated bool
 		var p *proxy.Handler
 		for {
 			select {
@@ -266,8 +266,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 					return
 				}
 				goUpdated = goUpdated || ge.GoUpdated
+				watchedFileUpdated = watchedFileUpdated || ge.WatchedFileUpdated
 				textUpdated = textUpdated || ge.TextUpdated
-				if goUpdated || textUpdated {
+				if goUpdated || textUpdated || watchedFileUpdated {
 					updates++
 				}
 				// Reset timer.
@@ -276,13 +277,13 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				}
 				timeout.Reset(time.Millisecond * 100)
 			case <-timeout.C:
-				if !goUpdated && !textUpdated {
+				if !goUpdated && !textUpdated && !watchedFileUpdated {
 					// Nothing to process, reset timer and wait again.
 					timeout.Reset(time.Hour * 24 * 365)
 					break
 				}
 				postGenerationEventsWG.Add(1)
-				if cmd.Args.Command != "" && goUpdated {
+				if cmd.Args.Command != "" && (goUpdated || watchedFileUpdated) {
 					cmd.Log.Debug("Executing command", slog.String("command", cmd.Args.Command))
 					if cmd.Args.Watch {
 						os.Setenv("TEMPL_DEV_MODE", "true")
@@ -300,7 +301,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 					}
 				}
 				// Send server-sent event.
-				if p != nil && (textUpdated || goUpdated) {
+				if p != nil && (textUpdated || goUpdated || watchedFileUpdated) {
 					cmd.Log.Debug("Sending reload event")
 					p.SendSSE("message", "reload")
 				}
@@ -309,6 +310,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				timeout.Reset(time.Millisecond * 100)
 				textUpdated = false
 				goUpdated = false
+				watchedFileUpdated = false
 			}
 		}
 	}()
