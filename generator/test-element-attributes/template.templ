@@ -36,6 +36,11 @@ templ render(p person) {
 	></div>
 	<h2>HTMX Wildcard attribute</h2>
 	<form
+		{ "dynamic"+"-attr-key" }={ "hello world" }
+		{ "dynamic"+"-const-key" }="hello world"
+		{ "my-string" + "-attr" }
+		{ "bool-" + "attr" }?={ true }
+		{ "bool-" + "attr-false" }?={ false }
 		hx-post="/api/secret/unlock"
 		hx-target="#secret"
 		hx-target-*="#errors"

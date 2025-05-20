@@ -47,10 +47,10 @@ func assetRewriter(rewrite func(path string) string) parser.Visitor {
 	// Rewrite attributes
 	visitConstantAttribute := ar.ConstantAttribute
 	ar.ConstantAttribute = func(n *parser.ConstantAttribute) error {
-		if inSrcElement && n.Name == "src" {
+		if inSrcElement && n.Key.String() == "src" {
 			n.Value = rewrite(n.Value)
 		}
-		if inHrefElement && n.Name == "href" {
+		if inHrefElement && n.Key.String() == "href" {
 			n.Value = rewrite(n.Value)
 		}
 		return visitConstantAttribute(n)
