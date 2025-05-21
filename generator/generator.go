@@ -1154,7 +1154,7 @@ func (g *generator) writeAttributeKey(indentLevel int, attr parser.AttributeKey)
 		}
 		return g.writeErrorHandler(indentLevel)
 	}
-	return nil
+	return fmt.Errorf("unknown attribute key type %T", attr)
 }
 
 func (g *generator) writeBoolConstantAttribute(indentLevel int, attr *parser.BoolConstantAttribute) (err error) {
