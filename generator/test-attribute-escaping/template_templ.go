@@ -37,7 +37,7 @@ func BasicTemplate(url string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">text</a></div><div><button hx-post=\"/click\" hx-trigger=\"click\" hx-vals=\"{&#34;val&#34;:&#34;Value&#34;}\">Click</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">text</a></div><div><button hx-post=\"/click\" hx-trigger=\"click\" hx-vals='{\"val\":\"Value\"}'>Click</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
