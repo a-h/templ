@@ -1165,9 +1165,12 @@ func (g *generator) writeConstantAttribute(indentLevel int, attr *parser.Constan
 	if err = g.writeAttributeKey(indentLevel, attr.Key); err != nil {
 		return err
 	}
-	value := html.EscapeString(attr.Value)
-	value = escapeQuotes(value)
-	if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`=\"%s\"`, value)); err != nil {
+	quote := `"`
+	if attr.SingleQuote {
+		quote = "'"
+	}
+	value := escapeQuotes("=" + quote + attr.Value + quote)
+	if _, err = g.w.WriteStringLiteral(indentLevel, value); err != nil {
 		return err
 	}
 	return nil
