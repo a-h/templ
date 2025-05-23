@@ -14,7 +14,109 @@ func TestForExpressionParser(t *testing.T) {
 		expected any
 	}{
 		{
-			name: "for: simple",
+			name: "for: infinite",
+			input: `for {
+					Ever
+			}`,
+			expected: &ForExpression{
+				Expression: Expression{
+					Value: "",
+					Range: Range{
+						From: Position{
+							Index: 4,
+							Line:  0,
+							Col:   4,
+						},
+						To: Position{
+							Index: 4,
+							Line:  0,
+							Col:   4,
+						},
+					},
+				},
+				Children: []Node{
+					&Whitespace{Value: "\t\t\t\t\t"},
+					&Text{
+						Range: Range{
+							From: Position{Index: 11, Line: 1, Col: 5},
+							To:   Position{Index: 15, Line: 1, Col: 9},
+						},
+						Value:         "Ever",
+						TrailingSpace: "\n",
+					},
+				},
+			},
+		},
+		{
+			name: "for: three clause",
+			input: `for i := 0; i < 10; i ++ {
+					Ever
+			}`,
+			expected: &ForExpression{
+				Expression: Expression{
+					Value: "i := 0; i < 10; i ++",
+					Range: Range{
+						From: Position{
+							Index: 4,
+							Line:  0,
+							Col:   4,
+						},
+						To: Position{
+							Index: 24,
+							Line:  0,
+							Col:   24,
+						},
+					},
+				},
+				Children: []Node{
+					&Whitespace{Value: "\t\t\t\t\t"},
+					&Text{
+						Range: Range{
+							From: Position{Index: 32, Line: 1, Col: 5},
+							To:   Position{Index: 36, Line: 1, Col: 9},
+						},
+						Value:         "Ever",
+						TrailingSpace: "\n",
+					},
+				},
+			},
+		},
+		{
+			name: "for: use existing variables",
+			input: `for x, y = range []int{1, 2} {
+					Ever
+			}`,
+			expected: &ForExpression{
+				Expression: Expression{
+					Value: "x, y = range []int{1, 2}",
+					Range: Range{
+						From: Position{
+							Index: 4,
+							Line:  0,
+							Col:   4,
+						},
+						To: Position{
+							Index: 28,
+							Line:  0,
+							Col:   28,
+						},
+					},
+				},
+				Children: []Node{
+					&Whitespace{Value: "\t\t\t\t\t"},
+					&Text{
+						Range: Range{
+							From: Position{Index: 36, Line: 1, Col: 5},
+							To:   Position{Index: 40, Line: 1, Col: 9},
+						},
+						Value:         "Ever",
+						TrailingSpace: "\n",
+					},
+				},
+			},
+		},
+		{
+			name: "for: empty first variable",
 			input: `for _, item := range p.Items {
 					<div>{ item }</div>
 				}`,
@@ -67,7 +169,7 @@ func TestForExpressionParser(t *testing.T) {
 			},
 		},
 		{
-			name: "for: simple, without spaces",
+			name: "for: empty first variable, without spaces",
 			input: `for _, item := range p.Items{
 					<div>{ item }</div>
 				}`,
@@ -138,25 +240,106 @@ func TestForExpressionParser(t *testing.T) {
 	}
 }
 
-func TestIncompleteFor(t *testing.T) {
-	t.Run("no opening brace", func(t *testing.T) {
-		input := parse.NewInput(`for with no brace is ignored`)
-		_, ok, err := forExpression.Parse(input)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if ok {
-			t.Fatal("expected a non match, but got a match")
-		}
-	})
-	t.Run("capitalised For", func(t *testing.T) {
-		input := parse.NewInput(`For with no brace`)
-		_, ok, err := forExpression.Parse(input)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if ok {
-			t.Fatal("expected a non match, but got a match")
-		}
-	})
+func TestForExpressionParserNegatives(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name:  "for: wrong case",
+			input: `For `, // not a for expression
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := parse.NewInput(tt.input)
+			_, ok, err := forExpression.Parse(input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if ok {
+				t.Fatal("unexpected success")
+			}
+		})
+	}
+}
+
+func TestForExpressionParserIncomplete(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name:  "for: just writing normal text",
+			input: `for this is`, // not a for expression, use <span>for</span> or `{ "for" }` to escape.
+		},
+		{
+			name:  "for: numbers are not variables",
+			input: `for 1`,
+		},
+		{
+			name:  "for: $ is not a variable",
+			input: `for $`,
+		},
+		{
+			name:  "for: bare",
+			input: `for `,
+		},
+		{
+			name:  "for: infinite",
+			input: `for {`,
+		},
+		{
+			name:  "for: variable i started",
+			input: `for i`,
+		},
+		{
+			name:  "for: variable _ started",
+			input: `for _`,
+		},
+		{
+			name:  "for: variable _ ended with comma",
+			input: `for _,`,
+		},
+		{
+			name:  "for: variable asd ended with comma",
+			input: `for asd,`,
+		},
+		{
+			name:  "for: three clause starting",
+			input: `for i `,
+		},
+		{
+			name:  "for: three clause starting with assignment",
+			input: `for i :=`,
+		},
+		{
+			name:  "for: three clause starting with initial value",
+			input: `for i := 0;`,
+		},
+		{
+			name:  "for: boolean expression",
+			input: `for i <`, // 10
+		},
+		{
+			name:  "for: range",
+			input: `for i := range`,
+		},
+		{
+			name:  "for: k, v",
+			input: `for k, v`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := parse.NewInput(tt.input)
+			_, ok, err := forExpression.Parse(input)
+			if err == nil {
+				t.Fatal("partial for should not be parsed successfully, but got nil")
+			}
+			if !ok {
+				t.Fatal("expected to be detected as a for loop, but wasn't")
+			}
+		})
+	}
 }

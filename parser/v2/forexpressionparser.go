@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"errors"
+
 	"github.com/a-h/parse"
 	"github.com/a-h/templ/parser/v2/goexpression"
 )
@@ -28,8 +30,12 @@ func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 
 	// Eat " {\n".
-	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+	_, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi)
+	if err != nil {
 		return r, true, err
+	}
+	if !ok {
+		return r, true, errors.New("for: missing opening brace")
 	}
 
 	// Node contents.

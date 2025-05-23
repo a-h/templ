@@ -508,13 +508,16 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	p.Log.Info("completion: received items", slog.Int("count", len(result.Items)))
 
 	for i, item := range result.Items {
+		item.FilterText = stripTemplStringable(item.FilterText)
 		if item.TextEdit != nil {
 			if item.TextEdit.TextEdit != nil {
 				item.TextEdit.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.TextEdit.Range)
+				item.TextEdit.TextEdit.NewText = stripTemplStringable(item.TextEdit.TextEdit.NewText)
 			}
 			if item.TextEdit.InsertReplaceEdit != nil {
 				item.TextEdit.InsertReplaceEdit.Insert = p.convertGoRangeToTemplRange(templURI, item.TextEdit.InsertReplaceEdit.Insert)
 				item.TextEdit.InsertReplaceEdit.Replace = p.convertGoRangeToTemplRange(templURI, item.TextEdit.InsertReplaceEdit.Replace)
+				item.TextEdit.InsertReplaceEdit.NewText = stripTemplStringable(item.TextEdit.InsertReplaceEdit.NewText)
 			}
 		}
 		if len(item.AdditionalTextEdits) > 0 {
@@ -541,6 +544,16 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	result.Items = append(result.Items, snippet...)
 
 	return
+}
+
+// The LSP attempts to insert `templ.stringable(variable)` as a completion, but this isn't required.
+func stripTemplStringable(s string) string {
+	if !strings.HasPrefix(s, "templ.stringable(") {
+		return s
+	}
+	s = strings.TrimPrefix(s, "templ.stringable(")
+	s = strings.TrimSuffix(s, ")")
+	return s
 }
 
 var completionWithImport = regexp.MustCompile(`^.*\(from\s(".+")\)$`)
