@@ -321,9 +321,12 @@ default:
 func TestIncompleteSwitch(t *testing.T) {
 	t.Run("no opening brace", func(t *testing.T) {
 		input := parse.NewInput(`switch with no brace`)
-		_, _, err := switchExpression.Parse(input)
+		_, ok, err := switchExpression.Parse(input)
 		if err == nil {
 			t.Fatal("expected an error, got nil")
+		}
+		if !ok {
+			t.Fatal("expected a match, because we started with the text 'switch'")
 		}
 		pe, isParseError := err.(parse.ParseError)
 		if !isParseError {

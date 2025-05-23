@@ -479,8 +479,8 @@ func TestTemplElementExpressionParserFailures(t *testing.T) {
 			if err == nil {
 				t.Fatalf("expected an error")
 			}
-			if ok {
-				t.Fatalf("expected a failure")
+			if !ok {
+				t.Fatalf("although we got an error, we did find a templ element, because the text started with @")
 			}
 		})
 	}

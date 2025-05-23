@@ -17,19 +17,17 @@ type ifExpressionParser struct{}
 //  err if an error occurred or a node was started and not completed
 
 func (ifExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	r := &IfExpression{}
 	start := pi.Index()
 
 	if !peekPrefix(pi, "if ") {
-		return r, false, nil
+		return nil, false, nil
 	}
 
 	// Parse the Go if expression using the Go parser.
-	goIfExpression, err := parseGo("if", pi, goexpression.If)
-	if err != nil {
+	r := &IfExpression{}
+	if r.Expression, err = parseGo("if", pi, goexpression.If); err != nil {
 		return r, true, err
 	}
-	r.Expression = goIfExpression
 
 	// Eat " {\n".
 	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {

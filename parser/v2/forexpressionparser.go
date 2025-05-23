@@ -43,9 +43,7 @@ func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	var nodes Nodes
 	if nodes, ok, err = tnp.Parse(pi); err != nil || !ok {
 		// If we got any nodes, take them, because the LSP might want to use them.
-		if nodes.Nodes != nil {
-			r.Children = nodes.Nodes
-		}
+		r.Children = nodes.Nodes
 		return r, true, parse.Error("for: expected nodes, but none were found", pi.Position())
 	}
 	r.Children = nodes.Nodes

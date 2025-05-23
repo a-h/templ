@@ -33,12 +33,12 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 	// Element name.
 	l := pi.Position().Line
 	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
-		return e, true, parse.Error("element: invalid name", pi.Position())
+		return e, true, err
 	}
 	e.NameRange = NewRange(pi.PositionAt(pi.Index()-len(e.Name)), pi.Position())
 
 	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
-		return e, true, parse.Error("element: invalid attributes", pi.Position())
+		return e, true, err
 	}
 
 	// If any attribute is not on the same line as the element name, indent them.
@@ -509,9 +509,7 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 			err = notFoundErr.ParseError
 		}
 		// If we got any nodes, take them, because the LSP might want to use them.
-		if nodes.Nodes != nil {
-			r.Children = nodes.Nodes
-		}
+		r.Children = nodes.Nodes
 		return r, true, err
 	}
 	r.Children = nodes.Nodes
