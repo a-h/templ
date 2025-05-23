@@ -73,7 +73,7 @@ func TestCompletion(t *testing.T) {
 			cursor:      `                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
 				if actual == nil || len(actual.Items) == globalSnippetsLen {
-					return fmt.Sprintf("expected completion list not to be empty or just the default"), false
+					return "expected completion list not to be empty or just the default", false
 				}
 				return "", true
 			},
