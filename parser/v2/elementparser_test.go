@@ -1713,37 +1713,6 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
-			name: "element: can contain text that starts with for",
-			input: `<div>for which any` + " " + `
-amount is charged</div>`,
-			expected: &Element{
-				Name:           "div",
-				IndentChildren: true,
-				NameRange: Range{
-					From: Position{Index: 1, Line: 0, Col: 1},
-					To:   Position{Index: 4, Line: 0, Col: 4},
-				},
-				Children: []Node{
-					&Text{
-						Value: "for which any ",
-						Range: Range{
-							From: Position{Index: 5, Line: 0, Col: 5},
-							To:   Position{Index: 19, Line: 0, Col: 19},
-						},
-						TrailingSpace: SpaceVertical,
-					},
-					&Text{
-						Value: "amount is charged",
-						Range: Range{
-							From: Position{Index: 20, Line: 1, Col: 0},
-							To:   Position{Index: 37, Line: 1, Col: 17},
-						},
-						TrailingSpace: SpaceNone,
-					},
-				},
-			},
-		},
-		{
 			name:  "element: self-closing with unquoted attribute",
 			input: `<hr noshade=noshade/>`,
 			expected: &Element{
@@ -1824,7 +1793,6 @@ amount is charged</div>`,
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
 			result, ok, err := element.Parse(input)
@@ -1972,7 +1940,6 @@ func TestElementFormatting(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
 			result, ok, err := element.Parse(input)

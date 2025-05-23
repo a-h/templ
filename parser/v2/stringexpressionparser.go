@@ -13,7 +13,9 @@ var stringExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err er
 	// Once we have a prefix, we must have an expression that returns a string, with optional err.
 	r := &StringExpression{}
 	if r.Expression, err = parseGoSliceArgs(pi); err != nil {
-		return r, false, err
+		// We return true because we should have completed the string expression, but didn't.
+		// That means we found a node, but the node is invalid (has an error).
+		return r, true, err
 	}
 
 	// Clear any optional whitespace.
@@ -21,18 +23,17 @@ var stringExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err er
 
 	// }
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
-		err = parse.Error("string expression: missing close brace", pi.Position())
-		return
+		return r, true, parse.Error("string expression: missing close brace", pi.Position())
 	}
 
 	// Parse trailing whitespace.
 	ws, _, err := parse.Whitespace.Parse(pi)
 	if err != nil {
-		return r, false, err
+		return r, true, err
 	}
 	r.TrailingSpace, err = NewTrailingSpace(ws)
 	if err != nil {
-		return r, false, err
+		return r, true, err
 	}
 
 	return r, true, nil

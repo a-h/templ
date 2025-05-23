@@ -47,3 +47,26 @@ templ h1() {
 		t.Fatalf("failed to write Go expression: %v", err)
 	}
 }
+
+func TestGeneratorForLSP(t *testing.T) {
+	input := `package main
+
+templ Hello(name string) {
+  if nam`
+	tf, err := parser.ParseString(input)
+	if err == nil {
+		t.Fatalf("expected error, because the file is not valid, got nil")
+	}
+
+	w := new(bytes.Buffer)
+	op, err := Generate(tf, w)
+	if err != nil {
+		t.Fatalf("failed to generate: %v", err)
+	}
+	if op.SourceMap == nil {
+		t.Fatal("expected source map for if expression, got nil")
+	}
+	if len(op.SourceMap.Expressions) != 3 {
+		t.Errorf("expected an expression for the package name, template signature (Hello) and for the if (nam), got %#v", op.SourceMap.Expressions)
+	}
+}

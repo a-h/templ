@@ -10,13 +10,13 @@ type templElementExpressionParser struct{}
 func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.Rune('@').Parse(pi); err != nil || !ok {
-		return
+		return nil, false, nil
 	}
 
-	r := &TemplElementExpression{}
 	// Parse the Go expression.
+	r := &TemplElementExpression{}
 	if r.Expression, err = parseGo("templ element", pi, goexpression.TemplExpression); err != nil {
-		return r, false, err
+		return r, true, err
 	}
 
 	// Once we've got a start expression, check to see if there's an open brace for children. {\n.
@@ -35,15 +35,17 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	np := newTemplateNodeParser(closeBraceWithOptionalPadding, "templ element closing brace")
 	var nodes Nodes
 	if nodes, ok, err = np.Parse(pi); err != nil || !ok {
+		// Populate the nodes anyway, so that the LSP can use them.
+		r.Children = nodes.Nodes
 		err = parse.Error("@"+r.Expression.Value+": expected nodes, but none were found", pi.Position())
-		return
+		return r, true, err
 	}
 	r.Children = nodes.Nodes
 
 	// Read the required closing brace.
 	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
 		err = parse.Error("@"+r.Expression.Value+": missing end (expected '}')", pi.Position())
-		return
+		return r, true, err
 	}
 
 	return r, true, nil

@@ -262,7 +262,7 @@ func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	// Retry logic.
 	var resp *http.Response
 	var err error
-	for retries := 0; retries < rt.maxRetries; retries++ {
+	for retries := range rt.maxRetries {
 		// Clone the request and set the body.
 		req := r.Clone(r.Context())
 		if bodyBytes != nil {

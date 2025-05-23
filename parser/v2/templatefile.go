@@ -116,6 +116,7 @@ outer:
 		var tn *HTMLTemplate
 		tn, ok, err = template.Parse(pi)
 		if err != nil {
+			tf.Nodes = append(tf.Nodes, tn)
 			return tf, false, err
 		}
 		if ok {

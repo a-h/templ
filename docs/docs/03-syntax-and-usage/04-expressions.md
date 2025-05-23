@@ -2,7 +2,7 @@
 
 ## Interpolation expressions
 
-Within a templ element, expressions can be used to interpolate go values. Content is automatically escaped using context-aware HTML encoding rules to protect against XSS and CSS injection attacks.
+Within a templ element, expressions can be used to interpolate Go values. Content is automatically escaped using context-aware HTML encoding rules to protect against XSS and CSS injection attacks.
 
 Literals, variables and functions that return a value can be used. 
 
