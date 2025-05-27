@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"slices"
 	"strings"
 
 	"github.com/a-h/parse"
@@ -59,12 +58,11 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 		return
 	}
 
-	// If there's a type attribute and it's not text/javascript, we need to parse the contents as raw text.
-	if slices.ContainsFunc(e.Attributes, isNotJavascript) {
+	// If there's a type attribute and it's not a JS attribute (e.g. text/javascript), we need to parse the contents as raw text.
+	if !hasJavaScriptType(e.Attributes) {
 		var contents string
 		if contents, ok, err = parse.StringUntil(jsEndTag).Parse(pi); err != nil || !ok {
-			err = parse.Error("<script>: expected end tag not present", pi.Position())
-			return
+			return e, true, parse.Error("<script>: expected end tag not present", pi.Position())
 		}
 		e.Contents = append(e.Contents, NewScriptContentsScriptCode(contents))
 
@@ -168,11 +166,37 @@ loop:
 	return e, true, nil
 }
 
-func isNotJavascript(a Attribute) bool {
-	if ca, ok := a.(*ConstantAttribute); ok {
-		return ca.Key.String() == "type" && !strings.EqualFold(ca.Value, "text/javascript")
+var javaScriptTypeAttributeValues = []string{
+	"", // If the type is not set, it is JavaScript.
+	"text/javascript",
+	"javascript", // Obsolete, but still used.
+	"module",
+}
+
+func hasJavaScriptType(attrs []Attribute) bool {
+	for _, attr := range attrs {
+		ca, isCA := attr.(*ConstantAttribute)
+		if !isCA {
+			continue
+		}
+		caKey, isCAKey := ca.Key.(ConstantAttributeKey)
+		if !isCAKey {
+			continue
+		}
+		if !strings.EqualFold(caKey.Name, "type") {
+			continue
+		}
+		for _, v := range javaScriptTypeAttributeValues {
+			if strings.EqualFold(ca.Value, v) {
+				return true
+			}
+		}
+		// If there's a type attribute but the value doesn't match any
+		// known JavaScript type, it's not JavaScript.
+		return false
 	}
-	return false
+	// If there's no type attribute, it's JavaScript.
+	return true
 }
 
 var (
