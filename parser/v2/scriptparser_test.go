@@ -136,6 +136,58 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "script: go expression with module type",
+			input: `<script type="module">{{ name }}</script>`,
+			expected: &ScriptElement{
+				Attributes: []Attribute{&ConstantAttribute{
+					Value: "module",
+					Key: ConstantAttributeKey{
+						Name: "type", NameRange: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
+					},
+				}},
+				Contents: []ScriptContents{
+					NewScriptContentsGo(&GoCode{
+						Expression: Expression{
+							Value: "name",
+							Range: Range{
+								From: Position{Index: 25, Line: 0, Col: 25},
+								To:   Position{Index: 29, Line: 0, Col: 29},
+							},
+						},
+					}, false),
+				},
+			},
+		},
+		{
+			name:  "script: go expression with javascript type",
+			input: `<script type="javascript">{{ name }}</script>`,
+			expected: &ScriptElement{
+				Attributes: []Attribute{&ConstantAttribute{
+					Value: "javascript",
+					Key: ConstantAttributeKey{
+						Name: "type", NameRange: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
+					},
+				}},
+				Contents: []ScriptContents{
+					NewScriptContentsGo(&GoCode{
+						Expression: Expression{
+							Value: "name",
+							Range: Range{
+								From: Position{Index: 29, Line: 0, Col: 29},
+								To:   Position{Index: 33, Line: 0, Col: 33},
+							},
+						},
+					}, false),
+				},
+			},
+		},
+		{
 			name: "script: go expression - multiline 1",
 			input: `<script>
 {{ name }}
