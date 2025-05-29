@@ -336,8 +336,15 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 	sb := new(strings.Builder)
 	renderCSSItemsToBuilder(sb, v, classes...)
 	if sb.Len() > 0 {
-		if _, err = io.WriteString(w, `<style type="text/css">`); err != nil {
-			return err
+		nonce := GetNonce(ctx)
+		if nonce != "" {
+			if _, err = io.WriteString(w, `<style type="text/css" nonce="`+template.HTMLEscapeString(nonce)+`">`); err != nil {
+				return err
+			}
+		} else {
+			if _, err = io.WriteString(w, `<style type="text/css">`); err != nil {
+				return err
+			}
 		}
 		if _, err = io.WriteString(w, sb.String()); err != nil {
 			return err

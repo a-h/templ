@@ -271,6 +271,25 @@ func TestRenderCSS(t *testing.T) {
 	}
 }
 
+func TestRenderCSSItemsWithNonce(t *testing.T) {
+	ctx := templ.WithNonce(context.Background(), "testnonce")
+	b := new(bytes.Buffer)
+	c := templ.ComponentCSSClass{
+		ID:    "c1",
+		Class: ".c1{color:red}",
+	}
+	err := templ.RenderCSSItems(ctx, b, c)
+	if err != nil {
+		t.Fatalf("failed to render CSS: %v", err)
+	}
+	actual := b.String()
+	// Should include nonce attribute on <style> tag.
+	expected := `<style type="text/css" nonce="testnonce">.c1{color:red}</style>`
+	if actual != expected {
+		t.Errorf("expected %q, got %q", expected, actual)
+	}
+}
+
 func TestClassesFunction(t *testing.T) {
 	tests := []struct {
 		name     string
