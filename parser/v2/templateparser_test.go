@@ -859,17 +859,18 @@ func TestTemplateParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			actual, ok, err := template.Parse(input)
+			actual, matched, err := template.Parse(input)
 			diff := cmp.Diff(tt.expected, actual)
 			switch {
 			case tt.expectError && err == nil:
 				t.Errorf("expected an error got nil: %+v", actual)
 			case !tt.expectError && err != nil:
 				t.Errorf("unexpected error: %v", err)
-			case tt.expectError && ok:
-				t.Errorf("Success=%v want=%v", ok, !tt.expectError)
 			case !tt.expectError && diff != "":
 				t.Error(diff)
+			}
+			if !matched {
+				t.Error("expected match, but got no match")
 			}
 		})
 	}
@@ -893,12 +894,12 @@ func TestTemplateParserErrors(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			_, ok, err := template.Parse(input)
+			_, matched, err := template.Parse(input)
 			if err == nil {
 				t.Fatalf("expected error %q, got nil", tt.expected)
 			}
-			if ok {
-				t.Error("expected failure, but got success")
+			if !matched {
+				t.Error("expected match, because there is a partial template")
 			}
 			if diff := cmp.Diff(tt.expected, err.Error()); diff != "" {
 				t.Error(diff)

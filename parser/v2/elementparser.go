@@ -19,25 +19,26 @@ type elementOpenTag struct {
 	Void        bool
 }
 
-var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, ok bool, err error) {
-	start := pi.Position()
+var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, matched bool, err error) {
+	if next, _ := pi.Peek(2); len(next) < 2 || next[0] != '<' || next == "<!" || next == "</" {
+		// This is not a tag, or it's a comment, doctype, or closing tag.
+		return e, false, nil
+	}
 
 	// <
-	if _, ok, err = lt.Parse(pi); err != nil || !ok {
+	if _, matched, err = lt.Parse(pi); err != nil || !matched {
 		return
 	}
 
 	// Element name.
 	l := pi.Position().Line
-	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
-		pi.Seek(start.Index)
-		return
+	if e.Name, matched, err = elementNameParser.Parse(pi); err != nil || !matched {
+		return e, true, err
 	}
 	e.NameRange = NewRange(pi.PositionAt(pi.Index()-len(e.Name)), pi.Position())
 
-	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
-		pi.Seek(start.Index)
-		return
+	if e.Attributes, matched, err = (attributesParser{}).Parse(pi); err != nil || !matched {
+		return e, true, err
 	}
 
 	// If any attribute is not on the same line as the element name, indent them.
@@ -47,26 +48,25 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 
 	// Optional whitespace.
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
-		pi.Seek(start.Index)
-		return
+		return e, true, err
 	}
 
 	// />
-	if _, ok, err = parse.String("/>").Parse(pi); err != nil {
-		return
+	if _, matched, err = parse.String("/>").Parse(pi); err != nil {
+		return e, true, err
 	}
-	if ok {
+	if matched {
 		e.Void = true
-		return
+		return e, true, nil
 	}
 
 	// >
-	if _, ok, err = gt.Parse(pi); err != nil {
-		return
+	if _, matched, err = gt.Parse(pi); err != nil {
+		return e, true, err
 	}
 
 	// If it's not a self-closing or complete open element, we have an error.
-	if !ok {
+	if !matched {
 		err = parse.Error(fmt.Sprintf("<%s>: malformed open element", e.Name), pi.Position())
 		return
 	}
@@ -472,6 +472,12 @@ type elementParser struct{}
 func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	start := pi.Position()
 
+	if prefix, _ := pi.Peek(len("<script")); prefix == "<script" {
+		// This is a script element, which has special handling and should
+		// be parsed by a different parser to this one.
+		return nil, false, nil
+	}
+
 	// Check the open tag.
 	var ot elementOpenTag
 	if ot, ok, err = elementOpenTagParser.Parse(pi); err != nil || !ok {
@@ -482,12 +488,6 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		Attributes:  ot.Attributes,
 		IndentAttrs: ot.IndentAttrs,
 		NameRange:   ot.NameRange,
-	}
-
-	if r.Name == "script" {
-		// Script elements have special handling.
-		pi.Seek(start.Index)
-		return n, false, nil
 	}
 
 	// Once we've got an open tag, the rest must be present.
@@ -508,7 +508,9 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		if isNotFoundError {
 			err = notFoundErr.ParseError
 		}
-		return r, false, err
+		// If we got any nodes, take them, because the LSP might want to use them.
+		r.Children = nodes.Nodes
+		return r, true, err
 	}
 	r.Children = nodes.Nodes
 	// If the children are not all on the same line, indent them.
@@ -519,11 +521,11 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Close tag.
 	_, ok, err = closer.Parse(pi)
 	if err != nil {
-		return r, false, err
+		return r, true, err
 	}
 	if !ok {
 		err = parse.Error(fmt.Sprintf("<%s>: expected end tag not present or invalid tag contents", r.Name), pi.Position())
-		return r, false, err
+		return r, true, err
 	}
 
 	return addTrailingSpaceAndValidate(start, r, pi)

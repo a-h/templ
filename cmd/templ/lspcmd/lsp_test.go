@@ -72,8 +72,8 @@ func TestCompletion(t *testing.T) {
 			replacement: ` <div data-testid="count">{  `,
 			cursor:      `                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
-				if actual != nil && len(actual.Items) != globalSnippetsLen {
-					return "expected completion list to be empty", false
+				if actual == nil || len(actual.Items) == globalSnippetsLen {
+					return "expected completion list not to be empty or just the default", false
 				}
 				return "", true
 			},

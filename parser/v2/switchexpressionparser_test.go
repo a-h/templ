@@ -304,11 +304,11 @@ default:
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			actual, ok, err := switchExpression.Parse(input)
+			actual, matched, err := switchExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
 			if diff := cmp.Diff(tt.expected, actual); diff != "" {
@@ -321,9 +321,12 @@ default:
 func TestIncompleteSwitch(t *testing.T) {
 	t.Run("no opening brace", func(t *testing.T) {
 		input := parse.NewInput(`switch with no brace`)
-		_, _, err := switchExpression.Parse(input)
+		_, matched, err := switchExpression.Parse(input)
 		if err == nil {
 			t.Fatal("expected an error, got nil")
+		}
+		if !matched {
+			t.Fatal("expected a match, because we started with the text 'switch'")
 		}
 		pe, isParseError := err.(parse.ParseError)
 		if !isParseError {
@@ -338,11 +341,11 @@ func TestIncompleteSwitch(t *testing.T) {
 	})
 	t.Run("capitalised Switch", func(t *testing.T) {
 		input := parse.NewInput(`Switch with no brace`)
-		_, ok, err := switchExpression.Parse(input)
+		_, matched, err := switchExpression.Parse(input)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if ok {
+		if matched {
 			t.Fatal("expected a non match")
 		}
 	})
