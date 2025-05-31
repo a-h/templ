@@ -350,12 +350,12 @@ func TestDefinitions(t *testing.T) {
 		{
 			line:      4,
 			character: 7,
-			filename:  "/remoteParent.templ",
+			filename:  "/remoteparent.templ",
 			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
 				expectedReference := []protocol.Location{
 					{
-						// This is the useage of the templ function in the main.go file.
-						URI: uri.URI("file://" + appDir + "/remoteChild.templ"),
+						// This is the usage of the templ function in the main.go file.
+						URI: uri.URI("file://" + appDir + "/remotechild.templ"),
 						Range: protocol.Range{
 							Start: protocol.Position{
 								Line:      uint32(2),

@@ -650,7 +650,7 @@ func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (
 		}
 	}
 	if !originalRequestFromTempl {
-		// If the requst came from outside of a templ file, we only care about the templ file references
+		// If the request came from outside of a templ file, we only care about the templ file references
 		// The attached gopls will return the others to the IDE
 		filteredResult := []lsp.Location{}
 		for i := 0; i < len(result); i++ {
