@@ -7,9 +7,9 @@ import (
 
 type templElementExpressionParser struct{}
 
-func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err error) {
 	// Check the prefix first.
-	if _, ok, err = parse.Rune('@').Parse(pi); err != nil || !ok {
+	if _, matched, err = parse.Rune('@').Parse(pi); err != nil || !matched {
 		return nil, false, nil
 	}
 
@@ -34,7 +34,7 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	// Node contents.
 	np := newTemplateNodeParser(closeBraceWithOptionalPadding, "templ element closing brace")
 	var nodes Nodes
-	if nodes, ok, err = np.Parse(pi); err != nil || !ok {
+	if nodes, matched, err = np.Parse(pi); err != nil || !matched {
 		// Populate the nodes anyway, so that the LSP can use them.
 		r.Children = nodes.Nodes
 		err = parse.Error("@"+r.Expression.Value+": expected nodes, but none were found", pi.Position())
@@ -43,7 +43,7 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 	r.Children = nodes.Nodes
 
 	// Read the required closing brace.
-	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+	if _, matched, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !matched {
 		err = parse.Error("@"+r.Expression.Value+": missing end (expected '}')", pi.Position())
 		return r, true, err
 	}

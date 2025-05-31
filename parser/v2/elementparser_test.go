@@ -648,11 +648,11 @@ if test {` + " " + `
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			result, ok, err := tt.parser.Parse(input)
+			result, matched, err := tt.parser.Parse(input)
 			if err != nil {
 				t.Error(err)
 			}
-			if !ok {
+			if !matched {
 				t.Errorf("failed to parse at %v", input.Position())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
@@ -665,11 +665,11 @@ if test {` + " " + `
 func TestVoidElementCloserParser(t *testing.T) {
 	t.Run("all void elements are parsed", func(t *testing.T) {
 		for _, input := range voidElementCloseTags {
-			_, ok, err := voidElementCloser.Parse(parse.NewInput(input))
+			_, matched, err := voidElementCloser.Parse(parse.NewInput(input))
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("failed to parse %q", input)
 			}
 		}
@@ -1795,11 +1795,11 @@ func TestElementParser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			result, ok, err := element.Parse(input)
+			result, matched, err := element.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
@@ -1873,11 +1873,11 @@ func TestBigElement(t *testing.T) {
 	sb.WriteString("<div>")
 	sb.WriteString(strings.Repeat("a", 16384))
 	sb.WriteString("</div>")
-	_, ok, err := element.Parse(parse.NewInput(sb.String()))
+	_, matched, err := element.Parse(parse.NewInput(sb.String()))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if !ok {
+	if !matched {
 		t.Errorf("unexpected failure to parse")
 	}
 }
@@ -1942,11 +1942,11 @@ func TestElementFormatting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			result, ok, err := element.Parse(input)
+			result, matched, err := element.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
 			formatted := new(strings.Builder)

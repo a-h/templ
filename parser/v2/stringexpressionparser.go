@@ -4,9 +4,9 @@ import (
 	"github.com/a-h/parse"
 )
 
-var stringExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
+var stringExpression = parse.Func(func(pi *parse.Input) (n Node, matched bool, err error) {
 	// Check the prefix first.
-	if _, ok, err = parse.Or(parse.String("{ "), parse.String("{")).Parse(pi); err != nil || !ok {
+	if _, matched, err = parse.Or(parse.String("{ "), parse.String("{")).Parse(pi); err != nil || !matched {
 		return
 	}
 
@@ -22,7 +22,7 @@ var stringExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, err er
 	_, _, _ = parse.OptionalWhitespace.Parse(pi)
 
 	// }
-	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+	if _, matched, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !matched {
 		return r, true, parse.Error("string expression: missing close brace", pi.Position())
 	}
 

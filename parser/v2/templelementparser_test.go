@@ -439,11 +439,11 @@ func TestTemplElementExpressionParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			actual, ok, err := templElementExpression.Parse(input)
+			actual, matched, err := templElementExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
 			if diff := cmp.Diff(tt.expected, actual); diff != "" {
@@ -475,11 +475,11 @@ func TestTemplElementExpressionParserFailures(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			_, ok, err := templElementExpression.Parse(input)
+			_, matched, err := templElementExpression.Parse(input)
 			if err == nil {
 				t.Fatalf("expected an error")
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("although we got an error, we did find a templ element, because the text started with @")
 			}
 		})

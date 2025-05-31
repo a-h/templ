@@ -86,11 +86,11 @@ func TestStringExpressionParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			an, ok, err := stringExpression.Parse(input)
+			an, matched, err := stringExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
 			actual := an.(*StringExpression)

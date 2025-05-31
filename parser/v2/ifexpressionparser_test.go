@@ -604,11 +604,11 @@ func TestIfExpression(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			actual, ok, err := ifExpression.Parse(input)
+			actual, matched, err := ifExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
 			if diff := cmp.Diff(tt.expected, actual); diff != "" {
@@ -638,11 +638,11 @@ func TestIncompleteIf(t *testing.T) {
 	})
 	t.Run("capitalised If", func(t *testing.T) {
 		input := parse.NewInput(`If a tree falls in the woods`)
-		_, ok, err := ifExpression.Parse(input)
+		_, matched, err := ifExpression.Parse(input)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if ok {
+		if matched {
 			t.Fatal("expected a non match")
 		}
 	})

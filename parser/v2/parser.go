@@ -9,13 +9,13 @@ var expressionFuncEnd = parse.All(parse.Rune(')'), openBraceWithOptionalPadding)
 
 // Template
 
-var template = parse.Func(func(pi *parse.Input) (r *HTMLTemplate, ok bool, err error) {
+var template = parse.Func(func(pi *parse.Input) (r *HTMLTemplate, matched bool, err error) {
 	start := pi.Position()
 
 	// templ FuncName(p Person, other Other) {
 	var te templateExpression
-	if te, ok, err = templateExpressionParser.Parse(pi); err != nil || !ok {
-		return
+	if te, matched, err = templateExpressionParser.Parse(pi); err != nil || !matched {
+		return r, matched, err
 	}
 	r = &HTMLTemplate{
 		Expression: te.Expression,
@@ -24,16 +24,15 @@ var template = parse.Func(func(pi *parse.Input) (r *HTMLTemplate, ok bool, err e
 	// Once we're in a template, we should expect some template whitespace, if/switch/for,
 	// or node string expressions etc.
 	var nodes Nodes
-	nodes, ok, err = newTemplateNodeParser(closeBraceWithOptionalPadding, "template closing brace").Parse(pi)
+	nodes, matched, err = newTemplateNodeParser(closeBraceWithOptionalPadding, "template closing brace").Parse(pi)
 	if err != nil {
 		// The LSP wants as many nodes as possible, so even though there was an error,
 		// we probably have some valid nodes that the LSP can use.
 		r.Children = nodes.Nodes
-		return
+		return r, true, err
 	}
-	if !ok {
-		err = parse.Error("templ: expected nodes in templ body, but found none", pi.Position())
-		return
+	if !matched {
+		return r, true, parse.Error("templ: expected nodes in templ body, but found none", pi.Position())
 	}
 	r.Children = nodes.Nodes
 
@@ -44,7 +43,7 @@ var template = parse.Func(func(pi *parse.Input) (r *HTMLTemplate, ok bool, err e
 	}
 
 	// Try for }
-	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+	if _, matched, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !matched {
 		err = parse.Error("template: missing closing brace", pi.Position())
 		return
 	}

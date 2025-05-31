@@ -11,7 +11,7 @@ var forExpression parse.Parser[Node] = forExpressionParser{}
 
 type forExpressionParser struct{}
 
-func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+func (forExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err error) {
 	r := &ForExpression{}
 	start := pi.Index()
 
@@ -30,18 +30,18 @@ func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 
 	// Eat " {\n".
-	_, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi)
+	_, matched, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi)
 	if err != nil {
 		return r, true, err
 	}
-	if !ok {
+	if !matched {
 		return r, true, errors.New("for: missing opening brace")
 	}
 
 	// Node contents.
 	tnp := newTemplateNodeParser(closeBraceWithOptionalPadding, "for expression closing brace")
 	var nodes Nodes
-	if nodes, ok, err = tnp.Parse(pi); err != nil || !ok {
+	if nodes, matched, err = tnp.Parse(pi); err != nil || !matched {
 		// If we got any nodes, take them, because the LSP might want to use them.
 		r.Children = nodes.Nodes
 		return r, true, parse.Error("for: expected nodes, but none were found", pi.Position())
@@ -49,7 +49,7 @@ func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	r.Children = nodes.Nodes
 
 	// Read the required closing brace.
-	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+	if _, matched, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !matched {
 		return r, true, parse.Error("for: "+unterminatedMissingEnd, pi.Position())
 	}
 

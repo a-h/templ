@@ -9,7 +9,7 @@ var switchExpression parse.Parser[Node] = switchExpressionParser{}
 
 type switchExpressionParser struct{}
 
-func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+func (switchExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err error) {
 	start := pi.Index()
 
 	// Check the prefix first.
@@ -25,7 +25,7 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error
 	}
 
 	// Eat " {\n".
-	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+	if _, matched, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !matched {
 		err = parse.Error("switch: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return r, true, err
 	}
@@ -35,13 +35,13 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error
 	// Read the optional 'case' nodes.
 	for {
 		var ce CaseExpression
-		ce, ok, err = caseExpressionParser.Parse(pi)
+		ce, matched, err = caseExpressionParser.Parse(pi)
 		if err != nil {
 			// Capture the case for the LSP.
 			r.Cases = append(r.Cases, ce)
 			return r, true, err
 		}
-		if !ok {
+		if !matched {
 			break
 		}
 		r.Cases = append(r.Cases, ce)
@@ -53,7 +53,7 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error
 	}
 
 	// Read the required closing brace.
-	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+	if _, matched, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !matched {
 		err = parse.Error("switch: "+unterminatedMissingEnd, pi.Position())
 		return r, true, err
 	}
@@ -61,7 +61,7 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error
 	return r, true, nil
 }
 
-var caseExpressionStartParser = parse.Func(func(pi *parse.Input) (r Expression, ok bool, err error) {
+var caseExpressionStartParser = parse.Func(func(pi *parse.Input) (r Expression, matched bool, err error) {
 	start := pi.Index()
 
 	// Optional whitespace.
@@ -88,15 +88,15 @@ var caseExpressionStartParser = parse.Func(func(pi *parse.Input) (r Expression, 
 
 var untilNextCaseOrEnd = parse.Any(StripType(caseExpressionStartParser), StripType(closeBraceWithOptionalPadding))
 
-var caseExpressionParser = parse.Func(func(pi *parse.Input) (r CaseExpression, ok bool, err error) {
-	if r.Expression, ok, err = caseExpressionStartParser.Parse(pi); err != nil || !ok {
-		return r, ok, err
+var caseExpressionParser = parse.Func(func(pi *parse.Input) (r CaseExpression, matched bool, err error) {
+	if r.Expression, matched, err = caseExpressionStartParser.Parse(pi); err != nil || !matched {
+		return r, matched, err
 	}
 
 	// Read until the next case statement, default, or end of the block.
 	pr := newTemplateNodeParser(untilNextCaseOrEnd, "closing brace or case expression")
 	var nodes Nodes
-	if nodes, ok, err = pr.Parse(pi); err != nil || !ok {
+	if nodes, matched, err = pr.Parse(pi); err != nil || !matched {
 		// Populate the nodes anyway, so that the LSP can use them.
 		r.Children = nodes.Nodes
 		err = parse.Error("case: expected nodes, but none were found", pi.Position())
@@ -105,7 +105,7 @@ var caseExpressionParser = parse.Func(func(pi *parse.Input) (r CaseExpression, o
 	r.Children = nodes.Nodes
 
 	// Optional whitespace.
-	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+	if _, matched, err = parse.OptionalWhitespace.Parse(pi); err != nil || !matched {
 		return r, true, err
 	}
 

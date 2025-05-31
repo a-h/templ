@@ -19,25 +19,25 @@ type elementOpenTag struct {
 	Void        bool
 }
 
-var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, ok bool, err error) {
+var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, matched bool, err error) {
 	if next, _ := pi.Peek(2); len(next) < 2 || next[0] != '<' || next == "<!" || next == "</" {
 		// This is not a tag, or it's a comment, doctype, or closing tag.
 		return e, false, nil
 	}
 
 	// <
-	if _, ok, err = lt.Parse(pi); err != nil || !ok {
+	if _, matched, err = lt.Parse(pi); err != nil || !matched {
 		return
 	}
 
 	// Element name.
 	l := pi.Position().Line
-	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
+	if e.Name, matched, err = elementNameParser.Parse(pi); err != nil || !matched {
 		return e, true, err
 	}
 	e.NameRange = NewRange(pi.PositionAt(pi.Index()-len(e.Name)), pi.Position())
 
-	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
+	if e.Attributes, matched, err = (attributesParser{}).Parse(pi); err != nil || !matched {
 		return e, true, err
 	}
 
@@ -52,21 +52,21 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, o
 	}
 
 	// />
-	if _, ok, err = parse.String("/>").Parse(pi); err != nil {
+	if _, matched, err = parse.String("/>").Parse(pi); err != nil {
 		return e, true, err
 	}
-	if ok {
+	if matched {
 		e.Void = true
 		return e, true, nil
 	}
 
 	// >
-	if _, ok, err = gt.Parse(pi); err != nil {
+	if _, matched, err = gt.Parse(pi); err != nil {
 		return e, true, err
 	}
 
 	// If it's not a self-closing or complete open element, we have an error.
-	if !ok {
+	if !matched {
 		err = parse.Error(fmt.Sprintf("<%s>: malformed open element", e.Name), pi.Position())
 		return
 	}

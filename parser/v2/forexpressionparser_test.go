@@ -226,11 +226,11 @@ func TestForExpressionParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			actual, ok, err := forExpression.Parse(input)
+			actual, matched, err := forExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
 			if diff := cmp.Diff(tt.expected, actual); diff != "" {
@@ -253,11 +253,11 @@ func TestForExpressionParserNegatives(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			_, ok, err := forExpression.Parse(input)
+			_, matched, err := forExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if ok {
+			if matched {
 				t.Fatal("unexpected success")
 			}
 		})
@@ -333,11 +333,11 @@ func TestForExpressionParserIncomplete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			_, ok, err := forExpression.Parse(input)
+			_, matched, err := forExpression.Parse(input)
 			if err == nil {
 				t.Fatal("partial for should not be parsed successfully, but got nil")
 			}
-			if !ok {
+			if !matched {
 				t.Fatal("expected to be detected as a for loop, but wasn't")
 			}
 		})
