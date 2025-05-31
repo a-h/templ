@@ -329,7 +329,7 @@ func TestDefinitions(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log, _ := zap.NewProduction()
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
