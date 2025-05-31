@@ -159,7 +159,7 @@ Air can also monitor the filesystem for changes, and provides a proxy to automat
 
 It uses a `toml` configuration file.
 
-See https://github.com/cosmtrek/air for details.
+See https://github.com/air-verse/air for details.
 
 #### Example configuration
 
