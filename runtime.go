@@ -335,18 +335,18 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 	_, v := getContext(ctx)
 	sb := new(strings.Builder)
 	renderCSSItemsToBuilder(sb, v, classes...)
-	if sb.Len() > 0 {
-		if _, err = io.WriteString(w, `<style type="text/css">`); err != nil {
-			return err
-		}
-		if _, err = io.WriteString(w, sb.String()); err != nil {
-			return err
-		}
-		if _, err = io.WriteString(w, `</style>`); err != nil {
+	if sb.Len() == 0 {
+		return nil
+	}
+	if _, err = io.WriteString(w, `<style type="text/css"`); err != nil {
+		return err
+	}
+	if v.nonce != "" {
+		if err = writeStrings(w, ` nonce="`, EscapeString(v.nonce), `"`); err != nil {
 			return err
 		}
 	}
-	return nil
+	return writeStrings(w, `>`, sb.String(), `</style>`)
 }
 
 func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...any) {
