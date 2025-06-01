@@ -4,4 +4,14 @@ templ render() {
 	<form action="javascript:alert('unaffected');">Ignored</form>
 	<form action={ templ.URL("javascript:alert('should be sanitized')") }>Sanitized</form>
 	<form action={ templ.SafeURL("javascript:alert('should not be sanitized')") }>Unsanitized</form>
+	<form action={ safeUrl() }>With Error</form>
+	<!-- <form action={ stringUrl() }>With Error</form> -->
+}
+
+func safeUrl() (templ.SafeURL, error) {
+	return templ.URL("/valid"), nil
+}
+
+func stringUrl() (string, error) {
+	return "/valid", nil
 }

@@ -1206,21 +1206,36 @@ func (g *generator) writeBoolExpressionAttribute(indentLevel int, attr *parser.B
 }
 
 func (g *generator) writeExpressionAttributeValueURL(indentLevel int, attr *parser.ExpressionAttribute) (err error) {
+	var r parser.Range
 	vn := g.createVariableName()
-	// var vn templ.SafeURL =
-	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.SafeURL = "); err != nil {
+	// var vn templ.SafeURL
+	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
+		return err
+	}
+	// vn, templ_7745c5c3_Err = templ.JoinStringErrs[templ.SafeURL](
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs[templ.SafeURL]("); err != nil {
 		return err
 	}
 	// p.Name()
-	var r parser.Range
 	if r, err = g.w.Write(attr.Expression.Value); err != nil {
 		return err
 	}
 	g.sourceMap.Add(attr.Expression, r)
+	// )
+	if _, err = g.w.Write(")\n"); err != nil {
+		return err
+	}
+	// Attribute expression error handler.
+	err = g.writeExpressionErrorHandler(indentLevel, attr.Expression)
+	if err != nil {
+		return err
+	}
+
+	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
 	if _, err = g.w.Write("\n"); err != nil {
 		return err
 	}
-	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(string("+vn+")))\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
 		return err
 	}
 	return g.writeErrorHandler(indentLevel)
