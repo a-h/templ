@@ -125,6 +125,28 @@ templ component() {
 <hr style="padding: 10px" class="itIsTrue" />
 ```
 
+## Attribute key expressions
+
+Use a string expression to dynamically set the key of an attribute.
+
+```templ
+templ paragraph(testID string) {
+  <p { "data-" + testID }="paragraph">Text</p>
+}
+
+templ component() {
+  @paragraph("testid")
+}
+```
+
+```html title="Output"
+<p data-testid="paragraph">Text</p>
+```
+
+:::warning
+Currently, attribute types with special handling like `href`, `onClick`, and `on*` are not handled differently when defined with an expression key. So if you use a string expression to set the key of an attribute, it will be treated as a normal string attribute, without type specific escaping.
+:::
+
 ## Spread attributes
 
 Use the `{ attrMap... }` syntax in the open tag of an element to append a dynamic map of attributes to the element's attributes.
