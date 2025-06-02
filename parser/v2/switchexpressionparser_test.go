@@ -332,7 +332,7 @@ func TestIncompleteSwitch(t *testing.T) {
 		if !isParseError {
 			t.Fatalf("expected a parse error, got %T", err)
 		}
-		if pe.Msg != "switch: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements" {
+		if pe.Msg != "switch: "+unterminatedMissingCurly {
 			t.Errorf("unexpected error: %v", err)
 		}
 		if pe.Pos.Line != 0 {
