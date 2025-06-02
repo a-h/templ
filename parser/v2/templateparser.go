@@ -41,8 +41,8 @@ var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpre
 })
 
 const (
-	unterminatedMissingCurly = `unterminated (missing closing '{\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
-	unterminatedMissingEnd   = `missing end (expected '}') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
+	unterminatedMissingCurly = `unterminated (missing closing '{\n') - to escape "for", "if", "switch" etc. with braces, e.g. '{ "for" }' - https://templ.guide/syntax-and-usage/statements#ifswitchfor-within-text`
+	unterminatedMissingEnd   = `missing end (expected '}') - https://templ.guide/syntax-and-usage/statements#ifswitchfor-within-text`
 )
 
 // Template node (element, call, if, switch, for, whitespace etc.)

@@ -629,7 +629,7 @@ func TestIncompleteIf(t *testing.T) {
 		if !isParseError {
 			t.Fatalf("expected a parse error, got %T", err)
 		}
-		if pe.Msg != "if: unterminated (missing closing '{\\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements" {
+		if pe.Msg != "if: "+unterminatedMissingCurly {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if pe.Pos.Line != 0 {
