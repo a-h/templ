@@ -479,18 +479,18 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 	// Get the sourcemap from the cache.
 	templURI := params.TextDocument.URI
 	var ok bool
-	ok, params.TextDocument.URI, params.TextDocumentPositionParams.Position = p.updatePosition(templURI, params.TextDocumentPositionParams.Position)
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
 	if !ok {
 		return nil, nil
 	}
 
 	// Ensure that Go source is available.
 	gosrc := strings.Split(p.GoSource[string(templURI)], "\n")
-	if len(gosrc) < int(params.TextDocumentPositionParams.Position.Line) {
+	if len(gosrc) < int(params.Position.Line) {
 		p.Log.Info("completion: line position out of range")
 		return nil, nil
 	}
-	if len(gosrc[params.TextDocumentPositionParams.Position.Line]) < int(params.TextDocumentPositionParams.Position.Character) {
+	if len(gosrc[params.Position.Line]) < int(params.Position.Character) {
 		p.Log.Info("completion: col position out of range")
 		return nil, nil
 	}
@@ -709,7 +709,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	p.GoSource[string(params.TextDocument.URI)] = w.String()
 	// Change the path.
 	params.TextDocument.URI = goURI
-	params.TextDocument.TextDocumentIdentifier.URI = goURI
+	params.TextDocument.URI = goURI
 	// Overwrite all the Go contents.
 	params.ContentChanges = []lsp.TextDocumentContentChangeEvent{{
 		Text: w.String(),
@@ -1319,7 +1319,7 @@ func (p *Server) Moniker(ctx context.Context, params *lsp.MonikerParams) (result
 	defer p.Log.Info("client -> server: Moniker end")
 	templURI := params.TextDocument.URI
 	var ok bool
-	ok, params.TextDocument.URI, params.TextDocumentPositionParams.Position = p.updatePosition(templURI, params.TextDocumentPositionParams.Position)
+	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
 	if !ok {
 		return nil, nil
 	}

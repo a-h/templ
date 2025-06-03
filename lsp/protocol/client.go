@@ -278,7 +278,7 @@ func (c *client) Progress(ctx context.Context, params *ProgressParams) (err erro
 	c.logger.Debug("call " + MethodProgress)
 	defer c.logger.Debug("end "+MethodProgress, slog.Any("error", err))
 
-	return c.Conn.Notify(ctx, MethodProgress, params)
+	return c.Notify(ctx, MethodProgress, params)
 }
 
 // WorkDoneProgressCreate sends the request is sent from the server to the client to ask the client to create a work done progress.
@@ -296,7 +296,7 @@ func (c *client) LogMessage(ctx context.Context, params *LogMessageParams) (err 
 	c.logger.Debug("call " + MethodWindowLogMessage)
 	defer c.logger.Debug("end "+MethodWindowLogMessage, slog.Any("error", err))
 
-	return c.Conn.Notify(ctx, MethodWindowLogMessage, params)
+	return c.Notify(ctx, MethodWindowLogMessage, params)
 }
 
 // PublishDiagnostics sends the notification from the server to the client to signal results of validation runs.
@@ -313,13 +313,13 @@ func (c *client) PublishDiagnostics(ctx context.Context, params *PublishDiagnost
 	c.logger.Debug("call " + MethodTextDocumentPublishDiagnostics)
 	defer c.logger.Debug("end "+MethodTextDocumentPublishDiagnostics, slog.Any("error", err))
 
-	return c.Conn.Notify(ctx, MethodTextDocumentPublishDiagnostics, params)
+	return c.Notify(ctx, MethodTextDocumentPublishDiagnostics, params)
 }
 
 // ShowMessage sends the notification from a server to a client to ask the
 // client to display a particular message in the user interface.
 func (c *client) ShowMessage(ctx context.Context, params *ShowMessageParams) (err error) {
-	return c.Conn.Notify(ctx, MethodWindowShowMessage, params)
+	return c.Notify(ctx, MethodWindowShowMessage, params)
 }
 
 // ShowMessageRequest sends the request from a server to a client to ask the client to display a particular message in the user interface.
@@ -342,7 +342,7 @@ func (c *client) Telemetry(ctx context.Context, params any) (err error) {
 	c.logger.Debug("call " + MethodTelemetryEvent)
 	defer c.logger.Debug("end "+MethodTelemetryEvent, slog.Any("error", err))
 
-	return c.Conn.Notify(ctx, MethodTelemetryEvent, params)
+	return c.Notify(ctx, MethodTelemetryEvent, params)
 }
 
 // RegisterCapability sends the request from the server to the client to register for a new capability on the client side.
