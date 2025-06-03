@@ -114,8 +114,8 @@ func prepare(ctx context.Context, t *testing.T) (a, b jsonrpc2.Conn, done func()
 	a = run(ctx, aPipe)
 	b = run(ctx, bPipe)
 	done = func() {
-		a.Close()
-		b.Close()
+		_ = a.Close()
+		_ = b.Close()
 		<-a.Done()
 		<-b.Done()
 	}

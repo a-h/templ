@@ -67,14 +67,15 @@ func replaceInFile(name, src, tgt string) error {
 
 func getPort() (port int, err error) {
 	var a *net.TCPAddr
-	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
-		var l *net.TCPListener
-		if l, err = net.ListenTCP("tcp", a); err == nil {
-			defer l.Close()
-			return l.Addr().(*net.TCPAddr).Port, nil
-		}
+	a, err = net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, fmt.Errorf("failed to resolve TCP address: %w", err)
 	}
-	return
+	l, err := net.ListenTCP("tcp", a)
+	if err != nil {
+		return 0, fmt.Errorf("failed to listen on TCP: %w", err)
+	}
+	return l.Addr().(*net.TCPAddr).Port, l.Close()
 }
 
 func getHTML(url string) (n *html.Node, err error) {
@@ -82,7 +83,9 @@ func getHTML(url string) (n *html.Node, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get %q: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	return html.Parse(resp.Body)
 }
 

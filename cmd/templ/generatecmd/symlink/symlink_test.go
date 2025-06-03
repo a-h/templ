@@ -31,7 +31,11 @@ func TestSymlink(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create dir symlink: %v", err)
 		}
-		defer os.Remove(symlinkPath)
+		defer func() {
+			if err = os.Remove(symlinkPath); err != nil {
+				t.Errorf("failed to remove symlink directory: %v", err)
+			}
+		}()
 
 		// Delete the templates_templ.go file to ensure it is generated.
 		err = os.Remove(path.Join(symlinkPath, "templates_templ.go"))

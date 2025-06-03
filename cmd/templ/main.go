@@ -43,7 +43,7 @@ commands:
 
 func run(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
 	if len(args) < 2 {
-		fmt.Fprint(stderr, usageText)
+		_, _ = fmt.Fprint(stderr, usageText)
 		return 64 // EX_USAGE
 	}
 	switch args[1] {
@@ -56,7 +56,7 @@ func run(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
 	case "lsp":
 		return lspCmd(stdin, stdout, stderr, args[2:])
 	case "version", "--version":
-		fmt.Fprintln(stdout, templ.Version())
+		_, _ = fmt.Fprintln(stdout, templ.Version())
 		return 0
 	case "help", "-help", "--help", "-h":
 		_, _ = fmt.Fprint(stdout, usageText)
@@ -108,11 +108,11 @@ func infoCmd(stdout, stderr io.Writer, args []string) (code int) {
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
-		fmt.Fprint(stderr, infoUsageText)
+		_, _ = fmt.Fprint(stderr, infoUsageText)
 		return 64 // EX_USAGE
 	}
 	if *helpFlag {
-		fmt.Fprint(stdout, infoUsageText)
+		_, _ = fmt.Fprint(stdout, infoUsageText)
 		return
 	}
 
@@ -123,7 +123,7 @@ func infoCmd(stdout, stderr io.Writer, args []string) (code int) {
 	signal.Notify(signalChan, os.Interrupt)
 	go func() {
 		<-signalChan
-		fmt.Fprintln(stderr, "Stopping...")
+		_, _ = fmt.Fprintln(stderr, "Stopping...")
 		cancel()
 	}()
 
@@ -131,8 +131,8 @@ func infoCmd(stdout, stderr io.Writer, args []string) (code int) {
 		JSON: *jsonFlag,
 	})
 	if err != nil {
-		color.New(color.FgRed).Fprint(stderr, "(✗) ")
-		fmt.Fprintln(stderr, "Command failed: "+err.Error())
+		_, _ = color.New(color.FgRed).Fprint(stderr, "(✗) ")
+		_, _ = fmt.Fprintln(stderr, "Command failed: "+err.Error())
 		return 1
 	}
 	return 0
@@ -225,11 +225,11 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	helpFlag := cmd.Bool("help", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
-		fmt.Fprint(stderr, generateUsageText)
+		_, _ = fmt.Fprint(stderr, generateUsageText)
 		return 64 // EX_USAGE
 	}
 	if *helpFlag {
-		fmt.Fprint(stdout, generateUsageText)
+		_, _ = fmt.Fprint(stdout, generateUsageText)
 		return
 	}
 
@@ -240,7 +240,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-signalChan
-		fmt.Fprintln(stderr, "Stopping...")
+		_, _ = fmt.Fprintln(stderr, "Stopping...")
 		cancel()
 	}()
 
@@ -271,7 +271,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 	})
 	if err != nil {
 		_, _ = color.New(color.FgRed).Fprint(stderr, "(✗) ")
-		fmt.Fprintln(stderr, "Command failed: "+err.Error())
+		_, _ = fmt.Fprintln(stderr, "Command failed: "+err.Error())
 		return 1
 	}
 	return 0
@@ -320,11 +320,11 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	stdinFilepath := cmd.String("stdin-filepath", "", "")
 	err := cmd.Parse(args)
 	if err != nil {
-		fmt.Fprint(stderr, fmtUsageText)
+		_, _ = fmt.Fprint(stderr, fmtUsageText)
 		return 64 // EX_USAGE
 	}
 	if *helpFlag {
-		fmt.Fprint(stdout, fmtUsageText)
+		_, _ = fmt.Fprint(stdout, fmtUsageText)
 		return
 	}
 
@@ -378,11 +378,11 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	noPreloadFlag := cmd.Bool("no-preload", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
-		fmt.Fprint(stderr, lspUsageText)
+		_, _ = fmt.Fprint(stderr, lspUsageText)
 		return 64 // EX_USAGE
 	}
 	if *helpFlag {
-		fmt.Fprint(stdout, lspUsageText)
+		_, _ = fmt.Fprint(stdout, lspUsageText)
 		return
 	}
 
@@ -396,7 +396,7 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 		NoPreload:     *noPreloadFlag && os.Getenv("GOPACKAGESDRIVER") != "",
 	})
 	if err != nil {
-		fmt.Fprintln(stderr, err.Error())
+		_, _ = fmt.Fprintln(stderr, err.Error())
 		return 1
 	}
 	return 0

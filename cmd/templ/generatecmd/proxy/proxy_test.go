@@ -310,7 +310,9 @@ func TestProxy(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error writing gzip: %v", err)
 		}
-		gzw.Close()
+		if err = gzw.Close(); err != nil {
+			t.Fatalf("unexpected error closing gzip writer: %v", err)
+		}
 
 		expectedString, err := insertScriptTagIntoBody("", body)
 		if err != nil {
@@ -323,7 +325,9 @@ func TestProxy(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error writing gzip: %v", err)
 		}
-		gzw.Close()
+		if err = gzw.Close(); err != nil {
+			t.Fatalf("unexpected error closing gzip writer: %v", err)
+		}
 		expectedLength := len(expectedBytes.Bytes())
 
 		r := &http.Response{
@@ -374,7 +378,9 @@ func TestProxy(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error writing gzip: %v", err)
 		}
-		brw.Close()
+		if err = brw.Close(); err != nil {
+			t.Fatalf("unexpected error closing brotli writer: %v", err)
+		}
 
 		expectedString, err := insertScriptTagIntoBody("", body)
 		if err != nil {
@@ -387,7 +393,9 @@ func TestProxy(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error writing gzip: %v", err)
 		}
-		brw.Close()
+		if err = brw.Close(); err != nil {
+			t.Fatalf("unexpected error closing brotli writer: %v", err)
+		}
 		expectedLength := len(expectedBytes.Bytes())
 
 		r := &http.Response{
@@ -468,7 +476,9 @@ func TestProxy(t *testing.T) {
 				errChan <- err
 				return
 			}
-			defer resp.Body.Close()
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 
 			sseListening <- true
 			lines := []string{}
