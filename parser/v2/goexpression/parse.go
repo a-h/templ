@@ -20,7 +20,7 @@ var (
 var defaultRegexp = regexp.MustCompile(`^default\s*:`)
 
 func Case(content string) (start, end int, err error) {
-	if !(strings.HasPrefix(content, "case ") || defaultRegexp.MatchString(content)) {
+	if !strings.HasPrefix(content, "case ") && !defaultRegexp.MatchString(content) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	prefix := "switch {\n"
