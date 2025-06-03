@@ -98,8 +98,8 @@ func run(ctx context.Context, log *slog.Logger, templStream jsonrpc2.Stream, arg
 	clientProxy, clientInit := proxy.NewClient(log, cache, diagnosticCache)
 	_, goplsConn, goplsServer := protocol.NewClient(ctx, clientProxy, jsonrpc2.NewStream(rwc), log)
 	defer func() {
-		if err = goplsConn.Close(); err != nil {
-			log.Error("failed to close gopls connection", slog.Any("error", err))
+		if closeErr := goplsConn.Close(); closeErr != nil {
+			log.Error("failed to close gopls connection", slog.Any("error", closeErr))
 		}
 	}()
 
