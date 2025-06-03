@@ -59,7 +59,7 @@ func run(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
 		fmt.Fprintln(stdout, templ.Version())
 		return 0
 	case "help", "-help", "--help", "-h":
-		fmt.Fprint(stdout, usageText)
+		_, _ = fmt.Fprint(stdout, usageText)
 		return 0
 	}
 	_, _ = fmt.Fprint(stderr, usageText)

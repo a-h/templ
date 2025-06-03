@@ -81,7 +81,9 @@ func cacheStrings(txtFilePath string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("templ: failed to open %s: %w", txtFilePath, err)
 	}
-	defer txtFile.Close()
+	defer func() {
+		_ = txtFile.Close()
+	}()
 
 	info, err := txtFile.Stat()
 	if err != nil {
