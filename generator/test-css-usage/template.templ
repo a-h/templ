@@ -63,6 +63,7 @@ templ ClassNamesAreHTMLEscaped() {
 	<div class={ "a\" onClick=\"alert('hello')\"" }>Class names are HTML escaped.</div>
 }
 
+// Templ ignores whitespace characters in class lists
 templ ClassListsIgnoreWhitespaceCharacters() {
 	<div
 		class="
