@@ -6,7 +6,6 @@ package jsonrpc2
 import (
 	"bufio"
 	"context"
-	stdjson "encoding/json"
 	"fmt"
 	"io"
 	"strconv"
@@ -62,7 +61,7 @@ type Stream interface {
 
 type rawStream struct {
 	conn io.ReadWriteCloser
-	in   *stdjson.Decoder
+	in   *json.Decoder
 }
 
 // NewRawStream returns a Stream built on top of a io.ReadWriteCloser.
@@ -72,7 +71,7 @@ type rawStream struct {
 func NewRawStream(conn io.ReadWriteCloser) Stream {
 	return &rawStream{
 		conn: conn,
-		in:   stdjson.NewDecoder(conn), // TODO(zchee): why test fail using segmentio json.Decoder?
+		in:   json.NewDecoder(conn), // TODO(zchee): why test fail using segmentio json.Decoder?
 	}
 }
 
@@ -84,7 +83,7 @@ func (s *rawStream) Read(ctx context.Context) (Message, int64, error) {
 	default:
 	}
 
-	var raw stdjson.RawMessage
+	var raw json.RawMessage
 	if err := s.in.Decode(&raw); err != nil {
 		return nil, 0, fmt.Errorf("decoding raw message: %w", err)
 	}

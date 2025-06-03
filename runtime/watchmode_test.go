@@ -1,13 +1,11 @@
 package runtime
 
 import (
-	"os"
 	"testing"
 )
 
 func TestWatchMode(t *testing.T) {
-	os.Setenv("TEMPL_DEV_MODE_ROOT", "/tmp")
-	defer os.Unsetenv("TEMPL_DEV_MODE_ROOT")
+	t.Setenv("TEMPL_DEV_MODE_ROOT", "/tmp")
 
 	t.Run("GetDevModeTextFileName respects the TEMPL_DEV_MODE_ROOT environment variable", func(t *testing.T) {
 		expected := "/tmp/templ_14a26e43676c091fa17a7f4eccbbf62a44339e3cc6454b9a82c042227a21757f.txt"

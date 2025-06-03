@@ -162,7 +162,7 @@ func (sh *Storybook) ListenAndServeWithContext(ctx context.Context) (err error) 
 	}()
 	<-ctx.Done()
 	// Close the Go server.
-	sh.Server.Close()
+	_ = sh.Server.Close()
 	return err
 }
 

@@ -122,7 +122,9 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 	if err != nil {
 		return err
 	}
-	defer r.Body.Close()
+	defer func() {
+		_ = r.Body.Close()
+	}()
 	body, err := io.ReadAll(encr)
 	if err != nil {
 		return err
@@ -256,7 +258,9 @@ func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		if err != nil {
 			return nil, err
 		}
-		r.Body.Close()
+		if err = r.Body.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close request body: %w", err)
+		}
 	}
 
 	// Retry logic.

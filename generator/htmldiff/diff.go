@@ -86,7 +86,9 @@ func DiffCtx(ctx context.Context, input templ.Component, expected string) (forma
 	if err != nil {
 		errs[2] = fmt.Errorf("failed to render component: %w", err)
 	}
-	w.Close()
+	if err := w.Close(); err != nil {
+		errs[2] = fmt.Errorf("failed to close writer: %w", err)
+	}
 
 	// Wait for processing.
 	wg.Wait()

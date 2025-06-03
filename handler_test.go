@@ -137,8 +137,9 @@ func TestHandler(t *testing.T) {
 		if got := w.Result().StatusCode; http.StatusCreated != got {
 			t.Errorf("expected status %d, got %d", http.StatusCreated, got)
 		}
-		if mimeType := w.Result().Header.Get("Content-Type"); "text/html; charset=utf-8" != mimeType {
-			t.Errorf("expected content-type %s, got %s", "text/html; charset=utf-8", mimeType)
+		expectedMIMEType := "text/html; charset=utf-8"
+		if mimeType := w.Result().Header.Get("Content-Type"); mimeType != expectedMIMEType {
+			t.Errorf("expected content-type %s, got %s", expectedMIMEType, mimeType)
 		}
 		body, err := io.ReadAll(w.Result().Body)
 		if err != nil {

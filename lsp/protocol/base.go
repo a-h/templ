@@ -64,9 +64,9 @@ func (v ProgressToken) Format(f fmt.State, r rune) {
 
 	switch {
 	case v.name != "":
-		fmt.Fprintf(f, strF, v.name)
+		_, _ = fmt.Fprintf(f, strF, v.name)
 	default:
-		fmt.Fprintf(f, numF, v.number)
+		_, _ = fmt.Fprintf(f, numF, v.number)
 	}
 }
 

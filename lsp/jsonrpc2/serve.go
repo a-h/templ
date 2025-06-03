@@ -52,10 +52,12 @@ func ListenAndServe(ctx context.Context, network, addr string, server StreamServ
 	if err != nil {
 		return fmt.Errorf("failed to listen %s:%s: %w", network, addr, err)
 	}
-	defer ln.Close()
+	defer func() {
+		_ = ln.Close()
+	}()
 
 	if network == "unix" {
-		defer os.Remove(addr)
+		defer func() { _ = os.Remove(addr) }()
 	}
 
 	return Serve(ctx, ln, server, idleTimeout)
@@ -104,7 +106,7 @@ func Serve(ctx context.Context, ln net.Listener, server StreamServer, idleTimeou
 			go func() {
 				conn := NewConn(stream)
 				closedConns <- server.ServeStream(ctx, conn)
-				stream.Close()
+				_ = stream.Close()
 			}()
 
 		case err := <-doneListening:

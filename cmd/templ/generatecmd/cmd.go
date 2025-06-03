@@ -229,7 +229,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				if err != nil {
 					errs <- err
 				}
-				if !(r.GoUpdated || r.TextUpdated || r.WatchfileUpdated) {
+				if !r.GoUpdated && !r.TextUpdated && !r.WatchfileUpdated {
 					cmd.Log.Debug("File not updated", slog.String("file", event.Name))
 					return
 				}
@@ -286,7 +286,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				if cmd.Args.Command != "" && (goUpdated || watchedFileUpdated) {
 					cmd.Log.Debug("Executing command", slog.String("command", cmd.Args.Command))
 					if cmd.Args.Watch {
-						os.Setenv("TEMPL_DEV_MODE", "true")
+						if err := os.Setenv("TEMPL_DEV_MODE", "true"); err != nil {
+							cmd.Log.Error("Error setting TEMPL_DEV_MODE environment variable", slog.Any("error", err))
+						}
 					}
 					if _, err := run.Run(ctx, cmd.Args.Path, cmd.Args.Command); err != nil {
 						cmd.Log.Error("Error executing command", slog.Any("error", err))

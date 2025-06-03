@@ -17,6 +17,19 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// extractErrorList unwraps errors until it finds a scanner.ErrorList
+func extractErrorList(err error) (scanner.ErrorList, bool) {
+	if err == nil {
+		return nil, false
+	}
+
+	if list, ok := err.(scanner.ErrorList); ok {
+		return list, true
+	}
+
+	return extractErrorList(errors.Unwrap(err))
+}
+
 func TestErrorLocationMapping(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -44,58 +57,65 @@ func TestErrorLocationMapping(t *testing.T) {
 	slog := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	var fw generatecmd.FileWriterFunc
 	fseh := generatecmd.NewFSEventHandler(slog, ".", false, []generator.GenerateOpt{}, false, false, fw, false)
+
 	for _, test := range tests {
-		// The raw files cannot end in .templ because they will cause the generator to fail. Instead,
-		// we create a tmp file that ends in .templ only for the duration of the test.
-		rawFile, err := os.Open(test.rawFileName)
-		if err != nil {
-			t.Errorf("%s: Failed to open file %s: %v", test.name, test.rawFileName, err)
-			break
-		}
-		file, err := os.CreateTemp("", fmt.Sprintf("*%s.templ", test.rawFileName))
-		if err != nil {
-			t.Errorf("%s: Failed to create a tmp file at %s: %v", test.name, file.Name(), err)
-			break
-		}
-		defer os.Remove(file.Name())
-		if _, err = io.Copy(file, rawFile); err != nil {
-			t.Errorf("%s: Failed to copy contents from raw file %s to tmp %s: %v", test.name, test.rawFileName, file.Name(), err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			// The raw files cannot end in .templ because they will cause the generator to fail. Instead,
+			// we create a tmp file that ends in .templ only for the duration of the test.
+			rawFile, err := os.Open(test.rawFileName)
+			if err != nil {
+				t.Fatalf("Failed to open file %s: %v", test.rawFileName, err)
+			}
+			defer func() {
+				if err = rawFile.Close(); err != nil {
+					t.Fatalf("Failed to close raw file %s: %v", test.rawFileName, err)
+				}
+			}()
 
-		event := fsnotify.Event{Name: file.Name(), Op: fsnotify.Write}
-		_, err = fseh.HandleEvent(context.Background(), event)
-		if err == nil {
-			t.Errorf("%s: no error was thrown", test.name)
-			break
-		}
-		list, ok := err.(scanner.ErrorList)
-		for !ok {
-			err = errors.Unwrap(err)
+			file, err := os.CreateTemp("", fmt.Sprintf("*%s.templ", test.rawFileName))
+			if err != nil {
+				t.Fatalf("Failed to create a tmp file at %s: %v", file.Name(), err)
+			}
+			tempFileName := file.Name()
+			defer func() {
+				_ = file.Close()
+				if err := os.Remove(tempFileName); err != nil {
+					t.Logf("Warning: Failed to remove tmp file %s: %v", tempFileName, err)
+				}
+			}()
+
+			if _, err = io.Copy(file, rawFile); err != nil {
+				t.Fatalf("Failed to copy contents from raw file %s to tmp %s: %v", test.rawFileName, tempFileName, err)
+			}
+
+			// Ensure file is synced to disk and file pointer is at the beginning
+			if err = file.Sync(); err != nil {
+				t.Fatalf("Failed to sync file: %v", err)
+			}
+
+			event := fsnotify.Event{Name: tempFileName, Op: fsnotify.Write}
+			_, err = fseh.HandleEvent(context.Background(), event)
 			if err == nil {
-				t.Errorf("%s: reached end of error wrapping before finding an ErrorList", test.name)
-				break
-			} else {
-				list, ok = err.(scanner.ErrorList)
+				t.Fatal("Expected an error but none was thrown")
 			}
-		}
-		if !ok {
-			break
-		}
 
-		if len(list) != len(test.errorPositions) {
-			t.Errorf("%s: expected %d errors but got %d", test.name, len(test.errorPositions), len(list))
-			break
-		}
-		for i, err := range list {
-			test.errorPositions[i].Filename = file.Name()
-			diff := cmp.Diff(test.errorPositions[i], err.Pos)
-			if diff != "" {
-				t.Error(diff)
-				t.Error("expected:")
-				t.Error(test.errorPositions[i])
-				t.Error("actual:")
-				t.Error(err.Pos)
+			list, ok := extractErrorList(err)
+			if !ok {
+				t.Fatal("Failed to extract ErrorList from error")
 			}
-		}
+
+			if len(list) != len(test.errorPositions) {
+				t.Fatalf("Expected %d errors but got %d", len(test.errorPositions), len(list))
+			}
+
+			for i, err := range list {
+				expected := test.errorPositions[i]
+				expected.Filename = tempFileName
+
+				if diff := cmp.Diff(expected, err.Pos); diff != "" {
+					t.Errorf("Error position mismatch (-expected +actual):\n%s", diff)
+				}
+			}
+		})
 	}
 }
