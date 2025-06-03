@@ -63,6 +63,18 @@ templ ClassNamesAreHTMLEscaped() {
 	<div class={ "a\" onClick=\"alert('hello')\"" }>Class names are HTML escaped.</div>
 }
 
+templ ClassListsIgnoreWhitespaceCharacters() {
+	<div
+		class="
+			bg-violet-500
+			hover:bg-red-600
+			hover:bg-sky-700
+			text-[#50d71e]
+			w-[calc(100%-4rem)]
+		"
+	>Class lists ignore whitespace characters</div>
+}
+
 // CSS components can be used with arguments.
 
 css loading(percent int) {
@@ -91,6 +103,7 @@ templ TestComponent() {
 	@KVCanBeUsedToConditionallySetClasses()
 	@PseudoAttributesAndComplexClassNamesAreSupported()
 	@ClassNamesAreHTMLEscaped()
+	@ClassListsIgnoreWhitespaceCharacters() 
 	@CSSComponentsCanBeUsedWithArguments()
 	@Rotate(45)
 }
