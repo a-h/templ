@@ -340,15 +340,24 @@ func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileNa
 	if goErr != nil {
 		return templErr
 	}
+	component := visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap)
 
 	targetFileName := strings.TrimSuffix(templFileName, ".templ") + "_templ_sourcemap.html"
 	w, err := os.Create(targetFileName)
 	if err != nil {
 		return fmt.Errorf("%s sourcemap visualisation error: %w", templFileName, err)
 	}
-	defer w.Close()
 	b := bufio.NewWriter(w)
-	defer b.Flush()
-
-	return visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap).Render(ctx, b)
+	if err = component.Render(ctx, b); err != nil {
+		_ = w.Close()
+		return fmt.Errorf("%s sourcemap visualisation render error: %w", templFileName, err)
+	}
+	if err = b.Flush(); err != nil {
+		_ = w.Close()
+		return fmt.Errorf("%s sourcemap visualisation flush error: %w", templFileName, err)
+	}
+	if err = w.Close(); err != nil {
+		return fmt.Errorf("%s sourcemap visualisation close error: %w", templFileName, err)
+	}
+	return nil
 }

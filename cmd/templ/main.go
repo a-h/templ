@@ -62,7 +62,7 @@ func run(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
 		fmt.Fprint(stdout, usageText)
 		return 0
 	}
-	fmt.Fprint(stderr, usageText)
+	_, _ = fmt.Fprint(stderr, usageText)
 	return 64 // EX_USAGE
 }
 
@@ -270,7 +270,7 @@ func generateCmd(stdout, stderr io.Writer, args []string) (code int) {
 		Lazy:                            *lazyFlag,
 	})
 	if err != nil {
-		color.New(color.FgRed).Fprint(stderr, "(✗) ")
+		_, _ = color.New(color.FgRed).Fprint(stderr, "(✗) ")
 		fmt.Fprintln(stderr, "Command failed: "+err.Error())
 		return 1
 	}
