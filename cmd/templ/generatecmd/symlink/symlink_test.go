@@ -20,7 +20,11 @@ func TestSymlink(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create test project: %v", err)
 		}
-		defer os.RemoveAll(dir)
+		defer func() {
+			if err := os.RemoveAll(dir); err != nil {
+				t.Errorf("failed to remove test project directory: %v", err)
+			}
+		}()
 
 		symlinkPath := dir + "-symlink"
 		err = os.Symlink(dir, symlinkPath)

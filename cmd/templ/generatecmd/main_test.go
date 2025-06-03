@@ -23,7 +23,11 @@ func TestGenerate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create test project: %v", err)
 		}
-		defer os.RemoveAll(dir)
+		defer func() {
+			if err := os.RemoveAll(dir); err != nil {
+				t.Errorf("failed to remove test project directory: %v", err)
+			}
+		}()
 
 		// Delete the templates_templ.go file to ensure it is generated.
 		err = os.Remove(path.Join(dir, "templates_templ.go"))
@@ -51,7 +55,11 @@ func TestGenerate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create test project: %v", err)
 		}
-		defer os.RemoveAll(dir)
+		defer func() {
+			if err := os.RemoveAll(dir); err != nil {
+				t.Errorf("failed to remove test project directory: %v", err)
+			}
+		}()
 
 		// Delete the templates_templ.go file to ensure it is generated.
 		err = os.Remove(path.Join(dir, "templates_templ.go"))

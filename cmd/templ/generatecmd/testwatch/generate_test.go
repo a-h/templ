@@ -61,7 +61,7 @@ func replaceInFile(name, src, tgt string) error {
 	if err != nil {
 		return err
 	}
-	updated := strings.Replace(string(data), src, tgt, -1)
+	updated := strings.ReplaceAll(string(data), src, tgt)
 	return os.WriteFile(name, []byte(updated), 0660)
 }
 
