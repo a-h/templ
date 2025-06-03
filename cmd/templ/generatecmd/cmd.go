@@ -229,7 +229,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				if err != nil {
 					errs <- err
 				}
-				if !(r.GoUpdated || r.TextUpdated || r.WatchfileUpdated) {
+				if !r.GoUpdated && !r.TextUpdated && !r.WatchfileUpdated {
 					cmd.Log.Debug("File not updated", slog.String("file", event.Name))
 					return
 				}
