@@ -20,6 +20,9 @@ var template = parse.Func(func(pi *parse.Input) (r *HTMLTemplate, matched bool, 
 	r = &HTMLTemplate{
 		Expression: te.Expression,
 	}
+	defer func() {
+		r.Range = NewRange(start, pi.Position())
+	}()
 
 	// Once we're in a template, we should expect some template whitespace, if/switch/for,
 	// or node string expressions etc.
@@ -47,8 +50,6 @@ var template = parse.Func(func(pi *parse.Input) (r *HTMLTemplate, matched bool, 
 		err = parse.Error("template: missing closing brace", pi.Position())
 		return
 	}
-
-	r.Range = NewRange(start, pi.Position())
 
 	return r, true, nil
 })
