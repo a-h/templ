@@ -17,6 +17,9 @@ var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r *ScriptTemplate, 
 		Name:       se.Name,
 		Parameters: se.Parameters,
 	}
+	defer func() {
+		r.Range = NewRange(start, pi.Position())
+	}()
 
 	// Read code expression.
 	var e Expression
@@ -31,8 +34,6 @@ var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r *ScriptTemplate, 
 		err = parse.Error("script template: missing closing brace", pi.Position())
 		return
 	}
-
-	r.Range = NewRange(start, pi.Position())
 
 	return r, true, nil
 })

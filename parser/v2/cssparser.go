@@ -13,6 +13,9 @@ var cssParser = parse.Func(func(pi *parse.Input) (r *CSSTemplate, ok bool, err e
 	r = &CSSTemplate{
 		Properties: []CSSProperty{},
 	}
+	defer func() {
+		r.Range = NewRange(from, pi.Position())
+	}()
 
 	// Parse the name.
 	var exp cssExpression
@@ -57,8 +60,6 @@ var cssParser = parse.Func(func(pi *parse.Input) (r *CSSTemplate, ok bool, err e
 			err = parse.Error("css property expression: missing closing brace", pi.Position())
 			return
 		}
-
-		r.Range = NewRange(from, pi.Position())
 
 		return r, true, nil
 	}

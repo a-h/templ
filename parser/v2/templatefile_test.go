@@ -3,6 +3,8 @@ package parser
 import (
 	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestTemplateFileParser(t *testing.T) {
@@ -171,6 +173,14 @@ templ Hello(name string) {
 		if !ok {
 			t.Fatalf("expected HTML template, but was %T", tf.Nodes[0])
 		}
+		// Expect the range of the HTML template to be from `templ Hello` to the end of the input.
+		expectedRange := Range{
+			From: Position{Index: int64(len("package main\n\n")), Line: 2, Col: 0},
+			To:   Position{Index: int64(len(input)), Line: 3, Col: 8},
+		}
+		if diff := cmp.Diff(expectedRange, hello.Range); diff != "" {
+			t.Errorf("expected range %v, got %v\n%s", expectedRange, hello.Range, diff)
+		}
 		// Inside Hello, we expect an if expression.
 		if len(hello.Children) == 0 {
 			t.Fatalf("expected to find children, but didn't")
@@ -184,6 +194,13 @@ templ Hello(name string) {
 		}
 		if ie.Expression.Value != "nam" {
 			t.Errorf("expected Go expression %q, got %q", "nam", ie.Expression.Value)
+		}
+		expectedIfExpressionRange := Range{
+			From: Position{Index: 46, Line: 3, Col: 5},
+			To:   Position{Index: 49, Line: 3, Col: 8},
+		}
+		if diff := cmp.Diff(expectedIfExpressionRange, ie.Expression.Range); diff != "" {
+			t.Errorf("expected range %v, got %v\n%s", expectedIfExpressionRange, ie.Expression.Range, diff)
 		}
 	})
 }
