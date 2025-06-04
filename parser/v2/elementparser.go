@@ -168,7 +168,7 @@ var (
 		}
 
 		// Strip superfluous whitespace characters from css class lists.
-		if k, singleQuote := attr.Key.(ConstantAttributeKey); singleQuote && strings.ToLower(k.Name) == "class" {
+		if k, isConstantAttributeKey := attr.Key.(ConstantAttributeKey); isConstantAttributeKey && strings.EqualFold(k.Name, "class") {
 			attr.Value = strings.Join(strings.Fields(attr.Value), " ")
 		}
 
