@@ -272,9 +272,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 					updates++
 				}
 				// Reset timer.
-				if !timeout.Stop() {
-					<-timeout.C
-				}
+				timeout.Stop()
 				timeout.Reset(time.Millisecond * 100)
 			case <-timeout.C:
 				if !goUpdated && !textUpdated && !watchedFileUpdated {
