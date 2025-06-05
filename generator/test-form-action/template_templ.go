@@ -35,7 +35,7 @@ func render() templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("javascript:alert('should be sanitized')"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `template.templ`, Line: 5, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-form-action/template.templ`, Line: 5, Col: 68}
 		}
 
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
@@ -49,7 +49,7 @@ func render() templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("javascript:alert('should not be sanitized')"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `template.templ`, Line: 6, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-form-action/template.templ`, Line: 6, Col: 76}
 		}
 
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
@@ -63,7 +63,7 @@ func render() templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(safeUrl("javascript:alert('should not be sanitized')"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `template.templ`, Line: 7, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-form-action/template.templ`, Line: 7, Col: 70}
 		}
 
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
@@ -77,7 +77,7 @@ func render() templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(stringUrl("javascript:alert('should be sanitized')"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `template.templ`, Line: 8, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-form-action/template.templ`, Line: 8, Col: 68}
 		}
 
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
