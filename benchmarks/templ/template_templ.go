@@ -59,7 +59,7 @@ func Render(p Person) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs[templ.SafeURL](templ.URL("mailto: " + p.Email))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(templ.URL("mailto: " + p.Email))
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `benchmarks/templ/template.templ`, Line: 7, Col: 55}
 		}

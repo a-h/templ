@@ -33,7 +33,7 @@ func render() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs[templ.SafeURL](templ.URL("javascript:alert('should be sanitized')"))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(templ.URL("javascript:alert('should be sanitized')"))
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-form-action/template.templ`, Line: 5, Col: 68}
 		}
@@ -47,7 +47,7 @@ func render() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs[templ.SafeURL](templ.SafeURL("javascript:alert('should not be sanitized')"))
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL("javascript:alert('should not be sanitized')"))
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-form-action/template.templ`, Line: 6, Col: 76}
 		}
@@ -61,7 +61,7 @@ func render() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs[templ.SafeURL](safeUrl())
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(safeUrl())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-form-action/template.templ`, Line: 7, Col: 25}
 		}

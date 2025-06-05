@@ -1213,7 +1213,7 @@ func (g *generator) writeExpressionAttributeValueURL(indentLevel int, attr *pars
 		return err
 	}
 	// vn, templ_7745c5c3_Err = templ.JoinStringErrs[templ.SafeURL](
-	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs[templ.SafeURL]("); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
 		return err
 	}
 	// p.Name()
