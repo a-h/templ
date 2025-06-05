@@ -1,6 +1,7 @@
 package templ
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -54,4 +55,55 @@ func BenchmarkURL(b *testing.B) {
 			}
 		}
 	}
+}
+
+func TestJoinURLErrs(t *testing.T) {
+	err1 := errors.New("error 1")
+	err2 := errors.New("error 2")
+	joinedErr := errors.Join(err1, err2)
+
+	type CustomString string
+
+	checkResult := func(t *testing.T, result SafeURL, err error, expected SafeURL, expectedErr error) {
+		t.Helper()
+		if result != expected {
+			t.Errorf("expected result %q, got %q", expected, result)
+		}
+		if expectedErr == nil && err != nil {
+			t.Errorf("expected nil error, got %v", err)
+		} else if expectedErr != nil && err == nil {
+			t.Errorf("expected error %v, got nil", expectedErr)
+		} else if expectedErr != nil && err != nil && expectedErr.Error() != err.Error() {
+			t.Errorf("expected error %v, got %v", expectedErr, err)
+		}
+	}
+	t.Run("strings are sanitized", func(t *testing.T) {
+		result, err := JoinURLErrs("javascript:alert(1)")
+		checkResult(t, result, err, FailedSanitizationURL, nil)
+	})
+	t.Run("custom string types are sanitized", func(t *testing.T) {
+		result, err := JoinURLErrs(CustomString("javascript:alert(1)"))
+		checkResult(t, result, err, FailedSanitizationURL, nil)
+	})
+	t.Run("SafeURLs bypass sanitization", func(t *testing.T) {
+		safeURL := SafeURL("javascript:alert(1)")
+		result, err := JoinURLErrs(safeURL)
+		checkResult(t, result, err, safeURL, nil)
+	})
+	t.Run("safe URL strings are returned unchanged", func(t *testing.T) {
+		result, err := JoinURLErrs("https://example.com")
+		checkResult(t, result, err, SafeURL("https://example.com"), nil)
+	})
+	t.Run("single errors are joined", func(t *testing.T) {
+		result, err := JoinURLErrs("https://example.com", err1)
+		checkResult(t, result, err, SafeURL("https://example.com"), err1)
+	})
+	t.Run("multiple errors are joined", func(t *testing.T) {
+		result, err := JoinURLErrs("https://example.com", err1, err2)
+		checkResult(t, result, err, SafeURL("https://example.com"), joinedErr)
+	})
+	t.Run("nil errors are preserved", func(t *testing.T) {
+		result, err := JoinURLErrs("https://example.com", nil)
+		checkResult(t, result, err, SafeURL("https://example.com"), nil)
+	})
 }

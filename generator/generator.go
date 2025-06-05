@@ -1209,7 +1209,7 @@ func (g *generator) writeExpressionAttributeValueURL(indentLevel int, attr *pars
 	var r parser.Range
 	vn := g.createVariableName()
 	// var vn templ.SafeURL
-	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.SafeURL\n"); err != nil {
 		return err
 	}
 	// vn, templ_7745c5c3_Err = templ.JoinStringErrs[templ.SafeURL](
@@ -1230,11 +1230,7 @@ func (g *generator) writeExpressionAttributeValueURL(indentLevel int, attr *pars
 	if err != nil {
 		return err
 	}
-
 	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
-	if _, err = g.w.Write("\n"); err != nil {
-		return err
-	}
 	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
 		return err
 	}

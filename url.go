@@ -22,11 +22,10 @@ func URL(s string) SafeURL {
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
 
-// JoinURLErrs joins an optional list of errors and returns a sanitized string.
-func JoinURLErrs[T ~string](s T, errs ...error) (string, error) {
-	// Bypass santization if the type is SafeURL.
+// JoinURLErrs joins an optional list of errors and returns a sanitized SafeURL.
+func JoinURLErrs[T ~string](s T, errs ...error) (SafeURL, error) {
 	if safeURL, ok := any(s).(SafeURL); ok {
-		return string(safeURL), errors.Join(errs...)
+		return safeURL, errors.Join(errs...)
 	}
-	return string(URL(string(s))), errors.Join(errs...)
+	return URL(string(s)), errors.Join(errs...)
 }
