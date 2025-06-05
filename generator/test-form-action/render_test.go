@@ -12,6 +12,7 @@ var expected string
 
 func Test(t *testing.T) {
 	component := render()
+	println(component)
 
 	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {

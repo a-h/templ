@@ -1,6 +1,9 @@
 package templ
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 // FailedSanitizationURL is returned if a URL fails sanitization checks.
 const FailedSanitizationURL = SafeURL("about:invalid#TemplFailedSanitizationURL")
@@ -18,3 +21,12 @@ func URL(s string) SafeURL {
 
 // SafeURL is a URL that has been sanitized.
 type SafeURL string
+
+// JoinURLErrs joins an optional list of errors and returns a sanitized string.
+func JoinURLErrs[T ~string](s T, errs ...error) (string, error) {
+	// Bypass santization if the type is SafeURL.
+	if safeURL, ok := any(s).(SafeURL); ok {
+		return string(safeURL), errors.Join(errs...)
+	}
+	return string(URL(string(s))), errors.Join(errs...)
+}

@@ -51,7 +51,7 @@ func list(uris []string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(getMapURL(uri))
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(getMapURL(uri))
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/templ/lspcmd/httpdebug/list.templ`, Line: 15, Col: 32}
 			}
@@ -65,7 +65,7 @@ func list(uris []string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(getSourceMapURL(uri))
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(getSourceMapURL(uri))
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/templ/lspcmd/httpdebug/list.templ`, Line: 16, Col: 38}
 			}
@@ -79,7 +79,7 @@ func list(uris []string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(getTemplURL(uri))
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(getTemplURL(uri))
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/templ/lspcmd/httpdebug/list.templ`, Line: 17, Col: 34}
 			}
@@ -93,7 +93,7 @@ func list(uris []string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(getGoURL(uri))
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(getGoURL(uri))
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `cmd/templ/lspcmd/httpdebug/list.templ`, Line: 18, Col: 31}
 			}

@@ -184,7 +184,7 @@ func indexPage(posts []Post) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(templ.SafeURL(path.Join(post.Date.Format("2006/01/02"), slug.Make(post.Title), "/")))
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(path.Join(post.Date.Format("2006/01/02"), slug.Make(post.Title), "/")))
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/static-generator/blog.templ`, Line: 34, Col: 103}
 			}

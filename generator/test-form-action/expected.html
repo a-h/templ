@@ -1,5 +1,7 @@
 <form action="javascript:alert(&#39;unaffected&#39;);">Ignored</form>
 <form action="about:invalid#TemplFailedSanitizationURL">Sanitized</form>
 <form action="javascript:alert(&#39;should not be sanitized&#39;)">Unsanitized</form>
-<form action="/valid">With Error</form>
-<!-- <form action={ stringUrl() }>With Error</form> -->
+<form action="/valid">SafeURL with error valid</form>
+<form action="/valid">string with error valid</form>
+<form action="about:invalid#TemplFailedSanitizationURL">SafeURL with error valid sanitized</form>
+<form action="about:invalid#TemplFailedSanitizationURL">string with error valid sanitized</form>
