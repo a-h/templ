@@ -262,6 +262,9 @@ func (g *generator) writeTemplateNodes() error {
 }
 
 func (g *generator) writeCSS(n *parser.CSSTemplate) error {
+	if n == nil {
+		return errors.New("CSS template is nil")
+	}
 	var r parser.Range
 	var tgtSymbolRange parser.Range
 	var err error
@@ -346,6 +349,9 @@ func (g *generator) writeCSS(n *parser.CSSTemplate) error {
 }
 
 func (g *generator) writeGoExpression(n *parser.TemplateFileGoExpression) (err error) {
+	if n == nil {
+		return errors.New("go expression is nil")
+	}
 	var tgtSymbolRange parser.Range
 
 	r, err := g.w.Write(n.Expression.Value)
@@ -427,6 +433,9 @@ func (g *generator) writeTemplBuffer(indentLevel int) (err error) {
 }
 
 func (g *generator) writeTemplate(nodeIdx int, t *parser.HTMLTemplate) error {
+	if t == nil {
+		return errors.New("template is nil")
+	}
 	var r parser.Range
 	var tgtSymbolRange parser.Range
 	var err error
@@ -1665,6 +1674,9 @@ func createGoString(s string) string {
 }
 
 func (g *generator) writeScript(t *parser.ScriptTemplate) error {
+	if t == nil {
+		return errors.New("script template is nil")
+	}
 	var r parser.Range
 	var tgtSymbolRange parser.Range
 	var err error
