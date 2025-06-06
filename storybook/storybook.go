@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math"
 	"net/http"
 	"net/url"
@@ -20,7 +21,6 @@ import (
 	"golang.org/x/mod/sumdb/dirhash"
 
 	_ "embed"
-	"log/slog"
 
 	"github.com/a-h/templ"
 	"github.com/rs/cors"
@@ -94,7 +94,7 @@ func New(conf ...StorybookConfig) *Storybook {
 }
 
 func (sh *Storybook) AddComponent(name string, componentConstructor any, args ...Arg) *Conf {
-	//TODO: Check that the component constructor is a function that returns a templ.Component.
+	// TODO: Check that the component constructor is a function that returns a templ.Component.
 	c := NewConf(name, args...)
 	sh.Config[name] = c
 	h := NewHandler(name, componentConstructor, args...)
@@ -232,7 +232,7 @@ func (sh *Storybook) installStorybook() (err error) {
 	if err != nil {
 		return fmt.Errorf("templ-storybook: cannot install storybook, cannot find npx on the path, check that Node.js is installed: %w", err)
 	}
-	cmd.Args = []string{"npx", "sb", "init", "-t", "server", "--no-dev"}
+	cmd.Args = []string{"npx", "sb", "init", "--features", "docs", "test", "-t", "server", "--no-dev"}
 	return cmd.Run()
 }
 
