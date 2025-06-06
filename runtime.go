@@ -78,8 +78,8 @@ func GetChildren(ctx context.Context) Component {
 }
 
 // EscapeString escapes HTML text within templates.
-func EscapeString(s string) string {
-	return html.EscapeString(s)
+func EscapeString[T ~string](s T) string {
+	return html.EscapeString(string(s))
 }
 
 // Bool attribute value.
