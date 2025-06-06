@@ -73,7 +73,7 @@ func TestJoinURLErrs(t *testing.T) {
 			t.Errorf("expected nil error, got %v", err)
 		} else if expectedErr != nil && err == nil {
 			t.Errorf("expected error %v, got nil", expectedErr)
-		} else if expectedErr != nil && err != nil && expectedErr.Error() != err.Error() {
+		} else if expectedErr != nil && err != nil && !errors.Is(err, expectedErr) {
 			t.Errorf("expected error %v, got %v", expectedErr, err)
 		}
 	}
