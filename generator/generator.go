@@ -1206,7 +1206,6 @@ func (g *generator) writeBoolExpressionAttribute(indentLevel int, attr *parser.B
 }
 
 func (g *generator) writeExpressionAttributeValueURL(indentLevel int, attr *parser.ExpressionAttribute) (err error) {
-	var r parser.Range
 	vn := g.createVariableName()
 	// var vn templ.SafeURL
 	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.SafeURL\n"); err != nil {
@@ -1217,6 +1216,7 @@ func (g *generator) writeExpressionAttributeValueURL(indentLevel int, attr *pars
 		return err
 	}
 	// p.Name()
+	var r parser.Range
 	if r, err = g.w.Write(attr.Expression.Value); err != nil {
 		return err
 	}
