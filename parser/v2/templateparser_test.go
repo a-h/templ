@@ -671,6 +671,7 @@ func TestTemplateParser(t *testing.T) {
 				Children: []Node{
 					&Whitespace{Value: "\t"},
 					&GoComment{Contents: " Comment", Multiline: false},
+					&Whitespace{Value: "\n"},
 				},
 			},
 		},

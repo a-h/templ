@@ -4,11 +4,12 @@ import (
 	"github.com/a-h/parse"
 )
 
-var goSingleLineCommentStart = parse.String("//")
-var goSingleLineCommentEnd = parse.Any(parse.NewLine, parse.EOF[string]())
+var (
+	goSingleLineCommentStart = parse.String("//")
+	goSingleLineCommentEnd   = parse.Any(parse.NewLine, parse.EOF[string]())
+)
 
-type goSingleLineCommentParser struct {
-}
+type goSingleLineCommentParser struct{}
 
 var goSingleLineComment = goSingleLineCommentParser{}
 
@@ -24,18 +25,17 @@ func (p goSingleLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err 
 		err = parse.Error("expected end comment literal '\n' not found", pi.Position())
 		return
 	}
-	// Move past the end element.
-	_, _, _ = goSingleLineCommentEnd.Parse(pi)
 	// Return the comment.
 	c.Multiline = false
 	return c, true, nil
 }
 
-var goMultiLineCommentStart = parse.String("/*")
-var goMultiLineCommentEnd = parse.String("*/")
+var (
+	goMultiLineCommentStart = parse.String("/*")
+	goMultiLineCommentEnd   = parse.String("*/")
+)
 
-type goMultiLineCommentParser struct {
-}
+type goMultiLineCommentParser struct{}
 
 var goMultiLineComment = goMultiLineCommentParser{}
 
