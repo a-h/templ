@@ -16,7 +16,7 @@ type templDocLazyLoader struct {
 	templDocHooks templDocHooks
 	packageLoader packageLoader
 	fileReader    fileReader
-	docsOpenCount map[string]int
+	pkgsRefCount  map[string]int
 }
 
 type templDocHooks struct {
@@ -53,16 +53,18 @@ func newTemplDocLazyLoader(templDocHooks templDocHooks) templDocLazyLoader {
 	return templDocLazyLoader{
 		templDocHooks: templDocHooks,
 		packageLoader: goPackageLoader{},
-		docsOpenCount: make(map[string]int),
 		fileReader:    templFileReader{},
+		pkgsRefCount:  make(map[string]int),
 	}
 }
 
 // load loads all templ documents in the dependency graph topologically (dependencies are loaded before dependents).
 func (l *templDocLazyLoader) load(ctx context.Context, params *lsp.DidOpenTextDocumentParams) error {
-	pkgs, err := l.packageLoader.load(params.TextDocument.URI.Filename())
+	filename := params.TextDocument.URI.Filename()
+
+	pkgs, err := l.packageLoader.load(filename)
 	if err != nil {
-		return fmt.Errorf("load packages for file %q: %w", params.TextDocument.URI.Filename(), err)
+		return fmt.Errorf("load packages for file %q: %w", filename, err)
 	}
 
 	for _, pkg := range pkgs {
@@ -81,6 +83,11 @@ func (l *templDocLazyLoader) openTopologically(ctx context.Context, pkg *package
 	}
 	visited[pkg.PkgPath] = true
 
+	if l.pkgsRefCount[pkg.PkgPath] > 0 {
+		l.pkgsRefCount[pkg.PkgPath]++
+		return nil
+	}
+
 	for _, imp := range pkg.Imports {
 		if err := l.openTopologically(ctx, imp, visited); err != nil {
 			return fmt.Errorf("open topologically %q: %w", imp.PkgPath, err)
@@ -92,35 +99,34 @@ func (l *templDocLazyLoader) openTopologically(ctx context.Context, pkg *package
 			continue
 		}
 
-		if l.docsOpenCount[otherFile] == 0 {
-			text, err := l.fileReader.read(otherFile)
-			if err != nil {
-				return fmt.Errorf("read file %q: %w", otherFile, err)
-			}
-
-			if err := l.templDocHooks.didOpen(ctx, &lsp.DidOpenTextDocumentParams{
-				TextDocument: lsp.TextDocumentItem{
-					URI:        uri.File(otherFile),
-					Text:       string(text),
-					Version:    1,
-					LanguageID: "go",
-				},
-			}); err != nil {
-				return fmt.Errorf("did open file %q: %w", otherFile, err)
-			}
+		text, err := l.fileReader.read(otherFile)
+		if err != nil {
+			return fmt.Errorf("read file %q: %w", otherFile, err)
 		}
 
-		l.docsOpenCount[otherFile]++
+		if err := l.templDocHooks.didOpen(ctx, &lsp.DidOpenTextDocumentParams{
+			TextDocument: lsp.TextDocumentItem{
+				URI:        uri.File(otherFile),
+				Text:       string(text),
+				Version:    1,
+				LanguageID: "go",
+			},
+		}); err != nil {
+			return fmt.Errorf("did open file %q: %w", otherFile, err)
+		}
 	}
+	l.pkgsRefCount[pkg.PkgPath]++
 
 	return nil
 }
 
 // unload unloads all templ documents in the dependency graph topologically (dependents are unloaded before dependencies).
 func (l *templDocLazyLoader) unload(ctx context.Context, params *lsp.DidCloseTextDocumentParams) error {
-	pkgs, err := l.packageLoader.load(params.TextDocument.URI.Filename())
+	filename := params.TextDocument.URI.Filename()
+
+	pkgs, err := l.packageLoader.load(filename)
 	if err != nil {
-		return fmt.Errorf("load packages for file %q: %w", params.TextDocument.URI.Filename(), err)
+		return fmt.Errorf("load packages for file %q: %w", filename, err)
 	}
 
 	for _, pkg := range pkgs {
@@ -139,13 +145,13 @@ func (l *templDocLazyLoader) closeTopologically(ctx context.Context, pkg *packag
 	}
 	visited[pkg.PkgPath] = true
 
+	if l.pkgsRefCount[pkg.PkgPath] > 1 {
+		l.pkgsRefCount[pkg.PkgPath]--
+		return nil
+	}
+
 	for _, otherFile := range pkg.OtherFiles {
 		if filepath.Ext(otherFile) != ".templ" {
-			continue
-		}
-
-		if l.docsOpenCount[otherFile] > 1 {
-			l.docsOpenCount[otherFile]--
 			continue
 		}
 
@@ -156,8 +162,8 @@ func (l *templDocLazyLoader) closeTopologically(ctx context.Context, pkg *packag
 		}); err != nil {
 			return fmt.Errorf("did close file %q: %w", otherFile, err)
 		}
-		delete(l.docsOpenCount, otherFile)
 	}
+	delete(l.pkgsRefCount, pkg.PkgPath)
 
 	for _, imp := range pkg.Imports {
 		if err := l.closeTopologically(ctx, imp, visited); err != nil {

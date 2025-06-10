@@ -52,12 +52,12 @@ func TestNewTemplDocLazyLoader(t *testing.T) {
 func TestLoad(t *testing.T) {
 	var order []string
 	tests := []struct {
-		name              string
-		loader            templDocLazyLoader
-		params            *lsp.DidOpenTextDocumentParams
-		wantErrStr        string
-		wantOpenOrder     []string
-		wantDocsOpenCount map[string]int
+		name             string
+		loader           templDocLazyLoader
+		params           *lsp.DidOpenTextDocumentParams
+		wantErrStr       string
+		wantOpenOrder    []string
+		wantPkgsRefCount map[string]int
 	}{
 		{
 			name: "err load package",
@@ -93,15 +93,15 @@ func TestLoad(t *testing.T) {
 						"/a.templ": errors.New("error"),
 					},
 				},
-				docsOpenCount: map[string]int{},
+				pkgsRefCount: map[string]int{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			wantErrStr:        "open topologically \"a\": read file \"/a.templ\": error",
-			wantDocsOpenCount: map[string]int{},
+			wantErrStr:       "open topologically \"a\": read file \"/a.templ\": error",
+			wantPkgsRefCount: map[string]int{},
 		},
 		{
 			name: "err did open",
@@ -126,15 +126,15 @@ func TestLoad(t *testing.T) {
 						"/a.templ": []byte("data"),
 					},
 				},
-				docsOpenCount: map[string]int{},
+				pkgsRefCount: map[string]int{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			wantErrStr:        "open topologically \"a\": did open file \"/a.templ\": error",
-			wantDocsOpenCount: map[string]int{},
+			wantErrStr:       "open topologically \"a\": did open file \"/a.templ\": error",
+			wantPkgsRefCount: map[string]int{},
 		},
 		{
 			name: "success a->b->c",
@@ -176,7 +176,7 @@ func TestLoad(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
-				docsOpenCount: map[string]int{},
+				pkgsRefCount: map[string]int{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -184,12 +184,10 @@ func TestLoad(t *testing.T) {
 				},
 			},
 			wantOpenOrder: []string{"/c.templ", "/c_other.templ", "/b.templ", "/a.templ", "/a_other.templ"},
-			wantDocsOpenCount: map[string]int{
-				"/c.templ":       1,
-				"/c_other.templ": 1,
-				"/b.templ":       1,
-				"/a.templ":       1,
-				"/a_other.templ": 1,
+			wantPkgsRefCount: map[string]int{
+				"a": 1,
+				"b": 1,
+				"c": 1,
 			},
 		},
 		{
@@ -238,7 +236,7 @@ func TestLoad(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
-				docsOpenCount: map[string]int{},
+				pkgsRefCount: map[string]int{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -246,12 +244,10 @@ func TestLoad(t *testing.T) {
 				},
 			},
 			wantOpenOrder: []string{"/c.templ", "/c_other.templ", "/b.templ", "/a.templ", "/a_other.templ"},
-			wantDocsOpenCount: map[string]int{
-				"/c.templ":       1,
-				"/c_other.templ": 1,
-				"/b.templ":       1,
-				"/a.templ":       1,
-				"/a_other.templ": 1,
+			wantPkgsRefCount: map[string]int{
+				"a": 1,
+				"b": 1,
+				"c": 1,
 			},
 		},
 		{
@@ -294,9 +290,8 @@ func TestLoad(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
-				docsOpenCount: map[string]int{
-					"/c.templ":       1,
-					"/c_other.templ": 1,
+				pkgsRefCount: map[string]int{
+					"c": 1,
 				},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
@@ -305,12 +300,10 @@ func TestLoad(t *testing.T) {
 				},
 			},
 			wantOpenOrder: []string{"/b.templ", "/a.templ", "/a_other.templ"},
-			wantDocsOpenCount: map[string]int{
-				"/c.templ":       2,
-				"/c_other.templ": 2,
-				"/b.templ":       1,
-				"/a.templ":       1,
-				"/a_other.templ": 1,
+			wantPkgsRefCount: map[string]int{
+				"a": 1,
+				"b": 1,
+				"c": 2,
 			},
 		},
 	}
@@ -331,8 +324,8 @@ func TestLoad(t *testing.T) {
 				t.Errorf("expected order \"%v\", got \"%v\"", tt.wantOpenOrder, order)
 			}
 
-			if !reflect.DeepEqual(tt.wantDocsOpenCount, tt.loader.docsOpenCount) {
-				t.Errorf("expected count \"%v\", got \"%v\"", tt.wantDocsOpenCount, tt.loader.docsOpenCount)
+			if !reflect.DeepEqual(tt.wantPkgsRefCount, tt.loader.pkgsRefCount) {
+				t.Errorf("expected count \"%v\", got \"%v\"", tt.wantPkgsRefCount, tt.loader.pkgsRefCount)
 			}
 		})
 	}
@@ -341,12 +334,12 @@ func TestLoad(t *testing.T) {
 func TestUnload(t *testing.T) {
 	var order []string
 	tests := []struct {
-		name              string
-		loader            templDocLazyLoader
-		params            *lsp.DidCloseTextDocumentParams
-		wantErrStr        string
-		wantCloseOrder    []string
-		wantDocsOpenCount map[string]int
+		name             string
+		loader           templDocLazyLoader
+		params           *lsp.DidCloseTextDocumentParams
+		wantErrStr       string
+		wantCloseOrder   []string
+		wantPkgsRefCount map[string]int
 	}{
 		{
 			name: "err load package",
@@ -387,8 +380,8 @@ func TestUnload(t *testing.T) {
 						"/a.templ": []byte("data"),
 					},
 				},
-				docsOpenCount: map[string]int{
-					"/a.templ": 1,
+				pkgsRefCount: map[string]int{
+					"a": 1,
 				},
 			},
 			params: &lsp.DidCloseTextDocumentParams{
@@ -397,8 +390,8 @@ func TestUnload(t *testing.T) {
 				},
 			},
 			wantErrStr: "close topologically \"a\": did close file \"/a.templ\": error",
-			wantDocsOpenCount: map[string]int{
-				"/a.templ": 1,
+			wantPkgsRefCount: map[string]int{
+				"a": 1,
 			},
 		},
 		{
@@ -441,12 +434,10 @@ func TestUnload(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
-				docsOpenCount: map[string]int{
-					"/a.templ":       1,
-					"/a_other.templ": 1,
-					"/b.templ":       1,
-					"/c.templ":       1,
-					"/c_other.templ": 1,
+				pkgsRefCount: map[string]int{
+					"a": 1,
+					"b": 1,
+					"c": 1,
 				},
 			},
 			params: &lsp.DidCloseTextDocumentParams{
@@ -454,8 +445,8 @@ func TestUnload(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			wantCloseOrder:    []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
-			wantDocsOpenCount: map[string]int{},
+			wantCloseOrder:   []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
+			wantPkgsRefCount: map[string]int{},
 		},
 		{
 			name: "success a->b->c->a",
@@ -503,12 +494,10 @@ func TestUnload(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
-				docsOpenCount: map[string]int{
-					"/a.templ":       1,
-					"/a_other.templ": 1,
-					"/b.templ":       1,
-					"/c.templ":       1,
-					"/c_other.templ": 1,
+				pkgsRefCount: map[string]int{
+					"a": 1,
+					"b": 1,
+					"c": 1,
 				},
 			},
 			params: &lsp.DidCloseTextDocumentParams{
@@ -516,8 +505,8 @@ func TestUnload(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			wantCloseOrder:    []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
-			wantDocsOpenCount: map[string]int{},
+			wantCloseOrder:   []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
+			wantPkgsRefCount: map[string]int{},
 		},
 		{
 			name: "success a->b->c with b close",
@@ -553,12 +542,10 @@ func TestUnload(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
-				docsOpenCount: map[string]int{
-					"/a.templ":       1,
-					"/a_other.templ": 1,
-					"/b.templ":       2,
-					"/c.templ":       2,
-					"/c_other.templ": 2,
+				pkgsRefCount: map[string]int{
+					"a": 1,
+					"b": 2,
+					"c": 1,
 				},
 			},
 			params: &lsp.DidCloseTextDocumentParams{
@@ -567,12 +554,10 @@ func TestUnload(t *testing.T) {
 				},
 			},
 			wantCloseOrder: []string{},
-			wantDocsOpenCount: map[string]int{
-				"/a.templ":       1,
-				"/a_other.templ": 1,
-				"/b.templ":       1,
-				"/c.templ":       1,
-				"/c_other.templ": 1,
+			wantPkgsRefCount: map[string]int{
+				"a": 1,
+				"b": 1,
+				"c": 1,
 			},
 		},
 	}
@@ -594,8 +579,8 @@ func TestUnload(t *testing.T) {
 			t.Errorf("expected order \"%v\", got \"%v\"", tt.wantCloseOrder, order)
 		}
 
-		if !reflect.DeepEqual(tt.wantDocsOpenCount, tt.loader.docsOpenCount) {
-			t.Errorf("expected count \"%v\", got \"%v\"", tt.wantDocsOpenCount, tt.loader.docsOpenCount)
+		if !reflect.DeepEqual(tt.wantPkgsRefCount, tt.loader.pkgsRefCount) {
+			t.Errorf("expected count \"%v\", got \"%v\"", tt.wantPkgsRefCount, tt.loader.pkgsRefCount)
 		}
 	}
 }
