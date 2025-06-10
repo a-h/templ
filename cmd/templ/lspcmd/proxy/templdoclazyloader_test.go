@@ -13,7 +13,7 @@ import (
 )
 
 type mockPackageLoader struct {
-	packages map[string][]*packages.Package
+	packages map[string]*packages.Package
 	err      map[string]error
 }
 
@@ -22,7 +22,7 @@ type mockFileReader struct {
 	err  map[string]error
 }
 
-func (m mockPackageLoader) load(file string) ([]*packages.Package, error) {
+func (m mockPackageLoader) load(file string) (*packages.Package, error) {
 	return m.packages[file], m.err[file]
 }
 
@@ -73,18 +73,16 @@ func TestLoad(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			wantErrStr: "load packages for file \"/a.templ\": error",
+			wantErrStr: "load package for file \"/a.templ\": error",
 		},
 		{
 			name: "err read file",
 			loader: templDocLazyLoader{
 				packageLoader: mockPackageLoader{
-					packages: map[string][]*packages.Package{
+					packages: map[string]*packages.Package{
 						"/a.templ": {
-							{
-								PkgPath:    "a",
-								OtherFiles: []string{"/a.templ"},
-							},
+							PkgPath:    "a",
+							OtherFiles: []string{"/a.templ"},
 						},
 					},
 				},
@@ -112,12 +110,10 @@ func TestLoad(t *testing.T) {
 					},
 				},
 				packageLoader: mockPackageLoader{
-					packages: map[string][]*packages.Package{
+					packages: map[string]*packages.Package{
 						"/a.templ": {
-							{
-								PkgPath:    "a",
-								OtherFiles: []string{"/a.templ"},
-							},
+							PkgPath:    "a",
+							OtherFiles: []string{"/a.templ"},
 						},
 					},
 				},
@@ -146,20 +142,18 @@ func TestLoad(t *testing.T) {
 					},
 				},
 				packageLoader: mockPackageLoader{
-					packages: map[string][]*packages.Package{
+					packages: map[string]*packages.Package{
 						"/a.templ": {
-							{
-								PkgPath:    "a",
-								OtherFiles: []string{"/a.templ", "/a_other.templ"},
-								Imports: map[string]*packages.Package{
-									"b": {
-										PkgPath:    "b",
-										OtherFiles: []string{"/b.templ"},
-										Imports: map[string]*packages.Package{
-											"c": {
-												PkgPath:    "c",
-												OtherFiles: []string{"/c.templ", "/c_other.templ"},
-											},
+							PkgPath:    "a",
+							OtherFiles: []string{"/a.templ", "/a_other.templ"},
+							Imports: map[string]*packages.Package{
+								"b": {
+									PkgPath:    "b",
+									OtherFiles: []string{"/b.templ"},
+									Imports: map[string]*packages.Package{
+										"c": {
+											PkgPath:    "c",
+											OtherFiles: []string{"/c.templ", "/c_other.templ"},
 										},
 									},
 								},
@@ -200,24 +194,22 @@ func TestLoad(t *testing.T) {
 					},
 				},
 				packageLoader: mockPackageLoader{
-					packages: map[string][]*packages.Package{
+					packages: map[string]*packages.Package{
 						"/a.templ": {
-							{
-								PkgPath:    "a",
-								OtherFiles: []string{"/a.templ", "/a_other.templ"},
-								Imports: map[string]*packages.Package{
-									"b": {
-										PkgPath:    "b",
-										OtherFiles: []string{"/b.templ"},
-										Imports: map[string]*packages.Package{
-											"c": {
-												PkgPath:    "c",
-												OtherFiles: []string{"/c.templ", "/c_other.templ"},
-												Imports: map[string]*packages.Package{
-													"a": {
-														PkgPath:    "a",
-														OtherFiles: []string{"/a_loop.templ", "/a_other_loop.templ"},
-													},
+							PkgPath:    "a",
+							OtherFiles: []string{"/a.templ", "/a_other.templ"},
+							Imports: map[string]*packages.Package{
+								"b": {
+									PkgPath:    "b",
+									OtherFiles: []string{"/b.templ"},
+									Imports: map[string]*packages.Package{
+										"c": {
+											PkgPath:    "c",
+											OtherFiles: []string{"/c.templ", "/c_other.templ"},
+											Imports: map[string]*packages.Package{
+												"a": {
+													PkgPath:    "a",
+													OtherFiles: []string{"/a_loop.templ", "/a_other_loop.templ"},
 												},
 											},
 										},
@@ -260,20 +252,18 @@ func TestLoad(t *testing.T) {
 					},
 				},
 				packageLoader: mockPackageLoader{
-					packages: map[string][]*packages.Package{
+					packages: map[string]*packages.Package{
 						"/a.templ": {
-							{
-								PkgPath:    "a",
-								OtherFiles: []string{"/a.templ", "/a_other.templ"},
-								Imports: map[string]*packages.Package{
-									"b": {
-										PkgPath:    "b",
-										OtherFiles: []string{"/b.templ"},
-										Imports: map[string]*packages.Package{
-											"c": {
-												PkgPath:    "c",
-												OtherFiles: []string{"/c.templ", "/c_other.templ"},
-											},
+							PkgPath:    "a",
+							OtherFiles: []string{"/a.templ", "/a_other.templ"},
+							Imports: map[string]*packages.Package{
+								"b": {
+									PkgPath:    "b",
+									OtherFiles: []string{"/b.templ"},
+									Imports: map[string]*packages.Package{
+										"c": {
+											PkgPath:    "c",
+											OtherFiles: []string{"/c.templ", "/c_other.templ"},
 										},
 									},
 								},
@@ -355,7 +345,7 @@ func TestUnload(t *testing.T) {
 					URI: uri.URI("file:///a.templ"),
 				},
 			},
-			wantErrStr: "load packages for file \"/a.templ\": error",
+			wantErrStr: "load package for file \"/a.templ\": error",
 		},
 		{
 			name: "err did close",
@@ -366,12 +356,10 @@ func TestUnload(t *testing.T) {
 					},
 				},
 				packageLoader: mockPackageLoader{
-					packages: map[string][]*packages.Package{
+					packages: map[string]*packages.Package{
 						"/a.templ": {
-							{
-								PkgPath:    "a",
-								OtherFiles: []string{"/a.templ"},
-							},
+							PkgPath:    "a",
+							OtherFiles: []string{"/a.templ"},
 						},
 					},
 				},
@@ -404,20 +392,18 @@ func TestUnload(t *testing.T) {
 					},
 				},
 				packageLoader: mockPackageLoader{
-					packages: map[string][]*packages.Package{
+					packages: map[string]*packages.Package{
 						"/a.templ": {
-							{
-								PkgPath:    "a",
-								OtherFiles: []string{"/a.templ", "/a_other.templ"},
-								Imports: map[string]*packages.Package{
-									"b": {
-										PkgPath:    "b",
-										OtherFiles: []string{"/b.templ"},
-										Imports: map[string]*packages.Package{
-											"c": {
-												PkgPath:    "c",
-												OtherFiles: []string{"/c.templ", "/c_other.templ"},
-											},
+							PkgPath:    "a",
+							OtherFiles: []string{"/a.templ", "/a_other.templ"},
+							Imports: map[string]*packages.Package{
+								"b": {
+									PkgPath:    "b",
+									OtherFiles: []string{"/b.templ"},
+									Imports: map[string]*packages.Package{
+										"c": {
+											PkgPath:    "c",
+											OtherFiles: []string{"/c.templ", "/c_other.templ"},
 										},
 									},
 								},
@@ -458,24 +444,22 @@ func TestUnload(t *testing.T) {
 					},
 				},
 				packageLoader: mockPackageLoader{
-					packages: map[string][]*packages.Package{
+					packages: map[string]*packages.Package{
 						"/a.templ": {
-							{
-								PkgPath:    "a",
-								OtherFiles: []string{"/a.templ", "/a_other.templ"},
-								Imports: map[string]*packages.Package{
-									"b": {
-										PkgPath:    "b",
-										OtherFiles: []string{"/b.templ"},
-										Imports: map[string]*packages.Package{
-											"c": {
-												PkgPath:    "c",
-												OtherFiles: []string{"/c.templ", "/c_other.templ"},
-												Imports: map[string]*packages.Package{
-													"a": {
-														PkgPath:    "a",
-														OtherFiles: []string{"/a_loop.templ", "/a_other_loop.templ"},
-													},
+							PkgPath:    "a",
+							OtherFiles: []string{"/a.templ", "/a_other.templ"},
+							Imports: map[string]*packages.Package{
+								"b": {
+									PkgPath:    "b",
+									OtherFiles: []string{"/b.templ"},
+									Imports: map[string]*packages.Package{
+										"c": {
+											PkgPath:    "c",
+											OtherFiles: []string{"/c.templ", "/c_other.templ"},
+											Imports: map[string]*packages.Package{
+												"a": {
+													PkgPath:    "a",
+													OtherFiles: []string{"/a_loop.templ", "/a_other_loop.templ"},
 												},
 											},
 										},
@@ -518,16 +502,14 @@ func TestUnload(t *testing.T) {
 					},
 				},
 				packageLoader: mockPackageLoader{
-					packages: map[string][]*packages.Package{
+					packages: map[string]*packages.Package{
 						"/b.templ": {
-							{
-								PkgPath:    "b",
-								OtherFiles: []string{"/b.templ"},
-								Imports: map[string]*packages.Package{
-									"c": {
-										PkgPath:    "c",
-										OtherFiles: []string{"/c.templ", "/c_other.templ"},
-									},
+							PkgPath:    "b",
+							OtherFiles: []string{"/b.templ"},
+							Imports: map[string]*packages.Package{
+								"c": {
+									PkgPath:    "c",
+									OtherFiles: []string{"/c.templ", "/c_other.templ"},
 								},
 							},
 						},

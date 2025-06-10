@@ -25,7 +25,7 @@ type templDocHooks struct {
 }
 
 type packageLoader interface {
-	load(file string) ([]*packages.Package, error)
+	load(file string) (*packages.Package, error)
 }
 
 type goPackageLoader struct{}
@@ -36,13 +36,23 @@ type fileReader interface {
 
 type templFileReader struct{}
 
-func (goPackageLoader) load(file string) ([]*packages.Package, error) {
-	return packages.Load(
+func (goPackageLoader) load(file string) (*packages.Package, error) {
+	pkgs, err := packages.Load(
 		&packages.Config{
 			Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
 		},
 		"file="+file,
 	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pkgs) != 1 {
+		return nil, fmt.Errorf("expected 1 package, got %d packages", len(pkgs))
+	}
+
+	return pkgs[0], nil
 }
 
 func (templFileReader) read(file string) ([]byte, error) {
@@ -62,15 +72,13 @@ func newTemplDocLazyLoader(templDocHooks templDocHooks) templDocLazyLoader {
 func (l *templDocLazyLoader) load(ctx context.Context, params *lsp.DidOpenTextDocumentParams) error {
 	filename := params.TextDocument.URI.Filename()
 
-	pkgs, err := l.packageLoader.load(filename)
+	pkg, err := l.packageLoader.load(filename)
 	if err != nil {
-		return fmt.Errorf("load packages for file %q: %w", filename, err)
+		return fmt.Errorf("load package for file %q: %w", filename, err)
 	}
 
-	for _, pkg := range pkgs {
-		if err := l.openTopologically(ctx, pkg, make(map[string]bool)); err != nil {
-			return fmt.Errorf("open topologically %q: %w", pkg.PkgPath, err)
-		}
+	if err := l.openTopologically(ctx, pkg, make(map[string]bool)); err != nil {
+		return fmt.Errorf("open topologically %q: %w", pkg.PkgPath, err)
 	}
 
 	return nil
@@ -124,15 +132,13 @@ func (l *templDocLazyLoader) openTopologically(ctx context.Context, pkg *package
 func (l *templDocLazyLoader) unload(ctx context.Context, params *lsp.DidCloseTextDocumentParams) error {
 	filename := params.TextDocument.URI.Filename()
 
-	pkgs, err := l.packageLoader.load(filename)
+	pkg, err := l.packageLoader.load(filename)
 	if err != nil {
-		return fmt.Errorf("load packages for file %q: %w", filename, err)
+		return fmt.Errorf("load package for file %q: %w", filename, err)
 	}
 
-	for _, pkg := range pkgs {
-		if err := l.closeTopologically(ctx, pkg, make(map[string]bool)); err != nil {
-			return fmt.Errorf("close topologically %q: %w", pkg.PkgPath, err)
-		}
+	if err := l.closeTopologically(ctx, pkg, make(map[string]bool)); err != nil {
+		return fmt.Errorf("close topologically %q: %w", pkg.PkgPath, err)
 	}
 
 	return nil
