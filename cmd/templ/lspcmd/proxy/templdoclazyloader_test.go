@@ -3,6 +3,10 @@ package proxy
 import (
 	"context"
 	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"math"
 	"reflect"
 	"slices"
 	"testing"
@@ -22,12 +26,95 @@ type mockFileReader struct {
 	err  map[string]error
 }
 
+type mockFileParser struct {
+	source map[string]string
+}
+
 func (m mockPackageLoader) load(file string) (*packages.Package, error) {
 	return m.packages[file], m.err[file]
 }
 
 func (m mockFileReader) read(file string) ([]byte, error) {
 	return m.data[file], m.err[file]
+}
+
+func (m mockFileParser) parseFile(fset *token.FileSet, file string, _ any, mode parser.Mode) (*ast.File, error) {
+	return parser.ParseFile(fset, file, m.source[file], mode)
+}
+
+func TestGoDocHeaderEquals(t *testing.T) {
+	tests := []struct {
+		name  string
+		this  *goDocHeader
+		other *goDocHeader
+		want  bool
+	}{
+		{
+			name: "nil",
+			this: &goDocHeader{},
+		},
+		{
+			name: "different package names",
+			this: &goDocHeader{
+				pkgName: "a",
+			},
+			other: &goDocHeader{
+				pkgName: "b",
+			},
+		},
+		{
+			name: "different imports lengths",
+			this: &goDocHeader{
+				pkgName: "a",
+				imports: map[string]struct{}{
+					"b": {},
+				},
+			},
+			other: &goDocHeader{
+				pkgName: "a",
+				imports: map[string]struct{}{},
+			},
+		},
+		{
+			name: "different imports",
+			this: &goDocHeader{
+				pkgName: "a",
+				imports: map[string]struct{}{
+					"b": {},
+				},
+			},
+			other: &goDocHeader{
+				pkgName: "a",
+				imports: map[string]struct{}{
+					"c": {},
+				},
+			},
+		},
+		{
+			name: "same",
+			this: &goDocHeader{
+				pkgName: "a",
+				imports: map[string]struct{}{
+					"b": {},
+				},
+			},
+			other: &goDocHeader{
+				pkgName: "a",
+				imports: map[string]struct{}{
+					"b": {},
+				},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.this.equals(tt.other); got != tt.want {
+				t.Errorf("expected %v, got %v", tt.want, got)
+			}
+		})
+	}
 }
 
 func TestNewTemplDocLazyLoader(t *testing.T) {
@@ -49,15 +136,16 @@ func TestNewTemplDocLazyLoader(t *testing.T) {
 	}
 }
 
-func TestLoad(t *testing.T) {
+func TestTemplDocLazyLoaderLoad(t *testing.T) {
 	var order []string
 	tests := []struct {
-		name             string
-		loader           templDocLazyLoader
-		params           *lsp.DidOpenTextDocumentParams
-		wantErrStr       string
-		wantOpenOrder    []string
-		wantPkgsRefCount map[string]int
+		name               string
+		loader             templDocLazyLoader
+		params             *lsp.DidOpenTextDocumentParams
+		wantErrStr         string
+		wantOpenOrder      []string
+		wantPkgsRefCount   map[string]int
+		wantOpenDocHeaders map[string]*goDocHeader
 	}{
 		{
 			name: "err load package",
@@ -170,7 +258,13 @@ func TestLoad(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
-				pkgsRefCount: map[string]int{},
+				fileParser: mockFileParser{
+					source: map[string]string{
+						"/a.templ": "}[gibberish\n",
+					},
+				},
+				pkgsRefCount:   map[string]int{},
+				openDocHeaders: map[string]*goDocHeader{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -182,6 +276,15 @@ func TestLoad(t *testing.T) {
 				"a": 1,
 				"b": 1,
 				"c": 1,
+			},
+			wantOpenDocHeaders: map[string]*goDocHeader{
+				"/a.templ": {
+					textRange: &lsp.Range{
+						End: lsp.Position{
+							Line: math.MaxUint32,
+						},
+					},
+				},
 			},
 		},
 		{
@@ -228,7 +331,13 @@ func TestLoad(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
-				pkgsRefCount: map[string]int{},
+				fileParser: mockFileParser{
+					source: map[string]string{
+						"/a.templ": "package a\n",
+					},
+				},
+				pkgsRefCount:   map[string]int{},
+				openDocHeaders: map[string]*goDocHeader{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -240,6 +349,17 @@ func TestLoad(t *testing.T) {
 				"a": 1,
 				"b": 1,
 				"c": 1,
+			},
+			wantOpenDocHeaders: map[string]*goDocHeader{
+				"/a.templ": {
+					pkgName: "a",
+					imports: map[string]struct{}{},
+					textRange: &lsp.Range{
+						End: lsp.Position{
+							Line: 2,
+						},
+					},
+				},
 			},
 		},
 		{
@@ -280,9 +400,15 @@ func TestLoad(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
+				fileParser: mockFileParser{
+					source: map[string]string{
+						"/a.templ": "package a\n\nimport (\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n}\n",
+					},
+				},
 				pkgsRefCount: map[string]int{
 					"c": 1,
 				},
+				openDocHeaders: map[string]*goDocHeader{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -294,6 +420,20 @@ func TestLoad(t *testing.T) {
 				"a": 1,
 				"b": 1,
 				"c": 2,
+			},
+			wantOpenDocHeaders: map[string]*goDocHeader{
+				"/a.templ": {
+					pkgName: "a",
+					imports: map[string]struct{}{
+						"\"fmt\"": {},
+						"\"os\"":  {},
+					},
+					textRange: &lsp.Range{
+						End: lsp.Position{
+							Line: 6,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -317,11 +457,139 @@ func TestLoad(t *testing.T) {
 			if !reflect.DeepEqual(tt.wantPkgsRefCount, tt.loader.pkgsRefCount) {
 				t.Errorf("expected count \"%v\", got \"%v\"", tt.wantPkgsRefCount, tt.loader.pkgsRefCount)
 			}
+
+			if !reflect.DeepEqual(tt.wantOpenDocHeaders, tt.loader.openDocHeaders) {
+				t.Errorf("expected headers \"%v\", got \"%v\"", tt.wantOpenDocHeaders, tt.loader.openDocHeaders)
+			}
 		})
 	}
 }
 
-func TestUnload(t *testing.T) {
+func TestTemplDocLazyLoaderSync(t *testing.T) {
+	tests := []struct {
+		name       string
+		loader     templDocLazyLoader
+		params     *lsp.DidChangeTextDocumentParams
+		wantErrStr string
+		overlay    any
+	}{
+		{
+			name: "no header change",
+			loader: templDocLazyLoader{
+				openDocHeaders: map[string]*goDocHeader{
+					"/a.templ": {
+						pkgName: "a",
+						imports: map[string]struct{}{},
+						textRange: &lsp.Range{
+							End: lsp.Position{
+								Line: 2,
+							},
+						},
+					},
+				},
+			},
+			params: &lsp.DidChangeTextDocumentParams{
+				TextDocument: lsp.VersionedTextDocumentIdentifier{
+					TextDocumentIdentifier: lsp.TextDocumentIdentifier{
+						URI: uri.URI("file:///a.templ"),
+					},
+				},
+				ContentChanges: []lsp.TextDocumentContentChangeEvent{
+					{
+						Range: &lsp.Range{
+							Start: lsp.Position{
+								Line: 2,
+							},
+						},
+					},
+					{
+						Range: &lsp.Range{
+							Start: lsp.Position{
+								Line: 7,
+							},
+						},
+					},
+					{
+						Range: &lsp.Range{
+							Start: lsp.Position{
+								Line: 9,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "no parsed header change",
+			loader: templDocLazyLoader{
+				openDocHeaders: map[string]*goDocHeader{
+					"/a.templ": {
+						pkgName: "a",
+						imports: map[string]struct{}{
+							"\"fmt\"": {},
+							"\"os\"":  {},
+						},
+						textRange: &lsp.Range{
+							End: lsp.Position{
+								Line: 6,
+							},
+						},
+					},
+				},
+				fileParser: mockFileParser{
+					source: map[string]string{
+						"/a.templ": "package a\n\nimport (\n\t\"os\"\n\t\"fmt\"\n)\n\nfunc main() {\n}\n",
+					},
+				},
+			},
+			params: &lsp.DidChangeTextDocumentParams{
+				TextDocument: lsp.VersionedTextDocumentIdentifier{
+					TextDocumentIdentifier: lsp.TextDocumentIdentifier{
+						URI: uri.URI("file:///a.templ"),
+					},
+				},
+				ContentChanges: []lsp.TextDocumentContentChangeEvent{
+					{
+						Range: &lsp.Range{
+							Start: lsp.Position{
+								Line: 7,
+							},
+						},
+					},
+					{
+						Range: &lsp.Range{
+							Start: lsp.Position{
+								Line: 2,
+							},
+						},
+					},
+					{
+						Range: &lsp.Range{
+							Start: lsp.Position{
+								Line: 4,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.loader.sync(context.Background(), tt.params, tt.overlay)
+			if tt.wantErrStr == "" && err != nil {
+				t.Errorf("expected nil error, got \"%s\"", err.Error())
+			} else if tt.wantErrStr != "" && err == nil {
+				t.Errorf("expected error \"%s\", got nil", tt.wantErrStr)
+			} else if tt.wantErrStr != "" && err != nil && err.Error() != tt.wantErrStr {
+				t.Errorf("expected error \"%s\", got \"%s\"", tt.wantErrStr, err.Error())
+			}
+		})
+	}
+}
+
+func TestTemplDocLazyLoaderUnload(t *testing.T) {
 	var order []string
 	tests := []struct {
 		name             string
