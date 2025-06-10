@@ -599,6 +599,56 @@ func TestIfExpression(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "if: else with comment and indentation",
+			input: `if p.A {
+		// this is a comment
+	} else {
+		{ "B" }
+	}`,
+			expected: &IfExpression{
+				Expression: Expression{
+					Value: `p.A`,
+					Range: Range{
+						From: Position{
+							Index: 3,
+							Line:  0,
+							Col:   3,
+						},
+						To: Position{
+							Index: 6,
+							Line:  0,
+							Col:   6,
+						},
+					},
+				},
+				Then: []Node{
+					&Whitespace{Value: "\t\t"},
+					&GoComment{Contents: " this is a comment", Multiline: false},
+					&Whitespace{Value: "\n\t"},
+				},
+				Else: []Node{
+					&StringExpression{
+						Expression: Expression{
+							Value: `"B"`,
+							Range: Range{
+								From: Position{
+									Index: 46,
+									Line:  3,
+									Col:   4,
+								},
+								To: Position{
+									Index: 49,
+									Line:  3,
+									Col:   7,
+								},
+							},
+						},
+						TrailingSpace: SpaceVertical,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
