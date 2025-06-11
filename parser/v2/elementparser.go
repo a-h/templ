@@ -167,6 +167,11 @@ var (
 			return attr, false, nil
 		}
 
+		// Strip superfluous whitespace characters from css class lists.
+		if k, isConstantAttributeKey := attr.Key.(ConstantAttributeKey); isConstantAttributeKey && strings.EqualFold(k.Name, "class") {
+			attr.Value = strings.Join(strings.Fields(attr.Value), " ")
+		}
+
 		// Only use single quotes if actually required, due to double quote in the value (prefer double quotes).
 		attr.SingleQuote = attr.SingleQuote && strings.Contains(attr.Value, "\"")
 
