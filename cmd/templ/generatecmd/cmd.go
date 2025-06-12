@@ -107,6 +107,63 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	}
 
 	cmd.Log.Debug("Creating filesystem event handler")
+	return cmd.handleFileEvents(ctx, opts)
+
+}
+
+func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err error) {
+	if cmd.Args.Proxy == "" {
+		cmd.Log.Debug("No proxy URL specified, not starting proxy")
+		return nil, nil
+	}
+	var target *url.URL
+	target, err = url.Parse(cmd.Args.Proxy)
+	if err != nil {
+		return nil, FatalError{Err: fmt.Errorf("failed to parse proxy URL: %w", err)}
+	}
+	if cmd.Args.ProxyPort == 0 {
+		cmd.Args.ProxyPort = 7331
+	}
+	if cmd.Args.ProxyBind == "" {
+		cmd.Args.ProxyBind = "127.0.0.1"
+	}
+	p = proxy.New(cmd.Log, cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
+	go func() {
+		cmd.Log.Info("Proxying", slog.String("from", p.URL), slog.String("to", p.Target.String()))
+		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort), p); err != nil {
+			cmd.Log.Error("Proxy failed", slog.Any("error", err))
+		}
+	}()
+	if !cmd.Args.OpenBrowser {
+		cmd.Log.Debug("Not opening browser")
+		return p, nil
+	}
+	go func() {
+		cmd.Log.Debug("Waiting for proxy to be ready", slog.String("url", p.URL))
+		backoff := backoff.NewExponentialBackOff()
+		backoff.InitialInterval = time.Second
+		var client http.Client
+		client.Timeout = 1 * time.Second
+		for {
+			if _, err := client.Get(p.URL); err == nil {
+				break
+			}
+			d := backoff.NextBackOff()
+			cmd.Log.Debug(
+				"Proxy not ready, retrying",
+				slog.String("url", p.URL),
+				slog.Any("backoff", d),
+			)
+			time.Sleep(d)
+		}
+		if err := browser.OpenURL(p.URL); err != nil {
+			cmd.Log.Error("Failed to open browser", slog.Any("error", err))
+		}
+	}()
+	return p, nil
+}
+
+func (cmd Generate) handleFileEvents(ctx context.Context, opts []generator.GenerateOpt) error {
 	fseh := NewFSEventHandler(
 		cmd.Log,
 		cmd.Args.Path,
@@ -120,7 +177,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
 	if cmd.Args.FileName != "" {
-		_, err = fseh.HandleEvent(ctx, fsnotify.Event{
+		_, err := fseh.HandleEvent(ctx, fsnotify.Event{
 			Name: cmd.Args.FileName,
 			Op:   fsnotify.Create,
 		})
@@ -247,6 +304,8 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		eventsWG.Wait()
 	}()
 
+	var proxyError error
+
 	// Start process to handle post-generation events.
 	var updates int
 	postGenerationWG.Add(1)
@@ -295,9 +354,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				if !firstPostGenerationExecuted {
 					cmd.Log.Debug("First post-generation event received, starting proxy")
 					firstPostGenerationExecuted = true
-					p, err = cmd.StartProxy(ctx)
-					if err != nil {
-						cmd.Log.Error("Failed to start proxy", slog.Any("error", err))
+					p, proxyError = cmd.StartProxy(ctx)
+					if proxyError != nil {
+						cmd.Log.Error("Failed to start proxy", slog.Any("error", proxyError))
 					}
 				}
 				// Send server-sent event.
@@ -352,57 +411,6 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		slog.Int("updates", updates),
 		slog.Duration("duration", time.Since(start)),
 	)
-	return nil
-}
 
-func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err error) {
-	if cmd.Args.Proxy == "" {
-		cmd.Log.Debug("No proxy URL specified, not starting proxy")
-		return nil, nil
-	}
-	var target *url.URL
-	target, err = url.Parse(cmd.Args.Proxy)
-	if err != nil {
-		return nil, FatalError{Err: fmt.Errorf("failed to parse proxy URL: %w", err)}
-	}
-	if cmd.Args.ProxyPort == 0 {
-		cmd.Args.ProxyPort = 7331
-	}
-	if cmd.Args.ProxyBind == "" {
-		cmd.Args.ProxyBind = "127.0.0.1"
-	}
-	p = proxy.New(cmd.Log, cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
-	go func() {
-		cmd.Log.Info("Proxying", slog.String("from", p.URL), slog.String("to", p.Target.String()))
-		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort), p); err != nil {
-			cmd.Log.Error("Proxy failed", slog.Any("error", err))
-		}
-	}()
-	if !cmd.Args.OpenBrowser {
-		cmd.Log.Debug("Not opening browser")
-		return p, nil
-	}
-	go func() {
-		cmd.Log.Debug("Waiting for proxy to be ready", slog.String("url", p.URL))
-		backoff := backoff.NewExponentialBackOff()
-		backoff.InitialInterval = time.Second
-		var client http.Client
-		client.Timeout = 1 * time.Second
-		for {
-			if _, err := client.Get(p.URL); err == nil {
-				break
-			}
-			d := backoff.NextBackOff()
-			cmd.Log.Debug(
-				"Proxy not ready, retrying",
-				slog.String("url", p.URL),
-				slog.Any("backoff", d),
-			)
-			time.Sleep(d)
-		}
-		if err := browser.OpenURL(p.URL); err != nil {
-			cmd.Log.Error("Failed to open browser", slog.Any("error", err))
-		}
-	}()
-	return p, nil
+	return proxyError
 }
