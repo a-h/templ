@@ -139,14 +139,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	errs := make(chan error)
 	// Tracks whether errors occurred during the generation process.
 	var errorCount atomic.Int64
-	// For triggering actions after generation has completed.
-	postGeneration := make(chan *GenerationEvent, 256)
 	// Used to check that the post-generation handler has completed.
 	var postGenerationWG sync.WaitGroup
 	var postGenerationEventsWG sync.WaitGroup
-
-	// Waitgroup for the push process.
-	var pushHandlerWG sync.WaitGroup
 
 	handleCanceled := func(rw *watcher.RecursiveWatcher) {
 		cmd.Log.Debug("Context cancelled, closing watcher")
@@ -182,6 +177,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		}
 	}
 
+	// Waitgroup for the push process.
+	var pushHandlerWG sync.WaitGroup
+
 	// Start process to push events into the channel.
 	pushHandlerWG.Add(1)
 
@@ -213,6 +211,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		<-ctx.Done()
 		handleCanceled(rw)
 	}()
+
+	// For triggering actions after generation has completed.
+	postGeneration := make(chan *GenerationEvent, 256)
 
 	// Used to check that the event handler has completed.
 	var eventHandlerWG sync.WaitGroup
