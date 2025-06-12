@@ -118,18 +118,16 @@ func TestGoDocHeaderEquals(t *testing.T) {
 }
 
 func TestNewTemplDocLazyLoader(t *testing.T) {
-	hooks := templDocHooks{
-		didOpen: func(ctx context.Context, params *lsp.DidOpenTextDocumentParams) error {
-			return nil
-		},
-		didClose: func(ctx context.Context, params *lsp.DidCloseTextDocumentParams) error {
-			return nil
-		},
-	}
-	openTemplDocSources := newDocumentContents(nil)
 	loader := newTemplDocLazyLoader(newTemplDocLazyLoaderParams{
-		templDocHooks:       hooks,
-		openTemplDocSources: openTemplDocSources,
+		templDocHooks: templDocHooks{
+			didOpen: func(ctx context.Context, params *lsp.DidOpenTextDocumentParams) error {
+				return nil
+			},
+			didClose: func(ctx context.Context, params *lsp.DidCloseTextDocumentParams) error {
+				return nil
+			},
+		},
+		openDocSources: map[string]string{},
 	})
 
 	if loader.templDocHooks.didOpen == nil {
@@ -138,7 +136,7 @@ func TestNewTemplDocLazyLoader(t *testing.T) {
 	if loader.templDocHooks.didClose == nil {
 		t.Errorf("expected didClose to be set")
 	}
-	if loader.openTemplDocSources != openTemplDocSources {
+	if loader.openDocSources == nil {
 		t.Errorf("expected openTemplDocSources to be set")
 	}
 }
@@ -151,6 +149,7 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 		params                  *lsp.DidOpenTextDocumentParams
 		wantErrStr              string
 		wantOpenOrder           []string
+		wantLoadedPkgs          map[string]*packages.Package
 		wantPkgsRefCount        map[string]int
 		wantOpenTemplDocHeaders map[string]*goDocHeader
 	}{
@@ -270,9 +269,10 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 						"/a.templ": "}[gibberish\n",
 					},
 				},
-				pkgsRefCount:        map[string]int{},
-				openTemplDocHeaders: map[string]*goDocHeader{},
-				openTemplDocSources: newDocumentContents(nil),
+				loadedPkgs:     map[string]*packages.Package{},
+				pkgsRefCount:   map[string]int{},
+				openDocHeaders: map[string]*goDocHeader{},
+				openDocSources: map[string]string{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -280,6 +280,24 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				},
 			},
 			wantOpenOrder: []string{"/c.templ", "/c_other.templ", "/b.templ", "/a.templ", "/a_other.templ"},
+			wantLoadedPkgs: map[string]*packages.Package{
+				"a": {
+					PkgPath:    "a",
+					OtherFiles: []string{"/a.templ", "/a_other.templ"},
+					Imports: map[string]*packages.Package{
+						"b": {
+							PkgPath:    "b",
+							OtherFiles: []string{"/b.templ"},
+							Imports: map[string]*packages.Package{
+								"c": {
+									PkgPath:    "c",
+									OtherFiles: []string{"/c.templ", "/c_other.templ"},
+								},
+							},
+						},
+					},
+				},
+			},
 			wantPkgsRefCount: map[string]int{
 				"a": 1,
 				"b": 1,
@@ -344,9 +362,10 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 						"/a.templ": "package a\n",
 					},
 				},
-				pkgsRefCount:        map[string]int{},
-				openTemplDocHeaders: map[string]*goDocHeader{},
-				openTemplDocSources: newDocumentContents(nil),
+				loadedPkgs:     map[string]*packages.Package{},
+				pkgsRefCount:   map[string]int{},
+				openDocHeaders: map[string]*goDocHeader{},
+				openDocSources: map[string]string{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -354,6 +373,30 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				},
 			},
 			wantOpenOrder: []string{"/c.templ", "/c_other.templ", "/b.templ", "/a.templ", "/a_other.templ"},
+			wantLoadedPkgs: map[string]*packages.Package{
+				"a": {
+					PkgPath:    "a",
+					OtherFiles: []string{"/a.templ", "/a_other.templ"},
+					Imports: map[string]*packages.Package{
+						"b": {
+							PkgPath:    "b",
+							OtherFiles: []string{"/b.templ"},
+							Imports: map[string]*packages.Package{
+								"c": {
+									PkgPath:    "c",
+									OtherFiles: []string{"/c.templ", "/c_other.templ"},
+									Imports: map[string]*packages.Package{
+										"a": {
+											PkgPath:    "a",
+											OtherFiles: []string{"/a_loop.templ", "/a_other_loop.templ"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 			wantPkgsRefCount: map[string]int{
 				"a": 1,
 				"b": 1,
@@ -414,11 +457,17 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 						"/a.templ": "package a\n\nimport (\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n}\n",
 					},
 				},
+				loadedPkgs: map[string]*packages.Package{
+					"c": {
+						PkgPath:    "c",
+						OtherFiles: []string{"/c.templ", "/c_other.templ"},
+					},
+				},
 				pkgsRefCount: map[string]int{
 					"c": 1,
 				},
-				openTemplDocHeaders: map[string]*goDocHeader{},
-				openTemplDocSources: newDocumentContents(nil),
+				openDocHeaders: map[string]*goDocHeader{},
+				openDocSources: map[string]string{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -426,6 +475,28 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				},
 			},
 			wantOpenOrder: []string{"/b.templ", "/a.templ", "/a_other.templ"},
+			wantLoadedPkgs: map[string]*packages.Package{
+				"a": {
+					PkgPath:    "a",
+					OtherFiles: []string{"/a.templ", "/a_other.templ"},
+					Imports: map[string]*packages.Package{
+						"b": {
+							PkgPath:    "b",
+							OtherFiles: []string{"/b.templ"},
+							Imports: map[string]*packages.Package{
+								"c": {
+									PkgPath:    "c",
+									OtherFiles: []string{"/c.templ", "/c_other.templ"},
+								},
+							},
+						},
+					},
+				},
+				"c": {
+					PkgPath:    "c",
+					OtherFiles: []string{"/c.templ", "/c_other.templ"},
+				},
+			},
 			wantPkgsRefCount: map[string]int{
 				"a": 1,
 				"b": 1,
@@ -464,12 +535,16 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				t.Errorf("expected order \"%v\", got \"%v\"", tt.wantOpenOrder, order)
 			}
 
+			if !reflect.DeepEqual(tt.wantLoadedPkgs, tt.loader.loadedPkgs) {
+				t.Errorf("expected loaded packages \"%v\", got \"%v\"", tt.wantLoadedPkgs, tt.loader.loadedPkgs)
+			}
+
 			if !reflect.DeepEqual(tt.wantPkgsRefCount, tt.loader.pkgsRefCount) {
 				t.Errorf("expected count \"%v\", got \"%v\"", tt.wantPkgsRefCount, tt.loader.pkgsRefCount)
 			}
 
-			if !reflect.DeepEqual(tt.wantOpenTemplDocHeaders, tt.loader.openTemplDocHeaders) {
-				t.Errorf("expected headers \"%v\", got \"%v\"", tt.wantOpenTemplDocHeaders, tt.loader.openTemplDocHeaders)
+			if !reflect.DeepEqual(tt.wantOpenTemplDocHeaders, tt.loader.openDocHeaders) {
+				t.Errorf("expected headers \"%v\", got \"%v\"", tt.wantOpenTemplDocHeaders, tt.loader.openDocHeaders)
 			}
 		})
 	}
@@ -485,7 +560,7 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 		{
 			name: "no header change",
 			loader: templDocLazyLoader{
-				openTemplDocHeaders: map[string]*goDocHeader{
+				openDocHeaders: map[string]*goDocHeader{
 					"/a.templ": {
 						pkgName: "a",
 						imports: map[string]struct{}{},
@@ -531,7 +606,7 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 		{
 			name: "no parsed header change",
 			loader: templDocLazyLoader{
-				openTemplDocHeaders: map[string]*goDocHeader{
+				openDocHeaders: map[string]*goDocHeader{
 					"/a.templ": {
 						pkgName: "a",
 						imports: map[string]struct{}{
@@ -550,7 +625,62 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 						"/a.templ": "package a\n\nimport (\n\t\"os\"\n\t\"fmt\"\n)\n\nfunc main() {\n}\n",
 					},
 				},
-				openTemplDocSources: newDocumentContents(nil),
+				openDocSources: map[string]string{},
+			},
+			params: &lsp.DidChangeTextDocumentParams{
+				TextDocument: lsp.VersionedTextDocumentIdentifier{
+					TextDocumentIdentifier: lsp.TextDocumentIdentifier{
+						URI: uri.URI("file:///a.templ"),
+					},
+				},
+				ContentChanges: []lsp.TextDocumentContentChangeEvent{
+					{
+						Range: &lsp.Range{
+							Start: lsp.Position{
+								Line: 7,
+							},
+						},
+					},
+					{
+						Range: &lsp.Range{
+							Start: lsp.Position{
+								Line: 2,
+							},
+						},
+					},
+					{
+						Range: &lsp.Range{
+							Start: lsp.Position{
+								Line: 4,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "no parsed header change",
+			loader: templDocLazyLoader{
+				openDocHeaders: map[string]*goDocHeader{
+					"/a.templ": {
+						pkgName: "a",
+						imports: map[string]struct{}{
+							"\"fmt\"": {},
+							"\"os\"":  {},
+						},
+						textRange: &lsp.Range{
+							End: lsp.Position{
+								Line: 6,
+							},
+						},
+					},
+				},
+				fileParser: mockFileParser{
+					source: map[string]string{
+						"/a.templ": "package a\n\nimport (\n\t\"os\"\n\t\"fmt\"\n)\n\nfunc main() {\n}\n",
+					},
+				},
+				openDocSources: map[string]string{},
 			},
 			params: &lsp.DidChangeTextDocumentParams{
 				TextDocument: lsp.VersionedTextDocumentIdentifier{
@@ -607,6 +737,7 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 		params           *lsp.DidCloseTextDocumentParams
 		wantErrStr       string
 		wantCloseOrder   []string
+		wantLoadedPkgs   map[string]*packages.Package
 		wantPkgsRefCount map[string]int
 	}{
 		{
@@ -698,6 +829,24 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
+				loadedPkgs: map[string]*packages.Package{
+					"a": {
+						PkgPath:    "a",
+						OtherFiles: []string{"/a.templ", "/a_other.templ"},
+						Imports: map[string]*packages.Package{
+							"b": {
+								PkgPath:    "b",
+								OtherFiles: []string{"/b.templ"},
+								Imports: map[string]*packages.Package{
+									"c": {
+										PkgPath:    "c",
+										OtherFiles: []string{"/c.templ", "/c_other.templ"},
+									},
+								},
+							},
+						},
+					},
+				},
 				pkgsRefCount: map[string]int{
 					"a": 1,
 					"b": 1,
@@ -710,6 +859,7 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 				},
 			},
 			wantCloseOrder:   []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
+			wantLoadedPkgs:   map[string]*packages.Package{},
 			wantPkgsRefCount: map[string]int{},
 		},
 		{
@@ -756,6 +906,30 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
+				loadedPkgs: map[string]*packages.Package{
+					"a": {
+						PkgPath:    "a",
+						OtherFiles: []string{"/a.templ", "/a_other.templ"},
+						Imports: map[string]*packages.Package{
+							"b": {
+								PkgPath:    "b",
+								OtherFiles: []string{"/b.templ"},
+								Imports: map[string]*packages.Package{
+									"c": {
+										PkgPath:    "c",
+										OtherFiles: []string{"/c.templ", "/c_other.templ"},
+										Imports: map[string]*packages.Package{
+											"a": {
+												PkgPath:    "a",
+												OtherFiles: []string{"/a_loop.templ", "/a_other_loop.templ"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 				pkgsRefCount: map[string]int{
 					"a": 1,
 					"b": 1,
@@ -768,6 +942,7 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 				},
 			},
 			wantCloseOrder:   []string{"/a.templ", "/a_other.templ", "/b.templ", "/c.templ", "/c_other.templ"},
+			wantLoadedPkgs:   map[string]*packages.Package{},
 			wantPkgsRefCount: map[string]int{},
 		},
 		{
@@ -802,6 +977,18 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 						"/c_other.templ": []byte("data"),
 					},
 				},
+				loadedPkgs: map[string]*packages.Package{
+					"b": {
+						PkgPath:    "b",
+						OtherFiles: []string{"/b.templ"},
+						Imports: map[string]*packages.Package{
+							"c": {
+								PkgPath:    "c",
+								OtherFiles: []string{"/c.templ", "/c_other.templ"},
+							},
+						},
+					},
+				},
 				pkgsRefCount: map[string]int{
 					"a": 1,
 					"b": 2,
@@ -814,6 +1001,7 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 				},
 			},
 			wantCloseOrder: []string{},
+			wantLoadedPkgs: map[string]*packages.Package{},
 			wantPkgsRefCount: map[string]int{
 				"a": 1,
 				"b": 1,
@@ -837,6 +1025,10 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 
 		if !slices.Equal(tt.wantCloseOrder, order) {
 			t.Errorf("expected order \"%v\", got \"%v\"", tt.wantCloseOrder, order)
+		}
+
+		if !reflect.DeepEqual(tt.wantLoadedPkgs, tt.loader.loadedPkgs) {
+			t.Errorf("expected loaded packages \"%v\", got \"%v\"", tt.wantLoadedPkgs, tt.loader.loadedPkgs)
 		}
 
 		if !reflect.DeepEqual(tt.wantPkgsRefCount, tt.loader.pkgsRefCount) {

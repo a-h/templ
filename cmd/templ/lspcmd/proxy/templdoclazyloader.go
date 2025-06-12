@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"unsafe"
 
 	lsp "github.com/a-h/templ/lsp/protocol"
 	"github.com/a-h/templ/lsp/uri"
@@ -17,13 +18,14 @@ import (
 
 // templDocLazyLoader is a loader that uses the packages API to lazily load templ documents in the dependency graph.
 type templDocLazyLoader struct {
-	templDocHooks       templDocHooks
-	packageLoader       packageLoader
-	fileReader          fileReader
-	fileParser          fileParser
-	pkgsRefCount        map[string]int
-	openTemplDocHeaders map[string]*goDocHeader
-	openTemplDocSources *DocumentContents
+	templDocHooks  templDocHooks
+	packageLoader  packageLoader
+	fileReader     fileReader
+	fileParser     fileParser
+	loadedPkgs     map[string]*packages.Package
+	pkgsRefCount   map[string]int
+	openDocHeaders map[string]*goDocHeader
+	openDocSources map[string]string
 }
 
 type templDocHooks struct {
@@ -56,8 +58,8 @@ type goDocHeader struct {
 }
 
 type newTemplDocLazyLoaderParams struct {
-	templDocHooks       templDocHooks
-	openTemplDocSources *DocumentContents
+	templDocHooks  templDocHooks
+	openDocSources map[string]string
 }
 
 func (goPackageLoader) load(config *packages.Config, file string) (*packages.Package, error) {
@@ -109,13 +111,14 @@ func (g *goDocHeader) equals(other *goDocHeader) bool {
 
 func newTemplDocLazyLoader(params newTemplDocLazyLoaderParams) templDocLazyLoader {
 	return templDocLazyLoader{
-		templDocHooks:       params.templDocHooks,
-		packageLoader:       goPackageLoader{},
-		fileReader:          templFileReader{},
-		fileParser:          templFileParser{},
-		pkgsRefCount:        make(map[string]int),
-		openTemplDocHeaders: make(map[string]*goDocHeader),
-		openTemplDocSources: params.openTemplDocSources,
+		templDocHooks:  params.templDocHooks,
+		packageLoader:  goPackageLoader{},
+		fileReader:     templFileReader{},
+		fileParser:     templFileParser{},
+		loadedPkgs:     make(map[string]*packages.Package),
+		pkgsRefCount:   make(map[string]int),
+		openDocHeaders: make(map[string]*goDocHeader),
+		openDocSources: params.openDocSources,
 	}
 }
 
@@ -125,7 +128,8 @@ func (l *templDocLazyLoader) load(ctx context.Context, params *lsp.DidOpenTextDo
 
 	pkg, err := l.packageLoader.load(
 		&packages.Config{
-			Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
+			Mode:    packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
+			Overlay: l.prepareOverlay(),
 		},
 		filename,
 	)
@@ -137,15 +141,16 @@ func (l *templDocLazyLoader) load(ctx context.Context, params *lsp.DidOpenTextDo
 		return fmt.Errorf("open topologically %q: %w", pkg.PkgPath, err)
 	}
 
-	l.openTemplDocHeaders[filename] = l.parseHeader(filename)
+	l.loadedPkgs[pkg.PkgPath] = pkg
+	l.openDocHeaders[filename] = l.parseHeader(filename)
 
 	return nil
 }
 
 // sync opens newly added dependencies and closes those that are no longer necessary.
-func (l *templDocLazyLoader) sync(_ context.Context, params *lsp.DidChangeTextDocumentParams) error {
+func (l *templDocLazyLoader) sync(ctx context.Context, params *lsp.DidChangeTextDocumentParams) error {
 	filename := params.TextDocument.URI.Filename()
-	header := l.openTemplDocHeaders[filename]
+	header := l.openDocHeaders[filename]
 
 	didChangeHeader := false
 	for _, change := range params.ContentChanges {
@@ -159,12 +164,36 @@ func (l *templDocLazyLoader) sync(_ context.Context, params *lsp.DidChangeTextDo
 		return nil
 	}
 
-	l.openTemplDocHeaders[filename] = l.parseHeader(filename)
-	if l.openTemplDocHeaders[filename].equals(header) {
+	l.openDocHeaders[filename] = l.parseHeader(filename)
+	if l.openDocHeaders[filename].equals(header) {
 		return nil
 	}
 
-	return fmt.Errorf("not implemented")
+	pkg, err := l.packageLoader.load(
+		&packages.Config{
+			Mode:    packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
+			Overlay: l.prepareOverlay(),
+		},
+		filename,
+	)
+	if err != nil {
+		return fmt.Errorf("load package for file %q: %w", filename, err)
+	}
+
+	for _, imp := range pkg.Imports {
+		if err := l.openTopologically(ctx, imp, make(map[string]bool)); err != nil {
+			return fmt.Errorf("open topologically %q: %w", imp.PkgPath, err)
+		}
+	}
+
+	for _, imp := range l.loadedPkgs[pkg.PkgPath].Imports {
+		if err := l.closeTopologically(ctx, imp, make(map[string]bool)); err != nil {
+			return fmt.Errorf("close topologically %q: %w", imp.PkgPath, err)
+		}
+	}
+	l.loadedPkgs[pkg.PkgPath] = pkg
+
+	return nil
 }
 
 // openTopologically opens templ files in dependency-first order (topological sort).
@@ -213,11 +242,10 @@ func (l *templDocLazyLoader) openTopologically(ctx context.Context, pkg *package
 
 // parseHeader parses the header from a templ file.
 func (l *templDocLazyLoader) parseHeader(filename string) *goDocHeader {
-	fileURI := string(uri.File(filename))
-
 	var overlay any
-	if doc, ok := l.openTemplDocSources.Get(fileURI); ok {
-		overlay = doc.String()
+	fileURI := string(uri.File(filename))
+	if source, ok := l.openDocSources[fileURI]; ok {
+		overlay = source
 	}
 
 	fset := token.NewFileSet()
@@ -265,7 +293,8 @@ func (l *templDocLazyLoader) unload(ctx context.Context, params *lsp.DidCloseTex
 
 	pkg, err := l.packageLoader.load(
 		&packages.Config{
-			Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
+			Mode:    packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
+			Overlay: l.prepareOverlay(),
 		},
 		filename,
 	)
@@ -277,7 +306,8 @@ func (l *templDocLazyLoader) unload(ctx context.Context, params *lsp.DidCloseTex
 		return fmt.Errorf("close topologically %q: %w", pkg.PkgPath, err)
 	}
 
-	delete(l.openTemplDocHeaders, filename)
+	delete(l.loadedPkgs, pkg.PkgPath)
+	delete(l.openDocHeaders, filename)
 
 	return nil
 }
@@ -316,4 +346,14 @@ func (l *templDocLazyLoader) closeTopologically(ctx context.Context, pkg *packag
 	}
 
 	return nil
+}
+
+// prepareOverlay prepares an overlay that can be provided to the package loader.
+// The byte slices in the returned map should never be modified; doing so will lead to undefined behavior.
+func (l *templDocLazyLoader) prepareOverlay() map[string][]byte {
+	overlay := make(map[string][]byte, len(l.openDocSources))
+	for fileURI, source := range l.openDocSources {
+		overlay[uri.New(fileURI).Filename()] = unsafe.Slice(unsafe.StringData(source), len(source))
+	}
+	return overlay
 }

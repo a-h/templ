@@ -250,7 +250,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 				didOpen:  p.didOpen,
 				didClose: p.didClose,
 			},
-			openTemplDocSources: p.TemplSource,
+			openDocSources: p.GoSource,
 		})
 	} else {
 		p.preload(ctx, params.WorkspaceFolders)
