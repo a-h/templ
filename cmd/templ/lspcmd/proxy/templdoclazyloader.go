@@ -32,7 +32,7 @@ type templDocHooks struct {
 }
 
 type packageLoader interface {
-	load(file string) (*packages.Package, error)
+	load(config *packages.Config, file string) (*packages.Package, error)
 }
 
 type goPackageLoader struct{}
@@ -60,11 +60,9 @@ type newTemplDocLazyLoaderParams struct {
 	openTemplDocSources *DocumentContents
 }
 
-func (goPackageLoader) load(file string) (*packages.Package, error) {
+func (goPackageLoader) load(config *packages.Config, file string) (*packages.Package, error) {
 	pkgs, err := packages.Load(
-		&packages.Config{
-			Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
-		},
+		config,
 		"file="+file,
 	)
 
@@ -125,7 +123,12 @@ func newTemplDocLazyLoader(params newTemplDocLazyLoaderParams) templDocLazyLoade
 func (l *templDocLazyLoader) load(ctx context.Context, params *lsp.DidOpenTextDocumentParams) error {
 	filename := params.TextDocument.URI.Filename()
 
-	pkg, err := l.packageLoader.load(filename)
+	pkg, err := l.packageLoader.load(
+		&packages.Config{
+			Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
+		},
+		filename,
+	)
 	if err != nil {
 		return fmt.Errorf("load package for file %q: %w", filename, err)
 	}
@@ -260,7 +263,12 @@ func (l *templDocLazyLoader) parseHeader(filename string) *goDocHeader {
 func (l *templDocLazyLoader) unload(ctx context.Context, params *lsp.DidCloseTextDocumentParams) error {
 	filename := params.TextDocument.URI.Filename()
 
-	pkg, err := l.packageLoader.load(filename)
+	pkg, err := l.packageLoader.load(
+		&packages.Config{
+			Mode: packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedDeps,
+		},
+		filename,
+	)
 	if err != nil {
 		return fmt.Errorf("load package for file %q: %w", filename, err)
 	}

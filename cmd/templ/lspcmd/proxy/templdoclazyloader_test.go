@@ -30,7 +30,7 @@ type mockFileParser struct {
 	source map[string]string
 }
 
-func (m mockPackageLoader) load(file string) (*packages.Package, error) {
+func (m mockPackageLoader) load(_ *packages.Config, file string) (*packages.Package, error) {
 	return m.packages[file], m.err[file]
 }
 
