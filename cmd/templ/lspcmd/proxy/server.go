@@ -245,12 +245,13 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	}
 
 	if p.NoPreload {
-		p.templDocLazyLoader = newTemplDocLazyLoader(
-			templDocHooks{
+		p.templDocLazyLoader = newTemplDocLazyLoader(newTemplDocLazyLoaderParams{
+			templDocHooks: templDocHooks{
 				didOpen:  p.didOpen,
 				didClose: p.didClose,
 			},
-		)
+			openTemplDocSources: p.TemplSource,
+		})
 	} else {
 		p.preload(ctx, params.WorkspaceFolders)
 	}
@@ -707,6 +708,13 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	p.Log.Info("setting cache", slog.String("uri", string(params.TextDocument.URI)))
 	p.SourceMapCache.Set(string(params.TextDocument.URI), generatorOutput.SourceMap)
 	p.GoSource[string(params.TextDocument.URI)] = w.String()
+
+	if p.NoPreload {
+		if err := p.templDocLazyLoader.sync(ctx, params); err != nil {
+			p.Log.Error("lazy loader sync", slog.Any("error", err))
+		}
+	}
+
 	// Change the path.
 	params.TextDocument.URI = goURI
 	params.TextDocument.URI = goURI

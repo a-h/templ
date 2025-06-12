@@ -126,7 +126,11 @@ func TestNewTemplDocLazyLoader(t *testing.T) {
 			return nil
 		},
 	}
-	loader := newTemplDocLazyLoader(hooks)
+	openTemplDocSources := newDocumentContents(nil)
+	loader := newTemplDocLazyLoader(newTemplDocLazyLoaderParams{
+		templDocHooks:       hooks,
+		openTemplDocSources: openTemplDocSources,
+	})
 
 	if loader.templDocHooks.didOpen == nil {
 		t.Errorf("expected didOpen to be set")
@@ -134,18 +138,21 @@ func TestNewTemplDocLazyLoader(t *testing.T) {
 	if loader.templDocHooks.didClose == nil {
 		t.Errorf("expected didClose to be set")
 	}
+	if loader.openTemplDocSources != openTemplDocSources {
+		t.Errorf("expected openTemplDocSources to be set")
+	}
 }
 
 func TestTemplDocLazyLoaderLoad(t *testing.T) {
 	var order []string
 	tests := []struct {
-		name               string
-		loader             templDocLazyLoader
-		params             *lsp.DidOpenTextDocumentParams
-		wantErrStr         string
-		wantOpenOrder      []string
-		wantPkgsRefCount   map[string]int
-		wantOpenDocHeaders map[string]*goDocHeader
+		name                    string
+		loader                  templDocLazyLoader
+		params                  *lsp.DidOpenTextDocumentParams
+		wantErrStr              string
+		wantOpenOrder           []string
+		wantPkgsRefCount        map[string]int
+		wantOpenTemplDocHeaders map[string]*goDocHeader
 	}{
 		{
 			name: "err load package",
@@ -263,8 +270,9 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 						"/a.templ": "}[gibberish\n",
 					},
 				},
-				pkgsRefCount:   map[string]int{},
-				openDocHeaders: map[string]*goDocHeader{},
+				pkgsRefCount:        map[string]int{},
+				openTemplDocHeaders: map[string]*goDocHeader{},
+				openTemplDocSources: newDocumentContents(nil),
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -277,7 +285,7 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				"b": 1,
 				"c": 1,
 			},
-			wantOpenDocHeaders: map[string]*goDocHeader{
+			wantOpenTemplDocHeaders: map[string]*goDocHeader{
 				"/a.templ": {
 					textRange: &lsp.Range{
 						End: lsp.Position{
@@ -336,8 +344,9 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 						"/a.templ": "package a\n",
 					},
 				},
-				pkgsRefCount:   map[string]int{},
-				openDocHeaders: map[string]*goDocHeader{},
+				pkgsRefCount:        map[string]int{},
+				openTemplDocHeaders: map[string]*goDocHeader{},
+				openTemplDocSources: newDocumentContents(nil),
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -350,7 +359,7 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				"b": 1,
 				"c": 1,
 			},
-			wantOpenDocHeaders: map[string]*goDocHeader{
+			wantOpenTemplDocHeaders: map[string]*goDocHeader{
 				"/a.templ": {
 					pkgName: "a",
 					imports: map[string]struct{}{},
@@ -408,7 +417,8 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				pkgsRefCount: map[string]int{
 					"c": 1,
 				},
-				openDocHeaders: map[string]*goDocHeader{},
+				openTemplDocHeaders: map[string]*goDocHeader{},
+				openTemplDocSources: newDocumentContents(nil),
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
@@ -421,7 +431,7 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				"b": 1,
 				"c": 2,
 			},
-			wantOpenDocHeaders: map[string]*goDocHeader{
+			wantOpenTemplDocHeaders: map[string]*goDocHeader{
 				"/a.templ": {
 					pkgName: "a",
 					imports: map[string]struct{}{
@@ -458,8 +468,8 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				t.Errorf("expected count \"%v\", got \"%v\"", tt.wantPkgsRefCount, tt.loader.pkgsRefCount)
 			}
 
-			if !reflect.DeepEqual(tt.wantOpenDocHeaders, tt.loader.openDocHeaders) {
-				t.Errorf("expected headers \"%v\", got \"%v\"", tt.wantOpenDocHeaders, tt.loader.openDocHeaders)
+			if !reflect.DeepEqual(tt.wantOpenTemplDocHeaders, tt.loader.openTemplDocHeaders) {
+				t.Errorf("expected headers \"%v\", got \"%v\"", tt.wantOpenTemplDocHeaders, tt.loader.openTemplDocHeaders)
 			}
 		})
 	}
@@ -471,12 +481,11 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 		loader     templDocLazyLoader
 		params     *lsp.DidChangeTextDocumentParams
 		wantErrStr string
-		overlay    any
 	}{
 		{
 			name: "no header change",
 			loader: templDocLazyLoader{
-				openDocHeaders: map[string]*goDocHeader{
+				openTemplDocHeaders: map[string]*goDocHeader{
 					"/a.templ": {
 						pkgName: "a",
 						imports: map[string]struct{}{},
@@ -522,7 +531,7 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 		{
 			name: "no parsed header change",
 			loader: templDocLazyLoader{
-				openDocHeaders: map[string]*goDocHeader{
+				openTemplDocHeaders: map[string]*goDocHeader{
 					"/a.templ": {
 						pkgName: "a",
 						imports: map[string]struct{}{
@@ -541,6 +550,7 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 						"/a.templ": "package a\n\nimport (\n\t\"os\"\n\t\"fmt\"\n)\n\nfunc main() {\n}\n",
 					},
 				},
+				openTemplDocSources: newDocumentContents(nil),
 			},
 			params: &lsp.DidChangeTextDocumentParams{
 				TextDocument: lsp.VersionedTextDocumentIdentifier{
@@ -577,7 +587,7 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.loader.sync(context.Background(), tt.params, tt.overlay)
+			err := tt.loader.sync(context.Background(), tt.params)
 			if tt.wantErrStr == "" && err != nil {
 				t.Errorf("expected nil error, got \"%s\"", err.Error())
 			} else if tt.wantErrStr != "" && err == nil {
