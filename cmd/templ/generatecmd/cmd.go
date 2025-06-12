@@ -63,7 +63,7 @@ type GenerationEvent struct {
 	TextUpdated        bool
 }
 
-func (cmd Generate) Run(ctx context.Context) (err error) {
+func (cmd Generate) Run(ctx context.Context) error {
 	if cmd.Args.NotifyProxy {
 		return proxy.NotifyProxy(cmd.Args.ProxyBind, cmd.Args.ProxyPort)
 	}
@@ -86,6 +86,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 
 	// Use absolute path.
 	if !path.IsAbs(cmd.Args.Path) {
+		var err error
 		cmd.Args.Path, err = filepath.Abs(cmd.Args.Path)
 		if err != nil {
 			return fmt.Errorf("failed to get absolute path: %w", err)
