@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/internal/lazyloader"
 	lsp "github.com/a-h/templ/lsp/protocol"
 	"github.com/a-h/templ/lsp/uri"
 
@@ -42,7 +43,7 @@ type Server struct {
 	GoSource           map[string]string
 	NoPreload          bool
 	preLoadURIs        []*lsp.DidOpenTextDocumentParams
-	templDocLazyLoader templDocLazyLoader
+	templDocLazyLoader lazyloader.TemplDocLazyLoader
 }
 
 func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache, noPreload bool) (s *Server) {
@@ -245,12 +246,9 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	}
 
 	if p.NoPreload {
-		p.templDocLazyLoader = newTemplDocLazyLoader(newTemplDocLazyLoaderParams{
-			templDocHooks: templDocHooks{
-				didOpen:  p.didOpen,
-				didClose: p.didClose,
-			},
-			openDocSources: p.GoSource,
+		p.templDocLazyLoader = lazyloader.New(lazyloader.NewParams{
+			TemplDocHandler: p,
+			OpenDocSources:  p.GoSource,
 		})
 	} else {
 		p.preload(ctx, params.WorkspaceFolders)
@@ -710,7 +708,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	p.GoSource[string(params.TextDocument.URI)] = w.String()
 
 	if p.NoPreload {
-		if err := p.templDocLazyLoader.sync(ctx, params); err != nil {
+		if err := p.templDocLazyLoader.Sync(ctx, params); err != nil {
 			p.Log.Error("lazy loader sync", slog.Any("error", err))
 		}
 	}
@@ -748,13 +746,13 @@ func (p *Server) DidClose(ctx context.Context, params *lsp.DidCloseTextDocumentP
 	defer p.Log.Info("client -> server: DidClose end")
 
 	if p.NoPreload {
-		return p.templDocLazyLoader.unload(ctx, params)
+		return p.templDocLazyLoader.Unload(ctx, params)
 	}
 
-	return p.didClose(ctx, params)
+	return p.HandleDidClose(ctx, params)
 }
 
-func (p *Server) didClose(ctx context.Context, params *lsp.DidCloseTextDocumentParams) (err error) {
+func (p *Server) HandleDidClose(ctx context.Context, params *lsp.DidCloseTextDocumentParams) (err error) {
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.DidClose(ctx, params)
@@ -772,13 +770,13 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	defer p.Log.Info("client -> server: DidOpen end")
 
 	if p.NoPreload {
-		return p.templDocLazyLoader.load(ctx, params)
+		return p.templDocLazyLoader.Load(ctx, params)
 	}
 
-	return p.didOpen(ctx, params)
+	return p.HandleDidOpen(ctx, params)
 }
 
-func (p *Server) didOpen(ctx context.Context, params *lsp.DidOpenTextDocumentParams) (err error) {
+func (p *Server) HandleDidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentParams) (err error) {
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.DidOpen(ctx, params)
