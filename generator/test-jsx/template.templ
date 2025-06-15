@@ -1,0 +1,20 @@
+package testjsx
+
+templ Jsx() {
+	<div>
+		<h1>JSX-like Syntax Demo</h1>
+    <Button title="Click me" />
+    <dl>
+      <DData term="Name" detail="Tom Cook" />
+    </dl>
+	</div>
+}
+
+templ Button(title string) {
+  <button>{title}</button>
+}
+
+templ DData(term, detail string) {
+  <dt>{term}</dt>
+  <dd>{detail}</dd>
+}
