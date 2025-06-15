@@ -1,5 +1,9 @@
 package testjsx
 
+import (
+  "github.com/a-h/templ/generator/test-jsx/jsxmod"
+)
+
 templ Jsx() {
 	<div>
 		<h1>JSX-like Syntax Demo</h1>
@@ -7,6 +11,8 @@ templ Jsx() {
     <dl>
       <DData term="Name" detail="Tom Cook" />
     </dl>
+    <Card title="Card Title">card body</Card>
+    <jsxmod.Text name="JSX Module" />
 	</div>
 }
 
@@ -17,4 +23,13 @@ templ Button(title string) {
 templ DData(term, detail string) {
   <dt>{term}</dt>
   <dd>{detail}</dd>
+}
+
+templ Card(title string) {
+  <article class="card">
+    <h2>{title}</h2>
+    <main>
+      { children... }
+    </main>
+  </article>
 }
