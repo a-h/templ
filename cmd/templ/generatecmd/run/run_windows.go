@@ -11,8 +11,10 @@ import (
 	"sync"
 )
 
-var m = &sync.Mutex{}
-var running = map[string]*exec.Cmd{}
+var (
+	m       = &sync.Mutex{}
+	running = map[string]*exec.Cmd{}
+)
 
 func KillAll() (err error) {
 	m.Lock()
@@ -61,6 +63,7 @@ func Run(ctx context.Context, workingDir string, input string) (cmd *exec.Cmd, e
 	cmd = exec.Command(executable, args...)
 	cmd.Env = os.Environ()
 	cmd.Dir = workingDir
+	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	running[input] = cmd
