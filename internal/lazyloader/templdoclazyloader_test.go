@@ -2,6 +2,7 @@ package lazyloader
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	lsp "github.com/a-h/templ/lsp/protocol"
@@ -34,6 +35,26 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 				},
 			},
 			wantErrContains: "load package for file \"/foo.go\"",
+		},
+		{
+			name: "load package failed with no packages loaded",
+			loader: &templDocLazyLoader{
+				pkgLoader: &goPkgLoader{
+					loadPackages: func(_ *packages.Config, _ ...string) ([]*packages.Package, error) {
+						return nil, errNoPkgsLoaded
+					},
+				},
+				docHandler: &mockTemplDocHandler{
+					openedDocs: map[string]int{},
+					error:      errors.New("mock error"),
+				},
+			},
+			params: &lsp.DidOpenTextDocumentParams{
+				TextDocument: lsp.TextDocumentItem{
+					URI: lsp.DocumentURI("file:///foo.go"),
+				},
+			},
+			wantErrContains: "mock error",
 		},
 		{
 			name: "open topologically failed",
@@ -202,7 +223,7 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 			wantErrContains: "load package for file \"/foo.go\"",
 		},
 		{
-			name: "load package failed",
+			name: "open topologically failed when package never loaded",
 			loader: &templDocLazyLoader{
 				openDocHeaders: map[string]docHeader{},
 				docHeaderParser: &mockDocHeaderParser{
@@ -218,10 +239,20 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 				},
 				pkgLoader: &goPkgLoader{
 					loadPackages: func(_ *packages.Config, _ ...string) ([]*packages.Package, error) {
-						return nil, assert.AnError
+						return []*packages.Package{
+							{
+								PkgPath: "foo_pkg",
+								Imports: map[string]*packages.Package{
+									"bar_pkg": {PkgPath: "bar_pkg"},
+								},
+							},
+						}, nil
 					},
 				},
-				pkgTraverser: &mockPkgTraverser{},
+				pkgTraverser: &mockPkgTraverser{
+					openErrors: map[string]error{"foo_pkg": assert.AnError},
+				},
+				loadedPkgs: map[string]*packages.Package{},
 			},
 			params: &lsp.DidChangeTextDocumentParams{
 				TextDocument: lsp.VersionedTextDocumentIdentifier{
@@ -243,7 +274,69 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 					},
 				},
 			},
-			wantErrContains: "load package for file \"/foo.go\"",
+			wantErrContains: "open topologically \"foo_pkg\"",
+		},
+		{
+			name: "successfully loaded package when never loaded",
+			loader: &templDocLazyLoader{
+				openDocHeaders: map[string]docHeader{},
+				docHeaderParser: &mockDocHeaderParser{
+					headers: map[string]docHeader{
+						"/foo.go": &goDocHeader{
+							pkgName: "foo_pkg",
+							imports: map[string]struct{}{
+								"fmt": {},
+								"os":  {},
+							},
+						},
+					},
+				},
+				pkgLoader: &goPkgLoader{
+					loadPackages: func(_ *packages.Config, _ ...string) ([]*packages.Package, error) {
+						return []*packages.Package{
+							{
+								PkgPath: "foo_pkg",
+								Imports: map[string]*packages.Package{
+									"bar_pkg": {PkgPath: "bar_pkg"},
+								},
+							},
+						}, nil
+					},
+				},
+				pkgTraverser: &mockPkgTraverser{
+					openErrors: map[string]error{},
+				},
+				loadedPkgs: map[string]*packages.Package{},
+			},
+			params: &lsp.DidChangeTextDocumentParams{
+				TextDocument: lsp.VersionedTextDocumentIdentifier{
+					TextDocumentIdentifier: lsp.TextDocumentIdentifier{
+						URI: lsp.DocumentURI("file:///foo.go"),
+					},
+				},
+				ContentChanges: []lsp.TextDocumentContentChangeEvent{
+					{Range: &lsp.Range{Start: lsp.Position{Line: 11}, End: lsp.Position{Line: 22}}},
+					{Range: &lsp.Range{Start: lsp.Position{Line: 3}, End: lsp.Position{Line: 9}}},
+				},
+			},
+			wantOpenDocHeaders: map[string]docHeader{
+				"/foo.go": &goDocHeader{
+					pkgName: "foo_pkg",
+					imports: map[string]struct{}{
+						"fmt": {},
+						"os":  {},
+					},
+				},
+			},
+			wantLoadedPkgs: map[string]*packages.Package{
+				"foo_pkg": {
+					PkgPath: "foo_pkg",
+					Imports: map[string]*packages.Package{
+						"bar_pkg": {PkgPath: "bar_pkg"},
+					},
+				},
+			},
+			wantOpenedPkgs: []string{"foo_pkg"},
 		},
 		{
 			name: "open topologically failed",
@@ -274,6 +367,14 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 				},
 				pkgTraverser: &mockPkgTraverser{
 					openErrors: map[string]error{"bar_pkg": assert.AnError},
+				},
+				loadedPkgs: map[string]*packages.Package{
+					"foo_pkg": {
+						PkgPath: "foo_pkg",
+						Imports: map[string]*packages.Package{
+							"bar_pkg": {PkgPath: "bar_pkg"},
+						},
+					},
 				},
 			},
 			params: &lsp.DidChangeTextDocumentParams{
@@ -475,6 +576,26 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 				},
 			},
 			wantErrContains: "load package for file \"/foo.go\"",
+		},
+		{
+			name: "load package failed with no packages loaded",
+			loader: &templDocLazyLoader{
+				pkgLoader: &goPkgLoader{
+					loadPackages: func(_ *packages.Config, _ ...string) ([]*packages.Package, error) {
+						return nil, errNoPkgsLoaded
+					},
+				},
+				docHandler: &mockTemplDocHandler{
+					closedDocs: map[string]int{},
+					error:      errors.New("mock error"),
+				},
+			},
+			params: &lsp.DidCloseTextDocumentParams{
+				TextDocument: lsp.TextDocumentIdentifier{
+					URI: lsp.DocumentURI("file:///foo.go"),
+				},
+			},
+			wantErrContains: "mock error",
 		},
 		{
 			name: "close topologically failed",

@@ -1,11 +1,16 @@
 package lazyloader
 
 import (
+	"errors"
 	"fmt"
 	"unsafe"
 
 	"github.com/a-h/templ/lsp/uri"
 	"golang.org/x/tools/go/packages"
+)
+
+var (
+	errNoPkgsLoaded = errors.New("loaded no packages")
 )
 
 type pkgLoader interface {
@@ -30,8 +35,12 @@ func (l *goPkgLoader) load(file string) (*packages.Package, error) {
 		return nil, err
 	}
 
-	if len(pkgs) != 1 {
-		return nil, fmt.Errorf("expected 1 package, got %d packages", len(pkgs))
+	if len(pkgs) == 0 {
+		return nil, errNoPkgsLoaded
+	}
+
+	if len(pkgs) > 1 {
+		return nil, fmt.Errorf("expected 1 package, loaded %d packages", len(pkgs))
 	}
 
 	return pkgs[0], nil

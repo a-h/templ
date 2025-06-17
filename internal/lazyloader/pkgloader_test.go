@@ -37,7 +37,7 @@ func TestGoPkgLoaderLoad(t *testing.T) {
 					}, nil
 				},
 			},
-			wantErrContains: "expected 1 package, got 2",
+			wantErrContains: "expected 1 package, loaded 2 packages",
 		},
 		{
 			name:     "returns zero packages",
@@ -47,7 +47,7 @@ func TestGoPkgLoaderLoad(t *testing.T) {
 					return []*packages.Package{}, nil
 				},
 			},
-			wantErrContains: "expected 1 package, got 0",
+			wantErrContains: "loaded no packages",
 		},
 		{
 			name:     "returns package successfully",

@@ -2,6 +2,7 @@ package lazyloader
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	lsp "github.com/a-h/templ/lsp/protocol"
@@ -27,6 +28,7 @@ type templDocLazyLoader struct {
 	pkgLoader       pkgLoader
 	pkgTraverser    pkgTraverser
 	docHeaderParser docHeaderParser
+	docHandler      TemplDocHandler
 }
 
 // NewParams specifies the parameters necessary to create a new lazy loader.
@@ -53,6 +55,7 @@ func New(params NewParams) TemplDocLazyLoader {
 			openDocSources: params.OpenDocSources,
 			fileParser:     goFileParser{},
 		},
+		docHandler: params.TemplDocHandler,
 	}
 }
 
@@ -62,6 +65,9 @@ func (l *templDocLazyLoader) Load(ctx context.Context, params *lsp.DidOpenTextDo
 
 	pkg, err := l.pkgLoader.load(filename)
 	if err != nil {
+		if errors.Is(err, errNoPkgsLoaded) {
+			return l.docHandler.HandleDidOpen(ctx, params)
+		}
 		return fmt.Errorf("load package for file %q: %w", filename, err)
 	}
 
@@ -90,6 +96,15 @@ func (l *templDocLazyLoader) Sync(ctx context.Context, params *lsp.DidChangeText
 		return fmt.Errorf("load package for file %q: %w", filename, err)
 	}
 
+	if _, ok := l.loadedPkgs[pkg.PkgPath]; !ok {
+		if err := l.pkgTraverser.openTopologically(ctx, pkg); err != nil {
+			return fmt.Errorf("open topologically %q: %w", pkg.PkgPath, err)
+		}
+		l.loadedPkgs[pkg.PkgPath] = pkg
+
+		return nil
+	}
+
 	for _, imp := range pkg.Imports {
 		if err := l.pkgTraverser.openTopologically(ctx, imp); err != nil {
 			return fmt.Errorf("open topologically %q: %w", imp.PkgPath, err)
@@ -112,6 +127,9 @@ func (l *templDocLazyLoader) Unload(ctx context.Context, params *lsp.DidCloseTex
 
 	pkg, err := l.pkgLoader.load(filename)
 	if err != nil {
+		if errors.Is(err, errNoPkgsLoaded) {
+			return l.docHandler.HandleDidClose(ctx, params)
+		}
 		return fmt.Errorf("load package for file %q: %w", filename, err)
 	}
 
