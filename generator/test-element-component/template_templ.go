@@ -36,7 +36,10 @@ func ElementComponent() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var2 := str()
+		templ_7745c5c3_Var2, templ_7745c5c3_Err := templ.JoinAnyErrs(str())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-element-component/template.templ`, Line: 10, Col: 23}
+		}
 		templ_7745c5c3_Err = Button(templ_7745c5c3_Var2).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -95,7 +98,10 @@ func ElementComponent() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var4 := "Hello " + str() + "!"
+		templ_7745c5c3_Var4, templ_7745c5c3_Err := templ.JoinAnyErrs("Hello " + str() + "!")
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-element-component/template.templ`, Line: 24, Col: 40}
+		}
 		templ_7745c5c3_Err = Button(templ_7745c5c3_Var4).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -104,12 +110,18 @@ func ElementComponent() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var5 := isEnabled()
+		templ_7745c5c3_Var5, templ_7745c5c3_Err := templ.JoinAnyErrs(isEnabled())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-element-component/template.templ`, Line: 30, Col: 57}
+		}
 		templ_7745c5c3_Err = BoolComponent("Bool Expr", templ_7745c5c3_Var5).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var6 := shouldShow()
+		templ_7745c5c3_Var6, templ_7745c5c3_Err := templ.JoinAnyErrs(shouldShow())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-element-component/template.templ`, Line: 37, Col: 26}
+		}
 		templ_7745c5c3_Err = MultiComponent("Multi Test", 42, true, templ_7745c5c3_Var6).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

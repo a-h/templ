@@ -1025,11 +1025,14 @@ func extractAttributeName(key parser.AttributeKey) string {
 	}
 }
 
-func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attribute) ([]string, error) {
+func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attribute, sig *ComponentSignature) ([]string, error) {
 	res := make([]string, len(args))
 	for i, attr := range args {
 		var value string
 		var err error
+		
+		// Get the parameter type (for future use if needed)
+		// paramType := sig.Parameters[i].Type
 
 		switch key := attr.(type) {
 		case *parser.ConstantAttribute:
@@ -1037,29 +1040,30 @@ func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attri
 			value = fmt.Sprintf(`"%s"`, key.Value)
 
 		case *parser.ExpressionAttribute:
-			// For expressions, we need to handle potential errors
-			varName := g.createVariableName()
-			// var vn string
-			if _, err = g.w.WriteIndent(indentLevel, "var "+varName+" string\n"); err != nil {
-				return nil, err
+			// Check if it's a simple expression that doesn't need error handling
+			if isSimpleExpression(key.Expression.Value) {
+				value = key.Expression.Value
+			} else {
+				// For all expressions that might return errors, use JoinAnyErrs
+				varName := g.createVariableName()
+				// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(expression)
+				if _, err = g.w.WriteIndent(indentLevel, varName+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
+					return nil, err
+				}
+				var r parser.Range
+				if r, err = g.w.Write(key.Expression.Value); err != nil {
+					return nil, err
+				}
+				g.sourceMap.Add(key.Expression, r)
+				if _, err = g.w.Write(")\n"); err != nil {
+					return nil, err
+				}
+				// Error handler
+				if err = g.writeExpressionErrorHandler(indentLevel, key.Expression); err != nil {
+					return nil, err
+				}
+				value = varName
 			}
-			// vn, templ_7745c5c3_Err = templ.JoinStringErrs(expression)
-			if _, err = g.w.WriteIndent(indentLevel, varName+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
-				return nil, err
-			}
-			var r parser.Range
-			if r, err = g.w.Write(key.Expression.Value); err != nil {
-				return nil, err
-			}
-			g.sourceMap.Add(key.Expression, r)
-			if _, err = g.w.Write(")\n"); err != nil {
-				return nil, err
-			}
-			// Error handler
-			if err = g.writeExpressionErrorHandler(indentLevel, key.Expression); err != nil {
-				return nil, err
-			}
-			value = varName
 
 		case *parser.BoolConstantAttribute:
 			// Simple boolean true
@@ -1070,9 +1074,10 @@ func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attri
 			if isSimpleExpression(key.Expression.Value) {
 				value = key.Expression.Value
 			} else {
-				// Create a variable for complex boolean expressions
+				// For boolean expressions that might return errors, use JoinAnyErrs
 				varName := g.createVariableName()
-				if _, err = g.w.WriteIndent(indentLevel, varName+" := "); err != nil {
+				// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(expression)
+				if _, err = g.w.WriteIndent(indentLevel, varName+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
 					return nil, err
 				}
 				var r parser.Range
@@ -1080,7 +1085,11 @@ func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attri
 					return nil, err
 				}
 				g.sourceMap.Add(key.Expression, r)
-				if _, err = g.w.Write("\n"); err != nil {
+				if _, err = g.w.Write(")\n"); err != nil {
+					return nil, err
+				}
+				// Error handler
+				if err = g.writeExpressionErrorHandler(indentLevel, key.Expression); err != nil {
 					return nil, err
 				}
 				value = varName
@@ -1106,9 +1115,25 @@ func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attri
 // isSimpleExpression checks if an expression is simple enough to be used directly
 // without creating a variable (e.g., identifiers, selectors, simple literals)
 func isSimpleExpression(expr string) bool {
-	// TODO: Implement proper heuristics for simple expressions
-	// For now, consider expressions without spaces or function calls as simple
-	return !strings.Contains(expr, " ") && !strings.Contains(expr, "(") && !strings.Contains(expr, "\n")
+	// Simple expressions are identifiers or member access that don't need error handling
+	// Examples: "foo", "obj.Field", "pkg.Const"
+	// Not simple: "foo()", "a + b", "func() { ... }", multi-line expressions
+	expr = strings.TrimSpace(expr)
+	
+	// Check for function calls, operators, or multi-line
+	if strings.Contains(expr, "(") || strings.Contains(expr, " ") || strings.Contains(expr, "\n") {
+		return false
+	}
+	
+	// Check for operators
+	operators := []string{"+", "-", "*", "/", "%", "=", "!", "<", ">", "&", "|", "^", "~"}
+	for _, op := range operators {
+		if strings.Contains(expr, op) {
+			return false
+		}
+	}
+	
+	return true
 }
 
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
@@ -1123,7 +1148,7 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 		return err
 	}
 	var vars []string
-	if vars, err = g.writeArgumentAssignment(indentLevel, attrs); err != nil {
+	if vars, err = g.writeArgumentAssignment(indentLevel, attrs, sigs); err != nil {
 		return err
 	}
 

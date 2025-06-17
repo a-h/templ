@@ -623,6 +623,18 @@ func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
 	return fmt.Sprint(s), errors.Join(errs...)
 }
 
+func JoinAnyErrs[T any](v T, errs ...error) (T, error) {
+	if len(errs) == 0 {
+		return v, nil
+	}
+	err := errors.Join(errs...)
+	if err == nil {
+		return v, nil
+	}
+	var zero T
+	return zero, err
+}
+
 // Error returned during template rendering.
 type Error struct {
 	Err error
