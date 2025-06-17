@@ -1232,6 +1232,117 @@ func (tee *TemplElementExpression) Visit(v Visitor) error {
 	return v.VisitTemplElementExpression(tee)
 }
 
+// JSXComponentElement represents JSX-like component syntax.
+// <Component attr="value" /> or <Component attr="value">children</Component>
+type JSXComponentElement struct {
+	// Name is the component name (e.g., "Button", "components.Input")
+	Name string
+	// NameRange tracks the position of the component name
+	NameRange Range
+	// Attributes are the component attributes
+	Attributes []Attribute
+	// IndentAttrs indicates if attributes should be indented
+	IndentAttrs bool
+	// Children contains child elements for non-self-closing components
+	Children []Node
+	// IndentChildren indicates if children should be indented
+	IndentChildren bool
+	// SelfClosing indicates if this is a self-closing component
+	SelfClosing bool
+	// TrailingSpace tracks whitespace after the component
+	TrailingSpace TrailingSpace
+}
+
+func (jsx *JSXComponentElement) ChildNodes() []Node {
+	return jsx.Children
+}
+
+func (jsx *JSXComponentElement) IsNode() bool { return true }
+
+func (jsx *JSXComponentElement) Trailing() TrailingSpace {
+	return jsx.TrailingSpace
+}
+
+func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
+	// Write JSX components in their original JSX syntax for formatting
+	if err := writeIndent(w, indent, "<"+jsx.Name); err != nil {
+		return err
+	}
+	
+	// Write attributes
+	for i, attr := range jsx.Attributes {
+		if jsx.IndentAttrs && i == 0 {
+			if _, err := io.WriteString(w, "\n"); err != nil {
+				return err
+			}
+			if err := writeIndent(w, indent+1, ""); err != nil {
+				return err
+			}
+		} else {
+			if _, err := io.WriteString(w, " "); err != nil {
+				return err
+			}
+		}
+		
+		if jsx.IndentAttrs && i > 0 {
+			if _, err := io.WriteString(w, "\n"); err != nil {
+				return err
+			}
+			if err := writeIndent(w, indent+1, ""); err != nil {
+				return err
+			}
+		}
+		
+		if err := attr.Write(w, 0); err != nil {
+			return err
+		}
+	}
+	
+	if jsx.SelfClosing {
+		if _, err := io.WriteString(w, " />"); err != nil {
+			return err
+		}
+		return nil
+	}
+	
+	if _, err := io.WriteString(w, ">"); err != nil {
+		return err
+	}
+	
+	// Write children if any
+	if len(jsx.Children) > 0 {
+		if jsx.IndentChildren {
+			if _, err := io.WriteString(w, "\n"); err != nil {
+				return err
+			}
+			if err := writeNodesIndented(w, indent+1, jsx.Children); err != nil {
+				return err
+			}
+			if _, err := io.WriteString(w, "\n"); err != nil {
+				return err
+			}
+			if err := writeIndent(w, indent, ""); err != nil {
+				return err
+			}
+		} else {
+			if err := writeNodes(w, 0, jsx.Children, false); err != nil {
+				return err
+			}
+		}
+	}
+	
+	// Write closing tag
+	if _, err := io.WriteString(w, "</"+jsx.Name+">"); err != nil {
+		return err
+	}
+	
+	return nil
+}
+
+func (jsx *JSXComponentElement) Visit(v Visitor) error {
+	return v.VisitJSXComponentElement(jsx)
+}
+
 // ChildrenExpression can be used to rended the children of a templ element.
 // { children ... }
 type ChildrenExpression struct{}

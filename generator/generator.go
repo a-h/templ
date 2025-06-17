@@ -613,6 +613,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeCallTemplateExpression(indentLevel, n)
 	case *parser.TemplElementExpression:
 		err = g.writeTemplElementExpression(indentLevel, n)
+	case *parser.JSXComponentElement:
+		err = g.writeJSXComponentElement(indentLevel, n)
 	case *parser.IfExpression:
 		err = g.writeIfExpression(indentLevel, n, next)
 	case *parser.SwitchExpression:
@@ -875,6 +877,57 @@ func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n *p
 		return err
 	}
 	return nil
+}
+
+func (g *generator) writeJSXComponentElement(indentLevel int, n *parser.JSXComponentElement) (err error) {
+	// Convert JSX component to TemplElementExpression equivalent for rendering
+	expr := g.buildJSXExpression(n)
+	templExpr := &parser.TemplElementExpression{
+		Expression: parser.Expression{
+			Value: expr,
+			Range: n.NameRange,
+		},
+		Children: n.Children,
+	}
+	
+	if len(n.Children) == 0 {
+		return g.writeSelfClosingTemplElementExpression(indentLevel, templExpr)
+	}
+	return g.writeBlockTemplElementExpression(indentLevel, templExpr)
+}
+
+func (g *generator) buildJSXExpression(n *parser.JSXComponentElement) string {
+	// Build Go function call expression from JSX component
+	expr := n.Name + "("
+
+	// Convert attributes to positional function arguments
+	if len(n.Attributes) > 0 {
+		args := make([]string, 0, len(n.Attributes))
+		
+		for _, attr := range n.Attributes {
+			switch a := attr.(type) {
+			case *parser.ConstantAttribute:
+				// Convert constant attributes to quoted string arguments
+				args = append(args, fmt.Sprintf(`"%s"`, a.Value))
+			case *parser.ExpressionAttribute:
+				// Convert expression attributes to direct arguments
+				args = append(args, a.Expression.Value)
+			case *parser.BoolConstantAttribute:
+				// Convert boolean attributes to true
+				args = append(args, "true")
+			case *parser.BoolExpressionAttribute:
+				// Convert boolean expression attributes
+				args = append(args, a.Expression.Value)
+			}
+		}
+		
+		if len(args) > 0 {
+			expr += strings.Join(args, ", ")
+		}
+	}
+
+	expr += ")"
+	return expr
 }
 
 func (g *generator) writeCallTemplateExpression(indentLevel int, n *parser.CallTemplateExpression) (err error) {

@@ -138,6 +138,19 @@ func New() *Visitor {
 		}
 		return nil
 	}
+	v.JSXComponentElement = func(n *parser.JSXComponentElement) error {
+		for _, attr := range n.Attributes {
+			if err := attr.Visit(v); err != nil {
+				return err
+			}
+		}
+		for _, child := range n.Children {
+			if err := child.Visit(v); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	v.ChildrenExpression = func(n *parser.ChildrenExpression) error {
 		return nil
 	}
@@ -220,6 +233,7 @@ type Visitor struct {
 	HTMLComment              func(n *parser.HTMLComment) error
 	CallTemplateExpression   func(n *parser.CallTemplateExpression) error
 	TemplElementExpression   func(n *parser.TemplElementExpression) error
+	JSXComponentElement      func(n *parser.JSXComponentElement) error
 	ChildrenExpression       func(n *parser.ChildrenExpression) error
 	IfExpression             func(n *parser.IfExpression) error
 	SwitchExpression         func(n *parser.SwitchExpression) error
@@ -320,6 +334,10 @@ func (v *Visitor) VisitCallTemplateExpression(n *parser.CallTemplateExpression) 
 
 func (v *Visitor) VisitTemplElementExpression(n *parser.TemplElementExpression) error {
 	return v.TemplElementExpression(n)
+}
+
+func (v *Visitor) VisitJSXComponentElement(n *parser.JSXComponentElement) error {
+	return v.JSXComponentElement(n)
 }
 
 func (v *Visitor) VisitChildrenExpression(n *parser.ChildrenExpression) error {

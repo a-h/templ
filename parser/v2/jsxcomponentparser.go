@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"strings"
 	"unicode"
 
 	"github.com/a-h/parse"
@@ -139,48 +138,31 @@ func (jsxComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 
-	// Convert JSX component syntax to TemplElementExpression for compatibility
-	// Build the Go expression for the component call
-	expr := ot.Name + "("
-
-	// Convert attributes to positional function arguments
-	// Only handle constant attributes for now (string literals)
-	if len(ot.Attributes) > 0 {
-		args := make([]string, 0, len(ot.Attributes))
-		
-		for _, attr := range ot.Attributes {
-			switch a := attr.(type) {
-			case *ConstantAttribute:
-				// Convert constant attributes to positional arguments
-				// e.g., term="Name" becomes "Name"
-				args = append(args, fmt.Sprintf(`"%s"`, a.Value))
-			case *ExpressionAttribute:
-				// Convert expression attributes to positional arguments
-				// e.g., term={variable} becomes variable
-				args = append(args, a.Expression.Value)
-			case *BoolConstantAttribute:
-				// Convert boolean attributes to true
-				args = append(args, "true")
-			case *BoolExpressionAttribute:
-				// Convert boolean expression attributes
-				args = append(args, a.Expression.Value)
-			}
-		}
-		
-		if len(args) > 0 {
-			expr += strings.Join(args, ", ")
-		}
+	// Create JSXComponentElement to preserve JSX syntax information
+	l := pi.Position().Line
+	r := &JSXComponentElement{
+		Name:        ot.Name,
+		NameRange:   NewRange(start, pi.Position()),
+		Attributes:  ot.Attributes,
+		SelfClosing: ot.SelfClosing,
+	}
+	
+	// If any attribute is not on the same line as the component name, indent them.
+	if pi.Position().Line != l {
+		r.IndentAttrs = true
 	}
 
-	expr += ")"
-
-	// Create the TemplElementExpression
-	r := &TemplElementExpression{
-		Expression: NewExpression(expr, start, pi.Position()),
-	}
-
-	// If the component is self-closing, we're done
+	// If the component is self-closing, add trailing space and we're done
 	if ot.SelfClosing {
+		// Add trailing space.
+		ws, _, err := parse.Whitespace.Parse(pi)
+		if err != nil {
+			return r, false, err
+		}
+		r.TrailingSpace, err = NewTrailingSpace(ws)
+		if err != nil {
+			return r, false, err
+		}
 		return r, true, nil
 	}
 
@@ -198,6 +180,10 @@ func (jsxComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return r, true, err
 	}
 	r.Children = nodes.Nodes
+	// If the children are not all on the same line, indent them.
+	if l != pi.Position().Line {
+		r.IndentChildren = true
+	}
 
 	// Close tag.
 	_, ok, err = closer.Parse(pi)
@@ -207,6 +193,16 @@ func (jsxComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	if !ok {
 		err = parse.Error(fmt.Sprintf("<%s>: expected end tag not present or invalid tag contents", ot.Name), pi.Position())
 		return r, true, err
+	}
+
+	// Add trailing space.
+	ws, _, err := parse.Whitespace.Parse(pi)
+	if err != nil {
+		return r, false, err
+	}
+	r.TrailingSpace, err = NewTrailingSpace(ws)
+	if err != nil {
+		return r, false, err
 	}
 
 	return r, true, nil
