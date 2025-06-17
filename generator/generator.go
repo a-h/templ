@@ -928,7 +928,6 @@ func (g *generator) buildJSXExpression(n *parser.JSXComponentElement) (string, e
 	// Check if we have a resolved signature for this component
 	sigKey := n.Name
 	sig, hasSig := g.componentSigs[sigKey]
-	fmt.Printf("Resolving JSX component %s with signature %v\n", n.Name, sig)
 
 	if hasSig && len(sig.Parameters) > 0 {
 		// Use named parameter mapping - required for JSX components
@@ -1926,11 +1925,18 @@ func (g *generator) collectAndResolveComponents() error {
 				}
 			}
 		} else {
-			// External component - use Go function resolution
-			if g.symbolResolver != nil {
-				sig, err = g.symbolResolver.ResolveComponent(comp.PackageName, comp.Name)
-				if err == nil {
-					found = true
+			// External component - first try templ templates, then Go functions
+			if externalSig, ok := g.resolveExternalTemplComponent(comp.PackageName, comp.Name); ok {
+				sig = externalSig
+				found = true
+			} else if g.symbolResolver != nil {
+				// Try Go function resolution with resolved import path
+				importPath := g.resolveImportPath(comp.PackageName)
+				if importPath != "" {
+					sig, err = g.symbolResolver.ResolveComponent(importPath, comp.Name)
+					if err == nil {
+						found = true
+					}
 				}
 			}
 		}
@@ -1958,6 +1964,69 @@ func (g *generator) collectAndResolveComponents() error {
 	}
 
 	return nil
+}
+
+func (g *generator) resolveExternalTemplComponent(packageAlias, componentName string) (*ComponentSignature, bool) {
+	// First, we need to map the package alias to the actual import path
+	importPath := g.resolveImportPath(packageAlias)
+	if importPath == "" {
+		return nil, false
+	}
+	
+	// Try to resolve the external templ template
+	if g.symbolResolver != nil {
+		if sig, err := g.symbolResolver.ResolveExternalTemplComponent(importPath, componentName); err == nil {
+			return sig, true
+		}
+	}
+	
+	return nil, false
+}
+
+func (g *generator) resolveImportPath(packageAlias string) string {
+	// Look through the template file's imports to find the import path for this alias
+	for _, node := range g.tf.Nodes {
+		if importNode, ok := node.(*parser.TemplateFileGoExpression); ok {
+			// Check if this is an import statement
+			if strings.HasPrefix(strings.TrimSpace(importNode.Expression.Value), "import ") {
+				// Parse import statement to extract alias and path
+				importValue := importNode.Expression.Value
+				if alias, path := g.parseImportStatement(importValue); alias == packageAlias {
+					return path
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func (g *generator) parseImportStatement(importStmt string) (alias, path string) {
+	// Handle import statements like:
+	// import "path/to/package"
+	// import alias "path/to/package"
+	
+	importStmt = strings.TrimSpace(importStmt)
+	if !strings.HasPrefix(importStmt, "import ") {
+		return "", ""
+	}
+	
+	importStmt = strings.TrimPrefix(importStmt, "import ")
+	importStmt = strings.TrimSpace(importStmt)
+	
+	// Check if there's an alias
+	parts := strings.Fields(importStmt)
+	if len(parts) == 2 {
+		// alias "path"
+		alias = parts[0]
+		path = strings.Trim(parts[1], `"`)
+	} else if len(parts) == 1 {
+		// "path" - derive alias from path
+		path = strings.Trim(parts[0], `"`)
+		pathParts := strings.Split(path, "/")
+		alias = pathParts[len(pathParts)-1]
+	}
+	
+	return alias, path
 }
 
 func functionName(name string, body string) string {
