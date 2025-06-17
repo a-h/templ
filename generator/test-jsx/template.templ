@@ -5,7 +5,7 @@ import "github.com/a-h/templ/generator/test-jsx/jsxmod"
 templ Jsx() {
 	<div>
 		<h1>JSX-like Syntax Demo</h1>
-		<Button title="Click me" />
+		<Button title={ str() } />
 		<dl>
 			<DData term="Name" detail="Tom Cook" />
 		</dl>
@@ -30,4 +30,8 @@ templ Card(title string) {
 			{ children... }
 		</main>
 	</article>
+}
+
+func str() string {
+	return "Click me"
 }
