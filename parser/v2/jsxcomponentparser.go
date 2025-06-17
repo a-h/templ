@@ -15,11 +15,11 @@ import (
 var (
 	componentNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
 		start := in.Index()
-		
+
 		// Try to parse identifier (could be package name or component name)
 		identifierFirst := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 		identifierSubsequent := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
-		
+
 		var prefix, suffix string
 		if prefix, ok, err = parse.RuneIn(identifierFirst).Parse(in); err != nil || !ok {
 			return
@@ -28,9 +28,9 @@ var (
 			in.Seek(start)
 			return
 		}
-		
+
 		firstIdentifier := prefix + suffix
-		
+
 		// Check if there's a dot (package.Component format)
 		dotStart := in.Index()
 		if _, dotOk, dotErr := parse.Rune('.').Parse(in); dotErr != nil || !dotOk {
@@ -41,7 +41,7 @@ var (
 			}
 			return firstIdentifier, true, nil
 		}
-		
+
 		// Found a dot, parse the component name after it
 		var componentPrefix, componentSuffix string
 		if componentPrefix, ok, err = parse.RuneIn("ABCDEFGHIJKLMNOPQRSTUVWXYZ").Parse(in); err != nil || !ok {
@@ -53,14 +53,14 @@ var (
 			in.Seek(dotStart)
 			return "", false, nil
 		}
-		
+
 		fullName := firstIdentifier + "." + componentPrefix + componentSuffix
 		if len(fullName) > 128 {
 			ok = false
 			err = parse.Error("component names must be < 128 characters long", in.Position())
 			return
 		}
-		
+
 		return fullName, true, nil
 	})
 )
@@ -74,7 +74,7 @@ type jsxComponentOpenTag struct {
 
 var jsxComponentOpenTagParser = parse.Func(func(pi *parse.Input) (e jsxComponentOpenTag, matched bool, err error) {
 	start := pi.Index()
-	
+
 	if next, _ := pi.Peek(2); len(next) < 2 || next[0] != '<' || next == "<!" || next == "</" {
 		// This is not a tag, or it's a comment, doctype, or closing tag.
 		return e, false, nil
@@ -87,7 +87,7 @@ var jsxComponentOpenTagParser = parse.Func(func(pi *parse.Input) (e jsxComponent
 
 	// Component name - must start with uppercase letter
 	if e.Name, matched, err = componentNameParser.Parse(pi); err != nil || !matched {
-		pi.Seek(start) // Restore parser state
+		pi.Seek(start)       // Restore parser state
 		return e, false, nil // Not a component, let regular element parser handle it
 	}
 
@@ -146,7 +146,7 @@ func (jsxComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		Attributes:  ot.Attributes,
 		SelfClosing: ot.SelfClosing,
 	}
-	
+
 	// If any attribute is not on the same line as the component name, indent them.
 	if pi.Position().Line != l {
 		r.IndentAttrs = true

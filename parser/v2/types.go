@@ -1268,7 +1268,7 @@ func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "<"+jsx.Name); err != nil {
 		return err
 	}
-	
+
 	// Write attributes
 	for i, attr := range jsx.Attributes {
 		if jsx.IndentAttrs && i == 0 {
@@ -1283,7 +1283,7 @@ func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
 				return err
 			}
 		}
-		
+
 		if jsx.IndentAttrs && i > 0 {
 			if _, err := io.WriteString(w, "\n"); err != nil {
 				return err
@@ -1292,23 +1292,23 @@ func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
 				return err
 			}
 		}
-		
+
 		if err := attr.Write(w, 0); err != nil {
 			return err
 		}
 	}
-	
+
 	if jsx.SelfClosing {
 		if _, err := io.WriteString(w, " />"); err != nil {
 			return err
 		}
 		return nil
 	}
-	
+
 	if _, err := io.WriteString(w, ">"); err != nil {
 		return err
 	}
-	
+
 	// Write children if any
 	if len(jsx.Children) > 0 {
 		if jsx.IndentChildren {
@@ -1330,12 +1330,12 @@ func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
 			}
 		}
 	}
-	
+
 	// Write closing tag
 	if _, err := io.WriteString(w, "</"+jsx.Name+">"); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 

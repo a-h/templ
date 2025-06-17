@@ -889,7 +889,7 @@ func (g *generator) writeJSXComponentElement(indentLevel int, n *parser.JSXCompo
 		},
 		Children: n.Children,
 	}
-	
+
 	if len(n.Children) == 0 {
 		return g.writeSelfClosingTemplElementExpression(indentLevel, templExpr)
 	}
@@ -903,7 +903,7 @@ func (g *generator) buildJSXExpression(n *parser.JSXComponentElement) string {
 	// Convert attributes to positional function arguments
 	if len(n.Attributes) > 0 {
 		args := make([]string, 0, len(n.Attributes))
-		
+
 		for _, attr := range n.Attributes {
 			switch a := attr.(type) {
 			case *parser.ConstantAttribute:
@@ -920,7 +920,7 @@ func (g *generator) buildJSXExpression(n *parser.JSXComponentElement) string {
 				args = append(args, a.Expression.Value)
 			}
 		}
-		
+
 		if len(args) > 0 {
 			expr += strings.Join(args, ", ")
 		}
