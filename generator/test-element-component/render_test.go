@@ -11,7 +11,7 @@ import (
 var expected string
 
 func Test(t *testing.T) {
-	component := Jsx()
+	component := ElementComponent()
 
 	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
