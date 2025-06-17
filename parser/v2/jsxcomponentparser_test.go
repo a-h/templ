@@ -22,6 +22,22 @@ func TestJSXComponentParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "jsx: self-closing component with expression attribute",
+			input: `<Button text={variable} />`,
+			expected: &JSXComponentElement{
+				Name:        "Button",
+				SelfClosing: true,
+				Attributes: []Attribute{
+					&ExpressionAttribute{
+						Key: ConstantAttributeKey{Name: "text"},
+						Expression: Expression{
+							Value: "variable",
+						},
+					},
+				},
+			},
+		},
+		{
 			name:  "jsx: self-closing component with string attribute",
 			input: `<Button text="Click me" />`,
 			expected: &JSXComponentElement{
