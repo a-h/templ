@@ -1,8 +1,6 @@
 package testjsx
 
-import (
-	"github.com/a-h/templ/generator/test-jsx/jsxmod"
-)
+import "github.com/a-h/templ/generator/test-jsx/jsxmod"
 
 templ Jsx() {
 	<div>
@@ -17,17 +15,17 @@ templ Jsx() {
 }
 
 templ Button(title string) {
-	<button>{title}</button>
+	<button>{ title }</button>
 }
 
 templ DData(term, detail string) {
-	<dt>{term}</dt>
-	<dd>{detail}</dd>
+	<dt>{ term }</dt>
+	<dd>{ detail }</dd>
 }
 
 templ Card(title string) {
 	<article class="card">
-		<h2>{title}</h2>
+		<h2>{ title }</h2>
 		<main>
 			{ children... }
 		</main>
