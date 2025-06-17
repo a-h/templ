@@ -1,4 +1,4 @@
-module github.com/a-h/templ/generator/test-jsx/externjsxmod
+module github.com/a-h/templ/generator/test-element-component/externmod
 
 go 1.24.3
 

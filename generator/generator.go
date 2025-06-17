@@ -636,7 +636,7 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 	case *parser.TemplElementExpression:
 		err = g.writeTemplElementExpression(indentLevel, n)
 	case *parser.JSXComponentElement:
-		err = g.writeJSXComponentElement(indentLevel, n)
+		err = g.writeElementComponent(indentLevel, n)
 	case *parser.IfExpression:
 		err = g.writeIfExpression(indentLevel, n, next)
 	case *parser.SwitchExpression:
@@ -901,14 +901,14 @@ func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n *p
 	return nil
 }
 
-func (g *generator) writeJSXComponentElement(indentLevel int, n *parser.JSXComponentElement) (err error) {
+func (g *generator) writeElementComponent(indentLevel int, n *parser.JSXComponentElement) (err error) {
 	if len(n.Children) == 0 {
-		return g.writeSelfClosingJSXComponentElement(indentLevel, n)
+		return g.writeSelfClosingElementComponent(indentLevel, n)
 	}
-	return g.writeBlockJSXComponentElement(indentLevel, n)
+	return g.writeBlockElementComponent(indentLevel, n)
 }
 
-func (g *generator) writeSelfClosingJSXComponentElement(indentLevel int, n *parser.JSXComponentElement) (err error) {
+func (g *generator) writeSelfClosingElementComponent(indentLevel int, n *parser.JSXComponentElement) (err error) {
 	// templ_7745c5c3_Err = Component(arg1, arg2, ...)
 	if err = g.writeJSXElementFunctionCall(indentLevel, n); err != nil {
 		return err
@@ -923,7 +923,7 @@ func (g *generator) writeSelfClosingJSXComponentElement(indentLevel int, n *pars
 	return nil
 }
 
-func (g *generator) writeBlockJSXComponentElement(indentLevel int, n *parser.JSXComponentElement) (err error) {
+func (g *generator) writeBlockElementComponent(indentLevel int, n *parser.JSXComponentElement) (err error) {
 	childrenName := g.createVariableName()
 	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
 		return err

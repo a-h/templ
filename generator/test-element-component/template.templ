@@ -1,18 +1,25 @@
-package testjsx
+package testelementcomponent
 
-import "github.com/a-h/templ/generator/test-jsx/jsxmod"
-import extern "github.com/a-h/templ/generator/test-jsx/externjsxmod"
+import "github.com/a-h/templ/generator/test-element-component/mod"
+import extern "github.com/a-h/templ/generator/test-element-component/externmod"
 
-templ Jsx() {
+templ ElementComponent() {
 	<div>
-		<h1>JSX-like Syntax Demo</h1>
+		<h1>ElementComponent Demo</h1>
 		<Button title={ str() } />
+		<!-- <Button  -->
+		<!-- if true { -->
+		<!-- title="Condition True" -->
+		<!-- } else { -->
+		<!-- title="Condition False" -->
+		<!-- } -->
+		<!-- /> -->
 		<dl>
 			<DData term="Name" detail="Tom Cook" />
 		</dl>
 		<Card title="Card Title">card body</Card>
 		<h2>Named Parameter Test</h2>
-		<jsxmod.Text name="hello"/>
+		<mod.Text name="hello"/>
 		<extern.Text name="world"/>
 		<TestComponent title="Test" count={ 42 } enabled={ true } />
 		<AnotherComponent name="Alice" description="Engineer" age={ 25 } />

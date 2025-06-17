@@ -78,12 +78,12 @@ go run ./cmd/templ generate -include-version=false
 go test ./...
 ```
 
-### test-jsx
+### test-element-component
 
-jsx test lives in its own module, so we need to run the tests in that directory.
+element component test lives in its own module, so we need to run the tests in that directory.
 
 ```sh
-cd generator/test-jsx
+cd generator/test-element-component
 go test ./...
 ```
 

@@ -1,4 +1,4 @@
-package testjsx
+package testelementcomponent
 
 import (
 	"context"
