@@ -915,6 +915,11 @@ func (g *generator) writeJSXComponentElement(indentLevel int, n *parser.JSXCompo
 		Children: n.Children,
 	}
 
+	// Create granular source map entries for JSX component parts
+	if err := g.addJSXSourceMapEntries(n); err != nil {
+		return err
+	}
+
 	if len(n.Children) == 0 {
 		return g.writeSelfClosingTemplElementExpression(indentLevel, templExpr)
 	}
@@ -994,6 +999,41 @@ func (g *generator) mapAttributesToParameters(attrs []parser.Attribute, sig *Com
 	}
 
 	return args, nil
+}
+
+// addJSXSourceMapEntries adds granular source map entries for JSX component parts
+func (g *generator) addJSXSourceMapEntries(n *parser.JSXComponentElement) error {
+	// Add source map entry for component name itself
+	// This enables hover and go-to-definition for the component name
+	componentNameExpr := parser.Expression{
+		Value: n.Name,
+		Range: n.NameRange,
+	}
+	
+	// Create a dummy range for the component name in the generated Go code
+	// Since we don't actually write the component name separately, we use the name range
+	g.sourceMap.Add(componentNameExpr, n.NameRange)
+
+	// Add source map entries for attribute expressions
+	for _, attr := range n.Attributes {
+		switch a := attr.(type) {
+		case *parser.ExpressionAttribute:
+			// Add source map entry for expression attributes so hover works on the expression
+			g.sourceMap.Add(a.Expression, a.Expression.Range)
+		case *parser.BoolExpressionAttribute:
+			// Add source map entry for boolean expression attributes
+			g.sourceMap.Add(a.Expression, a.Expression.Range)
+		case *parser.SpreadAttributes:
+			// Add source map entry for spread attributes
+			g.sourceMap.Add(a.Expression, a.Expression.Range)
+		case *parser.ConditionalAttribute:
+			// Add source map entry for the conditional expression
+			g.sourceMap.Add(a.Expression, a.Expression.Range)
+		}
+		// Note: Constant attributes don't have expressions, so they don't need source map entries
+	}
+	
+	return nil
 }
 
 func (g *generator) writeCallTemplateExpression(indentLevel int, n *parser.CallTemplateExpression) (err error) {
