@@ -1791,6 +1791,43 @@ func TestElementParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "element: space before name= { is still parsed as an expression",
+			input: `<div hx-vals= { "test" }></div>`,
+			expected: &Element{
+				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				Attributes: []Attribute{
+					&ExpressionAttribute{
+						Key: ConstantAttributeKey{
+							Name: "hx-vals",
+							NameRange: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 12, Line: 0, Col: 12},
+							},
+						},
+						Expression: Expression{
+							Value: `"test"`,
+							Range: Range{
+								From: Position{
+									Index: 16,
+									Line:  0,
+									Col:   16,
+								},
+								To: Position{
+									Index: 22,
+									Line:  0,
+									Col:   22,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

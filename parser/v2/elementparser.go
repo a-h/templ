@@ -123,13 +123,13 @@ func (avp attributeValueParser) Parse(pi *parse.Input) (value string, ok bool, e
 var (
 	attributeValueParsers = []attributeValueParser{
 		// Double quoted.
-		{EqualsAndQuote: parse.String(`="`), Suffix: parse.String(`"`), UseSingleQuote: false},
+		{EqualsAndQuote: parse.StringFrom(parse.OptionalWhitespace, parse.String(`="`)), Suffix: parse.String(`"`), UseSingleQuote: false},
 		// Single quoted.
-		{EqualsAndQuote: parse.String(`='`), Suffix: parse.String(`'`), UseSingleQuote: true},
+		{EqualsAndQuote: parse.StringFrom(parse.OptionalWhitespace, parse.String(`='`)), Suffix: parse.String(`'`), UseSingleQuote: true},
 		// Unquoted.
 		// A valid unquoted attribute value in HTML is any string of text that is not an empty string,
 		// and that doesn’t contain spaces, tabs, line feeds, form feeds, carriage returns, ", ', `, =, <, or >.
-		{EqualsAndQuote: parse.String("="), Suffix: parse.Any(parse.RuneIn(" \t\n\r\"'`=<>/"), parse.EOF[string]()), UseSingleQuote: false},
+		{EqualsAndQuote: parse.StringFrom(parse.OptionalWhitespace, parse.String("=")), Suffix: parse.Any(parse.RuneIn(" \t\n\r\"'`=<>/"), parse.EOF[string]()), UseSingleQuote: false},
 	}
 	constantAttributeParser = parse.Func(func(pi *parse.Input) (attr *ConstantAttribute, ok bool, err error) {
 		start := pi.Index()
@@ -288,6 +288,8 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r *BoolExp
 	return r, true, nil
 })
 
+var expressionAttributeStartParser = parse.StringFrom(parse.OptionalWhitespace, parse.String("="), parse.OptionalWhitespace, parse.String("{"), parse.OptionalWhitespace)
+
 var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *ExpressionAttribute, ok bool, err error) {
 	start := pi.Index()
 
@@ -305,7 +307,7 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 	}
 
 	// ={
-	if _, ok, err = parse.Or(parse.String("={ "), parse.String("={")).Parse(pi); err != nil || !ok {
+	if _, ok, err = expressionAttributeStartParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
