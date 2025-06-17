@@ -40,24 +40,23 @@ func TestJSXComponentParser(t *testing.T) {
 				},
 			},
 		},
-		// TODO: Children parsing needs more work
-		// {
-		// 	name:  "jsx: component with children",
-		// 	input: `<DList><div>Child content</div></DList>`,
-		// 	expected: &TemplElementExpression{
-		// 		Expression: Expression{
-		// 			Value: "DList()",
-		// 		},
-		// 		Children: []Node{
-		// 			&Element{
-		// 				Name: "div",
-		// 				Children: []Node{
-		// 					&Text{Value: "Child content"},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
+		{
+			name:  "jsx: component with children",
+			input: `<DList><div>Child content</div></DList>`,
+			expected: &TemplElementExpression{
+				Expression: Expression{
+					Value: "DList()",
+				},
+				Children: []Node{
+					&Element{
+						Name: "div",
+						Children: []Node{
+							&Text{Value: "Child content"},
+						},
+					},
+				},
+			},
+		},
 		{
 			name:  "jsx: component with package prefix",
 			input: `<components.Button text="Click" />`,
@@ -96,19 +95,19 @@ func TestJSXComponentParser(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			pi := parse.NewInput(tt.input)
 			node, matched, err := jsxComponent.Parse(pi)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error but got none")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 				return
 			}
-			
+
 			if tt.expected == nil {
 				// Test expects no match (e.g., lowercase element names)
 				if matched {
@@ -116,24 +115,24 @@ func TestJSXComponentParser(t *testing.T) {
 				}
 				return
 			}
-			
+
 			if !matched {
 				t.Error("expected match but got no match")
 				return
 			}
-			
+
 			result, ok := node.(*TemplElementExpression)
 			if !ok {
 				t.Errorf("expected *TemplElementExpression but got %T", node)
 				return
 			}
-			
+
 			// Compare only the expression value for simplicity
 			if result.Expression.Value != tt.expected.Expression.Value {
-				t.Errorf("expression mismatch:\nexpected: %q\ngot:      %q", 
+				t.Errorf("expression mismatch:\nexpected: %q\ngot:      %q",
 					tt.expected.Expression.Value, result.Expression.Value)
 			}
-			
+
 			// For tests with children, check that we have some children
 			if len(tt.expected.Children) > 0 && len(result.Children) == 0 {
 				t.Error("expected children but got none")
@@ -168,7 +167,7 @@ templ Page() {
 }`,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := ParseString(tt.input)
@@ -178,3 +177,4 @@ templ Page() {
 		})
 	}
 }
+
