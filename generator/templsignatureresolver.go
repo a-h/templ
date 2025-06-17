@@ -59,31 +59,31 @@ func (tsr *TemplSignatureResolver) extractHTMLTemplateSignature(tmpl *parser.HTM
 	}
 }
 
-// parseTemplateDeclaration parses a templ template declaration like "Button(title string)" 
+// parseTemplateDeclaration parses a templ template declaration like "Button(title string)"
 func (tsr *TemplSignatureResolver) parseTemplateDeclaration(decl string) (name string, params []ParameterInfo) {
 	decl = strings.TrimSpace(decl)
-	
+
 	// Find the opening parenthesis
 	parenIdx := strings.Index(decl, "(")
 	if parenIdx == -1 {
 		// No parameters
 		return strings.TrimSpace(decl), nil
 	}
-	
+
 	name = strings.TrimSpace(decl[:parenIdx])
-	
+
 	// Find the closing parenthesis
 	closeParenIdx := strings.LastIndex(decl, ")")
 	if closeParenIdx == -1 || closeParenIdx <= parenIdx {
 		// Malformed declaration
 		return name, nil
 	}
-	
+
 	paramStr := strings.TrimSpace(decl[parenIdx+1 : closeParenIdx])
 	if paramStr == "" {
 		return name, nil
 	}
-	
+
 	params = tsr.parseTemplateParameters(paramStr)
 	return name, params
 }
@@ -96,11 +96,11 @@ func (tsr *TemplSignatureResolver) parseTemplateParameters(paramStr string) []Pa
 	}
 
 	params := make([]ParameterInfo, 0)
-	
+
 	// Handle Go-style parameter syntax: "name1, name2 type1, name3 type2"
 	// Split by commas first to get all individual parts
 	parts := strings.Split(paramStr, ",")
-	
+
 	i := 0
 	for i < len(parts) {
 		part := strings.TrimSpace(parts[i])
@@ -108,7 +108,7 @@ func (tsr *TemplSignatureResolver) parseTemplateParameters(paramStr string) []Pa
 			i++
 			continue
 		}
-		
+
 		// Look ahead to see if this is a "name type" pattern or just a "name" that shares type with the next parts
 		words := strings.Fields(part)
 		if len(words) == 2 {
@@ -122,7 +122,7 @@ func (tsr *TemplSignatureResolver) parseTemplateParameters(paramStr string) []Pa
 			// This is just a name, need to collect names until we find a type
 			names := []string{words[0]}
 			i++
-			
+
 			// Collect additional names that share the same type
 			for i < len(parts) {
 				nextPart := strings.TrimSpace(parts[i])
@@ -131,7 +131,7 @@ func (tsr *TemplSignatureResolver) parseTemplateParameters(paramStr string) []Pa
 					// Found "name type" - the type applies to all collected names
 					names = append(names, nextWords[0])
 					_ = nextWords[1] // typeName - we assume string for now
-					
+
 					// Create parameters for all names with this type
 					for _, name := range names {
 						params = append(params, ParameterInfo{
@@ -156,31 +156,6 @@ func (tsr *TemplSignatureResolver) parseTemplateParameters(paramStr string) []Pa
 			i++
 		}
 	}
-	
-	return params
-}
 
-// parseParameterGroup parses a parameter group like "name type" or handles complex cases
-func (tsr *TemplSignatureResolver) parseParameterGroup(group string) []ParameterInfo {
-	// For now, handle simple cases - this could be enhanced to handle more complex Go parameter syntax
-	parts := strings.Fields(group)
-	if len(parts) < 2 {
-		return nil
-	}
-	
-	// Check if this is a "name1, name2 type" format by looking for the last part as type
-	nameCount := len(parts) - 1
-	
-	params := make([]ParameterInfo, 0, nameCount)
-	for i := 0; i < nameCount; i++ {
-		name := strings.TrimSuffix(parts[i], ",")
-		if name != "" {
-			params = append(params, ParameterInfo{
-				Name: name,
-				Type: types.Typ[types.String], // For now, assume string type - could be enhanced
-			})
-		}
-	}
-	
 	return params
 }

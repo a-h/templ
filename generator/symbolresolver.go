@@ -103,7 +103,7 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 	params := sig.Params()
 	paramInfo := make([]ParameterInfo, 0, params.Len())
 
-	for i := 0; i < params.Len(); i++ {
+	for i := range params.Len() {
 		param := params.At(i)
 		paramInfo = append(paramInfo, ParameterInfo{
 			Name: param.Name(),
