@@ -1943,9 +1943,17 @@ func (g *generator) collectAndResolveComponents() error {
 
 		if !found {
 			if err != nil {
-				resolveErrors = append(resolveErrors, fmt.Sprintf("component %s: %v", comp.Name, err))
+				if comp.PackageName != "" {
+					resolveErrors = append(resolveErrors, fmt.Sprintf("component %s.%s: %v", comp.PackageName, comp.Name, err))
+				} else {
+					resolveErrors = append(resolveErrors, fmt.Sprintf("component %s: %v", comp.Name, err))
+				}
 			} else {
-				resolveErrors = append(resolveErrors, fmt.Sprintf("component %s: not found in templ templates or Go functions", comp.Name))
+				if comp.PackageName != "" {
+					resolveErrors = append(resolveErrors, fmt.Sprintf("component %s.%s: not found in templ templates or Go functions", comp.PackageName, comp.Name))
+				} else {
+					resolveErrors = append(resolveErrors, fmt.Sprintf("component %s: not found in templ templates or Go functions", comp.Name))
+				}
 			}
 			continue
 		}
@@ -1987,12 +1995,18 @@ func (g *generator) resolveImportPath(packageAlias string) string {
 	// Look through the template file's imports to find the import path for this alias
 	for _, node := range g.tf.Nodes {
 		if importNode, ok := node.(*parser.TemplateFileGoExpression); ok {
-			// Check if this is an import statement
-			if strings.HasPrefix(strings.TrimSpace(importNode.Expression.Value), "import ") {
-				// Parse import statement to extract alias and path
-				importValue := importNode.Expression.Value
-				if alias, path := g.parseImportStatement(importValue); alias == packageAlias {
-					return path
+			// Check if this contains import statements
+			if strings.Contains(importNode.Expression.Value, "import ") {
+				// Split by lines and process each import statement
+				lines := strings.Split(importNode.Expression.Value, "\n")
+				for _, line := range lines {
+					line = strings.TrimSpace(line)
+					if strings.HasPrefix(line, "import ") {
+						alias, path := g.parseImportStatement(line)
+						if alias == packageAlias {
+							return path
+						}
+					}
 				}
 			}
 		}
