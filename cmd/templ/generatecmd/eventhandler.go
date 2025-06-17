@@ -239,7 +239,9 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 	relFilePath = filepath.ToSlash(relFilePath)
 
 	var b bytes.Buffer
-	generatorOutput, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath))...)
+	// Use the directory of the specific file being processed for symbol resolution
+	fileDir := filepath.Dir(fileName)
+	generatorOutput, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath), generator.WithWorkingDir(fileDir))...)
 	if err != nil {
 		return GenerateResult{}, nil, fmt.Errorf("%s generation error: %w", fileName, err)
 	}

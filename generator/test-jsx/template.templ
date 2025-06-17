@@ -1,7 +1,5 @@
 package testjsx
 
-import "github.com/a-h/templ/generator/test-jsx/jsxmod"
-
 templ Jsx() {
 	<div>
 		<h1>JSX-like Syntax Demo</h1>
@@ -10,7 +8,9 @@ templ Jsx() {
 			<DData term="Name" detail="Tom Cook" />
 		</dl>
 		<Card title="Card Title">card body</Card>
-		<jsxmod.Text name="JSX Module" />
+		<h2>Named Parameter Test</h2>
+		<TestComponent title="Test" count={ 42 } enabled={ true } />
+		<AnotherComponent name="Alice" description="Engineer" age={ 25 } />
 	</div>
 }
 

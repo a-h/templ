@@ -59,6 +59,15 @@ func WithSkipCodeGeneratedComment() GenerateOpt {
 	}
 }
 
+// WithWorkingDir sets the working directory for symbol resolution
+func WithWorkingDir(dir string) GenerateOpt {
+	return func(g *generator) error {
+		g.symbolResolver = NewSymbolResolver(dir)
+		g.componentSigs = make(map[string]*ComponentSignature)
+		return nil
+	}
+}
+
 type GeneratorOutput struct {
 	Options   GeneratorOptions  `json:"meta"`
 	SourceMap *parser.SourceMap `json:"sourceMap"`
@@ -110,9 +119,11 @@ func HasChanged(previous, updated GeneratorOutput) bool {
 // to the location of the generated Go code in the output.
 func Generate(template *parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (op GeneratorOutput, err error) {
 	g := &generator{
-		tf:        template,
-		w:         NewRangeWriter(w),
-		sourceMap: parser.NewSourceMap(),
+		tf:            template,
+		w:             NewRangeWriter(w),
+		sourceMap:     parser.NewSourceMap(),
+		templResolver: NewTemplSignatureResolver(),
+		componentSigs: make(map[string]*ComponentSignature),
 	}
 	for _, opt := range opts {
 		if err = opt(g); err != nil {
@@ -136,10 +147,21 @@ type generator struct {
 	variableID  int
 	childrenVar string
 
-	options GeneratorOptions
+	options        GeneratorOptions
+	symbolResolver *SymbolResolver
+	templResolver  *TemplSignatureResolver
+	componentSigs  map[string]*ComponentSignature
 }
 
 func (g *generator) generate() (err error) {
+	// Extract templ template signatures from the current file
+	g.templResolver.ExtractSignatures(g.tf)
+
+	// Collect and resolve JSX components
+	if err = g.collectAndResolveComponents(); err != nil {
+		return fmt.Errorf("failed to resolve components: %w", err)
+	}
+
 	if err = g.writeCodeGeneratedComment(); err != nil {
 		return
 	}
@@ -881,7 +903,10 @@ func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n *p
 
 func (g *generator) writeJSXComponentElement(indentLevel int, n *parser.JSXComponentElement) (err error) {
 	// Convert JSX component to TemplElementExpression equivalent for rendering
-	expr := g.buildJSXExpression(n)
+	expr, err := g.buildJSXExpression(n)
+	if err != nil {
+		return err
+	}
 	templExpr := &parser.TemplElementExpression{
 		Expression: parser.Expression{
 			Value: expr,
@@ -896,38 +921,80 @@ func (g *generator) writeJSXComponentElement(indentLevel int, n *parser.JSXCompo
 	return g.writeBlockTemplElementExpression(indentLevel, templExpr)
 }
 
-func (g *generator) buildJSXExpression(n *parser.JSXComponentElement) string {
+func (g *generator) buildJSXExpression(n *parser.JSXComponentElement) (string, error) {
 	// Build Go function call expression from JSX component
 	expr := n.Name + "("
 
-	// Convert attributes to positional function arguments
-	if len(n.Attributes) > 0 {
-		args := make([]string, 0, len(n.Attributes))
+	// Check if we have a resolved signature for this component
+	sigKey := n.Name
+	sig, hasSig := g.componentSigs[sigKey]
+	fmt.Printf("Resolving JSX component %s with signature %v\n", n.Name, sig)
 
-		for _, attr := range n.Attributes {
-			switch a := attr.(type) {
-			case *parser.ConstantAttribute:
-				// Convert constant attributes to quoted string arguments
-				args = append(args, fmt.Sprintf(`"%s"`, a.Value))
-			case *parser.ExpressionAttribute:
-				// Convert expression attributes to direct arguments
-				args = append(args, a.Expression.Value)
-			case *parser.BoolConstantAttribute:
-				// Convert boolean attributes to true
-				args = append(args, "true")
-			case *parser.BoolExpressionAttribute:
-				// Convert boolean expression attributes
-				args = append(args, a.Expression.Value)
-			}
+	if hasSig && len(sig.Parameters) > 0 {
+		// Use named parameter mapping - required for JSX components
+		args, err := g.mapAttributesToParameters(n.Attributes, sig)
+		if err != nil {
+			return "", err
 		}
-
-		if len(args) > 0 {
-			expr += strings.Join(args, ", ")
-		}
+		expr += strings.Join(args, ", ")
+	} else {
+		// No signature resolved - this is an error for JSX components
+		return "", fmt.Errorf("%s: no function signature found - all JSX components must have matching Go functions with named parameters", n.Name)
 	}
 
 	expr += ")"
-	return expr
+	return expr, nil
+}
+
+func (g *generator) mapAttributesToParameters(attrs []parser.Attribute, sig *ComponentSignature) ([]string, error) {
+	// Create a map of attribute names to values
+	attrMap := make(map[string]string)
+
+	for _, attr := range attrs {
+		var name, value string
+
+		// Extract attribute name - must be a constant string for JSX components
+		switch key := attr.(type) {
+		case *parser.ConstantAttribute:
+			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
+				name = constKey.Name
+				value = fmt.Sprintf(`"%s"`, key.Value)
+			}
+		case *parser.ExpressionAttribute:
+			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
+				name = constKey.Name
+				value = key.Expression.Value
+			}
+		case *parser.BoolConstantAttribute:
+			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
+				name = constKey.Name
+				value = "true"
+			}
+		case *parser.BoolExpressionAttribute:
+			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
+				name = constKey.Name
+				value = key.Expression.Value
+			}
+		}
+
+		if name != "" {
+			attrMap[name] = value
+		}
+	}
+
+	// Map attributes to parameters in the correct order
+	// Every parameter must have a matching attribute in JSX
+	args := make([]string, len(sig.Parameters))
+	for i, param := range sig.Parameters {
+		if value, ok := attrMap[param.Name]; ok {
+			args[i] = value
+		} else {
+			// Missing required parameter - return error
+			return nil, fmt.Errorf("%s: missing required parameter '%s'", sig.Name, param.Name)
+		}
+	}
+
+	return args, nil
 }
 
 func (g *generator) writeCallTemplateExpression(indentLevel int, n *parser.CallTemplateExpression) (err error) {
@@ -1823,6 +1890,73 @@ func (g *generator) writeBlankAssignmentForRuntimeImport() error {
 	if _, err = g.w.Write("var _ = templruntime.GeneratedTemplate"); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (g *generator) collectAndResolveComponents() error {
+	// Collect all JSX components from the template file
+	collector := NewComponentCollector()
+	_ = collector.Collect(g.tf) // Collect all occurrences
+
+	// Get unique components to resolve
+	uniqueComponents := collector.GetUniqueComponents()
+
+	if len(uniqueComponents) == 0 {
+		return nil // No JSX components to resolve
+	}
+
+	// Resolve each component's signature
+	var resolveErrors []string
+
+	for _, comp := range uniqueComponents {
+		var sig *ComponentSignature
+		var err error
+		var found bool
+
+		if comp.PackageName == "" {
+			// Local component - first check templ templates, then Go functions
+			if templSig, ok := g.templResolver.GetSignature(comp.Name); ok {
+				sig = templSig
+				found = true
+			} else if g.symbolResolver != nil {
+				// Try Go function resolution
+				sig, err = g.symbolResolver.ResolveLocalComponent(comp.Name)
+				if err == nil {
+					found = true
+				}
+			}
+		} else {
+			// External component - use Go function resolution
+			if g.symbolResolver != nil {
+				sig, err = g.symbolResolver.ResolveComponent(comp.PackageName, comp.Name)
+				if err == nil {
+					found = true
+				}
+			}
+		}
+
+		if !found {
+			if err != nil {
+				resolveErrors = append(resolveErrors, fmt.Sprintf("component %s: %v", comp.Name, err))
+			} else {
+				resolveErrors = append(resolveErrors, fmt.Sprintf("component %s: not found in templ templates or Go functions", comp.Name))
+			}
+			continue
+		}
+
+		// Store the signature for use during code generation
+		key := comp.Name
+		if comp.PackageName != "" {
+			key = comp.PackageName + "." + comp.Name
+		}
+		g.componentSigs[key] = sig
+	}
+
+	// If we have JSX components but couldn't resolve any, return error
+	if len(g.componentSigs) == 0 && len(uniqueComponents) > 0 {
+		return fmt.Errorf("failed to resolve component signatures: %s", strings.Join(resolveErrors, "; "))
+	}
+
 	return nil
 }
 
