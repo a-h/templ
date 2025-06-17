@@ -910,7 +910,7 @@ func (g *generator) writeJSXComponentElement(indentLevel int, n *parser.JSXCompo
 	templExpr := &parser.TemplElementExpression{
 		Expression: parser.Expression{
 			Value: expr,
-			Range: n.NameRange,
+			Range: n.Range,
 		},
 		Children: n.Children,
 	}

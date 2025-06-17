@@ -163,6 +163,7 @@ func (jsxComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		if err != nil {
 			return r, false, err
 		}
+		r.Range = NewRange(start, pi.Position())
 		return r, true, nil
 	}
 
@@ -177,6 +178,7 @@ func (jsxComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		}
 		// If we got any nodes, take them, because the LSP might want to use them.
 		r.Children = nodes.Nodes
+		r.Range = NewRange(start, pi.Position())
 		return r, true, err
 	}
 	r.Children = nodes.Nodes
@@ -188,10 +190,12 @@ func (jsxComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Close tag.
 	_, ok, err = closer.Parse(pi)
 	if err != nil {
+		r.Range = NewRange(start, pi.Position())
 		return r, true, err
 	}
 	if !ok {
 		err = parse.Error(fmt.Sprintf("<%s>: expected end tag not present or invalid tag contents", ot.Name), pi.Position())
+		r.Range = NewRange(start, pi.Position())
 		return r, true, err
 	}
 
@@ -204,6 +208,7 @@ func (jsxComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	if err != nil {
 		return r, false, err
 	}
+	r.Range = NewRange(start, pi.Position())
 
 	return r, true, nil
 }

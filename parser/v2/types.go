@@ -1239,6 +1239,8 @@ type JSXComponentElement struct {
 	Name string
 	// NameRange tracks the position of the component name
 	NameRange Range
+	// Range tracks the position of the entire JSX element
+	Range Range
 	// Attributes are the component attributes
 	Attributes []Attribute
 	// IndentAttrs indicates if attributes should be indented
