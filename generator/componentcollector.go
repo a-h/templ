@@ -6,7 +6,7 @@ import (
 	"github.com/a-h/templ/parser/v2"
 )
 
-// ComponentReference represents a reference to a component in JSX syntax
+// ComponentReference represents a reference to a component in HTML Element syntax
 type ComponentReference struct {
 	Name        string
 	PackageName string // empty for local components
@@ -14,22 +14,22 @@ type ComponentReference struct {
 	Attributes  []parser.Attribute
 }
 
-// ComponentCollector collects all JSX component references from a templ file
+// ComponentCollector collects all Element component references from a templ file
 type ComponentCollector struct {
 	components []ComponentReference
 }
 
-// NewComponentCollector creates a new component collector
-func NewComponentCollector() *ComponentCollector {
+// NewElementComponentCollector creates a new component collector
+func NewElementComponentCollector() *ComponentCollector {
 	return &ComponentCollector{
 		components: make([]ComponentReference, 0),
 	}
 }
 
-// Collect walks the template file and collects all JSX component references
+// Collect walks the template file and collects all Element component references
 func (cc *ComponentCollector) Collect(tf *parser.TemplateFile) []ComponentReference {
 	cc.components = make([]ComponentReference, 0)
-	
+
 	// Walk through all templates in the file
 	for _, node := range tf.Nodes {
 		switch n := node.(type) {
@@ -41,7 +41,7 @@ func (cc *ComponentCollector) Collect(tf *parser.TemplateFile) []ComponentRefere
 			// Script templates don't contain components
 		}
 	}
-	
+
 	return cc.components
 }
 
@@ -55,49 +55,49 @@ func (cc *ComponentCollector) collectFromNodes(nodes []parser.Node) {
 // collectFromNode collects components from a single node
 func (cc *ComponentCollector) collectFromNode(node parser.Node) {
 	switch n := node.(type) {
-	case *parser.JSXComponentElement:
+	case *parser.ElementComponent:
 		// Extract package name and component name
 		pkgName := ""
 		componentName := n.Name
-		
+
 		if idx := strings.LastIndex(n.Name, "."); idx != -1 {
 			pkgName = n.Name[:idx]
 			componentName = n.Name[idx+1:]
 		}
-		
+
 		cc.components = append(cc.components, ComponentReference{
 			Name:        componentName,
 			PackageName: pkgName,
 			Position:    n.NameRange.From,
 			Attributes:  n.Attributes,
 		})
-		
+
 		// Recursively collect from children
 		cc.collectFromNodes(n.Children)
-		
+
 	case *parser.Element:
-		// Regular HTML elements might contain JSX components in their children
+		// Regular HTML elements might contain Element components in their children
 		cc.collectFromNodes(n.Children)
-		
+
 	case *parser.IfExpression:
 		cc.collectFromNodes(n.Then)
 		cc.collectFromNodes(n.Else)
-		
+
 	case *parser.SwitchExpression:
 		for _, c := range n.Cases {
 			cc.collectFromNodes(c.Children)
 		}
-		
+
 	case *parser.ForExpression:
 		cc.collectFromNodes(n.Children)
-		
+
 	case *parser.CallTemplateExpression:
 		// Template calls don't have children in the AST
-		
+
 	case *parser.TemplElementExpression:
 		cc.collectFromNodes(n.Children)
-		
-	// Add other node types that might contain children
+
+		// Add other node types that might contain children
 	}
 }
 
@@ -105,7 +105,7 @@ func (cc *ComponentCollector) collectFromNode(node parser.Node) {
 func (cc *ComponentCollector) GetUniqueComponents() []ComponentReference {
 	seen := make(map[string]bool)
 	unique := make([]ComponentReference, 0)
-	
+
 	for _, comp := range cc.components {
 		key := comp.PackageName + "." + comp.Name
 		if !seen[key] {
@@ -113,6 +113,7 @@ func (cc *ComponentCollector) GetUniqueComponents() []ComponentReference {
 			unique = append(unique, comp)
 		}
 	}
-	
+
 	return unique
 }
+

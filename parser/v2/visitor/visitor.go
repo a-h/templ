@@ -138,7 +138,7 @@ func New() *Visitor {
 		}
 		return nil
 	}
-	v.JSXComponentElement = func(n *parser.JSXComponentElement) error {
+	v.ElementComponent = func(n *parser.ElementComponent) error {
 		for _, attr := range n.Attributes {
 			if err := attr.Visit(v); err != nil {
 				return err
@@ -233,7 +233,7 @@ type Visitor struct {
 	HTMLComment              func(n *parser.HTMLComment) error
 	CallTemplateExpression   func(n *parser.CallTemplateExpression) error
 	TemplElementExpression   func(n *parser.TemplElementExpression) error
-	JSXComponentElement      func(n *parser.JSXComponentElement) error
+	ElementComponent         func(n *parser.ElementComponent) error
 	ChildrenExpression       func(n *parser.ChildrenExpression) error
 	IfExpression             func(n *parser.IfExpression) error
 	SwitchExpression         func(n *parser.SwitchExpression) error
@@ -264,6 +264,7 @@ func (v *Visitor) VisitWhitespace(n *parser.Whitespace) error {
 func (v *Visitor) VisitCSSTemplate(n *parser.CSSTemplate) error {
 	return v.CSSTemplate(n)
 }
+
 func (v *Visitor) VisitConstantCSSProperty(n *parser.ConstantCSSProperty) error {
 	return v.ConstantCSSProperty(n)
 }
@@ -336,8 +337,8 @@ func (v *Visitor) VisitTemplElementExpression(n *parser.TemplElementExpression) 
 	return v.TemplElementExpression(n)
 }
 
-func (v *Visitor) VisitJSXComponentElement(n *parser.JSXComponentElement) error {
-	return v.JSXComponentElement(n)
+func (v *Visitor) VisitElementComponent(n *parser.ElementComponent) error {
+	return v.ElementComponent(n)
 }
 
 func (v *Visitor) VisitChildrenExpression(n *parser.ChildrenExpression) error {

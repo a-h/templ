@@ -10,13 +10,13 @@ func TestJSXComponentParser(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected *JSXComponentElement
+		expected *ElementComponent
 		wantErr  bool
 	}{
 		{
 			name:  "jsx: self-closing component no attributes",
 			input: `<Button />`,
-			expected: &JSXComponentElement{
+			expected: &ElementComponent{
 				Name:        "Button",
 				SelfClosing: true,
 			},
@@ -24,7 +24,7 @@ func TestJSXComponentParser(t *testing.T) {
 		{
 			name:  "jsx: self-closing component with expression attribute",
 			input: `<Button text={variable} />`,
-			expected: &JSXComponentElement{
+			expected: &ElementComponent{
 				Name:        "Button",
 				SelfClosing: true,
 				Attributes: []Attribute{
@@ -40,7 +40,7 @@ func TestJSXComponentParser(t *testing.T) {
 		{
 			name:  "jsx: self-closing component with string attribute",
 			input: `<Button text="Click me" />`,
-			expected: &JSXComponentElement{
+			expected: &ElementComponent{
 				Name:        "Button",
 				SelfClosing: true,
 				Attributes: []Attribute{
@@ -54,7 +54,7 @@ func TestJSXComponentParser(t *testing.T) {
 		{
 			name:  "jsx: self-closing component with multiple attributes",
 			input: `<DData term="Name" detail="Tom Cook" />`,
-			expected: &JSXComponentElement{
+			expected: &ElementComponent{
 				Name:        "DData",
 				SelfClosing: true,
 				Attributes: []Attribute{
@@ -72,7 +72,7 @@ func TestJSXComponentParser(t *testing.T) {
 		{
 			name:  "jsx: component with children",
 			input: `<DList><div>Child content</div></DList>`,
-			expected: &JSXComponentElement{
+			expected: &ElementComponent{
 				Name:        "DList",
 				SelfClosing: false,
 				Children: []Node{
@@ -88,7 +88,7 @@ func TestJSXComponentParser(t *testing.T) {
 		{
 			name:  "jsx: component with package prefix",
 			input: `<components.Button text="Click" />`,
-			expected: &JSXComponentElement{
+			expected: &ElementComponent{
 				Name:        "components.Button",
 				SelfClosing: true,
 				Attributes: []Attribute{
@@ -107,7 +107,7 @@ func TestJSXComponentParser(t *testing.T) {
 		{
 			name:  "jsx: component with expression attribute",
 			input: `<Button text={variable} />`,
-			expected: &JSXComponentElement{
+			expected: &ElementComponent{
 				Name:        "Button",
 				SelfClosing: true,
 				Attributes: []Attribute{
@@ -123,7 +123,7 @@ func TestJSXComponentParser(t *testing.T) {
 		{
 			name:  "jsx: component with boolean attribute",
 			input: `<Button disabled />`,
-			expected: &JSXComponentElement{
+			expected: &ElementComponent{
 				Name:        "Button",
 				SelfClosing: true,
 				Attributes: []Attribute{
@@ -138,7 +138,7 @@ func TestJSXComponentParser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			pi := parse.NewInput(tt.input)
-			node, matched, err := jsxComponent.Parse(pi)
+			node, matched, err := elementComponent.Parse(pi)
 
 			if tt.wantErr {
 				if err == nil {
@@ -165,7 +165,7 @@ func TestJSXComponentParser(t *testing.T) {
 				return
 			}
 
-			result, ok := node.(*JSXComponentElement)
+			result, ok := node.(*ElementComponent)
 			if !ok {
 				t.Errorf("expected *JSXComponentElement but got %T", node)
 				return

@@ -154,10 +154,8 @@ type generator struct {
 }
 
 func (g *generator) generate() (err error) {
-	// Extract templ template signatures from the current file
 	g.templResolver.ExtractSignatures(g.tf)
 
-	// Collect and resolve JSX components
 	if err = g.collectAndResolveComponents(); err != nil {
 		return fmt.Errorf("failed to resolve components: %w", err)
 	}
@@ -635,7 +633,7 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeCallTemplateExpression(indentLevel, n)
 	case *parser.TemplElementExpression:
 		err = g.writeTemplElementExpression(indentLevel, n)
-	case *parser.JSXComponentElement:
+	case *parser.ElementComponent:
 		err = g.writeElementComponent(indentLevel, n)
 	case *parser.IfExpression:
 		err = g.writeIfExpression(indentLevel, n, next)
@@ -901,16 +899,16 @@ func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n *p
 	return nil
 }
 
-func (g *generator) writeElementComponent(indentLevel int, n *parser.JSXComponentElement) (err error) {
+func (g *generator) writeElementComponent(indentLevel int, n *parser.ElementComponent) (err error) {
 	if len(n.Children) == 0 {
 		return g.writeSelfClosingElementComponent(indentLevel, n)
 	}
 	return g.writeBlockElementComponent(indentLevel, n)
 }
 
-func (g *generator) writeSelfClosingElementComponent(indentLevel int, n *parser.JSXComponentElement) (err error) {
+func (g *generator) writeSelfClosingElementComponent(indentLevel int, n *parser.ElementComponent) (err error) {
 	// templ_7745c5c3_Err = Component(arg1, arg2, ...)
-	if err = g.writeJSXElementFunctionCall(indentLevel, n); err != nil {
+	if err = g.writeElementComponentFunctionCall(indentLevel, n); err != nil {
 		return err
 	}
 	// .Render(ctx, templ_7745c5c3_Buffer)
@@ -923,7 +921,7 @@ func (g *generator) writeSelfClosingElementComponent(indentLevel int, n *parser.
 	return nil
 }
 
-func (g *generator) writeBlockElementComponent(indentLevel int, n *parser.JSXComponentElement) (err error) {
+func (g *generator) writeBlockElementComponent(indentLevel int, n *parser.ElementComponent) (err error) {
 	childrenName := g.createVariableName()
 	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
 		return err
@@ -950,8 +948,7 @@ func (g *generator) writeBlockElementComponent(indentLevel int, n *parser.JSXCom
 	if _, err = g.w.WriteIndent(indentLevel, "})\n"); err != nil {
 		return err
 	}
-	// Build and write the JSX function call
-	if err = g.writeJSXElementFunctionCall(indentLevel, n); err != nil {
+	if err = g.writeElementComponentFunctionCall(indentLevel, n); err != nil {
 		return err
 	}
 
@@ -965,7 +962,7 @@ func (g *generator) writeBlockElementComponent(indentLevel int, n *parser.JSXCom
 	return nil
 }
 
-func (g *generator) reorderJSXElementAttributes(sig *ComponentSignature, n *parser.JSXComponentElement) ([]parser.Attribute, error) {
+func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n *parser.ElementComponent) ([]parser.Attribute, error) {
 	// Create a map of attribute names to values
 	attrMap := make(map[string]parser.Attribute)
 
@@ -975,7 +972,7 @@ func (g *generator) reorderJSXElementAttributes(sig *ComponentSignature, n *pars
 		var name string
 
 		// TODO: handle condition attributes
-		// Extract attribute name - must be a constant string for JSX components
+		// Extract attribute name - must be a constant string for Element components
 		switch key := attr.(type) {
 		case *parser.ConstantAttribute:
 			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
@@ -1001,8 +998,6 @@ func (g *generator) reorderJSXElementAttributes(sig *ComponentSignature, n *pars
 	}
 	_ = rest // TODO: rest can be passed to var arg if the function supports it
 
-	// Map attributes to parameters in the correct order
-	// Every parameter must have a matching attribute in JSX
 	args := make([]parser.Attribute, len(sig.Parameters))
 	for i, param := range sig.Parameters {
 		var ok bool
@@ -1037,14 +1032,14 @@ func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attri
 	return res, nil
 }
 
-func (g *generator) writeJSXElementFunctionCall(indentLevel int, n *parser.JSXComponentElement) (err error) {
+func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
 	sigKey := n.Name
 	sigs, ok := g.componentSigs[sigKey]
 	if !ok {
 		return fmt.Errorf("%s: no function signature found - all components must have matching Go functions with matching parameters", n.Name)
 	}
 
-	attrs, err := g.reorderJSXElementAttributes(sigs, n)
+	attrs, err := g.reorderElementComponentAttributes(sigs, n)
 	if err != nil {
 		return err
 	}
@@ -1988,15 +1983,13 @@ func (g *generator) writeBlankAssignmentForRuntimeImport() error {
 }
 
 func (g *generator) collectAndResolveComponents() error {
-	// Collect all JSX components from the template file
-	collector := NewComponentCollector()
-	_ = collector.Collect(g.tf) // Collect all occurrences
+	collector := NewElementComponentCollector()
+	_ = collector.Collect(g.tf)
 
-	// Get unique components to resolve
 	uniqueComponents := collector.GetUniqueComponents()
 
 	if len(uniqueComponents) == 0 {
-		return nil // No JSX components to resolve
+		return nil
 	}
 
 	// Resolve each component's signature
@@ -2057,7 +2050,6 @@ func (g *generator) collectAndResolveComponents() error {
 		g.componentSigs[key] = sig
 	}
 
-	// If we have JSX components but couldn't resolve any, return error
 	if len(g.componentSigs) == 0 && len(uniqueComponents) > 0 {
 		return fmt.Errorf("failed to resolve component signatures: %s", strings.Join(resolveErrors, "; "))
 	}

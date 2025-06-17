@@ -7,72 +7,64 @@ import (
 	"github.com/a-h/parse"
 )
 
-// JSX-like component parser for templ
-// Converts: <Component attr1="value1" attr2="value2" /> to @Component("value1", "value2")
-// Converts: <Component attr1="value1">children</Component> to @Component("value1") { children }
+var componentNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
+	start := in.Index()
 
-// Component name validation - must be Component or package.Component format
-var (
-	componentNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
-		start := in.Index()
+	// Try to parse identifier (could be package name or component name)
+	identifierFirst := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+	identifierSubsequent := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 
-		// Try to parse identifier (could be package name or component name)
-		identifierFirst := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
-		identifierSubsequent := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+	var prefix, suffix string
+	if prefix, ok, err = parse.RuneIn(identifierFirst).Parse(in); err != nil || !ok {
+		return
+	}
+	if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(identifierSubsequent)).Parse(in); err != nil || !ok {
+		in.Seek(start)
+		return
+	}
 
-		var prefix, suffix string
-		if prefix, ok, err = parse.RuneIn(identifierFirst).Parse(in); err != nil || !ok {
-			return
-		}
-		if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(identifierSubsequent)).Parse(in); err != nil || !ok {
-			in.Seek(start)
-			return
-		}
+	firstIdentifier := prefix + suffix
 
-		firstIdentifier := prefix + suffix
-
-		// Check if there's a dot (package.Component format)
-		dotStart := in.Index()
-		if _, dotOk, dotErr := parse.Rune('.').Parse(in); dotErr != nil || !dotOk {
-			// No dot, this should be a Component name starting with uppercase
-			if !unicode.IsUpper(rune(firstIdentifier[0])) {
-				in.Seek(start)
-				return "", false, nil
-			}
-			return firstIdentifier, true, nil
-		}
-
-		// Found a dot, parse the component name after it
-		var componentPrefix, componentSuffix string
-		if componentPrefix, ok, err = parse.RuneIn("ABCDEFGHIJKLMNOPQRSTUVWXYZ").Parse(in); err != nil || !ok {
-			// Component name after dot must start with uppercase
+	// Check if there's a dot (package.Component format)
+	dotStart := in.Index()
+	if _, dotOk, dotErr := parse.Rune('.').Parse(in); dotErr != nil || !dotOk {
+		// No dot, this should be a Component name starting with uppercase
+		if !unicode.IsUpper(rune(firstIdentifier[0])) {
 			in.Seek(start)
 			return "", false, nil
 		}
-		if componentSuffix, ok, err = parse.StringUntil(parse.RuneNotIn(identifierSubsequent)).Parse(in); err != nil || !ok {
-			in.Seek(dotStart)
-			return "", false, nil
-		}
+		return firstIdentifier, true, nil
+	}
 
-		fullName := firstIdentifier + "." + componentPrefix + componentSuffix
-		if len(fullName) > 128 {
-			ok = false
-			err = parse.Error("component names must be < 128 characters long", in.Position())
-			return
-		}
+	// Found a dot, parse the component name after it
+	var componentPrefix, componentSuffix string
+	if componentPrefix, ok, err = parse.RuneIn("ABCDEFGHIJKLMNOPQRSTUVWXYZ").Parse(in); err != nil || !ok {
+		// Component name after dot must start with uppercase
+		in.Seek(start)
+		return "", false, nil
+	}
+	if componentSuffix, ok, err = parse.StringUntil(parse.RuneNotIn(identifierSubsequent)).Parse(in); err != nil || !ok {
+		in.Seek(dotStart)
+		return "", false, nil
+	}
 
-		return fullName, true, nil
-	})
-)
+	fullName := firstIdentifier + "." + componentPrefix + componentSuffix
+	if len(fullName) > 128 {
+		ok = false
+		err = parse.Error("component names must be < 128 characters long", in.Position())
+		return
+	}
 
-// JSX component open tag
-type jsxComponentOpenTag struct {
+	return fullName, true, nil
+})
+
+type elementComponentOpenTag struct {
 	Name        string
 	Attributes  []Attribute
 	SelfClosing bool
 }
 
-var jsxComponentOpenTagParser = parse.Func(func(pi *parse.Input) (e jsxComponentOpenTag, matched bool, err error) {
+var elementComponentOpenTagParser = parse.Func(func(pi *parse.Input) (e elementComponentOpenTag, matched bool, err error) {
 	start := pi.Index()
 
 	if next, _ := pi.Peek(2); len(next) < 2 || next[0] != '<' || next == "<!" || next == "</" {
@@ -124,23 +116,22 @@ var jsxComponentOpenTagParser = parse.Func(func(pi *parse.Input) (e jsxComponent
 	return e, true, nil
 })
 
-// JSX Component parser
-var jsxComponent jsxComponentParser
+// Element Component parser
+var elementComponent elementComponentParser
 
-type jsxComponentParser struct{}
+type elementComponentParser struct{}
 
-func (jsxComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+func (elementComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	start := pi.Position()
 
 	// Check the open tag.
-	var ot jsxComponentOpenTag
-	if ot, ok, err = jsxComponentOpenTagParser.Parse(pi); err != nil || !ok {
+	var ot elementComponentOpenTag
+	if ot, ok, err = elementComponentOpenTagParser.Parse(pi); err != nil || !ok {
 		return
 	}
 
-	// Create JSXComponentElement to preserve JSX syntax information
 	l := pi.Position().Line
-	r := &JSXComponentElement{
+	r := &ElementComponent{
 		Name:        ot.Name,
 		NameRange:   NewRange(start, pi.Position()),
 		Attributes:  ot.Attributes,

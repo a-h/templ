@@ -1236,14 +1236,14 @@ func (tee *TemplElementExpression) Visit(v Visitor) error {
 	return v.VisitTemplElementExpression(tee)
 }
 
-// JSXComponentElement represents JSX-like component syntax.
+// ElementComponent represents HTML element component syntax.
 // <Component attr="value" /> or <Component attr="value">children</Component>
-type JSXComponentElement struct {
+type ElementComponent struct {
 	// Name is the component name (e.g., "Button", "components.Input")
 	Name string
 	// NameRange tracks the position of the component name
 	NameRange Range
-	// Range tracks the position of the entire JSX element
+	// Range tracks the position of the entire element
 	Range Range
 	// Attributes are the component attributes
 	Attributes []Attribute
@@ -1259,25 +1259,24 @@ type JSXComponentElement struct {
 	TrailingSpace TrailingSpace
 }
 
-func (jsx *JSXComponentElement) ChildNodes() []Node {
-	return jsx.Children
+func (el *ElementComponent) ChildNodes() []Node {
+	return el.Children
 }
 
-func (jsx *JSXComponentElement) IsNode() bool { return true }
+func (el *ElementComponent) IsNode() bool { return true }
 
-func (jsx *JSXComponentElement) Trailing() TrailingSpace {
-	return jsx.TrailingSpace
+func (el *ElementComponent) Trailing() TrailingSpace {
+	return el.TrailingSpace
 }
 
-func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
-	// Write JSX components in their original JSX syntax for formatting
-	if err := writeIndent(w, indent, "<"+jsx.Name); err != nil {
+func (el *ElementComponent) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "<"+el.Name); err != nil {
 		return err
 	}
 
 	// Write attributes
-	for i, attr := range jsx.Attributes {
-		if jsx.IndentAttrs && i == 0 {
+	for i, attr := range el.Attributes {
+		if el.IndentAttrs && i == 0 {
 			if _, err := io.WriteString(w, "\n"); err != nil {
 				return err
 			}
@@ -1290,7 +1289,7 @@ func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
 			}
 		}
 
-		if jsx.IndentAttrs && i > 0 {
+		if el.IndentAttrs && i > 0 {
 			if _, err := io.WriteString(w, "\n"); err != nil {
 				return err
 			}
@@ -1304,7 +1303,7 @@ func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
 		}
 	}
 
-	if jsx.SelfClosing {
+	if el.SelfClosing {
 		if _, err := io.WriteString(w, " />"); err != nil {
 			return err
 		}
@@ -1316,12 +1315,12 @@ func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
 	}
 
 	// Write children if any
-	if len(jsx.Children) > 0 {
-		if jsx.IndentChildren {
+	if len(el.Children) > 0 {
+		if el.IndentChildren {
 			if _, err := io.WriteString(w, "\n"); err != nil {
 				return err
 			}
-			if err := writeNodesIndented(w, indent+1, jsx.Children); err != nil {
+			if err := writeNodesIndented(w, indent+1, el.Children); err != nil {
 				return err
 			}
 			if _, err := io.WriteString(w, "\n"); err != nil {
@@ -1331,22 +1330,22 @@ func (jsx *JSXComponentElement) Write(w io.Writer, indent int) error {
 				return err
 			}
 		} else {
-			if err := writeNodes(w, 0, jsx.Children, false); err != nil {
+			if err := writeNodes(w, 0, el.Children, false); err != nil {
 				return err
 			}
 		}
 	}
 
 	// Write closing tag
-	if _, err := io.WriteString(w, "</"+jsx.Name+">"); err != nil {
+	if _, err := io.WriteString(w, "</"+el.Name+">"); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (jsx *JSXComponentElement) Visit(v Visitor) error {
-	return v.VisitJSXComponentElement(jsx)
+func (el *ElementComponent) Visit(v Visitor) error {
+	return v.VisitElementComponent(el)
 }
 
 // ChildrenExpression can be used to rended the children of a templ element.
