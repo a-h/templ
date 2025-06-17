@@ -53,23 +53,22 @@ func TestJSXComponentParser(t *testing.T) {
 				},
 			},
 		},
-		// TODO: Children parsing needs more work
-		// {
-		// 	name:  "jsx: component with children",
-		// 	input: `<DList><div>Child content</div></DList>`,
-		// 	expected: &JSXComponentElement{
-		// 		Name:        "DList",
-		// 		SelfClosing: false,
-		// 		Children: []Node{
-		// 			&Element{
-		// 				Name: "div",
-		// 				Children: []Node{
-		// 					&Text{Value: "Child content"},
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
+		{
+			name:  "jsx: component with children",
+			input: `<DList><div>Child content</div></DList>`,
+			expected: &JSXComponentElement{
+				Name:        "DList",
+				SelfClosing: false,
+				Children: []Node{
+					&Element{
+						Name: "div",
+						Children: []Node{
+							&Text{Value: "Child content"},
+						},
+					},
+				},
+			},
+		},
 		{
 			name:  "jsx: component with package prefix",
 			input: `<components.Button text="Click" />`,
@@ -158,19 +157,19 @@ func TestJSXComponentParser(t *testing.T) {
 
 			// Compare component name
 			if result.Name != tt.expected.Name {
-				t.Errorf("name mismatch:\nexpected: %q\ngot:      %q", 
+				t.Errorf("name mismatch:\nexpected: %q\ngot:      %q",
 					tt.expected.Name, result.Name)
 			}
 
 			// Compare self-closing flag
 			if result.SelfClosing != tt.expected.SelfClosing {
-				t.Errorf("self-closing mismatch:\nexpected: %v\ngot:      %v", 
+				t.Errorf("self-closing mismatch:\nexpected: %v\ngot:      %v",
 					tt.expected.SelfClosing, result.SelfClosing)
 			}
 
 			// Compare attribute count
 			if len(result.Attributes) != len(tt.expected.Attributes) {
-				t.Errorf("attribute count mismatch:\nexpected: %d\ngot:      %d", 
+				t.Errorf("attribute count mismatch:\nexpected: %d\ngot:      %d",
 					len(tt.expected.Attributes), len(result.Attributes))
 			}
 
@@ -218,4 +217,3 @@ templ Page() {
 		})
 	}
 }
-
