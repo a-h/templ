@@ -971,25 +971,25 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 		var name string
 
 		// Extract attribute name - must be a constant string for Element components
-		switch key := attr.(type) {
+		switch a := attr.(type) {
 		case *parser.ConstantAttribute:
-			name = extractAttributeName(key.Key)
+			name = extractAttributeName(a.Key)
 		case *parser.ExpressionAttribute:
-			name = extractAttributeName(key.Key)
+			name = extractAttributeName(a.Key)
 		case *parser.BoolConstantAttribute:
-			name = extractAttributeName(key.Key)
+			name = extractAttributeName(a.Key)
 		case *parser.BoolExpressionAttribute:
-			name = extractAttributeName(key.Key)
+			name = extractAttributeName(a.Key)
 		case *parser.SpreadAttributes:
-			// Spread attributes don't have a name, add to rest
+			// TODO: maybe we can iterator over templ.Attributer and get the name?
 			rest = append(rest, attr)
 			continue
 		case *parser.ConditionalAttribute:
-			// Conditional attributes are special, add to rest for now
+			// TODO: we can get assignments from the conditional attribute
 			rest = append(rest, attr)
 			continue
 		}
-		
+
 		if name == "" {
 			rest = append(rest, attr)
 		} else {
@@ -1030,37 +1030,41 @@ func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attri
 	for i, attr := range args {
 		var value string
 		var err error
-		
+
 		switch key := attr.(type) {
 		case *parser.ConstantAttribute:
 			// Simple string literal
 			value = fmt.Sprintf(`"%s"`, key.Value)
-			
+
 		case *parser.ExpressionAttribute:
-			// For expressions, we might need to create a variable if it's complex
-			if isSimpleExpression(key.Expression.Value) {
-				value = key.Expression.Value
-			} else {
-				// Create a variable for complex expressions
-				varName := g.createVariableName()
-				if _, err = g.w.WriteIndent(indentLevel, varName+" := "); err != nil {
-					return nil, err
-				}
-				var r parser.Range
-				if r, err = g.w.Write(key.Expression.Value); err != nil {
-					return nil, err
-				}
-				g.sourceMap.Add(key.Expression, r)
-				if _, err = g.w.Write("\n"); err != nil {
-					return nil, err
-				}
-				value = varName
+			// For expressions, we need to handle potential errors
+			varName := g.createVariableName()
+			// var vn string
+			if _, err = g.w.WriteIndent(indentLevel, "var "+varName+" string\n"); err != nil {
+				return nil, err
 			}
-			
+			// vn, templ_7745c5c3_Err = templ.JoinStringErrs(expression)
+			if _, err = g.w.WriteIndent(indentLevel, varName+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
+				return nil, err
+			}
+			var r parser.Range
+			if r, err = g.w.Write(key.Expression.Value); err != nil {
+				return nil, err
+			}
+			g.sourceMap.Add(key.Expression, r)
+			if _, err = g.w.Write(")\n"); err != nil {
+				return nil, err
+			}
+			// Error handler
+			if err = g.writeExpressionErrorHandler(indentLevel, key.Expression); err != nil {
+				return nil, err
+			}
+			value = varName
+
 		case *parser.BoolConstantAttribute:
 			// Simple boolean true
 			value = "true"
-			
+
 		case *parser.BoolExpressionAttribute:
 			// Boolean expression
 			if isSimpleExpression(key.Expression.Value) {
@@ -1081,19 +1085,19 @@ func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attri
 				}
 				value = varName
 			}
-			
+
 		case *parser.SpreadAttributes:
 			// TODO: Handle spread attributes
 			return nil, fmt.Errorf("spread attributes not yet supported in element components")
-			
+
 		case *parser.ConditionalAttribute:
 			// TODO: Handle conditional attributes
 			return nil, fmt.Errorf("conditional attributes not yet supported in element components")
-			
+
 		default:
 			return nil, fmt.Errorf("unknown attribute type %T", attr)
 		}
-		
+
 		res[i] = value
 	}
 	return res, nil

@@ -405,8 +405,8 @@ func isEnabled() bool {
 	return true
 }
 
-func shouldShow() bool {
-	return false
+func shouldShow() (bool, error) {
+	return false, nil
 }
 
 var _ = templruntime.GeneratedTemplate
