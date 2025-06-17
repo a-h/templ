@@ -295,6 +295,121 @@ templ JSXComplexPage() {
 	}
 }
 
+func TestJSXPublishDiagnosticsNilPanic(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	if err != nil {
+		t.Fatalf("failed to setup test: %v", err)
+	}
+	defer teardown(t)
+	defer cancel()
+
+	// Create a JSX template with syntax errors that will trigger diagnostics
+	jsxTemplContent := `package main
+
+import "fmt"
+
+templ Button(title string) {
+	<button>{ title }</button>
+}
+
+templ JSXPageWithErrors() {
+	<!DOCTYPE html>
+	<html>
+		<body>
+			<h1>JSX Test</h1>
+			<Button title="Simple button" />
+			<Button title={ fmt.Sprintf("Dynamic %s", "content") } />
+			<div>
+				<Button title="Nested button" />
+				{ undefinedVariable }
+			</div>
+		</body>
+	</html>
+}
+`
+
+	jsxFileName := appDir + "/jsx_diagnostics_test.templ"
+	err = os.WriteFile(jsxFileName, []byte(jsxTemplContent), 0644)
+	if err != nil {
+		t.Fatalf("failed to create JSX test file: %v", err)
+	}
+
+	// Open the file - this should trigger generation and source map caching
+	err = server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        uri.URI("file://" + jsxFileName),
+			LanguageID: "templ",
+			Version:    1,
+			Text:       jsxTemplContent,
+		},
+	})
+	if err != nil {
+		t.Errorf("failed to register open file: %v", err)
+		return
+	}
+
+	// Wait for background processing that should trigger PublishDiagnostics
+	// This is where the nil pointer panic should occur if sourceMap is nil
+	time.Sleep(time.Millisecond * 2000)
+
+	// Create a second file that has compilation errors in the generated Go code
+	// This will more likely trigger the PublishDiagnostics path that causes the panic
+	jsxTemplWithGoErrors := `package main
+
+import "fmt"
+import "nonexistent/package"
+
+templ ButtonWithErrors(title string) {
+	<button>{ title }</button>
+}
+
+templ JSXPageWithGoErrors() {
+	<!DOCTYPE html>
+	<html>
+		<body>
+			<h1>JSX Test</h1>
+			<ButtonWithErrors title="Simple button" />
+			<ButtonWithErrors title={ fmt.Sprintf("Dynamic %s", nonexistent.Func()) } />
+		</body>
+	</html>
+}
+`
+
+	jsxFileNameErrors := appDir + "/jsx_go_errors_test.templ"
+	err = os.WriteFile(jsxFileNameErrors, []byte(jsxTemplWithGoErrors), 0644)
+	if err != nil {
+		t.Fatalf("failed to create JSX test file with errors: %v", err)
+	}
+
+	// Open the file with Go compilation errors
+	err = server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        uri.URI("file://" + jsxFileNameErrors),
+			LanguageID: "templ",
+			Version:    1,
+			Text:       jsxTemplWithGoErrors,
+		},
+	})
+	if err != nil {
+		t.Errorf("failed to register open file with errors: %v", err)
+		return
+	}
+
+	// Wait longer for background Go compilation and diagnostics publishing
+	// The panic should occur here when PublishDiagnostics tries to map Go errors back to templ
+	time.Sleep(time.Millisecond * 5000)
+
+	// If we get here without panic, the fix worked
+	log.Info("PublishDiagnostics test completed without panic")
+}
+
 func TestJSXCompletion(t *testing.T) {
 	if testing.Short() {
 		return

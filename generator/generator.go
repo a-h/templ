@@ -1970,7 +1970,6 @@ func (g *generator) collectAndResolveComponents() error {
 	return nil
 }
 
-
 func (g *generator) resolveImportPath(packageAlias string) string {
 	// Look through the template file's imports to find the import path for this alias
 	for _, node := range g.tf.Nodes {
@@ -1998,15 +1997,15 @@ func (g *generator) parseImportStatement(importStmt string) (alias, path string)
 	// Handle import statements like:
 	// import "path/to/package"
 	// import alias "path/to/package"
-	
+
 	importStmt = strings.TrimSpace(importStmt)
 	if !strings.HasPrefix(importStmt, "import ") {
 		return "", ""
 	}
-	
+
 	importStmt = strings.TrimPrefix(importStmt, "import ")
 	importStmt = strings.TrimSpace(importStmt)
-	
+
 	// Check if there's an alias
 	parts := strings.Fields(importStmt)
 	if len(parts) == 2 {
@@ -2019,7 +2018,7 @@ func (g *generator) parseImportStatement(importStmt string) (alias, path string)
 		pathParts := strings.Split(path, "/")
 		alias = pathParts[len(pathParts)-1]
 	}
-	
+
 	return alias, path
 }
 

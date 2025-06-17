@@ -38,6 +38,7 @@ func (p Client) Progress(ctx context.Context, params *lsp.ProgressParams) (err e
 	p.Log.Info("client <- server: Progress")
 	return p.Target.Progress(ctx, params)
 }
+
 func (p Client) WorkDoneProgressCreate(ctx context.Context, params *lsp.WorkDoneProgressCreateParams) (err error) {
 	p.Log.Info("client <- server: WorkDoneProgressCreate")
 	return p.Target.WorkDoneProgressCreate(ctx, params)
