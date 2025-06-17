@@ -78,6 +78,15 @@ go run ./cmd/templ generate -include-version=false
 go test ./...
 ```
 
+### test-jsx
+
+jsx test lives in its own module, so we need to run the tests in that directory.
+
+```sh
+cd generator/test-jsx
+go test ./...
+```
+
 ### test-short
 
 Run Go tests.
