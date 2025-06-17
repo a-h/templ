@@ -1,5 +1,6 @@
 package testelementcomponent
 
+import "fmt"
 import "github.com/a-h/templ/generator/test-element-component/mod"
 import extern "github.com/a-h/templ/generator/test-element-component/externmod"
 
@@ -14,8 +15,27 @@ templ ElementComponent() {
 		<h2>Named Parameter Test</h2>
 		<mod.Text name="hello"/>
 		<extern.Text name="world"/>
-		<TestComponent title="Test" count={ 42 } enabled={ true } />
-		<AnotherComponent name="Alice" description="Engineer" age={ 25 } />
+		
+		<h2>All Attribute Types Test</h2>
+		// Constant attribute
+		<Button title="Constant String" />
+		
+		// Complex expression attribute
+		<Button title={ "Hello " + str() + "!" } />
+		
+		// Boolean constant attribute (with title)
+		<BoolComponent title="Bool Test" enabled />
+		
+		// Boolean expression attribute
+		<BoolComponent title="Bool Expr" enabled?={ isEnabled() } />
+		
+		// Multiple attributes with different types
+		<MultiComponent 
+			title="Multi Test"
+			count={ 42 }
+			enabled
+			visible?={ shouldShow() }
+		/>
 	</div>
 }
 
@@ -39,4 +59,35 @@ templ Card(title string) {
 
 func str() string {
 	return "Click me"
+}
+
+templ BoolComponent(title string, enabled bool) {
+	<div class="bool-component">
+		<h3>{ title }</h3>
+		if enabled {
+			<span>Enabled</span>
+		} else {
+			<span>Disabled</span>
+		}
+	</div>
+}
+
+templ MultiComponent(title string, count int, enabled bool, visible bool) {
+	<div class="multi-component">
+		<h3>{ title } (count: { fmt.Sprint(count) })</h3>
+		if enabled {
+			<span>Enabled</span>
+		}
+		if visible {
+			<span>Visible</span>
+		}
+	</div>
+}
+
+func isEnabled() bool {
+	return true
+}
+
+func shouldShow() bool {
+	return false
 }

@@ -965,36 +965,36 @@ func (g *generator) writeBlockElementComponent(indentLevel int, n *parser.Elemen
 func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n *parser.ElementComponent) ([]parser.Attribute, error) {
 	// Create a map of attribute names to values
 	attrMap := make(map[string]parser.Attribute)
-
 	rest := make([]parser.Attribute, 0)
 
 	for _, attr := range n.Attributes {
 		var name string
 
-		// TODO: handle condition attributes
 		// Extract attribute name - must be a constant string for Element components
 		switch key := attr.(type) {
 		case *parser.ConstantAttribute:
-			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
-				name = constKey.Name
-			}
+			name = extractAttributeName(key.Key)
 		case *parser.ExpressionAttribute:
-			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
-				name = constKey.Name
-			}
+			name = extractAttributeName(key.Key)
 		case *parser.BoolConstantAttribute:
-			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
-				name = constKey.Name
-			}
+			name = extractAttributeName(key.Key)
 		case *parser.BoolExpressionAttribute:
-			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
-				name = constKey.Name
-			}
+			name = extractAttributeName(key.Key)
+		case *parser.SpreadAttributes:
+			// Spread attributes don't have a name, add to rest
+			rest = append(rest, attr)
+			continue
+		case *parser.ConditionalAttribute:
+			// Conditional attributes are special, add to rest for now
+			rest = append(rest, attr)
+			continue
 		}
+		
 		if name == "" {
 			rest = append(rest, attr)
+		} else {
+			attrMap[name] = attr
 		}
-		attrMap[name] = attr
 	}
 	_ = rest // TODO: rest can be passed to var arg if the function supports it
 
@@ -1007,29 +1007,104 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 		}
 	}
 	// TODO: append rest as templ.Attributer
-	// TODO: maybe we should write the script and style elements, or maybe do it in writeArgumentAssignment
+	// TODO: maybe we should write the script and style elements
 
 	return args, nil
 }
 
+// extractAttributeName extracts the name from an AttributeKey
+func extractAttributeName(key parser.AttributeKey) string {
+	switch k := key.(type) {
+	case parser.ConstantAttributeKey:
+		return k.Name
+	case parser.ExpressionAttributeKey:
+		// Expression keys can't be mapped by name
+		return ""
+	default:
+		return ""
+	}
+}
+
 func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attribute) ([]string, error) {
-	// TODO: support anonymous templ block in attrs, also should return var names
 	res := make([]string, len(args))
 	for i, attr := range args {
 		var value string
+		var err error
+		
 		switch key := attr.(type) {
 		case *parser.ConstantAttribute:
+			// Simple string literal
 			value = fmt.Sprintf(`"%s"`, key.Value)
+			
 		case *parser.ExpressionAttribute:
-			value = key.Expression.Value
+			// For expressions, we might need to create a variable if it's complex
+			if isSimpleExpression(key.Expression.Value) {
+				value = key.Expression.Value
+			} else {
+				// Create a variable for complex expressions
+				varName := g.createVariableName()
+				if _, err = g.w.WriteIndent(indentLevel, varName+" := "); err != nil {
+					return nil, err
+				}
+				var r parser.Range
+				if r, err = g.w.Write(key.Expression.Value); err != nil {
+					return nil, err
+				}
+				g.sourceMap.Add(key.Expression, r)
+				if _, err = g.w.Write("\n"); err != nil {
+					return nil, err
+				}
+				value = varName
+			}
+			
 		case *parser.BoolConstantAttribute:
+			// Simple boolean true
 			value = "true"
+			
 		case *parser.BoolExpressionAttribute:
-			value = key.Expression.Value
+			// Boolean expression
+			if isSimpleExpression(key.Expression.Value) {
+				value = key.Expression.Value
+			} else {
+				// Create a variable for complex boolean expressions
+				varName := g.createVariableName()
+				if _, err = g.w.WriteIndent(indentLevel, varName+" := "); err != nil {
+					return nil, err
+				}
+				var r parser.Range
+				if r, err = g.w.Write(key.Expression.Value); err != nil {
+					return nil, err
+				}
+				g.sourceMap.Add(key.Expression, r)
+				if _, err = g.w.Write("\n"); err != nil {
+					return nil, err
+				}
+				value = varName
+			}
+			
+		case *parser.SpreadAttributes:
+			// TODO: Handle spread attributes
+			return nil, fmt.Errorf("spread attributes not yet supported in element components")
+			
+		case *parser.ConditionalAttribute:
+			// TODO: Handle conditional attributes
+			return nil, fmt.Errorf("conditional attributes not yet supported in element components")
+			
+		default:
+			return nil, fmt.Errorf("unknown attribute type %T", attr)
 		}
+		
 		res[i] = value
 	}
 	return res, nil
+}
+
+// isSimpleExpression checks if an expression is simple enough to be used directly
+// without creating a variable (e.g., identifiers, selectors, simple literals)
+func isSimpleExpression(expr string) bool {
+	// TODO: Implement proper heuristics for simple expressions
+	// For now, consider expressions without spaces or function calls as simple
+	return !strings.Contains(expr, " ") && !strings.Contains(expr, "(") && !strings.Contains(expr, "\n")
 }
 
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
