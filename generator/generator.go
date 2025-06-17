@@ -902,137 +902,192 @@ func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n *p
 }
 
 func (g *generator) writeJSXComponentElement(indentLevel int, n *parser.JSXComponentElement) (err error) {
-	// Convert JSX component to TemplElementExpression equivalent for rendering
-	expr, err := g.buildJSXExpression(n)
-	if err != nil {
-		return err
-	}
-	templExpr := &parser.TemplElementExpression{
-		Expression: parser.Expression{
-			Value: expr,
-			Range: n.Range,
-		},
-		Children: n.Children,
-	}
-
-	// Create granular source map entries for JSX component parts
-	if err := g.addJSXSourceMapEntries(n); err != nil {
-		return err
-	}
-
 	if len(n.Children) == 0 {
-		return g.writeSelfClosingTemplElementExpression(indentLevel, templExpr)
+		return g.writeSelfClosingJSXComponentElement(indentLevel, n)
 	}
-	return g.writeBlockTemplElementExpression(indentLevel, templExpr)
+	return g.writeBlockJSXComponentElement(indentLevel, n)
 }
 
-func (g *generator) buildJSXExpression(n *parser.JSXComponentElement) (string, error) {
-	// Build Go function call expression from JSX component
-	expr := n.Name + "("
-
-	// Check if we have a resolved signature for this component
-	sigKey := n.Name
-	sig, hasSig := g.componentSigs[sigKey]
-
-	if hasSig && len(sig.Parameters) > 0 {
-		// Use named parameter mapping - required for JSX components
-		args, err := g.mapAttributesToParameters(n.Attributes, sig)
-		if err != nil {
-			return "", err
-		}
-		expr += strings.Join(args, ", ")
-	} else {
-		// No signature resolved - this is an error for JSX components
-		return "", fmt.Errorf("%s: no function signature found - all JSX components must have matching Go functions with named parameters", n.Name)
+func (g *generator) writeSelfClosingJSXComponentElement(indentLevel int, n *parser.JSXComponentElement) (err error) {
+	// templ_7745c5c3_Err = Component(arg1, arg2, ...)
+	if err = g.writeJSXElementFunctionCall(indentLevel, n); err != nil {
+		return err
 	}
-
-	expr += ")"
-	return expr, nil
+	// .Render(ctx, templ_7745c5c3_Buffer)
+	if _, err = g.w.Write(".Render(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	return nil
 }
 
-func (g *generator) mapAttributesToParameters(attrs []parser.Attribute, sig *ComponentSignature) ([]string, error) {
+func (g *generator) writeBlockJSXComponentElement(indentLevel int, n *parser.JSXComponentElement) (err error) {
+	childrenName := g.createVariableName()
+	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
+		return err
+	}
+	indentLevel++
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context\n"); err != nil {
+		return err
+	}
+	if err := g.writeTemplBuffer(indentLevel); err != nil {
+		return err
+	}
+	// ctx = templ.InitializeContext(ctx)
+	if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeContext(ctx)\n"); err != nil {
+		return err
+	}
+	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Children), nil); err != nil {
+		return err
+	}
+	// return nil
+	if _, err = g.w.WriteIndent(indentLevel, "return nil\n"); err != nil {
+		return err
+	}
+	indentLevel--
+	if _, err = g.w.WriteIndent(indentLevel, "})\n"); err != nil {
+		return err
+	}
+	// Build and write the JSX function call
+	if err = g.writeJSXElementFunctionCall(indentLevel, n); err != nil {
+		return err
+	}
+
+	// .Render(templ.WithChildren(ctx, children), templ_7745c5c3_Buffer)
+	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), templ_7745c5c3_Buffer)\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) reorderJSXElementAttributes(sig *ComponentSignature, n *parser.JSXComponentElement) ([]parser.Attribute, error) {
 	// Create a map of attribute names to values
-	attrMap := make(map[string]string)
+	attrMap := make(map[string]parser.Attribute)
 
-	for _, attr := range attrs {
-		var name, value string
+	rest := make([]parser.Attribute, 0)
 
+	for _, attr := range n.Attributes {
+		var name string
+
+		// TODO: handle condition attributes
 		// Extract attribute name - must be a constant string for JSX components
 		switch key := attr.(type) {
 		case *parser.ConstantAttribute:
 			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
 				name = constKey.Name
-				value = fmt.Sprintf(`"%s"`, key.Value)
 			}
 		case *parser.ExpressionAttribute:
 			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
 				name = constKey.Name
-				value = key.Expression.Value
 			}
 		case *parser.BoolConstantAttribute:
 			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
 				name = constKey.Name
-				value = "true"
 			}
 		case *parser.BoolExpressionAttribute:
 			if constKey, ok := key.Key.(parser.ConstantAttributeKey); ok {
 				name = constKey.Name
-				value = key.Expression.Value
 			}
 		}
-
-		if name != "" {
-			attrMap[name] = value
+		if name == "" {
+			rest = append(rest, attr)
 		}
+		attrMap[name] = attr
 	}
+	_ = rest // TODO: rest can be passed to var arg if the function supports it
 
 	// Map attributes to parameters in the correct order
 	// Every parameter must have a matching attribute in JSX
-	args := make([]string, len(sig.Parameters))
+	args := make([]parser.Attribute, len(sig.Parameters))
 	for i, param := range sig.Parameters {
-		if value, ok := attrMap[param.Name]; ok {
-			args[i] = value
-		} else {
-			// Missing required parameter - return error
+		var ok bool
+		args[i], ok = attrMap[param.Name]
+		if !ok {
 			return nil, fmt.Errorf("%s: missing required parameter '%s'", sig.Name, param.Name)
 		}
 	}
+	// TODO: append rest as templ.Attributer
+	// TODO: maybe we should write the script and style elements, or maybe do it in writeArgumentAssignment
 
 	return args, nil
 }
 
-// addJSXSourceMapEntries adds granular source map entries for JSX component parts
-func (g *generator) addJSXSourceMapEntries(n *parser.JSXComponentElement) error {
-	// Add source map entry for component name itself
-	// This enables hover and go-to-definition for the component name
-	componentNameExpr := parser.Expression{
-		Value: n.Name,
-		Range: n.NameRange,
-	}
-	
-	// Create a dummy range for the component name in the generated Go code
-	// Since we don't actually write the component name separately, we use the name range
-	g.sourceMap.Add(componentNameExpr, n.NameRange)
-
-	// Add source map entries for attribute expressions
-	for _, attr := range n.Attributes {
-		switch a := attr.(type) {
+func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attribute) ([]string, error) {
+	// TODO: support anonymous templ block in attrs, also should return var names
+	res := make([]string, len(args))
+	for i, attr := range args {
+		var value string
+		switch key := attr.(type) {
+		case *parser.ConstantAttribute:
+			value = fmt.Sprintf(`"%s"`, key.Value)
 		case *parser.ExpressionAttribute:
-			// Add source map entry for expression attributes so hover works on the expression
-			g.sourceMap.Add(a.Expression, a.Expression.Range)
+			value = key.Expression.Value
+		case *parser.BoolConstantAttribute:
+			value = "true"
 		case *parser.BoolExpressionAttribute:
-			// Add source map entry for boolean expression attributes
-			g.sourceMap.Add(a.Expression, a.Expression.Range)
-		case *parser.SpreadAttributes:
-			// Add source map entry for spread attributes
-			g.sourceMap.Add(a.Expression, a.Expression.Range)
-		case *parser.ConditionalAttribute:
-			// Add source map entry for the conditional expression
-			g.sourceMap.Add(a.Expression, a.Expression.Range)
+			value = key.Expression.Value
 		}
-		// Note: Constant attributes don't have expressions, so they don't need source map entries
+		res[i] = value
 	}
-	
+	return res, nil
+}
+
+func (g *generator) writeJSXElementFunctionCall(indentLevel int, n *parser.JSXComponentElement) (err error) {
+	sigKey := n.Name
+	sigs, ok := g.componentSigs[sigKey]
+	if !ok {
+		return fmt.Errorf("%s: no function signature found - all components must have matching Go functions with matching parameters", n.Name)
+	}
+
+	attrs, err := g.reorderJSXElementAttributes(sigs, n)
+	if err != nil {
+		return err
+	}
+	var vars []string
+	if vars, err = g.writeArgumentAssignment(indentLevel, attrs); err != nil {
+		return err
+	}
+
+	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
+		return err
+	}
+
+	var r parser.Range
+	if r, err = g.w.Write(n.Name); err != nil {
+		return err
+	}
+	g.sourceMap.Add(parser.Expression{Value: n.Name, Range: n.NameRange}, r)
+
+	// Write opening parenthesis
+	if _, err = g.w.Write("("); err != nil {
+		return err
+	}
+
+	for i, arg := range vars {
+		if i > 0 {
+			if _, err = g.w.Write(", "); err != nil {
+				return err
+			}
+		}
+		r, err = g.w.Write(arg)
+		if err != nil {
+			return err
+		}
+		_ = r
+		// TODO: we need to track the attribute range to jump to definition
+		// g.sourceMap.Add(parser.Expression{Value: arg, Range: n.NameRange}, r)
+	}
+
+	// Write closing parenthesis
+	if _, err = g.w.Write(")"); err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -18,8 +18,9 @@ type ComponentSignature struct {
 
 // ParameterInfo represents a function parameter
 type ParameterInfo struct {
-	Name string
-	Type types.Type
+	Name     string
+	Type     types.Type
+	Position int // Parameter position in function signature (0-based)
 }
 
 // SymbolResolver resolves component symbols across packages
@@ -129,5 +130,3 @@ func (sr *SymbolResolver) ResolveLocalComponent(componentName string) (*Componen
 
 	return sr.ResolveComponent(pkg.ImportPath, componentName)
 }
-
-

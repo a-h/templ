@@ -108,6 +108,10 @@ type Range struct {
 	To   Position
 }
 
+func (r Range) String() string {
+	return fmt.Sprintf("from %s to %s", r.From.String(), r.To.String())
+}
+
 // Expression containing Go code.
 type Expression struct {
 	Value string

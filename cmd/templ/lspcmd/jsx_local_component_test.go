@@ -68,6 +68,25 @@ templ TestTemplate() {
 		t.Logf("Attribute value position not found in source map at line %d, char %d", attrLine, attrChar)
 	}
 
+	// Test that we can map JSX attribute name to function parameter
+	// The attribute name "text" should be around line 8, character 10-14 (from debug output)
+	attrNameLine := uint32(8)
+	attrNameChar := uint32(12) // Position inside "text" attribute name
+	
+	attrNameTargetPos, attrNameFound := sourceMap.TargetPositionFromSource(attrNameLine, attrNameChar)
+	if attrNameFound {
+		t.Logf("Attribute name 'text' maps to target position: line %d, col %d", attrNameTargetPos.Line, attrNameTargetPos.Col)
+		// Check if this maps to the function parameter position (should be around line 10, col 21-25)
+		if attrNameTargetPos.Line == 10 && attrNameTargetPos.Col >= 20 && attrNameTargetPos.Col <= 26 {
+			t.Logf("SUCCESS: Attribute name correctly maps to function parameter position!")
+		} else {
+			t.Logf("ISSUE: Expected mapping to line 10, col 21-25 (function parameter), got line %d, col %d", 
+				attrNameTargetPos.Line, attrNameTargetPos.Col)
+		}
+	} else {
+		t.Logf("Attribute name position not found in source map at line %d, char %d (this is the issue we're fixing)", attrNameLine, attrNameChar)
+	}
+
 	// Verify the generated code contains the expected function call
 	generatedCode := output.String()
 	if !strings.Contains(generatedCode, `Button(`) {
