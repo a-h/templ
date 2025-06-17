@@ -2,7 +2,6 @@ package generator
 
 import (
 	"fmt"
-	"go/ast"
 	"go/build"
 	"go/types"
 	"strings"
@@ -27,7 +26,6 @@ type ParameterInfo struct {
 type SymbolResolver struct {
 	cache      map[string]*ComponentSignature
 	workingDir string
-	templCache map[string]*TemplSignatureResolver // Cache for external templ packages
 }
 
 // NewSymbolResolver creates a new symbol resolver
@@ -132,21 +130,4 @@ func (sr *SymbolResolver) ResolveLocalComponent(componentName string) (*Componen
 	return sr.ResolveComponent(pkg.ImportPath, componentName)
 }
 
-// ResolveExternalTemplComponent resolves a component from an external package
-// For now, we simply delegate to the existing ResolveComponent method which uses go/packages
-func (sr *SymbolResolver) ResolveExternalTemplComponent(pkgPath, componentName string) (*ComponentSignature, error) {
-	// Use the existing Go packages-based resolution
-	// This properly handles modules, go.mod files, and external dependencies
-	return sr.ResolveComponent(pkgPath, componentName)
-}
-
-// CollectJSXComponents walks the AST and collects all JSX component references
-func CollectJSXComponents(node ast.Node) []ComponentReference {
-	var refs []ComponentReference
-
-	// This would walk the templ AST, not Go AST
-	// We'll need to implement this based on the templ parser AST
-
-	return refs
-}
 

@@ -1925,12 +1925,8 @@ func (g *generator) collectAndResolveComponents() error {
 				}
 			}
 		} else {
-			// External component - first try templ templates, then Go functions
-			if externalSig, ok := g.resolveExternalTemplComponent(comp.PackageName, comp.Name); ok {
-				sig = externalSig
-				found = true
-			} else if g.symbolResolver != nil {
-				// Try Go function resolution with resolved import path
+			// External component - use Go function resolution with resolved import path
+			if g.symbolResolver != nil {
 				importPath := g.resolveImportPath(comp.PackageName)
 				if importPath != "" {
 					sig, err = g.symbolResolver.ResolveComponent(importPath, comp.Name)
@@ -1974,22 +1970,6 @@ func (g *generator) collectAndResolveComponents() error {
 	return nil
 }
 
-func (g *generator) resolveExternalTemplComponent(packageAlias, componentName string) (*ComponentSignature, bool) {
-	// First, we need to map the package alias to the actual import path
-	importPath := g.resolveImportPath(packageAlias)
-	if importPath == "" {
-		return nil, false
-	}
-	
-	// Try to resolve the external templ template
-	if g.symbolResolver != nil {
-		if sig, err := g.symbolResolver.ResolveExternalTemplComponent(importPath, componentName); err == nil {
-			return sig, true
-		}
-	}
-	
-	return nil, false
-}
 
 func (g *generator) resolveImportPath(packageAlias string) string {
 	// Look through the template file's imports to find the import path for this alias
