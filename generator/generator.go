@@ -869,12 +869,6 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n *parser.
 	if err != nil {
 		return err
 	}
-	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), templ_7745c5c3_Buffer)\n"); err != nil {
-		return err
-	}
-	if err = g.writeErrorHandler(indentLevel); err != nil {
-		return err
-	}
 	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
 		return err
 	}
@@ -883,7 +877,10 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n *parser.
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	return nil
+	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), templ_7745c5c3_Buffer)\n"); err != nil {
+		return err
+	}
+	return g.writeErrorHandler(indentLevel)
 }
 
 func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n *parser.TemplElementExpression) (err error) {
@@ -1938,6 +1935,8 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 			err = g.writeSpreadAttributes(indentLevel, attr)
 		case *parser.ConditionalAttribute:
 			err = g.writeConditionalAttribute(indentLevel, name, attr)
+		case *parser.InlineComponentAttribute:
+			err = fmt.Errorf("inline component attributes are not supported on HTML elements, only on Element Components")
 		case *parser.AttributeComment:
 			continue
 		default:

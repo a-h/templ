@@ -355,13 +355,70 @@ var inlineComponentAttributeParser = parse.Func(func(pi *parse.Input) (attr *Inl
 		return nil, false, err
 	}
 
-	// Peek to check if this contains HTML elements
-	peek, _ := pi.Peek(10)
-	if !strings.Contains(peek, "<") {
-		// Not an inline component, let expression parser handle it
+	// We need to extract only the content between the braces { } to check for HTML
+	// Don't peek beyond the closing brace or we'll see HTML from the surrounding context
+
+	braceDepth := 1
+	contentEnd := pi.Index()
+	tempInput := *pi // Create a copy to scan ahead without affecting original position
+
+	// Find the end of the brace content
+	for braceDepth > 0 {
+		next, ok := tempInput.Peek(1)
+		if !ok {
+			// EOF reached, this is malformed
+			pi.Seek(start)
+			return nil, false, nil
+		}
+		tempInput.Take(1)
+		contentEnd++
+
+		switch next {
+		case "{":
+			braceDepth++
+		case "}":
+			braceDepth--
+		}
+	}
+
+	// Get just the content between braces (excluding the final closing brace)
+	contentLength := contentEnd - pi.Index() - 1
+	if contentLength <= 0 {
+		// Empty braces or malformed
 		pi.Seek(start)
 		return nil, false, nil
 	}
+
+	content, _ := pi.Peek(contentLength)
+
+	// Check if the content INSIDE the braces contains actual HTML elements
+	// We need to distinguish between:
+	// 1. Actual HTML: { <div>content</div> }
+	// 2. Go strings that contain '<': { "some <tag> text" }
+
+	if !strings.Contains(content, "<") {
+		// No '<' characters at all - definitely not HTML
+		pi.Seek(start)
+		return nil, false, nil
+	}
+
+	// Check if this looks like HTML elements vs Go expressions with '<' in strings
+	trimmed := strings.TrimSpace(content)
+
+	// If it starts with a quote or backtick, it's likely a string literal
+	if strings.HasPrefix(trimmed, `"`) || strings.HasPrefix(trimmed, "`") || strings.HasPrefix(trimmed, "'") {
+		pi.Seek(start)
+		return nil, false, nil
+	}
+
+	// If it doesn't start with '<', it's likely a Go expression (function call, variable, etc.)
+	if !strings.HasPrefix(trimmed, "<") {
+		pi.Seek(start)
+		return nil, false, nil
+	}
+
+	// If we get here, it likely starts with '<' and isn't a quoted string,
+	// so it's probably actual HTML content
 
 	// Now we know this is an inline component attribute
 	attr = &InlineComponentAttribute{
@@ -371,27 +428,28 @@ var inlineComponentAttributeParser = parse.Func(func(pi *parse.Input) (attr *Inl
 	// We need to parse the content between braces
 	// For now, let's use a simple approach: collect everything until matching closing brace
 	contentStart := pi.Position()
-	braceDepth := 1
+	braceDepth = 1 // Reuse the variable declared above
 	var contentBuilder strings.Builder
-	
+
 	for braceDepth > 0 {
 		next, nextOk := pi.Peek(1)
 		if !nextOk {
 			return attr, false, parse.Error("inline component attribute: unexpected EOF", pi.Position())
 		}
-		
+
 		pi.Take(1)
 		contentBuilder.WriteString(next)
-		
-		if next == "{" {
+
+		switch next {
+		case "{":
 			braceDepth++
-		} else if next == "}" {
+		case "}":
 			braceDepth--
 			if braceDepth == 0 {
 				// Remove the last closing brace from content
 				content := contentBuilder.String()
 				content = content[:len(content)-1]
-				
+
 				// Parse the content as template nodes
 				contentInput := parse.NewInput(strings.TrimSpace(content))
 				parser := templateNodeParser[Node]{}
@@ -405,7 +463,7 @@ var inlineComponentAttributeParser = parse.Func(func(pi *parse.Input) (attr *Inl
 			}
 		}
 	}
-	
+
 	return attr, false, parse.Error("inline component attribute: missing closing brace", pi.Position())
 })
 
@@ -491,7 +549,7 @@ func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool,
 			if _, _, err = parse.OptionalWhitespace.Parse(in); err != nil {
 				return
 			}
-			
+
 			// Try to parse HTML comment
 			commentStart := in.Index()
 			if node, commentOk, commentErr := htmlComment.Parse(in); commentErr != nil {
@@ -500,14 +558,14 @@ func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool,
 				// Found an HTML comment, add it as an attribute comment
 				if htmlNode, ok := node.(*HTMLComment); ok {
 					attributes = append(attributes, &AttributeComment{
-						Comment: htmlNode.Contents,
-						Multiline: true, // HTML comments are always multiline style
+						Comment:       htmlNode.Contents,
+						Multiline:     true, // HTML comments are always multiline style
 						IsHTMLComment: true,
 					})
 				}
 				continue
 			}
-			
+
 			// Try to parse Go comment
 			if node, commentOk, commentErr := goComment.Parse(in); commentErr != nil {
 				return attributes, false, commentErr
@@ -515,18 +573,18 @@ func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool,
 				// Found a Go comment, add it as an attribute comment
 				if goNode, ok := node.(*GoComment); ok {
 					attributes = append(attributes, &AttributeComment{
-						Comment: goNode.Contents,
+						Comment:   goNode.Contents,
 						Multiline: goNode.Multiline,
 					})
 				}
 				continue
 			}
-			
+
 			// No more comments, break from comment parsing loop
 			in.Seek(commentStart)
 			break
 		}
-		
+
 		// Parse attribute
 		var attr Attribute
 		attr, ok, err = attribute.Parse(in)
