@@ -995,6 +995,7 @@ func (g *generator) writeElementComponentAttrVars(indentLevel int, sigs *Compone
 		for _, attr := range orderedAttrs.restAttrs {
 			g.writeElementComponentArgRestVar(indentLevel, restVarName, attr)
 		}
+		res = append(res, restVarName)
 	}
 	return res, nil
 }
@@ -1017,16 +1018,15 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 		rest = append(rest, attr)
 	}
 
-	ordered := make([]parser.Attribute, len(sig.Parameters))
-	keys := make([]parser.ConstantAttributeKey, len(sig.Parameters))
 	params := sig.Parameters
-
 	// We support an optional last parameter that is of type templ.Attributer.
 	var attrParam ParameterInfo
-	if len(params) > 0 && params[len(params)-1].Type.String() == "templ.Attributer" {
+	if len(params) > 0 && isTemplAttributer(params[len(params)-1].Type) {
 		attrParam = params[len(params)-1]
 		params = params[:len(params)-1]
 	}
+	ordered := make([]parser.Attribute, len(params))
+	keys := make([]parser.ConstantAttributeKey, len(params))
 	for i, param := range params {
 		var ok bool
 		ordered[i], ok = attrMap[param.Name]
@@ -1112,7 +1112,7 @@ func (g *generator) writeElementComponentArgNewVar(indentLevel int, attr parser.
 	}
 }
 
-func (g *generator) writeElementComponentArgRestVar(indentLevel int, restVarName string, attr parser.Attribute) {
+func (g *generator) writeElementComponentArgRestVar(indentLevel int, restVarName string, attr parser.Attribute) error {
 	switch attr := attr.(type) {
 	case *parser.BoolConstantAttribute:
 		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: ""})
@@ -1142,7 +1142,7 @@ func (g *generator) writeElementComponentArgRestVar(indentLevel int, restVarName
 		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: vn})
 		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
 		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
-		g.w.Write(", Value: "+vn+"})\n")
+		g.w.Write(", Value: " + vn + "})\n")
 	case *parser.ExpressionAttribute:
 		// Create a variable for the expression result
 		vn := g.createVariableName()
@@ -1156,8 +1156,9 @@ func (g *generator) writeElementComponentArgRestVar(indentLevel int, restVarName
 		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: vn})
 		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
 		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
-		g.w.Write(", Value: "+vn+"})\n")
+		g.w.Write(", Value: " + vn + "})\n")
 	}
+	return nil
 }
 
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
@@ -2261,4 +2262,12 @@ func stripTypes(parameters string) string {
 		variableNames = append(variableNames, strings.TrimSpace(p[0]))
 	}
 	return strings.Join(variableNames, ", ")
+}
+
+func isTemplAttributer(typ string) bool {
+	// TODO: better handling of the types:
+	// when the type comes from templ file, it will be "templ.Attributer"
+	// when it comes from a Go file which uses the x/tool/packages parser the moment, it will be "github.com/a-h/templ.Attributer"
+	// This is not ideal but a ok compromise. when the symbols is from templ files, it may not have been resolved, only parsed. And resolving takes time and may nto be available.
+	return typ == "templ.Attributer" || typ == "github.com/a-h/templ.Attributer"
 }

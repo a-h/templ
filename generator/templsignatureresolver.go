@@ -1,8 +1,9 @@
 package generator
 
 import (
-	"go/types"
-	"strings"
+	"go/ast"
+	goparser "go/parser"
+	"go/token"
 
 	"github.com/a-h/templ/parser/v2"
 )
@@ -40,15 +41,15 @@ func (tsr *TemplSignatureResolver) GetSignature(name string) (*ComponentSignatur
 
 // extractHTMLTemplateSignature extracts the signature from an HTML template
 func (tsr *TemplSignatureResolver) extractHTMLTemplateSignature(tmpl *parser.HTMLTemplate) *ComponentSignature {
-	// Parse the template declaration from Expression.Value
-	// Format: "templateName(param1 type1, param2 type2)"
+	// Parse the template declaration from Expression.Value using Go AST parser
+	// This leverages the same parsing logic used by parseTemplFuncDecl
 	exprValue := tmpl.Expression.Value
 	if exprValue == "" {
 		return nil
 	}
 
-	name, params := tsr.parseTemplateDeclaration(exprValue)
-	if name == "" {
+	name, params, err := tsr.parseTemplateSignatureFromAST(exprValue)
+	if err != nil || name == "" {
 		return nil
 	}
 
@@ -59,103 +60,97 @@ func (tsr *TemplSignatureResolver) extractHTMLTemplateSignature(tmpl *parser.HTM
 	}
 }
 
-// parseTemplateDeclaration parses a templ template declaration like "Button(title string)"
-func (tsr *TemplSignatureResolver) parseTemplateDeclaration(decl string) (name string, params []ParameterInfo) {
-	decl = strings.TrimSpace(decl)
+// parseTemplateSignatureFromAST parses a templ template signature using Go AST parser
+// This follows the same approach as parseTemplFuncDecl in goparser.go
+func (tsr *TemplSignatureResolver) parseTemplateSignatureFromAST(exprValue string) (name string, params []ParameterInfo, err error) {
+	// Add "func " prefix to make it a valid Go function declaration for parsing
+	// This mirrors what parseTemplFuncDecl does with goexpression.Func
+	funcDecl := "func " + exprValue
 
-	// Find the opening parenthesis
-	parenIdx := strings.Index(decl, "(")
-	if parenIdx == -1 {
-		// No parameters
-		return strings.TrimSpace(decl), nil
+	// Create a temporary package to parse the function
+	src := "package main\n" + funcDecl
+
+	// Parse the source
+	fset := token.NewFileSet()
+	node, parseErr := goparser.ParseFile(fset, "", src, goparser.AllErrors)
+	if parseErr != nil || node == nil {
+		return "", nil, parseErr
 	}
 
-	name = strings.TrimSpace(decl[:parenIdx])
-
-	// Find the closing parenthesis
-	closeParenIdx := strings.LastIndex(decl, ")")
-	if closeParenIdx == -1 || closeParenIdx <= parenIdx {
-		// Malformed declaration
-		return name, nil
+	// Extract function declaration from AST
+	for _, decl := range node.Decls {
+		if fn, ok := decl.(*ast.FuncDecl); ok {
+			name = fn.Name.Name
+			params = tsr.extractParametersFromAST(fn.Type.Params)
+			return name, params, nil
+		}
 	}
 
-	paramStr := strings.TrimSpace(decl[parenIdx+1 : closeParenIdx])
-	if paramStr == "" {
-		return name, nil
-	}
-
-	params = tsr.parseTemplateParameters(paramStr)
-	return name, params
+	return "", nil, nil
 }
 
-// parseTemplateParameters parses templ template parameter strings like "term, detail string" or "title string, count int"
-func (tsr *TemplSignatureResolver) parseTemplateParameters(paramStr string) []ParameterInfo {
-	paramStr = strings.TrimSpace(paramStr)
-	if paramStr == "" {
+// extractParametersFromAST extracts parameter information from AST field list
+func (tsr *TemplSignatureResolver) extractParametersFromAST(fieldList *ast.FieldList) []ParameterInfo {
+	if fieldList == nil || len(fieldList.List) == 0 {
 		return nil
 	}
 
-	params := make([]ParameterInfo, 0)
+	var params []ParameterInfo
 
-	// Handle Go-style parameter syntax: "name1, name2 type1, name3 type2"
-	// Split by commas first to get all individual parts
-	parts := strings.Split(paramStr, ",")
+	for _, field := range fieldList.List {
+		fieldType := tsr.astTypeToString(field.Type)
 
-	i := 0
-	for i < len(parts) {
-		part := strings.TrimSpace(parts[i])
-		if part == "" {
-			i++
-			continue
-		}
-
-		// Look ahead to see if this is a "name type" pattern or just a "name" that shares type with the next parts
-		words := strings.Fields(part)
-		if len(words) == 2 {
-			// This is "name type" - standalone parameter
-			params = append(params, ParameterInfo{
-				Name: words[0],
-				Type: types.Typ[types.String], // For now, assume string type
-			})
-			i++
-		} else if len(words) == 1 {
-			// This is just a name, need to collect names until we find a type
-			names := []string{words[0]}
-			i++
-
-			// Collect additional names that share the same type
-			for i < len(parts) {
-				nextPart := strings.TrimSpace(parts[i])
-				nextWords := strings.Fields(nextPart)
-				if len(nextWords) == 2 {
-					// Found "name type" - the type applies to all collected names
-					names = append(names, nextWords[0])
-					_ = nextWords[1] // typeName - we assume string for now
-
-					// Create parameters for all names with this type
-					for _, name := range names {
-						params = append(params, ParameterInfo{
-							Name: name,
-							Type: types.Typ[types.String], // For now, assume string type regardless of typeName
-						})
-					}
-					i++
-					break
-				} else if len(nextWords) == 1 {
-					// Another name sharing the type
-					names = append(names, nextWords[0])
-					i++
-				} else {
-					// Malformed
-					i++
-					break
-				}
+		// Handle multiple names with the same type (e.g., "a, b string")
+		if len(field.Names) > 0 {
+			for _, name := range field.Names {
+				params = append(params, ParameterInfo{
+					Name: name.Name,
+					Type: fieldType,
+				})
 			}
 		} else {
-			// Malformed parameter
-			i++
+			// TODO: Handle anonymous parameters if needed: maybe use the fieldtype, but sanitized?
+			params = append(params, ParameterInfo{
+				Name: "",
+				Type: fieldType,
+			})
 		}
 	}
 
 	return params
+}
+
+// astTypeToString converts AST type expressions to their string representation
+// This returns the type name as it appears in the Go source code
+func (tsr *TemplSignatureResolver) astTypeToString(expr ast.Expr) string {
+	switch t := expr.(type) {
+	case *ast.Ident:
+		// Basic types like string, int, bool, etc.
+		return t.Name
+	case *ast.StarExpr:
+		// Pointer types like *string
+		return "*" + tsr.astTypeToString(t.X)
+	case *ast.ArrayType:
+		// Array or slice types like []string, [10]int
+		if t.Len == nil {
+			// Slice
+			return "[]" + tsr.astTypeToString(t.Elt)
+		} else {
+			// Array - e.g., [10]int or [...]string{}
+			return "[...]" + tsr.astTypeToString(t.Elt)
+		}
+	case *ast.MapType:
+		// Map types like map[string]int
+		return "map[" + tsr.astTypeToString(t.Key) + "]" + tsr.astTypeToString(t.Value)
+	case *ast.SelectorExpr:
+		// Qualified types like time.Time, context.Context
+		if x, ok := t.X.(*ast.Ident); ok {
+			return x.Name + "." + t.Sel.Name
+		}
+		return t.Sel.Name
+	case *ast.InterfaceType:
+		return "any"
+	default:
+		return ""
+	}
 }

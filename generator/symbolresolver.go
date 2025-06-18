@@ -19,7 +19,7 @@ type ComponentSignature struct {
 // ParameterInfo represents a function parameter
 type ParameterInfo struct {
 	Name string
-	Type types.Type
+	Type string
 }
 
 // SymbolResolver resolves component symbols across packages
@@ -105,7 +105,7 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 		param := params.At(i)
 		paramInfo = append(paramInfo, ParameterInfo{
 			Name: param.Name(),
-			Type: param.Type(),
+			Type: param.Type().String(),
 		})
 	}
 
