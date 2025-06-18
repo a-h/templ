@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"html"
 	"io"
-	"log/slog"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -983,7 +982,6 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 				// Element component only works with const key element
 				attrMap[key.Name] = attr
 				keyMap[key.Name] = key
-				slog.Warn("Mapping attribute", "key", key.Name, "range", key.NameRange, "to", attr)
 				continue
 			}
 		}
@@ -1109,7 +1107,6 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 	if r, err = g.w.Write(n.Name); err != nil {
 		return err
 	}
-	slog.Warn("Writing ", "name", n.Name, "namerange", n.NameRange, "with range", r.String())
 	g.sourceMap.Add(parser.Expression{Value: n.Name, Range: n.NameRange}, r)
 
 	// Write opening parenthesis
@@ -1128,8 +1125,9 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 			return err
 		}
 		key := orderedArgs.keys[i]
-		slog.Warn("Writing ", "name", key.Name, "namerange", key.NameRange, "with range", r.String())
-		g.sourceMap.Add(parser.Expression{Value: key.Name, Range: key.NameRange}, r)
+		// TODO: Add source map for the key
+		_, _ = r, key
+		// g.sourceMap.Add(parser.Expression{Value: key.Name, Range: key.NameRange}, r)
 	}
 
 	// Write closing parenthesis

@@ -6,7 +6,6 @@ import (
 	"go/types"
 	"strings"
 
-	"github.com/a-h/templ/parser/v2"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -14,15 +13,13 @@ import (
 type ComponentSignature struct {
 	PackagePath string
 	Name        string
-	// NameRange   parser.Range
-	Parameters []ParameterInfo
+	Parameters  []ParameterInfo
 }
 
 // ParameterInfo represents a function parameter
 type ParameterInfo struct {
-	Name      string
-	NameRange parser.Range
-	Type      types.Type
+	Name string
+	Type types.Type
 }
 
 // SymbolResolver resolves component symbols across packages
