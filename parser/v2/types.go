@@ -1129,10 +1129,68 @@ func (ca *ConditionalAttribute) Copy() Attribute {
 	}
 }
 
+// InlineComponentAttribute represents an attribute that contains an inline component block.
+// e.g. child={ <div>content</div> }
+type InlineComponentAttribute struct {
+	Key      AttributeKey
+	Children []Node
+}
+
+func (ica *InlineComponentAttribute) String() string {
+	sb := new(strings.Builder)
+	_ = ica.Write(sb, 0)
+	return sb.String()
+}
+
+func (ica *InlineComponentAttribute) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, ica.Key.String(), "={\n"); err != nil {
+		return err
+	}
+	{
+		indent++
+		for _, child := range ica.Children {
+			if err := child.Write(w, indent); err != nil {
+				return err
+			}
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
+		}
+		indent--
+	}
+	if err := writeIndent(w, indent, "}"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ica *InlineComponentAttribute) Visit(v Visitor) error {
+	return v.VisitInlineComponentAttribute(ica)
+}
+
+func (ica *InlineComponentAttribute) Copy() Attribute {
+	return &InlineComponentAttribute{
+		Key:      ica.Key,
+		Children: CopyNodes(ica.Children),
+	}
+}
+
+func (ica *InlineComponentAttribute) AttributeKey() AttributeKey {
+	return ica.Key
+}
+
 func CopyAttributes(attrs []Attribute) (copies []Attribute) {
 	copies = make([]Attribute, len(attrs))
 	for i, a := range attrs {
 		copies[i] = a.Copy()
+	}
+	return copies
+}
+
+func CopyNodes(nodes []Node) (copies []Node) {
+	copies = make([]Node, len(nodes))
+	for i, n := range nodes {
+		copies[i] = n // Nodes don't have a Copy method, so we just copy the reference
 	}
 	return copies
 }

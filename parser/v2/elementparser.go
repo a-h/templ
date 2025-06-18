@@ -327,6 +327,86 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 	return attr, true, nil
 })
 
+var inlineComponentAttributeParser = parse.Func(func(pi *parse.Input) (attr *InlineComponentAttribute, ok bool, err error) {
+	start := pi.Index()
+
+	// Optional whitespace leader.
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+		return
+	}
+
+	// Attribute name.
+	var key AttributeKey
+	if key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	// ={
+	if _, ok, err = parse.Or(parse.String("={ "), parse.String("={")).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	// Skip whitespace
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		return nil, false, err
+	}
+
+	// Peek to check if this contains HTML elements
+	peek, _ := pi.Peek(10)
+	if !strings.Contains(peek, "<") {
+		// Not an inline component, let expression parser handle it
+		pi.Seek(start)
+		return nil, false, nil
+	}
+
+	// Now we know this is an inline component attribute
+	attr = &InlineComponentAttribute{
+		Key: key,
+	}
+
+	// We need to parse the content between braces
+	// For now, let's use a simple approach: collect everything until matching closing brace
+	contentStart := pi.Position()
+	braceDepth := 1
+	var contentBuilder strings.Builder
+	
+	for braceDepth > 0 {
+		next, nextOk := pi.Peek(1)
+		if !nextOk {
+			return attr, false, parse.Error("inline component attribute: unexpected EOF", pi.Position())
+		}
+		
+		pi.Take(1)
+		contentBuilder.WriteString(next)
+		
+		if next == "{" {
+			braceDepth++
+		} else if next == "}" {
+			braceDepth--
+			if braceDepth == 0 {
+				// Remove the last closing brace from content
+				content := contentBuilder.String()
+				content = content[:len(content)-1]
+				
+				// Parse the content as template nodes
+				contentInput := parse.NewInput(strings.TrimSpace(content))
+				parser := templateNodeParser[Node]{}
+				var nodes Nodes
+				nodes, ok, err = parser.Parse(contentInput)
+				if err != nil || !ok {
+					return attr, false, parse.Error("inline component attribute: failed to parse children", contentStart)
+				}
+				attr.Children = nodes.Nodes
+				return attr, true, nil
+			}
+		}
+	}
+	
+	return attr, false, parse.Error("inline component attribute: missing closing brace", pi.Position())
+})
+
 var spreadAttributesParser = parse.Func(func(pi *parse.Input) (attr *SpreadAttributes, ok bool, err error) {
 	start := pi.Index()
 
@@ -377,6 +457,9 @@ func (attributeParser) Parse(in *parse.Input) (out Attribute, ok bool, err error
 		return
 	}
 	if out, ok, err = boolExpressionAttributeParser.Parse(in); err != nil || ok {
+		return
+	}
+	if out, ok, err = inlineComponentAttributeParser.Parse(in); err != nil || ok {
 		return
 	}
 	if out, ok, err = expressionAttributeParser.Parse(in); err != nil || ok {

@@ -45,6 +45,20 @@ templ ElementComponent(attrs templ.Attributer) {
 		 />
 		// Multiple attributes with different types
 		<MultiComponent title="Multi Test" count={ 42 } enabled visible?={ shouldShow() } />
+		<!-- <Container child={ "hello" } /> -->
+		<Container
+			child={
+				<div>
+					divchild
+				</div>
+			}
+		 />
+	</div>
+}
+
+templ Container(child templ.Component) {
+	<div class="container">
+		@child
 	</div>
 }
 

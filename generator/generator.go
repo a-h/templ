@@ -832,48 +832,55 @@ func (g *generator) writeTemplElementExpression(indentLevel int, n *parser.Templ
 	return g.writeBlockTemplElementExpression(indentLevel, n)
 }
 
-func (g *generator) writeBlockTemplElementExpression(indentLevel int, n *parser.TemplElementExpression) (err error) {
-	var r parser.Range
-	childrenName := g.createVariableName()
-	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
-		return err
+func (g *generator) writeChildrenComponent(indentLevel int, children []parser.Node) (vn string, err error) {
+	vn = g.createVariableName()
+	if _, err = g.w.WriteIndent(indentLevel, vn+" := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
+		return "", err
 	}
 	indentLevel++
 	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context\n"); err != nil {
-		return err
+		return "", err
 	}
 	if err := g.writeTemplBuffer(indentLevel); err != nil {
-		return err
+		return "", err
 	}
 	// ctx = templ.InitializeContext(ctx)
 	if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeContext(ctx)\n"); err != nil {
-		return err
+		return "", err
 	}
-	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Children), nil); err != nil {
-		return err
+	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(children), nil); err != nil {
+		return "", err
 	}
 	// return nil
 	if _, err = g.w.WriteIndent(indentLevel, "return nil\n"); err != nil {
-		return err
+		return "", err
 	}
 	indentLevel--
 	if _, err = g.w.WriteIndent(indentLevel, "})\n"); err != nil {
+		return "", err
+	}
+	return vn, nil
+}
+
+func (g *generator) writeBlockTemplElementExpression(indentLevel int, n *parser.TemplElementExpression) (err error) {
+	childrenName, err := g.writeChildrenComponent(indentLevel, n.Children)
+	if err != nil {
 		return err
 	}
-	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
-		return err
-	}
-	if r, err = g.w.Write(n.Expression.Value); err != nil {
-		return err
-	}
-	g.sourceMap.Add(n.Expression, r)
-	// .Render(templ.WithChildren(ctx, children), templ_7745c5c3_Buffer)
 	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), templ_7745c5c3_Buffer)\n"); err != nil {
 		return err
 	}
 	if err = g.writeErrorHandler(indentLevel); err != nil {
 		return err
 	}
+	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
+		return err
+	}
+	var r parser.Range
+	if r, err = g.w.Write(n.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(n.Expression, r)
 	return nil
 }
 
@@ -1051,10 +1058,58 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 	}, nil
 }
 
+func (g *generator) writeElementComponentAttrComponent(indentLevel int, attr parser.Attribute, param ParameterInfo) (string, error) {
+	// For templ.Component attributes, we need to handle them differently
+	// The attribute value should be a component that can be rendered
+
+	switch attr := attr.(type) {
+	case *parser.InlineComponentAttribute:
+		return g.writeChildrenComponent(indentLevel, attr.Children)
+	// case *parser.ExpressionAttribute:
+	// 	// This is a regular expression that should return templ.Component
+	// 	varName := g.createVariableName()
+	//
+	// 	// Check if the expression is a simple string literal
+	// 	exprValue := strings.TrimSpace(attr.Expression.Value)
+	// 	if strings.HasPrefix(exprValue, `"`) && strings.HasSuffix(exprValue, `"`) {
+	// 		// It's a string literal, wrap it in templ.Text()
+	// 		if _, err := g.w.WriteIndent(indentLevel, varName+" := templ.Text("); err != nil {
+	// 			return "", err
+	// 		}
+	// 		if _, err := g.w.Write(exprValue); err != nil {
+	// 			return "", err
+	// 		}
+	// 		if _, err := g.w.Write(")\n"); err != nil {
+	// 			return "", err
+	// 		}
+	// 	} else {
+	// 		// It's an expression that should return templ.Component
+	// 		if _, err := g.w.WriteIndent(indentLevel, varName+" := "); err != nil {
+	// 			return "", err
+	// 		}
+	// 		if _, err := g.w.Write(attr.Expression.Value + "\n"); err != nil {
+	// 			return "", err
+	// 		}
+	// 	}
+	// 	return varName, nil
+	//
+	// case *parser.ConstantAttribute:
+	// 	// For constant string attributes, wrap in templ.Text
+	// 	varName := g.createVariableName()
+	// 	if _, err := g.w.WriteIndent(indentLevel, varName+" := templ.Text("+strconv.Quote(attr.Value)+")\n"); err != nil {
+	// 		return "", err
+	// 	}
+	// 	return varName, nil
+	//
+	default:
+		return "", fmt.Errorf("unsupported attribute type %T for templ.Component parameter", attr)
+	}
+}
+
 func (g *generator) writeElementComponentArgNewVar(indentLevel int, attr parser.Attribute, param ParameterInfo) (string, error) {
-	// TODO: implement templ.Component type handling: if the input is a stringable, it will be converted to a stringable component,
-	// or else it'll be rendered as a templ.Component, like how children are rendered.
-	_ = param
+	if isTemplComponent(param.Type) {
+		return g.writeElementComponentAttrComponent(indentLevel, attr, param)
+	}
 
 	switch attr := attr.(type) {
 	case *parser.ConstantAttribute:
@@ -2373,4 +2428,8 @@ func isTemplAttributer(typ string) bool {
 	// when it comes from a Go file which uses the x/tool/packages parser the moment, it will be "github.com/a-h/templ.Attributer"
 	// This is not ideal but a ok compromise. when the symbols is from templ files, it may not have been resolved, only parsed. And resolving takes time and may nto be available.
 	return typ == "templ.Attributer" || typ == "github.com/a-h/templ.Attributer"
+}
+
+func isTemplComponent(typ string) bool {
+	return typ == "templ.Component" || typ == "github.com/a-h/templ.Component"
 }
