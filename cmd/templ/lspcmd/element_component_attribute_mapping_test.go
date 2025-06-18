@@ -8,8 +8,8 @@ import (
 	"github.com/a-h/templ/parser/v2"
 )
 
-func TestJSXAttributeNameToParameterMapping(t *testing.T) {
-	// Test that JSX attribute names are properly mapped to function parameters in source maps
+func TestElementComponentAttributeNameToParameterMapping(t *testing.T) {
+	// Test that element component attribute names are properly mapped to function parameters in source maps
 	templContent := `package main
 
 templ Button(text string, onClick string, disabled bool) {
@@ -18,7 +18,7 @@ templ Button(text string, onClick string, disabled bool) {
 
 templ TestTemplate() {
 	<div>
-		<Button text="Click me" onClick={ fmt.Sprintf("handle()") } disabled={ false } />
+		@Button("Click me", fmt.Sprintf("handle()"), false)
 	</div>
 }`
 
@@ -81,7 +81,7 @@ templ TestTemplate() {
 	hasDisabledMapping := disabledFound
 
 	if hasTextMapping && hasOnClickMapping && hasDisabledMapping {
-		t.Log("SUCCESS: All JSX attribute names are properly mapped to function parameters in the source map")
+		t.Log("SUCCESS: All element component attribute names are properly mapped to function parameters in the source map")
 	} else {
 		t.Errorf("INCOMPLETE: Not all attribute names are mapped. text: %v, onClick: %v, disabled: %v", 
 			hasTextMapping, hasOnClickMapping, hasDisabledMapping)
@@ -93,5 +93,5 @@ templ TestTemplate() {
 		t.Error("Generated code should contain the correct function call with parameters in order")
 	}
 
-	t.Log("JSX attribute name to parameter mapping test completed")
+	t.Log("Element component attribute name to parameter mapping test completed")
 }

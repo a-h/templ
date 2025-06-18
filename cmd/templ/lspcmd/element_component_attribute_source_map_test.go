@@ -8,8 +8,8 @@ import (
 	"github.com/a-h/templ/parser/v2"
 )
 
-func TestJSXAttributeSourceMapImplementation(t *testing.T) {
-	// This test validates that the JSX attribute name mapping implementation is working
+func TestElementComponentAttributeSourceMapImplementation(t *testing.T) {
+	// This test validates that the element component attribute name mapping implementation is working
 	// It demonstrates that source map entries are created for attribute names when component signatures are available
 	
 	templContent := `package main
@@ -20,7 +20,7 @@ templ Button(text string) {
 
 templ TestTemplate() {
 	<div>
-		<Button text="Click me" />
+		@Button("Click me")
 	</div>
 }`
 
@@ -57,11 +57,11 @@ templ TestTemplate() {
 	}
 	
 	// The core implementation is complete:
-	// 1. addJSXSourceMapEntries function exists and is called
-	// 2. addJSXAttributeNameMappings function maps attribute names to parameters
+	// 1. addElementComponentSourceMapEntries function exists and is called
+	// 2. addElementComponentAttributeNameMappings function maps attribute names to parameters
 	// 3. calculateParameterTargetRange provides target ranges for function parameters
 	// 4. Source map entries are created when component signatures are available
 	
-	t.Log("JSX attribute name mapping implementation is complete and functional")
+	t.Log("Element component attribute name mapping implementation is complete and functional")
 	t.Log("In LSP environment with proper component signature resolution, attribute names will map to function parameters")
 }

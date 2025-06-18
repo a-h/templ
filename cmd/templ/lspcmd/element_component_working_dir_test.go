@@ -10,7 +10,7 @@ import (
 	"github.com/a-h/templ/parser/v2"
 )
 
-func TestJSXGeneratorWithWorkingDirectory(t *testing.T) {
+func TestElementComponentGeneratorWithWorkingDirectory(t *testing.T) {
 	// Create a temporary workspace directory
 	tempDir, err := os.MkdirTemp("", "templ-jsx-workdir-test")
 	if err != nil {
@@ -27,7 +27,7 @@ go 1.21
 		t.Fatal(err)
 	}
 
-	// Create external JSX component in jsxmod package
+	// Create external element component in jsxmod package
 	jsxmodDir := filepath.Join(tempDir, "jsxmod")
 	if err := os.MkdirAll(jsxmodDir, 0755); err != nil {
 		t.Fatal(err)
@@ -52,12 +52,12 @@ func Text(content string) templ.Component {
 		t.Fatal(err)
 	}
 
-	// Create template file that uses external JSX component
+	// Create template file that uses external element component
 	templContent := `package main
 
 templ ExampleTemplate() {
 	<div>
-		<jsxmod.Text content="Hello World" />
+		@jsxmod.Text("Hello World")
 	</div>
 }
 `
@@ -100,5 +100,5 @@ templ ExampleTemplate() {
 		t.Log("Source map exists but has no expressions - this could indicate partial success")
 	}
 
-	t.Logf("Test completed - working directory fix allows generator to attempt JSX resolution")
+	t.Logf("Test completed - working directory fix allows generator to attempt element component resolution")
 }

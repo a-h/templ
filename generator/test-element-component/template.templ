@@ -53,9 +53,12 @@ templ ElementComponent(attrs templ.Attributer) {
 					divchild
 				</div>
 			}
-		 />
+		/>
+		<structComp.Page title="Struct Component Example" class="struct-component" style="color: blue;" />
 	</div>
 }
+
+var structComp StructComponent
 
 templ Container(child templ.Component) {
 	<div class="container">
@@ -106,6 +109,15 @@ templ MultiComponent(title string, count int, enabled bool, visible bool) {
 			<span>Visible</span>
 		}
 	</div>
+}
+
+type StructComponent struct {}
+templ (StructComponent) Page(title string, attrs templ.Attributer) {
+	<div { attrs... }>
+		<h1>{ title }</h1>
+		<p>This is a struct component.</p>
+	</div>
+
 }
 
 func isEnabled() bool {

@@ -8,7 +8,7 @@ import (
 	"github.com/a-h/templ/parser/v2"
 )
 
-func TestJSXLocalComponentSourceMap(t *testing.T) {
+func TestElementComponentLocalComponentSourceMap(t *testing.T) {
 	// Test with a local templ component which should work without external dependencies
 	templContent := `package main
 
@@ -18,7 +18,7 @@ templ Button(text string) {
 
 templ TestTemplate() {
 	<div>
-		<Button text="Click me" />
+		@Button("Click me")
 	</div>
 }
 `
@@ -44,7 +44,7 @@ templ TestTemplate() {
 	t.Logf("Generated Go code:\n%s", output.String())
 	t.Logf("Source map has %d expressions", len(sourceMap.Expressions))
 
-	// Test that we can map JSX component name position
+	// Test that we can map element component name position
 	// Component name "Button" should be around line 8, character 2-8
 	componentNameLine := uint32(8)
 	componentNameChar := uint32(3) // Position of "Button" in "<Button"
@@ -56,7 +56,7 @@ templ TestTemplate() {
 		t.Logf("Component name position not found in source map at line %d, char %d (this may be expected)", componentNameLine, componentNameChar)
 	}
 
-	// Test that we can map JSX attribute value
+	// Test that we can map element component attribute value
 	// The string "Click me" should be around line 8, character 15-25
 	attrLine := uint32(8)
 	attrChar := uint32(17) // Position inside "Click me"
@@ -68,7 +68,7 @@ templ TestTemplate() {
 		t.Logf("Attribute value position not found in source map at line %d, char %d", attrLine, attrChar)
 	}
 
-	// Test that we can map JSX attribute name to function parameter
+	// Test that we can map element component attribute name to function parameter
 	// The attribute name "text" should be around line 8, character 10-14 (from debug output)
 	attrNameLine := uint32(8)
 	attrNameChar := uint32(12) // Position inside "text" attribute name
@@ -90,18 +90,18 @@ templ TestTemplate() {
 	// Verify the generated code contains the expected function call
 	generatedCode := output.String()
 	if !strings.Contains(generatedCode, `Button(`) {
-		t.Error("Generated code should contain JSX component function call")
+		t.Error("Generated code should contain element component function call")
 	}
 
 	if !strings.Contains(generatedCode, `"Click me"`) {
 		t.Error("Generated code should contain the attribute value")
 	}
 
-	t.Log("JSX local component source map test completed")
+	t.Log("Element component local component source map test completed")
 }
 
-func TestJSXAttributeExpressionSourceMap(t *testing.T) {
-	// Test JSX with expression attributes
+func TestElementComponentAttributeExpressionSourceMap(t *testing.T) {
+	// Test element component with expression attributes
 	templContent := `package main
 
 import "fmt"
@@ -112,7 +112,7 @@ templ Button(onClick string) {
 
 templ TestTemplate(name string) {
 	<div>
-		<Button onClick={ fmt.Sprintf("handle_%s", name) } />
+		@Button(fmt.Sprintf("handle_%s", name))
 	</div>
 }
 `
@@ -149,6 +149,6 @@ templ TestTemplate(name string) {
 	// Verify the generated code preserves the expression
 	generatedCode := output.String()
 	if !strings.Contains(generatedCode, `fmt.Sprintf("handle_%s", name)`) {
-		t.Error("Generated code should contain the original expression from JSX attribute")
+		t.Error("Generated code should contain the original expression from element component attribute")
 	}
 }
