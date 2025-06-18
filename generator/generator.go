@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	goparser "go/parser"
+	"go/token"
 	"html"
 	"io"
 	"path/filepath"
@@ -2299,7 +2301,7 @@ func (g *generator) collectAndResolveComponents() error {
 						}
 					}
 				}
-				
+
 				if !found && g.symbolResolver != nil {
 					// Try Go function resolution
 					sig, err = g.symbolResolver.ResolveLocalComponent(comp.Name)
@@ -2354,20 +2356,102 @@ func (g *generator) collectAndResolveComponents() error {
 }
 
 func (g *generator) resolveImportPath(packageAlias string) string {
+	fset := token.NewFileSet()
+
 	// Look through the template file's imports to find the import path for this alias
 	for _, node := range g.tf.Nodes {
 		if importNode, ok := node.(*parser.TemplateFileGoExpression); ok {
 			// Check if this contains import statements
-			if strings.Contains(importNode.Expression.Value, "import ") {
-				// Split by lines and process each import statement
-				lines := strings.Split(importNode.Expression.Value, "\n")
-				for _, line := range lines {
-					line = strings.TrimSpace(line)
-					if strings.HasPrefix(line, "import ") {
-						alias, path := g.parseImportStatement(line)
-						if alias == packageAlias {
-							return path
-						}
+			if strings.Contains(importNode.Expression.Value, "import") {
+				path := g.parseImportPathWithAST(importNode.Expression.Value, packageAlias, fset)
+				if path != "" {
+					return path
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// parseImportPathWithAST extracts the import path for a specific alias using Go AST parser
+func (g *generator) parseImportPathWithAST(goCode, packageAlias string, fset *token.FileSet) string {
+	// Try to parse as a complete Go file first
+	fullGoCode := "package main\n" + goCode
+
+	astFile, err := goparser.ParseFile(fset, "", fullGoCode, goparser.ImportsOnly)
+	if err != nil {
+		// If that fails, try parsing just the import block
+		if strings.Contains(goCode, "import (") {
+			// Extract just the import block
+			start := strings.Index(goCode, "import (")
+			if start != -1 {
+				end := strings.Index(goCode[start:], ")")
+				if end != -1 {
+					importBlock := goCode[start : start+end+1]
+					fullGoCode = "package main\n" + importBlock
+					astFile, err = goparser.ParseFile(fset, "", fullGoCode, goparser.ImportsOnly)
+				}
+			}
+		}
+
+		if err != nil {
+			// Fall back to simple string parsing for edge cases
+			return g.parseImportPathFallback(goCode, packageAlias)
+		}
+	}
+
+	// Extract import path for the specific alias from AST
+	for _, imp := range astFile.Imports {
+		if imp.Path != nil {
+			pkgPath := strings.Trim(imp.Path.Value, `"`)
+			var alias string
+
+			if imp.Name != nil {
+				// Explicit alias: import alias "path"
+				alias = imp.Name.Name
+			} else {
+				// No explicit alias: import "path" -> derive alias from path
+				if lastSlash := strings.LastIndex(pkgPath, "/"); lastSlash != -1 {
+					alias = pkgPath[lastSlash+1:]
+				}
+			}
+
+			if alias == packageAlias {
+				return pkgPath
+			}
+		}
+	}
+
+	return ""
+}
+
+// parseImportPathFallback provides fallback parsing for edge cases
+func (g *generator) parseImportPathFallback(goCode, packageAlias string) string {
+	lines := strings.Split(goCode, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "import ") {
+			// Remove "import " prefix
+			importPart := strings.TrimSpace(line[7:])
+
+			// Handle quoted import without alias
+			if strings.HasPrefix(importPart, `"`) && strings.HasSuffix(importPart, `"`) {
+				// import "github.com/pkg/name" -> alias is "name"
+				pkgPath := importPart[1 : len(importPart)-1]
+				if lastSlash := strings.LastIndex(pkgPath, "/"); lastSlash != -1 {
+					alias := pkgPath[lastSlash+1:]
+					if alias == packageAlias {
+						return pkgPath
+					}
+				}
+			} else {
+				// Handle import with explicit alias
+				// alias "package" or . "package"
+				parts := strings.Fields(importPart)
+				if len(parts) >= 2 {
+					alias := parts[0]
+					if alias == packageAlias {
+						return strings.Trim(parts[1], `"`)
 					}
 				}
 			}
@@ -2376,45 +2460,16 @@ func (g *generator) resolveImportPath(packageAlias string) string {
 	return ""
 }
 
-func (g *generator) parseImportStatement(importStmt string) (alias, path string) {
-	// Handle import statements like:
-	// import "path/to/package"
-	// import alias "path/to/package"
-
-	importStmt = strings.TrimSpace(importStmt)
-	if !strings.HasPrefix(importStmt, "import ") {
-		return "", ""
-	}
-
-	importStmt = strings.TrimPrefix(importStmt, "import ")
-	importStmt = strings.TrimSpace(importStmt)
-
-	// Check if there's an alias
-	parts := strings.Fields(importStmt)
-	if len(parts) == 2 {
-		// alias "path"
-		alias = parts[0]
-		path = strings.Trim(parts[1], `"`)
-	} else if len(parts) == 1 {
-		// "path" - derive alias from path
-		path = strings.Trim(parts[0], `"`)
-		pathParts := strings.Split(path, "/")
-		alias = pathParts[len(pathParts)-1]
-	}
-
-	return alias, path
-}
-
 // tryResolveStructMethod attempts to resolve struct method components like structComp.Page to StructComponent.Page
 func (g *generator) tryResolveStructMethod(componentName string) bool {
 	parts := strings.Split(componentName, ".")
 	if len(parts) < 2 {
 		return false
 	}
-	
+
 	varName := parts[0]
 	methodName := strings.Join(parts[1:], ".")
-	
+
 	// Look through the template file for variable declarations
 	for _, node := range g.tf.Nodes {
 		if goExpr, ok := node.(*parser.TemplateFileGoExpression); ok {
@@ -2433,7 +2488,7 @@ func (g *generator) tryResolveStructMethod(componentName string) bool {
 			}
 		}
 	}
-	
+
 	return false
 }
 
@@ -2445,7 +2500,7 @@ func (g *generator) containsVariableDeclaration(goCode, varName string) bool {
 		varName + " :=",
 		varName + " =",
 	}
-	
+
 	for _, pattern := range patterns {
 		if strings.Contains(goCode, pattern) {
 			return true
@@ -2459,7 +2514,7 @@ func (g *generator) extractVariableType(goCode, varName string) string {
 	lines := strings.Split(goCode, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		// Handle "var varName TypeName"
 		if strings.HasPrefix(line, "var "+varName+" ") {
 			parts := strings.Fields(line)
@@ -2467,7 +2522,7 @@ func (g *generator) extractVariableType(goCode, varName string) string {
 				return parts[2]
 			}
 		}
-		
+
 		// Handle "varName := TypeName{}" or "varName = TypeName{}"
 		if strings.Contains(line, varName+" :=") || strings.Contains(line, varName+" =") {
 			// Extract type from constructor call like "StructComponent{}"
@@ -2480,7 +2535,7 @@ func (g *generator) extractVariableType(goCode, varName string) string {
 			}
 		}
 	}
-	
+
 	return ""
 }
 

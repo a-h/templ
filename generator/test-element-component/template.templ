@@ -1,8 +1,10 @@
 package testelementcomponent
 
-import "fmt"
-import "github.com/a-h/templ/generator/test-element-component/mod"
-import extern "github.com/a-h/templ/generator/test-element-component/externmod"
+import (
+	"fmt"
+	extern "github.com/a-h/templ/generator/test-element-component/externmod"
+	"github.com/a-h/templ/generator/test-element-component/mod"
+)
 
 templ ElementComponent(attrs templ.Attributer) {
 	<div>
@@ -53,7 +55,7 @@ templ ElementComponent(attrs templ.Attributer) {
 					divchild
 				</div>
 			}
-		/>
+		 />
 		<structComp.Page title="Struct Component Example" class="struct-component" style="color: blue;" />
 	</div>
 }
@@ -111,13 +113,13 @@ templ MultiComponent(title string, count int, enabled bool, visible bool) {
 	</div>
 }
 
-type StructComponent struct {}
+type StructComponent struct{}
+
 templ (StructComponent) Page(title string, attrs templ.Attributer) {
 	<div { attrs... }>
 		<h1>{ title }</h1>
 		<p>This is a struct component.</p>
 	</div>
-
 }
 
 func isEnabled() bool {

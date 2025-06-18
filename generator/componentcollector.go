@@ -1,6 +1,8 @@
 package generator
 
 import (
+	goparser "go/parser"
+	"go/token"
 	"strings"
 
 	"github.com/a-h/templ/parser/v2"
@@ -64,9 +66,9 @@ func (cc *ComponentCollector) collectFromNode(node parser.Node) {
 	case *parser.ElementComponent:
 		// Split component name by dots and check if first part is an import
 		parts := strings.Split(n.Name, ".")
-		
+
 		var pkgName, componentName string
-		
+
 		if len(parts) > 1 && cc.imports[parts[0]] {
 			// First part is an import alias, treat as package.Component
 			pkgName = parts[0]
@@ -128,32 +130,80 @@ func (cc *ComponentCollector) GetUniqueComponents() []ComponentReference {
 	return unique
 }
 
-// collectImports extracts import aliases from the template file
+// collectImports extracts import aliases from the template file using Go AST parser
 func (cc *ComponentCollector) collectImports(tf *parser.TemplateFile) {
+	fset := token.NewFileSet()
+
 	for _, node := range tf.Nodes {
 		if importNode, ok := node.(*parser.TemplateFileGoExpression); ok {
 			// Check if this contains import statements
-			if strings.Contains(importNode.Expression.Value, "import ") {
-				cc.parseImportStatements(importNode.Expression.Value)
+			if strings.Contains(importNode.Expression.Value, "import") {
+				cc.parseImportStatementsWithAST(importNode.Expression.Value, fset)
 			}
 		}
 	}
 }
 
-// parseImportStatements extracts import aliases from Go import code
-func (cc *ComponentCollector) parseImportStatements(goCode string) {
+// parseImportStatementsWithAST extracts import aliases from Go code using proper AST parsing
+func (cc *ComponentCollector) parseImportStatementsWithAST(goCode string, fset *token.FileSet) {
+	// Try to parse as a complete Go file first
+	fullGoCode := "package main\n" + goCode
+
+	astFile, err := goparser.ParseFile(fset, "", fullGoCode, goparser.ImportsOnly)
+	if err != nil {
+		// If that fails, try parsing just the import block
+		if strings.Contains(goCode, "import (") {
+			// Extract just the import block
+			start := strings.Index(goCode, "import (")
+			if start != -1 {
+				end := strings.Index(goCode[start:], ")")
+				if end != -1 {
+					importBlock := goCode[start : start+end+1]
+					fullGoCode = "package main\n" + importBlock
+					astFile, err = goparser.ParseFile(fset, "", fullGoCode, goparser.ImportsOnly)
+				}
+			}
+		}
+
+		if err != nil {
+			// Fall back to simple string parsing for edge cases
+			cc.parseImportStatementsFallback(goCode)
+			return
+		}
+	}
+
+	// Extract import aliases from AST
+	for _, imp := range astFile.Imports {
+		if imp.Path != nil {
+			pkgPath := strings.Trim(imp.Path.Value, `"`)
+			var alias string
+
+			if imp.Name != nil {
+				// Explicit alias: import alias "path"
+				alias = imp.Name.Name
+				if alias != "." && alias != "_" {
+					cc.imports[alias] = true
+				}
+			} else {
+				// No explicit alias: import "path" -> derive alias from path
+				if lastSlash := strings.LastIndex(pkgPath, "/"); lastSlash != -1 {
+					alias = pkgPath[lastSlash+1:]
+					cc.imports[alias] = true
+				}
+			}
+		}
+	}
+}
+
+// parseImportStatementsFallback provides fallback parsing for edge cases
+func (cc *ComponentCollector) parseImportStatementsFallback(goCode string) {
 	lines := strings.Split(goCode, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "import ") {
-			// Handle different import formats:
-			// import "package"
-			// import alias "package" 
-			// import . "package"
-			
 			// Remove "import " prefix
 			importPart := strings.TrimSpace(line[7:])
-			
+
 			// Handle quoted import without alias
 			if strings.HasPrefix(importPart, `"`) && strings.HasSuffix(importPart, `"`) {
 				// import "github.com/pkg/name" -> alias is "name"
@@ -176,4 +226,3 @@ func (cc *ComponentCollector) parseImportStatements(goCode string) {
 		}
 	}
 }
-
