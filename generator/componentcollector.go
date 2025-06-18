@@ -17,20 +17,26 @@ type ComponentReference struct {
 // ComponentCollector collects all Element component references from a templ file
 type ComponentCollector struct {
 	components []ComponentReference
+	imports    map[string]bool // Track import aliases
 }
 
 // NewElementComponentCollector creates a new component collector
 func NewElementComponentCollector() *ComponentCollector {
 	return &ComponentCollector{
 		components: make([]ComponentReference, 0),
+		imports:    make(map[string]bool),
 	}
 }
 
 // Collect walks the template file and collects all Element component references
 func (cc *ComponentCollector) Collect(tf *parser.TemplateFile) []ComponentReference {
 	cc.components = make([]ComponentReference, 0)
+	cc.imports = make(map[string]bool)
 
-	// Walk through all templates in the file
+	// First pass: collect imports
+	cc.collectImports(tf)
+
+	// Second pass: collect components
 	for _, node := range tf.Nodes {
 		switch n := node.(type) {
 		case *parser.HTMLTemplate:
@@ -56,13 +62,18 @@ func (cc *ComponentCollector) collectFromNodes(nodes []parser.Node) {
 func (cc *ComponentCollector) collectFromNode(node parser.Node) {
 	switch n := node.(type) {
 	case *parser.ElementComponent:
-		// Extract package name and component name
-		pkgName := ""
-		componentName := n.Name
-
-		if idx := strings.LastIndex(n.Name, "."); idx != -1 {
-			pkgName = n.Name[:idx]
-			componentName = n.Name[idx+1:]
+		// Split component name by dots and check if first part is an import
+		parts := strings.Split(n.Name, ".")
+		
+		var pkgName, componentName string
+		
+		if len(parts) > 1 && cc.imports[parts[0]] {
+			// First part is an import alias, treat as package.Component
+			pkgName = parts[0]
+			componentName = strings.Join(parts[1:], ".")
+		} else {
+			// Not an import, treat as local component (could be structVar.Method)
+			componentName = n.Name
 		}
 
 		cc.components = append(cc.components, ComponentReference{
@@ -115,5 +126,54 @@ func (cc *ComponentCollector) GetUniqueComponents() []ComponentReference {
 	}
 
 	return unique
+}
+
+// collectImports extracts import aliases from the template file
+func (cc *ComponentCollector) collectImports(tf *parser.TemplateFile) {
+	for _, node := range tf.Nodes {
+		if importNode, ok := node.(*parser.TemplateFileGoExpression); ok {
+			// Check if this contains import statements
+			if strings.Contains(importNode.Expression.Value, "import ") {
+				cc.parseImportStatements(importNode.Expression.Value)
+			}
+		}
+	}
+}
+
+// parseImportStatements extracts import aliases from Go import code
+func (cc *ComponentCollector) parseImportStatements(goCode string) {
+	lines := strings.Split(goCode, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "import ") {
+			// Handle different import formats:
+			// import "package"
+			// import alias "package" 
+			// import . "package"
+			
+			// Remove "import " prefix
+			importPart := strings.TrimSpace(line[7:])
+			
+			// Handle quoted import without alias
+			if strings.HasPrefix(importPart, `"`) && strings.HasSuffix(importPart, `"`) {
+				// import "github.com/pkg/name" -> alias is "name"
+				pkgPath := importPart[1 : len(importPart)-1]
+				if lastSlash := strings.LastIndex(pkgPath, "/"); lastSlash != -1 {
+					alias := pkgPath[lastSlash+1:]
+					cc.imports[alias] = true
+				}
+			} else {
+				// Handle import with explicit alias
+				// alias "package" or . "package"
+				parts := strings.Fields(importPart)
+				if len(parts) >= 2 {
+					alias := parts[0]
+					if alias != "." && alias != "_" {
+						cc.imports[alias] = true
+					}
+				}
+			}
+		}
+	}
 }
 

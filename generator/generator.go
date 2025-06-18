@@ -2284,19 +2284,32 @@ func (g *generator) collectAndResolveComponents() error {
 		var found bool
 
 		if comp.PackageName == "" {
-			// Local component - first check templ templates, then Go functions
+			// Local component - check both simple name and full name for receiver methods
 			if templSig, ok := g.templResolver.GetSignature(comp.Name); ok {
 				sig = templSig
 				found = true
-			} else if g.symbolResolver != nil {
-				// Try Go function resolution
-				sig, err = g.symbolResolver.ResolveLocalComponent(comp.Name)
-				if err == nil {
-					found = true
+			} else {
+				// If this looks like a struct method (var.Method), try to resolve it
+				if strings.Contains(comp.Name, ".") {
+					found = g.tryResolveStructMethod(comp.Name)
+					if found {
+						// Find the resolved signature
+						if templSig, ok := g.templResolver.GetSignature(comp.Name); ok {
+							sig = templSig
+						}
+					}
+				}
+				
+				if !found && g.symbolResolver != nil {
+					// Try Go function resolution
+					sig, err = g.symbolResolver.ResolveLocalComponent(comp.Name)
+					if err == nil {
+						found = true
+					}
 				}
 			}
 		} else {
-			// External component - use Go function resolution with resolved import path
+			// Package import - use Go function resolution with resolved import path
 			if g.symbolResolver != nil {
 				importPath := g.resolveImportPath(comp.PackageName)
 				if importPath != "" {
@@ -2390,6 +2403,85 @@ func (g *generator) parseImportStatement(importStmt string) (alias, path string)
 	}
 
 	return alias, path
+}
+
+// tryResolveStructMethod attempts to resolve struct method components like structComp.Page to StructComponent.Page
+func (g *generator) tryResolveStructMethod(componentName string) bool {
+	parts := strings.Split(componentName, ".")
+	if len(parts) < 2 {
+		return false
+	}
+	
+	varName := parts[0]
+	methodName := strings.Join(parts[1:], ".")
+	
+	// Look through the template file for variable declarations
+	for _, node := range g.tf.Nodes {
+		if goExpr, ok := node.(*parser.TemplateFileGoExpression); ok {
+			// Check if this contains variable declarations
+			if g.containsVariableDeclaration(goExpr.Expression.Value, varName) {
+				typeName := g.extractVariableType(goExpr.Expression.Value, varName)
+				if typeName != "" {
+					// Look for signature with TypeName.MethodName
+					candidateSig := typeName + "." + methodName
+					if _, ok := g.templResolver.GetSignature(candidateSig); ok {
+						// Add alias mapping for future lookups
+						g.templResolver.AddSignatureAlias(componentName, candidateSig)
+						return true
+					}
+				}
+			}
+		}
+	}
+	
+	return false
+}
+
+// containsVariableDeclaration checks if the Go code contains a variable declaration
+func (g *generator) containsVariableDeclaration(goCode, varName string) bool {
+	// Simple pattern matching for "var varName" or "varName :="
+	patterns := []string{
+		"var " + varName + " ",
+		varName + " :=",
+		varName + " =",
+	}
+	
+	for _, pattern := range patterns {
+		if strings.Contains(goCode, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+// extractVariableType extracts the type from a variable declaration
+func (g *generator) extractVariableType(goCode, varName string) string {
+	lines := strings.Split(goCode, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		
+		// Handle "var varName TypeName"
+		if strings.HasPrefix(line, "var "+varName+" ") {
+			parts := strings.Fields(line)
+			if len(parts) >= 3 {
+				return parts[2]
+			}
+		}
+		
+		// Handle "varName := TypeName{}" or "varName = TypeName{}"
+		if strings.Contains(line, varName+" :=") || strings.Contains(line, varName+" =") {
+			// Extract type from constructor call like "StructComponent{}"
+			if idx := strings.Index(line, "{"); idx != -1 {
+				beforeBrace := line[:idx]
+				parts := strings.Fields(beforeBrace)
+				if len(parts) >= 3 {
+					return parts[len(parts)-1]
+				}
+			}
+		}
+	}
+	
+	return ""
 }
 
 func functionName(name string, body string) string {

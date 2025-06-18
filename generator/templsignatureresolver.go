@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	goparser "go/parser"
 	"go/token"
+	"strings"
 
 	"github.com/a-h/templ/parser/v2"
 )
@@ -37,6 +38,22 @@ func (tsr *TemplSignatureResolver) ExtractSignatures(tf *parser.TemplateFile) {
 func (tsr *TemplSignatureResolver) GetSignature(name string) (*ComponentSignature, bool) {
 	sig, ok := tsr.signatures[name]
 	return sig, ok
+}
+
+// GetAllSignatureNames returns all signature names for debugging
+func (tsr *TemplSignatureResolver) GetAllSignatureNames() []string {
+	names := make([]string, 0, len(tsr.signatures))
+	for name := range tsr.signatures {
+		names = append(names, name)
+	}
+	return names
+}
+
+// AddSignatureAlias adds an alias mapping for a signature
+func (tsr *TemplSignatureResolver) AddSignatureAlias(alias, target string) {
+	if sig, ok := tsr.signatures[target]; ok {
+		tsr.signatures[alias] = sig
+	}
 }
 
 // extractHTMLTemplateSignature extracts the signature from an HTML template
@@ -82,6 +99,17 @@ func (tsr *TemplSignatureResolver) parseTemplateSignatureFromAST(exprValue strin
 		if fn, ok := decl.(*ast.FuncDecl); ok {
 			name = fn.Name.Name
 			params = tsr.extractParametersFromAST(fn.Type.Params)
+			
+			// If this is a receiver method, create a composite name
+			if fn.Recv != nil && len(fn.Recv.List) > 0 {
+				receiverType := tsr.astTypeToString(fn.Recv.List[0].Type)
+				// Remove pointer indicator if present for consistent naming
+				if strings.HasPrefix(receiverType, "*") {
+					receiverType = receiverType[1:]
+				}
+				name = receiverType + "." + name
+			}
+			
 			return name, params, nil
 		}
 	}
