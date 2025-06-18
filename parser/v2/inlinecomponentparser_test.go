@@ -56,7 +56,7 @@ func TestInlineComponentAttributeParser(t *testing.T) {
 			input:       `href={ templ.URL("mailto: " + p.Email) }`,
 			expectMatch: false,
 		},
-		
+
 		// Should match - actual inline components
 		{
 			name:           "simple div element",
@@ -86,7 +86,7 @@ func TestInlineComponentAttributeParser(t *testing.T) {
 			expectedKey:    "child",
 			expectedResult: "component element",
 		},
-		
+
 		// Edge cases
 		{
 			name:        "empty braces",
@@ -110,7 +110,7 @@ func TestInlineComponentAttributeParser(t *testing.T) {
 			expectedKey:    "content",
 			expectedResult: "HTML with nested expressions",
 		},
-		
+
 		// Additional edge cases
 		{
 			name:        "Go expression with comparison operators",
@@ -139,7 +139,7 @@ func TestInlineComponentAttributeParser(t *testing.T) {
 			expectedKey:    "child",
 			expectedResult: "div with expression attribute",
 		},
-		
+
 		// Error cases
 		{
 			name:        "unclosed braces",
@@ -153,13 +153,13 @@ func TestInlineComponentAttributeParser(t *testing.T) {
 			expectError: true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			
+
 			attr, matched, err := inlineComponentAttributeParser.Parse(input)
-			
+
 			// Check error expectation
 			if tt.expectError {
 				if err == nil {
@@ -167,13 +167,13 @@ func TestInlineComponentAttributeParser(t *testing.T) {
 				}
 				return
 			}
-			
+
 			// Check match expectation
 			if matched != tt.expectMatch {
 				t.Errorf("Expected match=%v, got match=%v", tt.expectMatch, matched)
 				return
 			}
-			
+
 			if !tt.expectMatch {
 				// For non-matches, we expect no error and nil result
 				if err != nil {
@@ -184,22 +184,22 @@ func TestInlineComponentAttributeParser(t *testing.T) {
 				}
 				return
 			}
-			
+
 			// For matches, verify the results
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
 			}
-			
+
 			if attr == nil {
 				t.Errorf("Expected non-nil attribute for match")
 				return
 			}
-			
+
 			if attr.Key.String() != tt.expectedKey {
 				t.Errorf("Expected key=%q, got key=%q", tt.expectedKey, attr.Key.String())
 			}
-			
+
 			// Verify that children were parsed (basic check)
 			if len(attr.Children) == 0 {
 				t.Errorf("Expected parsed children, got empty children")
@@ -230,36 +230,36 @@ func TestInlineComponentAttributeParserIntegration(t *testing.T) {
 			expectTypes: []string{"InlineComponentAttribute", "InlineComponentAttribute"},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			
+
 			parser := attributesParser{}
 			attrs, matched, err := parser.Parse(input)
-			
+
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
 			}
-			
+
 			if !matched {
 				t.Errorf("Expected to match attributes")
 				return
 			}
-			
+
 			if len(attrs) != len(tt.expectTypes) {
 				t.Errorf("Expected %d attributes, got %d", len(tt.expectTypes), len(attrs))
 				return
 			}
-			
+
 			for i, expectedType := range tt.expectTypes {
 				actualType := ""
 				switch attrs[i].(type) {
 				case *ConstantAttribute:
 					actualType = "ConstantAttribute"
 				case *ExpressionAttribute:
-					actualType = "ExpressionAttribute" 
+					actualType = "ExpressionAttribute"
 				case *InlineComponentAttribute:
 					actualType = "InlineComponentAttribute"
 				case *BoolConstantAttribute:
@@ -269,7 +269,7 @@ func TestInlineComponentAttributeParserIntegration(t *testing.T) {
 				default:
 					actualType = "Unknown"
 				}
-				
+
 				if actualType != expectedType {
 					t.Errorf("Attribute %d: expected type %s, got type %s", i, expectedType, actualType)
 				}
@@ -287,7 +287,7 @@ func BenchmarkInlineComponentAttributeParser(b *testing.B) {
 		`child={ <div>simple element</div> }`,
 		`complex={ <div><p>nested</p><span>elements</span></div> }`,
 	}
-	
+
 	for _, testCase := range testCases {
 		b.Run(testCase, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {

@@ -99,7 +99,7 @@ func (tsr *TemplSignatureResolver) parseTemplateSignatureFromAST(exprValue strin
 		if fn, ok := decl.(*ast.FuncDecl); ok {
 			name = fn.Name.Name
 			params = tsr.extractParametersFromAST(fn.Type.Params)
-			
+
 			// If this is a receiver method, create a composite name
 			if fn.Recv != nil && len(fn.Recv.List) > 0 {
 				receiverType := tsr.astTypeToString(fn.Recv.List[0].Type)
@@ -109,7 +109,7 @@ func (tsr *TemplSignatureResolver) parseTemplateSignatureFromAST(exprValue strin
 				}
 				name = receiverType + "." + name
 			}
-			
+
 			return name, params, nil
 		}
 	}

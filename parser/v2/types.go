@@ -1316,8 +1316,8 @@ func (tee *TemplElementExpression) Visit(v Visitor) error {
 
 // AttributeComment represents a comment within element attributes
 type AttributeComment struct {
-	Comment string
-	Multiline bool
+	Comment       string
+	Multiline     bool
 	IsHTMLComment bool
 }
 
@@ -1348,8 +1348,8 @@ func (ac *AttributeComment) Visit(v Visitor) error {
 
 func (ac *AttributeComment) Copy() Attribute {
 	return &AttributeComment{
-		Comment: ac.Comment,
-		Multiline: ac.Multiline,
+		Comment:       ac.Comment,
+		Multiline:     ac.Multiline,
 		IsHTMLComment: ac.IsHTMLComment,
 	}
 }

@@ -690,7 +690,7 @@ func analyzeInlineAttributeContent(pi *parse.Input) (content string, contentLeng
 	braceDepth := 1
 	contentEnd := pi.Index()
 	tempInput := *pi // Create a copy to scan ahead without affecting original position
-	
+
 	for braceDepth > 0 {
 		next, ok := tempInput.Peek(1)
 		if !ok {
@@ -699,7 +699,7 @@ func analyzeInlineAttributeContent(pi *parse.Input) (content string, contentLeng
 		}
 		tempInput.Take(1)
 		contentEnd++
-		
+
 		switch next {
 		case "{":
 			braceDepth++
@@ -707,16 +707,16 @@ func analyzeInlineAttributeContent(pi *parse.Input) (content string, contentLeng
 			braceDepth--
 		}
 	}
-	
+
 	// Get just the content between braces (excluding the final closing brace)
 	contentLength = contentEnd - pi.Index() - 1
 	if contentLength <= 0 {
 		// Empty braces or malformed
 		return "", 0, false
 	}
-	
+
 	content, _ = pi.Peek(contentLength)
-	
+
 	// Determine if this content represents HTML vs Go expressions
 	isHTML = looksLikeHTMLContent(content)
 	return content, contentLength, isHTML
@@ -728,20 +728,20 @@ func looksLikeHTMLContent(content string) bool {
 	if !strings.Contains(content, "<") {
 		return false
 	}
-	
+
 	trimmed := strings.TrimSpace(content)
-	
+
 	// If it starts with a quote or backtick, it's likely a string literal containing '<'
 	if strings.HasPrefix(trimmed, `"`) || strings.HasPrefix(trimmed, "`") || strings.HasPrefix(trimmed, "'") {
 		return false
 	}
-	
+
 	// If it doesn't start with '<', it's likely a Go expression (function call, variable, etc.)
 	// that may contain '<' in string literals
 	if !strings.HasPrefix(trimmed, "<") {
 		return false
 	}
-	
+
 	// If we get here, it starts with '<' and isn't a quoted string,
 	// so it's probably actual HTML content
 	return true
