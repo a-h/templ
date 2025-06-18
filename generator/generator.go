@@ -962,7 +962,7 @@ func (g *generator) writeBlockElementComponent(indentLevel int, n *parser.Elemen
 	return nil
 }
 
-func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n *parser.ElementComponent) ([]parser.Attribute, error) {
+func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n *parser.ElementComponent) ([]parser.Attribute, []parser.Attribute, error) {
 	// Create a map of attribute names to values
 	attrMap := make(map[string]parser.Attribute)
 	rest := make([]parser.Attribute, 0)
@@ -1003,13 +1003,13 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 		var ok bool
 		args[i], ok = attrMap[param.Name]
 		if !ok {
-			return nil, fmt.Errorf("%s: missing required parameter '%s'", sig.Name, param.Name)
+			return nil, nil, fmt.Errorf("%s: missing required parameter '%s'", sig.Name, param.Name)
 		}
 	}
 	// TODO: append rest as templ.Attributer
 	// TODO: maybe we should write the script and style elements
 
-	return args, nil
+	return args, rest, nil
 }
 
 // extractAttributeName extracts the name from an AttributeKey
@@ -1025,84 +1025,76 @@ func extractAttributeName(key parser.AttributeKey) string {
 	}
 }
 
-func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attribute, sig *ComponentSignature) ([]string, error) {
+func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attribute, sigs *ComponentSignature) ([]string, error) {
 	res := make([]string, len(args))
 	for i, attr := range args {
 		var value string
 		var err error
-		
-		// Get the parameter type (for future use if needed)
-		// paramType := sig.Parameters[i].Type
+		sig := sigs.Parameters[i]
 
-		switch key := attr.(type) {
+		// TODO: implement templ.Component type handling: if the input is a stringable, it will be converted to a stringable component,
+		// or else it'll be rendered as a templ.Component, like how children are rendered.
+		_ = sig
+
+		switch attr := attr.(type) {
 		case *parser.ConstantAttribute:
-			// Simple string literal
-			value = fmt.Sprintf(`"%s"`, key.Value)
-
-		case *parser.ExpressionAttribute:
-			// Check if it's a simple expression that doesn't need error handling
-			if isSimpleExpression(key.Expression.Value) {
-				value = key.Expression.Value
-			} else {
-				// For all expressions that might return errors, use JoinAnyErrs
-				varName := g.createVariableName()
-				// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(expression)
-				if _, err = g.w.WriteIndent(indentLevel, varName+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
-					return nil, err
-				}
-				var r parser.Range
-				if r, err = g.w.Write(key.Expression.Value); err != nil {
-					return nil, err
-				}
-				g.sourceMap.Add(key.Expression, r)
-				if _, err = g.w.Write(")\n"); err != nil {
-					return nil, err
-				}
-				// Error handler
-				if err = g.writeExpressionErrorHandler(indentLevel, key.Expression); err != nil {
-					return nil, err
-				}
-				value = varName
+			// TODO: Copied from writeConstantAttribute, should merge with it
+			quote := `"`
+			if attr.SingleQuote {
+				quote = "'"
 			}
-
+			value = quote + attr.Value + quote
+		case *parser.ExpressionAttribute:
+			// TODO: support URL, Script and Style attribute
+			// check writeExpressionAttribute
+			var r parser.Range
+			vn := g.createVariableName()
+			// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(
+			if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
+				return nil, err
+			}
+			// p.Name()
+			if r, err = g.w.Write(attr.Expression.Value); err != nil {
+				return nil, err
+			}
+			g.sourceMap.Add(attr.Expression, r)
+			if _, err = g.w.Write(")\n"); err != nil {
+				return nil, err
+			}
+			// Error handler
+			if err = g.writeExpressionErrorHandler(indentLevel, attr.Expression); err != nil {
+				return nil, err
+			}
+			value = vn
 		case *parser.BoolConstantAttribute:
 			// Simple boolean true
 			value = "true"
-
 		case *parser.BoolExpressionAttribute:
-			// Boolean expression
-			if isSimpleExpression(key.Expression.Value) {
-				value = key.Expression.Value
-			} else {
-				// For boolean expressions that might return errors, use JoinAnyErrs
-				varName := g.createVariableName()
-				// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(expression)
-				if _, err = g.w.WriteIndent(indentLevel, varName+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
-					return nil, err
-				}
-				var r parser.Range
-				if r, err = g.w.Write(key.Expression.Value); err != nil {
-					return nil, err
-				}
-				g.sourceMap.Add(key.Expression, r)
-				if _, err = g.w.Write(")\n"); err != nil {
-					return nil, err
-				}
-				// Error handler
-				if err = g.writeExpressionErrorHandler(indentLevel, key.Expression); err != nil {
-					return nil, err
-				}
-				value = varName
+			// For boolean expressions that might return errors, use JoinAnyErrs
+			vn := g.createVariableName()
+			// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(expression)
+			if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
+				return nil, err
 			}
-
+			var r parser.Range
+			if r, err = g.w.Write(attr.Expression.Value); err != nil {
+				return nil, err
+			}
+			g.sourceMap.Add(attr.Expression, r)
+			if _, err = g.w.Write(")\n"); err != nil {
+				return nil, err
+			}
+			// Error handler
+			if err = g.writeExpressionErrorHandler(indentLevel, attr.Expression); err != nil {
+				return nil, err
+			}
+			value = vn
 		case *parser.SpreadAttributes:
 			// TODO: Handle spread attributes
 			return nil, fmt.Errorf("spread attributes not yet supported in element components")
-
 		case *parser.ConditionalAttribute:
 			// TODO: Handle conditional attributes
 			return nil, fmt.Errorf("conditional attributes not yet supported in element components")
-
 		default:
 			return nil, fmt.Errorf("unknown attribute type %T", attr)
 		}
@@ -1112,30 +1104,6 @@ func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attri
 	return res, nil
 }
 
-// isSimpleExpression checks if an expression is simple enough to be used directly
-// without creating a variable (e.g., identifiers, selectors, simple literals)
-func isSimpleExpression(expr string) bool {
-	// Simple expressions are identifiers or member access that don't need error handling
-	// Examples: "foo", "obj.Field", "pkg.Const"
-	// Not simple: "foo()", "a + b", "func() { ... }", multi-line expressions
-	expr = strings.TrimSpace(expr)
-	
-	// Check for function calls, operators, or multi-line
-	if strings.Contains(expr, "(") || strings.Contains(expr, " ") || strings.Contains(expr, "\n") {
-		return false
-	}
-	
-	// Check for operators
-	operators := []string{"+", "-", "*", "/", "%", "=", "!", "<", ">", "&", "|", "^", "~"}
-	for _, op := range operators {
-		if strings.Contains(expr, op) {
-			return false
-		}
-	}
-	
-	return true
-}
-
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
 	sigKey := n.Name
 	sigs, ok := g.componentSigs[sigKey]
@@ -1143,10 +1111,11 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 		return fmt.Errorf("%s: no function signature found - all components must have matching Go functions with matching parameters", n.Name)
 	}
 
-	attrs, err := g.reorderElementComponentAttributes(sigs, n)
+	attrs, rest, err := g.reorderElementComponentAttributes(sigs, n)
 	if err != nil {
 		return err
 	}
+	_ = rest // TODO: group rest into a single templ.Attributer
 	var vars []string
 	if vars, err = g.writeArgumentAssignment(indentLevel, attrs, sigs); err != nil {
 		return err

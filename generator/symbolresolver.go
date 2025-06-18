@@ -18,9 +18,8 @@ type ComponentSignature struct {
 
 // ParameterInfo represents a function parameter
 type ParameterInfo struct {
-	Name     string
-	Type     types.Type
-	Position int // Parameter position in function signature (0-based)
+	Name string
+	Type types.Type
 }
 
 // SymbolResolver resolves component symbols across packages
