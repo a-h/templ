@@ -4,7 +4,7 @@ import "fmt"
 import "github.com/a-h/templ/generator/test-element-component/mod"
 import extern "github.com/a-h/templ/generator/test-element-component/externmod"
 
-templ ElementComponent() {
+templ ElementComponent(attrs templ.Attributer) {
 	<div>
 		<h1>ElementComponent Demo</h1>
 		<Button title={ str() } />
@@ -24,18 +24,25 @@ templ ElementComponent() {
 		<Button title="Constant String" />
 		// Complex expression attribute
 		<Button title={ "Hello " + str() + "!" } />
-		// Boolean constant attribute (with title)
 		<BoolComponent
 			title="Bool Test"
-			enabled
 			if true {
 				class="enabled"
+			} else {
+				if true {
+					class="disabled"
+				}
 			}
 			style={ "color: green;", "font-weight: bold;" }
 			x-data-custom="custom-value"
+			disabled?={ false }
+			bool
+			// enabled is a argument
+			enabled
+			expr={ strErr() }
+			onclick={ templ.JSFuncCall("alert", templ.JSExpression("hello")) }
+			{ attrs... }
 		 />
-		// Boolean expression attribute
-		<BoolComponent title="Bool Expr" enabled?={ isEnabled() } />
 		// Multiple attributes with different types
 		<MultiComponent title="Multi Test" count={ 42 } enabled visible?={ shouldShow() } />
 	</div>
@@ -64,7 +71,7 @@ func str() string {
 }
 
 templ BoolComponent(title string, enabled bool, attrs templ.Attributer) {
-	<div class="bool-component">
+	<div { attrs... }>
 		<h3>{ title }</h3>
 		if enabled {
 			<span>Enabled</span>
@@ -92,4 +99,8 @@ func isEnabled() bool {
 
 func shouldShow() (bool, error) {
 	return false, nil
+}
+
+func strErr() (string, error) {
+	return "str with err", nil
 }

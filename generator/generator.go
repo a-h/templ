@@ -9,6 +9,7 @@ import (
 	"io"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -992,6 +993,7 @@ func (g *generator) writeElementComponentAttrVars(indentLevel int, sigs *Compone
 	}
 
 	if orderedAttrs.restParam.Name != "" {
+		// spew.Dump(orderedAttrs.restParam, orderedAttrs.restAttrs)
 		for _, attr := range orderedAttrs.restAttrs {
 			g.writeElementComponentArgRestVar(indentLevel, restVarName, attr)
 		}
@@ -1009,10 +1011,12 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 		if ok {
 			key, ok := keyed.AttributeKey().(parser.ConstantAttributeKey)
 			if ok {
-				// Element component should only works with const key element.
-				attrMap[key.Name] = attr
-				keyMap[key.Name] = key
-				continue
+				if slices.ContainsFunc(sig.Parameters, func(p ParameterInfo) bool { return p.Name == key.Name }) {
+					// Element component should only works with const key element.
+					attrMap[key.Name] = attr
+					keyMap[key.Name] = key
+					continue
+				}
 			}
 		}
 		rest = append(rest, attr)
@@ -1113,52 +1117,154 @@ func (g *generator) writeElementComponentArgNewVar(indentLevel int, attr parser.
 }
 
 func (g *generator) writeElementComponentArgRestVar(indentLevel int, restVarName string, attr parser.Attribute) error {
+	var err error
 	switch attr := attr.(type) {
 	case *parser.BoolConstantAttribute:
-		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: ""})
-		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
-		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
-		g.w.Write(", Value: ")
-		g.w.WriteStringLiteral(indentLevel, `""`)
-		g.w.Write("})\n")
+		if err = g.writeRestAppend(indentLevel, restVarName, attr.Key.String(), "true"); err != nil {
+			return err
+		}
 	case *parser.ConstantAttribute:
-		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: "attr-value"})
-		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
-		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
-		g.w.Write(", Value: ")
-		g.w.WriteStringLiteral(indentLevel, `"`+attr.Value+`"`)
-		g.w.Write("})\n")
+		value := `"` + attr.Value + `"`
+		if attr.SingleQuote {
+			value = `'` + attr.Value + `'`
+		}
+		if err = g.writeRestAppend(indentLevel, restVarName, attr.Key.String(), value); err != nil {
+			return err
+		}
 	case *parser.BoolExpressionAttribute:
-		// Create a variable for the expression result
-		vn := g.createVariableName()
-		g.w.WriteIndent(indentLevel, "var "+vn+" string\n")
-		g.w.WriteIndent(indentLevel, "if ")
-		g.w.Write(attr.Expression.Value)
-		g.w.Write(" {\n")
-		g.w.WriteIndent(indentLevel+1, vn+" = ")
-		g.w.WriteStringLiteral(indentLevel+1, `"`+attr.Key.String()+`"`)
-		g.w.Write("\n")
-		g.w.WriteIndent(indentLevel, "}\n")
-		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: vn})
-		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
-		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
-		g.w.Write(", Value: " + vn + "})\n")
+		if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
+			return err
+		}
+		if _, err = g.w.Write(attr.Expression.Value); err != nil {
+			return err
+		}
+		if _, err = g.w.Write(" {\n"); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			if err := g.writeRestAppend(indentLevel, restVarName, attr.Key.String(), "true"); err != nil {
+				return err
+			}
+			indentLevel--
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+			return err
+		}
 	case *parser.ExpressionAttribute:
-		// Create a variable for the expression result
-		vn := g.createVariableName()
-		g.w.WriteIndent(indentLevel, "var "+vn+" string\n")
-		g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs(")
-		g.w.Write(attr.Expression.Value)
-		g.w.Write(")\n")
-		g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n")
-		g.w.WriteIndent(indentLevel+1, "return templ_7745c5c3_Err\n")
-		g.w.WriteIndent(indentLevel, "}\n")
-		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: vn})
-		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
-		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
-		g.w.Write(", Value: " + vn + "})\n")
+		attrKey := attr.Key.String()
+		if isScriptAttribute(attrKey) {
+			vn := g.createVariableName()
+			if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" templ.ComponentScript = "); err != nil {
+				return err
+			}
+			var r parser.Range
+			if r, err = g.w.Write(attr.Expression.Value); err != nil {
+				return err
+			}
+			g.sourceMap.Add(attr.Expression, r)
+			if _, err = g.w.Write("\n"); err != nil {
+				return err
+			}
+			if err := g.writeRestAppend(indentLevel, restVarName, attrKey, vn+".Call"); err != nil {
+				return err
+			}
+		} else if attrKey == "style" {
+			var r parser.Range
+			vn := g.createVariableName()
+			// var vn string
+			if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
+				return err
+			}
+			// vn, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(
+			if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues("); err != nil {
+				return err
+			}
+			// value
+			if r, err = g.w.Write(attr.Expression.Value); err != nil {
+				return err
+			}
+			g.sourceMap.Add(attr.Expression, r)
+			// )
+			if _, err = g.w.Write(")\n"); err != nil {
+				return err
+			}
+			if err = g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+			if err = g.writeRestAppend(indentLevel, restVarName, attrKey, vn); err != nil {
+				return err
+			}
+		} else {
+			vn := g.createVariableName()
+			var r parser.Range
+			if r, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(
+				"%s, templ_7745c5c3_Err := templ.JoinAnyErrs(%s)\n",
+				vn, attr.Expression.Value)); err != nil {
+				return err
+			}
+			g.sourceMap.Add(attr.Expression, r)
+			if err := g.writeErrorHandler(indentLevel); err != nil {
+				return err
+			}
+			if err = g.writeRestAppend(indentLevel, restVarName, attr.Key.String(), vn); err != nil {
+				return err
+			}
+		}
+	case *parser.ConditionalAttribute:
+		if _, err = g.w.WriteIndent(indentLevel, `if `); err != nil {
+			return err
+		}
+		var r parser.Range
+		if r, err = g.w.Write(attr.Expression.Value); err != nil {
+			return err
+		}
+		g.sourceMap.Add(attr.Expression, r)
+		if _, err = g.w.Write(" {\n"); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			for _, attr := range attr.Then {
+				if err := g.writeElementComponentArgRestVar(indentLevel, restVarName, attr); err != nil {
+					return err
+				}
+			}
+			indentLevel--
+		}
+		if len(attr.Else) > 0 {
+			if _, err = g.w.WriteIndent(indentLevel, "} else {\n"); err != nil {
+				return err
+			}
+			{
+				indentLevel++
+				for _, attr := range attr.Else {
+					if err := g.writeElementComponentArgRestVar(indentLevel, restVarName, attr); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+			return err
+		}
+	case *parser.SpreadAttributes:
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s = append(%s, %s.Items()...)\n", restVarName, restVarName, attr.Expression.Value)); err != nil {
+			return err
+		}
+	case *parser.AttributeComment:
+		return nil
+	default:
+		return fmt.Errorf("TODO: support attribute type %T in Element component argument", attr)
 	}
-	return nil
+	return err
+}
+
+func (g *generator) writeRestAppend(indentLevel int, restVarName string, key string, val string) error {
+	_, err := g.w.WriteIndent(indentLevel,
+		fmt.Sprintf("%s = append(%s, templ.KeyValue[string, any]{Key: \"%s\", Value: %s})\n",
+			restVarName, restVarName, key, val))
+	return err
 }
 
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
@@ -1791,7 +1897,6 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 		case *parser.ConditionalAttribute:
 			err = g.writeConditionalAttribute(indentLevel, name, attr)
 		case *parser.AttributeComment:
-			// Skip comments during code generation
 			continue
 		default:
 			err = fmt.Errorf("unknown attribute type %T", attr)

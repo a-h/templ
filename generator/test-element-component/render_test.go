@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"testing"
 
+	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator/htmldiff"
 )
 
@@ -11,7 +12,7 @@ import (
 var expected string
 
 func Test(t *testing.T) {
-	component := ElementComponent()
+	component := ElementComponent(templ.Attributes{"test": "top"})
 
 	diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
