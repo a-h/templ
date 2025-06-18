@@ -962,12 +962,44 @@ func (g *generator) writeBlockElementComponent(indentLevel int, n *parser.Elemen
 type elementComponentAttributes struct {
 	keys      []parser.ConstantAttributeKey
 	attrs     []parser.Attribute
-	args      []ParameterInfo
+	params    []ParameterInfo
 	restAttrs []parser.Attribute
+	restParam ParameterInfo
+}
+
+func (g *generator) writeElementComponentAttrVars(indentLevel int, sigs *ComponentSignature, n *parser.ElementComponent) ([]string, error) {
+	orderedAttrs, err := g.reorderElementComponentAttributes(sigs, n)
+	if err != nil {
+		return nil, err
+	}
+
+	var restVarName string
+	if orderedAttrs.restParam.Name != "" {
+		restVarName = g.createVariableName()
+		if _, err = g.w.WriteIndent(indentLevel, "var "+restVarName+" = templ.OrderedAttributes{}\n"); err != nil {
+			return nil, err
+		}
+	}
+
+	res := make([]string, len(orderedAttrs.attrs))
+	for i, attr := range orderedAttrs.attrs {
+		param := orderedAttrs.params[i]
+		value, err := g.writeElementComponentArgNewVar(indentLevel, attr, param)
+		if err != nil {
+			return nil, err
+		}
+		res[i] = value
+	}
+
+	if orderedAttrs.restParam.Name != "" {
+		for _, attr := range orderedAttrs.restAttrs {
+			g.writeElementComponentArgRestVar(indentLevel, restVarName, attr)
+		}
+	}
+	return res, nil
 }
 
 func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n *parser.ElementComponent) (elementComponentAttributes, error) {
-	// Create a map of attribute names to values
 	rest := make([]parser.Attribute, 0)
 	attrMap := make(map[string]parser.Attribute)
 	keyMap := make(map[string]parser.ConstantAttributeKey)
@@ -976,19 +1008,26 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 		if ok {
 			key, ok := keyed.AttributeKey().(parser.ConstantAttributeKey)
 			if ok {
-				// Element component only works with const key element
+				// Element component should only works with const key element.
 				attrMap[key.Name] = attr
 				keyMap[key.Name] = key
 				continue
 			}
 		}
-		// If the attribute is not keyed, we can't map it by name, append it to the rest
 		rest = append(rest, attr)
 	}
 
 	ordered := make([]parser.Attribute, len(sig.Parameters))
 	keys := make([]parser.ConstantAttributeKey, len(sig.Parameters))
-	for i, param := range sig.Parameters {
+	params := sig.Parameters
+
+	// We support an optional last parameter that is of type templ.Attributer.
+	var attrParam ParameterInfo
+	if len(params) > 0 && params[len(params)-1].Type.String() == "templ.Attributer" {
+		attrParam = params[len(params)-1]
+		params = params[:len(params)-1]
+	}
+	for i, param := range params {
 		var ok bool
 		ordered[i], ok = attrMap[param.Name]
 		if !ok {
@@ -999,85 +1038,81 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 			return elementComponentAttributes{}, fmt.Errorf("missing required key for attribute %s in component %s", param.Name, n.Name)
 		}
 	}
-	return elementComponentAttributes{args: sig.Parameters, attrs: ordered, keys: keys, restAttrs: rest}, nil
+	return elementComponentAttributes{
+		params:    sig.Parameters,
+		attrs:     ordered,
+		keys:      keys,
+		restAttrs: rest,
+		restParam: attrParam,
+	}, nil
 }
 
-func (g *generator) writeArgumentAssignment(indentLevel int, attrs elementComponentAttributes) ([]string, error) {
-	res := make([]string, len(attrs.attrs))
-	for i, attr := range attrs.attrs {
-		var value string
-		var err error
-		sig := attrs.args[i]
+func (g *generator) writeElementComponentArgNewVar(indentLevel int, attr parser.Attribute, param ParameterInfo) (string, error) {
+	// TODO: implement templ.Component type handling: if the input is a stringable, it will be converted to a stringable component,
+	// or else it'll be rendered as a templ.Component, like how children are rendered.
+	_ = param
 
-		// TODO: implement templ.Component type handling: if the input is a stringable, it will be converted to a stringable component,
-		// or else it'll be rendered as a templ.Component, like how children are rendered.
-		_ = sig
-
-		switch attr := attr.(type) {
-		case *parser.ConstantAttribute:
-			quote := `"`
-			if attr.SingleQuote {
-				quote = "'"
-			}
-			value = quote + attr.Value + quote
-		case *parser.ExpressionAttribute:
-			// TODO: support URL, Script and Style attribute
-			// check writeExpressionAttribute
-			var r parser.Range
-			vn := g.createVariableName()
-			// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(
-			if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
-				return nil, err
-			}
-			// p.Name()
-			if r, err = g.w.Write(attr.Expression.Value); err != nil {
-				return nil, err
-			}
-			g.sourceMap.Add(attr.Expression, r)
-			if _, err = g.w.Write(")\n"); err != nil {
-				return nil, err
-			}
-			// Error handler
-			if err = g.writeExpressionErrorHandler(indentLevel, attr.Expression); err != nil {
-				return nil, err
-			}
-			value = vn
-		case *parser.BoolConstantAttribute:
-			// Simple boolean true
-			value = "true"
-		case *parser.BoolExpressionAttribute:
-			// For boolean expressions that might return errors, use JoinAnyErrs
-			vn := g.createVariableName()
-			// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(expression)
-			if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
-				return nil, err
-			}
-			var r parser.Range
-			if r, err = g.w.Write(attr.Expression.Value); err != nil {
-				return nil, err
-			}
-			g.sourceMap.Add(attr.Expression, r)
-			if _, err = g.w.Write(")\n"); err != nil {
-				return nil, err
-			}
-			// Error handler
-			if err = g.writeExpressionErrorHandler(indentLevel, attr.Expression); err != nil {
-				return nil, err
-			}
-			value = vn
-		case *parser.SpreadAttributes:
-			// TODO: Handle spread attributes
-			return nil, fmt.Errorf("spread attributes not yet supported in element components")
-		case *parser.ConditionalAttribute:
-			// TODO: Handle conditional attributes
-			return nil, fmt.Errorf("conditional attributes not yet supported in element components")
-		default:
-			return nil, fmt.Errorf("unknown attribute type %T", attr)
+	switch attr := attr.(type) {
+	case *parser.ConstantAttribute:
+		quote := `"`
+		if attr.SingleQuote {
+			quote = `'`
 		}
-
-		res[i] = value
+		value := quote + attr.Value + quote
+		return value, nil
+	case *parser.ExpressionAttribute:
+		// TODO: support URL, Script and Style attribute
+		// check writeExpressionAttribute
+		var r parser.Range
+		var err error
+		vn := g.createVariableName()
+		// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(
+		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
+			return "", err
+		}
+		// p.Name()
+		if r, err = g.w.Write(attr.Expression.Value); err != nil {
+			return "", err
+		}
+		g.sourceMap.Add(attr.Expression, r)
+		if _, err = g.w.Write(")\n"); err != nil {
+			return "", err
+		}
+		// Error handler
+		if err = g.writeExpressionErrorHandler(indentLevel, attr.Expression); err != nil {
+			return "", err
+		}
+		_ = r // TODO: add source map for the variable name
+		return vn, nil
+	case *parser.BoolConstantAttribute:
+		return "true", nil
+	case *parser.BoolExpressionAttribute:
+		// For boolean expressions that might return errors, use JoinAnyErrs
+		vn := g.createVariableName()
+		var err error
+		// vn, templ_7745c5c3_Err := templ.JoinAnyErrs(expression)
+		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
+			return "", err
+		}
+		var r parser.Range
+		if r, err = g.w.Write(attr.Expression.Value); err != nil {
+			return "", err
+		}
+		g.sourceMap.Add(attr.Expression, r)
+		if _, err = g.w.Write(")\n"); err != nil {
+			return "", err
+		}
+		// Error handler
+		if err = g.writeExpressionErrorHandler(indentLevel, attr.Expression); err != nil {
+			return "", err
+		}
+		return vn, nil
+	default:
+		return "", fmt.Errorf("unsupported attribute type %T in Element component argument", attr)
 	}
-	return res, nil
+}
+
+func (g *generator) writeElementComponentArgRestVar(indentLevel int, restVarName string, attr parser.Attribute) {
 }
 
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
@@ -1101,12 +1136,8 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 		return fmt.Errorf("%s: no function signature found - all components must have matching Go functions with matching parameters", n.Name)
 	}
 
-	orderedArgs, err := g.reorderElementComponentAttributes(sigs, n)
-	if err != nil {
-		return err
-	}
 	var vars []string
-	if vars, err = g.writeArgumentAssignment(indentLevel, orderedArgs); err != nil {
+	if vars, err = g.writeElementComponentAttrVars(indentLevel, sigs, n); err != nil {
 		return err
 	}
 
@@ -1120,7 +1151,6 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 	}
 	g.sourceMap.Add(parser.Expression{Value: n.Name, Range: n.NameRange}, r)
 
-	// Write opening parenthesis
 	if _, err = g.w.Write("("); err != nil {
 		return err
 	}
@@ -1135,13 +1165,9 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 		if err != nil {
 			return err
 		}
-		key := orderedArgs.keys[i]
-		// TODO: Add source map for the key
-		_, _ = r, key
-		// g.sourceMap.Add(parser.Expression{Value: key.Name, Range: key.NameRange}, r)
+		_ = r // TODO: Add source map for the key
 	}
 
-	// Write closing parenthesis
 	if _, err = g.w.Write(")"); err != nil {
 		return err
 	}

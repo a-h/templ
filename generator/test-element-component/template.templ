@@ -61,7 +61,7 @@ func str() string {
 	return "Click me"
 }
 
-templ BoolComponent(title string, enabled bool, attrs ...templ.Attributer) {
+templ BoolComponent(title string, enabled bool) {
 	<div class="bool-component">
 		<h3>{ title }</h3>
 		if enabled {
