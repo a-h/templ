@@ -29,6 +29,12 @@ type Arguments struct {
 	HTTPDebug string
 	// NoPreload disables preloading of templ files on server startup (useful for large monorepos)
 	NoPreload bool
+	// TestMode enables test mode with specified directory and optional request
+	TestMode bool
+	// TestDir is the directory to use in test mode
+	TestDir string
+	// TestRequest is the LSP request to send in test mode (optional)
+	TestRequest string
 }
 
 func Run(stdin io.Reader, stdout, stderr io.Writer, args Arguments) (err error) {
@@ -56,7 +62,7 @@ func Run(stdin io.Reader, stdout, stderr io.Writer, args Arguments) (err error) 
 	}()
 	log := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	if args.Log != "" {
-		file, err := os.OpenFile(args.Log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+		file, err := os.OpenFile(args.Log, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 		if err != nil {
 			return fmt.Errorf("failed to open log file: %w", err)
 		}
@@ -68,6 +74,12 @@ func Run(stdin io.Reader, stdout, stderr io.Writer, args Arguments) (err error) 
 		log = slog.New(slog.NewJSONHandler(file, nil))
 		log.Debug("Logging to file", slog.String("file", args.Log))
 	}
+
+	// If in test mode, run the test mode handler
+	if args.TestMode {
+		return runTestMode(ctx, args)
+	}
+
 	templStream := jsonrpc2.NewStream(newStdRwc(log, "templStream", stdout, stdin))
 	return run(ctx, log, templStream, args)
 }

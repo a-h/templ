@@ -364,6 +364,10 @@ Args:
     Enable http debug server by setting a listen address (e.g. localhost:7474)
   -no-preload
     Disable preloading of templ files on server startup and use custom GOPACKAGESDRIVER for lazy loading (useful for large monorepos). GOPACKAGESDRIVER environment variable must be set.
+  -test-dir string
+    Run in test mode with the specified directory. The LSP will load this directory exit. Stdout will print the request and response for the test request. Stderr will print the detailed log.
+  -test-request string
+    LSP request to execute in test mode (JSON format). If not specified, only loads the directory.
 `
 
 func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
@@ -376,6 +380,8 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	pprofFlag := cmd.Bool("pprof", false, "")
 	httpDebugFlag := cmd.String("http", "", "")
 	noPreloadFlag := cmd.Bool("no-preload", false, "")
+	testDirFlag := cmd.String("test-dir", "", "")
+	testRequestFlag := cmd.String("test-request", "", "")
 	err := cmd.Parse(args)
 	if err != nil {
 		_, _ = fmt.Fprint(stderr, lspUsageText)
@@ -394,6 +400,9 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 		PPROF:         *pprofFlag,
 		HTTPDebug:     *httpDebugFlag,
 		NoPreload:     *noPreloadFlag && os.Getenv("GOPACKAGESDRIVER") != "",
+		TestMode:      *testDirFlag != "",
+		TestDir:       *testDirFlag,
+		TestRequest:   *testRequestFlag,
 	})
 	if err != nil {
 		_, _ = fmt.Fprintln(stderr, err.Error())

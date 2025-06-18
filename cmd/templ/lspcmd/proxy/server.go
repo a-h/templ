@@ -296,6 +296,9 @@ func (p *Server) preload(ctx context.Context, workspaceFolders []lsp.WorkspaceFo
 				p.Log.Info("generator failure", slog.Any("error", err))
 			}
 			p.Log.Info("setting source map cache contents", slog.String("uri", string(uri)))
+			if generatorOutput.SourceMap == nil {
+				panic(fmt.Sprintf("generator output for %s has no source map", uri))
+			}
 			p.SourceMapCache.Set(string(uri), generatorOutput.SourceMap)
 			// Set the Go contents.
 			p.GoSource[string(uri)] = w.String()

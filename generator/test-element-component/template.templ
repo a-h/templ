@@ -13,9 +13,6 @@ templ ElementComponent() {
 		</dl>
 		<Card title="Card Title">card body</Card>
 		<h2
-			// This is a comment
-			//
-			<!-- hello -->
 			if true {
 				class="highlighted"
 			}
@@ -64,7 +61,7 @@ func str() string {
 	return "Click me"
 }
 
-templ BoolComponent(title string, enabled bool) {
+templ BoolComponent(title string, enabled bool, attrs ...templ.Attributer) {
 	<div class="bool-component">
 		<h3>{ title }</h3>
 		if enabled {
