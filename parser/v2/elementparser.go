@@ -400,6 +400,49 @@ type attributesParser struct{}
 
 func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool, err error) {
 	for {
+		// Try to parse and handle any comments first
+		for {
+			// Skip whitespace
+			if _, _, err = parse.OptionalWhitespace.Parse(in); err != nil {
+				return
+			}
+			
+			// Try to parse HTML comment
+			commentStart := in.Index()
+			if node, commentOk, commentErr := htmlComment.Parse(in); commentErr != nil {
+				return attributes, false, commentErr
+			} else if commentOk {
+				// Found an HTML comment, add it as an attribute comment
+				if htmlNode, ok := node.(*HTMLComment); ok {
+					attributes = append(attributes, &AttributeComment{
+						Comment: htmlNode.Contents,
+						Multiline: true, // HTML comments are always multiline style
+						IsHTMLComment: true,
+					})
+				}
+				continue
+			}
+			
+			// Try to parse Go comment
+			if node, commentOk, commentErr := goComment.Parse(in); commentErr != nil {
+				return attributes, false, commentErr
+			} else if commentOk {
+				// Found a Go comment, add it as an attribute comment
+				if goNode, ok := node.(*GoComment); ok {
+					attributes = append(attributes, &AttributeComment{
+						Comment: goNode.Contents,
+						Multiline: goNode.Multiline,
+					})
+				}
+				continue
+			}
+			
+			// No more comments, break from comment parsing loop
+			in.Seek(commentStart)
+			break
+		}
+		
+		// Parse attribute
 		var attr Attribute
 		attr, ok, err = attribute.Parse(in)
 		if err != nil {

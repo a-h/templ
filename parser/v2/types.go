@@ -1256,6 +1256,46 @@ func (tee *TemplElementExpression) Visit(v Visitor) error {
 	return v.VisitTemplElementExpression(tee)
 }
 
+// AttributeComment represents a comment within element attributes
+type AttributeComment struct {
+	Comment string
+	Multiline bool
+	IsHTMLComment bool
+}
+
+func (ac *AttributeComment) String() string {
+	return ac.Comment
+}
+
+func (ac *AttributeComment) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, ""); err != nil {
+		return err
+	}
+	if ac.IsHTMLComment {
+		_, err := w.Write([]byte("<!--" + ac.Comment + "-->"))
+		return err
+	}
+	if ac.Multiline {
+		_, err := w.Write([]byte("/*" + ac.Comment + "*/"))
+		return err
+	}
+	_, err := w.Write([]byte("//" + ac.Comment))
+	return err
+}
+
+func (ac *AttributeComment) Visit(v Visitor) error {
+	// Comments don't need to be visited
+	return nil
+}
+
+func (ac *AttributeComment) Copy() Attribute {
+	return &AttributeComment{
+		Comment: ac.Comment,
+		Multiline: ac.Multiline,
+		IsHTMLComment: ac.IsHTMLComment,
+	}
+}
+
 // ElementComponent represents HTML element component syntax.
 // <Component attr="value" /> or <Component attr="value">children</Component>
 type ElementComponent struct {

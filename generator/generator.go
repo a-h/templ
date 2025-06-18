@@ -1721,6 +1721,9 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 			err = g.writeSpreadAttributes(indentLevel, attr)
 		case *parser.ConditionalAttribute:
 			err = g.writeConditionalAttribute(indentLevel, name, attr)
+		case *parser.AttributeComment:
+			// Skip comments during code generation
+			continue
 		default:
 			err = fmt.Errorf("unknown attribute type %T", attr)
 		}
