@@ -85,11 +85,9 @@ func (cc *ComponentCollector) collectFromNode(node parser.Node) {
 			Attributes:  n.Attributes,
 		})
 
-		// Recursively collect from children
 		cc.collectFromNodes(n.Children)
 
 	case *parser.Element:
-		// Regular HTML elements might contain Element components in their children
 		cc.collectFromNodes(n.Children)
 
 	case *parser.IfExpression:
@@ -105,12 +103,9 @@ func (cc *ComponentCollector) collectFromNode(node parser.Node) {
 		cc.collectFromNodes(n.Children)
 
 	case *parser.CallTemplateExpression:
-		// Template calls don't have children in the AST
 
 	case *parser.TemplElementExpression:
 		cc.collectFromNodes(n.Children)
-
-		// Add other node types that might contain children
 	}
 }
 
