@@ -44,7 +44,7 @@ templ ElementComponent(attrs templ.Attributer) {
 			expr={ strErr() }
 			onclick={ templ.JSFuncCall("alert", templ.JSExpression("hello")) }
 			{ attrs... }
-		 />
+		/>
 		// Multiple attributes with different types
 		<MultiComponent title="Multi Test" count={ 42 } enabled visible?={ shouldShow() } />
 		<Container child={ strErr() } />
@@ -55,7 +55,7 @@ templ ElementComponent(attrs templ.Attributer) {
 					divchild
 				</div>
 			}
-		 />
+		/>
 		<structComp.Page title="Struct Component Example" class="struct-component" style="color: blue;" />
 		<NoArgsComponent />
 	</div>
