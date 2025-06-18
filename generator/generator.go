@@ -1113,6 +1113,51 @@ func (g *generator) writeElementComponentArgNewVar(indentLevel int, attr parser.
 }
 
 func (g *generator) writeElementComponentArgRestVar(indentLevel int, restVarName string, attr parser.Attribute) {
+	switch attr := attr.(type) {
+	case *parser.BoolConstantAttribute:
+		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: ""})
+		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
+		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
+		g.w.Write(", Value: ")
+		g.w.WriteStringLiteral(indentLevel, `""`)
+		g.w.Write("})\n")
+	case *parser.ConstantAttribute:
+		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: "attr-value"})
+		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
+		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
+		g.w.Write(", Value: ")
+		g.w.WriteStringLiteral(indentLevel, `"`+attr.Value+`"`)
+		g.w.Write("})\n")
+	case *parser.BoolExpressionAttribute:
+		// Create a variable for the expression result
+		vn := g.createVariableName()
+		g.w.WriteIndent(indentLevel, "var "+vn+" string\n")
+		g.w.WriteIndent(indentLevel, "if ")
+		g.w.Write(attr.Expression.Value)
+		g.w.Write(" {\n")
+		g.w.WriteIndent(indentLevel+1, vn+" = ")
+		g.w.WriteStringLiteral(indentLevel+1, `"`+attr.Key.String()+`"`)
+		g.w.Write("\n")
+		g.w.WriteIndent(indentLevel, "}\n")
+		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: vn})
+		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
+		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
+		g.w.Write(", Value: "+vn+"})\n")
+	case *parser.ExpressionAttribute:
+		// Create a variable for the expression result
+		vn := g.createVariableName()
+		g.w.WriteIndent(indentLevel, "var "+vn+" string\n")
+		g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs(")
+		g.w.Write(attr.Expression.Value)
+		g.w.Write(")\n")
+		g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n")
+		g.w.WriteIndent(indentLevel+1, "return templ_7745c5c3_Err\n")
+		g.w.WriteIndent(indentLevel, "}\n")
+		// restVarName = append(restVarName, templ.KeyValue[string, any]{Key: "attr-name", Value: vn})
+		g.w.WriteIndent(indentLevel, restVarName+" = append("+restVarName+", templ.KeyValue[string, any]{Key: ")
+		g.w.WriteStringLiteral(indentLevel, `"`+attr.Key.String()+`"`)
+		g.w.Write(", Value: "+vn+"})\n")
+	}
 }
 
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {

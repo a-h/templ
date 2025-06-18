@@ -31,6 +31,8 @@ templ ElementComponent() {
 			if true {
 				class="enabled"
 			}
+			style={ "color: green;", "font-weight: bold;" }
+			x-data-custom="custom-value"
 		 />
 		// Boolean expression attribute
 		<BoolComponent title="Bool Expr" enabled?={ isEnabled() } />
@@ -61,7 +63,7 @@ func str() string {
 	return "Click me"
 }
 
-templ BoolComponent(title string, enabled bool) {
+templ BoolComponent(title string, enabled bool, attrs templ.Attribuer) {
 	<div class="bool-component">
 		<h3>{ title }</h3>
 		if enabled {
