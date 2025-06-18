@@ -1289,78 +1289,72 @@ func (el *ElementComponent) Trailing() TrailingSpace {
 	return el.TrailingSpace
 }
 
+func (el *ElementComponent) hasNonWhitespaceChildren() bool {
+	for _, c := range el.Children {
+		if _, isWhitespace := c.(*Whitespace); !isWhitespace {
+			return true
+		}
+	}
+	return false
+}
+
 func (el *ElementComponent) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "<"+el.Name); err != nil {
+	if err := writeIndent(w, indent, "<", el.Name); err != nil {
 		return err
 	}
-
-	// Write attributes
-	for i, attr := range el.Attributes {
-		if el.IndentAttrs && i == 0 {
-			if _, err := io.WriteString(w, "\n"); err != nil {
+	for i := range el.Attributes {
+		a := el.Attributes[i]
+		// Only the conditional attributes get indented.
+		var attrIndent int
+		if el.IndentAttrs {
+			if _, err := w.Write([]byte("\n")); err != nil {
 				return err
 			}
-			if err := writeIndent(w, indent+1, ""); err != nil {
-				return err
-			}
+			attrIndent = indent + 1
 		} else {
-			if _, err := io.WriteString(w, " "); err != nil {
+			if _, err := w.Write([]byte(" ")); err != nil {
 				return err
 			}
 		}
-
-		if el.IndentAttrs && i > 0 {
-			if _, err := io.WriteString(w, "\n"); err != nil {
-				return err
-			}
-			if err := writeIndent(w, indent+1, ""); err != nil {
-				return err
-			}
-		}
-
-		if err := attr.Write(w, 0); err != nil {
+		if err := a.Write(w, attrIndent); err != nil {
 			return err
 		}
 	}
-
-	if el.SelfClosing {
-		if _, err := io.WriteString(w, " />"); err != nil {
+	var closeAngleBracketIndent int
+	if el.IndentAttrs {
+		if _, err := w.Write([]byte("\n")); err != nil {
 			return err
 		}
-		return nil
+		closeAngleBracketIndent = indent
 	}
-
-	if _, err := io.WriteString(w, ">"); err != nil {
-		return err
-	}
-
-	// Write children if any
-	if len(el.Children) > 0 {
+	if el.hasNonWhitespaceChildren() {
 		if el.IndentChildren {
-			if _, err := io.WriteString(w, "\n"); err != nil {
+			if err := writeIndent(w, closeAngleBracketIndent, ">\n"); err != nil {
 				return err
 			}
 			if err := writeNodesIndented(w, indent+1, el.Children); err != nil {
 				return err
 			}
-			if _, err := io.WriteString(w, "\n"); err != nil {
+			if err := writeIndent(w, indent, "</", el.Name, ">"); err != nil {
 				return err
 			}
-			if err := writeIndent(w, indent, ""); err != nil {
-				return err
-			}
-		} else {
-			if err := writeNodes(w, 0, el.Children, false); err != nil {
-				return err
-			}
+			return nil
 		}
+		if err := writeIndent(w, closeAngleBracketIndent, ">"); err != nil {
+			return err
+		}
+		if err := writeNodesWithoutIndentation(w, el.Children); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte("</" + el.Name + ">")); err != nil {
+			return err
+		}
+		return nil
 	}
-
-	// Write closing tag
-	if _, err := io.WriteString(w, "</"+el.Name+">"); err != nil {
+	// Self-closing when no children
+	if err := writeIndent(w, closeAngleBracketIndent, " />"); err != nil {
 		return err
 	}
-
 	return nil
 }
 

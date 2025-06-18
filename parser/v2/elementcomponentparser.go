@@ -60,12 +60,15 @@ var componentNameParser = parse.Func(func(in *parse.Input) (name string, ok bool
 
 type elementComponentOpenTag struct {
 	Name        string
+	NameRange   Range
 	Attributes  []Attribute
+	IndentAttrs bool
 	SelfClosing bool
 }
 
 var elementComponentOpenTagParser = parse.Func(func(pi *parse.Input) (e elementComponentOpenTag, matched bool, err error) {
 	start := pi.Index()
+	l := pi.Position().Line
 
 	if next, _ := pi.Peek(2); len(next) < 2 || next[0] != '<' || next == "<!" || next == "</" {
 		// This is not a tag, or it's a comment, doctype, or closing tag.
@@ -82,10 +85,16 @@ var elementComponentOpenTagParser = parse.Func(func(pi *parse.Input) (e elementC
 		pi.Seek(start)       // Restore parser state
 		return e, false, nil // Not a component, let regular element parser handle it
 	}
+	e.NameRange = NewRange(pi.PositionAt(pi.Index()-len(e.Name)), pi.Position())
 
 	// Parse attributes
 	if e.Attributes, matched, err = (attributesParser{}).Parse(pi); err != nil || !matched {
 		return e, true, err
+	}
+
+	// If any attribute is not on the same line as the element name, indent them.
+	if pi.Position().Line != l {
+		e.IndentAttrs = true
 	}
 
 	// Optional whitespace.
@@ -133,14 +142,10 @@ func (elementComponentParser) Parse(pi *parse.Input) (n Node, ok bool, err error
 	l := pi.Position().Line
 	r := &ElementComponent{
 		Name:        ot.Name,
-		NameRange:   NewRange(start, pi.Position()),
+		NameRange:   ot.NameRange,
 		Attributes:  ot.Attributes,
+		IndentAttrs: ot.IndentAttrs,
 		SelfClosing: ot.SelfClosing,
-	}
-
-	// If any attribute is not on the same line as the component name, indent them.
-	if pi.Position().Line != l {
-		r.IndentAttrs = true
 	}
 
 	// If the component is self-closing, add trailing space and we're done

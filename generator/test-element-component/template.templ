@@ -12,34 +12,30 @@ templ ElementComponent() {
 			<DData term="Name" detail="Tom Cook" />
 		</dl>
 		<Card title="Card Title">card body</Card>
-		<h2>Named Parameter Test</h2>
-		<mod.Text name="hello"/>
-		<extern.Text name="world"/>
-		
+		<h2
+			if true {
+				class="highlighted"
+			}
+		>Named Parameter Test</h2>
+		<mod.Text name="hello" />
+		<extern.Text name="world" />
 		<h2>All Attribute Types Test</h2>
 		// Constant attribute
 		<Button title="Constant String" />
-		
 		// Complex expression attribute
 		<Button title={ "Hello " + str() + "!" } />
-		
 		// Boolean constant attribute (with title)
-		<BoolComponent title="Bool Test" enabled 
+		<BoolComponent
+			title="Bool Test"
+			enabled
 			if true {
-			class="enabled"
+				class="enabled"
 			}
-		/>
-		
+		 />
 		// Boolean expression attribute
 		<BoolComponent title="Bool Expr" enabled?={ isEnabled() } />
-		
 		// Multiple attributes with different types
-		<MultiComponent 
-			title="Multi Test"
-			count={ 42 }
-			enabled
-			visible?={ shouldShow() }
-		/>
+		<MultiComponent title="Multi Test" count={ 42 } enabled visible?={ shouldShow() } />
 	</div>
 }
 

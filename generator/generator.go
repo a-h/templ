@@ -1084,9 +1084,23 @@ func (g *generator) writeArgumentAssignment(indentLevel int, attrs elementCompon
 }
 
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
-	sigKey := n.Name
-	sigs, ok := g.componentSigs[sigKey]
+	sigs, ok := g.componentSigs[n.Name]
 	if !ok {
+		// If we're in a context where symbol resolution isn't available (e.g., during formatting),
+		// write a placeholder that will be replaced during actual code generation
+		if g.symbolResolver == nil {
+			// Write a placeholder function call that maintains the correct syntax
+			if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
+				return err
+			}
+			if _, err = g.w.Write(n.Name); err != nil {
+				return err
+			}
+			if _, err = g.w.Write("()"); err != nil {
+				return err
+			}
+			return nil
+		}
 		return fmt.Errorf("%s: no function signature found - all components must have matching Go functions with matching parameters", n.Name)
 	}
 
