@@ -8,75 +8,61 @@ import (
 	"github.com/a-h/parse"
 )
 
-var componentNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
+var componentNameParser = parse.Func(func(in *parse.Input) (name string, matched bool, err error) {
 	start := in.Index()
 
-	// Try to parse identifier (could be package name, variable name, or component name)
-	identifierFirst := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
-	identifierSubsequent := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
+	// Parse a qualified identifier (e.g., Button, pkg.Component, structComp.Page)
+	identifierChars := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
 
-	var prefix, suffix string
-	if prefix, ok, err = parse.RuneIn(identifierFirst).Parse(in); err != nil || !ok {
+	var result string
+	if result, matched, err = parse.StringUntil(parse.RuneNotIn(identifierChars)).Parse(in); err != nil || !matched {
 		return
 	}
-	if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(identifierSubsequent)).Parse(in); err != nil || !ok {
+
+	// Must start with a letter or underscore
+	if len(result) == 0 || (!unicode.IsLetter(rune(result[0])) && result[0] != '_') {
 		in.Seek(start)
-		return
+		return "", false, nil
 	}
 
-	fullName := prefix + suffix
-
-	// Parse chained identifiers separated by dots
-	for {
-		dotStart := in.Index()
-		if _, dotOk, dotErr := parse.Rune('.').Parse(in); dotErr != nil || !dotOk {
-			break // No more dots
-		}
-
-		// Parse the next identifier after the dot
-		var nextPrefix, nextSuffix string
-		if nextPrefix, ok, err = parse.RuneIn(identifierFirst).Parse(in); err != nil || !ok {
-			// If we can't parse an identifier after a dot, revert to before the dot
-			in.Seek(dotStart)
-			break
-		}
-		if nextSuffix, ok, err = parse.StringUntil(parse.RuneNotIn(identifierSubsequent)).Parse(in); err != nil || !ok {
-			in.Seek(dotStart)
-			break
-		}
-
-		fullName = fullName + "." + nextPrefix + nextSuffix
-	}
-
-	// Validate the component name format
-	parts := strings.Split(fullName, ".")
+	// Split by dots to analyze the structure
+	parts := strings.Split(result, ".")
 	if len(parts) == 0 {
 		in.Seek(start)
 		return "", false, nil
 	}
 
-	// For a valid component name, the last part must start with uppercase
-	lastPart := parts[len(parts)-1]
-	if len(lastPart) == 0 || !unicode.IsUpper(rune(lastPart[0])) {
+	// If component name doesn't have a dot, it must start with uppercase to distinguish it from HTML elements
+	if len(parts) == 1 && !unicode.IsUpper(rune(result[0])) {
 		in.Seek(start)
 		return "", false, nil
 	}
 
-	// If there's only one part, it must be a direct Component (starts with uppercase)
-	if len(parts) == 1 {
-		if !unicode.IsUpper(rune(fullName[0])) {
+	// Validate each part is a valid identifier
+	for _, part := range parts {
+		if len(part) == 0 {
 			in.Seek(start)
 			return "", false, nil
 		}
+		if !unicode.IsLetter(rune(part[0])) && part[0] != '_' {
+			in.Seek(start)
+			return "", false, nil
+		}
+		for _, r := range part {
+			if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' {
+				in.Seek(start)
+				return "", false, nil
+			}
+		}
 	}
 
-	if len(fullName) > 128 {
-		ok = false
+	if len(result) > 128 {
+		matched = false
 		err = parse.Error("component names must be < 128 characters long", in.Position())
 		return
 	}
 
-	return fullName, true, nil
+	return result, true, nil
 })
 
 type elementComponentOpenTag struct {
