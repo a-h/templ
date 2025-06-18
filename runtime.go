@@ -618,6 +618,19 @@ type stringable interface {
 	ints | uints | floats | complexNumbers | ~string | ~bool
 }
 
+type primitive[T stringable] struct {
+	v T
+}
+
+func (s primitive[T]) Render(ctx context.Context, w io.Writer) (err error) {
+	_, err = io.WriteString(w, fmt.Sprint(s.v))
+	return
+}
+
+func Stringable[T stringable](s T) Component {
+	return primitive[T]{v: s}
+}
+
 // JoinStringErrs joins an optional list of errors.
 func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
 	return fmt.Sprint(s), errors.Join(errs...)

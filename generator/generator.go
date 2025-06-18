@@ -1058,49 +1058,37 @@ func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n
 	}, nil
 }
 
-func (g *generator) writeElementComponentAttrComponent(indentLevel int, attr parser.Attribute, param ParameterInfo) (string, error) {
-	// For templ.Component attributes, we need to handle them differently
-	// The attribute value should be a component that can be rendered
-
+func (g *generator) writeElementComponentAttrComponent(indentLevel int, attr parser.Attribute, param ParameterInfo) (varName string, err error) {
 	switch attr := attr.(type) {
 	case *parser.InlineComponentAttribute:
 		return g.writeChildrenComponent(indentLevel, attr.Children)
-	// case *parser.ExpressionAttribute:
-	// 	// This is a regular expression that should return templ.Component
-	// 	varName := g.createVariableName()
-	//
-	// 	// Check if the expression is a simple string literal
-	// 	exprValue := strings.TrimSpace(attr.Expression.Value)
-	// 	if strings.HasPrefix(exprValue, `"`) && strings.HasSuffix(exprValue, `"`) {
-	// 		// It's a string literal, wrap it in templ.Text()
-	// 		if _, err := g.w.WriteIndent(indentLevel, varName+" := templ.Text("); err != nil {
-	// 			return "", err
-	// 		}
-	// 		if _, err := g.w.Write(exprValue); err != nil {
-	// 			return "", err
-	// 		}
-	// 		if _, err := g.w.Write(")\n"); err != nil {
-	// 			return "", err
-	// 		}
-	// 	} else {
-	// 		// It's an expression that should return templ.Component
-	// 		if _, err := g.w.WriteIndent(indentLevel, varName+" := "); err != nil {
-	// 			return "", err
-	// 		}
-	// 		if _, err := g.w.Write(attr.Expression.Value + "\n"); err != nil {
-	// 			return "", err
-	// 		}
-	// 	}
-	// 	return varName, nil
-	//
-	// case *parser.ConstantAttribute:
-	// 	// For constant string attributes, wrap in templ.Text
-	// 	varName := g.createVariableName()
-	// 	if _, err := g.w.WriteIndent(indentLevel, varName+" := templ.Text("+strconv.Quote(attr.Value)+")\n"); err != nil {
-	// 		return "", err
-	// 	}
-	// 	return varName, nil
-	//
+	case *parser.ExpressionAttribute:
+		varName = g.createVariableName()
+		var r parser.Range
+		if _, err = g.w.WriteIndent(indentLevel, varName+", templ_7745c5c3_Err := templ.JoinAnyErrs("); err != nil {
+			return "", err
+		}
+		if r, err = g.w.Write(attr.Expression.Value); err != nil {
+			return "", err
+		}
+		g.sourceMap.Add(attr.Expression, r)
+		if _, err = g.w.Write(")\n"); err != nil {
+			return "", err
+		}
+		if err = g.writeExpressionErrorHandler(indentLevel, attr.Expression); err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("templ.Stringable(%s)", varName), nil
+	case *parser.ConstantAttribute:
+		value := `"` + attr.Value + `"`
+		if attr.SingleQuote {
+			value = `'` + attr.Value + `'`
+		}
+		varName = g.createVariableName()
+		if _, err = g.w.WriteIndent(indentLevel, varName+" := templ.Stringable("+value+")\n"); err != nil {
+			return "", err
+		}
+		return varName, nil
 	default:
 		return "", fmt.Errorf("unsupported attribute type %T for templ.Component parameter", attr)
 	}
@@ -1141,7 +1129,6 @@ func (g *generator) writeElementComponentArgNewVar(indentLevel int, attr parser.
 		if err = g.writeExpressionErrorHandler(indentLevel, attr.Expression); err != nil {
 			return "", err
 		}
-		_ = r // TODO: add source map for the variable name
 		return vn, nil
 	case *parser.BoolConstantAttribute:
 		return "true", nil
