@@ -131,13 +131,10 @@ func Generate(template *parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (
 		}
 	}
 	err = g.generate()
-	if err != nil {
-		return op, err
-	}
 	op.Options = g.options
 	op.SourceMap = g.sourceMap
 	op.Literals = g.w.Literals
-	return op, nil
+	return op, err
 }
 
 type generator struct {
