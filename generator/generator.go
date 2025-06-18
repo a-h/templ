@@ -1198,9 +1198,7 @@ func (g *generator) writeElementComponentArgRestVar(indentLevel int, restVarName
 		} else {
 			vn := g.createVariableName()
 			var r parser.Range
-			if r, err = g.w.WriteIndent(indentLevel, fmt.Sprintf(
-				"%s, templ_7745c5c3_Err := templ.JoinAnyErrs(%s)\n",
-				vn, attr.Expression.Value)); err != nil {
+			if r, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s, templ_7745c5c3_Err := templ.JoinAnyErrs(%s)\n", vn, attr.Expression.Value)); err != nil {
 				return err
 			}
 			g.sourceMap.Add(attr.Expression, r)
