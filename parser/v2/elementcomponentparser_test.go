@@ -100,6 +100,36 @@ func TestJSXComponentParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "jsx: component with struct method (variable.Component)",
+			input: `<structComp.Page title="Test" />`,
+			expected: &ElementComponent{
+				Name:        "structComp.Page",
+				SelfClosing: true,
+				Attributes: []Attribute{
+					&ConstantAttribute{
+						Key:   ConstantAttributeKey{Name: "title"},
+						Value: "Test",
+					},
+				},
+			},
+		},
+		{
+			name:  "jsx: component with package variable (pkg.Var.Component)",
+			input: `<pkg.Var.Component />`,
+			expected: &ElementComponent{
+				Name:        "pkg.Var.Component",
+				SelfClosing: true,
+			},
+		},
+		{
+			name:  "jsx: component with nested fields (pkg.Var.Field.InnerField.Component)",
+			input: `<pkg.Var.Field.InnerField.Component />`,
+			expected: &ElementComponent{
+				Name:        "pkg.Var.Field.InnerField.Component",
+				SelfClosing: true,
+			},
+		},
+		{
 			name:    "jsx: not a component (lowercase)",
 			input:   `<div>content</div>`,
 			wantErr: false, // Should not be parsed by JSX parser, falls through to element parser

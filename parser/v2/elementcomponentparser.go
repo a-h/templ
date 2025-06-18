@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strings"
 	"unicode"
 
 	"github.com/a-h/parse"
@@ -10,7 +11,7 @@ import (
 var componentNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
 	start := in.Index()
 
-	// Try to parse identifier (could be package name or component name)
+	// Try to parse identifier (could be package name, variable name, or component name)
 	identifierFirst := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 	identifierSubsequent := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 
@@ -23,32 +24,52 @@ var componentNameParser = parse.Func(func(in *parse.Input) (name string, ok bool
 		return
 	}
 
-	firstIdentifier := prefix + suffix
+	fullName := prefix + suffix
 
-	// Check if there's a dot (package.Component format)
-	dotStart := in.Index()
-	if _, dotOk, dotErr := parse.Rune('.').Parse(in); dotErr != nil || !dotOk {
-		// No dot, this should be a Component name starting with uppercase
-		if !unicode.IsUpper(rune(firstIdentifier[0])) {
-			in.Seek(start)
-			return "", false, nil
+	// Parse chained identifiers separated by dots
+	for {
+		dotStart := in.Index()
+		if _, dotOk, dotErr := parse.Rune('.').Parse(in); dotErr != nil || !dotOk {
+			break // No more dots
 		}
-		return firstIdentifier, true, nil
+
+		// Parse the next identifier after the dot
+		var nextPrefix, nextSuffix string
+		if nextPrefix, ok, err = parse.RuneIn(identifierFirst).Parse(in); err != nil || !ok {
+			// If we can't parse an identifier after a dot, revert to before the dot
+			in.Seek(dotStart)
+			break
+		}
+		if nextSuffix, ok, err = parse.StringUntil(parse.RuneNotIn(identifierSubsequent)).Parse(in); err != nil || !ok {
+			in.Seek(dotStart)
+			break
+		}
+
+		fullName = fullName + "." + nextPrefix + nextSuffix
 	}
 
-	// Found a dot, parse the component name after it
-	var componentPrefix, componentSuffix string
-	if componentPrefix, ok, err = parse.RuneIn("ABCDEFGHIJKLMNOPQRSTUVWXYZ").Parse(in); err != nil || !ok {
-		// Component name after dot must start with uppercase
+	// Validate the component name format
+	parts := strings.Split(fullName, ".")
+	if len(parts) == 0 {
 		in.Seek(start)
 		return "", false, nil
 	}
-	if componentSuffix, ok, err = parse.StringUntil(parse.RuneNotIn(identifierSubsequent)).Parse(in); err != nil || !ok {
-		in.Seek(dotStart)
+
+	// For a valid component name, the last part must start with uppercase
+	lastPart := parts[len(parts)-1]
+	if len(lastPart) == 0 || !unicode.IsUpper(rune(lastPart[0])) {
+		in.Seek(start)
 		return "", false, nil
 	}
 
-	fullName := firstIdentifier + "." + componentPrefix + componentSuffix
+	// If there's only one part, it must be a direct Component (starts with uppercase)
+	if len(parts) == 1 {
+		if !unicode.IsUpper(rune(fullName[0])) {
+			in.Seek(start)
+			return "", false, nil
+		}
+	}
+
 	if len(fullName) > 128 {
 		ok = false
 		err = parse.Error("component names must be < 128 characters long", in.Position())
