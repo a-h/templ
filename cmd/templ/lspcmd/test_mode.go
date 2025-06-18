@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"time"
 
 	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
@@ -76,72 +75,52 @@ func runTestMode(ctx context.Context, args Arguments) error {
 
 	clientInit(templClient)
 
-	// Initialize the server
-	log.Info("lsp: initializing server with directory", slog.String("rootUri", "file://"+absDir))
-
-	// Send initialize request
-	initParams := protocol.InitializeParams{
-		RootURI: protocol.DocumentURI("file://" + absDir),
-		Capabilities: protocol.ClientCapabilities{
-			TextDocument: &protocol.TextDocumentClientCapabilities{
-				Completion: &protocol.CompletionTextDocumentClientCapabilities{
-					CompletionItem: &protocol.CompletionTextDocumentClientCapabilitiesItem{
-						SnippetSupport: true,
-					},
-				},
-			},
-		},
-	}
-
-	initResult, err := server.Initialize(ctx, &initParams)
-	if err != nil {
-		return fmt.Errorf("failed to initialize: %w", err)
-	}
-
-	// Send initialized notification
-	if err := server.Initialized(ctx, &protocol.InitializedParams{}); err != nil {
-		return fmt.Errorf("failed to send initialized: %w", err)
-	}
-
-	// Print initialization result
-	resultJSON, err := json.MarshalIndent(initResult, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal init result: %w", err)
-	}
-	fmt.Fprintf(stdout, "Initialization result:\n%s\n", resultJSON)
-
-	log.Info("lsp: server initialized, sending initialize request", slog.String("rootPath", absDir))
-	res, err := sendInitialize(ctx, server, absDir)
+	initializeResult, err := server.Initialize(ctx, initializeParams(absDir))
 	if err != nil {
 		return fmt.Errorf("failed to send initialize: %w", err)
 	}
-	resultJSON, err = json.MarshalIndent(res, "", "  ")
+	resultJSON, err := json.MarshalIndent(initializeResult, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal initialize result: %w", err)
 	}
 	fmt.Fprintf(stdout, "Initialize result:\n%s\n", resultJSON)
 
-	// If a test request is provided, execute it
-	if args.TestRequest != "" {
-		log.Info("lsp: executing test request", slog.String("request", args.TestRequest))
-
-		// For now, just support specific common requests
-		// We can extend this later to support arbitrary JSON requests
-		switch args.TestRequest {
-		case "diagnostics":
-			// Wait a bit for diagnostics to be computed
-			log.Info("lsp: waiting for diagnostics...")
-			select {
-			case <-time.After(2 * time.Second):
-				fmt.Fprintf(stdout, "\nDiagnostics collection complete.\n")
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-		return fmt.Errorf("unsupported test request: %s", args.TestRequest)
+	if err := server.Initialized(ctx, &protocol.InitializedParams{}); err != nil {
+		return fmt.Errorf("failed to send initialized: %w", err)
 	}
 
-	log.Info("lsp: no test request provided, loading directory", slog.String("dir", absDir))
+	// If a test request is provided, execute it
+	if args.TestRequest != "" {
+
+		var requestParams map[string]any
+		if err := json.Unmarshal([]byte(args.TestRequest), &requestParams); err != nil {
+			return fmt.Errorf("failed to unmarshal test request params: %w", err)
+		}
+		indented, err := json.MarshalIndent(requestParams, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal test request params: %w", err)
+		}
+		fmt.Fprintf(stdout, "Executing test request: %s\n", string(indented))
+
+		// TODO: Implement support for test requests
+		return nil
+		// server.Request(ctx, )
+		// // For now, just support specific common requests
+		// // We can extend this later to support arbitrary JSON requests
+		// switch args.TestRequest {
+		// case "diagnostics":
+		// 	// Wait a bit for diagnostics to be computed
+		// 	log.Info("lsp: waiting for diagnostics...")
+		// 	select {
+		// 	case <-time.After(2 * time.Second):
+		// 		fmt.Fprintf(stdout, "\nDiagnostics collection complete.\n")
+		// 	case <-ctx.Done():
+		// 		return ctx.Err()
+		// 	}
+		// }
+		// return fmt.Errorf("unsupported test request: %s", args.TestRequest)
+	}
+
 	fmt.Fprintf(stdout, "No test request provided. Loading directory %s...\n", absDir)
 
 	pattern := `(.+\.go$)|(.+\.templ$)`
@@ -186,16 +165,6 @@ func runTestMode(ctx context.Context, args Arguments) error {
 	if err != nil {
 		return fmt.Errorf("failed to walk directory %s: %w", absDir, err)
 	}
-
-	// // Wait for shutdown
-	// select {
-	// case <-ctx.Done():
-	// 	return ctx.Err()
-	// case <-serverConn.Done():
-	// 	return fmt.Errorf("server connection closed")
-	// case <-goplsConn.Done():
-	// 	return fmt.Errorf("gopls connection closed")
-	// }
 
 	return nil
 }
@@ -273,9 +242,8 @@ func (c *testModeClient) WorkspaceFolders(ctx context.Context) ([]protocol.Works
 	return nil, nil
 }
 
-func sendInitialize(ctx context.Context, server protocol.Server, rootPath string) (*protocol.InitializeResult, error) {
-	// Send initialized notification
-	return server.Initialize(ctx, &protocol.InitializeParams{
+func initializeParams(rootPath string) *protocol.InitializeParams {
+	return &protocol.InitializeParams{
 		Capabilities: protocol.ClientCapabilities{
 			TextDocument: &protocol.TextDocumentClientCapabilities{
 				Completion: &protocol.CompletionTextDocumentClientCapabilities{
@@ -363,5 +331,5 @@ func sendInitialize(ctx context.Context, server protocol.Server, rootPath string
 				URI:  "file://" + rootPath,
 			},
 		},
-	})
+	}
 }
