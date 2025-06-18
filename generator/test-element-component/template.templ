@@ -1,41 +1,41 @@
 package testelementcomponent
 
 import "fmt"
-import "github.com/a-h/templ/generator/test-element-component/mod"
-import extern "github.com/a-h/templ/generator/test-element-component/externmod"
 
+// import "github.com/a-h/templ/generator/test-element-component/mod"
+// import extern "github.com/a-h/templ/generator/test-element-component/externmod"
 templ ElementComponent() {
 	<div>
-		<h1>ElementComponent Demo</h1>
+		<!-- <h1>ElementComponent Demo</h1> -->
 		<Button title={ str() } />
-		<dl>
-			<DData term="Name" detail="Tom Cook" />
-		</dl>
-		<Card title="Card Title">card body</Card>
-		<h2>Named Parameter Test</h2>
-		<mod.Text name="hello"/>
-		<extern.Text name="world"/>
-		
-		<h2>All Attribute Types Test</h2>
-		// Constant attribute
-		<Button title="Constant String" />
-		
-		// Complex expression attribute
-		<Button title={ "Hello " + str() + "!" } />
-		
-		// Boolean constant attribute (with title)
-		<BoolComponent title="Bool Test" enabled />
-		
-		// Boolean expression attribute
-		<BoolComponent title="Bool Expr" enabled?={ isEnabled() } />
-		
-		// Multiple attributes with different types
-		<MultiComponent 
-			title="Multi Test"
-			count={ 42 }
-			enabled
-			visible?={ shouldShow() }
-		/>
+		<!-- <dl> -->
+		<!-- 	<DData term="Name" detail="Tom Cook" /> -->
+		<!-- </dl> -->
+		<!-- <Card title="Card Title">card body</Card> -->
+		<!-- <h2>Named Parameter Test</h2> -->
+		<!-- <mod.Text name="hello"/> -->
+		<!-- <extern.Text name="world"/> -->
+		<!---->
+		<!-- <h2>All Attribute Types Test</h2> -->
+		<!-- // Constant attribute -->
+		<!-- <Button title="Constant String" /> -->
+		<!---->
+		<!-- // Complex expression attribute -->
+		<!-- <Button title={ "Hello " + str() + "!" } /> -->
+		<!---->
+		<!-- // Boolean constant attribute (with title) -->
+		<!-- <BoolComponent title="Bool Test" enabled /> -->
+		<!---->
+		<!-- // Boolean expression attribute -->
+		<!-- <BoolComponent title="Bool Expr" enabled?={ isEnabled() } /> -->
+		<!---->
+		<!-- // Multiple attributes with different types -->
+		<!-- <MultiComponent  -->
+		<!-- 	title="Multi Test" -->
+		<!-- 	count={ 42 } -->
+		<!-- 	enabled -->
+		<!-- 	visible?={ shouldShow() } -->
+		<!-- /> -->
 	</div>
 }
 

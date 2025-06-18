@@ -839,6 +839,10 @@ type Attribute interface {
 	Copy() Attribute
 }
 
+type KeyedAttribute interface {
+	AttributeKey() AttributeKey
+}
+
 type AttributeKey interface {
 	fmt.Stringer
 }
@@ -883,6 +887,10 @@ func (bca *BoolConstantAttribute) Copy() Attribute {
 	}
 }
 
+func (bca *BoolConstantAttribute) AttributeKey() AttributeKey {
+	return bca.Key
+}
+
 // href=""
 type ConstantAttribute struct {
 	Key         AttributeKey
@@ -914,6 +922,10 @@ func (ca *ConstantAttribute) Copy() Attribute {
 	}
 }
 
+func (ca *ConstantAttribute) AttributeKey() AttributeKey {
+	return ca.Key
+}
+
 // noshade={ templ.Bool(...) }
 type BoolExpressionAttribute struct {
 	Key        AttributeKey
@@ -937,6 +949,10 @@ func (bea *BoolExpressionAttribute) Copy() Attribute {
 		Expression: bea.Expression,
 		Key:        bea.Key,
 	}
+}
+
+func (bea *BoolExpressionAttribute) AttributeKey() AttributeKey {
+	return bea.Key
 }
 
 // href={ ... }
@@ -1006,6 +1022,10 @@ func (ea *ExpressionAttribute) Copy() Attribute {
 		Expression: ea.Expression,
 		Key:        ea.Key,
 	}
+}
+
+func (ea *ExpressionAttribute) AttributeKey() AttributeKey {
+	return ea.Key
 }
 
 // <a { spread... } />

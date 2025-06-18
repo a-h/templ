@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"log/slog"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -962,75 +963,56 @@ func (g *generator) writeBlockElementComponent(indentLevel int, n *parser.Elemen
 	return nil
 }
 
-func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n *parser.ElementComponent) ([]parser.Attribute, []parser.Attribute, error) {
+type elementComponentAttributes struct {
+	keys      []parser.ConstantAttributeKey
+	attrs     []parser.Attribute
+	args      []ParameterInfo
+	restAttrs []parser.Attribute
+}
+
+func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n *parser.ElementComponent) (elementComponentAttributes, error) {
 	// Create a map of attribute names to values
-	attrMap := make(map[string]parser.Attribute)
 	rest := make([]parser.Attribute, 0)
-
+	attrMap := make(map[string]parser.Attribute)
+	keyMap := make(map[string]parser.ConstantAttributeKey)
 	for _, attr := range n.Attributes {
-		var name string
-
-		// Extract attribute name - must be a constant string for Element components
-		switch a := attr.(type) {
-		case *parser.ConstantAttribute:
-			name = extractAttributeName(a.Key)
-		case *parser.ExpressionAttribute:
-			name = extractAttributeName(a.Key)
-		case *parser.BoolConstantAttribute:
-			name = extractAttributeName(a.Key)
-		case *parser.BoolExpressionAttribute:
-			name = extractAttributeName(a.Key)
-		case *parser.SpreadAttributes:
-			// TODO: maybe we can iterator over templ.Attributer and get the name?
-			rest = append(rest, attr)
-			continue
-		case *parser.ConditionalAttribute:
-			// TODO: we can get assignments from the conditional attribute
-			rest = append(rest, attr)
-			continue
+		keyed, ok := attr.(parser.KeyedAttribute)
+		if ok {
+			key, ok := keyed.AttributeKey().(parser.ConstantAttributeKey)
+			if ok {
+				// Element component only works with const key element
+				attrMap[key.Name] = attr
+				keyMap[key.Name] = key
+				slog.Warn("Mapping attribute", "key", key.Name, "range", key.NameRange, "to", attr)
+				continue
+			}
 		}
-
-		if name == "" {
-			rest = append(rest, attr)
-		} else {
-			attrMap[name] = attr
-		}
+		// If the attribute is not keyed, we can't map it by name, append it to the rest
+		rest = append(rest, attr)
 	}
-	_ = rest // TODO: rest can be passed to var arg if the function supports it
 
-	args := make([]parser.Attribute, len(sig.Parameters))
+	ordered := make([]parser.Attribute, len(sig.Parameters))
+	keys := make([]parser.ConstantAttributeKey, len(sig.Parameters))
 	for i, param := range sig.Parameters {
 		var ok bool
-		args[i], ok = attrMap[param.Name]
+		ordered[i], ok = attrMap[param.Name]
 		if !ok {
-			return nil, nil, fmt.Errorf("%s: missing required parameter '%s'", sig.Name, param.Name)
+			return elementComponentAttributes{}, fmt.Errorf("missing required attribute %s for component %s", param.Name, n.Name)
+		}
+		keys[i], ok = keyMap[param.Name]
+		if !ok {
+			return elementComponentAttributes{}, fmt.Errorf("missing required key for attribute %s in component %s", param.Name, n.Name)
 		}
 	}
-	// TODO: append rest as templ.Attributer
-	// TODO: maybe we should write the script and style elements
-
-	return args, rest, nil
+	return elementComponentAttributes{args: sig.Parameters, attrs: ordered, keys: keys, restAttrs: rest}, nil
 }
 
-// extractAttributeName extracts the name from an AttributeKey
-func extractAttributeName(key parser.AttributeKey) string {
-	switch k := key.(type) {
-	case parser.ConstantAttributeKey:
-		return k.Name
-	case parser.ExpressionAttributeKey:
-		// Expression keys can't be mapped by name
-		return ""
-	default:
-		return ""
-	}
-}
-
-func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attribute, sigs *ComponentSignature) ([]string, error) {
-	res := make([]string, len(args))
-	for i, attr := range args {
+func (g *generator) writeArgumentAssignment(indentLevel int, attrs elementComponentAttributes) ([]string, error) {
+	res := make([]string, len(attrs.attrs))
+	for i, attr := range attrs.attrs {
 		var value string
 		var err error
-		sig := sigs.Parameters[i]
+		sig := attrs.args[i]
 
 		// TODO: implement templ.Component type handling: if the input is a stringable, it will be converted to a stringable component,
 		// or else it'll be rendered as a templ.Component, like how children are rendered.
@@ -1038,7 +1020,6 @@ func (g *generator) writeArgumentAssignment(indentLevel int, args []parser.Attri
 
 		switch attr := attr.(type) {
 		case *parser.ConstantAttribute:
-			// TODO: Copied from writeConstantAttribute, should merge with it
 			quote := `"`
 			if attr.SingleQuote {
 				quote = "'"
@@ -1111,13 +1092,12 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 		return fmt.Errorf("%s: no function signature found - all components must have matching Go functions with matching parameters", n.Name)
 	}
 
-	attrs, rest, err := g.reorderElementComponentAttributes(sigs, n)
+	orderedArgs, err := g.reorderElementComponentAttributes(sigs, n)
 	if err != nil {
 		return err
 	}
-	_ = rest // TODO: group rest into a single templ.Attributer
 	var vars []string
-	if vars, err = g.writeArgumentAssignment(indentLevel, attrs, sigs); err != nil {
+	if vars, err = g.writeArgumentAssignment(indentLevel, orderedArgs); err != nil {
 		return err
 	}
 
@@ -1129,6 +1109,7 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 	if r, err = g.w.Write(n.Name); err != nil {
 		return err
 	}
+	slog.Warn("Writing ", "name", n.Name, "namerange", n.NameRange, "with range", r.String())
 	g.sourceMap.Add(parser.Expression{Value: n.Name, Range: n.NameRange}, r)
 
 	// Write opening parenthesis
@@ -1142,13 +1123,13 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 				return err
 			}
 		}
-		r, err = g.w.Write(arg)
+		r, err := g.w.Write(arg)
 		if err != nil {
 			return err
 		}
-		_ = r
-		// TODO: we need to track the attribute range to jump to definition
-		// g.sourceMap.Add(parser.Expression{Value: arg, Range: n.NameRange}, r)
+		key := orderedArgs.keys[i]
+		slog.Warn("Writing ", "name", key.Name, "namerange", key.NameRange, "with range", r.String())
+		g.sourceMap.Add(parser.Expression{Value: key.Name, Range: key.NameRange}, r)
 	}
 
 	// Write closing parenthesis
