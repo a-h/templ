@@ -1450,7 +1450,7 @@ func (el *ElementComponent) Write(w io.Writer, indent int) error {
 		return nil
 	}
 	// Self-closing when no children
-	if err := writeIndent(w, closeAngleBracketIndent, " />"); err != nil {
+	if err := writeIndent(w, closeAngleBracketIndent, "/>"); err != nil {
 		return err
 	}
 	return nil
