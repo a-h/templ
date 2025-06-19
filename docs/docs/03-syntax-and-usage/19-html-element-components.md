@@ -161,13 +161,11 @@ templ Container(child templ.Component) {
 <Container child={ strErr() } />
 ```
 
-## Types that Implement `templ.Component`
+## Struct type that Implement `templ.Component`
 
-Types that implement the `templ.Component` interface can be used directly as HTML element components:
+Struct type that implement the `templ.Component` interface can be used directly as HTML element components:
 
-```go
-import "github.com/example/mod"
-
+```go title="github.com/example/mod/struct_component.go"
 type StructComponent struct {
   Name  string
   Child templ.Component
@@ -199,6 +197,10 @@ func (c *StructComponent) Render(ctx context.Context, w io.Writer) error {
   }
   return nil
 }
+```
+
+```go
+import "github.com/example/mod"
 
 // Usage as HTML element component
 <mod.StructComponent
@@ -296,7 +298,7 @@ Multiple CSS properties and attributes can be combined:
 />
 ```
 
-## Function Call Attributes
+## JavaScript Attributes
 
 JavaScript function calls can be used as attribute values:
 
