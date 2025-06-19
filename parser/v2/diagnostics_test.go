@@ -134,6 +134,112 @@ templ template () {
 }`,
 			want: nil,
 		},
+
+		// missingComponentDiagnoser
+
+		{
+			name: "missingComponentDiagnoser: no diagnostics - no components",
+			template: `
+package main
+
+templ template () {
+	<div>Regular HTML</div>
+}`,
+			want: nil,
+		},
+		{
+			name: "missingComponentDiagnoser: no diagnostics - valid component",
+			template: `
+package main
+
+templ ValidComponent() {
+	<div>Valid component</div>
+}
+
+templ template() {
+	<ValidComponent />
+}`,
+			want: nil,
+		},
+		{
+			name: "missingComponentDiagnoser: missing component",
+			template: `
+package main
+
+templ template() {
+	<MissingComponent />
+}`,
+			want: []Diagnostic{{
+				Message: "Component MissingComponent not found",
+				Range:   Range{Position{36, 4, 2}, Position{52, 4, 18}},
+			}},
+		},
+		{
+			name: "missingComponentDiagnoser: multiple missing components",
+			template: `
+package main
+
+templ template() {
+	<FirstMissing />
+	<SecondMissing />
+}`,
+			want: []Diagnostic{
+				{
+					Message: "Component FirstMissing not found",
+					Range:   Range{Position{36, 4, 2}, Position{48, 4, 14}},
+				},
+				{
+					Message: "Component SecondMissing not found", 
+					Range:   Range{Position{54, 5, 2}, Position{67, 5, 15}},
+				},
+			},
+		},
+		{
+			name: "missingComponentDiagnoser: mixed valid and missing",
+			template: `
+package main
+
+templ ValidComponent() {
+	<div>Valid</div>
+}
+
+templ template() {
+	<ValidComponent />
+	<MissingComponent />
+}`,
+			want: []Diagnostic{{
+				Message: "Component MissingComponent not found",
+				Range:   Range{Position{102, 9, 2}, Position{118, 9, 18}},
+			}},
+		},
+		{
+			name: "missingComponentDiagnoser: skip package-qualified components",
+			template: `
+package main
+
+templ template() {
+	<pkg.ExternalComponent />
+	<MissingLocal />
+}`,
+			want: []Diagnostic{{
+				Message: "Component MissingLocal not found",
+				Range:   Range{Position{63, 5, 2}, Position{75, 5, 14}},
+			}},
+		},
+		{
+			name: "missingComponentDiagnoser: skip struct method components",
+			template: `
+package main
+
+templ template() {
+	<variable.Method />
+	<MissingLocal />
+}`,
+			want: []Diagnostic{{
+				Message: "Component MissingLocal not found",
+				Range:   Range{Position{57, 5, 2}, Position{69, 5, 14}},
+			}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
