@@ -6,6 +6,32 @@ import (
 	"github.com/a-h/templ/parser/v2"
 )
 
+// ARCHITECTURE NOTE: Enhanced Diagnostics
+//
+// This file provides generator-level diagnostics that complement parser/v2/diagnostics.go.
+// There is intentional duplication of some logic because these serve different purposes:
+//
+// GENERATOR LAYER (this file):
+// - Runs during code generation with full Go toolchain context
+// - Uses golang.org/x/tools/packages for accurate type information
+// - Can resolve cross-package imports and working directories
+// - Validates actual Go interface implementation (templ.Component)
+// - Slower but comprehensive validation
+// - Used during `templ generate` command
+//
+// vs PARSER LAYER (parser/v2/diagnostics.go):
+// - Runs during template parsing for immediate feedback
+// - No external dependencies, fast execution
+// - Simple string-based Go code pattern matching
+// - Limited to local (same-file) component validation
+// - Used by LSP for real-time editor diagnostics
+//
+// The duplication exists because:
+// 1. Parser diagnostics need to be fast for editor responsiveness
+// 2. Generator diagnostics need to be accurate for build-time validation
+// 3. Different execution contexts (parsing vs generation)
+// 4. Different dependency requirements (minimal vs full toolchain)
+
 // DiagnoseWithSymbolResolution performs diagnostics with Go type information
 // This is more comprehensive than parser.Diagnose() but requires a working directory for package loading
 func DiagnoseWithSymbolResolution(t *parser.TemplateFile, workingDir string) ([]parser.Diagnostic, error) {
@@ -81,6 +107,7 @@ func enhancedMissingComponentDiagnoser(t *parser.TemplateFile, workingDir string
 }
 
 // Helper types and functions that mirror those in parser/v2/diagnostics.go
+// NOTE: These are duplicated for architectural separation - see file header comment
 
 // componentRef represents a component reference for validation
 type componentRef struct {

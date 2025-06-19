@@ -5,6 +5,34 @@ import (
 	"strings"
 )
 
+// ARCHITECTURE NOTE: Diagnostics Duplication
+//
+// This file contains parser-level diagnostics that operate without external dependencies
+// like golang.org/x/tools/packages. These are "fast" diagnostics that can run during
+// parsing without needing to load Go modules or resolve import paths.
+//
+// There is intentional duplication with generator/enhanced_diagnostics.go because:
+//
+// 1. PARSER LAYER (this file):
+//    - Runs during template parsing
+//    - No external dependencies (no x/tools/packages)
+//    - Fast execution, minimal setup
+//    - Uses simple string parsing for Go code analysis
+//    - Can only validate local components (same file)
+//    - Limited to basic pattern matching for Go structs with Render methods
+//
+// 2. GENERATOR LAYER (enhanced_diagnostics.go):
+//    - Runs during code generation with full context
+//    - Uses x/tools/packages for proper Go type information
+//    - Slower but more accurate
+//    - Can resolve cross-package components and imports
+//    - Full type checking and interface implementation validation
+//    - Can validate working directory and module structure
+//
+// The parser diagnostics provide immediate feedback during editing, while the generator
+// diagnostics provide comprehensive validation during the build process. Both are needed
+// for a good user experience in editors/LSPs vs command-line builds.
+
 type diagnoser func(Node) ([]Diagnostic, error)
 type templateDiagnoser func(*TemplateFile) ([]Diagnostic, error)
 
@@ -90,6 +118,9 @@ func missingComponentDiagnoser(t *TemplateFile) ([]Diagnostic, error) {
 
 	// Find all defined components in this template
 	definedComponents := collectDefinedComponents(t)
+	
+	// Find all Go types that implement Component interface in this template
+	goComponents := collectGoComponents(t)
 
 	// Check each component reference
 	for _, ref := range componentRefs {
@@ -99,8 +130,8 @@ func missingComponentDiagnoser(t *TemplateFile) ([]Diagnostic, error) {
 			continue
 		}
 
-		// Check if component is defined in this template
-		if !definedComponents[ref.Name] {
+		// Check if component is defined in this template (either as templ component or Go struct)
+		if !definedComponents[ref.Name] && !goComponents[ref.Name] {
 			diags = append(diags, Diagnostic{
 				Message: "Component " + ref.Name + " not found",
 				Range: Range{
@@ -155,6 +186,74 @@ func collectDefinedComponents(t *TemplateFile) map[string]bool {
 	}
 
 	return defined
+}
+
+// collectGoComponents finds all Go types that implement the Component interface in the template file
+// NOTE: This is a simplified version compared to generator/enhanced_diagnostics.go which uses
+// x/tools/packages for full type checking. This version uses basic string parsing for speed.
+func collectGoComponents(t *TemplateFile) map[string]bool {
+	goComponents := make(map[string]bool)
+
+	// Look through Go expressions for type definitions and Render methods
+	for _, node := range t.Nodes {
+		if goExpr, ok := node.(*TemplateFileGoExpression); ok {
+			typeNames := parseGoTypesWithRenderMethod(goExpr.Expression.Value)
+			for _, typeName := range typeNames {
+				goComponents[typeName] = true
+			}
+		}
+	}
+
+	return goComponents
+}
+
+// parseGoTypesWithRenderMethod parses Go code and finds types that have a Render method
+// This is a simplified parser that looks for patterns like:
+// type Foo struct{} ... func (f *Foo) Render(ctx context.Context, w io.Writer) error
+func parseGoTypesWithRenderMethod(goCode string) []string {
+	var typeNames []string
+	
+	// Split into lines for simple pattern matching
+	lines := strings.Split(goCode, "\n")
+	
+	// First pass: collect type definitions
+	definedTypes := make(map[string]bool)
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "type ") && (strings.Contains(line, "struct") || strings.Contains(line, "interface")) {
+			// Extract type name
+			parts := strings.Fields(line)
+			if len(parts) >= 2 {
+				typeName := parts[1]
+				definedTypes[typeName] = true
+			}
+		}
+	}
+	
+	// Second pass: look for Render methods on these types
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "func ") && strings.Contains(line, "Render(") {
+			// Look for receiver pattern: func (receiver Type) Render or func (receiver *Type) Render
+			parenStart := strings.Index(line, "(")
+			parenEnd := strings.Index(line, ")")
+			if parenStart != -1 && parenEnd != -1 && parenEnd > parenStart {
+				receiver := strings.TrimSpace(line[parenStart+1 : parenEnd])
+				if receiver != "" {
+					// Parse receiver: "f Foo" or "f *Foo"
+					parts := strings.Fields(receiver)
+					if len(parts) >= 2 {
+						typeName := strings.TrimPrefix(parts[1], "*") // Remove pointer indicator
+						if definedTypes[typeName] {
+							typeNames = append(typeNames, typeName)
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return typeNames
 }
 
 // extractTemplateName extracts the template name from a template expression
