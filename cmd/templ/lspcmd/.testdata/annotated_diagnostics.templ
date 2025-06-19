@@ -1,0 +1,38 @@
+package testelementcomponent
+
+// Test file with annotated LSP expectations
+// Uses simple annotation format: @expect-diagnostic: message
+
+templ ValidComponent() {
+	<div>This component exists</div>
+}
+
+templ AnnotatedTest() {
+	// @expect-diagnostic: Component MissingComponent not found
+	<MissingComponent />
+	
+	<ValidComponent />  // Valid - no diagnostic expected
+	
+	// @expect-diagnostic: Component AnotherMissing not found  
+	<AnotherMissing name="test" />
+	
+	<pkg.External />    // Package qualified - should be ignored
+	
+	// @expect-diagnostic: Component LocalMissing not found
+	<LocalMissing>
+		<span>Nested content</span>
+	</LocalMissing>
+	
+	<div class="regular">Regular HTML - no issues</div>
+}
+
+// Multiple components with various scenarios
+templ ComplexTest() {
+	<div>
+		// @expect-diagnostic: Component First not found
+		<First />
+		
+		// @expect-diagnostic: Component Second not found
+		<Second attr="value" />
+	</div>
+}

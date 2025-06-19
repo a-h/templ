@@ -1,0 +1,18 @@
+package testelementcomponent
+
+// Simple annotated test file
+// Format: @expect-diagnostic: your_message_here
+
+templ ValidComponent() {
+	<div>This component exists</div>
+}
+
+templ SimpleTest() {
+	// @expect-diagnostic: Component MissingComponent not found
+	<MissingComponent />
+	
+	<ValidComponent />  // No diagnostic expected
+	
+	// @expect-diagnostic: Component AnotherMissing not found
+	<AnotherMissing />
+}

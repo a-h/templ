@@ -1,0 +1,49 @@
+<div>
+  <h1>ElementComponent Demo</h1>
+  <button>Click me</button>
+  <dl>
+    <dt>Name</dt>
+    <dd>Tom Cook</dd>
+  </dl>
+  <article class="card">
+    <h2>Card Title</h2>
+    <main>card body</main>
+  </article>
+  <h2 class="highlighted">Named Parameter Test</h2>
+  <div class="mod">hello</div>
+  <div class="externmod">world</div>
+  <h2>All Attribute Types Test</h2>
+  <button>Constant String</button>
+  <button>Hello Click me!</button>
+  <div
+    class="enabled"
+    style="color: green;font-weight: bold;"
+    x-data-custom="custom-value"
+    bool
+    expr="str with err"
+    onclick="alert(hello)"
+    test="top"
+  >
+    <h3>Bool Test</h3>
+    <span>Enabled</span>
+  </div>
+  <div class="multi-component">
+    <h3>Multi Test (count: 42)</h3>
+    <span>Enabled</span>
+  </div>
+  <div class="container">str with err</div>
+  <div class="container">hello</div>
+  <div class="container">
+    <div>divchild</div>
+  </div>
+  <div class="struct-component" style="color: blue;">
+    <h1>Struct Component Example</h1>
+    <p>This is a struct component.</p>
+  </div>
+  <div class="noargs"></div>
+  <div>Component Rendered</div>
+  <div class="struct-component" enabled>
+    <span>struct component child</span>
+    struct
+  </div>
+</div>

@@ -43,6 +43,7 @@ type Server struct {
 	NoPreload          bool
 	preLoadURIs        []*lsp.DidOpenTextDocumentParams
 	templDocLazyLoader templDocLazyLoader
+	workingDir         string
 }
 
 func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache, noPreload bool) (s *Server) {
@@ -163,12 +164,19 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		}
 		// If the template was even partially parsed, it's still potentially useful.
 		if template != nil {
-			template.Filepath = string(uri)
+			template.Filepath = strings.TrimPrefix(string(uri), "file://")
 		}
 		return
 	}
-	template.Filepath = string(uri)
-	parsedDiagnostics, err := parser.Diagnose(template)
+	template.Filepath = strings.TrimPrefix(string(uri), "file://")
+
+	// Use enhanced diagnostics if we have a working directory
+	var parsedDiagnostics []parser.Diagnostic
+	if p.workingDir != "" {
+		parsedDiagnostics, err = generator.DiagnoseWithSymbolResolution(template, p.workingDir)
+	} else {
+		parsedDiagnostics, err = parser.Diagnose(template)
+	}
 	if err != nil {
 		return
 	}
@@ -219,6 +227,14 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (result *lsp.InitializeResult, err error) {
 	p.Log.Info("client -> server: Initialize")
 	defer p.Log.Info("client -> server: Initialize end")
+
+	// Symbol resolution requires the project root to be set.
+	if len(params.WorkspaceFolders) > 0 {
+		if u, err := uri.Parse(string(params.WorkspaceFolders[0].URI)); err == nil {
+			p.workingDir = u.Filename()
+		}
+	}
+
 	result, err = p.Target.Initialize(ctx, params)
 	if err != nil {
 		p.Log.Error("Initialize failed", slog.Any("error", err))
@@ -263,8 +279,8 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 
 func (p *Server) preload(ctx context.Context, workspaceFolders []lsp.WorkspaceFolder) {
 	for _, c := range workspaceFolders {
-		path := strings.TrimPrefix(c.URI, "file://")
-		werr := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		workspacePath := strings.TrimPrefix(c.URI, "file://")
+		werr := filepath.Walk(workspacePath, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -289,13 +305,16 @@ func (p *Server) preload(ctx context.Context, workspaceFolders []lsp.WorkspaceFo
 				p.Log.Info("parseTemplate failure", slog.Any("error", err))
 			}
 			w := new(strings.Builder)
-			generatorOutput, err := generator.Generate(template, w)
+			generatorOutput, err := generator.Generate(template, w, generator.WithWorkingDir(workspacePath))
 			if err != nil {
-				// It's expected to have some failures while generating code from the template, since
+				// It's expected to have some failures while parsing the template, since
 				// you are likely to have invalid docs while you're typing.
 				p.Log.Info("generator failure", slog.Any("error", err))
 			}
 			p.Log.Info("setting source map cache contents", slog.String("uri", string(uri)))
+			if generatorOutput.SourceMap == nil {
+				panic(fmt.Sprintf("generator output for %s has no source map", uri))
+			}
 			p.SourceMapCache.Set(string(uri), generatorOutput.SourceMap)
 			// Set the Go contents.
 			p.GoSource[string(uri)] = w.String()
@@ -789,7 +808,9 @@ func (p *Server) didOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	// Generate the output code and cache the source map and Go contents to use during completion
 	// requests.
 	w := new(strings.Builder)
-	generatorOutput, err := generator.Generate(template, w)
+	// Get working directory from file path
+	workingDir := filepath.Dir(strings.TrimPrefix(string(params.TextDocument.URI), "file://"))
+	generatorOutput, err := generator.Generate(template, w, generator.WithWorkingDir(workingDir))
 	if err != nil {
 		return
 	}

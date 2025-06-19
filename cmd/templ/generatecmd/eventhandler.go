@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"go/format"
 	"go/scanner"
@@ -18,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
@@ -156,6 +158,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	if len(diag) > 0 {
 		for _, d := range diag {
 			h.Log.Warn(d.Message,
+				slog.String("file", event.Name),
 				slog.String("from", fmt.Sprintf("%d:%d", d.Range.From.Line, d.Range.From.Col)),
 				slog.String("to", fmt.Sprintf("%d:%d", d.Range.To.Line, d.Range.To.Col)),
 			)
@@ -239,15 +242,39 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 	relFilePath = filepath.ToSlash(relFilePath)
 
 	var b bytes.Buffer
-	generatorOutput, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath))...)
-	if err != nil {
-		return GenerateResult{}, nil, fmt.Errorf("%s generation error: %w", fileName, err)
+	// Use the directory of the specific file being processed for symbol resolution
+	fileDir := filepath.Dir(fileName)
+
+	// Check if there's a go.mod file in fileDir or any parent directory up to that level
+	// If found, use that directory as working directory for proper module resolution
+	workingDir := fileDir
+	if modDir, err := modcheck.WalkUp(fileDir); err == nil {
+		workingDir = modDir
 	}
 
-	formattedGoCode, err := format.Source(b.Bytes())
+	generatorOutput, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath), generator.WithWorkingDir(workingDir))...)
+
+	// Always extract diagnostics from the generator, even if generation failed
+	parsedDiagnostics, diagErr := parser.Diagnose(t)
+	if diagErr != nil {
+		return GenerateResult{}, nil, fmt.Errorf("%s diagnostics error: %w", fileName, diagErr)
+	}
+
+	var allDiagnostics []parser.Diagnostic
+	allDiagnostics = append(allDiagnostics, parsedDiagnostics...)
+	// Always append generator diagnostics (even if generation failed, we might have collected some)
+	allDiagnostics = append(allDiagnostics, generatorOutput.Diagnostics...)
+
 	if err != nil {
-		err = remapErrorList(err, generatorOutput.SourceMap, fileName)
-		return GenerateResult{}, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
+		// Return diagnostics even when generation fails
+		return GenerateResult{}, allDiagnostics, fmt.Errorf("%s generation error: %w", fileName, err)
+	}
+
+	formattedGoCode, formatErr := format.Source(b.Bytes())
+	if formatErr != nil {
+		formatErr = remapErrorList(formatErr, generatorOutput.SourceMap, fileName)
+		// Use unformatted code if formatting fails - better than no code at all for LSP
+		formattedGoCode = b.Bytes()
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
@@ -282,16 +309,11 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		h.fileNameToOutput[fileName] = generatorOutput
 	}
 
-	parsedDiagnostics, err := parser.Diagnose(t)
-	if err != nil {
-		return result, nil, fmt.Errorf("%s diagnostics error: %w", fileName, err)
-	}
-
 	if h.genSourceMapVis {
 		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, generatorOutput.SourceMap)
 	}
 
-	return result, parsedDiagnostics, err
+	return result, allDiagnostics, errors.Join(err, formatErr)
 }
 
 // Takes an error from the formatter and attempts to convert the positions reported in the target file to their positions

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/a-h/templ"
@@ -611,4 +612,38 @@ func TestNonce(t *testing.T) {
 			t.Errorf("expected %q got %q", expected, actual)
 		}
 	})
+}
+
+func TestStringable(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected string
+	}{
+		{
+			name:     "string",
+			input:    "test stringable",
+			expected: "test stringable",
+		},
+		{
+			name:     "int",
+			input:    42,
+			expected: "42",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var c templ.Component
+			switch v := tt.input.(type) {
+			case string:
+				c = templ.Stringable(v)
+			case int:
+				c = templ.Stringable(v)
+			}
+			var buf strings.Builder
+			if err := c.Render(context.Background(), &buf); err != nil {
+				t.Fatalf("failed to render Stringable: %v", err)
+			}
+		})
+	}
 }

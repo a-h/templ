@@ -1,0 +1,158 @@
+package testelementcomponent
+
+import (
+	"context"
+	"fmt"
+	"io"
+
+	extern "github.com/a-h/templ/generator/test-element-component/externmod"
+	"github.com/a-h/templ/generator/test-element-component/mod"
+)
+
+templ ElementComponent(attrs templ.Attributer) {
+	<div>
+		<h1>ElementComponent Demo</h1>
+		<Button title={ str() } />
+		<dl>
+			<DData term="Name" detail="Tom Cook" />
+		</dl>
+		<Card title="Card Title">card body</Card>
+		<h2
+			if true {
+				class="highlighted"
+			}
+		>Named Parameter Test</h2>
+		<mod.Text name="hello" />
+		<extern.Text name="world" />
+		<h2>All Attribute Types Test</h2>
+		// Constant attribute
+		<Button title="Constant String" />
+		// Complex expression attribute
+		<Button title={ "Hello " + str() + "!" } />
+		<BoolComponent
+			title="Bool Test"
+			if true {
+				class="enabled"
+			} else {
+				if true {
+					class="disabled"
+				}
+			}
+			style={ "color: green;", "font-weight: bold;" }
+			x-data-custom="custom-value"
+			disabled?={ false }
+			bool
+			// enabled is a argument
+			enabled
+			expr={ strErr() }
+			onclick={ templ.JSFuncCall("alert", templ.JSExpression("hello")) }
+			{ attrs... }
+		/>
+		// Multiple attributes with different types
+		<MultiComponent title="Multi Test" count={ 42 } enabled visible?={ shouldShow() } />
+		<Container child={ strErr() } />
+		<Container child="hello" />
+		<Container
+			child={
+				<div>
+					divchild
+				</div>
+			}
+		/>
+		<structComp.Page title="Struct Component Example" class="struct-component" style="color: blue;" />
+		<NoArgsComponent />
+		<ComponentImpl />
+		<mod.StructComponent
+			Name="struct"
+			Child={
+				<span>struct component child</span>
+			}
+			enabled?={ isEnabled() }
+		/>
+	</div>
+}
+
+var structComp StructComponent
+
+templ Container(child templ.Component) {
+	<div class="container">
+		{ child }
+	</div>
+}
+
+templ Button(title string) {
+	<button>{ title }</button>
+}
+
+templ DData(term, detail string) {
+	<dt>{ term }</dt>
+	<dd>{ detail }</dd>
+}
+
+templ Card(title string) {
+	<article class="card">
+		<h2>{ title }</h2>
+		<main>
+			{ children... }
+		</main>
+	</article>
+}
+
+func str() string {
+	return "Click me"
+}
+
+templ NoArgsComponent() {
+	<div class="noargs"></div>
+}
+
+templ BoolComponent(title string, enabled bool, attrs templ.Attributer) {
+	<div { attrs... }>
+		<h3>{ title }</h3>
+		if enabled {
+			<span>Enabled</span>
+		} else {
+			<span>Disabled</span>
+		}
+	</div>
+}
+
+templ MultiComponent(title string, count int, enabled bool, visible bool) {
+	<div class="multi-component">
+		<h3>{ title } (count: { fmt.Sprint(count) })</h3>
+		if enabled {
+			<span>Enabled</span>
+		}
+		if visible {
+			<span>Visible</span>
+		}
+	</div>
+}
+
+type StructComponent struct{}
+
+templ (StructComponent) Page(title string, attrs templ.Attributer) {
+	<div { attrs... }>
+		<h1>{ title }</h1>
+		<p>This is a struct component.</p>
+	</div>
+}
+
+type ComponentImpl struct{}
+
+func (c ComponentImpl) Render(ctx context.Context, w io.Writer) (err error) {
+	_, err = fmt.Fprint(w, "<div>Component Rendered</div>")
+	return
+}
+
+func isEnabled() bool {
+	return true
+}
+
+func shouldShow() (bool, error) {
+	return false, nil
+}
+
+func strErr() (string, error) {
+	return "str with err", nil
+}

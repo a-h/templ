@@ -59,10 +59,24 @@ func WithSkipCodeGeneratedComment() GenerateOpt {
 	}
 }
 
+// WithWorkingDir sets the working directory for symbol resolution
+func WithWorkingDir(dir string) GenerateOpt {
+	return func(g *generator) error {
+		g.symbolResolver = SymbolResolver{
+			cache:      make(map[string]ComponentSignature),
+			workingDir: dir,
+		}
+		g.symbolResolverEnabled = true
+		g.componentSigs = make(ComponentSignatures)
+		return nil
+	}
+}
+
 type GeneratorOutput struct {
-	Options   GeneratorOptions  `json:"meta"`
-	SourceMap *parser.SourceMap `json:"sourceMap"`
-	Literals  []string          `json:"literals"`
+	Options     GeneratorOptions    `json:"meta"`
+	SourceMap   *parser.SourceMap   `json:"sourceMap"`
+	Literals    []string            `json:"literals"`
+	Diagnostics []parser.Diagnostic `json:"diagnostics"`
 }
 
 type GeneratorOptions struct {
@@ -110,9 +124,11 @@ func HasChanged(previous, updated GeneratorOutput) bool {
 // to the location of the generated Go code in the output.
 func Generate(template *parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (op GeneratorOutput, err error) {
 	g := &generator{
-		tf:        template,
-		w:         NewRangeWriter(w),
-		sourceMap: parser.NewSourceMap(),
+		tf:            template,
+		w:             NewRangeWriter(w),
+		sourceMap:     parser.NewSourceMap(),
+		templResolver: make(TemplSignatureResolver),
+		componentSigs: make(ComponentSignatures),
 	}
 	for _, opt := range opts {
 		if err = opt(g); err != nil {
@@ -120,13 +136,11 @@ func Generate(template *parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (
 		}
 	}
 	err = g.generate()
-	if err != nil {
-		return op, err
-	}
 	op.Options = g.options
 	op.SourceMap = g.sourceMap
 	op.Literals = g.w.Literals
-	return op, nil
+	op.Diagnostics = g.diagnostics
+	return op, err
 }
 
 type generator struct {
@@ -136,10 +150,25 @@ type generator struct {
 	variableID  int
 	childrenVar string
 
-	options GeneratorOptions
+	options               GeneratorOptions
+	symbolResolver        SymbolResolver
+	symbolResolverEnabled bool
+	templResolver         TemplSignatureResolver
+	componentSigs         ComponentSignatures
+	diagnostics           []parser.Diagnostic
+
+	// currentTemplate tracks the current Templ block being processed.
+	// This is used to resolve component signatures.
+	currentTemplate *parser.HTMLTemplate
 }
 
 func (g *generator) generate() (err error) {
+	g.templResolver.ExtractSignatures(g.tf)
+
+	if err = g.collectAndResolveComponents(); err != nil {
+		return fmt.Errorf("failed to resolve components: %w", err)
+	}
+
 	if err = g.writeCodeGeneratedComment(); err != nil {
 		return
 	}
@@ -436,6 +465,11 @@ func (g *generator) writeTemplate(nodeIdx int, t *parser.HTMLTemplate) error {
 	if t == nil {
 		return errors.New("template is nil")
 	}
+
+	prevTemplate := g.currentTemplate
+	g.currentTemplate = t
+	defer func() { g.currentTemplate = prevTemplate }()
+
 	var r parser.Range
 	var tgtSymbolRange parser.Range
 	var err error
@@ -613,6 +647,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeCallTemplateExpression(indentLevel, n)
 	case *parser.TemplElementExpression:
 		err = g.writeTemplElementExpression(indentLevel, n)
+	case *parser.ElementComponent:
+		err = g.writeElementComponent(indentLevel, n)
 	case *parser.IfExpression:
 		err = g.writeIfExpression(indentLevel, n, next)
 	case *parser.SwitchExpression:
@@ -812,49 +848,53 @@ func (g *generator) writeTemplElementExpression(indentLevel int, n *parser.Templ
 	return g.writeBlockTemplElementExpression(indentLevel, n)
 }
 
-func (g *generator) writeBlockTemplElementExpression(indentLevel int, n *parser.TemplElementExpression) (err error) {
-	var r parser.Range
-	childrenName := g.createVariableName()
-	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
-		return err
+func (g *generator) writeChildrenComponent(indentLevel int, children []parser.Node) (vn string, err error) {
+	vn = g.createVariableName()
+	if _, err = g.w.WriteIndent(indentLevel, vn+" := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
+		return "", err
 	}
 	indentLevel++
 	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context\n"); err != nil {
-		return err
+		return "", err
 	}
 	if err := g.writeTemplBuffer(indentLevel); err != nil {
-		return err
+		return "", err
 	}
 	// ctx = templ.InitializeContext(ctx)
 	if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeContext(ctx)\n"); err != nil {
-		return err
+		return "", err
 	}
-	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Children), nil); err != nil {
-		return err
+	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(children), nil); err != nil {
+		return "", err
 	}
 	// return nil
 	if _, err = g.w.WriteIndent(indentLevel, "return nil\n"); err != nil {
-		return err
+		return "", err
 	}
 	indentLevel--
 	if _, err = g.w.WriteIndent(indentLevel, "})\n"); err != nil {
+		return "", err
+	}
+	return vn, nil
+}
+
+func (g *generator) writeBlockTemplElementExpression(indentLevel int, n *parser.TemplElementExpression) (err error) {
+	childrenName, err := g.writeChildrenComponent(indentLevel, n.Children)
+	if err != nil {
 		return err
 	}
 	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
 		return err
 	}
+	var r parser.Range
 	if r, err = g.w.Write(n.Expression.Value); err != nil {
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
-	// .Render(templ.WithChildren(ctx, children), templ_7745c5c3_Buffer)
 	if _, err = g.w.Write(".Render(templ.WithChildren(ctx, " + childrenName + "), templ_7745c5c3_Buffer)\n"); err != nil {
 		return err
 	}
-	if err = g.writeErrorHandler(indentLevel); err != nil {
-		return err
-	}
-	return nil
+	return g.writeErrorHandler(indentLevel)
 }
 
 func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n *parser.TemplElementExpression) (err error) {
@@ -1446,6 +1486,10 @@ func (g *generator) writeElementAttributes(indentLevel int, name string, attrs [
 			err = g.writeSpreadAttributes(indentLevel, attr)
 		case *parser.ConditionalAttribute:
 			err = g.writeConditionalAttribute(indentLevel, name, attr)
+		case *parser.InlineComponentAttribute:
+			err = fmt.Errorf("inline component attributes are not supported on HTML elements, only on Element Components")
+		case *parser.AttributeComment:
+			continue
 		default:
 			err = fmt.Errorf("unknown attribute type %T", attr)
 		}
@@ -1602,6 +1646,20 @@ func (g *generator) createVariableName() string {
 	return "templ_7745c5c3_Var" + strconv.Itoa(g.variableID)
 }
 
+func (g *generator) getTemplateName(tmpl *parser.HTMLTemplate) string {
+	if tmpl == nil {
+		return ""
+	}
+	// Extract template name from the expression value
+	// The expression value is like "Container(child templ.Component)"
+	// We need to extract just "Container"
+	exprValue := tmpl.Expression.Value
+	if idx := strings.Index(exprValue, "("); idx != -1 {
+		return strings.TrimSpace(exprValue[:idx])
+	}
+	return strings.TrimSpace(exprValue)
+}
+
 func (g *generator) writeGoCode(indentLevel int, e parser.Expression) (err error) {
 	if strings.TrimSpace(e.Value) == "" {
 		return
@@ -1618,6 +1676,22 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	if strings.TrimSpace(e.Value) == "" {
 		return
 	}
+
+	// In this block, we want to support { child } expression for templ.Component variables.
+	// Which means we only support local block variables, and not global variables.
+	if g.currentTemplate != nil {
+		if templSig, ok := g.templResolver.Get(g.getTemplateName(g.currentTemplate)); ok {
+			// Check if expression value matches a parameter name with templ.Component type
+			exprValue := strings.TrimSpace(e.Value)
+			for _, param := range templSig.Parameters {
+				if param.Name == exprValue && isTemplComponent(param.Type) {
+					// This is a component parameter, use call template expression logic
+					return g.writeCallTemplateExpression(indentLevel, &parser.CallTemplateExpression{Expression: e})
+				}
+			}
+		}
+	}
+
 	var r parser.Range
 	vn := g.createVariableName()
 	// var vn string

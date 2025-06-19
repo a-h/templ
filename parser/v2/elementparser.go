@@ -329,6 +329,86 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 	return attr, true, nil
 })
 
+var inlineComponentAttributeParser = parse.Func(func(pi *parse.Input) (attr *InlineComponentAttribute, ok bool, err error) {
+	start := pi.Index()
+
+	// Optional whitespace leader.
+	if _, ok, err = parse.OptionalWhitespace.Parse(pi); err != nil || !ok {
+		return
+	}
+
+	// Attribute name.
+	var key AttributeKey
+	if key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	// ={
+	if _, ok, err = parse.Or(parse.String("={ "), parse.String("={")).Parse(pi); err != nil || !ok {
+		pi.Seek(start)
+		return
+	}
+
+	// Skip whitespace
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		return nil, false, err
+	}
+
+	// Extract and analyze the content between braces to determine if it's HTML
+	_, _, isHTML := analyzeInlineAttributeContent(pi)
+	if !isHTML {
+		pi.Seek(start)
+		return nil, false, nil
+	}
+
+	// Now we know this is an inline component attribute
+	attr = &InlineComponentAttribute{
+		Key: key,
+	}
+
+	// We need to parse the content between braces
+	// For now, let's use a simple approach: collect everything until matching closing brace
+	contentStart := pi.Position()
+	braceDepth := 1
+	var contentBuilder strings.Builder
+
+	for braceDepth > 0 {
+		next, nextOk := pi.Peek(1)
+		if !nextOk {
+			return attr, false, parse.Error("inline component attribute: unexpected EOF", pi.Position())
+		}
+
+		pi.Take(1)
+		contentBuilder.WriteString(next)
+
+		switch next {
+		case "{":
+			braceDepth++
+		case "}":
+			braceDepth--
+			if braceDepth == 0 {
+				// Remove the last closing brace from content
+				content := contentBuilder.String()
+				content = content[:len(content)-1]
+
+				// Parse the content as template nodes
+				contentInput := parse.NewInput(strings.TrimSpace(content))
+				parser := templateNodeParser[Node]{}
+				var nodes Nodes
+				nodes, ok, err = parser.Parse(contentInput)
+				if err != nil || !ok {
+					return attr, false, parse.Error("inline component attribute: failed to parse children", contentStart)
+				}
+				attr.Children = nodes.Nodes
+				return attr, true, nil
+			}
+		}
+	}
+
+	return attr, false, parse.Error("inline component attribute: missing closing brace", pi.Position())
+})
+
 var spreadAttributesParser = parse.Func(func(pi *parse.Input) (attr *SpreadAttributes, ok bool, err error) {
 	start := pi.Index()
 
@@ -381,6 +461,9 @@ func (attributeParser) Parse(in *parse.Input) (out Attribute, ok bool, err error
 	if out, ok, err = boolExpressionAttributeParser.Parse(in); err != nil || ok {
 		return
 	}
+	if out, ok, err = inlineComponentAttributeParser.Parse(in); err != nil || ok {
+		return
+	}
 	if out, ok, err = expressionAttributeParser.Parse(in); err != nil || ok {
 		return
 	}
@@ -402,6 +485,49 @@ type attributesParser struct{}
 
 func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool, err error) {
 	for {
+		// Try to parse and handle any comments first
+		for {
+			// Skip whitespace
+			if _, _, err = parse.OptionalWhitespace.Parse(in); err != nil {
+				return
+			}
+
+			// Try to parse HTML comment
+			commentStart := in.Index()
+			if node, commentOk, commentErr := htmlComment.Parse(in); commentErr != nil {
+				return attributes, false, commentErr
+			} else if commentOk {
+				// Found an HTML comment, add it as an attribute comment
+				if htmlNode, ok := node.(*HTMLComment); ok {
+					attributes = append(attributes, &AttributeComment{
+						Comment:       htmlNode.Contents,
+						Multiline:     true, // HTML comments are always multiline style
+						IsHTMLComment: true,
+					})
+				}
+				continue
+			}
+
+			// Try to parse Go comment
+			if node, commentOk, commentErr := goComment.Parse(in); commentErr != nil {
+				return attributes, false, commentErr
+			} else if commentOk {
+				// Found a Go comment, add it as an attribute comment
+				if goNode, ok := node.(*GoComment); ok {
+					attributes = append(attributes, &AttributeComment{
+						Comment:   goNode.Contents,
+						Multiline: goNode.Multiline,
+					})
+				}
+				continue
+			}
+
+			// No more comments, break from comment parsing loop
+			in.Seek(commentStart)
+			break
+		}
+
+		// Parse attribute
 		var attr Attribute
 		attr, ok, err = attribute.Parse(in)
 		if err != nil {
@@ -556,4 +682,67 @@ func addTrailingSpaceAndValidate(start parse.Position, e *Element, pi *parse.Inp
 	}
 
 	return e, true, nil
+}
+
+// analyzeInlineAttributeContent extracts the content between braces and determines if it contains HTML
+func analyzeInlineAttributeContent(pi *parse.Input) (content string, contentLength int, isHTML bool) {
+	// Find the end of the brace content
+	braceDepth := 1
+	contentEnd := pi.Index()
+	tempInput := *pi // Create a copy to scan ahead without affecting original position
+
+	for braceDepth > 0 {
+		next, ok := tempInput.Peek(1)
+		if !ok {
+			// EOF reached, this is malformed
+			return "", 0, false
+		}
+		tempInput.Take(1)
+		contentEnd++
+
+		switch next {
+		case "{":
+			braceDepth++
+		case "}":
+			braceDepth--
+		}
+	}
+
+	// Get just the content between braces (excluding the final closing brace)
+	contentLength = contentEnd - pi.Index() - 1
+	if contentLength <= 0 {
+		// Empty braces or malformed
+		return "", 0, false
+	}
+
+	content, _ = pi.Peek(contentLength)
+
+	// Determine if this content represents HTML vs Go expressions
+	isHTML = looksLikeHTMLContent(content)
+	return content, contentLength, isHTML
+}
+
+// looksLikeHTMLContent analyzes the content to determine if it's HTML elements vs Go expressions
+func looksLikeHTMLContent(content string) bool {
+	// Quick check: no '<' means definitely not HTML
+	if !strings.Contains(content, "<") {
+		return false
+	}
+
+	trimmed := strings.TrimSpace(content)
+
+	// If it starts with a quote or backtick, it's likely a string literal containing '<'
+	if strings.HasPrefix(trimmed, `"`) || strings.HasPrefix(trimmed, "`") || strings.HasPrefix(trimmed, "'") {
+		return false
+	}
+
+	// If it doesn't start with '<', it's likely a Go expression (function call, variable, etc.)
+	// that may contain '<' in string literals
+	if !strings.HasPrefix(trimmed, "<") {
+		return false
+	}
+
+	// If we get here, it starts with '<' and isn't a quoted string,
+	// so it's probably actual HTML content
+	return true
 }

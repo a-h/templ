@@ -108,6 +108,10 @@ type Range struct {
 	To   Position
 }
 
+func (r Range) String() string {
+	return fmt.Sprintf("from %s to %s", r.From.String(), r.To.String())
+}
+
 // Expression containing Go code.
 type Expression struct {
 	Value string
@@ -835,6 +839,10 @@ type Attribute interface {
 	Copy() Attribute
 }
 
+type KeyedAttribute interface {
+	AttributeKey() AttributeKey
+}
+
 type AttributeKey interface {
 	fmt.Stringer
 }
@@ -879,6 +887,10 @@ func (bca *BoolConstantAttribute) Copy() Attribute {
 	}
 }
 
+func (bca *BoolConstantAttribute) AttributeKey() AttributeKey {
+	return bca.Key
+}
+
 // href=""
 type ConstantAttribute struct {
 	Key         AttributeKey
@@ -910,6 +922,10 @@ func (ca *ConstantAttribute) Copy() Attribute {
 	}
 }
 
+func (ca *ConstantAttribute) AttributeKey() AttributeKey {
+	return ca.Key
+}
+
 // noshade={ templ.Bool(...) }
 type BoolExpressionAttribute struct {
 	Key        AttributeKey
@@ -933,6 +949,10 @@ func (bea *BoolExpressionAttribute) Copy() Attribute {
 		Expression: bea.Expression,
 		Key:        bea.Key,
 	}
+}
+
+func (bea *BoolExpressionAttribute) AttributeKey() AttributeKey {
+	return bea.Key
 }
 
 // href={ ... }
@@ -1002,6 +1022,10 @@ func (ea *ExpressionAttribute) Copy() Attribute {
 		Expression: ea.Expression,
 		Key:        ea.Key,
 	}
+}
+
+func (ea *ExpressionAttribute) AttributeKey() AttributeKey {
+	return ea.Key
 }
 
 // <a { spread... } />
@@ -1105,11 +1129,67 @@ func (ca *ConditionalAttribute) Copy() Attribute {
 	}
 }
 
+// InlineComponentAttribute represents an attribute that contains an inline component block.
+// e.g. child={ <div>content</div> }
+type InlineComponentAttribute struct {
+	Key      AttributeKey
+	Children []Node
+}
+
+func (ica *InlineComponentAttribute) String() string {
+	sb := new(strings.Builder)
+	_ = ica.Write(sb, 0)
+	return sb.String()
+}
+
+func (ica *InlineComponentAttribute) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, ica.Key.String(), "={\n"); err != nil {
+		return err
+	}
+	{
+		indent++
+		for _, child := range ica.Children {
+			if err := child.Write(w, indent); err != nil {
+				return err
+			}
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
+		}
+		indent--
+	}
+	if err := writeIndent(w, indent, "}"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ica *InlineComponentAttribute) Visit(v Visitor) error {
+	return v.VisitInlineComponentAttribute(ica)
+}
+
+func (ica *InlineComponentAttribute) Copy() Attribute {
+	return &InlineComponentAttribute{
+		Key:      ica.Key,
+		Children: CopyNodes(ica.Children),
+	}
+}
+
+func (ica *InlineComponentAttribute) AttributeKey() AttributeKey {
+	return ica.Key
+}
+
 func CopyAttributes(attrs []Attribute) (copies []Attribute) {
 	copies = make([]Attribute, len(attrs))
 	for i, a := range attrs {
 		copies[i] = a.Copy()
 	}
+	return copies
+}
+
+func CopyNodes(nodes []Node) (copies []Node) {
+	copies = make([]Node, len(nodes))
+	copy(copies, nodes)
 	return copies
 }
 
@@ -1230,6 +1310,157 @@ func (tee *TemplElementExpression) Write(w io.Writer, indent int) error {
 
 func (tee *TemplElementExpression) Visit(v Visitor) error {
 	return v.VisitTemplElementExpression(tee)
+}
+
+// AttributeComment represents a comment within element attributes
+type AttributeComment struct {
+	Comment       string
+	Multiline     bool
+	IsHTMLComment bool
+}
+
+func (ac *AttributeComment) String() string {
+	return ac.Comment
+}
+
+func (ac *AttributeComment) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, ""); err != nil {
+		return err
+	}
+	if ac.IsHTMLComment {
+		_, err := w.Write([]byte("<!--" + ac.Comment + "-->"))
+		return err
+	}
+	if ac.Multiline {
+		_, err := w.Write([]byte("/*" + ac.Comment + "*/"))
+		return err
+	}
+	_, err := w.Write([]byte("//" + ac.Comment))
+	return err
+}
+
+func (ac *AttributeComment) Visit(v Visitor) error {
+	// Comments don't need to be visited
+	return nil
+}
+
+func (ac *AttributeComment) Copy() Attribute {
+	return &AttributeComment{
+		Comment:       ac.Comment,
+		Multiline:     ac.Multiline,
+		IsHTMLComment: ac.IsHTMLComment,
+	}
+}
+
+// ElementComponent represents HTML element component syntax.
+// <Component attr="value" /> or <Component attr="value">children</Component>
+type ElementComponent struct {
+	// Name is the component name (e.g., "Button", "components.Input")
+	Name string
+	// NameRange tracks the position of the component name
+	NameRange Range
+	// Range tracks the position of the entire element
+	Range Range
+	// Attributes are the component attributes
+	Attributes []Attribute
+	// IndentAttrs indicates if attributes should be indented
+	IndentAttrs bool
+	// Children contains child elements for non-self-closing components
+	Children []Node
+	// IndentChildren indicates if children should be indented
+	IndentChildren bool
+	// SelfClosing indicates if this is a self-closing component
+	SelfClosing bool
+	// TrailingSpace tracks whitespace after the component
+	TrailingSpace TrailingSpace
+}
+
+func (el *ElementComponent) ChildNodes() []Node {
+	return el.Children
+}
+
+func (el *ElementComponent) IsNode() bool { return true }
+
+func (el *ElementComponent) Trailing() TrailingSpace {
+	return el.TrailingSpace
+}
+
+func (el *ElementComponent) hasNonWhitespaceChildren() bool {
+	for _, c := range el.Children {
+		if _, isWhitespace := c.(*Whitespace); !isWhitespace {
+			return true
+		}
+	}
+	return false
+}
+
+func (el *ElementComponent) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "<", el.Name); err != nil {
+		return err
+	}
+	for i := range el.Attributes {
+		a := el.Attributes[i]
+		// Only the conditional attributes get indented.
+		var attrIndent int
+		if el.IndentAttrs {
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return err
+			}
+			attrIndent = indent + 1
+		} else {
+			if _, err := w.Write([]byte(" ")); err != nil {
+				return err
+			}
+		}
+		if err := a.Write(w, attrIndent); err != nil {
+			return err
+		}
+	}
+	var closeAngleBracketIndent int
+	if el.IndentAttrs {
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
+		closeAngleBracketIndent = indent
+	}
+	if el.hasNonWhitespaceChildren() {
+		if el.IndentChildren {
+			if err := writeIndent(w, closeAngleBracketIndent, ">\n"); err != nil {
+				return err
+			}
+			if err := writeNodesIndented(w, indent+1, el.Children); err != nil {
+				return err
+			}
+			if err := writeIndent(w, indent, "</", el.Name, ">"); err != nil {
+				return err
+			}
+			return nil
+		}
+		if err := writeIndent(w, closeAngleBracketIndent, ">"); err != nil {
+			return err
+		}
+		if err := writeNodesWithoutIndentation(w, el.Children); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte("</" + el.Name + ">")); err != nil {
+			return err
+		}
+		return nil
+	}
+	// Self-closing when no children
+	closeTag := " />"
+	if el.IndentAttrs {
+		closeTag = "/>"
+	}
+	// Single line: space before />
+	if err := writeIndent(w, closeAngleBracketIndent, closeTag); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (el *ElementComponent) Visit(v Visitor) error {
+	return v.VisitElementComponent(el)
 }
 
 // ChildrenExpression can be used to rended the children of a templ element.

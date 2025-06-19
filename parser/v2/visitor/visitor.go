@@ -121,6 +121,14 @@ func New() *Visitor {
 		}
 		return nil
 	}
+	v.InlineComponentAttribute = func(n *parser.InlineComponentAttribute) error {
+		for _, child := range n.Children {
+			if err := child.Visit(v); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	v.GoComment = func(n *parser.GoComment) error {
 		return nil
 	}
@@ -131,6 +139,19 @@ func New() *Visitor {
 		return nil
 	}
 	v.TemplElementExpression = func(n *parser.TemplElementExpression) error {
+		for _, child := range n.Children {
+			if err := child.Visit(v); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	v.ElementComponent = func(n *parser.ElementComponent) error {
+		for _, attr := range n.Attributes {
+			if err := attr.Visit(v); err != nil {
+				return err
+			}
+		}
 		for _, child := range n.Children {
 			if err := child.Visit(v); err != nil {
 				return err
@@ -216,10 +237,12 @@ type Visitor struct {
 	ExpressionAttribute      func(n *parser.ExpressionAttribute) error
 	SpreadAttributes         func(n *parser.SpreadAttributes) error
 	ConditionalAttribute     func(n *parser.ConditionalAttribute) error
+	InlineComponentAttribute func(n *parser.InlineComponentAttribute) error
 	GoComment                func(n *parser.GoComment) error
 	HTMLComment              func(n *parser.HTMLComment) error
 	CallTemplateExpression   func(n *parser.CallTemplateExpression) error
 	TemplElementExpression   func(n *parser.TemplElementExpression) error
+	ElementComponent         func(n *parser.ElementComponent) error
 	ChildrenExpression       func(n *parser.ChildrenExpression) error
 	IfExpression             func(n *parser.IfExpression) error
 	SwitchExpression         func(n *parser.SwitchExpression) error
@@ -250,6 +273,7 @@ func (v *Visitor) VisitWhitespace(n *parser.Whitespace) error {
 func (v *Visitor) VisitCSSTemplate(n *parser.CSSTemplate) error {
 	return v.CSSTemplate(n)
 }
+
 func (v *Visitor) VisitConstantCSSProperty(n *parser.ConstantCSSProperty) error {
 	return v.ConstantCSSProperty(n)
 }
@@ -306,6 +330,10 @@ func (v *Visitor) VisitConditionalAttribute(n *parser.ConditionalAttribute) erro
 	return v.ConditionalAttribute(n)
 }
 
+func (v *Visitor) VisitInlineComponentAttribute(n *parser.InlineComponentAttribute) error {
+	return v.InlineComponentAttribute(n)
+}
+
 func (v *Visitor) VisitGoComment(n *parser.GoComment) error {
 	return v.GoComment(n)
 }
@@ -320,6 +348,10 @@ func (v *Visitor) VisitCallTemplateExpression(n *parser.CallTemplateExpression) 
 
 func (v *Visitor) VisitTemplElementExpression(n *parser.TemplElementExpression) error {
 	return v.TemplElementExpression(n)
+}
+
+func (v *Visitor) VisitElementComponent(n *parser.ElementComponent) error {
+	return v.ElementComponent(n)
 }
 
 func (v *Visitor) VisitChildrenExpression(n *parser.ChildrenExpression) error {

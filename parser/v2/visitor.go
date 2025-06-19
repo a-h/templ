@@ -21,10 +21,12 @@ type Visitor interface {
 	VisitExpressionAttribute(*ExpressionAttribute) error
 	VisitSpreadAttributes(*SpreadAttributes) error
 	VisitConditionalAttribute(*ConditionalAttribute) error
+	VisitInlineComponentAttribute(*InlineComponentAttribute) error
 	VisitGoComment(*GoComment) error
 	VisitHTMLComment(*HTMLComment) error
 	VisitCallTemplateExpression(*CallTemplateExpression) error
 	VisitTemplElementExpression(*TemplElementExpression) error
+	VisitElementComponent(*ElementComponent) error
 	VisitChildrenExpression(*ChildrenExpression) error
 	VisitIfExpression(*IfExpression) error
 	VisitSwitchExpression(*SwitchExpression) error
