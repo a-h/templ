@@ -42,7 +42,7 @@ func (cc *ComponentCollector) Collect(tf *parser.TemplateFile) []ComponentRefere
 	// Second pass: collect components using visitor pattern
 	v := visitor.New()
 	v.ElementComponent = cc.visitElementComponent
-	tf.Visit(v)
+	_ = tf.Visit(v)
 
 	return cc.components
 }

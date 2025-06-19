@@ -228,13 +228,11 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	p.Log.Info("client -> server: Initialize")
 	defer p.Log.Info("client -> server: Initialize end")
 
-	// Set working directory from initialization params
-	if params.RootURI != "" {
-		if u, err := uri.Parse(string(params.RootURI)); err == nil {
+	// Symbol resolution requires the project root to be set.
+	if len(params.WorkspaceFolders) > 0 {
+		if u, err := uri.Parse(string(params.WorkspaceFolders[0].URI)); err == nil {
 			p.workingDir = u.Filename()
 		}
-	} else if params.RootPath != "" {
-		p.workingDir = params.RootPath
 	}
 
 	result, err = p.Target.Initialize(ctx, params)

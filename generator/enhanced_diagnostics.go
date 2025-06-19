@@ -60,7 +60,7 @@ func enhancedMissingComponentDiagnoser(t *parser.TemplateFile, workingDir string
 		}
 
 		// Try to resolve as a Go type implementing templ.Component
-		sig, err := resolver.ResolveLocalComponent(ref.Name, parser.Position{}, "")
+		_, err := resolver.ResolveLocalComponent(ref.Name, parser.Position{}, "")
 		if err != nil {
 			// Component not found - add diagnostic
 			diags = append(diags, parser.Diagnostic{
@@ -74,9 +74,6 @@ func enhancedMissingComponentDiagnoser(t *parser.TemplateFile, workingDir string
 					},
 				},
 			})
-		} else if sig != nil {
-			// For debugging: if we found it, let's understand what we found
-			// (This would normally be removed in production code)
 		}
 	}
 

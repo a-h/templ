@@ -27,6 +27,12 @@ func extractErrorList(err error) (scanner.ErrorList, bool) {
 		return list, true
 	}
 
+	// Try errors.As for better type extraction
+	var list scanner.ErrorList
+	if errors.As(err, &list) {
+		return list, true
+	}
+
 	return extractErrorList(errors.Unwrap(err))
 }
 
@@ -55,7 +61,7 @@ func TestErrorLocationMapping(t *testing.T) {
 	}
 
 	slog := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
-	var fw generatecmd.FileWriterFunc
+	fw := generatecmd.WriterFileWriter(io.Discard)
 	fseh := generatecmd.NewFSEventHandler(slog, ".", false, []generator.GenerateOpt{}, false, false, fw, false)
 
 	for _, test := range tests {
