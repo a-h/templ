@@ -28,6 +28,10 @@ jobs:
           purge-prefixes: nix-${{ runner.os }}-
           purge-primary-key: never
 
+      - name: Test Element Component
+        # TODO: add this to the test-cover
+        run: nix develop --command xc test-element-component
+
       - name: Test
         run: nix develop --command xc test-cover
 
