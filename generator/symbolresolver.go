@@ -2,7 +2,6 @@ package generator
 
 import (
 	"fmt"
-	"go/build"
 	"go/types"
 	"strings"
 
@@ -14,6 +13,7 @@ type ComponentSignature struct {
 	PackagePath string
 	Name        string
 	Parameters  []ParameterInfo
+	IsStruct    bool
 }
 
 // ParameterInfo represents a function parameter
@@ -89,30 +89,46 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 		return nil, fmt.Errorf("component %s not found in package %s", componentName, pkgPath)
 	}
 
+	var paramInfo []ParameterInfo
+
 	// Check if it's a function
-	fn, ok := obj.(*types.Func)
-	if !ok {
-		return nil, fmt.Errorf("%s is not a function", componentName)
-	}
+	fn, isFn := obj.(*types.Func)
+	if isFn {
+		sig := fn.Type().(*types.Signature)
 
-	sig := fn.Type().(*types.Signature)
+		// Extract parameter information
+		params := sig.Params()
+		paramInfo = make([]ParameterInfo, 0, params.Len())
 
-	// Extract parameter information
-	params := sig.Params()
-	paramInfo := make([]ParameterInfo, 0, params.Len())
+		for i := range params.Len() {
+			param := params.At(i)
+			paramInfo = append(paramInfo, ParameterInfo{
+				Name: param.Name(),
+				Type: param.Type().String(),
+			})
+		}
+	} else {
+		// Check if it's a type that implements templ.Component
+		typeName, ok := obj.(*types.TypeName)
+		if !ok {
+			return nil, fmt.Errorf("%s is neither a function nor a type", componentName)
+		}
 
-	for i := range params.Len() {
-		param := params.At(i)
-		paramInfo = append(paramInfo, ParameterInfo{
-			Name: param.Name(),
-			Type: param.Type().String(),
-		})
+		// Check if the type implements the templ.Component interface
+		implements := sr.implementsComponent(typeName.Type(), pkg.Types)
+		if !implements {
+			return nil, fmt.Errorf("%s does not implement templ.Component interface", componentName)
+		}
+
+		// For types that implement Component, they don't have parameters
+		paramInfo = make([]ParameterInfo, 0)
 	}
 
 	componentSig := &ComponentSignature{
 		PackagePath: pkgPath,
 		Name:        componentName,
 		Parameters:  paramInfo,
+		IsStruct:    !isFn,
 	}
 
 	sr.cache[key] = componentSig
@@ -121,11 +137,94 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 
 // ResolveLocalComponent resolves a component in the current package
 func (sr *SymbolResolver) ResolveLocalComponent(componentName string) (*ComponentSignature, error) {
-	// Get the current package path
-	pkg, err := build.ImportDir(sr.workingDir, build.FindOnly)
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine package path: %w", err)
+	// Use packages.Load to get the correct package path in module mode
+	cfg := &packages.Config{
+		Mode: packages.NeedName | packages.NeedModule,
+		Dir:  sr.workingDir,
 	}
 
-	return sr.ResolveComponent(pkg.ImportPath, componentName)
+	pkgs, err := packages.Load(cfg, ".")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load current package: %w", err)
+	}
+
+	if len(pkgs) == 0 {
+		return nil, fmt.Errorf("no package found in current directory")
+	}
+
+	pkgPath := pkgs[0].PkgPath
+
+	return sr.ResolveComponent(pkgPath, componentName)
+}
+
+// implementsComponent checks if a type implements the templ.Component interface
+func (sr *SymbolResolver) implementsComponent(t types.Type, pkg *types.Package) bool {
+	// Define the templ.Component interface
+	var componentInterface *types.Interface
+
+	// Try to find the templ package
+	for _, imp := range pkg.Imports() {
+		if imp.Path() == "github.com/a-h/templ" {
+			obj := imp.Scope().Lookup("Component")
+			if obj != nil {
+				if iface, ok := obj.Type().Underlying().(*types.Interface); ok {
+					componentInterface = iface
+					break
+				}
+			}
+		}
+	}
+
+	// If we couldn't find the interface, check for the Render method manually
+	if componentInterface == nil {
+		// Check if the type has a Render method with the correct signature
+		// Render(ctx context.Context, w io.Writer) error
+		method, _, _ := types.LookupFieldOrMethod(t, true, pkg, "Render")
+		if method == nil {
+			return false
+		}
+
+		fn, ok := method.(*types.Func)
+		if !ok {
+			return false
+		}
+
+		sig := fn.Type().(*types.Signature)
+
+		// Check parameters: (context.Context, io.Writer)
+		params := sig.Params()
+		if params.Len() != 2 {
+			return false
+		}
+
+		// Check first parameter is context.Context
+		param1Type := params.At(0).Type()
+		if param1Type.String() != "context.Context" {
+			return false
+		}
+
+		// Check second parameter is io.Writer
+		param2Type := params.At(1).Type()
+		if param2Type.String() != "io.Writer" {
+			return false
+		}
+
+		// Check return type: error
+		results := sig.Results()
+		if results.Len() != 1 {
+			return false
+		}
+
+		// Check if return type is error
+		returnType := results.At(0).Type().String()
+		if returnType != "error" {
+			return false
+		}
+
+		return true
+	}
+
+	// Use the found interface to check implementation
+	result := types.Implements(t, componentInterface)
+	return result
 }

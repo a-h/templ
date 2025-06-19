@@ -1,9 +1,11 @@
 package testelementcomponent
 
 import (
+	"context"
 	"fmt"
 	extern "github.com/a-h/templ/generator/test-element-component/externmod"
 	"github.com/a-h/templ/generator/test-element-component/mod"
+	"io"
 )
 
 templ ElementComponent(attrs templ.Attributer) {
@@ -58,6 +60,7 @@ templ ElementComponent(attrs templ.Attributer) {
 		/>
 		<structComp.Page title="Struct Component Example" class="struct-component" style="color: blue;" />
 		<NoArgsComponent />
+		<ComponentImpl />
 	</div>
 }
 
@@ -125,6 +128,13 @@ templ (StructComponent) Page(title string, attrs templ.Attributer) {
 		<h1>{ title }</h1>
 		<p>This is a struct component.</p>
 	</div>
+}
+
+type ComponentImpl struct{}
+
+func (c ComponentImpl) Render(ctx context.Context, w io.Writer) (err error) {
+	_, err = fmt.Fprint(w, "<div>Component Rendered</div>")
+	return
 }
 
 func isEnabled() bool {

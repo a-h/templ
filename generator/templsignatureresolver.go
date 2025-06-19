@@ -30,6 +30,9 @@ func (tsr *TemplSignatureResolver) ExtractSignatures(tf *parser.TemplateFile) {
 			if sig != nil {
 				tsr.signatures[sig.Name] = sig
 			}
+		case *parser.TemplateFileGoExpression:
+			// Extract type definitions that might implement Component
+			tsr.extractGoTypeSignatures(n)
 		}
 	}
 }
@@ -179,4 +182,74 @@ func (tsr *TemplSignatureResolver) astTypeToString(expr ast.Expr) string {
 	default:
 		return ""
 	}
+}
+
+// extractGoTypeSignatures extracts type definitions from Go code that might implement Component
+func (tsr *TemplSignatureResolver) extractGoTypeSignatures(goExpr *parser.TemplateFileGoExpression) {
+	// Parse the Go code
+	src := "package main\n" + goExpr.Expression.Value
+	fset := token.NewFileSet()
+	node, err := goparser.ParseFile(fset, "", src, goparser.AllErrors)
+	if err != nil || node == nil {
+		return
+	}
+
+	// Look for type declarations and methods
+	typeNames := make(map[string]bool)
+	
+	// First pass: collect all type names
+	for _, decl := range node.Decls {
+		if genDecl, ok := decl.(*ast.GenDecl); ok && genDecl.Tok == token.TYPE {
+			for _, spec := range genDecl.Specs {
+				if typeSpec, ok := spec.(*ast.TypeSpec); ok {
+					typeNames[typeSpec.Name.Name] = true
+				}
+			}
+		}
+	}
+	
+	// Second pass: look for Render methods on these types
+	for _, decl := range node.Decls {
+		if fn, ok := decl.(*ast.FuncDecl); ok && fn.Name.Name == "Render" && fn.Recv != nil {
+			// Check if this is a method on one of our types
+			if len(fn.Recv.List) > 0 {
+				receiverType := tsr.astTypeToString(fn.Recv.List[0].Type)
+				receiverType = strings.TrimPrefix(receiverType, "*")
+				
+				if typeNames[receiverType] {
+					// Check if the signature matches Component.Render
+					if tsr.isComponentRenderMethod(fn) {
+						// This type implements Component
+						sig := &ComponentSignature{
+							PackagePath: "",
+							Name:        receiverType,
+							Parameters:  []ParameterInfo{}, // Component types have no parameters
+							IsStruct:    true,
+						}
+						tsr.signatures[receiverType] = sig
+					}
+				}
+			}
+		}
+	}
+}
+
+// isComponentRenderMethod checks if a function declaration matches the Component.Render signature
+func (tsr *TemplSignatureResolver) isComponentRenderMethod(fn *ast.FuncDecl) bool {
+	// Check parameters: (ctx context.Context, w io.Writer)
+	if fn.Type.Params == nil || len(fn.Type.Params.List) != 2 {
+		return false
+	}
+	
+	// Check return type: error
+	if fn.Type.Results == nil || len(fn.Type.Results.List) != 1 {
+		return false
+	}
+	
+	// Check if return type is error
+	if retType, ok := fn.Type.Results.List[0].Type.(*ast.Ident); !ok || retType.Name != "error" {
+		return false
+	}
+	
+	return true
 }
