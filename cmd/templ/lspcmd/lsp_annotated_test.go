@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -77,13 +78,7 @@ func testAnnotatedMessageFile(t *testing.T, filePath string) {
 
 	// Check that all expected messages are present
 	for _, expected := range expectedMessages {
-		found := false
-		for _, actual := range actualMessages {
-			if expected == actual {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(actualMessages, expected)
 		if !found {
 			t.Errorf("Expected diagnostic message not found in %s: %s", filePath, expected)
 			t.Logf("Expected: %v", expectedMessages)
