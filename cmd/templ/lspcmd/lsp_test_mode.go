@@ -18,6 +18,7 @@ import (
 	"github.com/a-h/templ/internal/skipdir"
 	"github.com/a-h/templ/lsp/jsonrpc2"
 	"github.com/a-h/templ/lsp/protocol"
+	"github.com/google/go-cmp/cmp"
 )
 
 func runTestMode(ctx context.Context, args Arguments) error {
@@ -200,10 +201,14 @@ func executeTestRequest(ctx context.Context, server protocol.Server, request, ba
 		return handleDidOpen(ctx, server, filePath, stdout, log)
 	case "didChange":
 		return handleDidChange(ctx, server, filePath, stdout, log)
+	case "didSave":
+		return handleDidSave(ctx, server, filePath, stdout, log)
+	case "formatting":
+		return handleFormatting(ctx, server, filePath, stdout, log)
 	case "diagnostics":
 		return handleDiagnostics(ctx, server, filePath, stdout, log)
 	default:
-		return fmt.Errorf("unsupported command: %s. Supported commands: didOpen, didChange, diagnostics", command)
+		return fmt.Errorf("unsupported command: %s. Supported commands: didOpen, didChange, didSave, formatting, diagnostics", command)
 	}
 }
 
@@ -267,6 +272,120 @@ func handleDidChange(ctx context.Context, server protocol.Server, filePath strin
 	// Wait a moment for diagnostics to be processed
 	time.Sleep(1 * time.Second)
 	_, _ = fmt.Fprintf(stdout, "DidChange completed for: %s\n", filePath)
+	return nil
+}
+
+// handleDidSave sends a didSave notification for the specified file
+func handleDidSave(ctx context.Context, server protocol.Server, filePath string, stdout io.Writer, log *slog.Logger) error {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file %s: %w", filePath, err)
+	}
+
+	didSaveParams := &protocol.DidSaveTextDocumentParams{
+		TextDocument: protocol.TextDocumentIdentifier{
+			URI: protocol.DocumentURI("file://" + filePath),
+		},
+		Text: string(content),
+	}
+
+	log.Info("Sending didSave", slog.String("file", filePath))
+	_, _ = fmt.Fprintf(stdout, "Saving file: %s\n", filePath)
+
+	if err := server.DidSave(ctx, didSaveParams); err != nil {
+		return fmt.Errorf("failed to send didSave: %w", err)
+	}
+
+	// Wait a moment for processing to complete
+	time.Sleep(1 * time.Second)
+	_, _ = fmt.Fprintf(stdout, "DidSave completed for: %s\n", filePath)
+	return nil
+}
+
+// handleFormatting sends a textDocument/formatting request for the specified file
+func handleFormatting(ctx context.Context, server protocol.Server, filePath string, stdout io.Writer, log *slog.Logger) error {
+	// First ensure the file is opened
+	if err := handleDidOpen(ctx, server, filePath, stdout, log); err != nil {
+		return err
+	}
+
+	formattingParams := &protocol.DocumentFormattingParams{
+		TextDocument: protocol.TextDocumentIdentifier{
+			URI: protocol.DocumentURI("file://" + filePath),
+		},
+		Options: protocol.FormattingOptions{
+			TabSize:                2,
+			InsertSpaces:           false,
+			TrimTrailingWhitespace: true,
+			InsertFinalNewline:     true,
+		},
+	}
+
+	// Read original content
+	originalContent, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read original file: %w", err)
+	}
+
+	log.Info("Sending textDocument/formatting", slog.String("file", filePath))
+	_, _ = fmt.Fprintf(stdout, "Formatting file: %s\n", filePath)
+
+	result, err := server.Formatting(ctx, formattingParams)
+	if err != nil {
+		return fmt.Errorf("failed to send formatting request: %w", err)
+	}
+
+	_, _ = fmt.Fprintf(stdout, "Formatting result: %d text edits\n", len(result))
+
+	// Apply edits to see the result
+	formattedContent := string(originalContent)
+	if len(result) > 0 {
+		// Apply text edits in reverse order to avoid offset issues
+		for i := len(result) - 1; i >= 0; i-- {
+			edit := result[i]
+			lines := strings.Split(formattedContent, "\n")
+
+			// Convert to string positions
+			startOffset := 0
+			for line := 0; line < int(edit.Range.Start.Line); line++ {
+				if line < len(lines) {
+					startOffset += len(lines[line]) + 1 // +1 for newline
+				}
+			}
+			startOffset += int(edit.Range.Start.Character)
+
+			endOffset := 0
+			for line := 0; line < int(edit.Range.End.Line); line++ {
+				if line < len(lines) {
+					endOffset += len(lines[line]) + 1 // +1 for newline
+				}
+			}
+			endOffset += int(edit.Range.End.Character)
+
+			// Apply the edit
+			if startOffset <= len(formattedContent) && endOffset <= len(formattedContent) {
+				formattedContent = formattedContent[:startOffset] + edit.NewText + formattedContent[endOffset:]
+			}
+		}
+
+		// Compare original and formatted content using go-cmp
+		diff := cmp.Diff(string(originalContent), formattedContent)
+		if diff != "" {
+			_, _ = fmt.Fprintf(stdout, "\nFormatting differences found:\n%s\n", diff)
+		} else {
+			_, _ = fmt.Fprintf(stdout, "No differences between original and formatted content\n")
+		}
+	}
+
+	for i, edit := range result {
+		_, _ = fmt.Fprintf(stdout, "  Edit %d: %d:%d-%d:%d = %q\n",
+			i+1,
+			edit.Range.Start.Line, edit.Range.Start.Character,
+			edit.Range.End.Line, edit.Range.End.Character,
+			edit.NewText)
+	}
+
+	_, _ = fmt.Fprintf(stdout, "Formatting completed for: %s\n", filePath)
 	return nil
 }
 

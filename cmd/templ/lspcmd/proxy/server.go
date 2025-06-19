@@ -164,11 +164,11 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		}
 		// If the template was even partially parsed, it's still potentially useful.
 		if template != nil {
-			template.Filepath = string(uri)
+			template.Filepath = strings.TrimPrefix(string(uri), "file://")
 		}
 		return
 	}
-	template.Filepath = string(uri)
+	template.Filepath = strings.TrimPrefix(string(uri), "file://")
 
 	// Use enhanced diagnostics if we have a working directory
 	var parsedDiagnostics []parser.Diagnostic
