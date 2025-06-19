@@ -169,7 +169,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		return
 	}
 	template.Filepath = string(uri)
-	
+
 	// Use enhanced diagnostics if we have a working directory
 	var parsedDiagnostics []parser.Diagnostic
 	if p.workingDir != "" {
@@ -227,7 +227,7 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (result *lsp.InitializeResult, err error) {
 	p.Log.Info("client -> server: Initialize")
 	defer p.Log.Info("client -> server: Initialize end")
-	
+
 	// Set working directory from initialization params
 	if params.RootURI != "" {
 		if u, err := uri.Parse(string(params.RootURI)); err == nil {
@@ -236,7 +236,7 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	} else if params.RootPath != "" {
 		p.workingDir = params.RootPath
 	}
-	
+
 	result, err = p.Target.Initialize(ctx, params)
 	if err != nil {
 		p.Log.Error("Initialize failed", slog.Any("error", err))

@@ -4,8 +4,6 @@ This directory contains test data files for LSP (Language Server Protocol) featu
 
 ## Annotated Test Files
 
-Files prefixed with `annotated_` use a special format to specify expected LSP behavior:
-
 ### Format
 
 ```
