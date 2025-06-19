@@ -1189,9 +1189,7 @@ func CopyAttributes(attrs []Attribute) (copies []Attribute) {
 
 func CopyNodes(nodes []Node) (copies []Node) {
 	copies = make([]Node, len(nodes))
-	for i, n := range nodes {
-		copies[i] = n // Nodes don't have a Copy method, so we just copy the reference
-	}
+	copy(copies, nodes)
 	return copies
 }
 

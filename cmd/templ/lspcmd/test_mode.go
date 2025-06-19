@@ -44,7 +44,7 @@ func runTestMode(ctx context.Context, args Arguments) error {
 	if err != nil {
 		return fmt.Errorf("failed to start gopls: %w", err)
 	}
-	defer rwc.Close()
+	defer func() { _ = rwc.Close() }()
 
 	// Create proxy and clients
 	cache := proxy.NewSourceMapCache()
@@ -52,7 +52,7 @@ func runTestMode(ctx context.Context, args Arguments) error {
 
 	clientProxy, clientInit := proxy.NewClient(log, cache, diagnosticCache)
 	_, goplsConn, goplsServer := protocol.NewClient(ctx, clientProxy, jsonrpc2.NewStream(rwc), log)
-	defer goplsConn.Close()
+	defer func() { _ = goplsConn.Close() }()
 
 	serverProxy := proxy.NewServer(log, goplsServer, cache, diagnosticCache, args.NoPreload)
 
@@ -67,11 +67,11 @@ func runTestMode(ctx context.Context, args Arguments) error {
 	// Create the client
 	testClient := &testModeClient{log: log, stdout: stdout}
 	ctx, clientConn, server := protocol.NewClient(ctx, testClient, clientStream, log)
-	defer clientConn.Close()
+	defer func() { _ = clientConn.Close() }()
 
 	// Create the server connection
 	_, serverConn, templClient := protocol.NewServer(ctx, serverProxy, serverStream, log)
-	defer serverConn.Close()
+	defer func() { _ = serverConn.Close() }()
 
 	clientInit(templClient)
 
@@ -83,7 +83,7 @@ func runTestMode(ctx context.Context, args Arguments) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal initialize result: %w", err)
 	}
-	fmt.Fprintf(stdout, "Initialize result:\n%s\n", resultJSON)
+	_, _ = fmt.Fprintf(stdout, "Initialize result:\n%s\n", resultJSON)
 
 	if err := server.Initialized(ctx, &protocol.InitializedParams{}); err != nil {
 		return fmt.Errorf("failed to send initialized: %w", err)
@@ -100,7 +100,7 @@ func runTestMode(ctx context.Context, args Arguments) error {
 		if err != nil {
 			return fmt.Errorf("failed to marshal test request params: %w", err)
 		}
-		fmt.Fprintf(stdout, "Executing test request: %s\n", string(indented))
+		_, _ = fmt.Fprintf(stdout, "Executing test request: %s\n", string(indented))
 
 		// TODO: Implement support for test requests
 		return nil
@@ -121,7 +121,7 @@ func runTestMode(ctx context.Context, args Arguments) error {
 		// return fmt.Errorf("unsupported test request: %s", args.TestRequest)
 	}
 
-	fmt.Fprintf(stdout, "No test request provided. Loading directory %s...\n", absDir)
+	_, _ = fmt.Fprintf(stdout, "No test request provided. Loading directory %s...\n", absDir)
 
 	pattern := `(.+\.go$)|(.+\.templ$)`
 	re, err := regexp.Compile(pattern)
@@ -194,9 +194,9 @@ func (c *testModeClient) PublishDiagnostics(ctx context.Context, params *protoco
 	c.log.Info("client: PublishDiagnostics", slog.String("uri", string(params.URI)), slog.Int("count", len(params.Diagnostics)))
 	// Print diagnostics to stdout
 	if len(params.Diagnostics) > 0 {
-		fmt.Fprintf(c.stdout, "\nDiagnostics for %s:\n", params.URI)
+		_, _ = fmt.Fprintf(c.stdout, "\nDiagnostics for %s:\n", params.URI)
 		for _, diag := range params.Diagnostics {
-			fmt.Fprintf(c.stdout, "  - [%d:%d] %s\n", diag.Range.Start.Line, diag.Range.Start.Character, diag.Message)
+			_, _ = fmt.Fprintf(c.stdout, "  - [%d:%d] %s\n", diag.Range.Start.Line, diag.Range.Start.Character, diag.Message)
 		}
 	}
 	return nil

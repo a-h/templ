@@ -1001,7 +1001,7 @@ func (g *generator) writeElementComponentAttrVars(indentLevel int, sigs *Compone
 	if orderedAttrs.restParam.Name != "" {
 		// spew.Dump(orderedAttrs.restParam, orderedAttrs.restAttrs)
 		for _, attr := range orderedAttrs.restAttrs {
-			g.writeElementComponentArgRestVar(indentLevel, restVarName, attr)
+			_ = g.writeElementComponentArgRestVar(indentLevel, restVarName, attr)
 		}
 		res = append(res, restVarName)
 	}

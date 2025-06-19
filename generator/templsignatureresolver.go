@@ -104,9 +104,7 @@ func (tsr *TemplSignatureResolver) parseTemplateSignatureFromAST(exprValue strin
 			if fn.Recv != nil && len(fn.Recv.List) > 0 {
 				receiverType := tsr.astTypeToString(fn.Recv.List[0].Type)
 				// Remove pointer indicator if present for consistent naming
-				if strings.HasPrefix(receiverType, "*") {
-					receiverType = receiverType[1:]
-				}
+				receiverType = strings.TrimPrefix(receiverType, "*")
 				name = receiverType + "." + name
 			}
 
