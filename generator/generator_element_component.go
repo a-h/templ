@@ -784,6 +784,27 @@ func (g *generator) collectAndResolveComponents() error {
 	return nil
 }
 
+// addComponentDiagnostic adds a diagnostic for component resolution issues
+func (g *generator) addComponentDiagnostic(comp ComponentReference, message string) {
+	// Create a Range from the component's position
+	// ComponentReference.Position is the start position of the component name
+	nameStart := comp.Position
+	nameLength := int64(len(comp.Name))
+	nameEnd := parser.Position{
+		Index: nameStart.Index + nameLength,
+		Line:  nameStart.Line,
+		Col:   nameStart.Col + uint32(len(comp.Name)),
+	}
+
+	g.diagnostics = append(g.diagnostics, parser.Diagnostic{
+		Message: message,
+		Range: parser.Range{
+			From: nameStart,
+			To:   nameEnd,
+		},
+	})
+}
+
 func isTemplAttributer(typ string) bool {
 	// TODO: better handling of the types:
 	// when the type comes from templ file, it will be "templ.Attributer"
