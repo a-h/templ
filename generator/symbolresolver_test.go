@@ -25,6 +25,13 @@ func TestSymbolResolver_RealComponents(t *testing.T) {
 			wantIsStruct:  false,
 		},
 		{
+			name:          "External package struct component (pointer receiver)",
+			pkgPath:       "github.com/a-h/templ/generator/test-element-component/mod",
+			componentName: "StructComponent",
+			wantErr:       false,
+			wantIsStruct:  true,
+		},
+		{
 			name:          "Non-existent component",
 			pkgPath:       "github.com/a-h/templ/generator/test-element-component/mod",
 			componentName: "NonExistent",
@@ -70,7 +77,7 @@ func TestSymbolResolver_LocalComponents(t *testing.T) {
 		errContains   string
 	}{
 		{
-			name:          "Valid struct component from templ file",
+			name:          "Valid struct component from templ file (value receiver)",
 			componentName: "ComponentImpl",
 			wantErr:       false,
 			wantIsStruct:  true,
@@ -110,85 +117,85 @@ func TestSymbolResolver_LocalComponents(t *testing.T) {
 func TestImplementsComponent_Validation(t *testing.T) {
 	// This test validates the logic of the implementsComponent method
 	// by checking the string matching behavior
-	
+
 	tests := []struct {
-		name            string
-		param1Type      string
-		param2Type      string
-		returnType      string
-		paramCount      int
-		returnCount     int
-		wantImplements  bool
+		name           string
+		param1Type     string
+		param2Type     string
+		returnType     string
+		paramCount     int
+		returnCount    int
+		wantImplements bool
 	}{
 		{
-			name:            "Valid Component implementation",
-			param1Type:      "context.Context",
-			param2Type:      "io.Writer",
-			returnType:      "error",
-			paramCount:      2,
-			returnCount:     1,
-			wantImplements:  true,
+			name:           "Valid Component implementation",
+			param1Type:     "context.Context",
+			param2Type:     "io.Writer",
+			returnType:     "error",
+			paramCount:     2,
+			returnCount:    1,
+			wantImplements: true,
 		},
 		{
-			name:            "Wrong first parameter type",
-			param1Type:      "string",
-			param2Type:      "io.Writer",
-			returnType:      "error",
-			paramCount:      2,
-			returnCount:     1,
-			wantImplements:  false,
+			name:           "Wrong first parameter type",
+			param1Type:     "string",
+			param2Type:     "io.Writer",
+			returnType:     "error",
+			paramCount:     2,
+			returnCount:    1,
+			wantImplements: false,
 		},
 		{
-			name:            "Wrong second parameter type",
-			param1Type:      "context.Context",
-			param2Type:      "string",
-			returnType:      "error",
-			paramCount:      2,
-			returnCount:     1,
-			wantImplements:  false,
+			name:           "Wrong second parameter type",
+			param1Type:     "context.Context",
+			param2Type:     "string",
+			returnType:     "error",
+			paramCount:     2,
+			returnCount:    1,
+			wantImplements: false,
 		},
 		{
-			name:            "Wrong return type",
-			param1Type:      "context.Context",
-			param2Type:      "io.Writer",
-			returnType:      "string",
-			paramCount:      2,
-			returnCount:     1,
-			wantImplements:  false,
+			name:           "Wrong return type",
+			param1Type:     "context.Context",
+			param2Type:     "io.Writer",
+			returnType:     "string",
+			paramCount:     2,
+			returnCount:    1,
+			wantImplements: false,
 		},
 		{
-			name:            "Too few parameters",
-			param1Type:      "context.Context",
-			param2Type:      "",
-			returnType:      "error",
-			paramCount:      1,
-			returnCount:     1,
-			wantImplements:  false,
+			name:           "Too few parameters",
+			param1Type:     "context.Context",
+			param2Type:     "",
+			returnType:     "error",
+			paramCount:     1,
+			returnCount:    1,
+			wantImplements: false,
 		},
 		{
-			name:            "Too many parameters",
-			param1Type:      "context.Context",
-			param2Type:      "io.Writer",
-			returnType:      "error",
-			paramCount:      3,
-			returnCount:     1,
-			wantImplements:  false,
+			name:           "Too many parameters",
+			param1Type:     "context.Context",
+			param2Type:     "io.Writer",
+			returnType:     "error",
+			paramCount:     3,
+			returnCount:    1,
+			wantImplements: false,
 		},
 		{
-			name:            "Multiple return values",
-			param1Type:      "context.Context",
-			param2Type:      "io.Writer",
-			returnType:      "error",
-			paramCount:      2,
-			returnCount:     2,
-			wantImplements:  false,
+			name:           "Multiple return values",
+			param1Type:     "context.Context",
+			param2Type:     "io.Writer",
+			returnType:     "error",
+			paramCount:     2,
+			returnCount:    2,
+			wantImplements: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// The actual validation logic matches what's in implementsComponent
-			isValid := tt.paramCount == 2 && 
+			isValid := tt.paramCount == 2 &&
 				tt.returnCount == 1 &&
 				tt.param1Type == "context.Context" &&
 				tt.param2Type == "io.Writer" &&
@@ -226,7 +233,7 @@ func TestSymbolResolverCache(t *testing.T) {
 }
 
 func containsString(s, substr string) bool {
-	return len(substr) > 0 && len(s) >= len(substr) && 
+	return len(substr) > 0 && len(s) >= len(substr) &&
 		containsSubstring(s, substr)
 }
 

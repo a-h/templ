@@ -10,10 +10,11 @@ import (
 
 // ComponentSignature represents a templ component's function signature
 type ComponentSignature struct {
-	PackagePath string
-	Name        string
-	Parameters  []ParameterInfo
-	IsStruct    bool
+	PackagePath   string
+	Name          string
+	Parameters    []ParameterInfo
+	IsStruct      bool
+	IsPointerRecv bool
 }
 
 // ParameterInfo represents a function parameter
@@ -90,13 +91,12 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 	}
 
 	var paramInfo []ParameterInfo
+	var isStruct, isPointerRecv bool
 
-	// Check if it's a function
-	fn, isFn := obj.(*types.Func)
-	if isFn {
+	// The component can be either a function or a type that implements templ.Component
+	if fn, ok := obj.(*types.Func); ok {
 		sig := fn.Type().(*types.Signature)
 
-		// Extract parameter information
 		params := sig.Params()
 		paramInfo = make([]ParameterInfo, 0, params.Len())
 
@@ -108,27 +108,24 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 			})
 		}
 	} else {
-		// Check if it's a type that implements templ.Component
 		typeName, ok := obj.(*types.TypeName)
 		if !ok {
 			return nil, fmt.Errorf("%s is neither a function nor a type", componentName)
 		}
-
-		// Check if the type implements the templ.Component interface
-		implements := sr.implementsComponent(typeName.Type(), pkg.Types)
-		if !implements {
+		isStruct, isPointerRecv = sr.implementsComponent(typeName.Type(), pkg.Types)
+		if !isStruct {
 			return nil, fmt.Errorf("%s does not implement templ.Component interface", componentName)
 		}
-
-		// For types that implement Component, they don't have parameters
+		// TODO: Handle parameters for struct components
 		paramInfo = make([]ParameterInfo, 0)
 	}
 
 	componentSig := &ComponentSignature{
-		PackagePath: pkgPath,
-		Name:        componentName,
-		Parameters:  paramInfo,
-		IsStruct:    !isFn,
+		PackagePath:   pkgPath,
+		Name:          componentName,
+		Parameters:    paramInfo,
+		IsStruct:      isStruct,
+		IsPointerRecv: isPointerRecv,
 	}
 
 	sr.cache[key] = componentSig
@@ -157,74 +154,51 @@ func (sr *SymbolResolver) ResolveLocalComponent(componentName string) (*Componen
 	return sr.ResolveComponent(pkgPath, componentName)
 }
 
-// implementsComponent checks if a type implements the templ.Component interface
-func (sr *SymbolResolver) implementsComponent(t types.Type, pkg *types.Package) bool {
-	// Define the templ.Component interface
-	var componentInterface *types.Interface
-
-	// Try to find the templ package
-	for _, imp := range pkg.Imports() {
-		if imp.Path() == "github.com/a-h/templ" {
-			obj := imp.Scope().Lookup("Component")
-			if obj != nil {
-				if iface, ok := obj.Type().Underlying().(*types.Interface); ok {
-					componentInterface = iface
-					break
-				}
-			}
-		}
+// implementsComponent checks if a type implements the templ.Component interface: Render(ctx context.Context, w io.Writer) error
+// Returns (implements, isPointerReceiver)
+func (sr *SymbolResolver) implementsComponent(t types.Type, pkg *types.Package) (bool, bool) {
+	method, _, _ := types.LookupFieldOrMethod(t, true, pkg, "Render")
+	if method == nil {
+		return false, false
 	}
 
-	// If we couldn't find the interface, check for the Render method manually
-	if componentInterface == nil {
-		// Check if the type has a Render method with the correct signature
-		// Render(ctx context.Context, w io.Writer) error
-		method, _, _ := types.LookupFieldOrMethod(t, true, pkg, "Render")
-		if method == nil {
-			return false
-		}
-
-		fn, ok := method.(*types.Func)
-		if !ok {
-			return false
-		}
-
-		sig := fn.Type().(*types.Signature)
-
-		// Check parameters: (context.Context, io.Writer)
-		params := sig.Params()
-		if params.Len() != 2 {
-			return false
-		}
-
-		// Check first parameter is context.Context
-		param1Type := params.At(0).Type()
-		if param1Type.String() != "context.Context" {
-			return false
-		}
-
-		// Check second parameter is io.Writer
-		param2Type := params.At(1).Type()
-		if param2Type.String() != "io.Writer" {
-			return false
-		}
-
-		// Check return type: error
-		results := sig.Results()
-		if results.Len() != 1 {
-			return false
-		}
-
-		// Check if return type is error
-		returnType := results.At(0).Type().String()
-		if returnType != "error" {
-			return false
-		}
-
-		return true
+	fn, ok := method.(*types.Func)
+	if !ok {
+		return false, false
 	}
 
-	// Use the found interface to check implementation
-	result := types.Implements(t, componentInterface)
-	return result
+	sig := fn.Type().(*types.Signature)
+
+	// Check parameters: (context.Context, io.Writer)
+	params := sig.Params()
+	if params.Len() != 2 {
+		return false, false
+	}
+	if params.At(0).Type().String() != "context.Context" {
+		return false, false
+	}
+	if params.At(1).Type().String() != "io.Writer" {
+		return false, false
+	}
+
+	// Check return type: error
+	results := sig.Results()
+	if results.Len() != 1 {
+		return false, false
+	}
+	returnType := results.At(0).Type().String()
+	if returnType != "error" {
+		return false, false
+	}
+
+	// Check if the receiver is a pointer by examining the method signature
+	isPointerReceiver := false
+	if sig.Recv() == nil {
+		// We should never reach here since the Render should always have a receiver
+		panic("Method signature has no receiver")
+	}
+	recvType := sig.Recv().Type()
+	_, isPointerReceiver = recvType.(*types.Pointer)
+
+	return true, isPointerReceiver
 }

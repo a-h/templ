@@ -1337,18 +1337,33 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 	}
 
 	var r parser.Range
-	if r, err = g.w.Write(n.Name); err != nil {
-		return err
-	}
-	g.sourceMap.Add(parser.Expression{Value: n.Name, Range: n.NameRange}, r)
 
-	// For types that implement Component, use struct literal syntax
+	// For types that implement Component, use appropriate struct literal syntax
 	if sigs.IsStruct {
-		if _, err = g.w.Write("{}"); err != nil {
+		// (ComponentType{}) or (&ComponentType{})
+		if _, err = g.w.Write("("); err != nil {
+			return err
+		}
+
+		if sigs.IsPointerRecv {
+			if _, err = g.w.Write("&"); err != nil {
+				return err
+			}
+		}
+		if r, err = g.w.Write(n.Name); err != nil {
+			return err
+		}
+		g.sourceMap.Add(parser.Expression{Value: n.Name, Range: n.NameRange}, r)
+		if _, err = g.w.Write("{})"); err != nil {
 			return err
 		}
 	} else {
 		// For functions, use function call syntax
+		if r, err = g.w.Write(n.Name); err != nil {
+			return err
+		}
+		g.sourceMap.Add(parser.Expression{Value: n.Name, Range: n.NameRange}, r)
+
 		if _, err = g.w.Write("("); err != nil {
 			return err
 		}

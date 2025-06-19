@@ -196,7 +196,7 @@ func (tsr *TemplSignatureResolver) extractGoTypeSignatures(goExpr *parser.Templa
 
 	// Look for type declarations and methods
 	typeNames := make(map[string]bool)
-	
+
 	// First pass: collect all type names
 	for _, decl := range node.Decls {
 		if genDecl, ok := decl.(*ast.GenDecl); ok && genDecl.Tok == token.TYPE {
@@ -207,7 +207,7 @@ func (tsr *TemplSignatureResolver) extractGoTypeSignatures(goExpr *parser.Templa
 			}
 		}
 	}
-	
+
 	// Second pass: look for Render methods on these types
 	for _, decl := range node.Decls {
 		if fn, ok := decl.(*ast.FuncDecl); ok && fn.Name.Name == "Render" && fn.Recv != nil {
@@ -215,16 +215,20 @@ func (tsr *TemplSignatureResolver) extractGoTypeSignatures(goExpr *parser.Templa
 			if len(fn.Recv.List) > 0 {
 				receiverType := tsr.astTypeToString(fn.Recv.List[0].Type)
 				receiverType = strings.TrimPrefix(receiverType, "*")
-				
+
 				if typeNames[receiverType] {
 					// Check if the signature matches Component.Render
 					if tsr.isComponentRenderMethod(fn) {
+						// Check if receiver is a pointer
+						isPointerRecv := strings.HasPrefix(tsr.astTypeToString(fn.Recv.List[0].Type), "*")
+						
 						// This type implements Component
 						sig := &ComponentSignature{
-							PackagePath: "",
-							Name:        receiverType,
-							Parameters:  []ParameterInfo{}, // Component types have no parameters
-							IsStruct:    true,
+							PackagePath:   "",
+							Name:          receiverType,
+							Parameters:    []ParameterInfo{}, // Component types have no parameters
+							IsStruct:      true,
+							IsPointerRecv: isPointerRecv,
 						}
 						tsr.signatures[receiverType] = sig
 					}
@@ -240,16 +244,16 @@ func (tsr *TemplSignatureResolver) isComponentRenderMethod(fn *ast.FuncDecl) boo
 	if fn.Type.Params == nil || len(fn.Type.Params.List) != 2 {
 		return false
 	}
-	
+
 	// Check return type: error
 	if fn.Type.Results == nil || len(fn.Type.Results.List) != 1 {
 		return false
 	}
-	
+
 	// Check if return type is error
 	if retType, ok := fn.Type.Results.List[0].Type.(*ast.Ident); !ok || retType.Name != "error" {
 		return false
 	}
-	
+
 	return true
 }
