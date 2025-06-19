@@ -157,6 +157,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	if len(diag) > 0 {
 		for _, d := range diag {
 			h.Log.Warn(d.Message,
+				slog.String("file", event.Name),
 				slog.String("from", fmt.Sprintf("%d:%d", d.Range.From.Line, d.Range.From.Col)),
 				slog.String("to", fmt.Sprintf("%d:%d", d.Range.To.Line, d.Range.To.Col)),
 			)

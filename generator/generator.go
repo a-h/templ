@@ -1312,21 +1312,16 @@ func (g *generator) writeRestAppend(indentLevel int, restVarName string, key str
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
 	sigs, ok := g.componentSigs[n.Name]
 	if !ok {
-		// Component signature not found - write a valid placeholder
+		// Component signature not found - write a placeholder that the caller will append .Render() to
 		// The diagnostic for the missing component has already been added
 		// during collectAndResolveComponents
 
-		// Write a valid Go placeholder that will compile
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.NopComponent.Render(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
+		// Write a comment explaining the placeholder
+		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("// Component %s not found - using templ.NopComponet. Please fix.\n", n.Name)); err != nil {
 			return err
 		}
-		if _, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n"); err != nil {
-			return err
-		}
-		if _, err = g.w.WriteIndent(indentLevel+1, "return templ_7745c5c3_Err\n"); err != nil {
-			return err
-		}
-		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+		// Write just the component call part - caller will add .Render() and error handling
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.NopComponent"); err != nil {
 			return err
 		}
 		return nil
