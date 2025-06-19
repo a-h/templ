@@ -61,7 +61,13 @@ templ ElementComponent(attrs templ.Attributer) {
 		<structComp.Page title="Struct Component Example" class="struct-component" style="color: blue;" />
 		<NoArgsComponent />
 		<ComponentImpl />
-		<mod.StructComponent />
+		<mod.StructComponent
+			Name="struct"
+			Child={
+				<span>struct component child</span>
+			}
+			enabled?={ isEnabled() }
+		/>
 	</div>
 }
 

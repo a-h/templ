@@ -8,16 +8,16 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// ComponentSignature represents a templ component's function signature
+// ComponentSignature represents a templ component's function signature or struct fields
 type ComponentSignature struct {
 	PackagePath   string
 	Name          string
-	Parameters    []ParameterInfo
+	Parameters    []ParameterInfo // For functions: parameters, For structs: exported fields
 	IsStruct      bool
 	IsPointerRecv bool
 }
 
-// ParameterInfo represents a function parameter
+// ParameterInfo represents a function parameter or struct field
 type ParameterInfo struct {
 	Name string
 	Type string
@@ -116,8 +116,8 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 		if !isStruct {
 			return nil, fmt.Errorf("%s does not implement templ.Component interface", componentName)
 		}
-		// TODO: Handle parameters for struct components
-		paramInfo = make([]ParameterInfo, 0)
+		// Extract struct fields for struct components
+		paramInfo = sr.extractStructFields(typeName.Type())
 	}
 
 	componentSig := &ComponentSignature{
@@ -201,4 +201,25 @@ func (sr *SymbolResolver) implementsComponent(t types.Type, pkg *types.Package) 
 	_, isPointerReceiver = recvType.(*types.Pointer)
 
 	return true, isPointerReceiver
+}
+
+func (sr *SymbolResolver) extractStructFields(t types.Type) []ParameterInfo {
+	var structType *types.Struct
+	switch underlying := t.Underlying().(type) {
+	case *types.Struct:
+		structType = underlying
+	default:
+		return nil
+	}
+
+	var fields []ParameterInfo
+	for i := range structType.NumFields() {
+		field := structType.Field(i)
+		fields = append(fields, ParameterInfo{
+			Name: field.Name(),
+			Type: field.Type().String(),
+		})
+	}
+
+	return fields
 }

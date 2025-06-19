@@ -1340,7 +1340,7 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 
 	// For types that implement Component, use appropriate struct literal syntax
 	if sigs.IsStruct {
-		// (ComponentType{}) or (&ComponentType{})
+		// (ComponentType{Field1: value1, Field2: value2}) or (&ComponentType{...})
 		if _, err = g.w.Write("("); err != nil {
 			return err
 		}
@@ -1354,7 +1354,33 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 			return err
 		}
 		g.sourceMap.Add(parser.Expression{Value: n.Name, Range: n.NameRange}, r)
-		if _, err = g.w.Write("{})"); err != nil {
+		
+		if _, err = g.w.Write("{"); err != nil {
+			return err
+		}
+		
+		// Write field assignments for struct literal
+		for i, arg := range vars {
+			if i > 0 {
+				if _, err = g.w.Write(", "); err != nil {
+					return err
+				}
+			}
+			// Write field name: value
+			if i < len(sigs.Parameters) {
+				if _, err = g.w.Write(sigs.Parameters[i].Name); err != nil {
+					return err
+				}
+				if _, err = g.w.Write(": "); err != nil {
+					return err
+				}
+			}
+			if _, err = g.w.Write(arg); err != nil {
+				return err
+			}
+		}
+		
+		if _, err = g.w.Write("})"); err != nil {
 			return err
 		}
 	} else {
