@@ -83,7 +83,7 @@ type elementComponentAttributes struct {
 	restParam ParameterInfo
 }
 
-func (g *generator) writeElementComponentAttrVars(indentLevel int, sigs *ComponentSignature, n *parser.ElementComponent) ([]string, error) {
+func (g *generator) writeElementComponentAttrVars(indentLevel int, sigs ComponentSignature, n *parser.ElementComponent) ([]string, error) {
 	orderedAttrs, err := g.reorderElementComponentAttributes(sigs, n)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (g *generator) writeElementComponentAttrVars(indentLevel int, sigs *Compone
 	return res, nil
 }
 
-func (g *generator) reorderElementComponentAttributes(sig *ComponentSignature, n *parser.ElementComponent) (elementComponentAttributes, error) {
+func (g *generator) reorderElementComponentAttributes(sig ComponentSignature, n *parser.ElementComponent) (elementComponentAttributes, error) {
 	rest := make([]parser.Attribute, 0)
 	attrMap := make(map[string]parser.Attribute)
 	keyMap := make(map[string]parser.ConstantAttributeKey)
@@ -422,7 +422,7 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 	}
 
 	var vars []string
-	if vars, err = g.writeElementComponentAttrVars(indentLevel, &sigs, n); err != nil {
+	if vars, err = g.writeElementComponentAttrVars(indentLevel, sigs, n); err != nil {
 		return err
 	}
 
