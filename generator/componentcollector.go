@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/a-h/templ/parser/v2"
+	"github.com/a-h/templ/parser/v2/visitor"
 )
 
 // ComponentReference represents a reference to a component in HTML Element syntax
@@ -38,75 +39,39 @@ func (cc *ComponentCollector) Collect(tf *parser.TemplateFile) []ComponentRefere
 	// First pass: collect imports
 	cc.collectImports(tf)
 
-	// Second pass: collect components
-	for _, node := range tf.Nodes {
-		switch n := node.(type) {
-		case *parser.HTMLTemplate:
-			cc.collectFromNodes(n.Children)
-		case *parser.CSSTemplate:
-			// CSS templates don't contain components
-		case *parser.ScriptTemplate:
-			// Script templates don't contain components
-		}
-	}
+	// Second pass: collect components using visitor pattern
+	v := visitor.New()
+	v.ElementComponent = cc.visitElementComponent
+	tf.Visit(v)
 
 	return cc.components
 }
 
-// collectFromNodes recursively collects components from a slice of nodes
-func (cc *ComponentCollector) collectFromNodes(nodes []parser.Node) {
-	for _, node := range nodes {
-		cc.collectFromNode(node)
+// visitElementComponent handles ElementComponent nodes using the visitor pattern
+func (cc *ComponentCollector) visitElementComponent(n *parser.ElementComponent) error {
+	// Split component name by dots and check if first part is an import
+	parts := strings.Split(n.Name, ".")
+
+	var pkgName, componentName string
+
+	if len(parts) > 1 && cc.imports[parts[0]] {
+		// First part is an import alias, treat as package.Component
+		pkgName = parts[0]
+		componentName = strings.Join(parts[1:], ".")
+	} else {
+		// Not an import, treat as local component (could be structVar.Method)
+		componentName = n.Name
 	}
-}
 
-// collectFromNode collects components from a single node
-func (cc *ComponentCollector) collectFromNode(node parser.Node) {
-	switch n := node.(type) {
-	case *parser.ElementComponent:
-		// Split component name by dots and check if first part is an import
-		parts := strings.Split(n.Name, ".")
+	cc.components = append(cc.components, ComponentReference{
+		Name:        componentName,
+		PackageName: pkgName,
+		Position:    n.NameRange.From,
+		Attributes:  n.Attributes,
+	})
 
-		var pkgName, componentName string
-
-		if len(parts) > 1 && cc.imports[parts[0]] {
-			// First part is an import alias, treat as package.Component
-			pkgName = parts[0]
-			componentName = strings.Join(parts[1:], ".")
-		} else {
-			// Not an import, treat as local component (could be structVar.Method)
-			componentName = n.Name
-		}
-
-		cc.components = append(cc.components, ComponentReference{
-			Name:        componentName,
-			PackageName: pkgName,
-			Position:    n.NameRange.From,
-			Attributes:  n.Attributes,
-		})
-
-		cc.collectFromNodes(n.Children)
-
-	case *parser.Element:
-		cc.collectFromNodes(n.Children)
-
-	case *parser.IfExpression:
-		cc.collectFromNodes(n.Then)
-		cc.collectFromNodes(n.Else)
-
-	case *parser.SwitchExpression:
-		for _, c := range n.Cases {
-			cc.collectFromNodes(c.Children)
-		}
-
-	case *parser.ForExpression:
-		cc.collectFromNodes(n.Children)
-
-	case *parser.CallTemplateExpression:
-
-	case *parser.TemplElementExpression:
-		cc.collectFromNodes(n.Children)
-	}
+	// The default visitor implementation will handle visiting children
+	return nil
 }
 
 // GetUniqueComponents returns unique component references
