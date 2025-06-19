@@ -118,7 +118,7 @@ func missingComponentDiagnoser(t *TemplateFile) ([]Diagnostic, error) {
 
 	// Find all defined components in this template
 	definedComponents := collectDefinedComponents(t)
-	
+
 	// Find all Go types that implement Component interface in this template
 	goComponents := collectGoComponents(t)
 
@@ -212,10 +212,10 @@ func collectGoComponents(t *TemplateFile) map[string]bool {
 // type Foo struct{} ... func (f *Foo) Render(ctx context.Context, w io.Writer) error
 func parseGoTypesWithRenderMethod(goCode string) []string {
 	var typeNames []string
-	
+
 	// Split into lines for simple pattern matching
 	lines := strings.Split(goCode, "\n")
-	
+
 	// First pass: collect type definitions
 	definedTypes := make(map[string]bool)
 	for _, line := range lines {
@@ -229,7 +229,7 @@ func parseGoTypesWithRenderMethod(goCode string) []string {
 			}
 		}
 	}
-	
+
 	// Second pass: look for Render methods on these types
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -252,7 +252,7 @@ func parseGoTypesWithRenderMethod(goCode string) []string {
 			}
 		}
 	}
-	
+
 	return typeNames
 }
 
