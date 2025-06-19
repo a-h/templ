@@ -289,11 +289,15 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		return result, nil, fmt.Errorf("%s diagnostics error: %w", fileName, err)
 	}
 
+	// Combine parser diagnostics and generator diagnostics
+	allDiagnostics := parsedDiagnostics
+	allDiagnostics = append(allDiagnostics, generatorOutput.Diagnostics...)
+
 	if h.genSourceMapVis {
 		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, generatorOutput.SourceMap)
 	}
 
-	return result, parsedDiagnostics, err
+	return result, allDiagnostics, err
 }
 
 // Takes an error from the formatter and attempts to convert the positions reported in the target file to their positions

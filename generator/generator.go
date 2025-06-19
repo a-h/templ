@@ -72,9 +72,10 @@ func WithWorkingDir(dir string) GenerateOpt {
 }
 
 type GeneratorOutput struct {
-	Options   GeneratorOptions  `json:"meta"`
-	SourceMap *parser.SourceMap `json:"sourceMap"`
-	Literals  []string          `json:"literals"`
+	Options     GeneratorOptions   `json:"meta"`
+	SourceMap   *parser.SourceMap  `json:"sourceMap"`
+	Literals    []string           `json:"literals"`
+	Diagnostics []parser.Diagnostic `json:"diagnostics"`
 }
 
 type GeneratorOptions struct {
@@ -137,6 +138,7 @@ func Generate(template *parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (
 	op.Options = g.options
 	op.SourceMap = g.sourceMap
 	op.Literals = g.w.Literals
+	op.Diagnostics = g.diagnostics
 	return op, err
 }
 
@@ -151,6 +153,7 @@ type generator struct {
 	symbolResolver *SymbolResolver
 	templResolver  *TemplSignatureResolver
 	componentSigs  map[string]*ComponentSignature
+	diagnostics    []parser.Diagnostic
 }
 
 func (g *generator) generate() (err error) {
@@ -2315,6 +2318,27 @@ func (g *generator) writeBlankAssignmentForRuntimeImport() error {
 	return nil
 }
 
+// addComponentDiagnostic adds a diagnostic for component resolution issues
+func (g *generator) addComponentDiagnostic(comp ComponentReference, message string) {
+	// Create a Range from the component's position 
+	// ComponentReference.Position is the start position of the component name
+	nameStart := comp.Position
+	nameLength := int64(len(comp.Name))
+	nameEnd := parser.Position{
+		Index: nameStart.Index + nameLength,
+		Line:  nameStart.Line,
+		Col:   nameStart.Col + uint32(len(comp.Name)),
+	}
+	
+	g.diagnostics = append(g.diagnostics, parser.Diagnostic{
+		Message: message,
+		Range: parser.Range{
+			From: nameStart,
+			To:   nameEnd,
+		},
+	})
+}
+
 func (g *generator) collectAndResolveComponents() error {
 	collector := NewElementComponentCollector()
 	_ = collector.Collect(g.tf)
@@ -2372,19 +2396,26 @@ func (g *generator) collectAndResolveComponents() error {
 		}
 
 		if !found {
+			var message string
 			if err != nil {
 				if comp.PackageName != "" {
-					resolveErrors = append(resolveErrors, fmt.Sprintf("component %s.%s: %v", comp.PackageName, comp.Name, err))
+					message = fmt.Sprintf("Component %s.%s: %v", comp.PackageName, comp.Name, err)
 				} else {
-					resolveErrors = append(resolveErrors, fmt.Sprintf("component %s: %v", comp.Name, err))
+					message = fmt.Sprintf("Component %s: %v", comp.Name, err)
 				}
 			} else {
 				if comp.PackageName != "" {
-					resolveErrors = append(resolveErrors, fmt.Sprintf("component %s.%s: not found in templ templates or Go functions", comp.PackageName, comp.Name))
+					message = fmt.Sprintf("Component %s.%s not found in templ templates or Go functions", comp.PackageName, comp.Name)
 				} else {
-					resolveErrors = append(resolveErrors, fmt.Sprintf("component %s: not found in templ templates or Go functions", comp.Name))
+					message = fmt.Sprintf("Component %s not found in templ templates or Go functions", comp.Name)
 				}
 			}
+			
+			// Add diagnostic for this missing component
+			g.addComponentDiagnostic(comp, message)
+			
+			// Still collect error for fallback error handling
+			resolveErrors = append(resolveErrors, message)
 			continue
 		}
 
