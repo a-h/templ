@@ -221,7 +221,7 @@ func (tsr *TemplSignatureResolver) extractGoTypeSignatures(goExpr *parser.Templa
 					if tsr.isComponentRenderMethod(fn) {
 						// Check if receiver is a pointer
 						isPointerRecv := strings.HasPrefix(tsr.astTypeToString(fn.Recv.List[0].Type), "*")
-						
+
 						// This type implements Component
 						sig := &ComponentSignature{
 							PackagePath:   "",

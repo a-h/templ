@@ -1354,11 +1354,11 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 			return err
 		}
 		g.sourceMap.Add(parser.Expression{Value: n.Name, Range: n.NameRange}, r)
-		
+
 		if _, err = g.w.Write("{"); err != nil {
 			return err
 		}
-		
+
 		// Write field assignments for struct literal
 		for i, arg := range vars {
 			if i > 0 {
@@ -1379,7 +1379,7 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 				return err
 			}
 		}
-		
+
 		if _, err = g.w.Write("})"); err != nil {
 			return err
 		}
@@ -2352,7 +2352,7 @@ func (g *generator) collectAndResolveComponents() error {
 
 				if !found && g.symbolResolver != nil {
 					// Try Go function resolution
-					sig, err = g.symbolResolver.ResolveLocalComponentWithPosition(comp.Name, comp.Position, g.options.FileName)
+					sig, err = g.symbolResolver.ResolveLocalComponent(comp.Name, comp.Position, g.options.FileName)
 					if err == nil {
 						found = true
 					}

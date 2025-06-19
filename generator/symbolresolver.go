@@ -176,13 +176,8 @@ func (sr *SymbolResolver) ResolveComponentWithPosition(pkgPath, componentName st
 	return componentSig, nil
 }
 
-// ResolveLocalComponent resolves a component in the current package
-func (sr *SymbolResolver) ResolveLocalComponent(componentName string) (*ComponentSignature, error) {
-	return sr.ResolveLocalComponentWithPosition(componentName, parser.Position{}, "")
-}
-
-// ResolveLocalComponentWithPosition resolves a component in the current package with position information
-func (sr *SymbolResolver) ResolveLocalComponentWithPosition(componentName string, pos parser.Position, fileName string) (*ComponentSignature, error) {
+// ResolveLocalComponent resolves a component in the current package with position information
+func (sr *SymbolResolver) ResolveLocalComponent(componentName string, pos parser.Position, fileName string) (*ComponentSignature, error) {
 	// Use packages.Load to get the correct package path in module mode
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedModule,
