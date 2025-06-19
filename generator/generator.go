@@ -1312,22 +1312,24 @@ func (g *generator) writeRestAppend(indentLevel int, restVarName string, key str
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
 	sigs, ok := g.componentSigs[n.Name]
 	if !ok {
-		// If we're in a context where symbol resolution isn't available (e.g., during formatting),
-		// write a placeholder that will be replaced during actual code generation
-		if g.symbolResolver == nil {
-			// Write a placeholder function call that maintains the correct syntax
-			if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
-				return err
-			}
-			if _, err = g.w.Write(n.Name); err != nil {
-				return err
-			}
-			if _, err = g.w.Write("()"); err != nil {
-				return err
-			}
-			return nil
+		// Component signature not found - write a valid placeholder
+		// The diagnostic for the missing component has already been added
+		// during collectAndResolveComponents
+		
+		// Write a valid Go placeholder that will compile
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.NopComponent.Render(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
+			return err
 		}
-		return fmt.Errorf("%s: no function signature found - all components must have matching Go functions with matching parameters", n.Name)
+		if _, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_Err != nil {\n"); err != nil {
+			return err
+		}
+		if _, err = g.w.WriteIndent(indentLevel+1, "return templ_7745c5c3_Err\n"); err != nil {
+			return err
+		}
+		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	var vars []string
@@ -2427,8 +2429,12 @@ func (g *generator) collectAndResolveComponents() error {
 		g.componentSigs[key] = sig
 	}
 
+	// Don't return an error if no component signatures are resolved
+	// Instead, let the diagnostics be reported to the LSP
+	// The code generation will handle missing components gracefully
 	if len(g.componentSigs) == 0 && len(uniqueComponents) > 0 {
-		return fmt.Errorf("failed to resolve component signatures: %s", strings.Join(resolveErrors, "; "))
+		// All components failed to resolve, but we have diagnostics
+		// Continue with generation to allow diagnostics to be returned
 	}
 
 	return nil

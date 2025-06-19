@@ -242,14 +242,28 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 	// Use the directory of the specific file being processed for symbol resolution
 	fileDir := filepath.Dir(fileName)
 	generatorOutput, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath), generator.WithWorkingDir(fileDir))...)
+	
+	// Always extract diagnostics from the generator, even if generation failed
+	parsedDiagnostics, diagErr := parser.Diagnose(t)
+	if diagErr != nil {
+		return GenerateResult{}, nil, fmt.Errorf("%s diagnostics error: %w", fileName, diagErr)
+	}
+	
+	var allDiagnostics []parser.Diagnostic
+	allDiagnostics = append(allDiagnostics, parsedDiagnostics...)
+	// Always append generator diagnostics (even if generation failed, we might have collected some)
+	allDiagnostics = append(allDiagnostics, generatorOutput.Diagnostics...)
+	
 	if err != nil {
-		return GenerateResult{}, nil, fmt.Errorf("%s generation error: %w", fileName, err)
+		// Return diagnostics even when generation fails
+		return GenerateResult{}, allDiagnostics, fmt.Errorf("%s generation error: %w", fileName, err)
 	}
 
 	formattedGoCode, err := format.Source(b.Bytes())
 	if err != nil {
 		err = remapErrorList(err, generatorOutput.SourceMap, fileName)
-		return GenerateResult{}, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
+		// Return diagnostics even when formatting fails
+		return GenerateResult{}, allDiagnostics, fmt.Errorf("%s source formatting error %w", fileName, err)
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
@@ -283,15 +297,6 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		}
 		h.fileNameToOutput[fileName] = generatorOutput
 	}
-
-	parsedDiagnostics, err := parser.Diagnose(t)
-	if err != nil {
-		return result, nil, fmt.Errorf("%s diagnostics error: %w", fileName, err)
-	}
-
-	// Combine parser diagnostics and generator diagnostics
-	allDiagnostics := parsedDiagnostics
-	allDiagnostics = append(allDiagnostics, generatorOutput.Diagnostics...)
 
 	if h.genSourceMapVis {
 		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, generatorOutput.SourceMap)

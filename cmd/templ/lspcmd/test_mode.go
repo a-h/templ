@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
+	"time"
 
 	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
 	"github.com/a-h/templ/cmd/templ/lspcmd/proxy"
@@ -91,34 +93,11 @@ func runTestMode(ctx context.Context, args Arguments) error {
 
 	// If a test request is provided, execute it
 	if args.TestRequest != "" {
-
-		var requestParams map[string]any
-		if err := json.Unmarshal([]byte(args.TestRequest), &requestParams); err != nil {
-			return fmt.Errorf("failed to unmarshal test request params: %w", err)
+		_, _ = fmt.Fprintf(stdout, "Executing test request: %s\n", args.TestRequest)
+		if err := executeTestRequest(ctx, server, args.TestRequest, absDir, stdout, log); err != nil {
+			return fmt.Errorf("failed to execute test request: %w", err)
 		}
-		indented, err := json.MarshalIndent(requestParams, "", "  ")
-		if err != nil {
-			return fmt.Errorf("failed to marshal test request params: %w", err)
-		}
-		_, _ = fmt.Fprintf(stdout, "Executing test request: %s\n", string(indented))
-
-		// TODO: Implement support for test requests
 		return nil
-		// server.Request(ctx, )
-		// // For now, just support specific common requests
-		// // We can extend this later to support arbitrary JSON requests
-		// switch args.TestRequest {
-		// case "diagnostics":
-		// 	// Wait a bit for diagnostics to be computed
-		// 	log.Info("lsp: waiting for diagnostics...")
-		// 	select {
-		// 	case <-time.After(2 * time.Second):
-		// 		fmt.Fprintf(stdout, "\nDiagnostics collection complete.\n")
-		// 	case <-ctx.Done():
-		// 		return ctx.Err()
-		// 	}
-		// }
-		// return fmt.Errorf("unsupported test request: %s", args.TestRequest)
 	}
 
 	_, _ = fmt.Fprintf(stdout, "No test request provided. Loading directory %s...\n", absDir)
@@ -166,6 +145,142 @@ func runTestMode(ctx context.Context, args Arguments) error {
 		return fmt.Errorf("failed to walk directory %s: %w", absDir, err)
 	}
 
+	_, _ = fmt.Fprintf(stdout, "Directory %s loaded successfully. Waiting for diagnostics...\n", absDir)
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(5 * time.Second):
+	}
+
+	return nil
+}
+
+// executeTestRequest executes a test request with simple command patterns
+func executeTestRequest(ctx context.Context, server protocol.Server, request, baseDir string, stdout io.Writer, log *slog.Logger) error {
+	request = strings.TrimSpace(request)
+	// Parse the request command
+	parts := strings.SplitN(request, ":", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid test request format. Expected 'command:filepath', got '%s'", request)
+	}
+
+	command := parts[0]
+	if strings.HasPrefix(parts[1], "{") {
+		// If the second part starts with '{', treat it as a JSON object
+		var jsonObj map[string]any
+		if err := json.Unmarshal([]byte(parts[1]), &jsonObj); err != nil {
+			return fmt.Errorf("failed to parse JSON object: %w", err)
+		}
+		res, err := server.Request(ctx, command, jsonObj)
+		if err != nil {
+			return fmt.Errorf("failed to execute request %s: %w", command, err)
+		}
+		resultJSON, err := json.MarshalIndent(res, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal result: %w", err)
+		}
+		_, _ = fmt.Fprintf(stdout, "Result for %s:\n%s\n", command, resultJSON)
+		return nil
+	}
+
+	filePath := parts[1]
+
+	// Convert to absolute path if relative
+	if !filepath.IsAbs(filePath) {
+		filePath = filepath.Join(baseDir, filePath)
+	}
+
+	// Check if file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return fmt.Errorf("file does not exist: %s", filePath)
+	}
+
+	switch command {
+	case "didOpen":
+		return handleDidOpen(ctx, server, filePath, stdout, log)
+	case "didChange":
+		return handleDidChange(ctx, server, filePath, stdout, log)
+	case "diagnostics":
+		return handleDiagnostics(ctx, server, filePath, stdout, log)
+	default:
+		return fmt.Errorf("unsupported command: %s. Supported commands: didOpen, didChange, diagnostics", command)
+	}
+}
+
+// handleDidOpen sends a didOpen notification for the specified file
+func handleDidOpen(ctx context.Context, server protocol.Server, filePath string, stdout io.Writer, log *slog.Logger) error {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file %s: %w", filePath, err)
+	}
+
+	didOpenParams := &protocol.DidOpenTextDocumentParams{
+		TextDocument: protocol.TextDocumentItem{
+			URI:        protocol.DocumentURI("file://" + filePath),
+			LanguageID: "templ",
+			Version:    1,
+			Text:       string(content),
+		},
+	}
+
+	log.Info("Sending didOpen", slog.String("file", filePath))
+	_, _ = fmt.Fprintf(stdout, "Opening file: %s\n", filePath)
+
+	if err := server.DidOpen(ctx, didOpenParams); err != nil {
+		return fmt.Errorf("failed to send didOpen: %w", err)
+	}
+
+	// Wait a moment for diagnostics to be processed
+	time.Sleep(1 * time.Second)
+	_, _ = fmt.Fprintf(stdout, "DidOpen completed for: %s\n", filePath)
+	return nil
+}
+
+// handleDidChange sends a didChange notification for the specified file
+func handleDidChange(ctx context.Context, server protocol.Server, filePath string, stdout io.Writer, log *slog.Logger) error {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file %s: %w", filePath, err)
+	}
+
+	didChangeParams := &protocol.DidChangeTextDocumentParams{
+		TextDocument: protocol.VersionedTextDocumentIdentifier{
+			TextDocumentIdentifier: protocol.TextDocumentIdentifier{
+				URI: protocol.DocumentURI("file://" + filePath),
+			},
+			Version: 2, // Increment version for changes
+		},
+		ContentChanges: []protocol.TextDocumentContentChangeEvent{
+			{
+				Text: string(content),
+			},
+		},
+	}
+
+	log.Info("Sending didChange", slog.String("file", filePath))
+	_, _ = fmt.Fprintf(stdout, "Changing file: %s\n", filePath)
+
+	if err := server.DidChange(ctx, didChangeParams); err != nil {
+		return fmt.Errorf("failed to send didChange: %w", err)
+	}
+
+	// Wait a moment for diagnostics to be processed
+	time.Sleep(1 * time.Second)
+	_, _ = fmt.Fprintf(stdout, "DidChange completed for: %s\n", filePath)
+	return nil
+}
+
+// handleDiagnostics opens a file and waits for diagnostics
+func handleDiagnostics(ctx context.Context, server protocol.Server, filePath string, stdout io.Writer, log *slog.Logger) error {
+	// First open the file
+	if err := handleDidOpen(ctx, server, filePath, stdout, log); err != nil {
+		return err
+	}
+
+	// Wait longer for diagnostics to be computed
+	_, _ = fmt.Fprintf(stdout, "Waiting for diagnostics for: %s\n", filePath)
+	time.Sleep(3 * time.Second)
+	_, _ = fmt.Fprintf(stdout, "Diagnostics collection complete for: %s\n", filePath)
 	return nil
 }
 
