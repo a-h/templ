@@ -72,9 +72,9 @@ func WithWorkingDir(dir string) GenerateOpt {
 }
 
 type GeneratorOutput struct {
-	Options     GeneratorOptions   `json:"meta"`
-	SourceMap   *parser.SourceMap  `json:"sourceMap"`
-	Literals    []string           `json:"literals"`
+	Options     GeneratorOptions    `json:"meta"`
+	SourceMap   *parser.SourceMap   `json:"sourceMap"`
+	Literals    []string            `json:"literals"`
 	Diagnostics []parser.Diagnostic `json:"diagnostics"`
 }
 
@@ -1315,7 +1315,7 @@ func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser
 		// Component signature not found - write a valid placeholder
 		// The diagnostic for the missing component has already been added
 		// during collectAndResolveComponents
-		
+
 		// Write a valid Go placeholder that will compile
 		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.NopComponent.Render(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
 			return err
@@ -2322,7 +2322,7 @@ func (g *generator) writeBlankAssignmentForRuntimeImport() error {
 
 // addComponentDiagnostic adds a diagnostic for component resolution issues
 func (g *generator) addComponentDiagnostic(comp ComponentReference, message string) {
-	// Create a Range from the component's position 
+	// Create a Range from the component's position
 	// ComponentReference.Position is the start position of the component name
 	nameStart := comp.Position
 	nameLength := int64(len(comp.Name))
@@ -2331,7 +2331,7 @@ func (g *generator) addComponentDiagnostic(comp ComponentReference, message stri
 		Line:  nameStart.Line,
 		Col:   nameStart.Col + uint32(len(comp.Name)),
 	}
-	
+
 	g.diagnostics = append(g.diagnostics, parser.Diagnostic{
 		Message: message,
 		Range: parser.Range{
@@ -2350,9 +2350,6 @@ func (g *generator) collectAndResolveComponents() error {
 	if len(uniqueComponents) == 0 {
 		return nil
 	}
-
-	// Resolve each component's signature
-	var resolveErrors []string
 
 	for _, comp := range uniqueComponents {
 		var sig *ComponentSignature
@@ -2412,12 +2409,9 @@ func (g *generator) collectAndResolveComponents() error {
 					message = fmt.Sprintf("Component %s not found in templ templates or Go functions", comp.Name)
 				}
 			}
-			
+
 			// Add diagnostic for this missing component
 			g.addComponentDiagnostic(comp, message)
-			
-			// Still collect error for fallback error handling
-			resolveErrors = append(resolveErrors, message)
 			continue
 		}
 
@@ -2432,10 +2426,8 @@ func (g *generator) collectAndResolveComponents() error {
 	// Don't return an error if no component signatures are resolved
 	// Instead, let the diagnostics be reported to the LSP
 	// The code generation will handle missing components gracefully
-	if len(g.componentSigs) == 0 && len(uniqueComponents) > 0 {
-		// All components failed to resolve, but we have diagnostics
-		// Continue with generation to allow diagnostics to be returned
-	}
+	// if len(g.componentSigs) == 0 && len(uniqueComponents) > 0 {
+	// }
 
 	return nil
 }

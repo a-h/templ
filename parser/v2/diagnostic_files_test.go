@@ -14,12 +14,12 @@ import (
 // This approach is better for complex scenarios and provides more realistic test cases
 func TestDiagnoseFiles(t *testing.T) {
 	testDataDir := "testdata/diagnostics"
-	
+
 	// Create test data directory if it doesn't exist
-	if err := os.MkdirAll(testDataDir, 0755); err != nil {
+	if err := os.MkdirAll(testDataDir, 0o755); err != nil {
 		t.Fatalf("Failed to create test data directory: %v", err)
 	}
-	
+
 	// Create test files
 	testFiles := map[string]string{
 		"valid_components.templ": `package test
@@ -84,15 +84,15 @@ templ Page() {
 	}
 }`,
 	}
-	
+
 	// Write test files
 	for filename, content := range testFiles {
 		filepath := filepath.Join(testDataDir, filename)
-		if err := os.WriteFile(filepath, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(filepath, []byte(content), 0o644); err != nil {
 			t.Fatalf("Failed to write test file %s: %v", filename, err)
 		}
 	}
-	
+
 	// Run tests on each file
 	for filename := range testFiles {
 		t.Run(filename, func(t *testing.T) {
@@ -108,26 +108,26 @@ func testDiagnosticFile(t *testing.T, filePath string) {
 	if err != nil {
 		t.Fatalf("Failed to read test file %s: %v", filePath, err)
 	}
-	
+
 	// Parse expected diagnostics from comments
 	expectedDiagnostics := parseExpectedDiagnostics(string(content))
-	
+
 	// Parse the template
 	tf, err := ParseString(string(content))
 	if err != nil {
 		t.Fatalf("Failed to parse template from %s: %v", filePath, err)
 	}
-	
+
 	// Run diagnostics
 	actualDiagnostics, err := Diagnose(tf)
 	if err != nil {
 		t.Fatalf("Diagnose() failed for %s: %v", filePath, err)
 	}
-	
+
 	// Compare results
 	if diff := cmp.Diff(expectedDiagnostics, actualDiagnostics, cmp.AllowUnexported(Position{})); diff != "" {
 		t.Errorf("Diagnostics mismatch for %s (-expected +actual):\n%s", filePath, diff)
-		
+
 		// Additional debug info
 		t.Logf("Expected %d diagnostics:", len(expectedDiagnostics))
 		for i, d := range expectedDiagnostics {
@@ -145,37 +145,37 @@ func testDiagnosticFile(t *testing.T, filePath string) {
 func parseExpectedDiagnostics(content string) []Diagnostic {
 	var diagnostics []Diagnostic
 	lines := strings.Split(content, "\n")
-	
+
 	// Regex to match diagnostic comments
 	diagnosticRegex := regexp.MustCompile(`//\s*@diagnostic:\s*(.+)`)
-	
+
 	for lineIndex, line := range lines {
 		matches := diagnosticRegex.FindStringSubmatch(line)
 		if len(matches) == 2 {
 			expectedMessage := strings.TrimSpace(matches[1])
-			
+
 			// Find the component name that this diagnostic should apply to
 			// Look for <ComponentName in the same line
 			componentRegex := regexp.MustCompile(`<([A-Z][a-zA-Z0-9]*)\s*`)
 			componentMatches := componentRegex.FindStringSubmatch(line)
-			
+
 			if len(componentMatches) == 2 {
 				componentName := componentMatches[1]
-				
+
 				// Calculate position of the component name
 				componentIndex := strings.Index(line, "<"+componentName)
 				if componentIndex != -1 {
 					nameStart := componentIndex + 1 // Skip '<'
 					nameEnd := nameStart + len(componentName)
-					
+
 					// Calculate absolute positions
 					absoluteStart := 0
-					for i := 0; i < lineIndex; i++ {
+					for i := range lineIndex {
 						absoluteStart += len(lines[i]) + 1 // +1 for newline
 					}
 					absoluteStart += nameStart
 					absoluteEnd := absoluteStart + len(componentName)
-					
+
 					diagnostics = append(diagnostics, Diagnostic{
 						Message: expectedMessage,
 						Range: Range{
@@ -195,7 +195,7 @@ func parseExpectedDiagnostics(content string) []Diagnostic {
 			}
 		}
 	}
-	
+
 	return diagnostics
 }
 
@@ -203,9 +203,10 @@ func parseExpectedDiagnostics(content string) []Diagnostic {
 func TestMain(m *testing.M) {
 	// Run tests
 	code := m.Run()
-	
+
 	// Cleanup
-	os.RemoveAll("testdata/diagnostics")
-	
+	_ = os.RemoveAll("testdata/diagnostics")
+
 	os.Exit(code)
 }
+
