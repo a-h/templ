@@ -189,7 +189,7 @@ templ template() {
 					Range:   Range{Position{36, 4, 2}, Position{48, 4, 14}},
 				},
 				{
-					Message: "Component SecondMissing not found", 
+					Message: "Component SecondMissing not found",
 					Range:   Range{Position{54, 5, 2}, Position{67, 5, 15}},
 				},
 			},

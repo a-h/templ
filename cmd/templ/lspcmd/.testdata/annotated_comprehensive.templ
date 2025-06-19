@@ -1,0 +1,54 @@
+package testelementcomponent
+
+// Comprehensive test file for LSP diagnostics
+
+templ Button() {
+	<button>Click me</button>
+}
+
+templ Card() {
+	<div class="card">{ children... }</div>
+}
+
+templ TestVariousScenarios() {
+	// Valid components - no diagnostics expected
+	<Button />
+	<Card />
+	
+	// @expect-diagnostic: Component MissingButton not found
+	<MissingButton />
+	
+	// @expect-diagnostic: Component UnknownCard not found  
+	<UnknownCard />
+	
+	// Package qualified - should be ignored (no diagnostic)
+	<pkg.ExternalComponent />
+	
+	// Struct method - should be ignored (no diagnostic)
+	<variable.Method />
+	
+	// @expect-diagnostic: Component NonExistent not found
+	<NonExistent />
+	
+	// Nested in HTML - should still be detected
+	<div>
+		// @expect-diagnostic: Component NestedMissing not found
+		<NestedMissing />
+	</div>
+	
+	// Multiple missing in same block
+	<section>
+		// @expect-diagnostic: Component FirstMissing not found
+		<FirstMissing />
+		// @expect-diagnostic: Component SecondMissing not found
+		<SecondMissing />
+	</section>
+}
+
+templ ComplexNesting() {
+	@Card() {
+		// @expect-diagnostic: Component InnerMissing not found
+		<InnerMissing />
+		<Button />  // Valid
+	}
+}

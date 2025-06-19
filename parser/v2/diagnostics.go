@@ -45,7 +45,7 @@ var templateDiagnosers = []templateDiagnoser{
 func Diagnose(t *TemplateFile) ([]Diagnostic, error) {
 	var diags []Diagnostic
 	var errs error
-	
+
 	// Run node-level diagnosers
 	walkTemplate(t, func(n Node) bool {
 		for _, d := range diagnosers {
@@ -58,7 +58,7 @@ func Diagnose(t *TemplateFile) ([]Diagnostic, error) {
 		}
 		return true
 	})
-	
+
 	// Run template-level diagnosers
 	for _, d := range templateDiagnosers {
 		diag, err := d(t)
@@ -68,7 +68,7 @@ func Diagnose(t *TemplateFile) ([]Diagnostic, error) {
 		}
 		diags = append(diags, diag...)
 	}
-	
+
 	return diags, errs
 }
 
@@ -84,21 +84,21 @@ func useOfLegacyCallSyntaxDiagnoser(n Node) ([]Diagnostic, error) {
 
 func missingComponentDiagnoser(t *TemplateFile) ([]Diagnostic, error) {
 	var diags []Diagnostic
-	
+
 	// Collect all component references in the template
 	componentRefs := collectComponentReferences(t)
-	
+
 	// Find all defined components in this template
 	definedComponents := collectDefinedComponents(t)
-	
+
 	// Check each component reference
 	for _, ref := range componentRefs {
-		// Skip components with package prefixes (like pkg.Component) 
+		// Skip components with package prefixes (like pkg.Component)
 		// as we can't validate those without the full import context
 		if strings.Contains(ref.Name, ".") {
 			continue
 		}
-		
+
 		// Check if component is defined in this template
 		if !definedComponents[ref.Name] {
 			diags = append(diags, Diagnostic{
@@ -114,7 +114,7 @@ func missingComponentDiagnoser(t *TemplateFile) ([]Diagnostic, error) {
 			})
 		}
 	}
-	
+
 	return diags, nil
 }
 
@@ -127,7 +127,7 @@ type componentRef struct {
 // collectComponentReferences finds all ElementComponent references in the template
 func collectComponentReferences(t *TemplateFile) []componentRef {
 	var refs []componentRef
-	
+
 	walkTemplate(t, func(n Node) bool {
 		if comp, ok := n.(*ElementComponent); ok {
 			refs = append(refs, componentRef{
@@ -137,14 +137,14 @@ func collectComponentReferences(t *TemplateFile) []componentRef {
 		}
 		return true
 	})
-	
+
 	return refs
 }
 
 // collectDefinedComponents finds all HTMLTemplate definitions in the template file
 func collectDefinedComponents(t *TemplateFile) map[string]bool {
 	defined := make(map[string]bool)
-	
+
 	for _, node := range t.Nodes {
 		if tmpl, ok := node.(*HTMLTemplate); ok {
 			name := extractTemplateName(tmpl.Expression.Value)
@@ -153,7 +153,7 @@ func collectDefinedComponents(t *TemplateFile) map[string]bool {
 			}
 		}
 	}
-	
+
 	return defined
 }
 
@@ -162,22 +162,22 @@ func collectDefinedComponents(t *TemplateFile) map[string]bool {
 func extractTemplateName(expr string) string {
 	// Remove leading/trailing whitespace
 	expr = strings.TrimSpace(expr)
-	
+
 	// Find the function name by looking for the opening parenthesis
 	parenIndex := strings.Index(expr, "(")
 	if parenIndex == -1 {
 		return ""
 	}
-	
+
 	// Get everything before the opening parenthesis
 	beforeParen := strings.TrimSpace(expr[:parenIndex])
-	
+
 	// Split by spaces to handle receiver syntax like "(x Data) Foo"
 	parts := strings.Fields(beforeParen)
 	if len(parts) == 0 {
 		return ""
 	}
-	
+
 	// The function name is the last part
 	return parts[len(parts)-1]
 }

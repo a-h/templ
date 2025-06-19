@@ -242,18 +242,18 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 	// Use the directory of the specific file being processed for symbol resolution
 	fileDir := filepath.Dir(fileName)
 	generatorOutput, err := generator.Generate(t, &b, append(h.genOpts, generator.WithFileName(relFilePath), generator.WithWorkingDir(fileDir))...)
-	
+
 	// Always extract diagnostics from the generator, even if generation failed
 	parsedDiagnostics, diagErr := parser.Diagnose(t)
 	if diagErr != nil {
 		return GenerateResult{}, nil, fmt.Errorf("%s diagnostics error: %w", fileName, diagErr)
 	}
-	
+
 	var allDiagnostics []parser.Diagnostic
 	allDiagnostics = append(allDiagnostics, parsedDiagnostics...)
 	// Always append generator diagnostics (even if generation failed, we might have collected some)
 	allDiagnostics = append(allDiagnostics, generatorOutput.Diagnostics...)
-	
+
 	if err != nil {
 		// Return diagnostics even when generation fails
 		return GenerateResult{}, allDiagnostics, fmt.Errorf("%s generation error: %w", fileName, err)
