@@ -43,6 +43,7 @@ type Server struct {
 	NoPreload          bool
 	preLoadURIs        []*lsp.DidOpenTextDocumentParams
 	templDocLazyLoader templDocLazyLoader
+	workingDir         string
 }
 
 func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache, noPreload bool) (s *Server) {
@@ -168,7 +169,14 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 		return
 	}
 	template.Filepath = string(uri)
-	parsedDiagnostics, err := parser.Diagnose(template)
+	
+	// Use enhanced diagnostics if we have a working directory
+	var parsedDiagnostics []parser.Diagnostic
+	if p.workingDir != "" {
+		parsedDiagnostics, err = generator.DiagnoseWithSymbolResolution(template, p.workingDir)
+	} else {
+		parsedDiagnostics, err = parser.Diagnose(template)
+	}
 	if err != nil {
 		return
 	}
@@ -219,6 +227,16 @@ func (p *Server) parseTemplate(ctx context.Context, uri uri.URI, templateText st
 func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (result *lsp.InitializeResult, err error) {
 	p.Log.Info("client -> server: Initialize")
 	defer p.Log.Info("client -> server: Initialize end")
+	
+	// Set working directory from initialization params
+	if params.RootURI != "" {
+		if u, err := uri.Parse(string(params.RootURI)); err == nil {
+			p.workingDir = u.Filename()
+		}
+	} else if params.RootPath != "" {
+		p.workingDir = params.RootPath
+	}
+	
 	result, err = p.Target.Initialize(ctx, params)
 	if err != nil {
 		p.Log.Error("Initialize failed", slog.Any("error", err))

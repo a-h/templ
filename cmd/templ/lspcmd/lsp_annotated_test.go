@@ -8,12 +8,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 )
 
-// TestAnnotatedMessages tests diagnostics using simple message-based annotation format
+// TestLSPAnnotatedTempl tests diagnostics using simple message-based annotation format
 // This test focuses on the diagnostic messages rather than exact positions
-func TestAnnotatedMessages(t *testing.T) {
+func TestLSPAnnotatedTempl(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping annotated file tests in short mode")
 	}
@@ -55,10 +56,11 @@ func testAnnotatedMessageFile(t *testing.T, filePath string) {
 		t.Fatalf("Failed to parse template from %s: %v", filePath, err)
 	}
 
-	// Run diagnostics
-	actualDiagnostics, err := parser.Diagnose(tf)
+	// Run enhanced diagnostics that can find Go types implementing templ.Component
+	workingDir := ".testdata" // Use testdata directory as working directory
+	actualDiagnostics, err := generator.DiagnoseWithSymbolResolution(tf, workingDir)
 	if err != nil {
-		t.Fatalf("Diagnose() failed for %s: %v", filePath, err)
+		t.Fatalf("DiagnoseWithSymbolResolution() failed for %s: %v", filePath, err)
 	}
 
 	// Extract actual messages
