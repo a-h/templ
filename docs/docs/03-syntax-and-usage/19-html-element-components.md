@@ -54,6 +54,17 @@ HTML Element Components support various attribute types:
 <Button title={ strWithError() } />
 ```
 
+Other primitive types like `int`, `float`, and `bool` can also be used directly as attributes, as long as the types match:
+
+```go
+templ NumberComponent(count int) {
+  <div>Count: { count }</div>
+}
+// Integer attribute
+<NumberComponent count={ 42 } />
+<NumberComponent count={ int(42), error(nil) } />
+```
+
 ### Boolean Attributes
 
 ```go
@@ -304,4 +315,3 @@ templ NoArgsComponent() {
 
 <NoArgsComponent />
 ```
-
