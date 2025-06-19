@@ -115,6 +115,23 @@ templ Container(child templ.Component) {
 />
 ```
 
+### Alternative Syntax for Component Parameters
+
+For component parameters of type `templ.Component`, you can use curly brace syntax `{ paramName }` as an alternative to the `@paramName` syntax:
+
+```go
+templ Container(child templ.Component) {
+  <div class="container">
+    @child          // Traditional syntax
+    { child }       // Alternative syntax - works the same
+  </div>
+}
+```
+
+:::note
+The curly brace syntax `{ paramName }` only works for **local template parameters** of type `templ.Component`. It does not work for global variables or other types. For global component variables, you must still use the `@variableName` syntax.
+:::
+
 ### Primitive Types in Inline Components
 
 Primitive types can be passed directly to inline component attributes:

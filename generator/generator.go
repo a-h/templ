@@ -156,6 +156,10 @@ type generator struct {
 	templResolver         TemplSignatureResolver
 	componentSigs         ComponentSignatures
 	diagnostics           []parser.Diagnostic
+
+	// currentTemplate tracks the current Templ block being processed.
+	// This is used to resolve component signatures.
+	currentTemplate *parser.HTMLTemplate
 }
 
 func (g *generator) generate() (err error) {
@@ -461,6 +465,11 @@ func (g *generator) writeTemplate(nodeIdx int, t *parser.HTMLTemplate) error {
 	if t == nil {
 		return errors.New("template is nil")
 	}
+
+	prevTemplate := g.currentTemplate
+	g.currentTemplate = t
+	defer func() { g.currentTemplate = prevTemplate }()
+
 	var r parser.Range
 	var tgtSymbolRange parser.Range
 	var err error
@@ -1637,6 +1646,20 @@ func (g *generator) createVariableName() string {
 	return "templ_7745c5c3_Var" + strconv.Itoa(g.variableID)
 }
 
+func (g *generator) getTemplateName(tmpl *parser.HTMLTemplate) string {
+	if tmpl == nil {
+		return ""
+	}
+	// Extract template name from the expression value
+	// The expression value is like "Container(child templ.Component)"
+	// We need to extract just "Container"
+	exprValue := tmpl.Expression.Value
+	if idx := strings.Index(exprValue, "("); idx != -1 {
+		return strings.TrimSpace(exprValue[:idx])
+	}
+	return strings.TrimSpace(exprValue)
+}
+
 func (g *generator) writeGoCode(indentLevel int, e parser.Expression) (err error) {
 	if strings.TrimSpace(e.Value) == "" {
 		return
@@ -1653,6 +1676,22 @@ func (g *generator) writeStringExpression(indentLevel int, e parser.Expression) 
 	if strings.TrimSpace(e.Value) == "" {
 		return
 	}
+
+	// In this block, we want to support { child } expression for templ.Component variables.
+	// Which means we only support local block variables, and not global variables.
+	if g.currentTemplate != nil {
+		if templSig, ok := g.templResolver.Get(g.getTemplateName(g.currentTemplate)); ok {
+			// Check if expression value matches a parameter name with templ.Component type
+			exprValue := strings.TrimSpace(e.Value)
+			for _, param := range templSig.Parameters {
+				if param.Name == exprValue && isTemplComponent(param.Type) {
+					// This is a component parameter, use call template expression logic
+					return g.writeCallTemplateExpression(indentLevel, &parser.CallTemplateExpression{Expression: e})
+				}
+			}
+		}
+	}
+
 	var r parser.Range
 	vn := g.createVariableName()
 	// var vn string
