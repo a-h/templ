@@ -2,6 +2,8 @@ package generator
 
 import (
 	"testing"
+
+	"github.com/a-h/templ/parser/v2"
 )
 
 func TestSymbolResolver_RealComponents(t *testing.T) {
@@ -92,7 +94,7 @@ func TestSymbolResolver_LocalComponents(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sig, err := resolver.ResolveLocalComponent(tt.componentName)
+			sig, err := resolver.ResolveLocalComponent(tt.componentName, parser.Position{}, "")
 
 			if tt.wantErr {
 				if err == nil {

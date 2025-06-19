@@ -2352,7 +2352,7 @@ func (g *generator) collectAndResolveComponents() error {
 
 				if !found && g.symbolResolver != nil {
 					// Try Go function resolution
-					sig, err = g.symbolResolver.ResolveLocalComponent(comp.Name)
+					sig, err = g.symbolResolver.ResolveLocalComponentWithPosition(comp.Name, comp.Position, g.options.FileName)
 					if err == nil {
 						found = true
 					}
@@ -2363,7 +2363,7 @@ func (g *generator) collectAndResolveComponents() error {
 			if g.symbolResolver != nil {
 				importPath := g.resolveImportPath(comp.PackageName)
 				if importPath != "" {
-					sig, err = g.symbolResolver.ResolveComponent(importPath, comp.Name)
+					sig, err = g.symbolResolver.ResolveComponentWithPosition(importPath, comp.Name, comp.Position, g.options.FileName)
 					if err == nil {
 						found = true
 					}

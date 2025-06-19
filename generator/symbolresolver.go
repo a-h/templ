@@ -5,6 +5,7 @@ import (
 	"go/types"
 	"strings"
 
+	"github.com/a-h/templ/parser/v2"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -23,6 +24,20 @@ type ParameterInfo struct {
 	Type string
 }
 
+// ComponentResolutionError represents an error during component resolution with position information
+type ComponentResolutionError struct {
+	Err      error
+	Position parser.Position
+	FileName string
+}
+
+func (e ComponentResolutionError) Error() string {
+	if e.FileName == "" {
+		return e.Err.Error()
+	}
+	return fmt.Sprintf("%s:%d:%d: %v", e.FileName, e.Position.Line, e.Position.Col, e.Err)
+}
+
 // SymbolResolver resolves component symbols across packages
 type SymbolResolver struct {
 	cache      map[string]*ComponentSignature
@@ -39,6 +54,11 @@ func NewSymbolResolver(workingDir string) *SymbolResolver {
 
 // ResolveComponent resolves a component's function signature
 func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*ComponentSignature, error) {
+	return sr.ResolveComponentWithPosition(pkgPath, componentName, parser.Position{}, "")
+}
+
+// ResolveComponentWithPosition resolves a component's function signature with position information for error reporting
+func (sr *SymbolResolver) ResolveComponentWithPosition(pkgPath, componentName string, pos parser.Position, fileName string) (*ComponentSignature, error) {
 	key := fmt.Sprintf("%s.%s", pkgPath, componentName)
 	if sig, ok := sr.cache[key]; ok {
 		return sig, nil
@@ -58,11 +78,19 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 
 	pkgs, err := packages.Load(cfg, pkgPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load package %s: %w", pkgPath, err)
+		baseErr := fmt.Errorf("failed to load package %s: %w", pkgPath, err)
+		if fileName != "" {
+			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+		}
+		return nil, baseErr
 	}
 
 	if len(pkgs) == 0 {
-		return nil, fmt.Errorf("package %s not found", pkgPath)
+		baseErr := fmt.Errorf("package %s not found", pkgPath)
+		if fileName != "" {
+			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+		}
+		return nil, baseErr
 	}
 
 	pkg := pkgs[0]
@@ -79,7 +107,11 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 			}
 		}
 		if hasNonTemplErrors {
-			return nil, fmt.Errorf("package %s has non-generated file errors: %v", pkgPath, pkg.Errors)
+			baseErr := fmt.Errorf("package %s has non-generated file errors: %v", pkgPath, pkg.Errors)
+			if fileName != "" {
+				return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+			}
+			return nil, baseErr
 		}
 		// Continue with type checking even if there are _templ.go errors
 	}
@@ -87,7 +119,11 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 	// Look for the component function
 	obj := pkg.Types.Scope().Lookup(componentName)
 	if obj == nil {
-		return nil, fmt.Errorf("component %s not found in package %s", componentName, pkgPath)
+		baseErr := fmt.Errorf("component %s not found in package %s", componentName, pkgPath)
+		if fileName != "" {
+			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+		}
+		return nil, baseErr
 	}
 
 	var paramInfo []ParameterInfo
@@ -110,11 +146,19 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 	} else {
 		typeName, ok := obj.(*types.TypeName)
 		if !ok {
-			return nil, fmt.Errorf("%s is neither a function nor a type", componentName)
+			baseErr := fmt.Errorf("%s is neither a function nor a type", componentName)
+			if fileName != "" {
+				return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+			}
+			return nil, baseErr
 		}
 		isStruct, isPointerRecv = sr.implementsComponent(typeName.Type(), pkg.Types)
 		if !isStruct {
-			return nil, fmt.Errorf("%s does not implement templ.Component interface", componentName)
+			baseErr := fmt.Errorf("%s does not implement templ.Component interface", componentName)
+			if fileName != "" {
+				return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+			}
+			return nil, baseErr
 		}
 		// Extract struct fields for struct components
 		paramInfo = sr.extractStructFields(typeName.Type())
@@ -134,6 +178,11 @@ func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*Comp
 
 // ResolveLocalComponent resolves a component in the current package
 func (sr *SymbolResolver) ResolveLocalComponent(componentName string) (*ComponentSignature, error) {
+	return sr.ResolveLocalComponentWithPosition(componentName, parser.Position{}, "")
+}
+
+// ResolveLocalComponentWithPosition resolves a component in the current package with position information
+func (sr *SymbolResolver) ResolveLocalComponentWithPosition(componentName string, pos parser.Position, fileName string) (*ComponentSignature, error) {
 	// Use packages.Load to get the correct package path in module mode
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedModule,
@@ -142,16 +191,24 @@ func (sr *SymbolResolver) ResolveLocalComponent(componentName string) (*Componen
 
 	pkgs, err := packages.Load(cfg, ".")
 	if err != nil {
-		return nil, fmt.Errorf("failed to load current package: %w", err)
+		baseErr := fmt.Errorf("failed to load current package: %w", err)
+		if fileName != "" {
+			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+		}
+		return nil, baseErr
 	}
 
 	if len(pkgs) == 0 {
-		return nil, fmt.Errorf("no package found in current directory")
+		baseErr := fmt.Errorf("no package found in current directory")
+		if fileName != "" {
+			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+		}
+		return nil, baseErr
 	}
 
 	pkgPath := pkgs[0].PkgPath
 
-	return sr.ResolveComponent(pkgPath, componentName)
+	return sr.ResolveComponentWithPosition(pkgPath, componentName, pos, fileName)
 }
 
 // implementsComponent checks if a type implements the templ.Component interface: Render(ctx context.Context, w io.Writer) error
