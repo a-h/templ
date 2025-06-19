@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"go/format"
 	"go/scanner"
@@ -259,11 +260,11 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		return GenerateResult{}, allDiagnostics, fmt.Errorf("%s generation error: %w", fileName, err)
 	}
 
-	formattedGoCode, err := format.Source(b.Bytes())
-	if err != nil {
-		err = remapErrorList(err, generatorOutput.SourceMap, fileName)
-		// Return diagnostics even when formatting fails
-		return GenerateResult{}, allDiagnostics, fmt.Errorf("%s source formatting error %w", fileName, err)
+	formattedGoCode, formatErr := format.Source(b.Bytes())
+	if formatErr != nil {
+		formatErr = remapErrorList(formatErr, generatorOutput.SourceMap, fileName)
+		// Use unformatted code if formatting fails - better than no code at all for LSP
+		formattedGoCode = b.Bytes()
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
@@ -302,7 +303,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		err = generateSourceMapVisualisation(ctx, fileName, targetFileName, generatorOutput.SourceMap)
 	}
 
-	return result, allDiagnostics, err
+	return result, allDiagnostics, errors.Join(err, formatErr)
 }
 
 // Takes an error from the formatter and attempts to convert the positions reported in the target file to their positions
