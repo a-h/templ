@@ -62,8 +62,12 @@ func WithSkipCodeGeneratedComment() GenerateOpt {
 // WithWorkingDir sets the working directory for symbol resolution
 func WithWorkingDir(dir string) GenerateOpt {
 	return func(g *generator) error {
-		g.symbolResolver = NewSymbolResolver(dir)
-		g.componentSigs = make(map[string]*ComponentSignature)
+		g.symbolResolver = SymbolResolver{
+			cache:      make(map[string]ComponentSignature),
+			workingDir: dir,
+		}
+		g.symbolResolverEnabled = true
+		g.componentSigs = make(ComponentSignatures)
 		return nil
 	}
 }
@@ -123,8 +127,8 @@ func Generate(template *parser.TemplateFile, w io.Writer, opts ...GenerateOpt) (
 		tf:            template,
 		w:             NewRangeWriter(w),
 		sourceMap:     parser.NewSourceMap(),
-		templResolver: NewTemplSignatureResolver(),
-		componentSigs: make(map[string]*ComponentSignature),
+		templResolver: make(TemplSignatureResolver),
+		componentSigs: make(ComponentSignatures),
 	}
 	for _, opt := range opts {
 		if err = opt(g); err != nil {
@@ -146,11 +150,12 @@ type generator struct {
 	variableID  int
 	childrenVar string
 
-	options        GeneratorOptions
-	symbolResolver *SymbolResolver
-	templResolver  *TemplSignatureResolver
-	componentSigs  map[string]*ComponentSignature
-	diagnostics    []parser.Diagnostic
+	options               GeneratorOptions
+	symbolResolver        SymbolResolver
+	symbolResolverEnabled bool
+	templResolver         TemplSignatureResolver
+	componentSigs         ComponentSignatures
+	diagnostics           []parser.Diagnostic
 }
 
 func (g *generator) generate() (err error) {

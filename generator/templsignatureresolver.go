@@ -10,25 +10,16 @@ import (
 )
 
 // TemplSignatureResolver extracts component signatures from templ template definitions
-type TemplSignatureResolver struct {
-	signatures map[string]*ComponentSignature
-}
-
-// NewTemplSignatureResolver creates a new templ signature resolver
-func NewTemplSignatureResolver() *TemplSignatureResolver {
-	return &TemplSignatureResolver{
-		signatures: make(map[string]*ComponentSignature),
-	}
-}
+type TemplSignatureResolver map[string]ComponentSignature
 
 // ExtractSignatures walks through a templ file and extracts all template signatures
 func (tsr *TemplSignatureResolver) ExtractSignatures(tf *parser.TemplateFile) {
 	for _, node := range tf.Nodes {
 		switch n := node.(type) {
 		case *parser.HTMLTemplate:
-			sig := tsr.extractHTMLTemplateSignature(n)
-			if sig != nil {
-				tsr.signatures[sig.Name] = sig
+			sig, ok := tsr.extractHTMLTemplateSignature(n)
+			if ok {
+				tsr.Add(sig)
 			}
 		case *parser.TemplateFileGoExpression:
 			// Extract type definitions that might implement Component
@@ -37,47 +28,52 @@ func (tsr *TemplSignatureResolver) ExtractSignatures(tf *parser.TemplateFile) {
 	}
 }
 
-// GetSignature returns the signature for a template name
-func (tsr *TemplSignatureResolver) GetSignature(name string) (*ComponentSignature, bool) {
-	sig, ok := tsr.signatures[name]
+// Get returns the signature for a template name
+func (tsr TemplSignatureResolver) Get(name string) (ComponentSignature, bool) {
+	sig, ok := tsr[name]
 	return sig, ok
 }
 
-// GetAllSignatureNames returns all signature names for debugging
-func (tsr *TemplSignatureResolver) GetAllSignatureNames() []string {
-	names := make([]string, 0, len(tsr.signatures))
-	for name := range tsr.signatures {
+// Add adds a signature to the resolver using sig.Name as the key
+func (tsr TemplSignatureResolver) Add(sig ComponentSignature) {
+	tsr[sig.Name] = sig
+}
+
+// GetAllNames returns all signature names for debugging
+func (tsr TemplSignatureResolver) GetAllNames() []string {
+	names := make([]string, 0, len(tsr))
+	for name := range tsr {
 		names = append(names, name)
 	}
 	return names
 }
 
-// AddSignatureAlias adds an alias mapping for a signature
-func (tsr *TemplSignatureResolver) AddSignatureAlias(alias, target string) {
-	if sig, ok := tsr.signatures[target]; ok {
-		tsr.signatures[alias] = sig
+// AddAlias adds an alias mapping for a signature
+func (tsr TemplSignatureResolver) AddAlias(alias, target string) {
+	if sig, ok := tsr[target]; ok {
+		tsr[alias] = sig
 	}
 }
 
 // extractHTMLTemplateSignature extracts the signature from an HTML template
-func (tsr *TemplSignatureResolver) extractHTMLTemplateSignature(tmpl *parser.HTMLTemplate) *ComponentSignature {
+func (tsr *TemplSignatureResolver) extractHTMLTemplateSignature(tmpl *parser.HTMLTemplate) (ComponentSignature, bool) {
 	// Parse the template declaration from Expression.Value using Go AST parser
 	// This leverages the same parsing logic used by parseTemplFuncDecl
 	exprValue := tmpl.Expression.Value
 	if exprValue == "" {
-		return nil
+		return ComponentSignature{}, false
 	}
 
 	name, params, err := tsr.parseTemplateSignatureFromAST(exprValue)
 	if err != nil || name == "" {
-		return nil
+		return ComponentSignature{}, false
 	}
 
-	return &ComponentSignature{
+	return ComponentSignature{
 		PackagePath: "", // Local package
 		Name:        name,
 		Parameters:  params,
-	}
+	}, true
 }
 
 // parseTemplateSignatureFromAST parses a templ template signature using Go AST parser
@@ -223,14 +219,14 @@ func (tsr *TemplSignatureResolver) extractGoTypeSignatures(goExpr *parser.Templa
 						isPointerRecv := strings.HasPrefix(tsr.astTypeToString(fn.Recv.List[0].Type), "*")
 
 						// This type implements Component
-						sig := &ComponentSignature{
+						sig := ComponentSignature{
 							PackagePath:   "",
 							Name:          receiverType,
 							Parameters:    []ParameterInfo{}, // Component types have no parameters
 							IsStruct:      true,
 							IsPointerRecv: isPointerRecv,
 						}
-						tsr.signatures[receiverType] = sig
+						tsr.Add(sig)
 					}
 				}
 			}

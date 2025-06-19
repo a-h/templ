@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/a-h/templ/parser/v2"
@@ -228,8 +229,8 @@ func TestSymbolResolverCache(t *testing.T) {
 		t.Fatalf("Second resolution failed: %v", err)
 	}
 
-	// Both signatures should be the same pointer (from cache)
-	if sig1 != sig2 {
+	// Both signatures should be the same value (from cache)
+	if !reflect.DeepEqual(sig1, sig2) {
 		t.Error("Expected cached signature to be returned")
 	}
 }

@@ -13,6 +13,7 @@ import (
 type ComponentSignature struct {
 	PackagePath   string
 	Name          string
+	QualifiedName string          // For functions: pkgPath.Name, For structs: pkgPath.TypeName
 	Parameters    []ParameterInfo // For functions: parameters, For structs: exported fields
 	IsStruct      bool
 	IsPointerRecv bool
@@ -22,6 +23,20 @@ type ComponentSignature struct {
 type ParameterInfo struct {
 	Name string
 	Type string
+}
+
+// ComponentSignatures represents a collection of component signatures
+type ComponentSignatures map[string]ComponentSignature
+
+// Get returns the signature for a component name
+func (cs ComponentSignatures) Get(qname string) (ComponentSignature, bool) {
+	sig, ok := cs[qname]
+	return sig, ok
+}
+
+// Set adds a signature to the collection
+func (cs ComponentSignatures) Add(sig ComponentSignature) {
+	cs[sig.QualifiedName] = sig
 }
 
 // ComponentResolutionError represents an error during component resolution with position information
@@ -40,25 +55,25 @@ func (e ComponentResolutionError) Error() string {
 
 // SymbolResolver resolves component symbols across packages
 type SymbolResolver struct {
-	cache      map[string]*ComponentSignature
+	cache      map[string]ComponentSignature
 	workingDir string
 }
 
 // NewSymbolResolver creates a new symbol resolver
 func NewSymbolResolver(workingDir string) *SymbolResolver {
 	return &SymbolResolver{
-		cache:      make(map[string]*ComponentSignature),
+		cache:      make(map[string]ComponentSignature),
 		workingDir: workingDir,
 	}
 }
 
 // ResolveComponent resolves a component's function signature
-func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (*ComponentSignature, error) {
+func (sr *SymbolResolver) ResolveComponent(pkgPath, componentName string) (ComponentSignature, error) {
 	return sr.ResolveComponentWithPosition(pkgPath, componentName, parser.Position{}, "")
 }
 
 // ResolveComponentWithPosition resolves a component's function signature with position information for error reporting
-func (sr *SymbolResolver) ResolveComponentWithPosition(pkgPath, componentName string, pos parser.Position, fileName string) (*ComponentSignature, error) {
+func (sr *SymbolResolver) ResolveComponentWithPosition(pkgPath, componentName string, pos parser.Position, fileName string) (ComponentSignature, error) {
 	key := fmt.Sprintf("%s.%s", pkgPath, componentName)
 	if sig, ok := sr.cache[key]; ok {
 		return sig, nil
@@ -80,17 +95,17 @@ func (sr *SymbolResolver) ResolveComponentWithPosition(pkgPath, componentName st
 	if err != nil {
 		baseErr := fmt.Errorf("failed to load package %s: %w", pkgPath, err)
 		if fileName != "" {
-			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+			return ComponentSignature{}, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
 		}
-		return nil, baseErr
+		return ComponentSignature{}, baseErr
 	}
 
 	if len(pkgs) == 0 {
 		baseErr := fmt.Errorf("package %s not found", pkgPath)
 		if fileName != "" {
-			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+			return ComponentSignature{}, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
 		}
-		return nil, baseErr
+		return ComponentSignature{}, baseErr
 	}
 
 	pkg := pkgs[0]
@@ -109,9 +124,9 @@ func (sr *SymbolResolver) ResolveComponentWithPosition(pkgPath, componentName st
 		if hasNonTemplErrors {
 			baseErr := fmt.Errorf("package %s has non-generated file errors: %v", pkgPath, pkg.Errors)
 			if fileName != "" {
-				return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+				return ComponentSignature{}, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
 			}
-			return nil, baseErr
+			return ComponentSignature{}, baseErr
 		}
 		// Continue with type checking even if there are _templ.go errors
 	}
@@ -121,9 +136,9 @@ func (sr *SymbolResolver) ResolveComponentWithPosition(pkgPath, componentName st
 	if obj == nil {
 		baseErr := fmt.Errorf("component %s not found in package %s", componentName, pkgPath)
 		if fileName != "" {
-			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+			return ComponentSignature{}, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
 		}
-		return nil, baseErr
+		return ComponentSignature{}, baseErr
 	}
 
 	var paramInfo []ParameterInfo
@@ -148,23 +163,23 @@ func (sr *SymbolResolver) ResolveComponentWithPosition(pkgPath, componentName st
 		if !ok {
 			baseErr := fmt.Errorf("%s is neither a function nor a type", componentName)
 			if fileName != "" {
-				return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+				return ComponentSignature{}, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
 			}
-			return nil, baseErr
+			return ComponentSignature{}, baseErr
 		}
 		isStruct, isPointerRecv = sr.implementsComponent(typeName.Type(), pkg.Types)
 		if !isStruct {
 			baseErr := fmt.Errorf("%s does not implement templ.Component interface", componentName)
 			if fileName != "" {
-				return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+				return ComponentSignature{}, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
 			}
-			return nil, baseErr
+			return ComponentSignature{}, baseErr
 		}
 		// Extract struct fields for struct components
 		paramInfo = sr.extractStructFields(typeName.Type())
 	}
 
-	componentSig := &ComponentSignature{
+	componentSig := ComponentSignature{
 		PackagePath:   pkgPath,
 		Name:          componentName,
 		Parameters:    paramInfo,
@@ -177,7 +192,7 @@ func (sr *SymbolResolver) ResolveComponentWithPosition(pkgPath, componentName st
 }
 
 // ResolveLocalComponent resolves a component in the current package with position information
-func (sr *SymbolResolver) ResolveLocalComponent(componentName string, pos parser.Position, fileName string) (*ComponentSignature, error) {
+func (sr *SymbolResolver) ResolveLocalComponent(componentName string, pos parser.Position, fileName string) (ComponentSignature, error) {
 	// Use packages.Load to get the correct package path in module mode
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedModule,
@@ -188,17 +203,17 @@ func (sr *SymbolResolver) ResolveLocalComponent(componentName string, pos parser
 	if err != nil {
 		baseErr := fmt.Errorf("failed to load current package: %w", err)
 		if fileName != "" {
-			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+			return ComponentSignature{}, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
 		}
-		return nil, baseErr
+		return ComponentSignature{}, baseErr
 	}
 
 	if len(pkgs) == 0 {
 		baseErr := fmt.Errorf("no package found in current directory")
 		if fileName != "" {
-			return nil, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
+			return ComponentSignature{}, ComponentResolutionError{Err: baseErr, Position: pos, FileName: fileName}
 		}
-		return nil, baseErr
+		return ComponentSignature{}, baseErr
 	}
 
 	pkgPath := pkgs[0].PkgPath

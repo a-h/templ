@@ -416,13 +416,13 @@ func (g *generator) writeRestAppend(indentLevel int, restVarName string, key str
 }
 
 func (g *generator) writeElementComponentFunctionCall(indentLevel int, n *parser.ElementComponent) (err error) {
-	sigs, ok := g.componentSigs[n.Name]
+	sigs, ok := g.componentSigs.Get(n.Name)
 	if !ok {
 		return fmt.Errorf("component %s signature not found at %s:%d:%d", n.Name, g.options.FileName, n.Range.From.Line, n.Range.From.Col)
 	}
 
 	var vars []string
-	if vars, err = g.writeElementComponentAttrVars(indentLevel, sigs, n); err != nil {
+	if vars, err = g.writeElementComponentAttrVars(indentLevel, &sigs, n); err != nil {
 		return err
 	}
 
@@ -528,9 +528,9 @@ func (g *generator) tryResolveStructMethod(componentName string) bool {
 				if typeName != "" {
 					// Look for signature with TypeName.MethodName
 					candidateSig := typeName + "." + methodName
-					if _, ok := g.templResolver.GetSignature(candidateSig); ok {
+					if _, ok := g.templResolver.Get(candidateSig); ok {
 						// Add alias mapping for future lookups
-						g.templResolver.AddSignatureAlias(componentName, candidateSig)
+						g.templResolver.AddAlias(componentName, candidateSig)
 						return true
 					}
 				}
@@ -704,13 +704,13 @@ func (g *generator) collectAndResolveComponents() error {
 	}
 
 	for _, comp := range uniqueComponents {
-		var sig *ComponentSignature
+		var sig ComponentSignature
 		var err error
 		var found bool
 
 		if comp.PackageName == "" {
 			// Local component - check both simple name and full name for receiver methods
-			if templSig, ok := g.templResolver.GetSignature(comp.Name); ok {
+			if templSig, ok := g.templResolver.Get(comp.Name); ok {
 				sig = templSig
 				found = true
 			} else {
@@ -719,15 +719,15 @@ func (g *generator) collectAndResolveComponents() error {
 					found = g.tryResolveStructMethod(comp.Name)
 					if found {
 						// Find the resolved signature
-						if templSig, ok := g.templResolver.GetSignature(comp.Name); ok {
+						if templSig, ok := g.templResolver.Get(comp.Name); ok {
 							sig = templSig
 						}
 					}
 				}
 
-				if !found && g.symbolResolver != nil {
+				if !found && g.symbolResolverEnabled {
 					// Try Go function resolution
-					sig, err = g.symbolResolver.ResolveLocalComponent(comp.Name, comp.Position, g.options.FileName)
+					sig, err = (&g.symbolResolver).ResolveLocalComponent(comp.Name, comp.Position, g.options.FileName)
 					if err == nil {
 						found = true
 					}
@@ -735,10 +735,10 @@ func (g *generator) collectAndResolveComponents() error {
 			}
 		} else {
 			// Package import - use Go function resolution with resolved import path
-			if g.symbolResolver != nil {
+			if g.symbolResolverEnabled {
 				importPath := g.resolveImportPath(comp.PackageName)
 				if importPath != "" {
-					sig, err = g.symbolResolver.ResolveComponentWithPosition(importPath, comp.Name, comp.Position, g.options.FileName)
+					sig, err = (&g.symbolResolver).ResolveComponentWithPosition(importPath, comp.Name, comp.Position, g.options.FileName)
 					if err == nil {
 						found = true
 					}
@@ -772,7 +772,8 @@ func (g *generator) collectAndResolveComponents() error {
 		if comp.PackageName != "" {
 			key = comp.PackageName + "." + comp.Name
 		}
-		g.componentSigs[key] = sig
+		sig.QualifiedName = key
+		g.componentSigs.Add(sig)
 	}
 
 	// Don't return an error if no component signatures are resolved
