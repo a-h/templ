@@ -1,5 +1,7 @@
 package lazyloader
 
+import "maps"
+
 type docHeader interface {
 	equal(other docHeader) bool
 }
@@ -19,15 +21,5 @@ func (h *goDocHeader) equal(other docHeader) bool {
 		return false
 	}
 
-	if len(h.imports) != len(o.imports) {
-		return false
-	}
-
-	for imp := range h.imports {
-		if _, ok := o.imports[imp]; !ok {
-			return false
-		}
-	}
-
-	return true
+	return maps.Equal(h.imports, o.imports)
 }
