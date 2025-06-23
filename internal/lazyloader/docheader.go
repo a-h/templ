@@ -1,6 +1,8 @@
 package lazyloader
 
-import "maps"
+import (
+	"maps"
+)
 
 type docHeader interface {
 	equal(other docHeader) bool
