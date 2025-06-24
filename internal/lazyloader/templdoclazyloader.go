@@ -19,12 +19,16 @@ type TemplDocLazyLoader interface {
 
 	// Unload unloads a templ document and its dependencies.
 	Unload(ctx context.Context, params *lsp.DidCloseTextDocumentParams) error
+
+	// HasLoaded reports whether a templ document and its dependencies have been loaded.
+	HasLoaded(doc lsp.TextDocumentIdentifier) bool
 }
 
 // templDocLazyLoader is a loader that uses the go/packages API to lazily load templ documents in the dependency graph.
 type templDocLazyLoader struct {
 	loadedPkgs      map[string]*packages.Package
 	openDocHeaders  map[string]docHeader
+	docsPendingLoad map[string]struct{}
 	pkgLoader       pkgLoader
 	pkgTraverser    pkgTraverser
 	docHeaderParser docHeaderParser
@@ -40,8 +44,9 @@ type NewParams struct {
 // New creates a new lazy loader using the provided arguments.
 func New(params NewParams) TemplDocLazyLoader {
 	return &templDocLazyLoader{
-		loadedPkgs:     make(map[string]*packages.Package),
-		openDocHeaders: make(map[string]docHeader),
+		loadedPkgs:      make(map[string]*packages.Package),
+		openDocHeaders:  make(map[string]docHeader),
+		docsPendingLoad: make(map[string]struct{}),
 		pkgLoader: &goPkgLoader{
 			openDocSources: params.OpenDocSources,
 			loadPackages:   packages.Load,
@@ -66,6 +71,7 @@ func (l *templDocLazyLoader) Load(ctx context.Context, params *lsp.DidOpenTextDo
 	pkg, err := l.pkgLoader.load(filename)
 	if err != nil {
 		if errors.Is(err, errNoPkgsLoaded) {
+			l.docsPendingLoad[filename] = struct{}{}
 			return l.docHandler.HandleDidOpen(ctx, params)
 		}
 		return fmt.Errorf("load package for file %q: %w", filename, err)
@@ -95,6 +101,7 @@ func (l *templDocLazyLoader) Sync(ctx context.Context, params *lsp.DidChangeText
 	if err != nil {
 		return fmt.Errorf("load package for file %q: %w", filename, err)
 	}
+	delete(l.docsPendingLoad, filename)
 
 	if _, ok := l.loadedPkgs[pkg.PkgPath]; !ok {
 		if err := l.pkgTraverser.openTopologically(ctx, pkg); err != nil {
@@ -128,6 +135,7 @@ func (l *templDocLazyLoader) Unload(ctx context.Context, params *lsp.DidCloseTex
 	pkg, err := l.pkgLoader.load(filename)
 	if err != nil {
 		if errors.Is(err, errNoPkgsLoaded) {
+			delete(l.docsPendingLoad, filename)
 			return l.docHandler.HandleDidClose(ctx, params)
 		}
 		return fmt.Errorf("load package for file %q: %w", filename, err)
@@ -141,4 +149,13 @@ func (l *templDocLazyLoader) Unload(ctx context.Context, params *lsp.DidCloseTex
 	delete(l.openDocHeaders, filename)
 
 	return nil
+}
+
+func (l *templDocLazyLoader) HasLoaded(doc lsp.TextDocumentIdentifier) bool {
+	if _, ok := l.docsPendingLoad[doc.URI.Filename()]; ok {
+		return false
+	}
+
+	_, ok := l.openDocHeaders[doc.URI.Filename()]
+	return ok
 }

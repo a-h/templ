@@ -13,12 +13,13 @@ import (
 
 func TestTemplDocLazyLoaderLoad(t *testing.T) {
 	tests := []struct {
-		name               string
-		loader             *templDocLazyLoader
-		params             *lsp.DidOpenTextDocumentParams
-		wantLoadedPkgs     map[string]*packages.Package
-		wantOpenDocHeaders map[string]docHeader
-		wantErrContains    string
+		name                string
+		loader              *templDocLazyLoader
+		params              *lsp.DidOpenTextDocumentParams
+		wantLoadedPkgs      map[string]*packages.Package
+		wantOpenDocHeaders  map[string]docHeader
+		wantDocsPendingLoad map[string]struct{}
+		wantErrContains     string
 	}{
 		{
 			name: "load package failed",
@@ -48,11 +49,15 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 					openedDocs: map[string]int{},
 					error:      errors.New("mock error"),
 				},
+				docsPendingLoad: map[string]struct{}{},
 			},
 			params: &lsp.DidOpenTextDocumentParams{
 				TextDocument: lsp.TextDocumentItem{
 					URI: lsp.DocumentURI("file:///foo.go"),
 				},
+			},
+			wantDocsPendingLoad: map[string]struct{}{
+				"/foo.go": {},
 			},
 			wantErrContains: "mock error",
 		},
@@ -113,6 +118,7 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 			if tt.wantErrContains != "" {
 				assert.Error(t, err)
 				assert.ErrorContains(t, err, tt.wantErrContains)
+				assert.Equal(t, tt.wantDocsPendingLoad, tt.loader.docsPendingLoad)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.wantLoadedPkgs, tt.loader.loadedPkgs)
@@ -124,14 +130,15 @@ func TestTemplDocLazyLoaderLoad(t *testing.T) {
 
 func TestTemplDocLazyLoaderSync(t *testing.T) {
 	tests := []struct {
-		name               string
-		loader             *templDocLazyLoader
-		params             *lsp.DidChangeTextDocumentParams
-		wantLoadedPkgs     map[string]*packages.Package
-		wantOpenDocHeaders map[string]docHeader
-		wantOpenedPkgs     []string
-		wantClosedPkgs     []string
-		wantErrContains    string
+		name                string
+		loader              *templDocLazyLoader
+		params              *lsp.DidChangeTextDocumentParams
+		wantLoadedPkgs      map[string]*packages.Package
+		wantOpenDocHeaders  map[string]docHeader
+		wantOpenedPkgs      []string
+		wantClosedPkgs      []string
+		wantDocsPendingLoad map[string]struct{}
+		wantErrContains     string
 	}{
 		{
 			name: "same header",
@@ -307,6 +314,9 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 					openErrors: map[string]error{},
 				},
 				loadedPkgs: map[string]*packages.Package{},
+				docsPendingLoad: map[string]struct{}{
+					"/foo.go": {},
+				},
 			},
 			params: &lsp.DidChangeTextDocumentParams{
 				TextDocument: lsp.VersionedTextDocumentIdentifier{
@@ -336,7 +346,8 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 					},
 				},
 			},
-			wantOpenedPkgs: []string{"foo_pkg"},
+			wantOpenedPkgs:      []string{"foo_pkg"},
+			wantDocsPendingLoad: map[string]struct{}{},
 		},
 		{
 			name: "open topologically failed",
@@ -542,6 +553,7 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.wantLoadedPkgs, tt.loader.loadedPkgs)
 				assert.Equal(t, tt.wantOpenDocHeaders, tt.loader.openDocHeaders)
+				assert.Equal(t, tt.wantDocsPendingLoad, tt.loader.docsPendingLoad)
 
 				traverser, ok := tt.loader.pkgTraverser.(*mockPkgTraverser)
 				require.True(t, ok)
@@ -554,12 +566,13 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 
 func TestTemplDocLazyLoaderUnload(t *testing.T) {
 	tests := []struct {
-		name               string
-		loader             *templDocLazyLoader
-		params             *lsp.DidCloseTextDocumentParams
-		wantLoadedPkgs     map[string]*packages.Package
-		wantOpenDocHeaders map[string]docHeader
-		wantErrContains    string
+		name                string
+		loader              *templDocLazyLoader
+		params              *lsp.DidCloseTextDocumentParams
+		wantLoadedPkgs      map[string]*packages.Package
+		wantOpenDocHeaders  map[string]docHeader
+		wantDocsPendingLoad map[string]struct{}
+		wantErrContains     string
 	}{
 		{
 			name: "load package failed",
@@ -589,13 +602,17 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 					closedDocs: map[string]int{},
 					error:      errors.New("mock error"),
 				},
+				docsPendingLoad: map[string]struct{}{
+					"/foo.go": {},
+				},
 			},
 			params: &lsp.DidCloseTextDocumentParams{
 				TextDocument: lsp.TextDocumentIdentifier{
 					URI: lsp.DocumentURI("file:///foo.go"),
 				},
 			},
-			wantErrContains: "mock error",
+			wantDocsPendingLoad: map[string]struct{}{},
+			wantErrContains:     "mock error",
 		},
 		{
 			name: "close topologically failed",
@@ -654,11 +671,60 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 			if tt.wantErrContains != "" {
 				assert.Error(t, err)
 				assert.ErrorContains(t, err, tt.wantErrContains)
+				assert.Equal(t, tt.wantDocsPendingLoad, tt.loader.docsPendingLoad)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.wantLoadedPkgs, tt.loader.loadedPkgs)
 				assert.Equal(t, tt.wantOpenDocHeaders, tt.loader.openDocHeaders)
 			}
+		})
+	}
+}
+
+func TestTemplDocLazyLoaderHasLoaded(t *testing.T) {
+	tests := []struct {
+		name     string
+		loader   *templDocLazyLoader
+		doc      lsp.TextDocumentIdentifier
+		expected bool
+	}{
+		{
+			name: "doc pending load",
+			loader: &templDocLazyLoader{
+				docsPendingLoad: map[string]struct{}{
+					"/foo.go": {},
+				},
+			},
+			doc: lsp.TextDocumentIdentifier{
+				URI: lsp.DocumentURI("file:///foo.go"),
+			},
+		},
+		{
+			name: "doc loaded",
+			loader: &templDocLazyLoader{
+				openDocHeaders: map[string]docHeader{
+					"/foo.go": &goDocHeader{pkgName: "foo_pkg"},
+				},
+			},
+			doc: lsp.TextDocumentIdentifier{
+				URI: lsp.DocumentURI("file:///foo.go"),
+			},
+			expected: true,
+		},
+		{
+			name: "doc not loaded",
+			loader: &templDocLazyLoader{
+				openDocHeaders: map[string]docHeader{},
+			},
+			doc: lsp.TextDocumentIdentifier{
+				URI: lsp.DocumentURI("file:///foo.go"),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.loader.HasLoaded(tt.doc))
 		})
 	}
 }

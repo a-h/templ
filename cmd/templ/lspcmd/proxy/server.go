@@ -368,6 +368,12 @@ var supportedCodeActions = map[string]bool{}
 func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (result []lsp.CodeAction, err error) {
 	p.Log.Info("client -> server: CodeAction", slog.Any("params", params))
 	defer p.Log.Info("client -> server: CodeAction end")
+
+	if p.NoPreload && !p.templDocLazyLoader.HasLoaded(params.TextDocument) {
+		p.Log.Error("lazy loader has not loaded document", slog.Any("params", params))
+		return nil, nil
+	}
+
 	isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI)
 	if !isTemplFile {
 		return p.Target.CodeAction(ctx, params)
