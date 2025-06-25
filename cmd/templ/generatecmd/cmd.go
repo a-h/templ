@@ -135,23 +135,54 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	events := make(chan fsnotify.Event)
 	// Count of events currently being processed by the event handler.
 	var eventsWG sync.WaitGroup
-	// Used to check that the event handler has completed.
-	var eventHandlerWG sync.WaitGroup
 	// For errs from the watcher.
 	errs := make(chan error)
 	// Tracks whether errors occurred during the generation process.
 	var errorCount atomic.Int64
-	// For triggering actions after generation has completed.
-	postGeneration := make(chan *GenerationEvent, 256)
 	// Used to check that the post-generation handler has completed.
 	var postGenerationWG sync.WaitGroup
 	var postGenerationEventsWG sync.WaitGroup
+
+	handleCanceled := func(rw *watcher.RecursiveWatcher) {
+		cmd.Log.Debug("Context cancelled, closing watcher")
+		if err := rw.Close(); err != nil {
+			cmd.Log.Error("Failed to close watcher", slog.Any("error", err))
+		}
+		cmd.Log.Debug("Waiting for events to be processed")
+		eventsWG.Wait()
+		cmd.Log.Debug(
+			"All pending events processed, waiting for pending post-generation events to complete",
+		)
+		postGenerationEventsWG.Wait()
+		cmd.Log.Debug(
+			"All post-generation events processed, deleting watch mode text files",
+			slog.Int64("errorCount", errorCount.Load()),
+		)
+		fileEvents := make(chan fsnotify.Event)
+		go func() {
+			if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, fileEvents); err != nil {
+				cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
+				errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
+				return
+			}
+			close(fileEvents) // TODO should this be defer'red?
+		}()
+		for event := range fileEvents {
+			if strings.HasSuffix(event.Name, "_templ.go") || strings.HasSuffix(event.Name, ".templ") {
+				watchModeFileName := templruntime.GetDevModeTextFileName(event.Name)
+				if err := os.Remove(watchModeFileName); err != nil && !errors.Is(err, os.ErrNotExist) {
+					cmd.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
+				}
+			}
+		}
+	}
 
 	// Waitgroup for the push process.
 	var pushHandlerWG sync.WaitGroup
 
 	// Start process to push events into the channel.
 	pushHandlerWG.Add(1)
+
 	go func() {
 		defer pushHandlerWG.Done()
 		defer close(events)
@@ -178,38 +209,14 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		}
 		cmd.Log.Debug("Waiting for context to be cancelled to stop watching files")
 		<-ctx.Done()
-		cmd.Log.Debug("Context cancelled, closing watcher")
-		if err := rw.Close(); err != nil {
-			cmd.Log.Error("Failed to close watcher", slog.Any("error", err))
-		}
-		cmd.Log.Debug("Waiting for events to be processed")
-		eventsWG.Wait()
-		cmd.Log.Debug(
-			"All pending events processed, waiting for pending post-generation events to complete",
-		)
-		postGenerationEventsWG.Wait()
-		cmd.Log.Debug(
-			"All post-generation events processed, deleting watch mode text files",
-			slog.Int64("errorCount", errorCount.Load()),
-		)
-		fileEvents := make(chan fsnotify.Event)
-		go func() {
-			if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, fileEvents); err != nil {
-				cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
-				errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
-				return
-			}
-			close(fileEvents)
-		}()
-		for event := range fileEvents {
-			if strings.HasSuffix(event.Name, "_templ.go") || strings.HasSuffix(event.Name, ".templ") {
-				watchModeFileName := templruntime.GetDevModeTextFileName(event.Name)
-				if err := os.Remove(watchModeFileName); err != nil && !errors.Is(err, os.ErrNotExist) {
-					cmd.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
-				}
-			}
-		}
+		handleCanceled(rw)
 	}()
+
+	// For triggering actions after generation has completed.
+	postGeneration := make(chan *GenerationEvent, 256)
+
+	// Used to check that the event handler has completed.
+	var eventHandlerWG sync.WaitGroup
 
 	// Start process to handle events.
 	eventHandlerWG.Add(1)
