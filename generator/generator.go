@@ -1344,7 +1344,7 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 	}
 	attrKey := html.EscapeString(attr.Key.String())
 	// Value.
-	if (elementName == "a" && attrKey == "href") || (elementName == "form" && attrKey == "action") {
+	if isExpressionAttributeValueURL(elementName, attrKey) {
 		if err := g.writeExpressionAttributeValueURL(indentLevel, attr); err != nil {
 			return err
 		}
@@ -1788,4 +1788,24 @@ func stripTypes(parameters string) string {
 		variableNames = append(variableNames, strings.TrimSpace(p[0]))
 	}
 	return strings.Join(variableNames, ", ")
+}
+
+func isExpressionAttributeValueURL(elementName, attrName string) bool {
+	var elementAttributeLookup = map[string]string{
+		"a":      "href",
+		"form":   "action",
+		"link":   "href",
+		"object": "data",
+	}
+
+	expectedAttribute, exists := elementAttributeLookup[elementName]
+	if !exists {
+		return false
+	}
+
+	if attrName != expectedAttribute {
+		return false
+	}
+
+	return true
 }

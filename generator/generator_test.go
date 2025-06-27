@@ -70,3 +70,38 @@ templ Hello(name string) {
 		t.Errorf("expected an expression for the package name, template signature (Hello) and for the if (nam), got %#v", op.SourceMap.Expressions)
 	}
 }
+
+func TestIsExpressionAttributeValueURL(t *testing.T) {
+	testCases := []struct {
+		elementName    string
+		attrName       string
+		expectedOutput bool
+	}{
+		{
+			elementName:    "a",
+			attrName:       "href",
+			expectedOutput: true,
+		},
+		{
+			elementName:    "a",
+			attrName:       "class",
+			expectedOutput: false,
+		},
+		{
+			elementName:    "div",
+			attrName:       "class",
+			expectedOutput: false,
+		},
+		{
+			elementName:    "p",
+			attrName:       "href",
+			expectedOutput: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		if output := isExpressionAttributeValueURL(testCase.elementName, testCase.attrName); output != testCase.expectedOutput {
+			t.Errorf("expected %t got %t", testCase.expectedOutput, output)
+		}
+	}
+}
