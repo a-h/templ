@@ -1797,15 +1797,12 @@ func isExpressionAttributeValueURL(elementName, attrName string) bool {
 		"link":   "href",
 		"object": "data",
 	}
-
 	expectedAttribute, exists := elementAttributeLookup[elementName]
 	if !exists {
 		return false
 	}
-
 	if attrName != expectedAttribute {
 		return false
 	}
-
 	return true
 }
