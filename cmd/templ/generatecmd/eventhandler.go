@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd/syncmap"
+	"github.com/a-h/templ/cmd/templ/generatecmd/syncset"
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
@@ -56,8 +57,7 @@ func NewFSEventHandler(
 		Log:                   log,
 		dir:                   dir,
 		fileNameToLastModTime: syncmap.New[string, time.Time](),
-		fileNameToError:       make(map[string]struct{}),
-		fileNameToErrorMutex:  &sync.Mutex{},
+		fileNameToError:       syncset.New[string](),
 		fileNameToOutput:      syncmap.New[string, generator.GeneratorOutput](),
 		devMode:               devMode,
 		hashes:                make(map[string][sha256.Size]byte),
@@ -76,8 +76,7 @@ type FSEventHandler struct {
 	// dir is the root directory being processed.
 	dir                   string
 	fileNameToLastModTime *syncmap.Map[string, time.Time]
-	fileNameToError       map[string]struct{}
-	fileNameToErrorMutex  *sync.Mutex
+	fileNameToError       *syncset.Set[string]
 	fileNameToOutput      *syncmap.Map[string, generator.GeneratorOutput]
 	devMode               bool
 	hashes                map[string][sha256.Size]byte
@@ -154,7 +153,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	var diag []parser.Diagnostic
 	result, diag, err = h.generate(ctx, event.Name)
 	if err != nil {
-		h.SetError(event.Name, true)
+		h.fileNameToError.Set(event.Name)
 		return result, fmt.Errorf("failed to generate code for %q: %w", event.Name, err)
 	}
 	if len(diag) > 0 {
@@ -166,8 +165,8 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		}
 		return result, nil
 	}
-	if errorCleared, errorCount := h.SetError(event.Name, false); errorCleared {
-		h.Log.Info("Error cleared", slog.String("file", event.Name), slog.Int("errors", errorCount))
+	if errorCleared := h.fileNameToError.Delete(event.Name); errorCleared {
+		h.Log.Info("Error cleared", slog.String("file", event.Name), slog.Int("errors", h.fileNameToError.Count()))
 	}
 	h.Log.Debug("Generated code", slog.String("file", event.Name), slog.Duration("in", time.Since(start)))
 
@@ -181,17 +180,6 @@ func goFileIsUpToDate(templFileName string, templFileLastMod time.Time) (upToDat
 		return false
 	}
 	return goFileInfo.ModTime().After(templFileLastMod)
-}
-
-func (h *FSEventHandler) SetError(fileName string, hasError bool) (previouslyHadError bool, errorCount int) {
-	h.fileNameToErrorMutex.Lock()
-	defer h.fileNameToErrorMutex.Unlock()
-	_, previouslyHadError = h.fileNameToError[fileName]
-	delete(h.fileNameToError, fileName)
-	if hasError {
-		h.fileNameToError[fileName] = struct{}{}
-	}
-	return previouslyHadError, len(h.fileNameToError)
 }
 
 func (h *FSEventHandler) UpsertHash(fileName string, hash [sha256.Size]byte) (updated bool) {
