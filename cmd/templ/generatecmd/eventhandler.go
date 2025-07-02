@@ -117,7 +117,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
 	fileInfo, err := os.Stat(event.Name)
 	if err != nil {
-		return GenerateResult{}, fmt.Errorf("failed to stat file: %v", event.Name)
+		return GenerateResult{}, fmt.Errorf("failed to stat %q: %w", event.Name, err)
 	}
 	mustBeInTheFuture := func(previous, updated time.Time) bool {
 		return updated.After(previous)
