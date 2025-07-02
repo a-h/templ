@@ -412,7 +412,7 @@ func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err e
 	teardown = func(t *testing.T) {
 		cancel()
 		if cmdErr := wg.Wait(); cmdErr != nil {
-			t.Errorf("failed to run generate cmd: %v", err)
+			t.Errorf("failed to run generate cmd: %v", cmdErr)
 		}
 		if err = os.RemoveAll(appDir); err != nil {
 			t.Fatalf("failed to remove test dir %q: %v", appDir, err)
