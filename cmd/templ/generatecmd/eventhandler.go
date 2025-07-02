@@ -58,8 +58,7 @@ func NewFSEventHandler(
 		fileNameToLastModTime: syncmap.New[string, time.Time](),
 		fileNameToError:       make(map[string]struct{}),
 		fileNameToErrorMutex:  &sync.Mutex{},
-		fileNameToOutput:      make(map[string]generator.GeneratorOutput),
-		fileNameToOutputMutex: &sync.Mutex{},
+		fileNameToOutput:      syncmap.New[string, generator.GeneratorOutput](),
 		devMode:               devMode,
 		hashes:                make(map[string][sha256.Size]byte),
 		hashesMutex:           &sync.Mutex{},
@@ -75,22 +74,20 @@ func NewFSEventHandler(
 type FSEventHandler struct {
 	Log *slog.Logger
 	// dir is the root directory being processed.
-	dir                        string
-	fileNameToLastModTime      *syncmap.Map[string, time.Time]
-	fileNameToLastModTimeMutex *sync.Mutex
-	fileNameToError            map[string]struct{}
-	fileNameToErrorMutex       *sync.Mutex
-	fileNameToOutput           map[string]generator.GeneratorOutput
-	fileNameToOutputMutex      *sync.Mutex
-	devMode                    bool
-	hashes                     map[string][sha256.Size]byte
-	hashesMutex                *sync.Mutex
-	genOpts                    []generator.GenerateOpt
-	genSourceMapVis            bool
-	Errors                     []error
-	keepOrphanedFiles          bool
-	writer                     func(string, []byte) error
-	lazy                       bool
+	dir                   string
+	fileNameToLastModTime *syncmap.Map[string, time.Time]
+	fileNameToError       map[string]struct{}
+	fileNameToErrorMutex  *sync.Mutex
+	fileNameToOutput      *syncmap.Map[string, generator.GeneratorOutput]
+	devMode               bool
+	hashes                map[string][sha256.Size]byte
+	hashesMutex           *sync.Mutex
+	genOpts               []generator.GenerateOpt
+	genSourceMapVis       bool
+	Errors                []error
+	keepOrphanedFiles     bool
+	writer                func(string, []byte) error
+	lazy                  bool
 }
 
 type GenerateResult struct {
@@ -264,13 +261,11 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		}
 
 		// Check whether the change would require a recompilation to take effect.
-		h.fileNameToOutputMutex.Lock()
-		defer h.fileNameToOutputMutex.Unlock()
-		previous := h.fileNameToOutput[fileName]
-		if generator.HasChanged(previous, generatorOutput) {
+		previous, hasPrevious := h.fileNameToOutput.Get(fileName)
+		if hasPrevious && generator.HasChanged(previous, generatorOutput) {
 			result.GoUpdated = true
 		}
-		h.fileNameToOutput[fileName] = generatorOutput
+		h.fileNameToOutput.Set(fileName, generatorOutput)
 	}
 
 	parsedDiagnostics, err := parser.Diagnose(t)
