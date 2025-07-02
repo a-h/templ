@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/a-h/templ/cmd/templ/generatecmd/syncmap"
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
@@ -52,22 +53,21 @@ func NewFSEventHandler(
 		dir, _ = filepath.Abs(dir)
 	}
 	fseh := &FSEventHandler{
-		Log:                        log,
-		dir:                        dir,
-		fileNameToLastModTime:      make(map[string]time.Time),
-		fileNameToLastModTimeMutex: &sync.Mutex{},
-		fileNameToError:            make(map[string]struct{}),
-		fileNameToErrorMutex:       &sync.Mutex{},
-		fileNameToOutput:           make(map[string]generator.GeneratorOutput),
-		fileNameToOutputMutex:      &sync.Mutex{},
-		devMode:                    devMode,
-		hashes:                     make(map[string][sha256.Size]byte),
-		hashesMutex:                &sync.Mutex{},
-		genOpts:                    genOpts,
-		genSourceMapVis:            genSourceMapVis,
-		keepOrphanedFiles:          keepOrphanedFiles,
-		writer:                     fileWriter,
-		lazy:                       lazy,
+		Log:                   log,
+		dir:                   dir,
+		fileNameToLastModTime: syncmap.New[string, time.Time](),
+		fileNameToError:       make(map[string]struct{}),
+		fileNameToErrorMutex:  &sync.Mutex{},
+		fileNameToOutput:      make(map[string]generator.GeneratorOutput),
+		fileNameToOutputMutex: &sync.Mutex{},
+		devMode:               devMode,
+		hashes:                make(map[string][sha256.Size]byte),
+		hashesMutex:           &sync.Mutex{},
+		genOpts:               genOpts,
+		genSourceMapVis:       genSourceMapVis,
+		keepOrphanedFiles:     keepOrphanedFiles,
+		writer:                fileWriter,
+		lazy:                  lazy,
 	}
 	return fseh
 }
@@ -76,7 +76,7 @@ type FSEventHandler struct {
 	Log *slog.Logger
 	// dir is the root directory being processed.
 	dir                        string
-	fileNameToLastModTime      map[string]time.Time
+	fileNameToLastModTime      *syncmap.Map[string, time.Time]
 	fileNameToLastModTimeMutex *sync.Mutex
 	fileNameToError            map[string]struct{}
 	fileNameToErrorMutex       *sync.Mutex
@@ -121,7 +121,14 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	}
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
-	lastModTime, updatedModTime := h.UpsertLastModTime(event.Name)
+	fileInfo, err := os.Stat(event.Name)
+	if err != nil {
+		return GenerateResult{}, fmt.Errorf("failed to stat file: %v", event.Name)
+	}
+	mustBeInTheFuture := func(previous, updated time.Time) bool {
+		return updated.After(previous)
+	}
+	updatedModTime := h.fileNameToLastModTime.CompareAndSwap(event.Name, mustBeInTheFuture, fileInfo.ModTime())
 	if !updatedModTime {
 		h.Log.Debug("Skipping file because it wasn't updated", slog.String("file", event.Name))
 		return GenerateResult{}, nil
@@ -140,7 +147,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	// Handle templ files.
 
 	// If the go file is newer than the templ file, skip generation, because it's up-to-date.
-	if h.lazy && goFileIsUpToDate(event.Name, lastModTime) {
+	if h.lazy && goFileIsUpToDate(event.Name, fileInfo.ModTime()) {
 		h.Log.Debug("Skipping file because the Go file is up-to-date", slog.String("file", event.Name))
 		return GenerateResult{}, nil
 	}
@@ -188,22 +195,6 @@ func (h *FSEventHandler) SetError(fileName string, hasError bool) (previouslyHad
 		h.fileNameToError[fileName] = struct{}{}
 	}
 	return previouslyHadError, len(h.fileNameToError)
-}
-
-func (h *FSEventHandler) UpsertLastModTime(fileName string) (modTime time.Time, updated bool) {
-	fileInfo, err := os.Stat(fileName)
-	if err != nil {
-		return modTime, false
-	}
-	h.fileNameToLastModTimeMutex.Lock()
-	defer h.fileNameToLastModTimeMutex.Unlock()
-	previousModTime := h.fileNameToLastModTime[fileName]
-	currentModTime := fileInfo.ModTime()
-	if !currentModTime.After(previousModTime) {
-		return currentModTime, false
-	}
-	h.fileNameToLastModTime[fileName] = currentModTime
-	return currentModTime, true
 }
 
 func (h *FSEventHandler) UpsertHash(fileName string, hash [sha256.Size]byte) (updated bool) {
