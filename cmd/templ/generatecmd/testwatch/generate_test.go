@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -398,13 +399,13 @@ func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err e
 	// Wait for server to start.
 	if err = waitForURL(args.AppURL); err != nil {
 		cancel()
-		wg.Wait()
-		return args, teardown, fmt.Errorf("failed to start app server, command error %v: %w", wg.Wait(), err)
+		cmdErr := wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start app server: %w", errors.Join(cmdErr, err))
 	}
 	if err = waitForURL(args.ProxyURL); err != nil {
 		cancel()
-		wg.Wait()
-		return args, teardown, fmt.Errorf("failed to start proxy server, command error %v: %w", wg.Wait(), err)
+		cmdErr := wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start proxy server: %w", errors.Join(cmdErr, err))
 	}
 
 	// Wait for exit.
