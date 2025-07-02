@@ -5,13 +5,13 @@ import "sync"
 func New[K comparable, V any]() *Map[K, V] {
 	return &Map[K, V]{
 		m:  make(map[K]V),
-		mu: new(sync.Mutex),
+		mu: sync.Mutex{},
 	}
 }
 
 type Map[K comparable, V any] struct {
 	m  map[K]V
-	mu *sync.Mutex
+	mu sync.Mutex
 }
 
 func (m *Map[K, V]) Get(key K) (v V, ok bool) {
