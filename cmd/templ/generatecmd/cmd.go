@@ -194,12 +194,12 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		)
 		fileEvents := make(chan fsnotify.Event)
 		go func() {
+			defer close(fileEvents)
 			if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, fileEvents); err != nil {
 				cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
 				errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
 				return
 			}
-			close(fileEvents)
 		}()
 		for event := range fileEvents {
 			if strings.HasSuffix(event.Name, "_templ.go") || strings.HasSuffix(event.Name, ".templ") {
