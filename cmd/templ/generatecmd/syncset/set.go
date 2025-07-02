@@ -5,13 +5,13 @@ import "sync"
 func New[T comparable]() *Set[T] {
 	return &Set[T]{
 		m:  make(map[T]struct{}),
-		mu: new(sync.Mutex),
+		mu: sync.Mutex{},
 	}
 }
 
 type Set[T comparable] struct {
 	m  map[T]struct{}
-	mu *sync.Mutex
+	mu sync.Mutex
 }
 
 func (s *Set[T]) Get(key T) (ok bool) {
