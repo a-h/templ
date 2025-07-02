@@ -60,8 +60,7 @@ func NewFSEventHandler(
 		fileNameToError:       syncset.New[string](),
 		fileNameToOutput:      syncmap.New[string, generator.GeneratorOutput](),
 		devMode:               devMode,
-		hashes:                make(map[string][sha256.Size]byte),
-		hashesMutex:           &sync.Mutex{},
+		hashes:                syncmap.New[string, [sha256.Size]byte](),
 		genOpts:               genOpts,
 		genSourceMapVis:       genSourceMapVis,
 		keepOrphanedFiles:     keepOrphanedFiles,
@@ -79,8 +78,7 @@ type FSEventHandler struct {
 	fileNameToError       *syncset.Set[string]
 	fileNameToOutput      *syncmap.Map[string, generator.GeneratorOutput]
 	devMode               bool
-	hashes                map[string][sha256.Size]byte
-	hashesMutex           *sync.Mutex
+	hashes                *syncmap.Map[string, [sha256.Size]byte]
 	genOpts               []generator.GenerateOpt
 	genSourceMapVis       bool
 	Errors                []error
@@ -182,17 +180,6 @@ func goFileIsUpToDate(templFileName string, templFileLastMod time.Time) (upToDat
 	return goFileInfo.ModTime().After(templFileLastMod)
 }
 
-func (h *FSEventHandler) UpsertHash(fileName string, hash [sha256.Size]byte) (updated bool) {
-	h.hashesMutex.Lock()
-	defer h.hashesMutex.Unlock()
-	lastHash := h.hashes[fileName]
-	if lastHash == hash {
-		return false
-	}
-	h.hashes[fileName] = hash
-	return true
-}
-
 // generate Go code for a single template.
 // If a basePath is provided, the filename included in error messages is relative to it.
 func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result GenerateResult, diagnostics []parser.Diagnostic, err error) {
@@ -228,7 +215,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 
 	// Hash output, and write out the file if the goCodeHash has changed.
 	goCodeHash := sha256.Sum256(formattedGoCode)
-	if h.UpsertHash(targetFileName, goCodeHash) {
+	if h.hashes.CompareAndSwap(targetFileName, syncmap.UpdateIfChanged, goCodeHash) {
 		result.WatchedfileUpdated = true
 		if err = h.writer(targetFileName, formattedGoCode); err != nil {
 			return result, nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
@@ -241,7 +228,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		h.Log.Debug("Writing development mode text file", slog.String("file", fileName), slog.String("output", txtFileName))
 		joined := strings.Join(generatorOutput.Literals, "\n")
 		txtHash := sha256.Sum256([]byte(joined))
-		if h.UpsertHash(txtFileName, txtHash) {
+		if h.hashes.CompareAndSwap(txtFileName, syncmap.UpdateIfChanged, txtHash) {
 			result.TextUpdated = true
 			if err = os.WriteFile(txtFileName, []byte(joined), 0o644); err != nil {
 				return result, nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)

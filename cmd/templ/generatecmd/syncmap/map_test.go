@@ -57,16 +57,29 @@ func TestMap(t *testing.T) {
 				t.Errorf("Expected value 50 for key 'key1', got %d", v)
 			}
 		})
-		t.Run("Can use UpdateIfChanged function", func(t *testing.T) {
-			m := New[string, int]()
-			m.Set("key1", 42)
-			swapped := m.CompareAndSwap("key1", UpdateIfChanged, 50)
-			if !swapped {
-				t.Error("Expected CompareAndSwap to succeed with UpdateIfChanged")
-			}
-			if v, ok := m.Get("key1"); !ok || v != 50 {
-				t.Errorf("Expected value 50 for key 'key1', got %d", v)
-			}
+		t.Run("UpdateIfChanged", func(t *testing.T) {
+			t.Run("Swaps if the value is different", func(t *testing.T) {
+				m := New[string, int]()
+				m.Set("key1", 42)
+				swapped := m.CompareAndSwap("key1", UpdateIfChanged, 50)
+				if !swapped {
+					t.Error("Expected CompareAndSwap to succeed with UpdateIfChanged")
+				}
+				if v, ok := m.Get("key1"); !ok || v != 50 {
+					t.Errorf("Expected value 50 for key 'key1', got %d", v)
+				}
+			})
+			t.Run("Does not swap if the value is the same", func(t *testing.T) {
+				m := New[string, int]()
+				m.Set("key1", 42)
+				swapped := m.CompareAndSwap("key1", UpdateIfChanged, 42)
+				if swapped {
+					t.Error("Expected CompareAndSwap to fail with UpdateIfChanged for same value")
+				}
+				if v, ok := m.Get("key1"); !ok || v != 42 {
+					t.Errorf("Expected value 42 for key 'key1', got %d", v)
+				}
+			})
 		})
 	})
 }
