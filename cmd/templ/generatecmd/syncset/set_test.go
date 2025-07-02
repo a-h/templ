@@ -13,20 +13,8 @@ func TestSet(t *testing.T) {
 	})
 	t.Run("Set", func(t *testing.T) {
 		s := New[string]()
-		t.Run("Returns true for new items", func(t *testing.T) {
-			if ok := s.Set("foo"); !ok {
-				t.Error("expected Set to return true for new item")
-			}
-		})
-		t.Run("Returns false for existing items", func(t *testing.T) {
-			if !s.Get("foo") {
-				t.Error("expected Get to return true for item that was just set")
-			}
-		})
-		t.Run("Returns true for items that are already in the set", func(t *testing.T) {
-			if ok := s.Set("foo"); !ok {
-				t.Error("expected Set to return true for existing item")
-			}
+		t.Run("Can set new item", func(t *testing.T) {
+			s.Set("foo")
 			if !s.Get("foo") {
 				t.Error("expected Get to return true for item that was just set")
 			}

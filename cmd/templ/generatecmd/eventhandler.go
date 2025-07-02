@@ -15,7 +15,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd/syncmap"
@@ -25,6 +24,7 @@ import (
 	"github.com/a-h/templ/parser/v2"
 	"github.com/a-h/templ/runtime"
 	"github.com/fsnotify/fsnotify"
+	"golang.org/x/sync/errgroup"
 )
 
 type FileWriterFunc func(name string, contents []byte) error
@@ -83,7 +83,7 @@ type FSEventHandler struct {
 	genSourceMapVis       bool
 	Errors                []error
 	keepOrphanedFiles     bool
-	writer                func(string, []byte) error
+	writer                FileWriterFunc
 	lazy                  bool
 }
 
@@ -283,23 +283,17 @@ func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileNa
 		return err
 	}
 	var templContents, goContents []byte
-	var templErr, goErr error
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		templContents, templErr = os.ReadFile(templFileName)
-	}()
-	go func() {
-		defer wg.Done()
-		goContents, goErr = os.ReadFile(goFileName)
-	}()
-	wg.Wait()
-	if templErr != nil {
-		return templErr
-	}
-	if goErr != nil {
-		return templErr
+	var grp errgroup.Group
+	grp.Go(func() (err error) {
+		templContents, err = os.ReadFile(templFileName)
+		return err
+	})
+	grp.Go(func() (err error) {
+		goContents, err = os.ReadFile(goFileName)
+		return err
+	})
+	if err := grp.Wait(); err != nil {
+		return err
 	}
 	component := visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap)
 

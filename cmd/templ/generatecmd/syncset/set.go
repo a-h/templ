@@ -21,12 +21,10 @@ func (s *Set[T]) Get(key T) (ok bool) {
 	return ok
 }
 
-func (s *Set[T]) Set(key T) (ok bool) {
+func (s *Set[T]) Set(key T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	_, ok = s.m[key]
 	s.m[key] = struct{}{}
-	return ok
 }
 
 func (s *Set[T]) Delete(key T) (deleted bool) {
