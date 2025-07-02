@@ -81,26 +81,26 @@ const DefaultWatchPattern = `(.+\.go$)|(.+\.templ$)`
 
 func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, log *slog.Logger, help bool, err error) {
 	cmd := flag.NewFlagSet("generate", flag.ContinueOnError)
-	fileNameFlag := cmd.String("f", "", "")
-	pathFlag := cmd.String("path", ".", "")
+	cmd.StringVar(&cmdArgs.FileName, "f", "", "")
+	cmd.StringVar(&cmdArgs.Path, "path", ".", "")
 	toStdoutFlag := cmd.Bool("stdout", false, "")
-	sourceMapVisualisationsFlag := cmd.Bool("source-map-visualisations", false, "")
-	includeVersionFlag := cmd.Bool("include-version", true, "")
-	includeTimestampFlag := cmd.Bool("include-timestamp", false, "")
-	watchFlag := cmd.Bool("watch", false, "")
+	cmd.BoolVar(&cmdArgs.GenerateSourceMapVisualisations, "source-map-visualisations", false, "")
+	cmd.BoolVar(&cmdArgs.IncludeVersion, "include-version", true, "")
+	cmd.BoolVar(&cmdArgs.IncludeTimestamp, "include-timestamp", false, "")
+	cmd.BoolVar(&cmdArgs.Watch, "watch", false, "")
 	watchPatternFlag := cmd.String("watch-pattern", DefaultWatchPattern, "")
-	openBrowserFlag := cmd.Bool("open-browser", true, "")
-	cmdFlag := cmd.String("cmd", "", "")
-	proxyFlag := cmd.String("proxy", "", "")
-	proxyPortFlag := cmd.Int("proxyport", 7331, "")
-	proxyBindFlag := cmd.String("proxybind", "127.0.0.1", "")
-	notifyProxyFlag := cmd.Bool("notify-proxy", false, "")
-	workerCountFlag := cmd.Int("w", runtime.NumCPU(), "")
-	pprofPortFlag := cmd.Int("pprof", 0, "")
-	keepOrphanedFilesFlag := cmd.Bool("keep-orphaned-files", false, "")
+	cmd.BoolVar(&cmdArgs.OpenBrowser, "open-browser", true, "")
+	cmd.StringVar(&cmdArgs.Command, "cmd", "", "")
+	cmd.StringVar(&cmdArgs.Proxy, "proxy", "", "")
+	cmd.IntVar(&cmdArgs.ProxyPort, "proxyport", 7331, "")
+	cmd.StringVar(&cmdArgs.ProxyBind, "proxybind", "127.0.0.1", "")
+	cmd.BoolVar(&cmdArgs.NotifyProxy, "notify-proxy", false, "")
+	cmd.IntVar(&cmdArgs.WorkerCount, "w", runtime.NumCPU(), "")
+	cmd.IntVar(&cmdArgs.PPROFPort, "pprof", 0, "")
+	cmd.BoolVar(&cmdArgs.KeepOrphanedFiles, "keep-orphaned-files", false, "")
+	cmd.BoolVar(&cmdArgs.Lazy, "lazy", false, "")
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
-	lazyFlag := cmd.Bool("lazy", false, "")
 	helpFlag := cmd.Bool("help", false, "")
 	if err = cmd.Parse(args); err != nil {
 		return Arguments{}, nil, false, fmt.Errorf("failed to parse arguments: %w", err)
@@ -108,41 +108,21 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 
 	log = sloghandler.NewLogger(*logLevelFlag, *verboseFlag, stderr)
 
-	if *watchFlag && *fileNameFlag != "" {
+	if cmdArgs.Watch && cmdArgs.FileName != "" {
 		return Arguments{}, log, *helpFlag, fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
-	}
-
-	// Default to writing to files unless the stdout flag is set.
-	fw := FileWriter
-	if *toStdoutFlag {
-		if *fileNameFlag == "" {
-			return Arguments{}, log, *helpFlag, fmt.Errorf("only a single file can be output to stdout, add the -f flag to specify the file to generate code for")
-		}
-		fw = WriterFileWriter(stdout)
-	}
-
-	cmdArgs = Arguments{
-		FileName:                        *fileNameFlag,
-		FileWriter:                      fw,
-		Path:                            *pathFlag,
-		Watch:                           *watchFlag,
-		OpenBrowser:                     *openBrowserFlag,
-		Command:                         *cmdFlag,
-		ProxyBind:                       *proxyBindFlag,
-		ProxyPort:                       *proxyPortFlag,
-		Proxy:                           *proxyFlag,
-		NotifyProxy:                     *notifyProxyFlag,
-		WorkerCount:                     *workerCountFlag,
-		GenerateSourceMapVisualisations: *sourceMapVisualisationsFlag,
-		IncludeVersion:                  *includeVersionFlag,
-		IncludeTimestamp:                *includeTimestampFlag,
-		PPROFPort:                       *pprofPortFlag,
-		KeepOrphanedFiles:               *keepOrphanedFilesFlag,
-		Lazy:                            *lazyFlag,
 	}
 	cmdArgs.WatchPattern, err = regexp.Compile(*watchPatternFlag)
 	if err != nil {
 		return cmdArgs, log, *helpFlag, fmt.Errorf("invalid watch pattern %q: %w", *watchPatternFlag, err)
+	}
+
+	// Default to writing to files unless the stdout flag is set.
+	cmdArgs.FileWriter = FileWriter
+	if *toStdoutFlag {
+		if cmdArgs.FileName == "" {
+			return Arguments{}, log, *helpFlag, fmt.Errorf("only a single file can be output to stdout, add the -f flag to specify the file to generate code for")
+		}
+		cmdArgs.FileWriter = WriterFileWriter(stdout)
 	}
 
 	return cmdArgs, log, *helpFlag, nil
