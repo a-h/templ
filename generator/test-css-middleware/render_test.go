@@ -2,16 +2,15 @@ package testcssmiddleware
 
 import (
 	_ "embed"
-	"errors"
 	"fmt"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/a-h/htmlformat"
 	"github.com/a-h/templ"
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/sync/errgroup"
 )
 
 //go:embed expected.html
@@ -21,20 +20,18 @@ var expectedCSS = `.red_050e5e03{color:red;}
 `
 
 func Test(t *testing.T) {
-	errs := make([]error, 3)
-	var wg sync.WaitGroup
-	wg.Add(3)
+	var wg errgroup.Group
 
 	// Format the expected value.
-	go func() {
-		defer wg.Done()
+	wg.Go(func() error {
 		e := new(strings.Builder)
 		err := htmlformat.Fragment(e, strings.NewReader(expected))
 		if err != nil {
-			errs[0] = fmt.Errorf("expected html formatting error: %w", err)
+			return fmt.Errorf("expected html formatting error: %w", err)
 		}
 		expected = e.String()
-	}()
+		return nil
+	})
 
 	component := render("Red text")
 	h := templ.Handler(component)
@@ -42,38 +39,34 @@ func Test(t *testing.T) {
 
 	// Create the actual value.
 	var actual string
-	go func() {
-		defer wg.Done()
-
+	wg.Go(func() error {
 		w := httptest.NewRecorder()
 		cssmw.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
 
 		a := new(strings.Builder)
 		err := htmlformat.Fragment(a, w.Body)
 		if err != nil {
-			errs[1] = fmt.Errorf("actual html formatting error: %w", err)
+			return fmt.Errorf("actual html formatting error: %w", err)
 		}
 		actual = a.String()
-	}()
+		return nil
+	})
 
 	var actualCSS string
-	go func() {
-		defer wg.Done()
-
+	wg.Go(func() error {
 		w := httptest.NewRecorder()
 		cssmw.ServeHTTP(w, httptest.NewRequest("GET", "/styles/templ.css", nil))
 
 		a := new(strings.Builder)
 		err := htmlformat.Fragment(a, w.Body)
 		if err != nil {
-			errs[2] = fmt.Errorf("actual html formatting error: %w", err)
+			return fmt.Errorf("actual html formatting error: %w", err)
 		}
 		actualCSS = a.String()
-	}()
+		return nil
+	})
 
-	wg.Wait()
-
-	if err := errors.Join(errs...); err != nil {
+	if err := wg.Wait(); err != nil {
 		t.Error(err)
 	}
 	if diff := cmp.Diff(expected, actual); diff != "" {
