@@ -483,6 +483,70 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (
 					return err
 				}
 			}
+		// Integer types
+		case int:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case int8:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case int16:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case int32:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case int64:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		// Unsigned integer types
+		case uint:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case uint8:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case uint16:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case uint32:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case uint64:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case uintptr:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		// Float types
+		case float32:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case float64:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		// Complex types
+		case complex64:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case complex128:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
 		case KeyValue[string, bool]:
 			if value.Value {
 				if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value.Key), `"`); err != nil {

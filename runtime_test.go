@@ -612,3 +612,117 @@ func TestNonce(t *testing.T) {
 		}
 	})
 }
+
+func TestRenderAttributes(t *testing.T) {
+	tests := []struct {
+		name       string
+		attributes templ.Attributes
+		expected   string
+	}{
+		{
+			name: "string attributes are rendered",
+			attributes: templ.Attributes{
+				"class": "test-class",
+				"id":    "test-id",
+			},
+			expected: ` class="test-class" id="test-id"`,
+		},
+		{
+			name: "integer types are rendered as strings",
+			attributes: templ.Attributes{
+				"int":   42,
+				"int8":  int8(8),
+				"int16": int16(16),
+				"int32": int32(32),
+				"int64": int64(64),
+			},
+			expected: ` int="42" int16="16" int32="32" int64="64" int8="8"`,
+		},
+		{
+			name: "unsigned integer types are rendered as strings",
+			attributes: templ.Attributes{
+				"uint":    uint(42),
+				"uint8":   uint8(8),
+				"uint16":  uint16(16),
+				"uint32":  uint32(32),
+				"uint64":  uint64(64),
+				"uintptr": uintptr(100),
+			},
+			expected: ` uint="42" uint16="16" uint32="32" uint64="64" uint8="8" uintptr="100"`,
+		},
+		{
+			name: "float types are rendered as strings",
+			attributes: templ.Attributes{
+				"float32": float32(3.14),
+				"float64": float64(2.718),
+			},
+			expected: ` float32="3.14" float64="2.718"`,
+		},
+		{
+			name: "complex types are rendered as strings",
+			attributes: templ.Attributes{
+				"complex64":  complex64(1 + 2i),
+				"complex128": complex128(3 + 4i),
+			},
+			expected: ` complex128="(3+4i)" complex64="(1+2i)"`,
+		},
+		{
+			name: "boolean attributes are rendered correctly",
+			attributes: templ.Attributes{
+				"checked":  true,
+				"disabled": false,
+			},
+			expected: ` checked`,
+		},
+		{
+			name: "mixed types are rendered correctly",
+			attributes: templ.Attributes{
+				"class":  "button",
+				"value":  42,
+				"width":  float64(100.5),
+				"hidden": false,
+				"active": true,
+			},
+			expected: ` active class="button" value="42" width="100.5"`,
+		},
+		{
+			name: "nil pointer attributes are not rendered",
+			attributes: templ.Attributes{
+				"optional": (*string)(nil),
+				"visible":  (*bool)(nil),
+			},
+			expected: ``,
+		},
+		{
+			name: "non-nil pointer attributes are rendered",
+			attributes: templ.Attributes{
+				"title":   stringPtr("test title"),
+				"enabled": boolPtr(true),
+			},
+			expected: ` enabled title="test title"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			err := templ.RenderAttributes(context.Background(), &buf, tt.attributes)
+			if err != nil {
+				t.Fatalf("RenderAttributes failed: %v", err)
+			}
+
+			actual := buf.String()
+			if actual != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, actual)
+			}
+		})
+	}
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func boolPtr(b bool) *bool {
+	return &b
+}
