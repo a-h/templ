@@ -112,6 +112,9 @@ func ptr[T any](x T) *T {
 	return &x
 }
 
+//go:embed expected_numeric_attributes.html
+var expectedNumericAttributes string
+
 func TestNumericAttributeTypes(t *testing.T) {
 	t.Parallel()
 	component := BasicTemplate(templ.Attributes{
@@ -125,9 +128,7 @@ func TestNumericAttributeTypes(t *testing.T) {
 		"bool-false":    false,
 	})
 
-	expected := `<div><a bool-true complex-value="(1+2i)" float-value="3.14" int-value="42" int64-value="9223372036854775807" string-value="text" uint-value="100">text</a><div bool-true complex-value="(1+2i)" float-value="3.14" int-value="42" int64-value="9223372036854775807" string-value="text" uint-value="100">text2</div><div>text3</div></div>`
-
-	diff, err := htmldiff.Diff(component, expected)
+	diff, err := htmldiff.Diff(component, expectedNumericAttributes)
 	if err != nil {
 		t.Fatal(err)
 	}
