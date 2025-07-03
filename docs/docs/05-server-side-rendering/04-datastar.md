@@ -185,7 +185,8 @@ func setupExamplesTemplCounter(examplesRouter chi.Router, sessionSignals session
 	})
 
 	return nil
-}```
+}
+```
 
 The `atomic.Uint32` type stores the global state. The `userVal` function is a helper that retrieves the user's session state. The `updateGlobal` function increments the global state.
 
