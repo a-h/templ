@@ -125,7 +125,6 @@ func TestNumericAttributeTypes(t *testing.T) {
 		"bool-false":    false,
 	})
 
-	// Expected output should include all numeric values converted to strings
 	expected := `<div><a bool-true complex-value="(1+2i)" float-value="3.14" int-value="42" int64-value="9223372036854775807" string-value="text" uint-value="100">text</a><div bool-true complex-value="(1+2i)" float-value="3.14" int-value="42" int64-value="9223372036854775807" string-value="text" uint-value="100">text2</div><div>text3</div></div>`
 
 	diff, err := htmldiff.Diff(component, expected)
