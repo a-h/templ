@@ -483,7 +483,6 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (
 					return err
 				}
 			}
-		// Integer types
 		case int:
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
 				return err
@@ -504,7 +503,6 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
 				return err
 			}
-		// Unsigned integer types
 		case uint:
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
 				return err
@@ -529,7 +527,6 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
 				return err
 			}
-		// Float types
 		case float32:
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
 				return err
@@ -538,7 +535,6 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
 				return err
 			}
-		// Complex types
 		case complex64:
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
 				return err

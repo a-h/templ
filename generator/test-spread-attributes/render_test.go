@@ -113,15 +113,16 @@ func ptr[T any](x T) *T {
 }
 
 func TestNumericAttributeTypes(t *testing.T) {
+	t.Parallel()
 	component := BasicTemplate(templ.Attributes{
-		"int-value":      42,
-		"float-value":    3.14,
-		"uint-value":     uint(100),
-		"int64-value":    int64(9223372036854775807),
-		"complex-value":  complex(1, 2),
-		"string-value":   "text",
-		"bool-true":      true,
-		"bool-false":     false,
+		"int-value":     42,
+		"float-value":   3.14,
+		"uint-value":    uint(100),
+		"int64-value":   int64(9223372036854775807),
+		"complex-value": complex(1, 2),
+		"string-value":  "text",
+		"bool-true":     true,
+		"bool-false":    false,
 	})
 
 	// Expected output should include all numeric values converted to strings
