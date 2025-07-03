@@ -696,8 +696,8 @@ func TestRenderAttributes(t *testing.T) {
 		{
 			name: "non-nil pointer attributes are rendered",
 			attributes: templ.Attributes{
-				"title":   stringPtr("test title"),
-				"enabled": boolPtr(true),
+				"title":   ptr("test title"),
+				"enabled": ptr(true),
 			},
 			expected: ` enabled title="test title"`,
 		},
@@ -720,10 +720,6 @@ func TestRenderAttributes(t *testing.T) {
 	}
 }
 
-func stringPtr(s string) *string {
-	return &s
-}
-
-func boolPtr(b bool) *bool {
-	return &b
+func ptr[T any](x T) *T {
+	return &x
 }
