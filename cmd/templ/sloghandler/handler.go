@@ -10,6 +10,25 @@ import (
 	"github.com/fatih/color"
 )
 
+func NewLogger(logLevel string, verbose bool, stderr io.Writer) *slog.Logger {
+	if verbose {
+		logLevel = "debug"
+	}
+	level := slog.LevelInfo.Level()
+	switch logLevel {
+	case "debug":
+		level = slog.LevelDebug.Level()
+	case "warn":
+		level = slog.LevelWarn.Level()
+	case "error":
+		level = slog.LevelError.Level()
+	}
+	return slog.New(NewHandler(stderr, &slog.HandlerOptions{
+		AddSource: logLevel == "debug",
+		Level:     level,
+	}))
+}
+
 var _ slog.Handler = &Handler{}
 
 type Handler struct {

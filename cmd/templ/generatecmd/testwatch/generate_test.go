@@ -5,16 +5,15 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -22,6 +21,7 @@ import (
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"github.com/a-h/templ/internal/htmlfind"
 	"golang.org/x/net/html"
+	"golang.org/x/sync/errgroup"
 )
 
 //go:embed testdata/*
@@ -387,58 +387,33 @@ func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err e
 	args = NewTestArgs(moduleRoot, appDir, appPort, proxyBind, proxyPort)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	var wg sync.WaitGroup
-	var cmdErr error
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
+	var wg errgroup.Group
+	wg.Go(func() error {
 		command := fmt.Sprintf("go run . -port %d", args.AppPort)
 		if gzipEncoding {
 			command += " -gzip true"
 		}
-
-		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-
-		cmdErr = generatecmd.Run(ctx, log, generatecmd.Arguments{
-			Path:                            appDir,
-			Watch:                           true,
-			OpenBrowser:                     false,
-			Command:                         command,
-			ProxyBind:                       proxyBind,
-			ProxyPort:                       proxyPort,
-			Proxy:                           args.AppURL,
-			NotifyProxy:                     false,
-			WorkerCount:                     0,
-			GenerateSourceMapVisualisations: false,
-			IncludeVersion:                  false,
-			IncludeTimestamp:                false,
-			PPROFPort:                       0,
-			KeepOrphanedFiles:               false,
-		})
-	}()
+		return generatecmd.Run(ctx, io.Discard, io.Discard, []string{"-path", appDir, "-watch", "-proxybind", proxyBind, "-proxyport", strconv.Itoa(proxyPort), "-proxy", args.AppURL, "-open-browser=false", "-cmd", command})
+	})
 
 	// Wait for server to start.
 	if err = waitForURL(args.AppURL); err != nil {
 		cancel()
-		wg.Wait()
-		return args, teardown, fmt.Errorf("failed to start app server, command error %v: %w", cmdErr, err)
+		cmdErr := wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start app server: %w", errors.Join(cmdErr, err))
 	}
 	if err = waitForURL(args.ProxyURL); err != nil {
 		cancel()
-		wg.Wait()
-		return args, teardown, fmt.Errorf("failed to start proxy server, command error %v: %w", cmdErr, err)
+		cmdErr := wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start proxy server: %w", errors.Join(cmdErr, err))
 	}
 
 	// Wait for exit.
 	teardown = func(t *testing.T) {
 		cancel()
-		wg.Wait()
-		if cmdErr != nil {
-			t.Errorf("failed to run generate cmd: %v", err)
+		if cmdErr := wg.Wait(); cmdErr != nil {
+			t.Errorf("failed to run generate cmd: %v", cmdErr)
 		}
-
 		if err = os.RemoveAll(appDir); err != nil {
 			t.Fatalf("failed to remove test dir %q: %v", appDir, err)
 		}
@@ -498,16 +473,8 @@ func TestGenerateReturnsErrors(t *testing.T) {
 		t.Errorf("failed to replace text in file: %v", err)
 	}
 
-	log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-
 	// Run.
-	err = generatecmd.Run(context.Background(), log, generatecmd.Arguments{
-		Path:              appDir,
-		Watch:             false,
-		IncludeVersion:    false,
-		IncludeTimestamp:  false,
-		KeepOrphanedFiles: false,
-	})
+	err = generatecmd.Run(context.Background(), io.Discard, io.Discard, []string{"-path", appDir, "-include-version=false", "-include-timestamp=false", "-keep-orphaned-files=false"})
 	if err == nil {
 		t.Errorf("expected generation error, got %v", err)
 	}

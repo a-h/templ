@@ -6,46 +6,45 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 
 	"github.com/a-h/htmlformat"
 	"github.com/a-h/templ"
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/sync/errgroup"
 )
 
 func DiffStrings(expected, actual string) (diff string, err error) {
 	// Format both strings.
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	errs := make([]error, 2)
+	var wg errgroup.Group
 
 	// Format expected.
-	go func() {
-		defer wg.Done()
+	wg.Go(func() error {
 		e := new(strings.Builder)
 		err := htmlformat.Fragment(e, strings.NewReader(expected))
 		if err != nil {
-			errs[0] = fmt.Errorf("expected html formatting error: %w", err)
+			return fmt.Errorf("expected html formatting error: %w", err)
 		}
 		expected = e.String()
-	}()
+		return nil
+	})
 
 	// Format actual.
-	go func() {
-		defer wg.Done()
+	wg.Go(func() error {
 		a := new(strings.Builder)
 		err := htmlformat.Fragment(a, strings.NewReader(actual))
 		if err != nil {
-			errs[1] = fmt.Errorf("actual html formatting error: %w", err)
+			return fmt.Errorf("actual html formatting error: %w", err)
 		}
 		actual = a.String()
-	}()
+		return nil
+	})
 
 	// Wait for processing.
-	wg.Wait()
+	if err = wg.Wait(); err != nil {
+		return "", err
+	}
 
-	return cmp.Diff(expected, actual), errors.Join(errs...)
+	return cmp.Diff(expected, actual), nil
 }
 
 func Diff(input templ.Component, expected string) (diff string, err error) {
@@ -54,44 +53,36 @@ func Diff(input templ.Component, expected string) (diff string, err error) {
 }
 
 func DiffCtx(ctx context.Context, input templ.Component, expected string) (formattedInput, diff string, err error) {
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	errs := make([]error, 3)
+	var wg errgroup.Group
 
 	// Format the expected value.
-	go func() {
-		defer wg.Done()
+	wg.Go(func() error {
 		e := new(strings.Builder)
 		err := htmlformat.Fragment(e, strings.NewReader(expected))
 		if err != nil {
-			errs[0] = fmt.Errorf("expected html formatting error: %w", err)
+			return fmt.Errorf("expected html formatting error: %w", err)
 		}
 		expected = e.String()
-	}()
+		return nil
+	})
 
 	// Pipe via the HTML formatter.
 	actual := new(strings.Builder)
 	r, w := io.Pipe()
-	go func() {
-		defer wg.Done()
+	wg.Go(func() error {
 		err := htmlformat.Fragment(actual, r)
 		if err != nil {
-			errs[1] = fmt.Errorf("actual html formatting error: %w", err)
+			return fmt.Errorf("actual html formatting error: %w", err)
 		}
-	}()
+		return nil
+	})
 
 	// Render the component.
-	err = input.Render(ctx, w)
-	if err != nil {
-		errs[2] = fmt.Errorf("failed to render component: %w", err)
-	}
-	if err := w.Close(); err != nil {
-		errs[2] = fmt.Errorf("failed to close writer: %w", err)
-	}
+	renderErr := input.Render(ctx, w)
+	closeErr := w.Close()
 
 	// Wait for processing.
-	wg.Wait()
+	processingErr := wg.Wait()
 
-	return actual.String(), cmp.Diff(expected, actual.String()), errors.Join(errs...)
+	return actual.String(), cmp.Diff(expected, actual.String()), errors.Join(renderErr, closeErr, processingErr)
 }
