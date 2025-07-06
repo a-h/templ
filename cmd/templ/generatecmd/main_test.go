@@ -170,7 +170,7 @@ func TestDefaultWatchPattern(t *testing.T) {
 			matches: false,
 		},
 	}
-	wpRegexp, err := regexp.Compile(DefaultWatchPattern)
+	wpRegexp, err := regexp.Compile(defaultWatchPattern)
 	if err != nil {
 		t.Fatalf("failed to compile default watch pattern: %v", err)
 	}
@@ -235,8 +235,8 @@ func TestArgs(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if args.WatchPattern.String() != DefaultWatchPattern {
-			t.Fatalf("expected watch pattern to be %q, got %q", DefaultWatchPattern, args.WatchPattern.String())
+		if args.WatchPattern.String() != defaultWatchPattern {
+			t.Fatalf("expected watch pattern to be %q, got %q", defaultWatchPattern, args.WatchPattern.String())
 		}
 	})
 	t.Run("If the watchPattern is set, it is checked for validity", func(t *testing.T) {

@@ -77,7 +77,7 @@ Examples:
     templ generate -watch
 `
 
-const DefaultWatchPattern = `(.+\.go$)|(.+\.templ$)`
+const defaultWatchPattern = `(.+\.go$)|(.+\.templ$)`
 
 func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, log *slog.Logger, help bool, err error) {
 	cmd := flag.NewFlagSet("generate", flag.ContinueOnError)
@@ -88,7 +88,7 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 	cmd.BoolVar(&cmdArgs.IncludeVersion, "include-version", true, "")
 	cmd.BoolVar(&cmdArgs.IncludeTimestamp, "include-timestamp", false, "")
 	cmd.BoolVar(&cmdArgs.Watch, "watch", false, "")
-	watchPatternFlag := cmd.String("watch-pattern", DefaultWatchPattern, "")
+	watchPatternFlag := cmd.String("watch-pattern", defaultWatchPattern, "")
 	cmd.BoolVar(&cmdArgs.OpenBrowser, "open-browser", true, "")
 	cmd.StringVar(&cmdArgs.Command, "cmd", "", "")
 	cmd.StringVar(&cmdArgs.Proxy, "proxy", "", "")
