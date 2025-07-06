@@ -111,3 +111,28 @@ func nilPtr[T any]() *T {
 func ptr[T any](x T) *T {
 	return &x
 }
+
+//go:embed expected_numeric_attributes.html
+var expectedNumericAttributes string
+
+func TestNumericAttributeTypes(t *testing.T) {
+	t.Parallel()
+	component := BasicTemplate(templ.Attributes{
+		"int-value":     42,
+		"float-value":   3.14,
+		"uint-value":    uint(100),
+		"int64-value":   int64(9223372036854775807),
+		"complex-value": complex(1, 2),
+		"string-value":  "text",
+		"bool-true":     true,
+		"bool-false":    false,
+	})
+
+	diff, err := htmldiff.Diff(component, expectedNumericAttributes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff != "" {
+		t.Error(diff)
+	}
+}
