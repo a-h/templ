@@ -23,12 +23,15 @@ If you run `xc` you can get see a list of the development tasks that can be run,
 The most useful tasks for local development are:
 
 * `xc install-snapshot` - builds the templ CLI and installs it into `~/bin`. Ensure that this is in your path.
+* `xc generate` - generates Go code from the templ files in the project.
 * `xc test` - regenerates all templates, and runs the unit tests.
 * `xc fmt` - runs `gofmt` to format all Go code.
 * `xc lint` - run the same linting as run in the CI process.
 * `xc docs-run` - run the Docusaurus documentation site.
 
 templ has a code generation step, this is automatically carried out using `xc test`.
+
+Don't install templ globally using `xc install-snapshot` or `go install`. Use the `xc generate` or `xc test` tasks to generate the code, which will also run the tests.
 
 ## Commit messages
 
@@ -60,3 +63,24 @@ Examples:
 * Use the `xc fmt` and `xc lint` build tasks to format and lint code before committing.
 * Don't use unnecessary comments that explain what the code does.
 * If comments are used, ensure that they are full sentences, and use proper punctuation, including ending with a full stop.
+
+## Tests
+
+* Tests for generated code are in the `./generator` directory. Each test is in a subdirectory.
+* Tests for the templ CLI are in the `./cmd/templ` directory.
+* Tests for the templ runtime are in the root directory.
+* Tests for formatting templ files are in `./parser/v2/formattestdata` - it uses txtar to store tests.
+* The `htmldiff` library does not take whitespace into account, so cannot be used to test output whitespace handling.
+* Don't attempt to run tests individually, use the `xc test` task to run all tests, because it regenerates templates, and there's minimal performance penalty due to Go's test caching.
+
+## Moving and renaming files
+
+* templ files have the `.templ` extension.
+* If a `project.templ` file is created, after generation a `project_templ.go` file will be created.
+* If a `project.templ` file is renamed, you must also rename the generated `project_templ.go` file.
+* If a `project.templ` file is moved, you must also move the generated `project_templ.go` file.
+* If a `project.templ` file is deleted, you must also delete the generated `project_templ.go` file.
+
+# Files
+
+* Don't attempt to create helper or utility tests in the `./tmp` or `/tmp` directory. Create unit tests in the relevant directory instead.
