@@ -701,8 +701,72 @@ func TestRenderAttributes(t *testing.T) {
 			},
 			expected: ` enabled title="test title"`,
 		},
+		{
+			name: "numeric pointer types are rendered as strings",
+			attributes: templ.Attributes{
+				"int-ptr":        ptr(42),
+				"int8-ptr":       ptr(int8(8)),
+				"int16-ptr":      ptr(int16(16)),
+				"int32-ptr":      ptr(int32(32)),
+				"int64-ptr":      ptr(int64(64)),
+				"uint-ptr":       ptr(uint(42)),
+				"uint8-ptr":      ptr(uint8(8)),
+				"uint16-ptr":     ptr(uint16(16)),
+				"uint32-ptr":     ptr(uint32(32)),
+				"uint64-ptr":     ptr(uint64(64)),
+				"uintptr-ptr":    ptr(uintptr(100)),
+				"float32-ptr":    ptr(float32(3.14)),
+				"float64-ptr":    ptr(float64(2.718)),
+				"complex64-ptr":  ptr(complex64(1 + 2i)),
+				"complex128-ptr": ptr(complex128(3 + 4i)),
+			},
+			expected: ` complex128-ptr="(3+4i)" complex64-ptr="(1+2i)" float32-ptr="3.14" float64-ptr="2.718" int-ptr="42" int16-ptr="16" int32-ptr="32" int64-ptr="64" int8-ptr="8" uint-ptr="42" uint16-ptr="16" uint32-ptr="32" uint64-ptr="64" uint8-ptr="8" uintptr-ptr="100"`,
+		},
+		{
+			name: "nil numeric pointer attributes are not rendered",
+			attributes: templ.Attributes{
+				"int-ptr":       (*int)(nil),
+				"float32-ptr":   (*float32)(nil),
+				"complex64-ptr": (*complex64)(nil),
+			},
+			expected: ``,
+		},
+		{
+			name: "KeyValue[string, bool] attributes are rendered correctly",
+			attributes: templ.Attributes{
+				"data-value": templ.KV("test-string", true),
+				"data-hidden": templ.KV("ignored", false),
+			},
+			expected: ` data-value="test-string"`,
+		},
+		{
+			name: "KeyValue[bool, bool] attributes are rendered correctly",
+			attributes: templ.Attributes{
+				"checked":  templ.KV(true, true),
+				"disabled": templ.KV(false, true),
+				"hidden":   templ.KV(true, false),
+			},
+			expected: ` checked`,
+		},
+		{
+			name: "function bool attributes are rendered correctly",
+			attributes: templ.Attributes{
+				"enabled": func() bool { return true },
+				"hidden":  func() bool { return false },
+			},
+			expected: ` enabled`,
+		},
+		{
+			name: "mixed KeyValue and function attributes",
+			attributes: templ.Attributes{
+				"data-name": templ.KV("value", true),
+				"active":    templ.KV(true, true),
+				"dynamic":   func() bool { return true },
+				"ignored":   templ.KV("ignored", false),
+			},
+			expected: ` active data-name="value" dynamic`,
+		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
