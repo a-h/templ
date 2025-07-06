@@ -734,7 +734,7 @@ func TestRenderAttributes(t *testing.T) {
 		{
 			name: "KeyValue[string, bool] attributes are rendered correctly",
 			attributes: templ.Attributes{
-				"data-value": templ.KV("test-string", true),
+				"data-value":  templ.KV("test-string", true),
 				"data-hidden": templ.KV("ignored", false),
 			},
 			expected: ` data-value="test-string"`,
