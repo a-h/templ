@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-h/templ/cmd/templ/generatecmd/syncmap"
-	"github.com/a-h/templ/cmd/templ/generatecmd/syncset"
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
+	"github.com/a-h/templ/internal/syncmap"
+	"github.com/a-h/templ/internal/syncset"
 	"github.com/a-h/templ/parser/v2"
 	"github.com/a-h/templ/runtime"
 	"github.com/fsnotify/fsnotify"
