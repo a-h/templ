@@ -15,14 +15,16 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
+	"github.com/a-h/templ/internal/syncmap"
+	"github.com/a-h/templ/internal/syncset"
 	"github.com/a-h/templ/parser/v2"
 	"github.com/a-h/templ/runtime"
 	"github.com/fsnotify/fsnotify"
+	"golang.org/x/sync/errgroup"
 )
 
 type FileWriterFunc func(name string, contents []byte) error
@@ -52,22 +54,18 @@ func NewFSEventHandler(
 		dir, _ = filepath.Abs(dir)
 	}
 	fseh := &FSEventHandler{
-		Log:                        log,
-		dir:                        dir,
-		fileNameToLastModTime:      make(map[string]time.Time),
-		fileNameToLastModTimeMutex: &sync.Mutex{},
-		fileNameToError:            make(map[string]struct{}),
-		fileNameToErrorMutex:       &sync.Mutex{},
-		fileNameToOutput:           make(map[string]generator.GeneratorOutput),
-		fileNameToOutputMutex:      &sync.Mutex{},
-		devMode:                    devMode,
-		hashes:                     make(map[string][sha256.Size]byte),
-		hashesMutex:                &sync.Mutex{},
-		genOpts:                    genOpts,
-		genSourceMapVis:            genSourceMapVis,
-		keepOrphanedFiles:          keepOrphanedFiles,
-		writer:                     fileWriter,
-		lazy:                       lazy,
+		Log:                   log,
+		dir:                   dir,
+		fileNameToLastModTime: syncmap.New[string, time.Time](),
+		fileNameToError:       syncset.New[string](),
+		fileNameToOutput:      syncmap.New[string, generator.GeneratorOutput](),
+		devMode:               devMode,
+		hashes:                syncmap.New[string, [sha256.Size]byte](),
+		genOpts:               genOpts,
+		genSourceMapVis:       genSourceMapVis,
+		keepOrphanedFiles:     keepOrphanedFiles,
+		writer:                fileWriter,
+		lazy:                  lazy,
 	}
 	return fseh
 }
@@ -75,27 +73,23 @@ func NewFSEventHandler(
 type FSEventHandler struct {
 	Log *slog.Logger
 	// dir is the root directory being processed.
-	dir                        string
-	fileNameToLastModTime      map[string]time.Time
-	fileNameToLastModTimeMutex *sync.Mutex
-	fileNameToError            map[string]struct{}
-	fileNameToErrorMutex       *sync.Mutex
-	fileNameToOutput           map[string]generator.GeneratorOutput
-	fileNameToOutputMutex      *sync.Mutex
-	devMode                    bool
-	hashes                     map[string][sha256.Size]byte
-	hashesMutex                *sync.Mutex
-	genOpts                    []generator.GenerateOpt
-	genSourceMapVis            bool
-	Errors                     []error
-	keepOrphanedFiles          bool
-	writer                     func(string, []byte) error
-	lazy                       bool
+	dir                   string
+	fileNameToLastModTime *syncmap.Map[string, time.Time]
+	fileNameToError       *syncset.Set[string]
+	fileNameToOutput      *syncmap.Map[string, generator.GeneratorOutput]
+	devMode               bool
+	hashes                *syncmap.Map[string, [sha256.Size]byte]
+	genOpts               []generator.GenerateOpt
+	genSourceMapVis       bool
+	Errors                []error
+	keepOrphanedFiles     bool
+	writer                FileWriterFunc
+	lazy                  bool
 }
 
 type GenerateResult struct {
-	// WatchfileUpdated indicates that a file matching the watch pattern was updated.
-	WatchfileUpdated bool
+	// WatchedfileUpdated indicates that a file matching the watch pattern was updated.
+	WatchedfileUpdated bool
 	// GoUpdated indicates that Go expressions were updated.
 	GoUpdated bool
 	// TextUpdated indicates that text literals were updated.
@@ -117,11 +111,18 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		if err = os.Remove(event.Name); err != nil {
 			h.Log.Warn("Failed to remove orphaned file", slog.Any("error", err))
 		}
-		return GenerateResult{WatchfileUpdated: true, GoUpdated: true, TextUpdated: false}, nil
+		return GenerateResult{WatchedfileUpdated: true, GoUpdated: true, TextUpdated: false}, nil
 	}
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
-	lastModTime, updatedModTime := h.UpsertLastModTime(event.Name)
+	fileInfo, err := os.Stat(event.Name)
+	if err != nil {
+		return GenerateResult{}, fmt.Errorf("failed to stat %q: %w", event.Name, err)
+	}
+	mustBeInTheFuture := func(previous, updated time.Time) bool {
+		return updated.After(previous)
+	}
+	updatedModTime := h.fileNameToLastModTime.CompareAndSwap(event.Name, mustBeInTheFuture, fileInfo.ModTime())
 	if !updatedModTime {
 		h.Log.Debug("Skipping file because it wasn't updated", slog.String("file", event.Name))
 		return GenerateResult{}, nil
@@ -133,14 +134,14 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		if strings.HasSuffix(event.Name, ".go") {
 			result.GoUpdated = true
 		}
-		result.WatchfileUpdated = true
+		result.WatchedfileUpdated = true
 		return result, nil
 	}
 
 	// Handle templ files.
 
 	// If the go file is newer than the templ file, skip generation, because it's up-to-date.
-	if h.lazy && goFileIsUpToDate(event.Name, lastModTime) {
+	if h.lazy && goFileIsUpToDate(event.Name, fileInfo.ModTime()) {
 		h.Log.Debug("Skipping file because the Go file is up-to-date", slog.String("file", event.Name))
 		return GenerateResult{}, nil
 	}
@@ -150,7 +151,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 	var diag []parser.Diagnostic
 	result, diag, err = h.generate(ctx, event.Name)
 	if err != nil {
-		h.SetError(event.Name, true)
+		h.fileNameToError.Set(event.Name)
 		return result, fmt.Errorf("failed to generate code for %q: %w", event.Name, err)
 	}
 	if len(diag) > 0 {
@@ -162,8 +163,8 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		}
 		return result, nil
 	}
-	if errorCleared, errorCount := h.SetError(event.Name, false); errorCleared {
-		h.Log.Info("Error cleared", slog.String("file", event.Name), slog.Int("errors", errorCount))
+	if errorCleared := h.fileNameToError.Delete(event.Name); errorCleared {
+		h.Log.Info("Error cleared", slog.String("file", event.Name), slog.Int("errors", h.fileNameToError.Count()))
 	}
 	h.Log.Debug("Generated code", slog.String("file", event.Name), slog.Duration("in", time.Since(start)))
 
@@ -177,44 +178,6 @@ func goFileIsUpToDate(templFileName string, templFileLastMod time.Time) (upToDat
 		return false
 	}
 	return goFileInfo.ModTime().After(templFileLastMod)
-}
-
-func (h *FSEventHandler) SetError(fileName string, hasError bool) (previouslyHadError bool, errorCount int) {
-	h.fileNameToErrorMutex.Lock()
-	defer h.fileNameToErrorMutex.Unlock()
-	_, previouslyHadError = h.fileNameToError[fileName]
-	delete(h.fileNameToError, fileName)
-	if hasError {
-		h.fileNameToError[fileName] = struct{}{}
-	}
-	return previouslyHadError, len(h.fileNameToError)
-}
-
-func (h *FSEventHandler) UpsertLastModTime(fileName string) (modTime time.Time, updated bool) {
-	fileInfo, err := os.Stat(fileName)
-	if err != nil {
-		return modTime, false
-	}
-	h.fileNameToLastModTimeMutex.Lock()
-	defer h.fileNameToLastModTimeMutex.Unlock()
-	previousModTime := h.fileNameToLastModTime[fileName]
-	currentModTime := fileInfo.ModTime()
-	if !currentModTime.After(previousModTime) {
-		return currentModTime, false
-	}
-	h.fileNameToLastModTime[fileName] = currentModTime
-	return currentModTime, true
-}
-
-func (h *FSEventHandler) UpsertHash(fileName string, hash [sha256.Size]byte) (updated bool) {
-	h.hashesMutex.Lock()
-	defer h.hashesMutex.Unlock()
-	lastHash := h.hashes[fileName]
-	if lastHash == hash {
-		return false
-	}
-	h.hashes[fileName] = hash
-	return true
 }
 
 // generate Go code for a single template.
@@ -252,8 +215,8 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 
 	// Hash output, and write out the file if the goCodeHash has changed.
 	goCodeHash := sha256.Sum256(formattedGoCode)
-	if h.UpsertHash(targetFileName, goCodeHash) {
-		result.WatchfileUpdated = true
+	if h.hashes.CompareAndSwap(targetFileName, syncmap.UpdateIfChanged, goCodeHash) {
+		result.WatchedfileUpdated = true
 		if err = h.writer(targetFileName, formattedGoCode); err != nil {
 			return result, nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
 		}
@@ -265,7 +228,7 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		h.Log.Debug("Writing development mode text file", slog.String("file", fileName), slog.String("output", txtFileName))
 		joined := strings.Join(generatorOutput.Literals, "\n")
 		txtHash := sha256.Sum256([]byte(joined))
-		if h.UpsertHash(txtFileName, txtHash) {
+		if h.hashes.CompareAndSwap(txtFileName, syncmap.UpdateIfChanged, txtHash) {
 			result.TextUpdated = true
 			if err = os.WriteFile(txtFileName, []byte(joined), 0o644); err != nil {
 				return result, nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
@@ -273,13 +236,11 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		}
 
 		// Check whether the change would require a recompilation to take effect.
-		h.fileNameToOutputMutex.Lock()
-		defer h.fileNameToOutputMutex.Unlock()
-		previous := h.fileNameToOutput[fileName]
-		if generator.HasChanged(previous, generatorOutput) {
+		previous, hasPrevious := h.fileNameToOutput.Get(fileName)
+		if hasPrevious && generator.HasChanged(previous, generatorOutput) {
 			result.GoUpdated = true
 		}
-		h.fileNameToOutput[fileName] = generatorOutput
+		h.fileNameToOutput.Set(fileName, generatorOutput)
 	}
 
 	parsedDiagnostics, err := parser.Diagnose(t)
@@ -322,23 +283,17 @@ func generateSourceMapVisualisation(ctx context.Context, templFileName, goFileNa
 		return err
 	}
 	var templContents, goContents []byte
-	var templErr, goErr error
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		templContents, templErr = os.ReadFile(templFileName)
-	}()
-	go func() {
-		defer wg.Done()
-		goContents, goErr = os.ReadFile(goFileName)
-	}()
-	wg.Wait()
-	if templErr != nil {
-		return templErr
-	}
-	if goErr != nil {
-		return templErr
+	var grp errgroup.Group
+	grp.Go(func() (err error) {
+		templContents, err = os.ReadFile(templFileName)
+		return err
+	})
+	grp.Go(func() (err error) {
+		goContents, err = os.ReadFile(goFileName)
+		return err
+	})
+	if err := grp.Wait(); err != nil {
+		return err
 	}
 	component := visualize.HTML(templFileName, string(templContents), string(goContents), sourceMap)
 

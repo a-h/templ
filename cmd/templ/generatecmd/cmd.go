@@ -10,8 +10,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"regexp"
-	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -30,30 +28,17 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-const defaultWatchPattern = `(.+\.go$)|(.+\.templ$)`
-
 func NewGenerate(log *slog.Logger, args Arguments) (g *Generate, err error) {
 	g = &Generate{
 		Log:  log,
-		Args: &args,
-	}
-	if g.Args.WorkerCount == 0 {
-		g.Args.WorkerCount = runtime.NumCPU()
-	}
-	if g.Args.WatchPattern == "" {
-		g.Args.WatchPattern = defaultWatchPattern
-	}
-	g.WatchPattern, err = regexp.Compile(g.Args.WatchPattern)
-	if err != nil {
-		return nil, fmt.Errorf("failed to compile watch pattern %q: %w", g.Args.WatchPattern, err)
+		Args: args,
 	}
 	return g, nil
 }
 
 type Generate struct {
-	Log          *slog.Logger
-	Args         *Arguments
-	WatchPattern *regexp.Regexp
+	Log  *slog.Logger
+	Args Arguments
 }
 
 type GenerationEvent struct {
@@ -66,17 +51,6 @@ type GenerationEvent struct {
 func (cmd Generate) Run(ctx context.Context) (err error) {
 	if cmd.Args.NotifyProxy {
 		return proxy.NotifyProxy(cmd.Args.ProxyBind, cmd.Args.ProxyPort)
-	}
-	if cmd.Args.Watch && cmd.Args.FileName != "" {
-		return fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
-	}
-	writingToWriter := cmd.Args.FileWriter != nil
-	if cmd.Args.FileName == "" && writingToWriter {
-		return fmt.Errorf("only a single file can be output to stdout, add the -f flag to specify the file to generate code for")
-	}
-	// Default to writing to files.
-	if cmd.Args.FileWriter == nil {
-		cmd.Args.FileWriter = FileWriter
 	}
 	if cmd.Args.PPROFPort > 0 {
 		go func() {
@@ -160,7 +134,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			slog.String("path", cmd.Args.Path),
 			slog.Bool("devMode", cmd.Args.Watch),
 		)
-		if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, events); err != nil {
+		if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.Args.WatchPattern, events); err != nil {
 			cmd.Log.Error("WalkFiles failed, exiting", slog.Any("error", err))
 			errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
 			return
@@ -170,7 +144,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			return
 		}
 		cmd.Log.Info("Watching files")
-		rw, err := watcher.Recursive(ctx, cmd.Args.Path, cmd.WatchPattern, events, errs)
+		rw, err := watcher.Recursive(ctx, cmd.Args.Path, cmd.Args.WatchPattern, events, errs)
 		if err != nil {
 			cmd.Log.Error("Recursive watcher setup failed, exiting", slog.Any("error", err))
 			errs <- FatalError{Err: fmt.Errorf("failed to setup recursive watcher: %w", err)}
@@ -194,12 +168,12 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		)
 		fileEvents := make(chan fsnotify.Event)
 		go func() {
-			if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.WatchPattern, fileEvents); err != nil {
+			defer close(fileEvents)
+			if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.Args.WatchPattern, fileEvents); err != nil {
 				cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
 				errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
 				return
 			}
-			close(fileEvents)
 		}()
 		for event := range fileEvents {
 			if strings.HasSuffix(event.Name, "_templ.go") || strings.HasSuffix(event.Name, ".templ") {
@@ -229,13 +203,13 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 				if err != nil {
 					errs <- err
 				}
-				if !r.GoUpdated && !r.TextUpdated && !r.WatchfileUpdated {
+				if !r.GoUpdated && !r.TextUpdated && !r.WatchedfileUpdated {
 					cmd.Log.Debug("File not updated", slog.String("file", event.Name))
 					return
 				}
 				e := &GenerationEvent{
 					Event:              event,
-					WatchedFileUpdated: r.WatchfileUpdated,
+					WatchedFileUpdated: r.WatchedfileUpdated,
 					GoUpdated:          r.GoUpdated,
 					TextUpdated:        r.TextUpdated,
 				}
@@ -281,8 +255,9 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 					break
 				}
 				postGenerationEventsWG.Add(1)
+				fmt.Println("Post-generation event received, processing...", cmd.Args.Command, goUpdated, watchedFileUpdated)
 				if cmd.Args.Command != "" && (goUpdated || watchedFileUpdated) {
-					cmd.Log.Debug("Executing command", slog.String("command", cmd.Args.Command))
+					cmd.Log.Info("Executing command", slog.String("command", cmd.Args.Command))
 					if cmd.Args.Watch {
 						if err := os.Setenv("TEMPL_DEV_MODE", "true"); err != nil {
 							cmd.Log.Error("Error setting TEMPL_DEV_MODE environment variable", slog.Any("error", err))
@@ -364,12 +339,6 @@ func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err erro
 	target, err = url.Parse(cmd.Args.Proxy)
 	if err != nil {
 		return nil, FatalError{Err: fmt.Errorf("failed to parse proxy URL: %w", err)}
-	}
-	if cmd.Args.ProxyPort == 0 {
-		cmd.Args.ProxyPort = 7331
-	}
-	if cmd.Args.ProxyBind == "" {
-		cmd.Args.ProxyBind = "127.0.0.1"
 	}
 	p = proxy.New(cmd.Log, cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
 	go func() {
