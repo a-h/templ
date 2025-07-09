@@ -25,6 +25,16 @@ func TestHandler(t *testing.T) {
 		}
 		return errors.New("handler error")
 	})
+	fragmentPage := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		if _, err := io.WriteString(w, "page_contents\n"); err != nil {
+			return err
+		}
+		fragmentContents := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+			_, err := io.WriteString(w, "fragment_contents")
+			return err
+		})
+		return templ.Fragment("fragment").Render(templ.WithChildren(ctx, fragmentContents), w)
+	})
 
 	tests := []struct {
 		name             string
@@ -83,6 +93,27 @@ func TestHandler(t *testing.T) {
 			expectedStatus:   http.StatusBadRequest,
 			expectedMIMEType: "text/html; charset=utf-8",
 			expectedBody:     "custom body",
+		},
+		{
+			name:             "fragments can be rendered individually",
+			input:            templ.Handler(fragmentPage, templ.WithFragments("fragment")),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/html; charset=utf-8",
+			expectedBody:     "fragment_contents",
+		},
+		{
+			name:             "fragments can be rendered within a page",
+			input:            templ.Handler(fragmentPage),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/html; charset=utf-8",
+			expectedBody:     "page_contents\nfragment_contents",
+		},
+		{
+			name:             "fragments can be streamed",
+			input:            templ.Handler(fragmentPage, templ.WithFragments("fragment"), templ.WithStreaming()),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/html; charset=utf-8",
+			expectedBody:     "fragment_contents",
 		},
 	}
 	for _, tt := range tests {

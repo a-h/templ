@@ -1,0 +1,19 @@
+package testfragment
+
+templ Page() {
+	<div>Page Header</div>
+	@templ.Fragment("content-a") {
+		<div>Fragment Content A</div>
+	}
+	@templ.Fragment("content-b") {
+		<div>Fragment Content B</div>
+	}
+	@templ.Fragment("outer") {
+		<div>Outer Fragment Start</div>
+		@templ.Fragment("inner") {
+			<div>Inner Fragment Content</div>
+		}
+		<div>Outer Fragment End</div>
+	}
+	<div>Page Footer</div>
+}
