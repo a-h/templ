@@ -1,4 +1,4 @@
-module github.com/a-h/templ/examples/counter-basic
+module github.com/a-h/templ/examples/htmx-fragments
 
 go 1.23.0
 
