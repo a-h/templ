@@ -156,7 +156,7 @@ func WithStreaming() func(*ComponentHandler) {
 	}
 }
 
-// WithFragment sets the name of the fragment to render.
+// WithFragments sets the names of the fragments to render.
 // If not set, all content is rendered.
 func WithFragments(names ...string) func(*ComponentHandler) {
 	return func(ch *ComponentHandler) {

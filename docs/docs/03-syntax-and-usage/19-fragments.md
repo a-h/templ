@@ -21,10 +21,10 @@ templ Page() {
 
 The most common use case for `Fragment` is to render only a specific part of the template to the HTML response, while discarding the rest of the output.
 
-To render only the "name" fragment from the `Page` template, use the `templ.WithFragment("name")` option when creating the HTTP handler:
+To render only the "name" fragment from the `Page` template, use the `templ.WithFragments("name")` option when creating the HTTP handler:
 
 ```go title="main.go"
-handler := templ.Handler(Page(), templ.WithFragment("name"))
+handler := templ.Handler(Page(), templ.WithFragments("name"))
 http.Handle("/", handler)
 ```
 
@@ -38,7 +38,7 @@ When the HTTP request is made, only the content of the specified fragment will b
 The whole of the template is rendered, so any function calls or logic in the template will still be executed, but only the specified fragment's output is sent to the client.
 :::
 
-If the `templ.WithFragment("name")` option is omitted, the whole page is rendered as normal.
+If the `templ.WithFragments("name")` option is omitted, the whole page is rendered as normal.
 
 ```go title="main.go"
 handler := templ.Handler(Page())
