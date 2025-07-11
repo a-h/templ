@@ -1,6 +1,6 @@
 # Fragments
 
-The `templ.Fragment` component enables redirection of a subsection of a template to an alternative output stream.
+The `templ.Fragment` component can be used to render a subsection of a template, discarding all other output.
 
 Fragments work well as an optimisation for HTMX, as discussed in https://htmx.org/essays/template-fragments/
 
@@ -52,28 +52,20 @@ http.Handle("/", handler)
 
 ## Use outside of an HTTP handler
 
-To use outside of an HTTP handler, e.g. when generating static content, you can render a fragment to a specific output stream using `templ.WithFragmentContext` to set the writer, and the names of the fragments you would like to write to it.
+To use outside of an HTTP handler, e.g. when generating static content, you can render fragments with the `templ.RenderFragments` function.
 
 ```go
-// Set up the context.
-ctxW := new(bytes.Buffer)
-ctx := templ.WithFragmentContext(context.Background(), ctxW, "name")
-
-// Render the template.
 w := new(bytes.Buffer)
-if err := fragmentPage.Render(ctx, w); err != nil {
-	t.Fatalf("failed to render: %v", err)
+if err := templ.RenderFragments(context.Background(), w, fragmentPage, "name"); err != nil {
+  t.Fatalf("failed to render: %v", err)
 }
 
 // <div>Content of the fragment</div>
-fragmentContents := ctxW.String()
-
-// <div>Page Header</div>
-wContents := w.String()
+html := w.String()
 ```
 
-:::tip
-To discard everything other than the fragments you're interested in, pass `io.Discard` to the `Render` method.
+:::note
+All fragments with matching identifiers will be rendered. If the fragment identifier isn't matched, no output will be produced.
 :::
 
 ## Nested fragments
