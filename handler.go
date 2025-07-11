@@ -11,7 +11,7 @@ type ComponentHandler struct {
 	ContentType    string
 	ErrorHandler   func(r *http.Request, err error) http.Handler
 	StreamResponse bool
-	FragmentNames  []string
+	FragmentIDs    []any
 }
 
 const componentHandlerErrorMessage = "templ: failed to render template"
@@ -32,7 +32,7 @@ func (ch *ComponentHandler) ServeHTTPBufferedFragment(w http.ResponseWriter, r *
 	defer ReleaseBuffer(buf)
 
 	// Render the component into io.Discard, but use the buffer for fragments.
-	if err := RenderFragments(r.Context(), buf, ch.Component, ch.FragmentNames...); err != nil {
+	if err := RenderFragments(r.Context(), buf, ch.Component, ch.FragmentIDs...); err != nil {
 		ch.handleRenderErr(w, r, err)
 		return
 	}
@@ -71,7 +71,7 @@ func (ch *ComponentHandler) ServeHTTPBufferedComplete(w http.ResponseWriter, r *
 
 func (ch *ComponentHandler) ServeHTTPBuffered(w http.ResponseWriter, r *http.Request) {
 	// If fragments are specified, render only those.
-	if len(ch.FragmentNames) > 0 {
+	if len(ch.FragmentIDs) > 0 {
 		ch.ServeHTTPBufferedFragment(w, r)
 		return
 	}
@@ -88,10 +88,10 @@ func (ch *ComponentHandler) ServeHTTPStreamed(w http.ResponseWriter, r *http.Req
 	}
 
 	// Pass fragment names to the context if specified.
-	if len(ch.FragmentNames) > 0 {
+	if len(ch.FragmentIDs) > 0 {
 
 		// Render the component into io.Discard, but use the buffer for fragments.
-		if err := RenderFragments(r.Context(), w, ch.Component, ch.FragmentNames...); err != nil {
+		if err := RenderFragments(r.Context(), w, ch.Component, ch.FragmentIDs...); err != nil {
 			ch.handleRenderErr(w, r, err)
 			return
 		}
@@ -154,10 +154,10 @@ func WithStreaming() func(*ComponentHandler) {
 	}
 }
 
-// WithFragments sets the names of the fragments to render.
+// WithFragments sets the ids of the fragments to render.
 // If not set, all content is rendered.
-func WithFragments(names ...string) func(*ComponentHandler) {
+func WithFragments(ids ...any) func(*ComponentHandler) {
 	return func(ch *ComponentHandler) {
-		ch.FragmentNames = names
+		ch.FragmentIDs = ids
 	}
 }

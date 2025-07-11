@@ -6,11 +6,11 @@ import (
 	"slices"
 )
 
-// RenderFragments renders the named fragments to w.
-func RenderFragments(ctx context.Context, w io.Writer, c Component, names ...string) error {
+// RenderFragments renders the specified fragments to w.
+func RenderFragments(ctx context.Context, w io.Writer, c Component, ids ...any) error {
 	ctx = context.WithValue(ctx, fragmentContextKey, &FragmentContext{
-		W:     w,
-		Names: names,
+		W:   w,
+		IDs: ids,
 	})
 	return c.Render(ctx, io.Discard)
 }
@@ -22,27 +22,27 @@ const fragmentContextKey fragmentContextKeyType = iota
 // FragmentContext is used to control rendering of fragments within a template.
 type FragmentContext struct {
 	W      io.Writer
-	Names  []string
+	IDs    []any
 	Active bool
 }
 
-// Fragment defines a fragment within a template that can be rendered conditionally based on the name.
+// Fragment defines a fragment within a template that can be rendered conditionally based on the id.
 // You can use it to render a specific part of a page, e.g. to reduce the amount of HTML returned from a HTMX-initiated request.
 // Any non-matching contents of the template are rendered, but discarded by the FramentWriter.
-func Fragment(name string) Component {
+func Fragment(id any) Component {
 	return &fragment{
-		Name: name,
+		ID: id,
 	}
 }
 
 type fragment struct {
-	Name string
+	ID any
 }
 
 func (f *fragment) Render(ctx context.Context, w io.Writer) (err error) {
 	// If not in a fragment context, if we're a child fragment, or in a mismatching fragment context, render children normally.
 	fragmentCtx := getFragmentContext(ctx)
-	if fragmentCtx == nil || fragmentCtx.Active || !slices.Contains(fragmentCtx.Names, f.Name) {
+	if fragmentCtx == nil || fragmentCtx.Active || !slices.Contains(fragmentCtx.IDs, f.ID) {
 		return GetChildren(ctx).Render(ctx, w)
 	}
 

@@ -17,6 +17,20 @@ templ Page() {
 }
 ```
 
+To avoid name clashes with other libraries, you can define a custom type for your package.
+
+```templ
+type nameFragmentKey struct {}
+var Name = nameFragmentKey{}
+
+templ Page() {
+  <div>Page Header</div>
+  @templ.Fragment(Name) {
+    <div>Content of the fragment</div>
+  }
+}
+```
+
 ## Use with HTTP
 
 The most common use case for `Fragment` is to render only a specific part of the template to the HTML response, while discarding the rest of the output.

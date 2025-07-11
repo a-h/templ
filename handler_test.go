@@ -36,6 +36,19 @@ func TestHandler(t *testing.T) {
 		return templ.Fragment("fragment").Render(templ.WithChildren(ctx, fragmentContents), w)
 	})
 
+	type nameFragmentKey struct{}
+	var fragmentContentsName = nameFragmentKey{}
+	fragmentPageWithCustomKey := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+		if _, err := io.WriteString(w, "page_contents\n"); err != nil {
+			return err
+		}
+		fragmentContents := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+			_, err := io.WriteString(w, "fragment_contents")
+			return err
+		})
+		return templ.Fragment(fragmentContentsName).Render(templ.WithChildren(ctx, fragmentContents), w)
+	})
+
 	tests := []struct {
 		name             string
 		input            *templ.ComponentHandler
@@ -97,6 +110,13 @@ func TestHandler(t *testing.T) {
 		{
 			name:             "fragments can be rendered individually",
 			input:            templ.Handler(fragmentPage, templ.WithFragments("fragment")),
+			expectedStatus:   http.StatusOK,
+			expectedMIMEType: "text/html; charset=utf-8",
+			expectedBody:     "fragment_contents",
+		},
+		{
+			name:             "fragments can be rendered with a custom key type",
+			input:            templ.Handler(fragmentPageWithCustomKey, templ.WithFragments(fragmentContentsName)),
 			expectedStatus:   http.StatusOK,
 			expectedMIMEType: "text/html; charset=utf-8",
 			expectedBody:     "fragment_contents",
