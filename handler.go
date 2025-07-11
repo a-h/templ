@@ -1,7 +1,6 @@
 package templ
 
 import (
-	"io"
 	"net/http"
 )
 
@@ -33,8 +32,7 @@ func (ch *ComponentHandler) ServeHTTPBufferedFragment(w http.ResponseWriter, r *
 	defer ReleaseBuffer(buf)
 
 	// Render the component into io.Discard, but use the buffer for fragments.
-	ctx := WithFragmentContext(r.Context(), buf, ch.FragmentNames...)
-	if err := ch.Component.Render(ctx, io.Discard); err != nil {
+	if err := RenderFragments(r.Context(), buf, ch.Component, ch.FragmentNames...); err != nil {
 		ch.handleRenderErr(w, r, err)
 		return
 	}
@@ -91,9 +89,9 @@ func (ch *ComponentHandler) ServeHTTPStreamed(w http.ResponseWriter, r *http.Req
 
 	// Pass fragment names to the context if specified.
 	if len(ch.FragmentNames) > 0 {
+
 		// Render the component into io.Discard, but use the buffer for fragments.
-		ctx := WithFragmentContext(r.Context(), w, ch.FragmentNames...)
-		if err := ch.Component.Render(ctx, io.Discard); err != nil {
+		if err := RenderFragments(r.Context(), w, ch.Component, ch.FragmentNames...); err != nil {
 			ch.handleRenderErr(w, r, err)
 			return
 		}

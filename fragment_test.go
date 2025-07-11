@@ -21,22 +21,14 @@ func TestFragment(t *testing.T) {
 		return templ.Fragment("fragment").Render(templ.WithChildren(ctx, fragmentContents), w)
 	})
 	t.Run("can render without a HTTP handler", func(t *testing.T) {
-		// Set up the context.
-		ctxW := new(bytes.Buffer)
-		ctx := templ.WithFragmentContext(context.Background(), ctxW, "fragment")
-
-		// Render the template.
 		w := new(bytes.Buffer)
-		if err := fragmentPage.Render(ctx, w); err != nil {
+		if err := templ.RenderFragments(context.Background(), w, fragmentPage, "fragment"); err != nil {
 			t.Fatalf("failed to render: %v", err)
 		}
 
-		// Note that the fragment should not have been written to the output.
-		if w.String() != "page_contents" {
-			t.Errorf("expected output 'page_contents', got '%s'", w.String())
-		}
-		if ctxW.String() != "fragment_contents" {
-			t.Errorf("expected output 'fragment_contents', got '%s'", ctxW.String())
+		// Note that the fragment should have been written to the output.
+		if w.String() != "fragment_contents" {
+			t.Errorf("expected output 'fragment_contents', got '%s'", w.String())
 		}
 	})
 }
