@@ -169,7 +169,7 @@ func main() {
   h := templ.Handler(Page())
   withMiddleware := Middleware(h)
   http.Handle("/", withMiddleware)
-  http.ListenAndServe(":8080", h)
+  http.ListenAndServe(":8080", nil)
 }
 ```
 
