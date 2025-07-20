@@ -1,6 +1,8 @@
 package templ
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // ComponentHandler is a http.Handler that renders components.
 type ComponentHandler struct {
@@ -9,25 +11,33 @@ type ComponentHandler struct {
 	ContentType    string
 	ErrorHandler   func(r *http.Request, err error) http.Handler
 	StreamResponse bool
+	FragmentIDs    []any
 }
 
 const componentHandlerErrorMessage = "templ: failed to render template"
 
-func (ch *ComponentHandler) ServeHTTPBuffered(w http.ResponseWriter, r *http.Request) {
+func (ch *ComponentHandler) handleRenderErr(w http.ResponseWriter, r *http.Request, err error) {
+	if ch.ErrorHandler != nil {
+		w.Header().Set("Content-Type", ch.ContentType)
+		ch.ErrorHandler(r, err).ServeHTTP(w, r)
+		return
+	}
+	http.Error(w, componentHandlerErrorMessage, http.StatusInternalServerError)
+}
+
+func (ch *ComponentHandler) ServeHTTPBufferedFragment(w http.ResponseWriter, r *http.Request) {
 	// Since the component may error, write to a buffer first.
 	// This prevents partial responses from being written to the client.
 	buf := GetBuffer()
 	defer ReleaseBuffer(buf)
-	err := ch.Component.Render(r.Context(), buf)
-	if err != nil {
-		if ch.ErrorHandler != nil {
-			w.Header().Set("Content-Type", ch.ContentType)
-			ch.ErrorHandler(r, err).ServeHTTP(w, r)
-			return
-		}
-		http.Error(w, componentHandlerErrorMessage, http.StatusInternalServerError)
+
+	// Render the component into io.Discard, but use the buffer for fragments.
+	if err := RenderFragments(r.Context(), buf, ch.Component, ch.FragmentIDs...); err != nil {
+		ch.handleRenderErr(w, r, err)
 		return
 	}
+
+	// The component rendered successfully, we can write the Content-Type and Status.
 	w.Header().Set("Content-Type", ch.ContentType)
 	if ch.Status != 0 {
 		w.WriteHeader(ch.Status)
@@ -37,18 +47,61 @@ func (ch *ComponentHandler) ServeHTTPBuffered(w http.ResponseWriter, r *http.Req
 	_, _ = w.Write(buf.Bytes())
 }
 
-func (ch *ComponentHandler) ServeHTTPStreamed(w http.ResponseWriter, r *http.Request) {
+func (ch *ComponentHandler) ServeHTTPBufferedComplete(w http.ResponseWriter, r *http.Request) {
+	// Since the component may error, write to a buffer first.
+	// This prevents partial responses from being written to the client.
+	buf := GetBuffer()
+	defer ReleaseBuffer(buf)
+
+	// Render the component into the buffer.
+	if err := ch.Component.Render(r.Context(), buf); err != nil {
+		ch.handleRenderErr(w, r, err)
+		return
+	}
+
+	// The component rendered successfully, we can write the Content-Type and Status.
 	w.Header().Set("Content-Type", ch.ContentType)
 	if ch.Status != 0 {
 		w.WriteHeader(ch.Status)
 	}
-	if err := ch.Component.Render(r.Context(), w); err != nil {
-		if ch.ErrorHandler != nil {
-			w.Header().Set("Content-Type", ch.ContentType)
-			ch.ErrorHandler(r, err).ServeHTTP(w, r)
+	// Ignore write error like http.Error() does, because there is
+	// no way to recover at this point.
+	_, _ = w.Write(buf.Bytes())
+}
+
+func (ch *ComponentHandler) ServeHTTPBuffered(w http.ResponseWriter, r *http.Request) {
+	// If fragments are specified, render only those.
+	if len(ch.FragmentIDs) > 0 {
+		ch.ServeHTTPBufferedFragment(w, r)
+		return
+	}
+
+	// Otherwise, render the complete component.
+	ch.ServeHTTPBufferedComplete(w, r)
+}
+
+func (ch *ComponentHandler) ServeHTTPStreamed(w http.ResponseWriter, r *http.Request) {
+	// If streaming, we do not buffer the response, so set the headers immediately.
+	w.Header().Set("Content-Type", ch.ContentType)
+	if ch.Status != 0 {
+		w.WriteHeader(ch.Status)
+	}
+
+	// Pass fragment names to the context if specified.
+	if len(ch.FragmentIDs) > 0 {
+
+		// Render the component into io.Discard, but use the buffer for fragments.
+		if err := RenderFragments(r.Context(), w, ch.Component, ch.FragmentIDs...); err != nil {
+			ch.handleRenderErr(w, r, err)
 			return
 		}
-		http.Error(w, componentHandlerErrorMessage, http.StatusInternalServerError)
+		return
+	}
+
+	// Render the component into the buffer.
+	if err := ch.Component.Render(r.Context(), w); err != nil {
+		ch.handleRenderErr(w, r, err)
+		return
 	}
 }
 
@@ -98,5 +151,13 @@ func WithErrorHandler(eh func(r *http.Request, err error) http.Handler) func(*Co
 func WithStreaming() func(*ComponentHandler) {
 	return func(ch *ComponentHandler) {
 		ch.StreamResponse = true
+	}
+}
+
+// WithFragments sets the ids of the fragments to render.
+// If not set, all content is rendered.
+func WithFragments(ids ...any) func(*ComponentHandler) {
+	return func(ch *ComponentHandler) {
+		ch.FragmentIDs = ids
 	}
 }
