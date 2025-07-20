@@ -1791,18 +1791,13 @@ func stripTypes(parameters string) string {
 }
 
 func isExpressionAttributeValueURL(elementName, attrName string) bool {
-	var elementAttributeLookup = map[string]string{
-		"a":      "href",
-		"form":   "action",
-		"link":   "href",
-		"object": "data",
+	switch elementName {
+	case "a", "link":
+		return attrName == "href"
+	case "form":
+		return attrName == "action"
+	case "object":
+		return attrName == "data"
 	}
-	expectedAttribute, exists := elementAttributeLookup[elementName]
-	if !exists {
-		return false
-	}
-	if attrName != expectedAttribute {
-		return false
-	}
-	return true
+	return false
 }
