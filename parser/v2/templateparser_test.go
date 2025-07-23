@@ -670,7 +670,14 @@ func TestTemplateParser(t *testing.T) {
 				},
 				Children: []Node{
 					&Whitespace{Value: "\t"},
-					&GoComment{Contents: " Comment", Multiline: false},
+					&GoComment{
+						Contents:  " Comment",
+						Multiline: false,
+						Range: Range{
+							From: Position{Index: 13, Line: 1, Col: 1},
+							To:   Position{Index: 23, Line: 1, Col: 11},
+						},
+					},
 					&Whitespace{Value: "\n"},
 				},
 			},
@@ -694,7 +701,14 @@ func TestTemplateParser(t *testing.T) {
 				},
 				Children: []Node{
 					&Whitespace{Value: "\t"},
-					&GoComment{Contents: " Comment ", Multiline: true},
+					&GoComment{
+						Contents:  " Comment ",
+						Multiline: true,
+						Range: Range{
+							From: Position{Index: 13, Line: 1, Col: 1},
+							To:   Position{Index: 26, Line: 1, Col: 14},
+						},
+					},
 					&Whitespace{Value: "\n"},
 				},
 			},
@@ -720,7 +734,14 @@ func TestTemplateParser(t *testing.T) {
 				},
 				Children: []Node{
 					&Whitespace{Value: "\t"},
-					&GoComment{Contents: " Line 1\n\t\t Line 2\n\t", Multiline: true},
+					&GoComment{
+						Contents:  " Line 1\n\t\t Line 2\n\t",
+						Multiline: true,
+						Range: Range{
+							From: Position{Index: 13, Line: 1, Col: 1},
+							To:   Position{Index: 36, Line: 3, Col: 3},
+						},
+					},
 					&Whitespace{Value: "\n"},
 				},
 			},
