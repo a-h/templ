@@ -42,10 +42,8 @@ func NewRecursiveWatcher(ctx context.Context, w *fsnotify.Watcher, watchPattern 
 
 // WalkFiles walks the file tree rooted at path, sending a Create event for each
 // file it encounters.
-func WalkFiles(ctx context.Context, path string, watchPattern *regexp.Regexp, out chan fsnotify.Event) (err error) {
-	rootPath := path
-	fileSystem := os.DirFS(rootPath)
-	return fs.WalkDir(fileSystem, ".", func(path string, info os.DirEntry, err error) error {
+func WalkFiles(ctx context.Context, rootPath string, watchPattern *regexp.Regexp, out chan fsnotify.Event) (err error) {
+	return fs.WalkDir(os.DirFS(rootPath), ".", func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}

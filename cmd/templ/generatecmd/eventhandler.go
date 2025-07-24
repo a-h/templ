@@ -88,12 +88,12 @@ type FSEventHandler struct {
 }
 
 type GenerateResult struct {
-	// WatchedfileUpdated indicates that a file matching the watch pattern was updated.
-	WatchedfileUpdated bool
-	// GoUpdated indicates that Go expressions were updated.
-	GoUpdated bool
-	// TextUpdated indicates that text literals were updated.
-	TextUpdated bool
+	// WatchedFileUpdated indicates that a file matching the watch pattern was updated.
+	WatchedFileUpdated bool
+	// TemplFileTextUpdated indicates that text literals were updated.
+	TemplFileTextUpdated bool
+	// TemplFileGoUpdated indicates that Go expressions were updated.
+	TemplFileGoUpdated bool
 }
 
 func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) (result GenerateResult, err error) {
@@ -111,7 +111,7 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		if err = os.Remove(event.Name); err != nil {
 			h.Log.Warn("Failed to remove orphaned file", slog.Any("error", err))
 		}
-		return GenerateResult{WatchedfileUpdated: true, GoUpdated: true, TextUpdated: false}, nil
+		return GenerateResult{WatchedFileUpdated: false, TemplFileGoUpdated: true, TemplFileTextUpdated: false}, nil
 	}
 
 	// If the file hasn't been updated since the last time we processed it, ignore it.
@@ -130,11 +130,10 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 
 	// Process anything that isn't a templ file.
 	if !strings.HasSuffix(event.Name, ".templ") {
-		// If it's a Go file, mark it as updated.
-		if strings.HasSuffix(event.Name, ".go") {
-			result.GoUpdated = true
+		if h.devMode {
+			h.Log.Info("Watched file updated", slog.String("file", event.Name))
 		}
-		result.WatchedfileUpdated = true
+		result.WatchedFileUpdated = true
 		return result, nil
 	}
 
@@ -216,7 +215,6 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 	// Hash output, and write out the file if the goCodeHash has changed.
 	goCodeHash := sha256.Sum256(formattedGoCode)
 	if h.hashes.CompareAndSwap(targetFileName, syncmap.UpdateIfChanged, goCodeHash) {
-		result.WatchedfileUpdated = true
 		if err = h.writer(targetFileName, formattedGoCode); err != nil {
 			return result, nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
 		}
@@ -229,16 +227,15 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		joined := strings.Join(generatorOutput.Literals, "\n")
 		txtHash := sha256.Sum256([]byte(joined))
 		if h.hashes.CompareAndSwap(txtFileName, syncmap.UpdateIfChanged, txtHash) {
-			result.TextUpdated = true
 			if err = os.WriteFile(txtFileName, []byte(joined), 0o644); err != nil {
 				return result, nil, fmt.Errorf("failed to write string literal file %q: %w", txtFileName, err)
 			}
 		}
-
-		// Check whether the change would require a recompilation to take effect.
+		// Check whether the change would require a recompilation or text update to take effect.
 		previous, hasPrevious := h.fileNameToOutput.Get(fileName)
-		if hasPrevious && generator.HasChanged(previous, generatorOutput) {
-			result.GoUpdated = true
+		if hasPrevious {
+			result.TemplFileTextUpdated = generator.HasTextChanged(previous, generatorOutput)
+			result.TemplFileGoUpdated = generator.HasGoChanged(previous, generatorOutput)
 		}
 		h.fileNameToOutput.Set(fileName, generatorOutput)
 	}
