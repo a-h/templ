@@ -177,7 +177,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	return nil
 }
 
-func (cmd Generate) groupUntilNoMessagesReceivedFor100ms(postGeneration chan *GenerationEvent) (grouped *GenerationEvent, updates int, err error) {
+func (cmd Generate) groupUntilNoMessagesReceivedFor100ms(postGeneration chan *GenerationEvent) (grouped *GenerationEvent, updates int, ok bool, err error) {
 	timeout := time.NewTimer(time.Hour * 24 * 365)
 loop:
 	for {
@@ -185,7 +185,7 @@ loop:
 		case ge := <-postGeneration:
 			if ge == nil {
 				cmd.Log.Debug("Post-generation event channel closed, exiting")
-				return nil, 0, nil
+				return nil, 0, false, nil
 			}
 			if grouped == nil {
 				grouped = ge
@@ -206,7 +206,7 @@ loop:
 				continue loop
 			}
 			// We have a grouped event, and no events have been sent in the last 100ms, so we need to return.
-			return grouped, updates, nil
+			return grouped, updates, true, nil
 		}
 	}
 }
@@ -214,19 +214,19 @@ loop:
 func (cmd Generate) handlePostGenerationEvents(ctx context.Context, postGeneration chan *GenerationEvent) (updates int, err error) {
 	cmd.Log.Debug("Starting post-generation handler")
 	var p *proxy.Handler
+loop:
 	for {
-		grouped, updated, err := cmd.groupUntilNoMessagesReceivedFor100ms(postGeneration)
+		grouped, updated, ok, err := cmd.groupUntilNoMessagesReceivedFor100ms(postGeneration)
 		if err != nil {
 			return 0, fmt.Errorf("error grouping post-generation events: %w", err)
 		}
-		if grouped == nil {
-			return 0, nil
+		if !ok {
+			break loop
 		}
 
 		// The Go application needs to be restarted if any watched non-templ watched files (i.e. non-templ Go files)
 		// were updated, or if any Go code within a templ file was updated.
 		needsRestart := grouped.WatchedFileUpdated || grouped.TemplFileGoUpdated
-
 		// If the text in a templ file, or any other changes have happened, reload the browser.
 		needsBrowserReload := grouped.TemplFileTextUpdated || grouped.TemplFileGoUpdated || grouped.WatchedFileUpdated
 
@@ -258,6 +258,7 @@ func (cmd Generate) handlePostGenerationEvents(ctx context.Context, postGenerati
 			}
 		}
 	}
+	return updates, nil
 }
 
 func (cmd Generate) handleEvents(ctx context.Context, events chan fsnotify.Event, errs chan error, fseh *FSEventHandler, postGeneration chan *GenerationEvent) {
