@@ -15,6 +15,7 @@ var goSingleLineComment = goSingleLineCommentParser{}
 
 func (p goSingleLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Comment start.
+	start := pi.Position()
 	if _, ok, err = goSingleLineCommentStart.Parse(pi); err != nil || !ok {
 		return
 	}
@@ -27,6 +28,7 @@ func (p goSingleLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err 
 	}
 	// Return the comment.
 	c.Multiline = false
+	c.Range = NewRange(start, pi.Position())
 	return c, true, nil
 }
 
@@ -57,6 +59,7 @@ func (p goMultiLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err e
 	_, _, _ = goMultiLineCommentEnd.Parse(pi)
 	// Return the comment.
 	c.Multiline = true
+	c.Range = NewRange(start, pi.Position())
 	return c, true, nil
 }
 

@@ -624,7 +624,14 @@ func TestIfExpression(t *testing.T) {
 				},
 				Then: []Node{
 					&Whitespace{Value: "\t\t"},
-					&GoComment{Contents: " this is a comment", Multiline: false},
+					&GoComment{
+						Contents:  " this is a comment",
+						Multiline: false,
+						Range: Range{
+							From: Position{Index: 11, Line: 1, Col: 2},
+							To:   Position{Index: 31, Line: 1, Col: 22},
+						},
+					},
 					&Whitespace{Value: "\n\t"},
 				},
 				Else: []Node{

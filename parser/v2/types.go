@@ -1117,6 +1117,7 @@ func CopyAttributes(attrs []Attribute) (copies []Attribute) {
 type GoComment struct {
 	Contents  string
 	Multiline bool
+	Range     Range
 }
 
 func (c *GoComment) IsNode() bool { return true }
