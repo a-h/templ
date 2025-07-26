@@ -21,6 +21,7 @@ func TestGoCommentParser(t *testing.T) {
 				Contents:  " single line comment",
 				Multiline: false,
 				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 22, Line: 0, Col: 22},
 				},
 			},
@@ -32,6 +33,7 @@ func TestGoCommentParser(t *testing.T) {
 				Contents:  " single line comment",
 				Multiline: false,
 				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 22, Line: 0, Col: 22},
 				},
 			},
@@ -43,6 +45,7 @@ func TestGoCommentParser(t *testing.T) {
 				Contents:  " multiline comment, on one line ",
 				Multiline: true,
 				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 36, Line: 0, Col: 36},
 				},
 			},
@@ -55,6 +58,7 @@ on multiple lines */`,
 				Contents:  " multiline comment,\non multiple lines ",
 				Multiline: true,
 				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 42, Line: 1, Col: 20},
 				},
 			},
