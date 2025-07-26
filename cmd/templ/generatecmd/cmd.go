@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -12,10 +13,11 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
+	"github.com/a-h/templ/internal/skipdir"
 	templruntime "github.com/a-h/templ/runtime"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
@@ -42,10 +44,10 @@ type Generate struct {
 }
 
 type GenerationEvent struct {
-	Event              fsnotify.Event
-	WatchedFileUpdated bool
-	GoUpdated          bool
-	TextUpdated        bool
+	Event                fsnotify.Event
+	WatchedFileUpdated   bool
+	TemplFileTextUpdated bool
+	TemplFileGoUpdated   bool
 }
 
 func (cmd Generate) Run(ctx context.Context) (err error) {
@@ -104,193 +106,39 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 	// Start timer.
 	start := time.Now()
 
-	// Create channels:
 	// For the initial filesystem walk and subsequent (optional) fsnotify events.
 	events := make(chan fsnotify.Event)
-	// Count of events currently being processed by the event handler.
-	var eventsWG sync.WaitGroup
-	// Used to check that the event handler has completed.
-	var eventHandlerWG sync.WaitGroup
 	// For errs from the watcher.
 	errs := make(chan error)
-	// Tracks whether errors occurred during the generation process.
-	var errorCount atomic.Int64
+
+	// Start process to push events into the events channel.
+	grp, ctx := errgroup.WithContext(ctx)
+	grp.Go(func() error {
+		defer close(events)
+		cmd.walkAndWatch(ctx, events, errs)
+		return nil
+	})
+
 	// For triggering actions after generation has completed.
 	postGeneration := make(chan *GenerationEvent, 256)
-	// Used to check that the post-generation handler has completed.
-	var postGenerationWG sync.WaitGroup
-	var postGenerationEventsWG sync.WaitGroup
-
-	// Waitgroup for the push process.
-	var pushHandlerWG sync.WaitGroup
-
-	// Start process to push events into the channel.
-	pushHandlerWG.Add(1)
-	go func() {
-		defer pushHandlerWG.Done()
-		defer close(events)
-		cmd.Log.Debug(
-			"Walking directory",
-			slog.String("path", cmd.Args.Path),
-			slog.Bool("devMode", cmd.Args.Watch),
-		)
-		if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.Args.WatchPattern, events); err != nil {
-			cmd.Log.Error("WalkFiles failed, exiting", slog.Any("error", err))
-			errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
-			return
-		}
-		if !cmd.Args.Watch {
-			cmd.Log.Debug("Dev mode not enabled, process can finish early")
-			return
-		}
-		cmd.Log.Info("Watching files")
-		rw, err := watcher.Recursive(ctx, cmd.Args.Path, cmd.Args.WatchPattern, events, errs)
-		if err != nil {
-			cmd.Log.Error("Recursive watcher setup failed, exiting", slog.Any("error", err))
-			errs <- FatalError{Err: fmt.Errorf("failed to setup recursive watcher: %w", err)}
-			return
-		}
-		cmd.Log.Debug("Waiting for context to be cancelled to stop watching files")
-		<-ctx.Done()
-		cmd.Log.Debug("Context cancelled, closing watcher")
-		if err := rw.Close(); err != nil {
-			cmd.Log.Error("Failed to close watcher", slog.Any("error", err))
-		}
-		cmd.Log.Debug("Waiting for events to be processed")
-		eventsWG.Wait()
-		cmd.Log.Debug(
-			"All pending events processed, waiting for pending post-generation events to complete",
-		)
-		postGenerationEventsWG.Wait()
-		cmd.Log.Debug(
-			"All post-generation events processed, deleting watch mode text files",
-			slog.Int64("errorCount", errorCount.Load()),
-		)
-		fileEvents := make(chan fsnotify.Event)
-		go func() {
-			defer close(fileEvents)
-			if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.Args.WatchPattern, fileEvents); err != nil {
-				cmd.Log.Error("Post dev mode WalkFiles failed", slog.Any("error", err))
-				errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
-				return
-			}
-		}()
-		for event := range fileEvents {
-			if strings.HasSuffix(event.Name, "_templ.go") || strings.HasSuffix(event.Name, ".templ") {
-				watchModeFileName := templruntime.GetDevModeTextFileName(event.Name)
-				if err := os.Remove(watchModeFileName); err != nil && !errors.Is(err, os.ErrNotExist) {
-					cmd.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
-				}
-			}
-		}
-	}()
 
 	// Start process to handle events.
-	eventHandlerWG.Add(1)
-	sem := make(chan struct{}, cmd.Args.WorkerCount)
-	go func() {
-		defer eventHandlerWG.Done()
+	grp.Go(func() error {
 		defer close(postGeneration)
-		cmd.Log.Debug("Starting event handler")
-		for event := range events {
-			eventsWG.Add(1)
-			sem <- struct{}{}
-			go func(event fsnotify.Event) {
-				cmd.Log.Debug("Processing file", slog.String("file", event.Name))
-				defer eventsWG.Done()
-				defer func() { <-sem }()
-				r, err := fseh.HandleEvent(ctx, event)
-				if err != nil {
-					errs <- err
-				}
-				if !r.GoUpdated && !r.TextUpdated && !r.WatchedfileUpdated {
-					cmd.Log.Debug("File not updated", slog.String("file", event.Name))
-					return
-				}
-				e := &GenerationEvent{
-					Event:              event,
-					WatchedFileUpdated: r.WatchedfileUpdated,
-					GoUpdated:          r.GoUpdated,
-					TextUpdated:        r.TextUpdated,
-				}
-				cmd.Log.Debug("File updated", slog.String("file", event.Name))
-				postGeneration <- e
-			}(event)
-		}
-		// Wait for all events to be processed before closing.
-		eventsWG.Wait()
-	}()
+		cmd.handleEvents(ctx, events, errs, fseh, postGeneration)
+		return nil
+	})
 
 	// Start process to handle post-generation events.
 	var updates int
-	postGenerationWG.Add(1)
-	var firstPostGenerationExecuted bool
-	go func() {
+	grp.Go(func() error {
 		defer close(errs)
-		defer postGenerationWG.Done()
-		cmd.Log.Debug("Starting post-generation handler")
-		timeout := time.NewTimer(time.Hour * 24 * 365)
-		var goUpdated, textUpdated, watchedFileUpdated bool
-		var p *proxy.Handler
-		for {
-			select {
-			case ge := <-postGeneration:
-				if ge == nil {
-					cmd.Log.Debug("Post-generation event channel closed, exiting")
-					return
-				}
-				goUpdated = goUpdated || ge.GoUpdated
-				watchedFileUpdated = watchedFileUpdated || ge.WatchedFileUpdated
-				textUpdated = textUpdated || ge.TextUpdated
-				if goUpdated || textUpdated || watchedFileUpdated {
-					updates++
-				}
-				// Reset timer.
-				timeout.Stop()
-				timeout.Reset(time.Millisecond * 100)
-			case <-timeout.C:
-				if !goUpdated && !textUpdated && !watchedFileUpdated {
-					// Nothing to process, reset timer and wait again.
-					timeout.Reset(time.Hour * 24 * 365)
-					break
-				}
-				postGenerationEventsWG.Add(1)
-				fmt.Println("Post-generation event received, processing...", cmd.Args.Command, goUpdated, watchedFileUpdated)
-				if cmd.Args.Command != "" && (goUpdated || watchedFileUpdated) {
-					cmd.Log.Info("Executing command", slog.String("command", cmd.Args.Command))
-					if cmd.Args.Watch {
-						if err := os.Setenv("TEMPL_DEV_MODE", "true"); err != nil {
-							cmd.Log.Error("Error setting TEMPL_DEV_MODE environment variable", slog.Any("error", err))
-						}
-					}
-					if _, err := run.Run(ctx, cmd.Args.Path, cmd.Args.Command); err != nil {
-						cmd.Log.Error("Error executing command", slog.Any("error", err))
-					}
-				}
-				if !firstPostGenerationExecuted {
-					cmd.Log.Debug("First post-generation event received, starting proxy")
-					firstPostGenerationExecuted = true
-					p, err = cmd.StartProxy(ctx)
-					if err != nil {
-						cmd.Log.Error("Failed to start proxy", slog.Any("error", err))
-					}
-				}
-				// Send server-sent event.
-				if p != nil && (textUpdated || goUpdated || watchedFileUpdated) {
-					cmd.Log.Debug("Sending reload event")
-					p.SendSSE("message", "reload")
-				}
-				postGenerationEventsWG.Done()
-				// Reset timer.
-				timeout.Reset(time.Millisecond * 100)
-				textUpdated = false
-				goUpdated = false
-				watchedFileUpdated = false
-			}
-		}
-	}()
+		updates, err = cmd.handlePostGenerationEvents(ctx, postGeneration)
+		return err
+	})
 
 	// Read errors.
+	var errorCount int
 	for err := range errs {
 		if err == nil {
 			continue
@@ -300,16 +148,14 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 			return err
 		}
 		cmd.Log.Error("Error", slog.Any("error", err))
-		errorCount.Add(1)
+		errorCount++
 	}
 
 	// Wait for everything to complete.
-	cmd.Log.Debug("Waiting for push handler to complete")
-	pushHandlerWG.Wait()
-	cmd.Log.Debug("Waiting for event handler to complete")
-	eventHandlerWG.Wait()
-	cmd.Log.Debug("Waiting for post-generation handler to complete")
-	postGenerationWG.Wait()
+	cmd.Log.Debug("Waiting for processes to complete")
+	if err = grp.Wait(); err != nil {
+		return err
+	}
 	if cmd.Args.Command != "" {
 		cmd.Log.Debug("Killing command", slog.String("command", cmd.Args.Command))
 		if err := run.KillAll(); err != nil {
@@ -317,24 +163,188 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		}
 	}
 
-	// Check for errors after everything has completed.
-	if errorCount.Load() > 0 {
-		return fmt.Errorf("generation completed with %d errors", errorCount.Load())
+	// Clean up temporary watch mode text files.
+	if err := cmd.deleteWatchModeTextFiles(); err != nil {
+		cmd.Log.Warn("Failed to delete watch mode text files", slog.Any("error", err))
 	}
 
-	cmd.Log.Info(
-		"Complete",
-		slog.Int("updates", updates),
-		slog.Duration("duration", time.Since(start)),
-	)
+	// Check for errors after everything has completed.
+	if errorCount > 0 {
+		return fmt.Errorf("generation completed with %d errors", errorCount)
+	}
+
+	cmd.Log.Info("Complete", slog.Int("updates", updates), slog.Duration("duration", time.Since(start)))
 	return nil
 }
 
-func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err error) {
-	if cmd.Args.Proxy == "" {
-		cmd.Log.Debug("No proxy URL specified, not starting proxy")
-		return nil, nil
+func (cmd Generate) groupUntilNoMessagesReceivedFor100ms(postGeneration chan *GenerationEvent) (grouped *GenerationEvent, updates int, ok bool, err error) {
+	timeout := time.NewTimer(time.Hour * 24 * 365)
+loop:
+	for {
+		select {
+		case ge := <-postGeneration:
+			if ge == nil {
+				cmd.Log.Debug("Post-generation event channel closed, exiting")
+				return nil, 0, false, nil
+			}
+			if grouped == nil {
+				grouped = ge
+			}
+			grouped.WatchedFileUpdated = grouped.WatchedFileUpdated || ge.WatchedFileUpdated
+			grouped.TemplFileTextUpdated = grouped.TemplFileTextUpdated || ge.TemplFileTextUpdated
+			grouped.TemplFileGoUpdated = grouped.TemplFileGoUpdated || ge.TemplFileGoUpdated
+			if grouped.WatchedFileUpdated || grouped.TemplFileTextUpdated || grouped.TemplFileGoUpdated {
+				updates++
+			}
+			// Now we have received an event, wait for 100ms.
+			// If no further messages are received in that time, the timeout will trigger.
+			timeout = time.NewTimer(time.Millisecond * 100)
+		case <-timeout.C:
+			// If grouped is nil, or if no updates were made, reset the timer and continue waiting.
+			if grouped == nil || (!grouped.WatchedFileUpdated && !grouped.TemplFileTextUpdated && !grouped.TemplFileGoUpdated) {
+				timeout = time.NewTimer(time.Hour * 24 * 365)
+				continue loop
+			}
+			// We have a grouped event, and no events have been sent in the last 100ms, so we need to return.
+			return grouped, updates, true, nil
+		}
 	}
+}
+
+func (cmd Generate) handlePostGenerationEvents(ctx context.Context, postGeneration chan *GenerationEvent) (updates int, err error) {
+	cmd.Log.Debug("Starting post-generation handler")
+	var p *proxy.Handler
+loop:
+	for {
+		grouped, updated, ok, err := cmd.groupUntilNoMessagesReceivedFor100ms(postGeneration)
+		if err != nil {
+			return 0, fmt.Errorf("error grouping post-generation events: %w", err)
+		}
+		if !ok {
+			break loop
+		}
+
+		// The Go application needs to be restarted if any watched non-templ watched files (i.e. non-templ Go files)
+		// were updated, or if any Go code within a templ file was updated.
+		needsRestart := grouped.WatchedFileUpdated || grouped.TemplFileGoUpdated
+		// If the text in a templ file, or any other changes have happened, reload the browser.
+		needsBrowserReload := grouped.TemplFileTextUpdated || grouped.TemplFileGoUpdated || grouped.WatchedFileUpdated
+
+		cmd.Log.Info("Post-generation event received, processing...", slog.Bool("needsRestart", needsRestart), slog.Bool("needsBrowserReload", needsBrowserReload))
+		updates += updated
+
+		if cmd.Args.Command != "" && needsRestart {
+			cmd.Log.Info("Executing command", slog.String("command", cmd.Args.Command))
+			if cmd.Args.Watch {
+				if err := os.Setenv("TEMPL_DEV_MODE", "true"); err != nil {
+					cmd.Log.Error("Error setting TEMPL_DEV_MODE environment variable", slog.Any("error", err))
+				}
+			}
+			if _, err := run.Run(ctx, cmd.Args.Path, cmd.Args.Command); err != nil {
+				cmd.Log.Error("Error executing command", slog.Any("error", err))
+			}
+		}
+		if cmd.Args.Proxy != "" {
+			if p == nil {
+				cmd.Log.Debug("Starting proxy...")
+				p, err = cmd.startProxy()
+				if err != nil {
+					cmd.Log.Error("Failed to start proxy", slog.Any("error", err))
+				}
+			}
+			if needsBrowserReload {
+				cmd.Log.Debug("Sending reload event")
+				p.SendSSE("message", "reload")
+			}
+		}
+	}
+	return updates, nil
+}
+
+func (cmd Generate) handleEvents(ctx context.Context, events chan fsnotify.Event, errs chan error, fseh *FSEventHandler, postGeneration chan *GenerationEvent) {
+	var eventsWG sync.WaitGroup
+	sem := make(chan struct{}, cmd.Args.WorkerCount)
+	cmd.Log.Debug("Starting event handler")
+	for event := range events {
+		eventsWG.Add(1)
+		sem <- struct{}{}
+		go func(event fsnotify.Event) {
+			cmd.Log.Debug("Processing file", slog.String("file", event.Name))
+			defer eventsWG.Done()
+			defer func() { <-sem }()
+			r, err := fseh.HandleEvent(ctx, event)
+			if err != nil {
+				errs <- err
+			}
+			if !r.WatchedFileUpdated && !r.TemplFileTextUpdated && !r.TemplFileGoUpdated {
+				cmd.Log.Debug("File not updated", slog.String("file", event.Name))
+				return
+			}
+			e := &GenerationEvent{
+				Event:                event,
+				WatchedFileUpdated:   r.WatchedFileUpdated,
+				TemplFileTextUpdated: r.TemplFileTextUpdated,
+				TemplFileGoUpdated:   r.TemplFileGoUpdated,
+			}
+			cmd.Log.Debug("File updated", slog.String("file", event.Name))
+			postGeneration <- e
+		}(event)
+	}
+	// Wait for all events to be processed before closing.
+	eventsWG.Wait()
+}
+
+func (cmd *Generate) walkAndWatch(ctx context.Context, events chan fsnotify.Event, errs chan error) {
+	cmd.Log.Debug("Walking directory", slog.String("path", cmd.Args.Path), slog.Bool("devMode", cmd.Args.Watch))
+	if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.Args.WatchPattern, events); err != nil {
+		cmd.Log.Error("WalkFiles failed, exiting", slog.Any("error", err))
+		errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
+		return
+	}
+	if !cmd.Args.Watch {
+		cmd.Log.Debug("Dev mode not enabled, process can finish early")
+		return
+	}
+	cmd.Log.Info("Watching files")
+	rw, err := watcher.Recursive(ctx, cmd.Args.Path, cmd.Args.WatchPattern, events, errs)
+	if err != nil {
+		cmd.Log.Error("Recursive watcher setup failed, exiting", slog.Any("error", err))
+		errs <- FatalError{Err: fmt.Errorf("failed to setup recursive watcher: %w", err)}
+		return
+	}
+	defer func() {
+		if err := rw.Close(); err != nil {
+			cmd.Log.Error("Failed to close watcher", slog.Any("error", err))
+		}
+	}()
+	cmd.Log.Debug("Waiting for context to be cancelled to stop watching files")
+	<-ctx.Done()
+}
+
+func (cmd *Generate) deleteWatchModeTextFiles() error {
+	return fs.WalkDir(os.DirFS(cmd.Args.Path), ".", func(path string, info os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		absPath, err := filepath.Abs(filepath.Join(cmd.Args.Path, path))
+		if err != nil {
+			return nil
+		}
+		if info.IsDir() && skipdir.ShouldSkip(absPath) {
+			return filepath.SkipDir
+		}
+		if !strings.HasSuffix(absPath, "_templ.go") && !strings.HasSuffix(absPath, ".templ") {
+			return nil
+		}
+		watchModeFileName := templruntime.GetDevModeTextFileName(absPath)
+		if err := os.Remove(watchModeFileName); err != nil && !errors.Is(err, os.ErrNotExist) {
+			cmd.Log.Warn("Failed to remove watch mode text file", slog.Any("error", err))
+		}
+		return nil
+	})
+}
+
+func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 	var target *url.URL
 	target, err = url.Parse(cmd.Args.Proxy)
 	if err != nil {
@@ -362,11 +372,7 @@ func (cmd *Generate) StartProxy(ctx context.Context) (p *proxy.Handler, err erro
 				break
 			}
 			d := backoff.NextBackOff()
-			cmd.Log.Debug(
-				"Proxy not ready, retrying",
-				slog.String("url", p.URL),
-				slog.Any("backoff", d),
-			)
+			cmd.Log.Debug("Proxy not ready, retrying", slog.String("url", p.URL), slog.Any("backoff", d))
 			time.Sleep(d)
 		}
 		if err := browser.OpenURL(p.URL); err != nil {
