@@ -63,6 +63,7 @@ Examples:
 * Use the `xc fmt` and `xc lint` build tasks to format and lint code before committing.
 * Don't use unnecessary comments that explain what the code does.
 * If comments are used, ensure that they are full sentences, and use proper punctuation, including ending with a full stop.
+* Don't write comments after the end of keywords, e.g. `continue // Only process pairs`
 
 ## Tests
 
