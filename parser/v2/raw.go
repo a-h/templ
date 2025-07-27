@@ -62,5 +62,6 @@ func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Cut the end element.
 	_, _, _ = end.Parse(pi)
 
+	e.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return e, true, nil
 }
