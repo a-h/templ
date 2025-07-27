@@ -1,4 +1,4 @@
-package parser
+package format
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestFormatting(t *testing.T) {
-	files, _ := filepath.Glob("formattestdata/*.txt")
+	files, _ := filepath.Glob("testdata/*.txt")
 	if len(files) == 0 {
 		t.Errorf("no test files found")
 	}
@@ -23,23 +23,19 @@ func TestFormatting(t *testing.T) {
 			if len(a.Files) != 2 {
 				t.Fatalf("expected 2 files, got %d", len(a.Files))
 			}
-			tem, err := ParseString(clean(a.Files[0].Data))
+			actual, _, err := Templ(clean(a.Files[0].Data), "")
 			if err != nil {
 				t.Fatal(err)
 			}
-			var actual bytes.Buffer
-			if err := tem.Write(&actual); err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if diff := cmp.Diff(string(a.Files[1].Data), actual.String()); diff != "" {
-				t.Fatalf("%s:\n%s", file, diff)
+			if diff := cmp.Diff(string(a.Files[1].Data), string(actual)); diff != "" {
+				t.Errorf("Expected:\n%s\nActual:\n%s\n", showWhitespace(string(a.Files[1].Data)), showWhitespace(string(actual)))
 			}
 		})
 	}
 }
 
-func clean(b []byte) string {
+func clean(b []byte) []byte {
 	b = bytes.ReplaceAll(b, []byte("$\n"), []byte("\n"))
 	b = bytes.TrimSuffix(b, []byte("\n"))
-	return string(b)
+	return b
 }

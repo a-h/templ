@@ -734,20 +734,7 @@ type ScriptElement struct {
 func (se *ScriptElement) IsNode() bool { return true }
 func (se *ScriptElement) Write(w io.Writer, indent int) error {
 	// Start.
-	if err := writeIndent(w, indent, "<script"); err != nil {
-		return err
-	}
-	for i := range se.Attributes {
-		if _, err := w.Write([]byte(" ")); err != nil {
-			return err
-		}
-		a := se.Attributes[i]
-		// Don't indent the attributes, only the conditional attributes get indented.
-		if err := a.Write(w, 0); err != nil {
-			return err
-		}
-	}
-	if _, err := w.Write([]byte(">")); err != nil {
+	if err := se.WriteStart(w, indent); err != nil {
 		return err
 	}
 	// Contents.
@@ -770,6 +757,33 @@ func (se *ScriptElement) Write(w io.Writer, indent int) error {
 		}
 	}
 	// Close.
+	if err := se.WriteEnd(w); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (se *ScriptElement) WriteStart(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "<script"); err != nil {
+		return err
+	}
+	for i := range se.Attributes {
+		if _, err := w.Write([]byte(" ")); err != nil {
+			return err
+		}
+		a := se.Attributes[i]
+		// Don't indent the attributes, only the conditional attributes get indented.
+		if err := a.Write(w, 0); err != nil {
+			return err
+		}
+	}
+	if _, err := w.Write([]byte(">")); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (se *ScriptElement) WriteEnd(w io.Writer) error {
 	if _, err := w.Write([]byte("</script>")); err != nil {
 		return err
 	}
