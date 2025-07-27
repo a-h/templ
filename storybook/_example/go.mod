@@ -20,6 +20,5 @@ require (
 require (
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/rs/cors v1.11.0 // indirect
-	github.com/stretchr/testify v1.10.0 // indirect
-	golang.org/x/mod v0.24.0 // indirect
+	golang.org/x/mod v0.26.0 // indirect
 )
