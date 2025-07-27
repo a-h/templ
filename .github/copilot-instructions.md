@@ -1,5 +1,10 @@
 # Coding standards
 
+## Behaviour
+
+* Always run `go fmt` after making changes to Go code.
+* Always run unit tests after making changes to Go code.
+
 ## Environment setup
 
 * Ensure that the user has direnv installed, and that it is set up correctly in their shell. See https://direnv.net/docs/installation.html

@@ -9,7 +9,6 @@ import (
 	"sync"
 )
 
-
 type Mode string
 
 const (

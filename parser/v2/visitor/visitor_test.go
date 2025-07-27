@@ -14,7 +14,7 @@ func assetRewriter(rewrite func(path string) string) parser.Visitor {
 	inSrcElement := false
 	inHrefElement := false
 
-	// Visit elements
+	// Save the original Element visitor to allow chaining.
 	visitElement := ar.Element
 	ar.Element = func(e *parser.Element) error {
 		switch e.Name {
@@ -23,7 +23,7 @@ func assetRewriter(rewrite func(path string) string) parser.Visitor {
 		case "img":
 			inSrcElement = true
 		}
-		// Visit children
+		// Visit child elements.
 		if err := visitElement(e); err != nil {
 			return err
 		}
@@ -32,11 +32,11 @@ func assetRewriter(rewrite func(path string) string) parser.Visitor {
 		return nil
 	}
 
-	// Script elements
+	// Save the original ScriptElement visitor to allow chaining.
 	visitScriptElement := ar.ScriptElement
 	ar.ScriptElement = func(e *parser.ScriptElement) error {
 		inSrcElement = true
-		// Visit children
+		// Visit child script elements.
 		if err := visitScriptElement(e); err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ func assetRewriter(rewrite func(path string) string) parser.Visitor {
 		return nil
 	}
 
-	// Rewrite attributes
+	// Save the original ConstantAttribute visitor to allow chaining.
 	visitConstantAttribute := ar.ConstantAttribute
 	ar.ConstantAttribute = func(n *parser.ConstantAttribute) error {
 		if inSrcElement && n.Key.String() == "src" {
