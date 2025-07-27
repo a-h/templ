@@ -7,8 +7,9 @@ import (
 	"github.com/a-h/templ/internal/htmlfind"
 	"github.com/a-h/templ/internal/prettier"
 	"github.com/a-h/templ/parser/v2"
-	"golang.org/x/net/html"
 )
+
+const templScriptPlaceholder = "templ_go_expression_7331"
 
 // ScriptElement formats a ScriptElement node, replacing Go expressions with placeholders for formatting.
 // After formatting, it updates the GoCode expressions and their ranges.
@@ -33,7 +34,7 @@ func ScriptElement(se *parser.ScriptElement, depth int) (err error) {
 			continue
 		}
 		if part.GoCode != nil {
-			scriptWithPlaceholders.WriteString("__templ_go_expr_()")
+			scriptWithPlaceholders.WriteString(templScriptPlaceholder)
 			continue
 		}
 	}
@@ -69,18 +70,20 @@ func ScriptElement(se *parser.ScriptElement, depth int) (err error) {
 		}
 		var sb strings.Builder
 		for node := range scriptNode.ChildNodes() {
-			if node.Type == html.TextNode {
-				sb.WriteString(node.Data)
-			}
+			sb.WriteString(node.Data)
 		}
 		after = strings.TrimRight(sb.String(), " \t\r\n") + "\n" + strings.Repeat("\t", depth)
-		fmt.Printf("After: %s\n", showWhitespace(after))
 	}
 
-	split := strings.Split(after, "__templ_go_expr_()")
+	split := strings.Split(after, templScriptPlaceholder)
+	var splitIndex int
 	for i, part := range se.Contents {
 		if part.Value != nil {
-			se.Contents[i].Value = &split[i*2]
+			se.Contents[i].Value = &split[splitIndex]
+			splitIndex++
+		}
+		if part.GoCode != nil && part.GoCode.TrailingSpace != parser.SpaceNone {
+			se.Contents[i].GoCode.TrailingSpace = parser.SpaceNone
 		}
 	}
 

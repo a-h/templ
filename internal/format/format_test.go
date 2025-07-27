@@ -3,6 +3,7 @@ package format
 import (
 	"bytes"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -23,12 +24,19 @@ func TestFormatting(t *testing.T) {
 			if len(a.Files) != 2 {
 				t.Fatalf("expected 2 files, got %d", len(a.Files))
 			}
-			actual, _, err := Templ(clean(a.Files[0].Data), "")
+			actual, _, err := Templ(a.Files[0].Data, "")
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(string(a.Files[1].Data), string(actual)); diff != "" {
-				t.Errorf("Expected:\n%s\nActual:\n%s\n", showWhitespace(string(a.Files[1].Data)), showWhitespace(string(actual)))
+			expected := string(a.Files[1].Data)
+			if diff := cmp.Diff(expected, string(actual)); diff != "" {
+				t.Errorf("Expected:\n%s\nActual:\n%s\n", showWhitespace(expected), showWhitespace(string(actual)))
+
+				expectedLines := strings.Split(expected, "\n")
+				actualLines := strings.Split(string(actual), "\n")
+				if len(expectedLines) != len(actualLines) {
+					t.Errorf("Expected %d lines, got %d lines", len(expectedLines), len(actualLines))
+				}
 			}
 		})
 	}
