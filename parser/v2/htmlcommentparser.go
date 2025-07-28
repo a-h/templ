@@ -35,5 +35,6 @@ func (p htmlCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 
+	c.Range = NewRange(start, pi.Position())
 	return c, true, nil
 }
