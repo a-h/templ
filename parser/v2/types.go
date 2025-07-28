@@ -1135,6 +1135,7 @@ func (c *GoComment) Visit(v Visitor) error {
 // HTMLComment.
 type HTMLComment struct {
 	Contents string
+	Range    Range
 }
 
 func (c *HTMLComment) IsNode() bool { return true }

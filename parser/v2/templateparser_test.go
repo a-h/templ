@@ -768,9 +768,21 @@ func TestTemplateParser(t *testing.T) {
 				},
 				Children: []Node{
 					&Whitespace{Value: "\t"},
-					&HTMLComment{Contents: " Single line "},
+					&HTMLComment{
+						Contents: " Single line ",
+						Range: Range{
+							From: Position{Index: 13, Line: 1, Col: 1},
+							To:   Position{Index: 33, Line: 1, Col: 21},
+						},
+					},
 					&Whitespace{Value: "\n\t"},
-					&HTMLComment{Contents: "\n\t\tMultiline\n\t"},
+					&HTMLComment{
+						Contents: "\n\t\tMultiline\n\t",
+						Range: Range{
+							From: Position{Index: 35, Line: 2, Col: 1},
+							To:   Position{Index: 56, Line: 4, Col: 4},
+						},
+					},
 					&Whitespace{Value: "\n"},
 				},
 			},
