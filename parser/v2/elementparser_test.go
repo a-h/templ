@@ -556,6 +556,10 @@ if test {` + " " + `
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 21, Line: 2, Col: 3},
+				},
 			},
 		},
 		{
@@ -579,6 +583,10 @@ if test {` + " " + `
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 23, Line: 2, Col: 3},
 				},
 			},
 		},
@@ -703,6 +711,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 16, Line: 0, Col: 16},
+				},
 			},
 		},
 		{
@@ -713,6 +725,10 @@ func TestElementParser(t *testing.T) {
 				NameRange: Range{
 					From: Position{Index: 1, Line: 0, Col: 1},
 					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 21, Line: 0, Col: 21},
 				},
 			},
 		},
@@ -734,6 +750,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 28, Line: 0, Col: 28},
+				},
 			},
 		},
 		{
@@ -746,6 +766,10 @@ func TestElementParser(t *testing.T) {
 					To:   Position{Index: 6, Line: 0, Col: 6},
 				},
 				Children: nil,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 7, Line: 0, Col: 7},
+				},
 			},
 		},
 		{
@@ -758,6 +782,10 @@ func TestElementParser(t *testing.T) {
 					To:   Position{Index: 3, Line: 0, Col: 3},
 				},
 				Children: nil,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
 			},
 		},
 		{
@@ -781,6 +809,10 @@ func TestElementParser(t *testing.T) {
 					},
 				},
 				Children: nil,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 12, Line: 0, Col: 12},
+				},
 			},
 		},
 		{
@@ -795,6 +827,10 @@ func TestElementParser(t *testing.T) {
 				// <input> is a void element, so text is not a child of the input.
 				// </input> is ignored.
 				Children: nil,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 7, Line: 0, Col: 7},
+				},
 			},
 		},
 		{
@@ -832,6 +868,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 23, Line: 0, Col: 23},
+				},
 			},
 		},
 		{
@@ -850,6 +890,10 @@ func TestElementParser(t *testing.T) {
 							From: Position{Index: 6, Line: 0, Col: 6},
 							To:   Position{Index: 8, Line: 0, Col: 8},
 						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 9, Line: 0, Col: 9},
+						},
 					},
 					&Element{
 						Name: "br", // The <br></br> one.
@@ -857,7 +901,15 @@ func TestElementParser(t *testing.T) {
 							From: Position{Index: 10, Line: 0, Col: 10},
 							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
+						Range: Range{
+							From: Position{Index: 9, Line: 0, Col: 9},
+							To:   Position{Index: 18, Line: 0, Col: 18},
+						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 24, Line: 0, Col: 24},
 				},
 			},
 		},
@@ -873,6 +925,10 @@ func TestElementParser(t *testing.T) {
 				// <br> is a void element, so <hr> is not a child of the <br>.
 				// </br> is ignored.
 				Children: nil,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
 			},
 		},
 		{
@@ -910,6 +966,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 20, Line: 0, Col: 20},
+				},
 			},
 		},
 		{
@@ -942,6 +1002,10 @@ func TestElementParser(t *testing.T) {
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 45, Line: 0, Col: 45},
 				},
 			},
 		},
@@ -989,6 +1053,10 @@ func TestElementParser(t *testing.T) {
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 39, Line: 0, Col: 39},
 				},
 			},
 		},
@@ -1046,6 +1114,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 47, Line: 0, Col: 47},
+				},
 			},
 		},
 		{
@@ -1102,6 +1174,10 @@ func TestElementParser(t *testing.T) {
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 83, Line: 0, Col: 83},
 				},
 			},
 		},
@@ -1173,6 +1249,10 @@ func TestElementParser(t *testing.T) {
 					},
 				},
 				TrailingSpace: SpaceVertical,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 81, Line: 5, Col: 0},
+				},
 			},
 		},
 		{
@@ -1183,6 +1263,10 @@ func TestElementParser(t *testing.T) {
 				NameRange: Range{
 					From: Position{Index: 1, Line: 0, Col: 1},
 					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 5, Line: 0, Col: 5},
 				},
 			},
 		},
@@ -1206,6 +1290,10 @@ func TestElementParser(t *testing.T) {
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 28, Line: 0, Col: 28},
 				},
 			},
 		},
@@ -1264,6 +1352,10 @@ func TestElementParser(t *testing.T) {
 					},
 				},
 				IndentAttrs: true,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 68, Line: 4, Col: 2},
+				},
 			},
 		},
 		{
@@ -1335,6 +1427,10 @@ func TestElementParser(t *testing.T) {
 					},
 				},
 				IndentAttrs: true,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 104, Line: 6, Col: 2},
+				},
 			},
 		},
 		{
@@ -1401,6 +1497,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 74, Line: 4, Col: 9},
+				},
 			},
 		},
 		{
@@ -1411,6 +1511,10 @@ func TestElementParser(t *testing.T) {
 				NameRange: Range{
 					From: Position{Index: 1, Line: 0, Col: 1},
 					To:   Position{Index: 2, Line: 0, Col: 2},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 7, Line: 0, Col: 7},
 				},
 			},
 		},
@@ -1432,6 +1536,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 15, Line: 0, Col: 15},
+				},
 			},
 		},
 		{
@@ -1450,7 +1558,15 @@ func TestElementParser(t *testing.T) {
 							From: Position{Index: 4, Line: 0, Col: 4},
 							To:   Position{Index: 5, Line: 0, Col: 5},
 						},
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 7, Line: 0, Col: 7},
+						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 11, Line: 0, Col: 11},
 				},
 			},
 		},
@@ -1470,7 +1586,15 @@ func TestElementParser(t *testing.T) {
 							From: Position{Index: 4, Line: 0, Col: 4},
 							To:   Position{Index: 5, Line: 0, Col: 5},
 						},
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 10, Line: 0, Col: 10},
+						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 14, Line: 0, Col: 14},
 				},
 			},
 		},
@@ -1496,7 +1620,15 @@ func TestElementParser(t *testing.T) {
 							&Whitespace{Value: " "},
 						},
 						TrailingSpace: SpaceHorizontal,
+						Range: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 13, Line: 0, Col: 13},
+						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 17, Line: 0, Col: 17},
 				},
 			},
 		},
@@ -1516,6 +1648,10 @@ func TestElementParser(t *testing.T) {
 							From: Position{Index: 4, Line: 0, Col: 4},
 							To:   Position{Index: 5, Line: 0, Col: 5},
 						},
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 10, Line: 0, Col: 10},
+						},
 					},
 					&Element{
 						Name: "c",
@@ -1530,9 +1666,21 @@ func TestElementParser(t *testing.T) {
 									From: Position{Index: 14, Line: 0, Col: 14},
 									To:   Position{Index: 15, Line: 0, Col: 15},
 								},
+								Range: Range{
+									From: Position{Index: 13, Line: 0, Col: 13},
+									To:   Position{Index: 17, Line: 0, Col: 17},
+								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 10, Line: 0, Col: 10},
+							To:   Position{Index: 21, Line: 0, Col: 21},
+						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 25, Line: 0, Col: 25},
 				},
 			},
 		},
@@ -1544,6 +1692,10 @@ func TestElementParser(t *testing.T) {
 				NameRange: Range{
 					From: Position{Index: 1, Line: 0, Col: 1},
 					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 11, Line: 0, Col: 11},
 				},
 			},
 		},
@@ -1574,6 +1726,10 @@ func TestElementParser(t *testing.T) {
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 21, Line: 0, Col: 21},
 				},
 			},
 		},
@@ -1662,6 +1818,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 140, Line: 0, Col: 140},
+				},
 			},
 		},
 		{
@@ -1710,6 +1870,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 58, Line: 4, Col: 9},
+				},
 			},
 		},
 		{
@@ -1732,6 +1896,10 @@ func TestElementParser(t *testing.T) {
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 21, Line: 0, Col: 21},
 				},
 			},
 		},
@@ -1789,6 +1957,10 @@ func TestElementParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 57, Line: 0, Col: 57},
+				},
 			},
 		},
 		{
@@ -1825,6 +1997,10 @@ func TestElementParser(t *testing.T) {
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 31, Line: 0, Col: 31},
 				},
 			},
 		},
