@@ -1,7 +1,6 @@
 package format
 
 import (
-	"bytes"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -42,8 +41,9 @@ func TestFormatting(t *testing.T) {
 	}
 }
 
-func clean(b []byte) []byte {
-	b = bytes.ReplaceAll(b, []byte("$\n"), []byte("\n"))
-	b = bytes.TrimSuffix(b, []byte("\n"))
-	return b
+func showWhitespace(s string) string {
+	s = strings.ReplaceAll(s, "\n", "⏎\n")
+	s = strings.ReplaceAll(s, "\t", "→")
+	s = strings.ReplaceAll(s, " ", "·")
+	return s
 }

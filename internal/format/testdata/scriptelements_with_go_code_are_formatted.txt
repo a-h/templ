@@ -14,8 +14,8 @@ package test
 
 templ script(data string) {
 	<script>
-      function log({{ data }}) {
-        console.log({{ data }});
-      }
+		function log({{ data }}) {
+			console.log({{ data }});
+		}
 	</script>
 }

@@ -1,0 +1,24 @@
+package format
+
+import (
+	"github.com/a-h/templ/parser/v2"
+)
+
+func StyleElement(se *parser.RawElement, depth int) (err error) {
+	if se.Name != "style" {
+		return nil
+	}
+
+	// Skip empty style elements, as they don't need formatting.
+	if len(se.Contents) == 0 {
+		return nil
+	}
+
+	// Prettyify the style contents.
+	se.Contents, err = prettifyElement("style", "text/css", se.Contents, depth)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -11,7 +11,7 @@ func Run(input string, fileName string) (formatted string, err error) {
 	if err != nil {
 		return "", errors.New("unable to format script or CSS: prettier not found in PATH, please install it")
 	}
-	cmd := exec.Command(path, "--stdin-filepath", fileName)
+	cmd := exec.Command(path, "--use-tabs", "true", "--stdin-filepath", fileName)
 	cmd.Stdin = bytes.NewBufferString(input)
 	var out bytes.Buffer
 	cmd.Stdout = &out

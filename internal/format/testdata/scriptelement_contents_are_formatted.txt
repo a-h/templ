@@ -14,8 +14,8 @@ package test
 
 templ script(data string) {
 	<script>
-      function log(something) {
-        console.log(something);
-      }
+		function log(something) {
+			console.log(something);
+		}
 	</script>
 }

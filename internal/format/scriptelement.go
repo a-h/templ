@@ -1,11 +1,8 @@
 package format
 
 import (
-	"fmt"
 	"strings"
 
-	"github.com/a-h/templ/internal/htmlfind"
-	"github.com/a-h/templ/internal/prettier"
 	"github.com/a-h/templ/parser/v2"
 )
 
@@ -19,15 +16,10 @@ func ScriptElement(se *parser.ScriptElement, depth int) (err error) {
 		return nil
 	}
 
+	// ScriptElements may contain Go expressions in {{ }} blocks. Prettier has no idea how to handle
+	// that, so we replace them with a placeholder, format the script, and then replace the placeholders
+	// with the original Go expressions.
 	var scriptWithPlaceholders strings.Builder
-
-	// Add divs to the start and end of the script to ensure that prettier formats the content with
-	// correct indentation.
-	for i := range depth + 1 {
-		scriptWithPlaceholders.WriteString(fmt.Sprintf("<div data-templ-depth=\"%d\">", i))
-	}
-
-	se.WriteStart(&scriptWithPlaceholders, depth)
 	for _, part := range se.Contents {
 		if part.Value != nil {
 			scriptWithPlaceholders.WriteString(*part.Value)
@@ -38,43 +30,29 @@ func ScriptElement(se *parser.ScriptElement, depth int) (err error) {
 			continue
 		}
 	}
-	se.WriteEnd(&scriptWithPlaceholders)
 
-	for range depth + 1 {
-		scriptWithPlaceholders.WriteString("</div>")
+	// <script> elements can have a type attribute that specifies the script type. This is important
+	// to avoid formatting errors, e.g. attempting to format <script type="text/hyperscript"> with a
+	// JavaScript formatter.
+	var scriptType string
+loop:
+	for _, attr := range se.Attributes {
+		switch attr := attr.(type) {
+		case *parser.ConstantAttribute:
+			if attr.Key.String() == "type" {
+				scriptType = attr.Value
+			}
+			break loop
+		}
 	}
 
-	before := scriptWithPlaceholders.String()
-	after, err := prettier.Run(before, "script_element.html")
+	// Use the prettifyElement function to format the script contents.
+	after, err := prettifyElement("script", scriptType, scriptWithPlaceholders.String(), depth)
 	if err != nil {
-		return fmt.Errorf("prettier error: %w", err)
-	}
-	if before == after {
-		return nil
+		return err
 	}
 
-	// Chop off the start and end divs we added to get prettier to format the content with correct
-	// indentation.
-	if depth > 0 {
-		matcher := htmlfind.Element("script")
-		nodes, err := htmlfind.AllReader(strings.NewReader(after), matcher)
-		if err != nil {
-			return fmt.Errorf("htmlfind error: %w", err)
-		}
-		if len(nodes) != 1 {
-			return fmt.Errorf("expected 1 script node, got %d", len(nodes))
-		}
-		scriptNode := nodes[0]
-		if scriptNode.FirstChild == nil {
-			return fmt.Errorf("script node has no children")
-		}
-		var sb strings.Builder
-		for node := range scriptNode.ChildNodes() {
-			sb.WriteString(node.Data)
-		}
-		after = strings.TrimRight(sb.String(), " \t\r\n") + "\n" + strings.Repeat("\t", depth)
-	}
-
+	// After formatting, replace the placeholders with the original Go expressions.
 	split := strings.Split(after, templScriptPlaceholder)
 	var splitIndex int
 	for i, part := range se.Contents {
@@ -88,11 +66,4 @@ func ScriptElement(se *parser.ScriptElement, depth int) (err error) {
 	}
 
 	return nil
-}
-
-func showWhitespace(s string) string {
-	s = strings.ReplaceAll(s, "\n", "⏎\n")
-	s = strings.ReplaceAll(s, "\t", "→")
-	s = strings.ReplaceAll(s, " ", "·")
-	return s
 }
