@@ -31,6 +31,9 @@ func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (e
 			return fmt.Errorf("failed to read from stdin: %w", err)
 		}
 		formatted, _, err := format.Templ(src, args.StdinFilepath)
+		if err != nil {
+			return fmt.Errorf("failed to format stdin: %w", err)
+		}
 		if _, err = stdout.Write(formatted); err != nil {
 			return fmt.Errorf("failed to write to stdout: %w", err)
 		}
