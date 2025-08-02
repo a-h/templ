@@ -3,6 +3,7 @@ package syncmap
 import "testing"
 
 func TestMap(t *testing.T) {
+	t.Parallel()
 	t.Run("Can Set and Get values", func(t *testing.T) {
 		m := New[string, int]()
 		m.Set("key1", 42)

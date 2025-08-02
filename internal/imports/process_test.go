@@ -117,42 +117,45 @@ templ Page(count int) {
 	}
 
 	for _, test := range tests {
-		// Create test project.
-		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
-		if err != nil {
-			t.Fatalf("failed to create test project: %v", err)
-		}
-		defer func() {
-			if err = os.RemoveAll(dir); err != nil {
-				t.Errorf("failed to remove test project directory: %v", err)
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			// Create test project.
+			dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
+			if err != nil {
+				t.Fatalf("failed to create test project: %v", err)
 			}
-		}()
+			defer func() {
+				if err = os.RemoveAll(dir); err != nil {
+					t.Errorf("failed to remove test project directory: %v", err)
+				}
+			}()
 
-		// Load the templates.templ file.
-		filePath := path.Join(dir, "templates.templ")
-		err = os.WriteFile(filePath, []byte(test.src), 0660)
-		if err != nil {
-			t.Fatalf("failed to write file: %v", err)
-		}
+			// Load the templates.templ file.
+			filePath := path.Join(dir, "templates.templ")
+			err = os.WriteFile(filePath, []byte(test.src), 0660)
+			if err != nil {
+				t.Fatalf("failed to write file: %v", err)
+			}
 
-		// Parse the new file.
-		template, err := parser.Parse(filePath)
-		if err != nil {
-			t.Fatalf("failed to parse %v", err)
-		}
-		template.Filepath = filePath
-		tf, err := Process(template)
-		if err != nil {
-			t.Fatalf("failed to process file: %v", err)
-		}
+			// Parse the new file.
+			template, err := parser.Parse(filePath)
+			if err != nil {
+				t.Fatalf("failed to parse %v", err)
+			}
+			template.Filepath = filePath
+			tf, err := Process(template)
+			if err != nil {
+				t.Fatalf("failed to process file: %v", err)
+			}
 
-		// Write it back out after processing.
-		buf := new(strings.Builder)
-		if err := tf.Write(buf); err != nil {
-			t.Fatalf("failed to write template file: %v", err)
-		}
+			// Write it back out after processing.
+			buf := new(strings.Builder)
+			if err := tf.Write(buf); err != nil {
+				t.Fatalf("failed to write template file: %v", err)
+			}
 
-		// Assert.
-		test.assertions(t, buf.String())
+			// Assert.
+			test.assertions(t, buf.String())
+		})
 	}
 }
