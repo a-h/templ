@@ -2,87 +2,54 @@ package htmldiff
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"strings"
 
-	"github.com/a-h/htmlformat"
 	"github.com/a-h/templ"
+	"github.com/a-h/templ/internal/prettier"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/sync/errgroup"
 )
 
-func DiffStrings(expected, actual string) (diff string, err error) {
+func DiffStrings(expected, actual string) (output, diff string, err error) {
 	// Format both strings.
 	var wg errgroup.Group
 
 	// Format expected.
-	wg.Go(func() error {
-		e := new(strings.Builder)
-		err := htmlformat.Fragment(e, strings.NewReader(expected))
+	wg.Go(func() (err error) {
+		expected, err = prettier.Run(expected, "expected.html")
 		if err != nil {
-			return fmt.Errorf("expected html formatting error: %w", err)
+			return err
 		}
-		expected = e.String()
 		return nil
 	})
 
 	// Format actual.
-	wg.Go(func() error {
-		a := new(strings.Builder)
-		err := htmlformat.Fragment(a, strings.NewReader(actual))
+	wg.Go(func() (err error) {
+		actual, err = prettier.Run(actual, "actual.html")
 		if err != nil {
 			return fmt.Errorf("actual html formatting error: %w", err)
 		}
-		actual = a.String()
 		return nil
 	})
 
 	// Wait for processing.
 	if err = wg.Wait(); err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return cmp.Diff(expected, actual), nil
+	return actual, cmp.Diff(expected, actual), nil
 }
 
-func Diff(input templ.Component, expected string) (diff string, err error) {
-	_, diff, err = DiffCtx(context.Background(), input, expected)
-	return diff, err
+func Diff(input templ.Component, expected string) (actual, diff string, err error) {
+	return DiffCtx(context.Background(), input, expected)
 }
 
-func DiffCtx(ctx context.Context, input templ.Component, expected string) (formattedInput, diff string, err error) {
-	var wg errgroup.Group
-
-	// Format the expected value.
-	wg.Go(func() error {
-		e := new(strings.Builder)
-		err := htmlformat.Fragment(e, strings.NewReader(expected))
-		if err != nil {
-			return fmt.Errorf("expected html formatting error: %w", err)
-		}
-		expected = e.String()
-		return nil
-	})
-
-	// Pipe via the HTML formatter.
-	actual := new(strings.Builder)
-	r, w := io.Pipe()
-	wg.Go(func() error {
-		err := htmlformat.Fragment(actual, r)
-		if err != nil {
-			return fmt.Errorf("actual html formatting error: %w", err)
-		}
-		return nil
-	})
-
-	// Render the component.
-	renderErr := input.Render(ctx, w)
-	closeErr := w.Close()
-
-	// Wait for processing.
-	processingErr := wg.Wait()
-
-	return actual.String(), cmp.Diff(expected, actual.String()), errors.Join(renderErr, closeErr, processingErr)
+func DiffCtx(ctx context.Context, input templ.Component, expected string) (actual, diff string, err error) {
+	var a strings.Builder
+	err = input.Render(ctx, &a)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to render input: %w", err)
+	}
+	return DiffStrings(expected, a.String())
 }

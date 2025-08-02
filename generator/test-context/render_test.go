@@ -5,6 +5,8 @@ import (
 	_ "embed"
 	"testing"
 
+	"os"
+
 	"github.com/a-h/templ/generator/htmldiff"
 )
 
@@ -16,11 +18,14 @@ func Test(t *testing.T) {
 
 	ctx := context.WithValue(context.Background(), contextKeyName, "test")
 
-	_, diff, err := htmldiff.DiffCtx(ctx, component, expected)
+	actual, diff, err := htmldiff.DiffCtx(ctx, component, expected)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if diff != "" {
+		if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual.html: %v", err)
+		}
 		t.Error(diff)
 	}
 }

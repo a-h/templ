@@ -1,27 +1,29 @@
-<button onclick="alert(&#34;Hello, World!&#34;)">
- Click me
-</button>
+<button onClick="alert(&#34;Hello, World!&#34;)">Click me</button>
 <script>
- function customAlert(msg, date) {
-				alert(msg + " " + date);
-			}
+	function customAlert(msg, date) {
+		alert(msg + " " + date);
+	}
 </script>
-<button onclick="customAlert(&#34;Hello, custom alert 1: &#34;,&#34;2020-01-01T00:00:00Z&#34;)">
- Click me
+<button
+	onClick="customAlert(&#34;Hello, custom alert 1: &#34;,&#34;2020-01-01T00:00:00Z&#34;)"
+>
+	Click me
 </button>
-<button onclick="customAlert(&#34;Hello, custom alert 2: &#34;,&#34;2020-01-01T00:00:00Z&#34;)">
- Click me
+<button
+	onClick="customAlert(&#34;Hello, custom alert 2: &#34;,&#34;2020-01-01T00:00:00Z&#34;)"
+>
+	Click me
 </button>
 <script>
- customAlert("Runs on page load","2020-01-01T00:00:00Z")
+	customAlert("Runs on page load", "2020-01-01T00:00:00Z");
 </script>
 <script>
- function onClickEventHandler(event, data) {
-			alert(event.type);
-			alert(data)
-			event.preventDefault();
-		}
+	function onClickEventHandler(event, data) {
+		alert(event.type);
+		alert(data);
+		event.preventDefault();
+	}
 </script>
 <button onclick="onClickEventHandler(event,&#34;1234&#34;)">
- Pass event handler
+	Pass event handler
 </button>

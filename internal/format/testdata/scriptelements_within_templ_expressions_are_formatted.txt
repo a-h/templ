@@ -1,0 +1,27 @@
+-- in --
+package test
+
+templ script(c templ.Component) {
+	@c() {
+		<script>
+			var a = {{ data }}
+			var b = "{{ data }}"
+			var c = '{{ data }}'
+			var d = `{{ data }}`
+		</script>
+	}
+}
+
+-- out --
+package test
+
+templ script(c templ.Component) {
+	@c() {
+		<script>
+			var a = {{ data }}
+			var b = "{{ data }}"
+			var c = '{{ data }}'
+			var d = `{{ data }}`
+		</script>
+	}
+}

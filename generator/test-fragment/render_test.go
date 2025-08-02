@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"os"
+
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator/htmldiff"
 )
@@ -68,11 +70,14 @@ func Test(t *testing.T) {
 				t.Errorf("failed to read body: %v", err)
 			}
 
-			diff, err := htmldiff.DiffStrings(tt.expected, string(body))
+			actual, diff, err := htmldiff.DiffStrings(tt.expected, string(body))
 			if err != nil {
 				t.Fatalf("failed to diff: %v", err)
 			}
 			if diff != "" {
+				if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
+					t.Errorf("failed to write actual.html: %v", err)
+				}
 				t.Error(diff)
 			}
 		})

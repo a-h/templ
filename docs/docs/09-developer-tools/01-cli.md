@@ -94,6 +94,8 @@ to exit with unix error-code `1` if any templates needed to be modified.
 templ fmt -fail .
 ```
 
+If `prettierd`, `prettier` or `npx` is found in your `PATH`, `templ fmt` will use prettier to format `script` and `style` elements in files.
+
 ## Language Server for IDE integration
 
 `templ lsp` provides a Language Server Protocol (LSP) implementation to support IDE integrations.

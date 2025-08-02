@@ -145,7 +145,6 @@ module.exports = {
 
 With the templ LSP installed and configured, you can use the following code snippet to format on save:
 
-
 ```lua
 vim.api.nvim_create_autocmd({ "BufWritePre" }, { pattern = { "*.templ" }, callback = vim.lsp.buf.format })
 ```
@@ -210,6 +209,12 @@ local templ_format = function()
     })
 end
 ```
+
+:::note
+Formatting `script` and `style` elements in templ files is handed off to prettier.
+
+If you don't have `prettierd`, `prettier` or `npx` on your path, formatting will not be applied to those elements.
+:::
 
 ### Troubleshooting
 

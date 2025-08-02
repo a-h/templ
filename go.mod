@@ -5,7 +5,6 @@ go 1.23.0
 toolchain go1.23.6
 
 require (
-	github.com/a-h/htmlformat v0.0.0-20250209131833-673be874c677
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e
 	github.com/andybalholm/brotli v1.1.0
 	github.com/cenkalti/backoff/v4 v4.3.0

@@ -3,8 +3,8 @@ package fuzzing
 templ String(v any) {
 	<script>
 		function logValue() {
-			console.log("{{ v }}")
-			return "result_ok"
+			console.log("{{ v }}");
+			return "result_ok";
 		}
 	</script>
 }
@@ -12,8 +12,8 @@ templ String(v any) {
 templ Any(v any) {
 	<script>
 		function logValue() {
-			console.log({{ v }})
-			return "result_ok"
+			console.log({{ v }});
+			return "result_ok";
 		}
 	</script>
 }
