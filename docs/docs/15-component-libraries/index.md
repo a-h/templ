@@ -36,3 +36,50 @@ templ ExamplePage() {
 - [Documentation](https://templui.io)
 - [GitHub](https://github.com/axzilla/templui)
 - [Quick Start Template](https://github.com/axzilla/templui-quickstart)
+
+## DatastarUI
+
+### About
+
+DatastarUI is a comprehensive UI component library that ports shadcn/ui components to Go and templ. It provides pixel-perfect visual and functional replicas of popular UI components with reactive capabilities powered by Datastar signals.
+
+### Features
+
+- **shadcn/ui Port**: Faithful recreation of shadcn/ui components in Go/templ
+- **Reactive UI**: Powered by lightweight Datastar signals (15KB runtime)
+- **Server-side Rendered**: All components render on the server for optimal performance
+- **Type-safe**: Full Go type system integration with structured component arguments
+- **Tailwind CSS**: Consistent styling that matches shadcn/ui design system
+- **Dark Mode**: Built-in dark mode support across all components
+- **Accessibility**: Focused on creating accessible UI components
+
+### Example
+
+```go
+import "github.com/CoreyCole/datastarui/components"
+
+templ ExamplePage() {
+  @components.Button(components.ButtonProps{
+    ID: "my-button",
+    Variant: "primary",
+    Size: "md",
+    Loading: false,
+  }) {
+    Click me
+  }
+}
+```
+
+### Development Setup
+
+DatastarUI includes a streamlined development workflow:
+
+```sh
+# Start Tailwind CSS watcher and Go server with live reload
+templ generate --watch --proxy="http://localhost:4242" --cmd="go run ."
+```
+
+### Links
+
+- [GitHub](https://github.com/CoreyCole/datastarui)
+- [Datastar](https://data-star.dev/) - The reactive framework powering the components
