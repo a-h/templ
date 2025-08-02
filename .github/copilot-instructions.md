@@ -30,13 +30,14 @@ The most useful tasks for local development are:
 * `xc install-snapshot` - builds the templ CLI and installs it into `~/bin`. Ensure that this is in your path.
 * `xc generate` - generates Go code from the templ files in the project.
 * `xc test` - regenerates all templates, and runs the unit tests.
+* `xc test-short` - runs shorter tests, avoiding long running tests for filesystem watchers etc.
 * `xc fmt` - runs `gofmt` to format all Go code.
 * `xc lint` - run the same linting as run in the CI process.
 * `xc docs-run` - run the Docusaurus documentation site.
 
 templ has a code generation step, this is automatically carried out using `xc test`.
 
-Don't install templ globally using `xc install-snapshot` or `go install`. Use the `xc generate` or `xc test` tasks to generate the code, which will also run the tests.
+Don't install templ globally using `xc install-snapshot` or `go install`. Use the `xc generate` or `xc test-short` tasks to generate the code, which will also run the tests.
 
 ## Commit messages
 

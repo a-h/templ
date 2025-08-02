@@ -3,6 +3,7 @@ package testgotemplates
 import (
 	"context"
 	_ "embed"
+	"os"
 	"strings"
 	"testing"
 
@@ -29,11 +30,14 @@ func TestExample(t *testing.T) {
 	}
 
 	// Compare the output with the expected.
-	diff, err := htmldiff.DiffStrings(expected, b.String())
+	actual, diff, err := htmldiff.DiffStrings(expected, b.String())
 	if err != nil {
 		t.Fatalf("failed to diff strings: %v", err)
 	}
 	if diff != "" {
+		if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual.html: %v", err)
+		}
 		t.Error(diff)
 	}
 }
