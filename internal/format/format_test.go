@@ -16,6 +16,7 @@ func TestFormatting(t *testing.T) {
 	}
 	for _, file := range files {
 		t.Run(filepath.Base(file), func(t *testing.T) {
+			t.Parallel()
 			a, err := txtar.ParseFile(file)
 			if err != nil {
 				t.Fatal(err)
@@ -25,7 +26,7 @@ func TestFormatting(t *testing.T) {
 			}
 			actual, _, err := Templ(a.Files[0].Data, "")
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("failed to format input: %v", err)
 			}
 			expected := string(a.Files[1].Data)
 			if diff := cmp.Diff(expected, string(actual)); diff != "" {
