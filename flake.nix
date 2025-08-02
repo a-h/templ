@@ -81,7 +81,7 @@
             pkgs.gotestsum
             pkgs.ko # Used to build Docker images.
             pkgs.nodejs # Used to build templ-docs.
-            pkgs.nodePackages.prettier # Used for formatting JS and CSS.
+            pkgs.prettierd # Used for formatting JS and CSS.
             pkgs.version
             pkgs.xc
           ];
