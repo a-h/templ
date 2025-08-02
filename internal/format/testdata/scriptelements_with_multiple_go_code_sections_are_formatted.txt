@@ -1,0 +1,23 @@
+-- in --
+package test
+
+templ script(data string) {
+	<script>
+		var a = {{ data }}
+		var b = "{{ data }}"
+		var c = '{{ data }}'
+		var d = `{{ data }}`
+	</script>
+}
+
+-- out --
+package test
+
+templ script(data string) {
+	<script>
+		var a = {{ data }}
+		var b = "{{ data }}"
+		var c = '{{ data }}'
+		var d = `{{ data }}`
+	</script>
+}

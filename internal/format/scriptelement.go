@@ -19,6 +19,7 @@ func ScriptElement(se *parser.ScriptElement, depth int) (err error) {
 	// ScriptElements may contain Go expressions in {{ }} blocks. Prettier has no idea how to handle
 	// that, so we replace them with a placeholder, format the script, and then replace the placeholders
 	// with the original Go expressions.
+	var placeholderContent []parser.ScriptContents
 	var scriptWithPlaceholders strings.Builder
 	for _, part := range se.Contents {
 		if part.Value != nil {
@@ -27,6 +28,7 @@ func ScriptElement(se *parser.ScriptElement, depth int) (err error) {
 		}
 		if part.GoCode != nil {
 			scriptWithPlaceholders.WriteString(templScriptPlaceholder)
+			placeholderContent = append(placeholderContent, part)
 			continue
 		}
 	}
@@ -52,18 +54,42 @@ loop:
 		return err
 	}
 
-	// After formatting, replace the placeholders with the original Go expressions.
-	split := strings.Split(after, templScriptPlaceholder)
-	var splitIndex int
-	for i, part := range se.Contents {
-		if part.Value != nil {
-			se.Contents[i].Value = &split[splitIndex]
-			splitIndex++
+	// If there were no placeholders, set the contents to the formatted script.
+	if len(placeholderContent) == 0 {
+		se.Contents = []parser.ScriptContents{
+			{
+				Value:               &after,
+				GoCode:              nil,
+				InsideStringLiteral: false,
+			},
 		}
-		if part.GoCode != nil && part.GoCode.TrailingSpace != parser.SpaceNone {
-			se.Contents[i].GoCode.TrailingSpace = parser.SpaceNone
+		return nil
+	}
+
+	split := strings.Split(after, templScriptPlaceholder)
+	var appliedPlaceholderCount int
+	var newContents []parser.ScriptContents
+	for _, part := range split {
+		if part == "" {
+			continue
+		}
+		newContents = append(newContents, parser.ScriptContents{
+			Value:               &part,
+			GoCode:              nil,
+			InsideStringLiteral: false,
+		})
+		// If we had a GoCode part, we need to add it back in.
+		if appliedPlaceholderCount < len(placeholderContent) {
+			placeholder := placeholderContent[appliedPlaceholderCount]
+			// Trim horizontal space from the GoCode trailing space, as prettier will add its own.
+			if placeholder.GoCode != nil && strings.Contains(string(placeholder.GoCode.TrailingSpace), " ") {
+				placeholder.GoCode.TrailingSpace = parser.SpaceNone
+			}
+			newContents = append(newContents, placeholder)
+			appliedPlaceholderCount++
 		}
 	}
+	se.Contents = newContents
 
 	return nil
 }

@@ -13,17 +13,14 @@ import (
 	"github.com/a-h/templ/parser/v2/visitor"
 )
 
-func calculateNodeDepth(e *parser.Element, nodeToDepth map[parser.Node]int, depth int) {
-loop:
-	for _, child := range e.Children {
-		switch child := child.(type) {
-		case *parser.ScriptElement:
-			nodeToDepth[child] = depth
-			continue loop
-		case *parser.RawElement:
-			nodeToDepth[child] = depth
-			continue loop
-		case *parser.Element:
+func calculateNodeDepth(e parser.Node, nodeToDepth map[parser.Node]int, depth int) {
+	switch e := e.(type) {
+	case *parser.ScriptElement:
+		nodeToDepth[e] = depth
+	case *parser.RawElement:
+		nodeToDepth[e] = depth
+	case parser.CompositeNode:
+		for _, child := range e.ChildNodes() {
 			calculateNodeDepth(child, nodeToDepth, depth+1)
 		}
 	}
@@ -45,8 +42,17 @@ func Templ(src []byte, fileName string) (output []byte, changed bool, err error)
 	nodeFormatter := visitor.New()
 	// Calculate the depth of each ScriptElement and RawElement in the tree so that the formatting is properly indented.
 	nodeToDepth := make(map[parser.Node]int)
-	nodeFormatter.Element = func(e *parser.Element) error {
-		calculateNodeDepth(e, nodeToDepth, 0)
+	nodeFormatter.HTMLTemplate = func(n *parser.HTMLTemplate) error {
+		// Visit the children first to calculate their depth.
+		for _, child := range n.Children {
+			calculateNodeDepth(child, nodeToDepth, 1)
+		}
+		// Now that we have the depth of each node, we can format them.
+		for _, child := range n.Children {
+			if err := child.Visit(nodeFormatter); err != nil {
+				return err
+			}
+		}
 		return nil
 	}
 	nodeFormatter.ScriptElement = func(se *parser.ScriptElement) error {
@@ -60,6 +66,7 @@ func Templ(src []byte, fileName string) (output []byte, changed bool, err error)
 		}
 		return StyleElement(re, depth)
 	}
+
 	if err = nodeFormatter.VisitTemplateFile(t); err != nil {
 		return nil, false, err
 	}
@@ -78,7 +85,7 @@ func prettifyElement(name string, typeAttrValue string, content string, depth in
 
 	// Add divs to the start and end of the script to ensure that prettier formats the content with
 	// correct indentation.
-	for i := range depth + 1 {
+	for i := range depth {
 		indentationWrapper.WriteString(fmt.Sprintf("<div data-templ-depth=\"%d\">", i))
 	}
 
@@ -100,7 +107,7 @@ func prettifyElement(name string, typeAttrValue string, content string, depth in
 	indentationWrapper.WriteString(name)
 	indentationWrapper.WriteString(">")
 
-	for range depth + 1 {
+	for range depth {
 		indentationWrapper.WriteString("</div>")
 	}
 
@@ -131,7 +138,7 @@ func prettifyElement(name string, typeAttrValue string, content string, depth in
 	for node := range scriptNode.ChildNodes() {
 		sb.WriteString(node.Data)
 	}
-	after = strings.TrimRight(sb.String(), " \t\r\n") + "\n" + strings.Repeat("\t", depth+1)
+	after = strings.TrimRight(sb.String(), " \t\r\n") + "\n" + strings.Repeat("\t", depth)
 
 	return after, nil
 }
