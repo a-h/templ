@@ -729,6 +729,7 @@ type ScriptContents struct {
 type ScriptElement struct {
 	Attributes []Attribute
 	Contents   []ScriptContents
+	Range      Range
 }
 
 func (se *ScriptElement) IsNode() bool { return true }
@@ -793,6 +794,7 @@ type RawElement struct {
 	Name       string
 	Attributes []Attribute
 	Contents   string
+	Range      Range
 }
 
 func (e *RawElement) IsNode() bool { return true }

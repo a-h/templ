@@ -163,6 +163,7 @@ loop:
 		}
 	}
 
+	e.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return e, true, nil
 }
 
