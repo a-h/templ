@@ -67,9 +67,14 @@ func TestScriptElementParser(t *testing.T) {
 		expected *ScriptElement
 	}{
 		{
-			name:     "script: no content",
-			input:    `<script></script>`,
-			expected: &ScriptElement{},
+			name:  "script: no content",
+			input: `<script></script>`,
+			expected: &ScriptElement{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 17, Line: 0, Col: 17},
+				},
+			},
 		},
 		{
 			name:  "script: vbscript",
@@ -107,6 +112,10 @@ func TestScriptElementParser(t *testing.T) {
 						},
 					}, false),
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 27, Line: 0, Col: 27},
+				},
 			},
 		},
 		{
@@ -132,6 +141,10 @@ func TestScriptElementParser(t *testing.T) {
 							},
 						},
 					}, false),
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 50, Line: 0, Col: 50},
 				},
 			},
 		},
@@ -159,6 +172,10 @@ func TestScriptElementParser(t *testing.T) {
 						},
 					}, false),
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 41, Line: 0, Col: 41},
+				},
 			},
 		},
 		{
@@ -185,6 +202,10 @@ func TestScriptElementParser(t *testing.T) {
 						},
 					}, false),
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 45, Line: 0, Col: 45},
+				},
 			},
 		},
 		{
@@ -206,6 +227,10 @@ func TestScriptElementParser(t *testing.T) {
 						TrailingSpace: SpaceVertical,
 					}, false),
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 29, Line: 2, Col: 9},
+				},
 			},
 		},
 		{
@@ -225,6 +250,10 @@ func TestScriptElementParser(t *testing.T) {
 					}, true),
 					NewScriptContentsScriptCode("';"),
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 38, Line: 0, Col: 38},
+				},
 			},
 		},
 		{
@@ -243,6 +272,10 @@ func TestScriptElementParser(t *testing.T) {
 						},
 					}, true),
 					NewScriptContentsScriptCode("\";"),
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 38, Line: 0, Col: 38},
 				},
 			},
 		},
@@ -266,6 +299,10 @@ to see if it works";</script>`,
 					}, true),
 					NewScriptContentsScriptCode("\\\nto see if it works\";"),
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 76, Line: 2, Col: 29},
+				},
 			},
 		},
 		{
@@ -285,6 +322,10 @@ to see if it works";</script>`,
 					}, true),
 					NewScriptContentsScriptCode("`;"),
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 38, Line: 0, Col: 38},
+				},
 			},
 		},
 		{
@@ -296,6 +337,10 @@ to see if it works";</script>`,
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("\n"),
 					NewScriptContentsScriptCode("// {{ name }}\n"),
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 32, Line: 2, Col: 9},
 				},
 			},
 		},
@@ -310,6 +355,10 @@ but it's commented out */
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("\n"),
 					NewScriptContentsScriptCode("/* There's some content\n{{ name }}\nbut it's commented out */\n"),
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 79, Line: 4, Col: 9},
 				},
 			},
 		},
