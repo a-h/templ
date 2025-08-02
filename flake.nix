@@ -53,7 +53,7 @@
             name = "templ";
             subPackages = [ "cmd/templ" ];
             src = gitignore.lib.gitignoreSource ./.;
-            vendorHash = "sha256-eJV0q+qG1QETydYtE6hipuxyp+P649RzF36Jc4qe8e4=";
+            vendorHash = "sha256-pVZjZCXT/xhBCMyZdR7kEmB9jqhTwRISFp63bQf6w5A=";
             env = {
               CGO_ENABLED = 0;
             };
