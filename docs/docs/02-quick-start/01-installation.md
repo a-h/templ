@@ -10,52 +10,17 @@ go install github.com/a-h/templ/cmd/templ@latest
 
 This installs templ into your path.
 
-## go install (as tool) - Recommended for projects
+## Using templ as a Go tool
 
-:::tip Recommended approach
-The tools directive introduced in Go 1.24 is the recommended way to manage templ in your projects, as it ensures version consistency between the generator and runtime.
+:::info
+This uses the [tool directive](https://tip.golang.org/doc/modules/managing-dependencies#tools) feature of Go added in v1.24. To run templ once installed, use `go tool templ` instead of `templ`.
 :::
 
-To install templ as a tool in your project, run:
+To install templ locally in your project, run:
 
 ```bash
 go get -tool github.com/a-h/templ/cmd/templ@latest
 ```
-
-This approach provides several advantages:
-
-- **Version consistency**: Links the generator version to the runtime version in your `go.mod`
-- **Reproducible builds**: Team members and CI/CD systems use the same templ version
-- **No global installation**: Keeps your global environment clean
-- **Project isolation**: Different projects can use different templ versions
-
-### Using templ as a tool
-
-Once installed as a tool, use `go tool templ` instead of `templ` for all commands:
-
-```bash
-# Generate templates
-go tool templ generate
-
-# Format templates  
-go tool templ fmt .
-
-# Get version information
-go tool templ version
-
-# Start language server
-go tool templ lsp
-```
-
-### How it works
-
-The [tool directive](https://tip.golang.org/doc/modules/managing-dependencies#tools) feature added in Go 1.24 allows you to track tools as dependencies in your `go.mod` file. When you run `go get -tool`, Go adds an entry like this to your `go.mod`:
-
-```go
-//go:tool github.com/a-h/templ/cmd/templ
-```
-
-This ensures that the templ version used to generate code matches the templ runtime version your application imports, reducing the likelihood of compatibility issues.
 
 ## GitHub binaries
 
