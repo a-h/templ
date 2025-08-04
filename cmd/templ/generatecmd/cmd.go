@@ -306,10 +306,15 @@ func (cmd *Generate) walkAndWatch(ctx context.Context, events chan fsnotify.Even
 		return
 	}
 	cmd.Log.Info("Watching files")
-	rw, err := watcher.Recursive(ctx, cmd.Args.Path, cmd.Args.WatchPattern, events, errs)
+	rw, err := watcher.Recursive(ctx, cmd.Args.WatchPattern, events, errs)
 	if err != nil {
 		cmd.Log.Error("Recursive watcher setup failed, exiting", slog.Any("error", err))
 		errs <- FatalError{Err: fmt.Errorf("failed to setup recursive watcher: %w", err)}
+		return
+	}
+	if err = rw.Add(cmd.Args.Path); err != nil {
+		cmd.Log.Error("Failed to add path to watcher", slog.Any("error", err))
+		errs <- FatalError{Err: fmt.Errorf("failed to add path to watcher: %w", err)}
 		return
 	}
 	defer func() {
