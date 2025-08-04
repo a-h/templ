@@ -37,7 +37,9 @@ func TestWatchDebouncesDuplicates(t *testing.T) {
 				t.Errorf("expected 1 event, got %d", count)
 			}
 			cancel()
-			rw.Close()
+			if err := rw.Close(); err != nil {
+				t.Errorf("unexpected error closing watcher: %v", err)
+			}
 			return
 		}
 	}
@@ -88,7 +90,9 @@ func TestWatchDoesNotDebounceDifferentEvents(t *testing.T) {
 					t.Errorf("expected 2 event, got %d", count)
 				}
 				cancel()
-				rw.Close()
+				if err := rw.Close(); err != nil {
+					t.Errorf("unexpected error closing watcher: %v", err)
+				}
 				return
 			}
 		}
@@ -123,7 +127,9 @@ func TestWatchDoesNotDebounceSeparateEvents(t *testing.T) {
 				t.Errorf("expected 2 event, got %d", count)
 			}
 			cancel()
-			rw.Close()
+			if err := rw.Close(); err != nil {
+				t.Errorf("unexpected error closing watcher: %v", err)
+			}
 			return
 		}
 	}
