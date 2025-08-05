@@ -18,6 +18,18 @@ func TestHTMLCommentParser(t *testing.T) {
 			input: `<!-- single line comment -->`,
 			expected: &HTMLComment{
 				Contents: " single line comment ",
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 28,
+						Line:  0,
+						Col:   28,
+					},
+				},
 			},
 		},
 		{
@@ -25,6 +37,18 @@ func TestHTMLCommentParser(t *testing.T) {
 			input: `<!--no whitespace between sequence open and close-->`,
 			expected: &HTMLComment{
 				Contents: "no whitespace between sequence open and close",
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 52,
+						Line:  0,
+						Col:   52,
+					},
+				},
 			},
 		},
 		{
@@ -36,6 +60,18 @@ func TestHTMLCommentParser(t *testing.T) {
 				Contents: ` multiline
 								comment
 					`,
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 39,
+						Line:  2,
+						Col:   8,
+					},
+				},
 			},
 		},
 		{
@@ -43,6 +79,18 @@ func TestHTMLCommentParser(t *testing.T) {
 			input: `<!-- <p class="test">tag</p> -->`,
 			expected: &HTMLComment{
 				Contents: ` <p class="test">tag</p> `,
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 32,
+						Line:  0,
+						Col:   32,
+					},
+				},
 			},
 		},
 		{
@@ -50,6 +98,18 @@ func TestHTMLCommentParser(t *testing.T) {
 			input: `<!-- <div> hello world </div> -->`,
 			expected: &HTMLComment{
 				Contents: ` <div> hello world </div> `,
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 33,
+						Line:  0,
+						Col:   33,
+					},
+				},
 			},
 		},
 	}

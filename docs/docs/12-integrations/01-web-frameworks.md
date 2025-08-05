@@ -60,7 +60,7 @@ func main() {
   r := http.NewServeMux()
   r.Handle("/", templ.Handler(Form()))
 
-  csrfMiddleware := csrf.Protect(mustGenerateCSRFKey())
+  csrfMiddleware := csrf.Protect(mustGenerateCSRFKey(), csrf.TrustedOrigins([]string{"localhost:8000"}))
   withCSRFProtection := csrfMiddleware(r)
 
   fmt.Println("Listening on localhost:8000")
