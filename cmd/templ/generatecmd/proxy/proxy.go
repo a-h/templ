@@ -242,8 +242,8 @@ type roundTripper struct {
 
 func (rt *roundTripper) setShouldSkipResponseModificationHeader(r *http.Request, resp *http.Response) {
 	// Instruct the modifyResponse function to skip modifying the response if the
-	// HTTP request has come from HTMX.
-	if r.Header.Get("HX-Request") != "true" {
+	// HTTP request has come from HTMX or Datastar.
+	if !(r.Header.Get("HX-Request") == "true" || r.Header.Get("Datastar-Request") == "true") {
 		return
 	}
 	resp.Header.Set("templ-skip-modify", "true")
