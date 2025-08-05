@@ -16,21 +16,27 @@ import (
 )
 
 type Arguments struct {
-	FailIfChanged bool
-	ToStdout      bool
-	StdinFilepath string
-	Files         []string
-	WorkerCount   int
+	FailIfChanged    bool
+	ToStdout         bool
+	StdinFilepath    string
+	Files            []string
+	WorkerCount      int
+	PrettierCommand  string
+	PrettierRequired bool
 }
 
 func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (err error) {
 	// If no files are provided, read from stdin and write to stdout.
+	formatterConfig := format.Config{
+		PrettierCommand:  args.PrettierCommand,
+		PrettierRequired: args.PrettierRequired,
+	}
 	if len(args.Files) == 0 {
 		src, err := io.ReadAll(stdin)
 		if err != nil {
 			return fmt.Errorf("failed to read from stdin: %w", err)
 		}
-		formatted, _, err := format.Templ(src, args.StdinFilepath)
+		formatted, _, err := format.Templ(src, args.StdinFilepath, formatterConfig)
 		if err != nil {
 			return fmt.Errorf("failed to format stdin: %w", err)
 		}
@@ -45,7 +51,7 @@ func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (e
 		if err != nil {
 			return fmt.Errorf("failed to read file %q: %w", fileName, err), false
 		}
-		formatted, changed, err := format.Templ(src, fileName)
+		formatted, changed, err := format.Templ(src, fileName, formatterConfig)
 		if err != nil {
 			return fmt.Errorf("failed to format file %q: %w", fileName, err), false
 		}

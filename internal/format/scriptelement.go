@@ -10,7 +10,7 @@ const templScriptPlaceholder = "templ_go_expression_7331"
 
 // ScriptElement formats a ScriptElement node, replacing Go expressions with placeholders for formatting.
 // After formatting, it updates the GoCode expressions and their ranges.
-func ScriptElement(se *parser.ScriptElement, depth int) (err error) {
+func ScriptElement(se *parser.ScriptElement, depth int, prettierCommand string) (err error) {
 	// Skip empty script elements, as they don't need formatting.
 	if len(se.Contents) == 0 {
 		return nil
@@ -49,7 +49,7 @@ loop:
 	}
 
 	// Use the prettifyElement function to format the script contents.
-	after, err := prettifyElement("script", scriptType, scriptWithPlaceholders.String(), depth)
+	after, err := prettifyElement("script", scriptType, scriptWithPlaceholders.String(), depth, prettierCommand)
 	if err != nil {
 		return err
 	}

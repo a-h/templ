@@ -24,7 +24,7 @@ func TestFormatting(t *testing.T) {
 			if len(a.Files) != 2 {
 				t.Fatalf("expected 2 files, got %d", len(a.Files))
 			}
-			actual, _, err := Templ(a.Files[0].Data, "")
+			actual, _, err := Templ(a.Files[0].Data, "", Config{PrettierRequired: true})
 			if err != nil {
 				t.Fatalf("failed to format input: %v", err)
 			}

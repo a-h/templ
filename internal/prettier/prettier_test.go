@@ -21,7 +21,7 @@ func Test(t *testing.T) {
 			expectedData := archive.Files[i+1].Data
 			input := strings.TrimSpace(string(inputData))
 			expected := strings.TrimSpace(string(expectedData))
-			actual, err := Run(input, archive.Files[i].Name)
+			actual, err := Run(input, archive.Files[i].Name, DefaultCommand)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

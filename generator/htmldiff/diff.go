@@ -17,7 +17,7 @@ func DiffStrings(expected, actual string) (output, diff string, err error) {
 
 	// Format expected.
 	wg.Go(func() (err error) {
-		expected, err = prettier.Run(expected, "expected.html")
+		expected, err = prettier.Run(expected, "expected.html", prettier.DefaultCommand)
 		if err != nil {
 			return err
 		}
@@ -26,7 +26,7 @@ func DiffStrings(expected, actual string) (output, diff string, err error) {
 
 	// Format actual.
 	wg.Go(func() (err error) {
-		actual, err = prettier.Run(actual, "actual.html")
+		actual, err = prettier.Run(actual, "actual.html", prettier.DefaultCommand)
 		if err != nil {
 			return fmt.Errorf("actual html formatting error: %w", err)
 		}

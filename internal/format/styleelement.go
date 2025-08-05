@@ -4,7 +4,7 @@ import (
 	"github.com/a-h/templ/parser/v2"
 )
 
-func StyleElement(se *parser.RawElement, depth int) (err error) {
+func StyleElement(se *parser.RawElement, depth int, prettierCommand string) (err error) {
 	if se.Name != "style" {
 		return nil
 	}
@@ -15,7 +15,7 @@ func StyleElement(se *parser.RawElement, depth int) (err error) {
 	}
 
 	// Prettyify the style contents.
-	se.Contents, err = prettifyElement("style", "text/css", se.Contents, depth)
+	se.Contents, err = prettifyElement("style", "text/css", se.Contents, depth, prettierCommand)
 	if err != nil {
 		return err
 	}

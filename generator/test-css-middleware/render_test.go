@@ -24,7 +24,7 @@ func Test(t *testing.T) {
 
 	// Format the expected value.
 	wg.Go(func() (err error) {
-		expected, err = prettier.Run(expected, "expected.html")
+		expected, err = prettier.Run(expected, "expected.html", prettier.DefaultCommand)
 		if err != nil {
 			return err
 		}
@@ -40,7 +40,7 @@ func Test(t *testing.T) {
 	wg.Go(func() (err error) {
 		w := httptest.NewRecorder()
 		cssmw.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
-		actual, err = prettier.Run(w.Body.String(), "actual.html")
+		actual, err = prettier.Run(w.Body.String(), "actual.html", prettier.DefaultCommand)
 		if err != nil {
 			return err
 		}
@@ -51,7 +51,7 @@ func Test(t *testing.T) {
 	wg.Go(func() (err error) {
 		w := httptest.NewRecorder()
 		cssmw.ServeHTTP(w, httptest.NewRequest("GET", "/styles/templ.css", nil))
-		actualCSS, err = prettier.Run(w.Body.String(), "actual.css")
+		actualCSS, err = prettier.Run(w.Body.String(), "actual.css", prettier.DefaultCommand)
 		if err != nil {
 			return err
 		}

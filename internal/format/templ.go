@@ -13,22 +13,17 @@ import (
 	"github.com/a-h/templ/parser/v2/visitor"
 )
 
-func calculateNodeDepth(e parser.Node, nodeToDepth map[parser.Node]int, depth int) {
-	switch e := e.(type) {
-	case *parser.ScriptElement:
-		nodeToDepth[e] = depth
-	case *parser.RawElement:
-		nodeToDepth[e] = depth
-	case parser.CompositeNode:
-		for _, child := range e.ChildNodes() {
-			calculateNodeDepth(child, nodeToDepth, depth+1)
-		}
-	}
+type Config struct {
+	// PrettierCommand is the command to run to format the content of script and style elements.
+	// If empty, the default is "prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME".
+	PrettierCommand string
+	// PrettierRequired indicates that formatting using Prettier must be applied.
+	PrettierRequired bool
 }
 
 // Templ formats templ source, returning the formatted output, whether it changed, and an error if any.
 // The fileName is used for Go import processing, use an empty name if the source is not from a file.
-func Templ(src []byte, fileName string) (output []byte, changed bool, err error) {
+func Templ(src []byte, fileName string, config Config) (output []byte, changed bool, err error) {
 	t, err := parser.ParseString(string(src))
 	if err != nil {
 		return nil, false, err
@@ -37,6 +32,28 @@ func Templ(src []byte, fileName string) (output []byte, changed bool, err error)
 	t, err = imports.Process(t)
 	if err != nil {
 		return nil, false, err
+	}
+
+	if err = applyPrettier(t, src, config); err != nil {
+		return nil, false, err
+	}
+
+	w := new(bytes.Buffer)
+	if err = t.Write(w); err != nil {
+		return nil, false, fmt.Errorf("formatting error: %w", err)
+	}
+	out := w.Bytes()
+	changed = !bytes.Equal(src, out)
+	return out, changed, nil
+}
+
+func applyPrettier(t *parser.TemplateFile, src []byte, config Config) (err error) {
+	// Check to see if prettier can be run.
+	if config.PrettierCommand == "" {
+		config.PrettierCommand = prettier.DefaultCommand
+	}
+	if config.PrettierRequired && !prettier.IsAvailable(config.PrettierCommand) {
+		return fmt.Errorf("prettier command is not available, please install it or set a different command using the -prettier-command flag")
 	}
 
 	nodeFormatter := visitor.New()
@@ -57,30 +74,33 @@ func Templ(src []byte, fileName string) (output []byte, changed bool, err error)
 	}
 	nodeFormatter.ScriptElement = func(se *parser.ScriptElement) error {
 		depth := nodeToDepth[se]
-		return ScriptElement(se, depth)
+		return ScriptElement(se, depth, config.PrettierCommand)
 	}
 	nodeFormatter.RawElement = func(re *parser.RawElement) error {
 		depth := nodeToDepth[re]
 		if re.Name != "style" {
 			return nil
 		}
-		return StyleElement(re, depth)
+		return StyleElement(re, depth, config.PrettierCommand)
 	}
 
-	if err = nodeFormatter.VisitTemplateFile(t); err != nil {
-		return nil, false, err
-	}
-
-	w := new(bytes.Buffer)
-	if err = t.Write(w); err != nil {
-		return nil, false, fmt.Errorf("formatting error: %w", err)
-	}
-	out := w.Bytes()
-	changed = !bytes.Equal(src, out)
-	return out, changed, nil
+	return nodeFormatter.VisitTemplateFile(t)
 }
 
-func prettifyElement(name string, typeAttrValue string, content string, depth int) (after string, err error) {
+func calculateNodeDepth(e parser.Node, nodeToDepth map[parser.Node]int, depth int) {
+	switch e := e.(type) {
+	case *parser.ScriptElement:
+		nodeToDepth[e] = depth
+	case *parser.RawElement:
+		nodeToDepth[e] = depth
+	case parser.CompositeNode:
+		for _, child := range e.ChildNodes() {
+			calculateNodeDepth(child, nodeToDepth, depth+1)
+		}
+	}
+}
+
+func prettifyElement(name string, typeAttrValue string, content string, depth int, prettierCommand string) (after string, err error) {
 	var indentationWrapper strings.Builder
 
 	// Add divs to the start and end of the script to ensure that prettier formats the content with
@@ -112,7 +132,7 @@ func prettifyElement(name string, typeAttrValue string, content string, depth in
 	}
 
 	before := indentationWrapper.String()
-	after, err = prettier.Run(before, "templ_content.html")
+	after, err = prettier.Run(before, "templ_content.html", prettierCommand)
 	if err != nil {
 		return "", fmt.Errorf("prettier error: %w", err)
 	}
