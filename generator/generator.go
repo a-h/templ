@@ -1575,20 +1575,38 @@ func (g *generator) writeScript(t parser.ScriptTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "Name: "+goFn+",\n"); err != nil {
 			return err
 		}
+		// Non-modules generate:
 		// Function: `function scriptName(a, b, c){` + `constantScriptValue` + `}`,
-		prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
-		body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
-		suffix := "}"
-		if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+body+suffix)+",\n"); err != nil {
-			return err
-		}
-		// Call: templ.SafeScript(scriptName, a, b, c)
-		if _, err = g.w.WriteIndent(indentLevel, "Call: templ.SafeScript("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
-			return err
-		}
-		// CallInline: templ.SafeScriptInline(scriptName, a, b, c)
-		if _, err = g.w.WriteIndent(indentLevel, "CallInline: templ.SafeScriptInline("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
-			return err
+		// Call and CallInline
+		//
+		// Modules:
+		// Ignore the leading `function scriptName(a, b, c){` and closing `}`
+		// Don't add Call or CallInline to prevent
+		// Add IsModule: true
+		if !t.IsModule {
+			prefix := "function " + fn + "(" + stripTypes(t.Parameters.Value) + "){"
+			body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
+			suffix := "}"
+			if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(prefix+body+suffix)+",\n"); err != nil {
+				return err
+			}
+			// Call: templ.SafeScript(scriptName, a, b, c)
+			if _, err = g.w.WriteIndent(indentLevel, "Call: templ.SafeScript("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
+				return err
+			}
+			// CallInline: templ.SafeScriptInline(scriptName, a, b, c)
+			if _, err = g.w.WriteIndent(indentLevel, "CallInline: templ.SafeScriptInline("+goFn+", "+stripTypes(t.Parameters.Value)+"),\n"); err != nil {
+				return err
+			}
+		} else {
+			body := strings.TrimLeftFunc(t.Value, unicode.IsSpace)
+			if _, err = g.w.WriteIndent(indentLevel, "Function: "+createGoString(body)+",\n"); err != nil {
+				return err
+			}
+			// IsModule: true
+			if _, err = g.w.WriteIndent(indentLevel, "IsModule: "+fmt.Sprintf("%t", t.IsModule)+",\n"); err != nil {
+				return err
+			}
 		}
 		indentLevel--
 	}

@@ -40,16 +40,23 @@ type ComponentScript struct {
 	// This is can be used to call the function inside a script tag:
 	//    <script>__templ_functionName_sha("some string",12345))</script>
 	CallInline string
+	// Flag to specify if the script should have type="module".
+	// type="text/javascript" is used when false.
+	IsModule bool
 }
 
 var _ Component = ComponentScript{}
 
-func writeScriptHeader(ctx context.Context, w io.Writer) (err error) {
+func writeScriptHeader(ctx context.Context, isModule bool, w io.Writer) (err error) {
+	var scriptType string
+	if isModule {
+		scriptType = " type=\"module\""
+	}
 	var nonceAttr string
 	if nonce := GetNonce(ctx); nonce != "" {
 		nonceAttr = " nonce=\"" + EscapeString(nonce) + "\""
 	}
-	_, err = fmt.Fprintf(w, `<script%s>`, nonceAttr)
+	_, err = fmt.Fprintf(w, `<script%s%s>`, scriptType, nonceAttr)
 	return err
 }
 
@@ -59,7 +66,7 @@ func (c ComponentScript) Render(ctx context.Context, w io.Writer) error {
 		return err
 	}
 	if len(c.Call) > 0 {
-		if err = writeScriptHeader(ctx, w); err != nil {
+		if err = writeScriptHeader(ctx, c.IsModule, w); err != nil {
 			return err
 		}
 		if _, err = io.WriteString(w, c.CallInline); err != nil {
@@ -86,7 +93,7 @@ func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScr
 		}
 	}
 	if sb.Len() > 0 {
-		if err = writeScriptHeader(ctx, w); err != nil {
+		if err = writeScriptHeader(ctx, scripts[0].IsModule, w); err != nil {
 			return err
 		}
 		if _, err = io.WriteString(w, sb.String()); err != nil {

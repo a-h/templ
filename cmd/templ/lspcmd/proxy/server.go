@@ -542,7 +542,7 @@ type importInsert struct {
 	LineIndex int
 }
 
-var nonImportKeywordRegexp = regexp.MustCompile(`^(?:templ|func|css|script|var|const|type)\s`)
+var nonImportKeywordRegexp = regexp.MustCompile(`^(?:templ|func|css|script|scriptModule|var|const|type)\s`)
 
 func addImport(lines []string, pkg string) (result importInsert) {
 	var isInMultiLineImport bool

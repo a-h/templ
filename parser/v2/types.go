@@ -1184,6 +1184,7 @@ type ScriptTemplate struct {
 	Name       Expression
 	Parameters Expression
 	Value      string
+	IsModule   bool
 }
 
 func (s ScriptTemplate) IsTemplateFileNode() bool { return true }

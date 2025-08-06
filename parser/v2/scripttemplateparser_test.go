@@ -268,6 +268,50 @@ console.log(value);
 				},
 			},
 		},
+		{
+			name: "script: module containing a JS variable",
+			input: `scriptModule Name() {
+var x = "x";
+}`,
+			expected: ScriptTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 36, Line: 2, Col: 1},
+				},
+				Name: Expression{
+					Value: "Name",
+					Range: Range{
+						From: Position{
+							Index: 13,
+							Line:  0,
+							Col:   13,
+						},
+						To: Position{
+							Index: 17,
+							Line:  0,
+							Col:   17,
+						},
+					},
+				},
+				Parameters: Expression{
+					Value: "",
+					Range: Range{
+						From: Position{
+							Index: 18,
+							Line:  0,
+							Col:   18,
+						},
+						To: Position{
+							Index: 18,
+							Line:  0,
+							Col:   18,
+						},
+					},
+				},
+				Value:    `var x = "x";` + "\n",
+				IsModule: true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

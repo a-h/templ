@@ -1,0 +1,20 @@
+package testscriptusage
+
+scriptModule AModule() {
+	import { val } from "/file.js"
+	console.log(val);
+}
+
+// A comment before a module
+scriptModule BModule() {
+	import { val2 } from "/file2.js"
+    console.log(val2);
+}
+
+templ LoadAModule() {
+	@AModule()
+	<div>
+		Module Test
+	</div>
+	@BModule()
+}

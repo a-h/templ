@@ -18,6 +18,15 @@ func TestRenderScriptItems(t *testing.T) {
 		Name:     "s2",
 		Function: "function s2() { return 'hello2'; }",
 	}
+	s3 := templ.ComponentScript{
+		Name:     "s3",
+		Function: "function s3() { return 'hello3'; }",
+	}
+	s4 := templ.ComponentScript{
+		Name:     "s4",
+		Function: "import { value } from \"package\";\nvar v = 1;",
+		IsModule: true,
+	}
 	tests := []struct {
 		name     string
 		toIgnore []templ.ComponentScript
@@ -33,10 +42,7 @@ func TestRenderScriptItems(t *testing.T) {
 		{
 			name: "if something outside the expected is ignored, if has no effect",
 			toIgnore: []templ.ComponentScript{
-				{
-					Name:     "s3",
-					Function: "function s3() { return 'hello3'; }",
-				},
+				s3,
 			},
 			toRender: []templ.ComponentScript{s1, s2},
 			expected: `<script>` + s1.Function + s2.Function + `</script>`,
@@ -52,13 +58,17 @@ func TestRenderScriptItems(t *testing.T) {
 			toIgnore: []templ.ComponentScript{
 				s1,
 				s2,
-				{
-					Name:     "s3",
-					Function: "function s3() { return 'hello3'; }",
-				},
+				s3,
 			},
 			toRender: []templ.ComponentScript{s1, s2},
 			expected: ``,
+		},
+		{
+			name: "if the module flag is provided, type=\"module\" is used",
+			toRender: []templ.ComponentScript{
+				s4,
+			},
+			expected: `<script type="module">` + s4.Function + `</script>`,
 		},
 	}
 	for _, tt := range tests {

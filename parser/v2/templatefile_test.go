@@ -155,6 +155,66 @@ templ template(
 			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
 		}
 	})
+	t.Run("template files can contain scriptModule expressions", func(t *testing.T) {
+		input := `package goof
+
+scriptModule aModule() {
+	import { value } from "package";
+	var v = 1;
+}`
+		tf, err := ParseString(input)
+		if err != nil {
+			t.Fatalf("failed to parse template, with t.Fatalf(parser %v", err)
+		}
+		if len(tf.Nodes) != 1 {
+			var nodeTypes []string
+			for _, n := range tf.Nodes {
+				nodeTypes = append(nodeTypes, reflect.TypeOf(n).Name())
+			}
+			t.Fatalf("expected 1 nodes, got %d nodes, %v\n%#v", len(tf.Nodes), nodeTypes, tf)
+		}
+		expr, isScriptTemplate := tf.Nodes[0].(ScriptTemplate)
+		if !isScriptTemplate {
+			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
+		}
+		if expr.Value != "\timport { value } from \"package\";\n\tvar v = 1;\n" {
+			t.Errorf("0: unexpected expression: %q", expr.Value)
+		}
+	})
+	t.Run("template files can contain scriptModule expressions with preceeding comments", func(t *testing.T) {
+		input := `package goof
+
+// A comment
+scriptModule aModule() {
+	import { value } from "package";
+	var v = 1;
+}`
+		tf, err := ParseString(input)
+		if err != nil {
+			t.Fatalf("failed to parse template, with t.Fatalf(parser %v", err)
+		}
+		if len(tf.Nodes) != 2 {
+			var nodeTypes []string
+			for _, n := range tf.Nodes {
+				nodeTypes = append(nodeTypes, reflect.TypeOf(n).Name())
+			}
+			t.Fatalf("expected 2 nodes, got %d nodes, %v\n%#v", len(tf.Nodes), nodeTypes, tf)
+		}
+		commentExpr, isGoExpression := tf.Nodes[0].(TemplateFileGoExpression)
+		if !isGoExpression {
+			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
+		}
+		if commentExpr.Expression.Value != "// A comment" {
+			t.Errorf("0: unexpected expression: %q", commentExpr.Expression.Value)
+		}
+		scriptExpr, isScriptTemplate := tf.Nodes[1].(ScriptTemplate)
+		if !isScriptTemplate {
+			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
+		}
+		if scriptExpr.Value != "\timport { value } from \"package\";\n\tvar v = 1;\n" {
+			t.Errorf("0: unexpected expression: %q", scriptExpr.Value)
+		}
+	})
 }
 
 func TestDefaultPackageName(t *testing.T) {

@@ -15,6 +15,7 @@ var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, o
 	}
 	r.Name = se.Name
 	r.Parameters = se.Parameters
+	r.IsModule = se.IsModule
 
 	// Read code expression.
 	var e Expression
@@ -39,6 +40,7 @@ var scriptTemplateParser = parse.Func(func(pi *parse.Input) (r ScriptTemplate, o
 type scriptExpression struct {
 	Name       Expression
 	Parameters Expression
+	IsModule   bool
 }
 
 var scriptExpressionNameParser = ExpressionOf(parse.StringFrom(
@@ -48,8 +50,16 @@ var scriptExpressionNameParser = ExpressionOf(parse.StringFrom(
 
 var scriptExpressionParser = parse.Func(func(pi *parse.Input) (r scriptExpression, ok bool, err error) {
 	// Check the prefix first.
-	if _, ok, err = parse.String("script ").Parse(pi); err != nil || !ok {
+	_, ok, err = parse.String("script ").Parse(pi)
+	if err != nil {
 		return
+	}
+	if !ok {
+		// Check for JS Module
+		if _, ok, err = parse.String("scriptModule ").Parse(pi); err != nil || !ok {
+			return
+		}
+		r.IsModule = true
 	}
 
 	// Once we have the prefix, we must have a name and parameters.
