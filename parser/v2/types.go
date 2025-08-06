@@ -497,6 +497,7 @@ type Element struct {
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
 	NameRange      Range
+	Range          Range
 }
 
 func (e Element) Trailing() TrailingSpace {

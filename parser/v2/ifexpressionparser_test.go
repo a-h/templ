@@ -68,6 +68,10 @@ func TestIfExpression(t *testing.T) {
 						},
 						IndentChildren: true,
 						TrailingSpace:  SpaceVertical,
+						Range: Range{
+							From: Position{Index: 12, Line: 1, Col: 0},
+							To:   Position{Index: 48, Line: 4, Col: 0},
+						},
 					},
 				},
 			},
@@ -228,6 +232,10 @@ func TestIfExpression(t *testing.T) {
 						},
 						IndentChildren: true,
 						TrailingSpace:  SpaceVertical,
+						Range: Range{
+							From: Position{Index: 12, Line: 1, Col: 0},
+							To:   Position{Index: 48, Line: 4, Col: 0},
+						},
 					},
 				},
 			},
@@ -368,6 +376,10 @@ func TestIfExpression(t *testing.T) {
 									},
 								},
 								TrailingSpace: SpaceVertical,
+								Range: Range{
+									From: Position{Index: 29, Line: 2, Col: 6},
+									To:   Position{Index: 53, Line: 3, Col: 5},
+								},
 							},
 						},
 					},

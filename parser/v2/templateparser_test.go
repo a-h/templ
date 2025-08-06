@@ -198,6 +198,10 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						Range: Range{
+							From: Position{Index: 26, Line: 1, Col: 0},
+							To:   Position{Index: 58, Line: 2, Col: 0},
+						},
 					},
 				},
 			},
@@ -252,6 +256,10 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceHorizontal,
+						Range: Range{
+							From: Position{Index: 26, Line: 0, Col: 26},
+							To:   Position{Index: 58, Line: 0, Col: 58},
+						},
 					},
 				},
 			},
@@ -342,10 +350,18 @@ func TestTemplateParser(t *testing.T) {
 								},
 								IndentChildren: true,
 								TrailingSpace:  SpaceVertical,
+								Range: Range{
+									From: Position{Index: 54, Line: 3, Col: 2},
+									To:   Position{Index: 91, Line: 6, Col: 0},
+								},
 							},
 						},
 						IndentChildren: true,
 						TrailingSpace:  SpaceVertical,
+						Range: Range{
+							From: Position{Index: 26, Line: 1, Col: 0},
+							To:   Position{Index: 98, Line: 7, Col: 0},
+						},
 					},
 				},
 			},
@@ -428,6 +444,10 @@ func TestTemplateParser(t *testing.T) {
 								},
 								IndentChildren: true,
 								TrailingSpace:  SpaceVertical,
+								Range: Range{
+									From: Position{Index: 41, Line: 2, Col: 2},
+									To:   Position{Index: 81, Line: 5, Col: 1},
+								},
 							},
 						},
 					},
@@ -494,6 +514,10 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						Range: Range{
+							From: Position{Index: 27, Line: 1, Col: 1},
+							To:   Position{Index: 60, Line: 2, Col: 1},
+						},
 					},
 					&Element{
 						Name: "input",
@@ -524,6 +548,10 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						Range: Range{
+							From: Position{Index: 60, Line: 2, Col: 1},
+							To:   Position{Index: 92, Line: 3, Col: 0},
+						},
 					},
 				},
 			},
@@ -647,6 +675,10 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						Range: Range{
+							From: Position{Index: 13, Line: 1, Col: 1},
+							To:   Position{Index: 57, Line: 2, Col: 0},
+						},
 					},
 				},
 			},
@@ -846,6 +878,10 @@ func TestTemplateParser(t *testing.T) {
 						},
 						IndentChildren: true,
 						TrailingSpace:  SpaceVertical,
+						Range: Range{
+							From: Position{Index: 42, Line: 1, Col: 2},
+							To:   Position{Index: 94, Line: 4, Col: 0},
+						},
 					},
 				},
 			},
@@ -876,6 +912,10 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 19, Line: 1, Col: 4},
 						},
 						TrailingSpace: SpaceNone,
+						Range: Range{
+							From: Position{Index: 16, Line: 1, Col: 1},
+							To:   Position{Index: 25, Line: 1, Col: 10},
+						},
 					},
 					&Element{
 						Name: "br",
@@ -884,6 +924,10 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 28, Line: 1, Col: 13},
 						},
 						TrailingSpace: SpaceVertical,
+						Range: Range{
+							From: Position{Index: 25, Line: 1, Col: 10},
+							To:   Position{Index: 30, Line: 2, Col: 0},
+						},
 					},
 				},
 			},
