@@ -3,7 +3,7 @@
 To render HTML that has come from a trusted source, bypassing all HTML escaping and security mechanisms that templ includes, use the `templ.Raw` function.
 
 :::info
-Only include HTML that comes from a trusted source.
+Only include HTML that comes from a trusted source. Use the `templ.EscapeString` function to escape content that comes from untrusted sources.
 :::
 
 :::warning
