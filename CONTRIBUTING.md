@@ -242,3 +242,6 @@ Examples:
 * Use line breaks to separate "paragraphs" of code - don't use line breaks in between lines, or at the start/end of functions etc.
 * Use the `fmt` and `lint` build tasks to format and lint your code before submitting a PR.
 
+### LLM instructions
+
+See additional coding standards at `.github/copilot-instructions.md`

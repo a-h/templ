@@ -2,11 +2,12 @@ package processor
 
 import (
 	"io/fs"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/a-h/templ/internal/skipdir"
 )
 
 type Result struct {
@@ -27,27 +28,12 @@ func Process(dir string, f func(fileName string) (error, bool), workerCount int,
 	ProcessChannel(templates, dir, f, workerCount, results)
 }
 
-func shouldSkipDir(dir string) bool {
-	if dir == "." {
-		return false
-	}
-	if dir == "vendor" || dir == "node_modules" {
-		return true
-	}
-	_, name := path.Split(dir)
-	// These directories are ignored by the Go tool.
-	if strings.HasPrefix(name, ".") || strings.HasPrefix(name, "_") {
-		return true
-	}
-	return false
-}
-
 func FindTemplates(srcPath string, output chan<- string) (err error) {
 	return filepath.WalkDir(srcPath, func(currentPath string, info fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() && shouldSkipDir(currentPath) {
+		if info.IsDir() && skipdir.ShouldSkip(currentPath) {
 			return filepath.SkipDir
 		}
 		if !info.IsDir() && strings.HasSuffix(currentPath, ".templ") {
@@ -61,7 +47,7 @@ func ProcessChannel(templates <-chan string, dir string, f func(fileName string)
 	defer close(results)
 	var wg sync.WaitGroup
 	wg.Add(workerCount)
-	for i := 0; i < workerCount; i++ {
+	for range workerCount {
 		go func() {
 			defer wg.Done()
 			for sourceFileName := range templates {

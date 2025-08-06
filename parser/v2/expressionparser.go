@@ -8,17 +8,17 @@ import (
 
 // StripType takes the parser and throws away the return value.
 func StripType[T any](p parse.Parser[T]) parse.Parser[any] {
-	return parse.Func(func(in *parse.Input) (out any, ok bool, err error) {
+	return parse.Func(func(in *parse.Input) (out any, matched bool, err error) {
 		return p.Parse(in)
 	})
 }
 
 func ExpressionOf(p parse.Parser[string]) parse.Parser[Expression] {
-	return parse.Func(func(in *parse.Input) (out Expression, ok bool, err error) {
+	return parse.Func(func(in *parse.Input) (out Expression, matched bool, err error) {
 		from := in.Position()
 
 		var exp string
-		if exp, ok, err = p.Parse(in); err != nil || !ok {
+		if exp, matched, err = p.Parse(in); err != nil || !matched {
 			return
 		}
 
@@ -28,9 +28,10 @@ func ExpressionOf(p parse.Parser[string]) parse.Parser[Expression] {
 
 var lt = parse.Rune('<')
 var gt = parse.Rune('>')
+var spaceOrTab = parse.Any(parse.Rune(' '), parse.Rune('\t'))
 var openBrace = parse.String("{")
 var optionalSpaces = parse.StringFrom(parse.Optional(
-	parse.AtLeast(1, parse.Rune(' '))))
+	parse.AtLeast(1, spaceOrTab)))
 var openBraceWithPadding = parse.StringFrom(optionalSpaces,
 	openBrace,
 	optionalSpaces)
@@ -38,6 +39,9 @@ var openBraceWithOptionalPadding = parse.Any(openBraceWithPadding, openBrace)
 
 var closeBrace = parse.String("}")
 var closeBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, closeBrace)
+
+var dblOpenBrace = parse.String("{{")
+var dblOpenBraceWithOptionalPadding = parse.StringFrom(dblOpenBrace, optionalSpaces)
 
 var dblCloseBrace = parse.String("}}")
 var dblCloseBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, dblCloseBrace)
@@ -60,7 +64,7 @@ type expressionParser struct {
 	startBraceCount int
 }
 
-func (p expressionParser) Parse(pi *parse.Input) (s Expression, ok bool, err error) {
+func (p expressionParser) Parse(pi *parse.Input) (s Expression, matched bool, err error) {
 	from := pi.Position()
 
 	braceCount := p.startBraceCount
@@ -71,54 +75,54 @@ loop:
 		var result string
 
 		// Try to parse a single line comment.
-		if result, ok, err = jsOrGoSingleLineComment.Parse(pi); err != nil {
+		if result, matched, err = jsOrGoSingleLineComment.Parse(pi); err != nil {
 			return
 		}
-		if ok {
+		if matched {
 			sb.WriteString(result)
 			continue
 		}
 
 		// Try to parse a multi-line comment.
-		if result, ok, err = jsOrGoMultiLineComment.Parse(pi); err != nil {
+		if result, matched, err = jsOrGoMultiLineComment.Parse(pi); err != nil {
 			return
 		}
-		if ok {
+		if matched {
 			sb.WriteString(result)
 			continue
 		}
 
 		// Try to read a string literal.
-		if result, ok, err = string_lit.Parse(pi); err != nil {
+		if result, matched, err = string_lit.Parse(pi); err != nil {
 			return
 		}
-		if ok {
+		if matched {
 			sb.WriteString(result)
 			continue
 		}
 		// Also try for a rune literal.
-		if result, ok, err = rune_lit.Parse(pi); err != nil {
+		if result, matched, err = rune_lit.Parse(pi); err != nil {
 			return
 		}
-		if ok {
+		if matched {
 			sb.WriteString(result)
 			continue
 		}
 		// Try opener.
-		if result, ok, err = openBrace.Parse(pi); err != nil {
+		if result, matched, err = openBrace.Parse(pi); err != nil {
 			return
 		}
-		if ok {
+		if matched {
 			braceCount++
 			sb.WriteString(result)
 			continue
 		}
 		// Try closer.
 		startOfCloseBrace := pi.Index()
-		if result, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil {
+		if result, matched, err = closeBraceWithOptionalPadding.Parse(pi); err != nil {
 			return
 		}
-		if ok {
+		if matched {
 			braceCount--
 			if braceCount < 0 {
 				err = parse.Error("expression: too many closing braces", pi.Position())
@@ -134,8 +138,8 @@ loop:
 
 		// Read anything else.
 		var c string
-		c, ok = pi.Take(1)
-		if !ok {
+		c, matched = pi.Take(1)
+		if !matched {
 			break loop
 		}
 		if rune(c[0]) == 65533 { // Invalid Unicode.

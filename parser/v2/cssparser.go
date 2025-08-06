@@ -7,12 +7,15 @@ import (
 // CSS.
 
 // CSS Parser.
-var cssParser = parse.Func(func(pi *parse.Input) (r CSSTemplate, ok bool, err error) {
+var cssParser = parse.Func(func(pi *parse.Input) (r *CSSTemplate, ok bool, err error) {
 	from := pi.Position()
 
-	r = CSSTemplate{
+	r = &CSSTemplate{
 		Properties: []CSSProperty{},
 	}
+	defer func() {
+		r.Range = NewRange(from, pi.Position())
+	}()
 
 	// Parse the name.
 	var exp cssExpression
@@ -57,8 +60,6 @@ var cssParser = parse.Func(func(pi *parse.Input) (r CSSTemplate, ok bool, err er
 			err = parse.Error("css property expression: missing closing brace", pi.Position())
 			return
 		}
-
-		r.Range = NewRange(from, pi.Position())
 
 		return r, true, nil
 	}
@@ -117,7 +118,7 @@ var cssPropertyNameParser = parse.Func(func(in *parse.Input) (name string, ok bo
 })
 
 // background-color: {%= constants.BackgroundColor %};
-var expressionCSSPropertyParser = parse.Func(func(pi *parse.Input) (r ExpressionCSSProperty, ok bool, err error) {
+var expressionCSSPropertyParser = parse.Func(func(pi *parse.Input) (r *ExpressionCSSProperty, ok bool, err error) {
 	start := pi.Index()
 
 	// Optional whitespace.
@@ -125,6 +126,7 @@ var expressionCSSPropertyParser = parse.Func(func(pi *parse.Input) (r Expression
 		return
 	}
 	// Property name.
+	r = &ExpressionCSSProperty{}
 	if r.Name, ok, err = cssPropertyNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
@@ -141,7 +143,7 @@ var expressionCSSPropertyParser = parse.Func(func(pi *parse.Input) (r Expression
 		pi.Seek(start)
 		return
 	}
-	r.Value = se.(StringExpression)
+	r.Value = se.(*StringExpression)
 
 	// ;
 	if _, ok, err = parse.String(";").Parse(pi); err != nil || !ok {
@@ -158,7 +160,7 @@ var expressionCSSPropertyParser = parse.Func(func(pi *parse.Input) (r Expression
 })
 
 // background-color: #ffffff;
-var constantCSSPropertyParser = parse.Func(func(pi *parse.Input) (r ConstantCSSProperty, ok bool, err error) {
+var constantCSSPropertyParser = parse.Func(func(pi *parse.Input) (r *ConstantCSSProperty, ok bool, err error) {
 	start := pi.Index()
 
 	// Optional whitespace.
@@ -166,6 +168,7 @@ var constantCSSPropertyParser = parse.Func(func(pi *parse.Input) (r ConstantCSSP
 		return
 	}
 	// Property name.
+	r = &ConstantCSSProperty{}
 	if r.Name, ok, err = cssPropertyNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return

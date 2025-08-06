@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
-	"html"
 	"io"
 	stdlog "log"
 	"log/slog"
@@ -17,9 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/a-h/templ/cmd/templ/generatecmd/sse"
+	"github.com/a-h/templ/internal/htmlfind"
 	"github.com/andybalholm/brotli"
+	"golang.org/x/net/html"
 
 	_ "embed"
 )
@@ -35,28 +35,37 @@ type Handler struct {
 	sse    *sse.Handler
 }
 
-func getScriptTag(nonce string) string {
-	if nonce != "" {
-		var sb strings.Builder
-		sb.WriteString(`<script src="/_templ/reload/script.js" nonce="`)
-		sb.WriteString(html.EscapeString(nonce))
-		sb.WriteString(`"></script>`)
-		return sb.String()
+func reloadScript(nonce string) *html.Node {
+	script := &html.Node{
+		Type: html.ElementNode,
+		Data: "script",
+		Attr: []html.Attribute{
+			{Key: "src", Val: "/_templ/reload/script.js"},
+		},
 	}
-	return `<script src="/_templ/reload/script.js"></script>`
+	if nonce != "" {
+		script.Attr = append(script.Attr, html.Attribute{Key: "nonce", Val: nonce})
+	}
+	return script
 }
 
-func insertScriptTagIntoBody(nonce, body string) (updated string) {
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(body))
+var ErrBodyNotFound = fmt.Errorf("body not found")
+
+func insertScriptTagIntoBody(nonce, body string) (updated string, err error) {
+	n, err := html.Parse(strings.NewReader(body))
 	if err != nil {
-		return strings.Replace(body, "</body>", getScriptTag(nonce)+"</body>", -1)
+		return body, err
 	}
-	doc.Find("body").AppendHtml(getScriptTag(nonce))
-	r, err := doc.Html()
-	if err != nil {
-		return strings.Replace(body, "</body>", getScriptTag(nonce)+"</body>", -1)
+	bodyNodes := htmlfind.All(n, htmlfind.Element("body"))
+	if len(bodyNodes) == 0 {
+		return body, ErrBodyNotFound
 	}
-	return r
+	bodyNodes[0].AppendChild(reloadScript(nonce))
+	buf := new(bytes.Buffer)
+	if err = html.Render(buf, n); err != nil {
+		return body, err
+	}
+	return buf.String(), nil
 }
 
 type passthroughWriteCloser struct {
@@ -113,7 +122,9 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 	if err != nil {
 		return err
 	}
-	defer r.Body.Close()
+	defer func() {
+		_ = r.Body.Close()
+	}()
 	body, err := io.ReadAll(encr)
 	if err != nil {
 		return err
@@ -121,13 +132,15 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 
 	// Update it.
 	csp := r.Header.Get("Content-Security-Policy")
-	updated := insertScriptTagIntoBody(parseNonce(csp), string(body))
-	if log.Enabled(r.Request.Context(), slog.LevelDebug) {
-		if len(updated) == len(body) {
-			log.Debug("Reload script not inserted")
-		} else {
-			log.Debug("Reload script inserted")
-		}
+	updated, err := insertScriptTagIntoBody(parseNonce(csp), string(body))
+	if err != nil {
+		log.Warn("Unable to insert reload script", slog.Any("error", err))
+		updated = string(body)
+	}
+	if len(updated) == len(body) {
+		log.Debug("Reload script not inserted")
+	} else {
+		log.Debug("Reload script inserted")
 	}
 
 	// Encode the response.
@@ -245,13 +258,15 @@ func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 		if err != nil {
 			return nil, err
 		}
-		r.Body.Close()
+		if err = r.Body.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close request body: %w", err)
+		}
 	}
 
 	// Retry logic.
 	var resp *http.Response
 	var err error
-	for retries := 0; retries < rt.maxRetries; retries++ {
+	for retries := range rt.maxRetries {
 		// Clone the request and set the body.
 		req := r.Clone(r.Context())
 		if bodyBytes != nil {

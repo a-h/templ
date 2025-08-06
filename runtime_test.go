@@ -271,6 +271,25 @@ func TestRenderCSS(t *testing.T) {
 	}
 }
 
+func TestRenderCSSItemsWithNonce(t *testing.T) {
+	ctx := templ.WithNonce(context.Background(), "testnonce")
+	b := new(bytes.Buffer)
+	c := templ.ComponentCSSClass{
+		ID:    "c1",
+		Class: ".c1{color:red}",
+	}
+	err := templ.RenderCSSItems(ctx, b, c)
+	if err != nil {
+		t.Fatalf("failed to render CSS: %v", err)
+	}
+	actual := b.String()
+	// Should include nonce attribute on <style> tag.
+	expected := `<style type="text/css" nonce="testnonce">.c1{color:red}</style>`
+	if actual != expected {
+		t.Errorf("expected %q, got %q", expected, actual)
+	}
+}
+
 func TestClassesFunction(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -592,4 +611,179 @@ func TestNonce(t *testing.T) {
 			t.Errorf("expected %q got %q", expected, actual)
 		}
 	})
+}
+
+func TestRenderAttributes(t *testing.T) {
+	tests := []struct {
+		name       string
+		attributes templ.Attributes
+		expected   string
+	}{
+		{
+			name: "string attributes are rendered",
+			attributes: templ.Attributes{
+				"class": "test-class",
+				"id":    "test-id",
+			},
+			expected: ` class="test-class" id="test-id"`,
+		},
+		{
+			name: "integer types are rendered as strings",
+			attributes: templ.Attributes{
+				"int":   42,
+				"int8":  int8(8),
+				"int16": int16(16),
+				"int32": int32(32),
+				"int64": int64(64),
+			},
+			expected: ` int="42" int16="16" int32="32" int64="64" int8="8"`,
+		},
+		{
+			name: "unsigned integer types are rendered as strings",
+			attributes: templ.Attributes{
+				"uint":    uint(42),
+				"uint8":   uint8(8),
+				"uint16":  uint16(16),
+				"uint32":  uint32(32),
+				"uint64":  uint64(64),
+				"uintptr": uintptr(100),
+			},
+			expected: ` uint="42" uint16="16" uint32="32" uint64="64" uint8="8" uintptr="100"`,
+		},
+		{
+			name: "float types are rendered as strings",
+			attributes: templ.Attributes{
+				"float32": float32(3.14),
+				"float64": float64(2.718),
+			},
+			expected: ` float32="3.14" float64="2.718"`,
+		},
+		{
+			name: "complex types are rendered as strings",
+			attributes: templ.Attributes{
+				"complex64":  complex64(1 + 2i),
+				"complex128": complex128(3 + 4i),
+			},
+			expected: ` complex128="(3+4i)" complex64="(1+2i)"`,
+		},
+		{
+			name: "boolean attributes are rendered correctly",
+			attributes: templ.Attributes{
+				"checked":  true,
+				"disabled": false,
+			},
+			expected: ` checked`,
+		},
+		{
+			name: "mixed types are rendered correctly",
+			attributes: templ.Attributes{
+				"class":  "button",
+				"value":  42,
+				"width":  float64(100.5),
+				"hidden": false,
+				"active": true,
+			},
+			expected: ` active class="button" value="42" width="100.5"`,
+		},
+		{
+			name: "nil pointer attributes are not rendered",
+			attributes: templ.Attributes{
+				"optional": (*string)(nil),
+				"visible":  (*bool)(nil),
+			},
+			expected: ``,
+		},
+		{
+			name: "non-nil pointer attributes are rendered",
+			attributes: templ.Attributes{
+				"title":   ptr("test title"),
+				"enabled": ptr(true),
+			},
+			expected: ` enabled title="test title"`,
+		},
+		{
+			name: "numeric pointer types are rendered as strings",
+			attributes: templ.Attributes{
+				"int-ptr":        ptr(42),
+				"int8-ptr":       ptr(int8(8)),
+				"int16-ptr":      ptr(int16(16)),
+				"int32-ptr":      ptr(int32(32)),
+				"int64-ptr":      ptr(int64(64)),
+				"uint-ptr":       ptr(uint(42)),
+				"uint8-ptr":      ptr(uint8(8)),
+				"uint16-ptr":     ptr(uint16(16)),
+				"uint32-ptr":     ptr(uint32(32)),
+				"uint64-ptr":     ptr(uint64(64)),
+				"uintptr-ptr":    ptr(uintptr(100)),
+				"float32-ptr":    ptr(float32(3.14)),
+				"float64-ptr":    ptr(float64(2.718)),
+				"complex64-ptr":  ptr(complex64(1 + 2i)),
+				"complex128-ptr": ptr(complex128(3 + 4i)),
+			},
+			expected: ` complex128-ptr="(3+4i)" complex64-ptr="(1+2i)" float32-ptr="3.14" float64-ptr="2.718" int-ptr="42" int16-ptr="16" int32-ptr="32" int64-ptr="64" int8-ptr="8" uint-ptr="42" uint16-ptr="16" uint32-ptr="32" uint64-ptr="64" uint8-ptr="8" uintptr-ptr="100"`,
+		},
+		{
+			name: "nil numeric pointer attributes are not rendered",
+			attributes: templ.Attributes{
+				"int-ptr":       (*int)(nil),
+				"float32-ptr":   (*float32)(nil),
+				"complex64-ptr": (*complex64)(nil),
+			},
+			expected: ``,
+		},
+		{
+			name: "KeyValue[string, bool] attributes are rendered correctly",
+			attributes: templ.Attributes{
+				"data-value":  templ.KV("test-string", true),
+				"data-hidden": templ.KV("ignored", false),
+			},
+			expected: ` data-value="test-string"`,
+		},
+		{
+			name: "KeyValue[bool, bool] attributes are rendered correctly",
+			attributes: templ.Attributes{
+				"checked":  templ.KV(true, true),
+				"disabled": templ.KV(false, true),
+				"hidden":   templ.KV(true, false),
+			},
+			expected: ` checked`,
+		},
+		{
+			name: "function bool attributes are rendered correctly",
+			attributes: templ.Attributes{
+				"enabled": func() bool { return true },
+				"hidden":  func() bool { return false },
+			},
+			expected: ` enabled`,
+		},
+		{
+			name: "mixed KeyValue and function attributes",
+			attributes: templ.Attributes{
+				"data-name": templ.KV("value", true),
+				"active":    templ.KV(true, true),
+				"dynamic":   func() bool { return true },
+				"ignored":   templ.KV("ignored", false),
+			},
+			expected: ` active data-name="value" dynamic`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var buf bytes.Buffer
+			err := templ.RenderAttributes(context.Background(), &buf, tt.attributes)
+			if err != nil {
+				t.Fatalf("RenderAttributes failed: %v", err)
+			}
+
+			actual := buf.String()
+			if actual != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, actual)
+			}
+		})
+	}
+}
+
+func ptr[T any](x T) *T {
+	return &x
 }

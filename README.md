@@ -18,12 +18,20 @@ See user documentation at https://templ.guide
 
 ## Tasks
 
+### version-set
+
+Set the version of templ to the current version.
+
+```sh
+version set --template="0.3.%d"
+```
+
 ### build
 
 Build a local version.
 
 ```sh
-go run ./get-version > .version
+version set --template="0.3.%d"
 cd cmd/templ
 go build
 ```
@@ -39,7 +47,7 @@ rm -f ~/bin/templ
 # Clear LSP logs.
 rm -f cmd/templ/lspcmd/*.txt
 # Update version.
-go run ./get-version > .version
+version set --template="0.3.%d"
 # Install to $GOPATH/bin or $HOME/go/bin
 cd cmd/templ && go install
 ```
@@ -65,7 +73,7 @@ go run ./cmd/templ generate -include-version=false
 Run Go tests.
 
 ```sh
-go run ./get-version > .version
+version set --template="0.3.%d"
 go run ./cmd/templ generate -include-version=false
 go test ./...
 ```
@@ -75,7 +83,7 @@ go test ./...
 Run Go tests.
 
 ```sh
-go run ./get-version > .version
+version set --template="0.3.%d"
 go run ./cmd/templ generate -include-version=false
 go test ./... -short
 ```
@@ -107,6 +115,8 @@ go tool cover -func coverage.out | grep total
 ```
 
 ### test-cover-watch
+
+interactive: true
 
 ```sh
 gotestsum --watch -- -coverprofile=coverage.out
@@ -159,7 +169,7 @@ git diff --exit-code
 Push a semantic version number to GitHub to trigger the release process.
 
 ```sh
-./push-tag.sh
+version push --template="0.3.%d" --prefix="v"
 ```
 
 ### docs-run

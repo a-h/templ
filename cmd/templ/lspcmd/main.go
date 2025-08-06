@@ -22,10 +22,13 @@ type Arguments struct {
 	Log           string
 	GoplsLog      string
 	GoplsRPCTrace bool
+	GoplsRemote   string
 	// PPROF sets whether to start a profiling server on localhost:9999
 	PPROF bool
 	// HTTPDebug sets the HTTP endpoint to listen on. Leave empty for no web debug.
 	HTTPDebug string
+	// NoPreload disables preloading of templ files on server startup (useful for large monorepos)
+	NoPreload bool
 }
 
 func Run(stdin io.Reader, stdout, stderr io.Writer, args Arguments) (err error) {
@@ -57,7 +60,9 @@ func Run(stdin io.Reader, stdout, stderr io.Writer, args Arguments) (err error) 
 		if err != nil {
 			return fmt.Errorf("failed to open log file: %w", err)
 		}
-		defer file.Close()
+		defer func() {
+			_ = file.Close()
+		}()
 
 		// Create a new logger with a file writer
 		log = slog.New(slog.NewJSONHandler(file, nil))
@@ -79,6 +84,7 @@ func run(ctx context.Context, log *slog.Logger, templStream jsonrpc2.Stream, arg
 	rwc, err := pls.NewGopls(ctx, log, pls.Options{
 		Log:      args.GoplsLog,
 		RPCTrace: args.GoplsRPCTrace,
+		Remote:   args.GoplsRemote,
 	})
 	if err != nil {
 		log.Error("failed to start gopls", slog.Any("error", err))
@@ -91,16 +97,24 @@ func run(ctx context.Context, log *slog.Logger, templStream jsonrpc2.Stream, arg
 	log.Info("creating gopls client")
 	clientProxy, clientInit := proxy.NewClient(log, cache, diagnosticCache)
 	_, goplsConn, goplsServer := protocol.NewClient(ctx, clientProxy, jsonrpc2.NewStream(rwc), log)
-	defer goplsConn.Close()
+	defer func() {
+		if closeErr := goplsConn.Close(); closeErr != nil {
+			log.Error("failed to close gopls connection", slog.Any("error", closeErr))
+		}
+	}()
 
 	log.Info("creating proxy")
 	// Create the proxy to sit between.
-	serverProxy := proxy.NewServer(log, goplsServer, cache, diagnosticCache)
+	serverProxy := proxy.NewServer(log, goplsServer, cache, diagnosticCache, args.NoPreload)
 
 	// Create templ server.
 	log.Info("creating templ server")
 	_, templConn, templClient := protocol.NewServer(context.Background(), serverProxy, templStream, log)
-	defer templConn.Close()
+	defer func() {
+		if err = templConn.Close(); err != nil {
+			log.Error("failed to close templ connection", slog.Any("error", err))
+		}
+	}()
 
 	// Allow both the server and the client to initiate outbound requests.
 	clientInit(templClient)

@@ -34,7 +34,7 @@ func main() {
 
 In the previous example, the `hello` component does not take any parameters. Let's display the time when the server was started instead.
 
-```go title="components.templ"
+```templ title="components.templ"
 package main
 
 import "time"

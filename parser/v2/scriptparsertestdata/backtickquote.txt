@@ -1,0 +1,8 @@
+-- in --
+<script>
+window.alert(`This is 'single quoted' and this is "double quoted"`);
+</script>
+-- out --
+
+window.alert(`This is 'single quoted' and this is "double quoted"`);
+

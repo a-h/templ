@@ -330,12 +330,80 @@ require'nvim-treesitter.configs'.setup {
 
 ## Vim
 
-Currently support for vim is limited. Configure formatting with the following VimScript:
+This requires Vim version 8 or later. Install LSP and autocomplete plugins, using
+[vim-plug](https://github.com/junegunn/vim-plug) or other plugin manager.
+
+_Note_: this example is for [vim-lsp](https://github.com/prabirshrestha/vim-lsp). Other LSP plugins can be also
+be used, but they need to be configured differently.
 
 ```vim
-set autoread
-autocmd BufWritePost *.templ silent! execute "!PATH=\"$PATH:$(go env GOPATH)/bin\" templ fmt <afile> >/dev/null 2>&1" | redraw!
+Plug 'prabirshrestha/vim-lsp'
+Plug 'prabirshrestha/asyncomplete.vim'
+Plug 'prabirshrestha/asyncomplete-lsp.vim'
 ```
+
+Add configuration:
+
+```vim
+" Register LSP server for Templ.
+au User lsp_setup call lsp#register_server({
+        \ 'name': 'templ',
+        \ 'cmd': [$GOPATH . '/bin/templ', 'lsp'],
+        \ 'allowlist': ['templ'],
+        \ })
+
+function! s:on_lsp_buffer_enabled() abort
+  setlocal signcolumn=yes
+  if exists('+tagfunc') | setlocal tagfunc=lsp#tagfunc | endif
+  nmap <buffer> gd <plug>(lsp-definition)
+  nmap <buffer> gs <plug>(lsp-document-symbol-search)
+  nmap <buffer> gS <plug>(lsp-workspace-symbol-search)
+  nmap <buffer> gr <plug>(lsp-references)
+  nmap <buffer> gi <plug>(lsp-implementation)
+  nmap <buffer> gt <plug>(lsp-type-definition)
+  nmap <buffer> <leader>rn <plug>(lsp-rename)
+  nmap <buffer> [g <plug>(lsp-previous-diagnostic)
+  nmap <buffer> ]g <plug>(lsp-next-diagnostic)
+  nmap <buffer> K <plug>(lsp-hover)
+
+  let g:lsp_format_sync_timeout = 1000
+  autocmd! BufWritePre *.templ call execute('LspDocumentFormatSync')
+endfunction
+
+augroup lsp_install
+    au!
+    " call s:on_lsp_buffer_enabled only for languages that has the server registered.
+    autocmd User lsp_buffer_enabled call s:on_lsp_buffer_enabled()
+augroup END
+```
+
+See [vim-lsp](https://github.com/prabirshrestha/vim-lsp) for additional configuration options.
+
+Configure autocomplete, for example:
+
+```vim
+inoremap <expr> <Tab>   pumvisible() ? "\<C-n>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+inoremap <expr> <cr>    pumvisible() ? asyncomplete#close_popup() : "\<cr>"
+```
+
+See [asyncomplete.vim](https://github.com/prabirshrestha/asyncomplete.vim) for more options.
+
+If you're also using [deoplete](https://github.com/Shougo/deoplete.nvim), you may need to disable it for templ files to
+avoid conflict with `asyncomplete`:
+
+```vim
+autocmd FileType templ call deoplete#custom#buffer_option('auto_complete', v:false)
+```
+
+_Optional_: If you'd like indentation to better match Go outside of `templ` blocks, install:
+
+```
+Plug 'iefserge/templ.vim'
+```
+
+* This plugin also adds [tcomment_vim](https://github.com/tomtom/tcomment_vim) support.
+* This is a fork of [joerdav/templ.vim](https://github.com/Joe-Davidson1802/templ.vim).
 
 ## Helix
 
@@ -432,8 +500,18 @@ The logs can be quite verbose, since almost every keypress results in additional
 
 ### Look at the web server
 
-The web server option provides an insight into the internal state of the language server. It may provide insight into what's going wrong.
+The LSP has a `http` argument that starts a web server that can show the internal state of the LSP - in particular, the mapping between templ files and Go source code. The default is `templ lsp -http=localhost:7474`. See the log options above for instructions on how to set it.
 
 ### Run templ info
 
 The `templ info` command outputs information that's useful for debugging issues.
+
+### "missing metadata for import" / "could not import"
+
+If you see an error like this coming from gopls:
+
+```
+could not import strconv (missing metadata for import of "strconv") compiler (BrokenImport)
+```
+
+Running `go mod tidy` in your project usually solves it.

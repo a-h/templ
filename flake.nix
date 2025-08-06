@@ -2,10 +2,14 @@
   description = "templ";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    version = {
+      url = "github:a-h/version/0.0.10";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     xc = {
@@ -14,7 +18,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, xc }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, version, xc }:
     let
       allSystems = [
         "x86_64-linux" # 64-bit Intel/AMD Linux
@@ -24,21 +28,35 @@
       ];
       forAllSystems = f: nixpkgs.lib.genAttrs allSystems (system: f {
         inherit system;
-        pkgs = import nixpkgs { inherit system; };
-        pkgs-unstable = import nixpkgs-unstable { inherit system; };
+        pkgs =
+          let
+            pkgs-unstable = import nixpkgs-unstable { inherit system; };
+          in
+          import nixpkgs {
+            inherit system;
+            overlays = [
+              (final: prev: {
+                gopls = pkgs-unstable.gopls;
+                version = version.packages.${system}.default; # Used to apply version numbers to the repo.
+                xc = xc.packages.${system}.xc;
+              })
+            ];
+          };
       });
     in
     {
-      packages = forAllSystems ({ system, pkgs, ... }:
+      packages = forAllSystems ({ pkgs, ... }:
         rec {
           default = templ;
 
-          templ = pkgs.buildGo123Module {
+          templ = pkgs.buildGo124Module {
             name = "templ";
             subPackages = [ "cmd/templ" ];
             src = gitignore.lib.gitignoreSource ./.;
-            vendorHash = "sha256-OPADot7Lkn9IBjFCfbrqs3es3F6QnWNjSOHxONjG4MM=";
-            CGO_ENABLED = 0;
+            vendorHash = "sha256-eJV0q+qG1QETydYtE6hipuxyp+P649RzF36Jc4qe8e4=";
+            env = {
+              CGO_ENABLED = 0;
+            };
             flags = [
               "-trimpath"
             ];
@@ -51,19 +69,20 @@
         });
 
       # `nix develop` provides a shell containing development tools.
-      devShell = forAllSystems ({ system, pkgs, pkgs-unstable, ... }:
+      devShell = forAllSystems ({ pkgs, ... }:
         pkgs.mkShell {
           buildInputs = [
             pkgs.golangci-lint
             pkgs.cosign # Used to sign container images.
             pkgs.esbuild # Used to package JS examples.
             pkgs.go
-            pkgs-unstable.gopls
+            pkgs.gopls
             pkgs.goreleaser
             pkgs.gotestsum
             pkgs.ko # Used to build Docker images.
             pkgs.nodejs # Used to build templ-docs.
-            xc.packages.${system}.xc
+            pkgs.version
+            pkgs.xc
           ];
         });
 

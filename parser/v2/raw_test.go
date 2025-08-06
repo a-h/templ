@@ -13,63 +13,57 @@ var ignoredContent = `{
 }`
 
 func TestRawElementParser(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
-		expected RawElement
+		expected *RawElement
 	}{
 		{
 			name:  "style tag",
 			input: `<style type="text/css">contents</style>`,
-			expected: RawElement{
+			expected: &RawElement{
 				Name: "style",
 				Attributes: []Attribute{
-					ConstantAttribute{
-						Name:  "type",
+					&ConstantAttribute{
 						Value: "text/css",
-						NameRange: Range{
-							From: Position{Index: 7, Line: 0, Col: 7},
-							To:   Position{Index: 11, Line: 0, Col: 11},
+						Key: ConstantAttributeKey{
+							Name: "type",
+							NameRange: Range{
+								From: Position{Index: 7, Line: 0, Col: 7},
+								To:   Position{Index: 11, Line: 0, Col: 11},
+							},
 						},
 					},
 				},
 				Contents: "contents",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 39, Line: 0, Col: 39},
+				},
 			},
 		},
 		{
 			name:  "style tag containing mismatched braces",
 			input: `<style type="text/css">` + ignoredContent + "</style>",
-			expected: RawElement{
+			expected: &RawElement{
 				Name: "style",
 				Attributes: []Attribute{
-					ConstantAttribute{
-						Name:  "type",
+					&ConstantAttribute{
 						Value: "text/css",
-						NameRange: Range{
-							From: Position{Index: 7, Line: 0, Col: 7},
-							To:   Position{Index: 11, Line: 0, Col: 11},
+						Key: ConstantAttributeKey{
+							Name: "type",
+							NameRange: Range{
+								From: Position{Index: 7, Line: 0, Col: 7},
+								To:   Position{Index: 11, Line: 0, Col: 11},
+							},
 						},
 					},
 				},
 				Contents: ignoredContent,
-			},
-		},
-		{
-			name:  "script tag",
-			input: `<script type="vbscript">dim x = 1</script>`,
-			expected: RawElement{
-				Name: "script",
-				Attributes: []Attribute{
-					ConstantAttribute{
-						Name:  "type",
-						Value: "vbscript",
-						NameRange: Range{
-							From: Position{Index: 8, Line: 0, Col: 8},
-							To:   Position{Index: 12, Line: 0, Col: 12},
-						},
-					},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 52, Line: 3, Col: 9},
 				},
-				Contents: "dim x = 1",
 			},
 		},
 	}
@@ -92,7 +86,7 @@ func TestRawElementParser(t *testing.T) {
 }
 
 func TestRawElementParserIsNotGreedy(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name     string
 		input    string
 		expected RawElement

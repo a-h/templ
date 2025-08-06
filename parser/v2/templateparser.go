@@ -16,7 +16,7 @@ type templateExpression struct {
 	Expression Expression
 }
 
-var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpression, ok bool, err error) {
+var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpression, matched bool, err error) {
 	start := pi.Index()
 
 	if !peekPrefix(pi, "templ ") {
@@ -29,21 +29,20 @@ var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpre
 	// becomes:
 	// func (x []string) Test() templ.Component {
 	if _, r.Expression, err = parseTemplFuncDecl(pi); err != nil {
-		return r, false, err
+		return r, true, err
 	}
 
 	// Eat " {\n".
-	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.StringFrom(parse.Optional(parse.NewLine))).Parse(pi); err != nil || !ok {
-		err = parse.Error("templ: malformed templ expression, expected `templ functionName() {`", pi.PositionAt(start))
-		return
+	if _, matched, err = parse.All(openBraceWithOptionalPadding, parse.StringFrom(parse.Optional(parse.NewLine))).Parse(pi); err != nil || !matched {
+		return r, true, parse.Error("templ: malformed templ expression, expected `templ functionName() {`", pi.PositionAt(start))
 	}
 
 	return r, true, nil
 })
 
 const (
-	unterminatedMissingCurly = `unterminated (missing closing '{\n') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
-	unterminatedMissingEnd   = `missing end (expected '}') - https://templ.guide/syntax-and-usage/statements#incomplete-statements`
+	unterminatedMissingCurly = `unterminated (missing closing '{\n') - to escape "for", "if", "switch" etc. with braces, e.g. '{ "for" }' - https://templ.guide/syntax-and-usage/statements#ifswitchfor-within-text`
+	unterminatedMissingEnd   = `missing end (expected '}') - https://templ.guide/syntax-and-usage/statements#ifswitchfor-within-text`
 )
 
 // Template node (element, call, if, switch, for, whitespace etc.)
@@ -83,17 +82,17 @@ var templateNodeParsers = []parse.Parser[Node]{
 	textParser,             // anything &amp; everything accepted...
 }
 
-func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, ok bool, err error) {
+func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, matched bool, err error) {
 outer:
 	for {
 		// Check if we've reached the end.
 		if p.until != nil {
 			start := pi.Index()
-			_, ok, err = p.until.Parse(pi)
+			_, didMatchUntilParser, err := p.until.Parse(pi)
 			if err != nil {
-				return
+				return op, false, err
 			}
-			if ok {
+			if didMatchUntilParser {
 				pi.Seek(start)
 				return op, true, nil
 			}
@@ -101,30 +100,35 @@ outer:
 
 		// Skip any nodes that we don't care about.
 		for _, p := range templateNodeSkipParsers {
-			_, matched, err := p.Parse(pi)
+			_, didMatchSkipParser, err := p.Parse(pi)
 			if err != nil {
-				return Nodes{}, false, err
+				return op, false, err
 			}
-			if matched {
+			if didMatchSkipParser {
 				continue outer
 			}
 		}
 
 		// Attempt to parse a node.
 		// Loop through the parsers and try to parse a node.
-		var matched bool
+		var didMatchTemplateNode bool
 		for _, p := range templateNodeParsers {
 			var node Node
-			node, matched, err = p.Parse(pi)
+			node, didMatchTemplateNode, err = p.Parse(pi)
 			if err != nil {
-				return Nodes{}, false, err
+				// Even if there's an error, we might have a node that the LSP can use,
+				// so return it.
+				if node != nil {
+					op.Nodes = append(op.Nodes, node)
+				}
+				return op, true, err
 			}
-			if matched {
+			if didMatchTemplateNode {
 				op.Nodes = append(op.Nodes, node)
 				break
 			}
 		}
-		if matched {
+		if didMatchTemplateNode {
 			continue
 		}
 
@@ -138,7 +142,7 @@ outer:
 		err = UntilNotFoundError{
 			ParseError: parse.Error(fmt.Sprintf("%v not found", p.untilName), pi.Position()),
 		}
-		return
+		return op, true, err
 	}
 
 	return op, true, nil

@@ -1,36 +1,21 @@
 # Live reload
 
-To access a Go web application that uses templ in a web browser, a few things must happen:
+To enable live reload on a `templ` app use:
 
-1. `templ generate` must be executed, to create Go code (`*_templ.go` files) from the `*.templ` files.
-2. The Go code must start a web server on a port, e.g. (`http.ListenAndServe("localhost:8080", nil)`.
-3. The Go program must be ran, e.g. by running `go run .`.
-4. The web browser must access or reload the page, e.g. `http://localhost:8080`.
-5. Content-Type must be text/html. 
-
-If the `*.templ` files change, #1 and #2 must be ran.
-
-If the `*.go` files change, #3 and #4 must be ran.
-
-## Built-in
-
-`templ generate --watch` watches the current directory for changes and generates Go code if changes are detected.
-
-To re-run your app automatically, add the `--cmd` argument to `templ generate`, and templ will start or restart your app using the command provided once template code generation is complete (#3).
-
-To trigger your web browser to reload automatically (without pressing F5), set the `--proxy` argument (#4) to point at your app, and browse to the proxy address (default `http://localhost:7331`).
-
-The `--proxy` argument starts a HTTP proxy which proxies requests to your app. For example, if your app runs on port 8080, you would use `--proxy="http://localhost:8080"`. The proxy inserts client-side JavaScript before the `</body>` tag that will cause the browser to reload the window when the app is restarted instead of you having to reload the page manually. Note that the html being served by the webserver MUST have a `<body>` tag, otherwise there will be no javascript injection thus making the browser not reload automatically. In addition, the script might not be inserted if templ cannot read and modify the http response, e.g. due to middleware implementation.   
-
-By default, the proxy binds to `127.0.0.1`. You can use `--proxybind` to bind to another address, e.g., `--proxybind="0.0.0.0"`.
-
-Altogether, to setup live reload on an app that listens on port 8080, run the following.
-
-```
+```bash
 templ generate --watch --proxy="http://localhost:8080" --cmd="go run ."
 ```
 
-This will start the proxy server on port `7331` and open it in your default browser. If you'd like to prevent it from opening in your browser add the flag `--open-browser=false`.
+This will:
+
+- Automatically re-generate Go code if you change `*.templ` files.
+- Restart the web server if you change `*.go` files.
+- Automatically reload the browser if you change `*.go` or `*.templ` files.
+- Run a HTTP proxy on `localhost:7331` (by default) that proxies requests to your web server (default `http://localhost:8080`).
+
+## Example
+
+Create `main.go` and `hello.templ` files.
 
 ```go title="main.go"
 package main
@@ -61,6 +46,61 @@ templ hello(name string) {
   </body>
 }
 ```
+
+Run `templ generate --watch --proxy="http://localhost:8080" --cmd="go run ."`.
+
+Observe that the web server is started, and the browser opens to `http://localhost:7331`.
+
+Make changes to `hello.templ` and `main.go`, and see the changes reflected in the browser without having to press F5.
+
+## How it works
+
+### templ watches files for changes
+
+The `templ generate --watch` argument tells `templ` to watch for changes to `*.templ` and `*.go` files in the current directory.
+
+When a change is detected, `templ` will:
+
+- Automatically generate `*.go` code from your `*.templ` files when you save changes to them.
+- Create text files in the `tmp` directory that is read by generated templ Go code if the `TEMPL_DEV_MODE` enabled.
+  - This means that the Go web server doesn't need to be restarted when changes are made to HTML or text in `*.templ` files, `templ` can read the files at runtime instead.
+  - The web server is only restarted when changes are made to Go code in `*.templ` files.
+
+### templ restarts your server automatically
+
+The `--cmd` argument tells `templ` to run a command when `*.go` files change, for example:
+
+```bash
+templ generate --watch --cmd="go run ."
+```
+
+The command is executed if `*.go` files change, or if any Go code within `*.templ` files change.
+
+You can run any command you like, e.g. `go build -o app && ./app`, or `air`, or `wgo`.
+
+### templ uses a proxy to auto-reload the browser
+
+The `--proxy` argument tells `templ` to run a HTTP proxy that proxies requests to your web server.
+
+For example, if your web server listens on port 8080:
+
+```bash
+templ generate --watch --cmd="go run ." --proxy="http://localhost:8080"
+```
+
+This starts a HTTP proxy that proxies requests to your web server (default `http://localhost:7331`). The proxy inserts client-side JavaScript before the `</body>` tag that will cause the browser to reload the window when the app is restarted instead of you having to reload the page manually - no more pressing F5!
+
+By default, the proxy binds to `127.0.0.1:7331`. You can use `--proxybind` to bind to another address, e.g., `--proxybind="0.0.0.0"`.
+
+:::note
+In order for templ to successfully inject the reload JavaScript into the HTML response:
+
+- The HTML must have a `<body>` tag.
+- The HTML must be served with a `Content-Type` of `text/html`.
+- The response must be compressed with no compression, or a supported compression algorithm (e.g. gzip).
+:::
+
+## Live reload process
 
 The live reload process can be shown in the following diagram:
 
@@ -97,7 +137,11 @@ This will default to the default templ proxy address of `localhost:7331`, but ca
 templ generate --notify-proxy --proxybind="localhost" --proxyport="8080"
 ```
 
-## Alternative 1: wgo
+## Alternatives
+
+If you don't want to use `templ generate --watch`, you can use other tools to watch for changes and restart the server.
+
+### wgo
 
 [wgo](https://github.com/bokwoon95/wgo):
 
@@ -109,15 +153,15 @@ wgo -file=.go -file=.templ -xfile=_templ.go templ generate :: go run main.go
 
 To avoid a continuous reloading files ending with `_templ.go` should be skipped via `-xfile`.
 
-## Alternative 2: air
+### air
 
 Air can also monitor the filesystem for changes, and provides a proxy to automatically reload pages.
 
 It uses a `toml` configuration file.
 
-See https://github.com/cosmtrek/air for details.
+See https://github.com/air-verse/air for details.
 
-### Example configuration
+#### Example configuration
 
 ```toml title=".air.toml"
 root = "."

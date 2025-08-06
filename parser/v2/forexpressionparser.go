@@ -9,8 +9,8 @@ var forExpression parse.Parser[Node] = forExpressionParser{}
 
 type forExpressionParser struct{}
 
-func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
-	var r ForExpression
+func (forExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err error) {
+	r := &ForExpression{}
 	start := pi.Index()
 
 	// Strip leading whitespace and look for `for `.
@@ -24,28 +24,32 @@ func (forExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 
 	// Parse the Go for expression.
 	if r.Expression, err = parseGo("for", pi, goexpression.For); err != nil {
-		return r, false, err
+		return r, true, err
 	}
 
 	// Eat " {\n".
-	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
-		pi.Seek(start)
-		return r, false, err
+	_, matched, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi)
+	if err != nil {
+		return r, true, err
+	}
+	if !matched {
+		err = parse.Error("for: "+unterminatedMissingCurly, pi.PositionAt(start))
+		return r, true, err
 	}
 
 	// Node contents.
 	tnp := newTemplateNodeParser(closeBraceWithOptionalPadding, "for expression closing brace")
 	var nodes Nodes
-	if nodes, ok, err = tnp.Parse(pi); err != nil || !ok {
-		err = parse.Error("for: expected nodes, but none were found", pi.Position())
-		return
+	if nodes, matched, err = tnp.Parse(pi); err != nil || !matched {
+		// If we got any nodes, take them, because the LSP might want to use them.
+		r.Children = nodes.Nodes
+		return r, true, parse.Error("for: expected nodes, but none were found", pi.Position())
 	}
 	r.Children = nodes.Nodes
 
 	// Read the required closing brace.
-	if _, ok, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
-		err = parse.Error("for: "+unterminatedMissingEnd, pi.Position())
-		return
+	if _, matched, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !matched {
+		return r, true, parse.Error("for: "+unterminatedMissingEnd, pi.Position())
 	}
 
 	return r, true, nil

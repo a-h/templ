@@ -125,6 +125,28 @@ templ component() {
 <hr style="padding: 10px" class="itIsTrue" />
 ```
 
+## Attribute key expressions
+
+Use a string expression to dynamically set the key of an attribute.
+
+```templ
+templ paragraph(testID string) {
+  <p { "data-" + testID }="paragraph">Text</p>
+}
+
+templ component() {
+  @paragraph("testid")
+}
+```
+
+```html title="Output"
+<p data-testid="paragraph">Text</p>
+```
+
+:::warning
+Currently, attribute types with special handling like `href`, `onClick`, and `on*` are not handled differently when defined with an expression key. So if you use a string expression to set the key of an attribute, it will be treated as a normal string attribute, without type specific escaping.
+:::
+
 ## Spread attributes
 
 Use the `{ attrMap... }` syntax in the open tag of an element to append a dynamic map of attributes to the element's attributes.
@@ -158,19 +180,39 @@ templ usage() {
 
 ## URL attributes
 
-The `<a>` element's `href` attribute is treated differently. templ expects you to provide a `templ.SafeURL` instead of a `string`.
-
-Typically, you would do this by using the `templ.URL` function.
-
-The `templ.URL` function sanitizes input URLs and checks that the protocol is `http`/`https`/`mailto` rather than `javascript` or another unexpected protocol.
+Attributes that expect a URL, such as `<a href={ url }>`, `<form action={ url }>`, or `<img src={ url }>`, have special behavior if you use a dynamic value.
 
 ```templ
 templ component(p Person) {
-  <a href={ templ.URL(p.URL) }>{ strings.ToUpper(p.Name) }</a>
+  <a href={ p.URL }>{ strings.ToUpper(p.Name) }</a>
 }
 ```
 
+When you pass a `string` to these attributes, templ will automatically sanitize the input URL, ensuring that the protocol is safe (e.g., `http`, `https`, or `mailto`) and does not contain potentially harmful protocols like `javascript:`.
+
+:::caution
+To bypass URL sanitization, you can use `templ.SafeURL(myURL)` to mark that your string is safe to use.
+
+This may introduce security vulnerabilities to your program.
+:::
+
+If you use a constant value, e.g. `<a href="javascript:alert('hello')">`, templ will not modify it, and it will be rendered as is.
+
 :::tip
+Non-standard HTML attributes can contain URLs, for example HTMX's `hx-*` attributes).
+
+To sanitize URLs in that context, use the `templ.URL(urlString)` function.
+
+```templ
+templ component(contact model.Contact) {
+  <div hx-get={ templ.URL(fmt.Sprintf("/contacts/%s/email", contact.ID)) }>
+    { contact.Name }
+  </div>
+}
+```
+:::
+
+:::note
 In templ, all attributes are HTML-escaped. This means that:
 
 - `&` characters in the URL are escaped to `&amp;`.
@@ -182,24 +224,6 @@ This done to prevent XSS attacks. For example, without escaping, if a string con
 The escaping does not change the URL's functionality.
 
 Sanitization is the process of examining the URL scheme (protocol) and structure to ensure that it's safe to use, e.g. that it doesn't contain `javascript:` or other potentially harmful schemes. If a URL is not safe, templ will replace the URL with `about:invalid#TemplFailedSanitizationURL`.
-:::
-
-The `templ.URL` function only supports standard HTML elements and attributes (`<a href=""` and `<form action=""`).
-
-For use on non-standard HTML elements (e.g. HTMX's `hx-*` attributes), convert the `templ.URL` to a `string` after sanitization.
-
-```templ
-templ component(contact model.Contact) {
-  <div hx-get={ string(templ.URL(fmt.Sprintf("/contacts/%s/email", contact.ID)))}>
-    { contact.Name }
-  </div>
-}
-```
-
-:::caution
-If you need to bypass this sanitization, you can use `templ.SafeURL(myURL)` to mark that your string is safe to use.
-
-This may introduce security vulnerabilities to your program.
 :::
 
 ## JavaScript attributes

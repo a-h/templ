@@ -78,8 +78,8 @@ func GetChildren(ctx context.Context) Component {
 }
 
 // EscapeString escapes HTML text within templates.
-func EscapeString(s string) string {
-	return html.EscapeString(s)
+func EscapeString[T ~string](s T) string {
+	return html.EscapeString(string(s))
 }
 
 // Bool attribute value.
@@ -335,18 +335,18 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 	_, v := getContext(ctx)
 	sb := new(strings.Builder)
 	renderCSSItemsToBuilder(sb, v, classes...)
-	if sb.Len() > 0 {
-		if _, err = io.WriteString(w, `<style type="text/css">`); err != nil {
-			return err
-		}
-		if _, err = io.WriteString(w, sb.String()); err != nil {
-			return err
-		}
-		if _, err = io.WriteString(w, `</style>`); err != nil {
+	if sb.Len() == 0 {
+		return nil
+	}
+	if _, err = io.WriteString(w, `<style type="text/css"`); err != nil {
+		return err
+	}
+	if v.nonce != "" {
+		if err = writeStrings(w, ` nonce="`, EscapeString(v.nonce), `"`); err != nil {
 			return err
 		}
 	}
-	return nil
+	return writeStrings(w, `>`, sb.String(), `</style>`)
 }
 
 func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...any) {
@@ -413,19 +413,38 @@ func SanitizeCSS[T ~string](property string, value T) SafeCSS {
 	return SafeCSS(p + ":" + v + ";")
 }
 
+type Attributer interface {
+	Items() []KeyValue[string, any]
+}
+
 // Attributes is an alias to map[string]any made for spread attributes.
 type Attributes map[string]any
 
-// sortedKeys returns the keys of a map in sorted order.
-func sortedKeys(m map[string]any) (keys []string) {
-	keys = make([]string, len(m))
-	var i int
-	for k := range m {
-		keys[i] = k
+var _ Attributer = Attributes{}
+
+// Returns the items of the attributes map in key sorted order.
+func (a Attributes) Items() []KeyValue[string, any] {
+	var (
+		items = make([]KeyValue[string, any], len(a))
+		i     int
+	)
+	for k, v := range a {
+		items[i] = KeyValue[string, any]{Key: k, Value: v}
 		i++
 	}
-	sort.Strings(keys)
-	return keys
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Key < items[j].Key
+	})
+	return items
+}
+
+// OrderedAttributes stores attributes in order of insertion.
+type OrderedAttributes []KeyValue[string, any]
+
+var _ Attributer = OrderedAttributes{}
+
+func (a OrderedAttributes) Items() []KeyValue[string, any] {
+	return a
 }
 
 func writeStrings(w io.Writer, ss ...string) (err error) {
@@ -437,53 +456,90 @@ func writeStrings(w io.Writer, ss ...string) (err error) {
 	return nil
 }
 
-func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributes) (err error) {
-	for _, key := range sortedKeys(attributes) {
-		value := attributes[key]
+func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (err error) {
+	for _, item := range attributes.Items() {
+		key := item.Key
+		value := item.Value
 		switch value := value.(type) {
 		case string:
 			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {
 				return err
 			}
 		case *string:
-			if value != nil {
-				if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(*value), `"`); err != nil {
-					return err
-				}
+			if value == nil {
+				continue
+			}
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(*value), `"`); err != nil {
+				return err
 			}
 		case bool:
-			if value {
-				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
-					return err
-				}
+			if !value {
+				continue
+			}
+			if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+				return err
 			}
 		case *bool:
-			if value != nil && *value {
-				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
-					return err
-				}
+			if value == nil || !*value {
+				continue
+			}
+			if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+				return err
+			}
+		case int, int8, int16, int32, int64,
+			uint, uint8, uint16, uint32, uint64, uintptr,
+			float32, float64, complex64, complex128:
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
+			}
+		case *int, *int8, *int16, *int32, *int64,
+			*uint, *uint8, *uint16, *uint32, *uint64, *uintptr,
+			*float32, *float64, *complex64, *complex128:
+			value = ptrValue(value)
+			if value == nil {
+				continue
+			}
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
+				return err
 			}
 		case KeyValue[string, bool]:
-			if value.Value {
-				if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value.Key), `"`); err != nil {
-					return err
-				}
+			if !value.Value {
+				continue
+			}
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value.Key), `"`); err != nil {
+				return err
 			}
 		case KeyValue[bool, bool]:
-			if value.Value && value.Key {
-				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
-					return err
-				}
+			if !value.Value || !value.Key {
+				continue
+			}
+			if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+				return err
 			}
 		case func() bool:
-			if value() {
-				if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
-					return err
-				}
+			if !value() {
+				continue
+			}
+			if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
+				return err
 			}
 		}
 	}
 	return nil
+}
+
+func ptrValue(v any) any {
+	if v == nil {
+		return nil
+	}
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Ptr {
+		return v
+	}
+	if rv.IsNil() {
+		return nil
+	}
+	return rv.Elem().Interface()
 }
 
 // Context.
@@ -578,9 +634,29 @@ func ReleaseBuffer(b *bytes.Buffer) {
 	bufferPool.Put(b)
 }
 
+type ints interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64
+}
+
+type uints interface {
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
+type floats interface {
+	~float32 | ~float64
+}
+
+type complexNumbers interface {
+	~complex64 | ~complex128
+}
+
+type stringable interface {
+	ints | uints | floats | complexNumbers | ~string | ~bool
+}
+
 // JoinStringErrs joins an optional list of errors.
-func JoinStringErrs(s string, errs ...error) (string, error) {
-	return s, errors.Join(errs...)
+func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
+	return fmt.Sprint(s), errors.Join(errs...)
 }
 
 // Error returned during template rendering.

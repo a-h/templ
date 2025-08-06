@@ -15,13 +15,13 @@ var htmlComment = htmlCommentParser{}
 func (p htmlCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Comment start.
 	start := pi.Position()
-	var c HTMLComment
 	if _, ok, err = htmlCommentStart.Parse(pi); err != nil || !ok {
 		return
 	}
 
 	// Once we've got the comment start sequence, parse anything until the end
 	// sequence as the comment contents.
+	c := &HTMLComment{}
 	if c.Contents, ok, err = parse.StringUntil(htmlCommentEnd).Parse(pi); err != nil || !ok {
 		err = parse.Error("expected end comment literal '-->' not found", start)
 		return
@@ -35,5 +35,6 @@ func (p htmlCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 
+	c.Range = NewRange(start, pi.Position())
 	return c, true, nil
 }

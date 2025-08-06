@@ -51,7 +51,7 @@ This enables interesting use cases. For example, here, the `Page` template is re
 
 By using `templ.Flush()` to create a flushable area, the data is pushed to the client as soon as it is available, rather than waiting for the entire template to render before sending a response.
 
-```go
+```templ
 templ Page(data chan string) {
 	<!DOCTYPE html>
 	<html>
@@ -84,15 +84,15 @@ This involves a lot of extra HTTP requests, and means that we have to wait until
 
 Combining templ's streaming capability with a new feature in web browsers called "Declarative Shadow DOM" means that we can perform the same action in a single HTTP request.
 
-:::note:::
-React SSR solutions such as Next.js can do this on the server, just like templ can, see https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming#what-is-streaming
+:::note
+React SSR solutions such as Next.js can also do this on the server, see https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming#what-is-streaming
 :::
 
 ### Declarative Shadow DOM
 
 First, we need to define a new templ component called `Slot`.
 
-```go
+```templ
 templ Slot(name string) {
 	<slot name={ name }>
 		<div>Loading { name }...</div>
@@ -110,7 +110,7 @@ We can then use a `for` loop over the channel of data to populate the slots with
 
 The result is a simple way to load content after initial page load without the need to use JavaScript.
 
-```go
+```templ
 templ Page(data chan SlotContents) {
 	<!DOCTYPE html>
 	<html>

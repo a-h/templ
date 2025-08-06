@@ -19,7 +19,7 @@ var testDataTxTar []byte
 
 type testProject struct {
 	dir       string
-	cleanup   func()
+	cleanup   func() error
 	testFiles map[string]testFile
 }
 
@@ -47,8 +47,11 @@ func setupProjectDir() (tp testProject, err error) {
 			expected: string(testData.Files[i+1].Data),
 		}
 	}
-	tp.cleanup = func() {
-		os.RemoveAll(tp.dir)
+	tp.cleanup = func() error {
+		if err := os.RemoveAll(tp.dir); err != nil {
+			return fmt.Errorf("failed to remove test directory %q: %w", tp.dir, err)
+		}
+		return nil
 	}
 	return tp, nil
 }
@@ -60,7 +63,11 @@ func TestFormat(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to setup project dir: %v", err)
 		}
-		defer tp.cleanup()
+		defer func() {
+			if err := tp.cleanup(); err != nil {
+				t.Errorf("cleanup error: %v", err)
+			}
+		}()
 		stdin := strings.NewReader(tp.testFiles["a.templ"].input)
 		stdout := new(strings.Builder)
 		if err = Run(log, stdin, stdout, Arguments{
@@ -77,7 +84,11 @@ func TestFormat(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to setup project dir: %v", err)
 		}
-		defer tp.cleanup()
+		defer func() {
+			if err := tp.cleanup(); err != nil {
+				t.Errorf("cleanup error: %v", err)
+			}
+		}()
 		stdout := new(strings.Builder)
 		if err = Run(log, nil, stdout, Arguments{
 			ToStdout: true,
@@ -97,7 +108,11 @@ func TestFormat(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to setup project dir: %v", err)
 		}
-		defer tp.cleanup()
+		defer func() {
+			if err := tp.cleanup(); err != nil {
+				t.Errorf("cleanup error: %v", err)
+			}
+		}()
 		if err = Run(log, nil, nil, Arguments{
 			Files: []string{
 				tp.testFiles["a.templ"].name,
@@ -120,7 +135,11 @@ func TestFormat(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to setup project dir: %v", err)
 		}
-		defer tp.cleanup()
+		defer func() {
+			if err := tp.cleanup(); err != nil {
+				t.Errorf("cleanup error: %v", err)
+			}
+		}()
 		if err = Run(log, nil, nil, Arguments{
 			Files: []string{
 				tp.testFiles["a.templ"].name,
@@ -143,7 +162,11 @@ func TestFormat(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to setup project dir: %v", err)
 		}
-		defer tp.cleanup()
+		defer func() {
+			if err := tp.cleanup(); err != nil {
+				t.Errorf("cleanup error: %v", err)
+			}
+		}()
 		if err = Run(log, nil, nil, Arguments{
 			Files: []string{
 				tp.testFiles["c.templ"].name,

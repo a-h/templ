@@ -11,12 +11,12 @@ func TestStringExpressionParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected StringExpression
+		expected *StringExpression
 	}{
 		{
 			name:  "basic expression",
 			input: `{ "this" }`,
-			expected: StringExpression{
+			expected: &StringExpression{
 				Expression: Expression{
 					Value: `"this"`,
 					Range: Range{
@@ -38,7 +38,7 @@ func TestStringExpressionParser(t *testing.T) {
 		{
 			name:  "no spaces",
 			input: `{"this"}`,
-			expected: StringExpression{
+			expected: &StringExpression{
 				Expression: Expression{
 					Value: `"this"`,
 					Range: Range{
@@ -62,7 +62,7 @@ func TestStringExpressionParser(t *testing.T) {
 			input: `{ test{}.Call(a,
 		b,
 	  c) }`,
-			expected: StringExpression{
+			expected: &StringExpression{
 				Expression: Expression{
 					Value: "test{}.Call(a,\n\t\tb,\n\t  c)",
 					Range: Range{
@@ -86,14 +86,14 @@ func TestStringExpressionParser(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
-			an, ok, err := stringExpression.Parse(input)
+			an, matched, err := stringExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if !ok {
+			if !matched {
 				t.Fatalf("unexpected failure for input %q", tt.input)
 			}
-			actual := an.(StringExpression)
+			actual := an.(*StringExpression)
 			if diff := cmp.Diff(tt.expected, actual); diff != "" {
 				t.Error(diff)
 			}

@@ -5,10 +5,12 @@ import (
 	"context"
 	"io"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/a-h/templ"
+	"github.com/a-h/templ/internal/htmlfind"
+	"golang.org/x/net/html"
 )
 
 var contentTemplate = templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
@@ -26,19 +28,22 @@ func TestStreamReplace(t *testing.T) {
 
 	// Act.
 	bdy := w.Body.Bytes()
-	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(bdy))
+	doc, err := html.Parse(bytes.NewReader(bdy))
 	if err != nil {
 		t.Fatalf("failed to read response: %v", err)
 	}
 
 	// Assert.
-	selection := doc.Find(`turbo-stream[action="replace"][target="replaceTarget"]`)
-	if selection.Length() != 1 {
-		t.Error("expected to find a replace action, but didn't")
+	match := htmlfind.Element("turbo-stream", htmlfind.Attr("action", "replace"), htmlfind.Attr("target", "replaceTarget"))
+	var count int
+	for _, node := range htmlfind.All(doc, match) {
+		count++
+		if strings.TrimSpace(node.FirstChild.FirstChild.Data) != "content" {
+			t.Errorf("expected 'content' to be the text, but got %q\n%s", node.FirstChild.Data, bdy)
+		}
 	}
-	text := selection.First().Text()
-	if text != "content" {
-		t.Errorf("expected 'content' to be the text, but got %q\n%s", text, bdy)
+	if count != 1 {
+		t.Errorf("expected to find a single replace action, but found %d", count)
 	}
 }
 
@@ -47,59 +52,64 @@ func TestStream(t *testing.T) {
 
 	// Append.
 	expectedAppends := 2
-	for i := 0; i < expectedAppends; i++ {
+	for range expectedAppends {
 		if err := Append(w, "appendTarget", contentTemplate); err != nil {
 			t.Fatalf("append failed: %v", err)
 		}
 	}
 	// Prepend.
 	expectedPrepends := 3
-	for i := 0; i < expectedPrepends; i++ {
+	for range expectedPrepends {
 		if err := Prepend(w, "prependTarget", contentTemplate); err != nil {
 			t.Fatalf("prepend failed: %v", err)
 		}
 	}
 	// Replace.
 	expectedReplaces := 4
-	for i := 0; i < expectedReplaces; i++ {
+	for range expectedReplaces {
 		if err := Replace(w, "replaceTarget", contentTemplate); err != nil {
 			t.Fatalf("replace failed: %v", err)
 		}
 	}
 	// Update.
 	expectedUpdates := 5
-	for i := 0; i < expectedUpdates; i++ {
+	for range expectedUpdates {
 		if err := Update(w, "updateTarget", contentTemplate); err != nil {
 			t.Fatalf("update failed: %v", err)
 		}
 	}
 	// Remove.
 	expectedRemoves := 6
-	for i := 0; i < expectedRemoves; i++ {
+	for range expectedRemoves {
 		if err := Remove(w, "removeTarget"); err != nil {
 			t.Fatalf("remove failed: %v", err)
 		}
 	}
 
-	doc, err := goquery.NewDocumentFromReader(w.Body)
+	doc, err := html.Parse(w.Body)
 	if err != nil {
 		t.Fatalf("failed to read response: %v", err)
 	}
 
-	if appendCount := doc.Find(`turbo-stream[action="append"][target="appendTarget"]`).Length(); appendCount != expectedAppends {
-		t.Errorf("expected %d append actions, but got %d", expectedAppends, appendCount)
+	appends := htmlfind.All(doc, htmlfind.Element("turbo-stream", htmlfind.Attr("action", "append"), htmlfind.Attr("target", "appendTarget")))
+	if len(appends) != expectedAppends {
+		t.Errorf("expected %d append actions, but got %d", expectedAppends, len(appends))
 	}
-	if prependCount := doc.Find(`turbo-stream[action="prepend"][target="prependTarget"]`).Length(); prependCount != expectedPrepends {
-		t.Errorf("expected %d prepend actions, but got %d", expectedPrepends, prependCount)
+	prepends := htmlfind.All(doc, htmlfind.Element("turbo-stream", htmlfind.Attr("action", "prepend"), htmlfind.Attr("target", "prependTarget")))
+	if len(prepends) != expectedPrepends {
+		t.Errorf("expected %d prepend actions, but got %d", expectedPrepends, len(prepends))
 	}
-	if replaceCount := doc.Find(`turbo-stream[action="replace"][target="replaceTarget"]`).Length(); replaceCount != expectedReplaces {
-		t.Errorf("expected %d replace actions, but got %d", expectedReplaces, replaceCount)
+	replaces := htmlfind.All(doc, htmlfind.Element("turbo-stream", htmlfind.Attr("action", "replace"), htmlfind.Attr("target", "replaceTarget")))
+	if len(replaces) != expectedReplaces {
+		t.Errorf("expected %d replace actions, but got %d", expectedReplaces, len(replaces))
 	}
-	if updateCount := doc.Find(`turbo-stream[action="update"][target="updateTarget"]`).Length(); updateCount != expectedUpdates {
-		t.Errorf("expected %d update actions, but got %d", expectedUpdates, updateCount)
+	updates := htmlfind.All(doc, htmlfind.Element("turbo-stream", htmlfind.Attr("action", "update"), htmlfind.Attr("target", "updateTarget")))
+	if len(updates) != expectedUpdates {
+		t.Errorf("expected %d update actions, but got %d", expectedUpdates, len(updates))
 	}
-	if removeCount := doc.Find(`turbo-stream[action="remove"][target="removeTarget"]`).Length(); removeCount != expectedRemoves {
-		t.Errorf("expected %d remove actions, but got %d", expectedRemoves, removeCount)
+	removes := htmlfind.All(doc, htmlfind.Element("turbo-stream", htmlfind.Attr("action", "remove"), htmlfind.Attr("target", "removeTarget")))
+	if len(removes) != expectedRemoves {
+		t.Errorf("expected %d remove actions, but got %d", expectedRemoves, len(removes))
 	}
 	if w.Result().Header.Get("Content-Type") != "text/vnd.turbo-stream.html" {
 		t.Errorf("expected Content-Type %q, got %q", "text/vnd.turbo-stream.html", w.Result().Header.Get("Content-Type"))

@@ -20,7 +20,7 @@ func BenchmarkTemplRender(b *testing.B) {
 	})
 
 	w := new(strings.Builder)
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		err := t.Render(context.Background(), w)
 		if err != nil {
 			b.Errorf("failed to render: %v", err)
@@ -33,7 +33,7 @@ func BenchmarkTemplRender(b *testing.B) {
 var parserBenchmarkTemplate string
 
 func BenchmarkTemplParser(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		tf, err := parser.ParseString(parserBenchmarkTemplate)
 		if err != nil {
 			b.Fatal(err)
@@ -63,7 +63,7 @@ func BenchmarkGoTemplateRender(b *testing.B) {
 		Email: "luiz@exapmle.com",
 	}
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		err := goTemplate.Execute(w, person)
 		if err != nil {
 			b.Errorf("failed to render: %v", err)
@@ -77,7 +77,7 @@ const html = `<div><h1>Luiz Bonfa</h1><div style="font-family: &#39;sans-serif&#
 func BenchmarkIOWriteString(b *testing.B) {
 	b.ReportAllocs()
 	w := new(strings.Builder)
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := io.WriteString(w, html)
 		if err != nil {
 			b.Errorf("failed to render: %v", err)

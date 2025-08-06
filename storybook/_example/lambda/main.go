@@ -66,8 +66,8 @@ func handler(ctx context.Context, e events.APIGatewayV2HTTPRequest) (resp events
 	cookies := result.Cookies()
 	if len(cookies) > 0 {
 		resp.Cookies = make([]string, len(cookies))
-		for i := 0; i < len(cookies); i++ {
-			resp.Cookies[i] = cookies[i].String()
+		for i, c := range cookies {
+			resp.Cookies[i] = c.String()
 		}
 	}
 	return

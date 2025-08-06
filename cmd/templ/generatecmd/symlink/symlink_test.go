@@ -3,7 +3,6 @@ package symlink
 import (
 	"context"
 	"io"
-	"log/slog"
 	"os"
 	"path"
 	"testing"
@@ -13,21 +12,28 @@ import (
 )
 
 func TestSymlink(t *testing.T) {
-	log := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	t.Run("can generate if root is symlink", func(t *testing.T) {
 		// templ generate -f templates.templ
 		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
 		if err != nil {
 			t.Fatalf("failed to create test project: %v", err)
 		}
-		defer os.RemoveAll(dir)
+		defer func() {
+			if err := os.RemoveAll(dir); err != nil {
+				t.Errorf("failed to remove test project directory: %v", err)
+			}
+		}()
 
 		symlinkPath := dir + "-symlink"
 		err = os.Symlink(dir, symlinkPath)
 		if err != nil {
 			t.Fatalf("failed to create dir symlink: %v", err)
 		}
-		defer os.Remove(symlinkPath)
+		defer func() {
+			if err = os.Remove(symlinkPath); err != nil {
+				t.Errorf("failed to remove symlink directory: %v", err)
+			}
+		}()
 
 		// Delete the templates_templ.go file to ensure it is generated.
 		err = os.Remove(path.Join(symlinkPath, "templates_templ.go"))
@@ -36,9 +42,7 @@ func TestSymlink(t *testing.T) {
 		}
 
 		// Run the generate command.
-		err = generatecmd.Run(context.Background(), log, generatecmd.Arguments{
-			Path: symlinkPath,
-		})
+		err = generatecmd.Run(context.Background(), io.Discard, io.Discard, []string{"-path", symlinkPath})
 		if err != nil {
 			t.Fatalf("failed to run generate command: %v", err)
 		}

@@ -1,14 +1,24 @@
 # Expressions
 
-## String expressions
+## Interpolation expressions
 
-Within a templ element, expressions can be used to render strings. Content is automatically escaped using context-aware HTML encoding rules to protect against XSS and CSS injection attacks.
+Within a templ element, expressions can be used to interpolate Go values. Content is automatically escaped using context-aware HTML encoding rules to protect against XSS and CSS injection attacks.
 
-String literals, variables and functions that return a string can be used. 
+Literals, variables and functions that return a value can be used. 
+
+The supported types for interpolation are:
+
+- Strings
+- Numbers (`int`, `uint`, `float32`, `complex64` etc.)
+- Booleans
+
+:::note
+Any type based on the above list can be used, for example `type Age int` or `type Name string`.
+:::
 
 ### Literals
 
-You can use Go string literals.
+You can use Go literals.
 
 ```templ title="component.templ"
 package main
@@ -16,26 +26,28 @@ package main
 templ component() {
   <div>{ "print this" }</div>
   <div>{ `and this` }</div>
+  <div>Number of the day: { 1 }</div>
 }
 ```
 
 ```html title="Output"
-<div>print this</div><div>and this</div>
+<div>print this</div><div>and this</div><div>Number of the day: 1</div>
 ```
 
 ### Variables
 
-Any Go string variable can be used, for example:
+Any supported Go variable can be used, for example:
 
-* A string function parameter.
+* A function parameter.
 * A field on a struct.
-* A variable or constant string that is in scope.
+* A variable or constant that is in scope.
 
 ```templ title="/main.templ"
 package main
 
 templ greet(prefix string, p Person) {
   <div>{ prefix } { p.Name }{ exclamation }</div>
+  <div>Congratulations on being { p.Age }!</div>
 }
 ```
 
@@ -44,24 +56,25 @@ package main
 
 type Person struct {
   Name string
+  Age  int
 }
 
 const exclamation = "!"
 
 func main() {
-  p := Person{ Name: "John" }
+  p := Person{ Name: "John", Age: 42 }
   component := greet("Hello", p) 
   component.Render(context.Background(), os.Stdout)
 }
 ```
 
 ```html title="Output"
-<div>Hello John!</div>
+<div>Hello John!</div><div>Congratulations on being 42!</div>
 ```
 
 ### Functions
 
-Functions that return `string` or `(string, error)` can be used.
+Functions that return a value, or a value-error tuple can be used.
 
 ```templ title="component.templ"
 package main

@@ -5,22 +5,23 @@ import (
 	"bytes"
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
+	"github.com/a-h/templ/internal/htmlfind"
+	"golang.org/x/net/html"
+	"golang.org/x/sync/errgroup"
 )
 
 //go:embed testdata/*
@@ -60,28 +61,32 @@ func replaceInFile(name, src, tgt string) error {
 	if err != nil {
 		return err
 	}
-	updated := strings.Replace(string(data), src, tgt, -1)
+	updated := strings.ReplaceAll(string(data), src, tgt)
 	return os.WriteFile(name, []byte(updated), 0660)
 }
 
 func getPort() (port int, err error) {
 	var a *net.TCPAddr
-	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
-		var l *net.TCPListener
-		if l, err = net.ListenTCP("tcp", a); err == nil {
-			defer l.Close()
-			return l.Addr().(*net.TCPAddr).Port, nil
-		}
+	a, err = net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, fmt.Errorf("failed to resolve TCP address: %w", err)
 	}
-	return
+	l, err := net.ListenTCP("tcp", a)
+	if err != nil {
+		return 0, fmt.Errorf("failed to listen on TCP: %w", err)
+	}
+	return l.Addr().(*net.TCPAddr).Port, l.Close()
 }
 
-func getHTML(url string) (doc *goquery.Document, err error) {
+func getHTML(url string) (n *html.Node, err error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get %q: %w", url, err)
 	}
-	return goquery.NewDocumentFromReader(resp.Body)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	return html.Parse(resp.Body)
 }
 
 func TestCanAccessDirect(t *testing.T) {
@@ -99,7 +104,11 @@ func TestCanAccessDirect(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	countText := doc.Find(`div[data-testid="count"]`).Text()
+	countElements := htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "count")))
+	if len(countElements) != 1 {
+		t.Fatalf("expected 1 count element, got %d", len(countElements))
+	}
+	countText := countElements[0].FirstChild.Data
 	actualCount, err := strconv.Atoi(countText)
 	if err != nil {
 		t.Fatalf("got count %q instead of integer", countText)
@@ -124,7 +133,11 @@ func TestCanAccessViaProxy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	countText := doc.Find(`div[data-testid="count"]`).Text()
+	countElements := htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "count")))
+	if len(countElements) != 1 {
+		t.Fatalf("expected 1 count element, got %d", len(countElements))
+	}
+	countText := countElements[0].FirstChild.Data
 	actualCount, err := strconv.Atoi(countText)
 	if err != nil {
 		t.Fatalf("got count %q instead of integer", countText)
@@ -195,7 +208,11 @@ func TestFileModificationsResultInSSEWithGzip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Original" {
+	modified := htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "modification")))
+	if len(modified) != 1 {
+		t.Fatalf("expected 1 modification element, got %d", len(modified))
+	}
+	if text := modified[0].FirstChild.Data; text != "Original" {
 		t.Errorf("expected %q, got %q", "Original", text)
 	}
 
@@ -236,7 +253,11 @@ loop:
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Updated" {
+	modified = htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "modification")))
+	if len(modified) != 1 {
+		t.Fatalf("expected 1 modification element, got %d", len(modified))
+	}
+	if text := modified[0].FirstChild.Data; text != "Updated" {
 		t.Errorf("expected %q, got %q", "Updated", text)
 	}
 }
@@ -263,7 +284,11 @@ func TestFileModificationsResultInSSE(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Original" {
+	modified := htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "modification")))
+	if len(modified) != 1 {
+		t.Fatalf("expected 1 modification element, got %d", len(modified))
+	}
+	if text := modified[0].FirstChild.Data; text != "Original" {
 		t.Errorf("expected %q, got %q", "Original", text)
 	}
 
@@ -304,7 +329,11 @@ loop:
 	if err != nil {
 		t.Fatalf("failed to read HTML: %v", err)
 	}
-	if text := doc.Find(`div[data-testid="modification"]`).Text(); text != "Updated" {
+	modified = htmlfind.All(doc, htmlfind.Element("div", htmlfind.Attr("data-testid", "modification")))
+	if len(modified) != 1 {
+		t.Fatalf("expected 1 modification element, got %d", len(modified))
+	}
+	if text := modified[0].FirstChild.Data; text != "Updated" {
 		t.Errorf("expected %q, got %q", "Updated", text)
 	}
 }
@@ -358,58 +387,33 @@ func Setup(gzipEncoding bool) (args TestArgs, teardown func(t *testing.T), err e
 	args = NewTestArgs(moduleRoot, appDir, appPort, proxyBind, proxyPort)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	var wg sync.WaitGroup
-	var cmdErr error
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
+	var wg errgroup.Group
+	wg.Go(func() error {
 		command := fmt.Sprintf("go run . -port %d", args.AppPort)
 		if gzipEncoding {
 			command += " -gzip true"
 		}
-
-		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-
-		cmdErr = generatecmd.Run(ctx, log, generatecmd.Arguments{
-			Path:                            appDir,
-			Watch:                           true,
-			OpenBrowser:                     false,
-			Command:                         command,
-			ProxyBind:                       proxyBind,
-			ProxyPort:                       proxyPort,
-			Proxy:                           args.AppURL,
-			NotifyProxy:                     false,
-			WorkerCount:                     0,
-			GenerateSourceMapVisualisations: false,
-			IncludeVersion:                  false,
-			IncludeTimestamp:                false,
-			PPROFPort:                       0,
-			KeepOrphanedFiles:               false,
-		})
-	}()
+		return generatecmd.Run(ctx, io.Discard, io.Discard, []string{"-path", appDir, "-watch", "-proxybind", proxyBind, "-proxyport", strconv.Itoa(proxyPort), "-proxy", args.AppURL, "-open-browser=false", "-cmd", command})
+	})
 
 	// Wait for server to start.
 	if err = waitForURL(args.AppURL); err != nil {
 		cancel()
-		wg.Wait()
-		return args, teardown, fmt.Errorf("failed to start app server, command error %v: %w", cmdErr, err)
+		cmdErr := wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start app server: %w", errors.Join(cmdErr, err))
 	}
 	if err = waitForURL(args.ProxyURL); err != nil {
 		cancel()
-		wg.Wait()
-		return args, teardown, fmt.Errorf("failed to start proxy server, command error %v: %w", cmdErr, err)
+		cmdErr := wg.Wait()
+		return args, teardown, fmt.Errorf("failed to start proxy server: %w", errors.Join(cmdErr, err))
 	}
 
 	// Wait for exit.
 	teardown = func(t *testing.T) {
 		cancel()
-		wg.Wait()
-		if cmdErr != nil {
-			t.Errorf("failed to run generate cmd: %v", err)
+		if cmdErr := wg.Wait(); cmdErr != nil {
+			t.Errorf("failed to run generate cmd: %v", cmdErr)
 		}
-
 		if err = os.RemoveAll(appDir); err != nil {
 			t.Fatalf("failed to remove test dir %q: %v", appDir, err)
 		}
@@ -469,16 +473,8 @@ func TestGenerateReturnsErrors(t *testing.T) {
 		t.Errorf("failed to replace text in file: %v", err)
 	}
 
-	log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-
 	// Run.
-	err = generatecmd.Run(context.Background(), log, generatecmd.Arguments{
-		Path:              appDir,
-		Watch:             false,
-		IncludeVersion:    false,
-		IncludeTimestamp:  false,
-		KeepOrphanedFiles: false,
-	})
+	err = generatecmd.Run(context.Background(), io.Discard, io.Discard, []string{"-path", appDir, "-include-version=false", "-include-timestamp=false", "-keep-orphaned-files=false"})
 	if err == nil {
 		t.Errorf("expected generation error, got %v", err)
 	}

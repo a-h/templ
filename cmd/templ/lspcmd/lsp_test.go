@@ -72,8 +72,8 @@ func TestCompletion(t *testing.T) {
 			replacement: ` <div data-testid="count">{  `,
 			cursor:      `                            ^`,
 			assert: func(t *testing.T, actual *protocol.CompletionList) (msg string, ok bool) {
-				if actual != nil && len(actual.Items) != globalSnippetsLen {
-					return "expected completion list to be empty", false
+				if actual == nil || len(actual.Items) == globalSnippetsLen {
+					return "expected completion list not to be empty or just the default", false
 				}
 				return "", true
 			},
@@ -128,7 +128,7 @@ func TestCompletion(t *testing.T) {
 			// Give CI/CD pipeline executors some time because they're often quite slow.
 			var ok bool
 			var msg string
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				actual, err := server.Completion(ctx, &protocol.CompletionParams{
 					Context: &protocol.CompletionContext{
 						TriggerCharacter: ".",
@@ -289,7 +289,7 @@ func TestHover(t *testing.T) {
 			// Give CI/CD pipeline executors some time because they're often quite slow.
 			var ok bool
 			var msg string
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				lspCharIndex, err := runeIndexToUTF8ByteIndex(test.replacement, len(test.cursor)-1)
 				if err != nil {
 					t.Error(err)
@@ -450,7 +450,7 @@ func TestReferences(t *testing.T) {
 			// Give CI/CD pipeline executors some time because they're often quite slow.
 			var ok bool
 			var msg string
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				if err != nil {
 					t.Error(err)
 					return
@@ -570,7 +570,7 @@ func TestCodeAction(t *testing.T) {
 			// Give CI/CD pipeline executors some time because they're often quite slow.
 			var ok bool
 			var msg string
-			for i := 0; i < 3; i++ {
+			for range 3 {
 				lspCharIndex, err := runeIndexToUTF8ByteIndex(test.replacement, len(test.cursor)-1)
 				if err != nil {
 					t.Error(err)

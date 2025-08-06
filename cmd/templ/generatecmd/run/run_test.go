@@ -38,13 +38,8 @@ func TestGoRun(t *testing.T) {
 			t.Fatalf("failed to read src file %q: %v", srcFileName, err)
 		}
 		tgtFileName := filepath.Join(dir, file.Name())
-		tgtFile, err := os.Create(tgtFileName)
-		if err != nil {
-			t.Fatalf("failed to create tgt file %q: %v", tgtFileName, err)
-		}
-		defer tgtFile.Close()
-		if _, err := tgtFile.Write(srcData); err != nil {
-			t.Fatalf("failed to write to tgt file %q: %v", tgtFileName, err)
+		if err = os.WriteFile(tgtFileName, srcData, 0644); err != nil {
+			t.Fatalf("failed to write tgt file %q: %v", tgtFileName, err)
 		}
 	}
 	// Rename the go.mod.embed file to go.mod.
@@ -99,9 +94,12 @@ func readResponse(url string) (body string, err error) {
 	if err != nil {
 		return body, err
 	}
-	defer resp.Body.Close()
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
+		_ = resp.Body.Close()
+		return body, err
+	}
+	if err = resp.Body.Close(); err != nil {
 		return body, err
 	}
 	return string(b), nil

@@ -2,6 +2,7 @@ package fmtcmd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -66,6 +67,7 @@ func NewFormatter(log *slog.Logger, dir string, process func(fileName string) (e
 }
 
 func (f *Formatter) Run() (err error) {
+	var errs []error
 	changesMade := 0
 	start := time.Now()
 	results := make(chan processor.Result)
@@ -79,6 +81,7 @@ func (f *Formatter) Run() (err error) {
 		if r.Error != nil {
 			f.Log.Error(r.FileName, slog.Any("error", r.Error))
 			errorCount++
+			errs = append(errs, r.Error)
 			continue
 		}
 		f.Log.Debug(r.FileName, slog.Duration("duration", r.Duration))
@@ -92,11 +95,11 @@ func (f *Formatter) Run() (err error) {
 
 	f.Log.Info("Format Complete", slog.Int("count", successCount+errorCount), slog.Int("errors", errorCount), slog.Int("changed", changesMade), slog.Duration("duration", time.Since(start)))
 
-	if errorCount > 0 {
-		return fmt.Errorf("formatting failed")
+	if err = errors.Join(errs...); err != nil {
+		return fmt.Errorf("formatting failed: %w", err)
 	}
 
-	return
+	return nil
 }
 
 type reader func() (fileName, src string, err error)

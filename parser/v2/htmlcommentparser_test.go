@@ -11,20 +11,44 @@ func TestHTMLCommentParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected HTMLComment
+		expected *HTMLComment
 	}{
 		{
 			name:  "comment - single line",
 			input: `<!-- single line comment -->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: " single line comment ",
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 28,
+						Line:  0,
+						Col:   28,
+					},
+				},
 			},
 		},
 		{
 			name:  "comment - no whitespace",
 			input: `<!--no whitespace between sequence open and close-->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: "no whitespace between sequence open and close",
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 52,
+						Line:  0,
+						Col:   52,
+					},
+				},
 			},
 		},
 		{
@@ -32,24 +56,60 @@ func TestHTMLCommentParser(t *testing.T) {
 			input: `<!-- multiline
 								comment
 					-->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: ` multiline
 								comment
 					`,
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 39,
+						Line:  2,
+						Col:   8,
+					},
+				},
 			},
 		},
 		{
 			name:  "comment - with tag",
 			input: `<!-- <p class="test">tag</p> -->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: ` <p class="test">tag</p> `,
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 32,
+						Line:  0,
+						Col:   32,
+					},
+				},
 			},
 		},
 		{
 			name:  "comments can contain tags",
 			input: `<!-- <div> hello world </div> -->`,
-			expected: HTMLComment{
+			expected: &HTMLComment{
 				Contents: ` <div> hello world </div> `,
+				Range: Range{
+					From: Position{
+						Index: 0,
+						Line:  0,
+						Col:   0,
+					},
+					To: Position{
+						Index: 33,
+						Line:  0,
+						Col:   33,
+					},
+				},
 			},
 		},
 	}

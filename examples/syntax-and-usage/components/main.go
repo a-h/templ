@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"log"
 	"os"
 
 	"github.com/a-h/templ"
@@ -12,8 +13,12 @@ import (
 
 func main() {
 	ctx := context.Background()
-	list([]string{"a", "b", "c"}).Render(ctx, os.Stdout)
-	codeList([]string{"A", "B", "C"}).Render(ctx, os.Stdout)
+	if err := list([]string{"a", "b", "c"}).Render(ctx, os.Stdout); err != nil {
+		log.Fatalf("failed to render list: %v", err)
+	}
+	if err := codeList([]string{"A", "B", "C"}).Render(ctx, os.Stdout); err != nil {
+		log.Fatalf("failed to render code list: %v", err)
+	}
 }
 
 func codeList(items []string) templ.Component {

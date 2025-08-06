@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.22
+          go-version: 1.23
           cache: true
       - uses: ko-build/setup-ko@v0.7
       - uses: sigstore/cosign-installer@v3.7.0

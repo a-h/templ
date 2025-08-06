@@ -52,3 +52,15 @@ templ c() {
 		</p>
 	</div>
 }
+-- d.templ --
+package test
+
+templ c(s string) {
+  <div s= {s}/>
+}
+-- d.templ --
+package test
+
+templ c(s string) {
+  <div s={ s }/>
+}

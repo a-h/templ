@@ -22,7 +22,9 @@ func TestIdleTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	defer func() {
+		_ = ln.Close()
+	}()
 
 	connect := func() net.Conn {
 		conn, err := net.DialTimeout("tcp", ln.Addr().String(), 5*time.Second)
@@ -47,10 +49,10 @@ func TestIdleTimeout(t *testing.T) {
 	// our timer fires, the server exits.
 	conn1 := connect()
 	conn2 := connect()
-	conn1.Close()
-	conn2.Close()
+	_ = conn1.Close()
+	_ = conn2.Close()
 	conn3 := connect()
-	conn3.Close()
+	_ = conn3.Close()
 
 	wg.Wait()
 

@@ -3,6 +3,8 @@ package parser
 import (
 	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestTemplateFileParser(t *testing.T) {
@@ -71,14 +73,14 @@ const y = "456"
 			}
 			t.Fatalf("expected 3 nodes, got %d nodes, %v", len(tf.Nodes), nodeTypes)
 		}
-		expr, isGoExpression := tf.Nodes[0].(TemplateFileGoExpression)
+		expr, isGoExpression := tf.Nodes[0].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
 		if expr.Expression.Value != `const x = "123"` {
 			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
 		}
-		expr, isGoExpression = tf.Nodes[2].(TemplateFileGoExpression)
+		expr, isGoExpression = tf.Nodes[2].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
 		}
@@ -107,14 +109,14 @@ const y = ` + "`456`"
 			}
 			t.Fatalf("expected 3 nodes, got %d nodes, %v", len(tf.Nodes), nodeTypes)
 		}
-		expr, isGoExpression := tf.Nodes[0].(TemplateFileGoExpression)
+		expr, isGoExpression := tf.Nodes[0].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
 		if expr.Expression.Value != `const x = "123"` {
 			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
 		}
-		expr, isGoExpression = tf.Nodes[2].(TemplateFileGoExpression)
+		expr, isGoExpression = tf.Nodes[2].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
 		}
@@ -143,14 +145,14 @@ templ template(
 			}
 			t.Fatalf("expected 2 nodes, got %d nodes, %v\n%#v", len(tf.Nodes), nodeTypes, tf)
 		}
-		expr, isGoExpression := tf.Nodes[0].(TemplateFileGoExpression)
+		expr, isGoExpression := tf.Nodes[0].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
 		if expr.Expression.Value != `var a = "a"` {
 			t.Errorf("0: unexpected expression: %q", expr.Expression.Value)
 		}
-		_, isGoExpression = tf.Nodes[1].(HTMLTemplate)
+		_, isGoExpression = tf.Nodes[1].(*HTMLTemplate)
 		if !isGoExpression {
 			t.Errorf("2: expected expression, got %t", tf.Nodes[2])
 		}
@@ -173,7 +175,7 @@ scriptModule aModule() {
 			}
 			t.Fatalf("expected 1 nodes, got %d nodes, %v\n%#v", len(tf.Nodes), nodeTypes, tf)
 		}
-		expr, isScriptTemplate := tf.Nodes[0].(ScriptTemplate)
+		expr, isScriptTemplate := tf.Nodes[0].(*ScriptTemplate)
 		if !isScriptTemplate {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
@@ -200,19 +202,65 @@ scriptModule aModule() {
 			}
 			t.Fatalf("expected 2 nodes, got %d nodes, %v\n%#v", len(tf.Nodes), nodeTypes, tf)
 		}
-		commentExpr, isGoExpression := tf.Nodes[0].(TemplateFileGoExpression)
+		commentExpr, isGoExpression := tf.Nodes[0].(*TemplateFileGoExpression)
 		if !isGoExpression {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
 		if commentExpr.Expression.Value != "// A comment" {
 			t.Errorf("0: unexpected expression: %q", commentExpr.Expression.Value)
 		}
-		scriptExpr, isScriptTemplate := tf.Nodes[1].(ScriptTemplate)
+		scriptExpr, isScriptTemplate := tf.Nodes[1].(*ScriptTemplate)
 		if !isScriptTemplate {
 			t.Errorf("0: expected expression, got %t", tf.Nodes[2])
 		}
 		if scriptExpr.Value != "\timport { value } from \"package\";\n\tvar v = 1;\n" {
 			t.Errorf("0: unexpected expression: %q", scriptExpr.Value)
+		}
+	})
+	t.Run("as you type a templ file, it parses as much as it can, even if there's an error, so that the LSP functions", func(t *testing.T) {
+		input := `package main
+
+templ Hello(name string) {
+  if nam`
+		tf, err := ParseString(input)
+		if err == nil {
+			t.Fatalf("expected error, because the file is not valid, got nil")
+		}
+		if len(tf.Nodes) != 1 {
+			t.Fatalf("expected 1 node, got %d nodes", len(tf.Nodes))
+		}
+		hello, ok := tf.Nodes[0].(*HTMLTemplate)
+		if !ok {
+			t.Fatalf("expected HTML template, but was %T", tf.Nodes[0])
+		}
+		// Expect the range of the HTML template to be from `templ Hello` to the end of the input.
+		expectedRange := Range{
+			From: Position{Index: int64(len("package main\n\n")), Line: 2, Col: 0},
+			To:   Position{Index: int64(len(input)), Line: 3, Col: 8},
+		}
+		if diff := cmp.Diff(expectedRange, hello.Range); diff != "" {
+			t.Errorf("expected range %v, got %v\n%s", expectedRange, hello.Range, diff)
+		}
+		// Inside Hello, we expect an if expression.
+		if len(hello.Children) == 0 {
+			t.Fatalf("expected to find children, but didn't")
+		}
+		if len(hello.Children) != 2 {
+			t.Fatalf("expected 2 children (whitespace, if), got %d", len(hello.Children))
+		}
+		ie, ok := hello.Children[1].(*IfExpression)
+		if !ok {
+			t.Fatalf("expected if expression, but was %T", hello.Children[0])
+		}
+		if ie.Expression.Value != "nam" {
+			t.Errorf("expected Go expression %q, got %q", "nam", ie.Expression.Value)
+		}
+		expectedIfExpressionRange := Range{
+			From: Position{Index: 46, Line: 3, Col: 5},
+			To:   Position{Index: 49, Line: 3, Col: 8},
+		}
+		if diff := cmp.Diff(expectedIfExpressionRange, ie.Expression.Range); diff != "" {
+			t.Errorf("expected range %v, got %v\n%s", expectedIfExpressionRange, ie.Expression.Range, diff)
 		}
 	})
 }

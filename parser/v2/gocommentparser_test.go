@@ -11,40 +11,56 @@ func TestGoCommentParser(t *testing.T) {
 	var tests = []struct {
 		name     string
 		input    string
-		expected GoComment
+		expected *GoComment
 	}{
 		{
 			name: "single line can have a newline at the end",
 			input: `// single line comment
 `,
-			expected: GoComment{
+			expected: &GoComment{
 				Contents:  " single line comment",
 				Multiline: false,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 22, Line: 0, Col: 22},
+				},
 			},
 		},
 		{
 			name:  "single line comments can terminate the file",
 			input: `// single line comment`,
-			expected: GoComment{
+			expected: &GoComment{
 				Contents:  " single line comment",
 				Multiline: false,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 22, Line: 0, Col: 22},
+				},
 			},
 		},
 		{
 			name:  "multiline comments can be on one line",
 			input: `/* multiline comment, on one line */`,
-			expected: GoComment{
+			expected: &GoComment{
 				Contents:  " multiline comment, on one line ",
 				Multiline: true,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 36, Line: 0, Col: 36},
+				},
 			},
 		},
 		{
 			name: "multiline comments can span lines",
 			input: `/* multiline comment,
 on multiple lines */`,
-			expected: GoComment{
+			expected: &GoComment{
 				Contents:  " multiline comment,\non multiple lines ",
 				Multiline: true,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 42, Line: 1, Col: 20},
+				},
 			},
 		},
 	}

@@ -4,8 +4,6 @@ import (
 	_ "embed"
 	"testing"
 
-	_ "embed"
-
 	"github.com/a-h/templ/generator/htmldiff"
 )
 

@@ -54,12 +54,6 @@ func TestMain(t *testing.T) {
 			expectedCode:   0,
 		},
 		{
-			name:           `"templ generate --help" prints usage`,
-			args:           []string{"templ", "generate", "--help"},
-			expectedStdout: generateUsageText,
-			expectedCode:   0,
-		},
-		{
 			name:           `"templ lsp --help" prints usage`,
 			args:           []string{"templ", "lsp", "--help"},
 			expectedStdout: lspUsageText,

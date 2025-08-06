@@ -75,6 +75,7 @@ func Run(ctx context.Context, workingDir string, input string) (cmd *exec.Cmd, e
 	cmd.WaitDelay = time.Second * 3
 	cmd.Env = os.Environ()
 	cmd.Dir = workingDir
+	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

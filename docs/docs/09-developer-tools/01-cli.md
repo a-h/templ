@@ -100,6 +100,8 @@ templ fmt -fail .
 
 This command isn't intended to be used directly by users, but is used by IDE integrations such as the VSCode extension and by Neovim support.
 
+By default, `templ lsp` starts its own instance of gopls. However, gopls supports a [shared daemon mode](https://github.com/golang/tools/blob/master/gopls/doc/daemon.md), allowing multiple clients to connect to a single, long-lived instance. You can enable this mode using the `-gopls-remote` flag, which will either connect to an existing shared gopls instance or create one if none is running. This can improve performance and reduce resource usage.
+
 A number of additional options are provided to enable runtime logging and profiling tools.
 
 ```
@@ -107,6 +109,8 @@ A number of additional options are provided to enable runtime logging and profil
         The file to log gopls output, or leave empty to disable logging.
   -goplsRPCTrace
         Set gopls to log input and output messages.
+  -gopls-remote
+        Specify remote gopls instance to connect to.
   -help
         Print help and exit.
   -http string

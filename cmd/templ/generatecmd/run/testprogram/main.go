@@ -39,7 +39,7 @@ func main() {
 	// its pid.
 	go func() {
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "%d", os.Getpid())
+			_, _ = fmt.Fprintf(w, "%d", os.Getpid())
 		})
 		err := http.ListenAndServe("127.0.0.1:7777", nil)
 		if err != nil {

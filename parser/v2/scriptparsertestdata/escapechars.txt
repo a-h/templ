@@ -1,0 +1,34 @@
+-- in --
+<script>
+const singleQuotedBackslashEscape = '\x61'; // a
+const singleQuotedHexEscape = '\x61';
+const singleQuotedUnicodeEscape = '\u0061';
+const singleQuotedExtendedUnicodeEscape = '\u{61}';
+
+const doubleQuotedBackslashEscape = "\x61"; // a
+const doubleQuotedHexEscape = "\x61";
+const doubleQuotedUnicodeEscape = "\u0061";
+const doubleQuotedExtendedUnicodeEscape = "\u{61}";
+
+const backtickQuotedBackslashEscape = `\x61`; // a
+const backtickQuotedHexEscape = `\x61`;
+const backtickQuotedUnicodeEscape = `\u0061`;
+const backtickQuotedExtendedUnicodeEscape = `\u{61}`;
+</script>
+-- out --
+
+const singleQuotedBackslashEscape = '\x61'; // a
+const singleQuotedHexEscape = '\x61';
+const singleQuotedUnicodeEscape = '\u0061';
+const singleQuotedExtendedUnicodeEscape = '\u{61}';
+
+const doubleQuotedBackslashEscape = "\x61"; // a
+const doubleQuotedHexEscape = "\x61";
+const doubleQuotedUnicodeEscape = "\u0061";
+const doubleQuotedExtendedUnicodeEscape = "\u{61}";
+
+const backtickQuotedBackslashEscape = `\x61`; // a
+const backtickQuotedHexEscape = `\x61`;
+const backtickQuotedUnicodeEscape = `\u0061`;
+const backtickQuotedExtendedUnicodeEscape = `\u{61}`;
+
