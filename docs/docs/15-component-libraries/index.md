@@ -4,35 +4,12 @@ Component libraries in the templ ecosystem provide ready-to-use UI elements.
 
 ## templUI
 
-![templUI Banner](/img/ecosystem/templui.png)
+![templUI Banner](https://raw.githubusercontent.com/templui/templui/main/assets/img/readme.png)
 
-### About
+**The UI Kit for templ**
 
-templUI is the premier UI component library built specifically for templ. It combines the type-safety of Go with the interactivity of Alpine.js and the styling power of Tailwind CSS to create beautiful, responsive web applications.
+* 40+ components, themes & blocks.
+* Install via CLI – own your code.
+* Built by [Axel Adrian](https://axeladrian.com). Inspired by [shadcn/ui](https://ui.shadcn.com/?ref=shadcn.com).
 
-### Features
-
-- **30+ Ready-made Components**: Buttons, cards, modals, charts, and more
-- **Enterprise-Ready**: Built for production with security in mind
-- **CSP Compliant**: Works seamlessly with Content Security Policy
-- **Type-Safe**: Full Go type system integration and checking
-- **Customizable**: Easily adapt to match your brand identity
-
-### Example
-
-```go
-import "github.com/axzilla/templui/components"
-
-templ ExamplePage() {
-  @components.Button(components.ButtonProps{
-    Text: "Click me",
-    IconRight: icons.ArrowRight(icons.IconProps{Size: "16"}),
-  })
-}
-```
-
-### Links
-
-- [Documentation](https://templui.io)
-- [GitHub](https://github.com/axzilla/templui)
-- [Quick Start Template](https://github.com/axzilla/templui-quickstart)
+🔗 [Documentation](https://templui.io)
