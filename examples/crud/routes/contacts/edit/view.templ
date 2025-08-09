@@ -5,7 +5,6 @@ templ View(m Model) {
 	<ul>
 		<li><a href="/contacts" hx-boost="true">Back to Contacts</a></li>
 	</ul>
-	<!-- Try hx-boost="true" -->
 	<form id="form" method="post" hx-boost="true">
 		<div id="name-group" class={ "form-group", templ.KV("has-error", m.NameHasError()) }>
 			<label for="name">Name</label>

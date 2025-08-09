@@ -12,11 +12,11 @@ templ View(contacts []db.Contact) {
 	if len(contacts) == 0 {
 		<p>No contacts</p>
 	} else {
-		@Users(contacts)
+		@ContactList(contacts)
 	}
 }
 
-templ Users(contacts []db.Contact) {
+templ ContactList(contacts []db.Contact) {
 	<table class="table">
 		<tr>
 			<th>
