@@ -1,0 +1,43 @@
+package contacts
+
+import "fmt"
+import "net/url"
+import "github.com/a-h/templ/examples/crud/db"
+
+templ View(contacts []db.Contact) {
+	<h1>Contacts</h1>
+	<ul>
+		<li><a href="/contacts/edit" hx-boost="true">Add contact</a></li>
+	</ul>
+	if len(contacts) == 0 {
+		<p>No contacts</p>
+	} else {
+		@ContactList(contacts)
+	}
+}
+
+templ ContactList(contacts []db.Contact) {
+	<table class="table">
+		<tr>
+			<th>
+				Name
+			</th>
+			<th>
+				Email
+			</th>
+			<th>
+				Actions
+			</th>
+		</tr>
+		for _, contact := range contacts {
+			<tr>
+				<td>{ contact.Name }</td>
+				<td>{ contact.Email }</td>
+				<td>
+					<a href={ fmt.Sprintf("/contacts/edit/%s", url.PathEscape(contact.ID)) } hx-boost="true">Edit</a>
+					<a href={ fmt.Sprintf("/contacts/delete/%s", url.PathEscape(contact.ID)) } hx-boost="true">Delete</a>
+				</td>
+			</tr>
+		}
+	</table>
+}
