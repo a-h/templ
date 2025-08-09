@@ -1,0 +1,15 @@
+package delete
+
+import "github.com/a-h/templ/examples/crud/csrf"
+
+templ View(m Model) {
+	<h1>Delete</h1>
+	<p>
+		Are you sure you want to delete <strong>{ m.Name }</strong>?
+	</p>
+	<form id="form" method="post" hx-boost="true">
+		@csrf.CSRF()
+		<a href="/contacts" class="btn btn-secondary">Cancel</a>
+		<input type="submit" value="Delete"/>
+	</form>
+}

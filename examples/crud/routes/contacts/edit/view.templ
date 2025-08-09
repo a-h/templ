@@ -1,0 +1,43 @@
+package contactsedit
+
+import "github.com/a-h/templ/examples/crud/csrf"
+
+templ View(m Model) {
+	<h1>Add Contact</h1>
+	<ul>
+		<li><a href="/contacts" hx-boost="true">Back to Contacts</a></li>
+	</ul>
+	<form id="form" method="post" hx-boost="true">
+		@csrf.CSRF()
+		<div id="name-group" class={ "form-group", templ.KV("has-error", m.NameHasError()) }>
+			<label for="name">Name</label>
+			<input type="text" id="name" name="name" class="form-control" placeholder="Name" value={ m.Name }/>
+		</div>
+		<div id="email-group" class={ "form-group", templ.KV("has-error", m.EmailHasError()) }>
+			<label for="email">Email</label>
+			<input type="email" id="email" name="email" class="form-control" placeholder="Email" value={ m.Email }/>
+		</div>
+		<div id="validation">
+			if m.Error != "" {
+				<p class="error">{ m.Error }</p>
+			}
+			if msgs := m.Validate(); len(msgs) > 0 {
+				@ValidationMessages(msgs)
+			}
+		</div>
+		<a href="/contacts" class="btn btn-secondary">Cancel</a>
+		<input type="submit" value="Save"/>
+	</form>
+}
+
+templ ValidationMessages(msgs []string) {
+	if len(msgs) > 0 {
+		<div class="invalid-feedback">
+			<ul>
+				for _, msg := range msgs {
+					<li class="error">{ msg }</li>
+				}
+			</ul>
+		</div>
+	}
+}
