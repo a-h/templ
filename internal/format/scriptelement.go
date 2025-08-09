@@ -3,6 +3,7 @@ package format
 import (
 	"strings"
 
+	"github.com/a-h/templ/internal/prettier"
 	"github.com/a-h/templ/parser/v2"
 )
 
@@ -49,7 +50,7 @@ loop:
 	}
 
 	// Use the prettifyElement function to format the script contents.
-	after, err := prettifyElement("script", scriptType, scriptWithPlaceholders.String(), depth, prettierCommand)
+	after, err := prettier.Element("script", scriptType, scriptWithPlaceholders.String(), depth, prettierCommand)
 	if err != nil {
 		return err
 	}

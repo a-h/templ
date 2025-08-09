@@ -1,6 +1,7 @@
 package format
 
 import (
+	"github.com/a-h/templ/internal/prettier"
 	"github.com/a-h/templ/parser/v2"
 )
 
@@ -15,7 +16,7 @@ func StyleElement(se *parser.RawElement, depth int, prettierCommand string) (err
 	}
 
 	// Prettyify the style contents.
-	se.Contents, err = prettifyElement("style", "text/css", se.Contents, depth, prettierCommand)
+	se.Contents, err = prettier.Element("style", "text/css", se.Contents, depth, prettierCommand)
 	if err != nil {
 		return err
 	}

@@ -3,10 +3,7 @@ package format
 import (
 	"bytes"
 	"fmt"
-	"html"
-	"strings"
 
-	"github.com/a-h/templ/internal/htmlfind"
 	"github.com/a-h/templ/internal/imports"
 	"github.com/a-h/templ/internal/prettier"
 	parser "github.com/a-h/templ/parser/v2"
@@ -98,67 +95,4 @@ func calculateNodeDepth(e parser.Node, nodeToDepth map[parser.Node]int, depth in
 			calculateNodeDepth(child, nodeToDepth, depth+1)
 		}
 	}
-}
-
-func prettifyElement(name string, typeAttrValue string, content string, depth int, prettierCommand string) (after string, err error) {
-	var indentationWrapper strings.Builder
-
-	// Add divs to the start and end of the script to ensure that prettier formats the content with
-	// correct indentation.
-	for i := range depth {
-		indentationWrapper.WriteString(fmt.Sprintf("<div data-templ-depth=\"%d\">", i))
-	}
-
-	// Write start tag with type attribute if present.
-	indentationWrapper.WriteString("<")
-	indentationWrapper.WriteString(name)
-	if typeAttrValue != "" {
-		indentationWrapper.WriteString(" type=\"")
-		indentationWrapper.WriteString(html.EscapeString(typeAttrValue))
-		indentationWrapper.WriteString("\"")
-	}
-	indentationWrapper.WriteString(">")
-
-	// Write contents.
-	indentationWrapper.WriteString(content)
-
-	// Write end tag.
-	indentationWrapper.WriteString("</")
-	indentationWrapper.WriteString(name)
-	indentationWrapper.WriteString(">")
-
-	for range depth {
-		indentationWrapper.WriteString("</div>")
-	}
-
-	before := indentationWrapper.String()
-	after, err = prettier.Run(before, "templ_content.html", prettierCommand)
-	if err != nil {
-		return "", fmt.Errorf("prettier error: %w", err)
-	}
-	if before == after {
-		return before, nil
-	}
-
-	// Chop off the start and end divs we added to get prettier to format the content with correct
-	// indentation.
-	matcher := htmlfind.Element(name)
-	nodes, err := htmlfind.AllReader(strings.NewReader(after), matcher)
-	if err != nil {
-		return before, fmt.Errorf("htmlfind error: %w", err)
-	}
-	if len(nodes) != 1 {
-		return before, fmt.Errorf("expected 1 %q node, got %d", name, len(nodes))
-	}
-	scriptNode := nodes[0]
-	if scriptNode.FirstChild == nil {
-		return before, fmt.Errorf("%q node has no children", name)
-	}
-	var sb strings.Builder
-	for node := range scriptNode.ChildNodes() {
-		sb.WriteString(node.Data)
-	}
-	after = strings.TrimRight(sb.String(), " \t\r\n") + "\n" + strings.Repeat("\t", depth)
-
-	return after, nil
 }
