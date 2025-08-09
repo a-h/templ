@@ -1,0 +1,14 @@
+package layout
+
+templ Page(content templ.Component) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<script src="/static/htmx.min.js"></script>
+			<link rel="stylesheet" href="/static/bootstrap.css"/>
+		</head>
+		<body class="container">
+			@content
+		</body>
+	</html>
+}

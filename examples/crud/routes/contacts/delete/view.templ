@@ -1,0 +1,12 @@
+package delete
+
+templ View(m Model) {
+	<h1>Delete</h1>
+	<p>
+		Are you sure you want to delete <strong>{ m.Name }</strong>?
+	</p>
+	<form id="form" method="post" hx-boost="true">
+		<a href="/contacts" class="btn btn-secondary">Cancel</a>
+		<input type="submit" value="Delete"/>
+	</form>
+}
