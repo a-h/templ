@@ -69,7 +69,9 @@ func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
 	var model Model
 
 	// Decode the form.
-	err = schema.NewDecoder().Decode(&model, r.PostForm)
+	dec := schema.NewDecoder()
+	dec.IgnoreUnknownKeys(true)
+	err = dec.Decode(&model, r.PostForm)
 	if err != nil {
 		h.Log.Warn("Failed to decode form", slog.Any("error", err))
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -1,11 +1,14 @@
 package contactsedit
 
+import "github.com/a-h/templ/examples/crud/csrf"
+
 templ View(m Model) {
 	<h1>Add Contact</h1>
 	<ul>
 		<li><a href="/contacts" hx-boost="true">Back to Contacts</a></li>
 	</ul>
 	<form id="form" method="post" hx-boost="true">
+		@csrf.CSRF()
 		<div id="name-group" class={ "form-group", templ.KV("has-error", m.NameHasError()) }>
 			<label for="name">Name</label>
 			<input type="text" id="name" name="name" class="form-control" placeholder="Name" value={ m.Name }/>

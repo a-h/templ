@@ -68,6 +68,20 @@ Later, we will use the Gorilla `schema` package to populate Go struct fields aut
 
 If a field value is invalid, the `has-error` class is added to the form group using the `templ.KV` function.
 
+To protect your forms from cross-site request forgery (CSRF) attacks, use the [`gorilla/csrf`](https://github.com/gorilla/csrf) middleware to generate and validate CSRF tokens.
+
+```go
+csrfKey := mustGenerateCSRFKey()
+csrfMiddleware := csrf.Protect(csrfKey, csrf.TrustedOrigins([]string{"localhost:8080"}), csrf.FieldName("_csrf"))
+```
+
+In your form templates, include a hidden CSRF token field using a shared component:
+
+```templ
+<input type="hidden" name="_csrf" value={ ctx.Value("gorilla.csrf.Token").(string) }/>
+```
+
+This ensures all POST requests include a valid CSRF token.
 ```templ
 templ View(m Model) {
   <h1>Add Contact</h1>
@@ -75,6 +89,7 @@ templ View(m Model) {
     <li><a href="/contacts" hx-boost="true">Back to Contacts</a></li>
   </ul>
   <form id="form" method="post" hx-boost="true">
+    @csrf.CSRF()
     <div id="name-group" class={ "form-group", templ.KV("has-error", m.NameHasError()) }>
       <label for="name">Name</label>
       <input type="text" id="name" name="name" class="form-control" placeholder="Name" value={ m.Name }/>
@@ -142,7 +157,9 @@ func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
   var model Model
 
   // Decode the form.
-  err = schema.NewDecoder().Decode(&model, r.PostForm)
+  dec := schema.NewDecoder()
+  dec.IgnoreUnknownKeys(true)
+  err = dec.Decode(&model, r.PostForm)
   if err != nil {
     h.Log.Warn("Failed to decode form", slog.Any("error", err))
     http.Error(w, err.Error(), http.StatusBadRequest)
@@ -436,7 +453,9 @@ func (h *Handler) Post(w http.ResponseWriter, r *http.Request) {
   var model Model
 
   // Decode the form.
-  err = schema.NewDecoder().Decode(&model, r.PostForm)
+  dec := schema.NewDecoder()
+  dec.IgnoreUnknownKeys(true)
+  err = dec.Decode(&model, r.PostForm)
   if err != nil {
     h.Log.Warn("Failed to decode form", slog.Any("error", err))
     http.Error(w, err.Error(), http.StatusBadRequest)
@@ -670,6 +689,7 @@ templ View(m Model) {
     Are you sure you want to delete <strong>{ m.Name }</strong>?
   </p>
   <form id="form" method="post" hx-boost="true">
+    @csrf.CSRF()
     <a href="/contacts" class="btn btn-secondary">Cancel</a>
     <input type="submit" value="Delete"/>
   </form>
