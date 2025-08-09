@@ -43,6 +43,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			h.Log.Error("Failed to get contact", slog.String("id", id), slog.Any("error", err))
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		if !ok {
 			http.Redirect(w, r, "/contacts/edit", http.StatusSeeOther)
