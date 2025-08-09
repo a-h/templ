@@ -41,7 +41,7 @@ func Hello(name string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><script>\n\t\t\t// Place the React component into the parent div.\n\t\t\tbundle.renderHello(document.currentScript.closest('div'));\n\t\t</script></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><script>\n\t\t\t// Place the React component into the parent div.\n\t\t\tbundle.renderHello(document.currentScript.closest(\"div\"));\n\t\t</script></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

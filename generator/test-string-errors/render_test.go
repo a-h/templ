@@ -18,7 +18,7 @@ func Test(t *testing.T) {
 	t.Run("can render without error", func(t *testing.T) {
 		component := TestComponent(nil)
 
-		_, err := htmldiff.Diff(component, expected)
+		_, _, err := htmldiff.Diff(component, expected)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

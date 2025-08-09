@@ -172,6 +172,10 @@ Args:
     Set log verbosity level. (default "info", options: "debug", "info", "warn", "error")
   -w
     Number of workers to use when formatting code. (default runtime.NumCPUs).
+  -prettier-command
+    Set the command to use for formatting HTML, CSS, and JS blocks. Default is "prettier --stdin-filepath $TEMPL_PRETTIER_FILENAME".
+  -prettier-required
+    Set to true to return an error the prettier command is not available. Default is false.
   -fail
     Fails with exit code 1 if files are changed. (e.g. in CI)
   -help
@@ -185,6 +189,8 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
 	failIfChanged := cmd.Bool("fail", false, "")
+	prettierCommand := cmd.String("prettier-command", "", "")
+	prettierRequired := cmd.Bool("prettier-required", false, "")
 	stdoutFlag := cmd.Bool("stdout", false, "")
 	stdinFilepath := cmd.String("stdin-filepath", "", "")
 	err := cmd.Parse(args)
@@ -200,11 +206,13 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	log := sloghandler.NewLogger(*logLevelFlag, *verboseFlag, stderr)
 
 	err = fmtcmd.Run(log, stdin, stdout, fmtcmd.Arguments{
-		ToStdout:      *stdoutFlag,
-		Files:         cmd.Args(),
-		WorkerCount:   *workerCountFlag,
-		StdinFilepath: *stdinFilepath,
-		FailIfChanged: *failIfChanged,
+		ToStdout:         *stdoutFlag,
+		Files:            cmd.Args(),
+		WorkerCount:      *workerCountFlag,
+		StdinFilepath:    *stdinFilepath,
+		FailIfChanged:    *failIfChanged,
+		PrettierCommand:  *prettierCommand,
+		PrettierRequired: *prettierRequired,
 	})
 	if err != nil {
 		return 1

@@ -1,0 +1,29 @@
+-- in --
+package test
+
+templ script(data string) {
+	<script type="text/hyperscript">
+  on mousedown
+    halt the event -- prevent text selection...
+    -- do other stuff...
+  end
+	</script>
+	<script>
+	  var x = "abc";
+	</script>
+}
+
+-- out --
+package test
+
+templ script(data string) {
+	<script type="text/hyperscript">
+		on mousedown
+		  halt the event -- prevent text selection...
+		  -- do other stuff...
+		end
+	</script>
+	<script>
+		var x = "abc";
+	</script>
+}

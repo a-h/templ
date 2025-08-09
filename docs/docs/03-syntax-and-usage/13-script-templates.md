@@ -15,6 +15,8 @@ templ body() {
 }
 ```
 
+If you have `prettierd`, `prettier` or `npx` on your `PATH`, `templ` will use it to format the `<script>` tag contents.
+
 :::tip
 To ensure that a `<script>` tag within a templ component is only rendered once per HTTP response (or context), use a [templ.OnceHandle](18-render-once.md).
 

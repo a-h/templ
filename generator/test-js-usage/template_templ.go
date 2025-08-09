@@ -109,7 +109,7 @@ func TestComponent() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<script>\n\t\tfunction onClickEventHandler(event, data) {\n\t\t\talert(event.type);\n\t\t\talert(data)\n\t\t\tevent.preventDefault();\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<script>\n\t\tfunction onClickEventHandler(event, data) {\n\t\t\talert(event.type);\n\t\t\talert(data);\n\t\t\tevent.preventDefault();\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

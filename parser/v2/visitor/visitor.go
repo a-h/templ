@@ -2,12 +2,12 @@ package visitor
 
 import "github.com/a-h/templ/parser/v2"
 
-// New creates a default visitor. Each of the visitor functions can be
+// New returns a default Visitor. Each function in the Visitor struct can be
 // overridden to provide custom behavior when visiting nodes in the parse tree.
 func New() *Visitor {
 	v := &Visitor{}
 
-	// Default implementations of the visitor functions
+	// Set default implementations for all visitor functions.
 	v.TemplateFile = func(n *parser.TemplateFile) error {
 		for _, header := range n.Header {
 			if err := v.VisitTemplateFileGoExpression(header); err != nil {
@@ -192,10 +192,8 @@ func New() *Visitor {
 	return v
 }
 
-// Visitor is a struct that implements the parser.Visitor interface. Each
-// function in the Visitor struct corresponds to a node type in the parse tree.
-// The functions can be overridden to provide custom behavior when visiting
-// nodes in the parse tree.
+// Visitor implements the parser.Visitor interface. Each function corresponds to a node type in the parse tree.
+// Override these functions to provide custom behavior when visiting nodes.
 type Visitor struct {
 	TemplateFile             func(n *parser.TemplateFile) error
 	TemplateFileGoExpression func(n *parser.TemplateFileGoExpression) error

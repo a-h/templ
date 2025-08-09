@@ -3,6 +3,7 @@ package teststyleattribute
 import (
 	_ "embed"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/a-h/templ"
@@ -52,11 +53,14 @@ func Test(t *testing.T) {
 		t.Run(fmt.Sprintf("%T", test), func(t *testing.T) {
 			component := Button(test, "Click me")
 
-			diff, err := htmldiff.Diff(component, expected)
+			actual, diff, err := htmldiff.Diff(component, expected)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if diff != "" {
+				if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
+					t.Errorf("failed to write actual.html: %v", err)
+				}
 				t.Error(diff)
 			}
 		})

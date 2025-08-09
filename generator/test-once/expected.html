@@ -1,7 +1,16 @@
 <script>
-			function hello(name) {
-				alert('Hello, ' + name + '!');
-			}
+	function hello(name) {
+		alert("Hello, " + name + "!");
+	}
 </script>
-<input type="button" value="Hello User" data-name="user" onclick="hello(this.getAttribute('data-name'))">
-<input type="button" value="Hello World" data-name="world" onclick="hello(this.getAttribute('data-name'))">
+<input
+	type="button"
+	value="Hello User"
+	data-name="user"
+	onclick="hello(this.getAttribute('data-name'))"
+/><input
+	type="button"
+	value="Hello World"
+	data-name="world"
+	onclick="hello(this.getAttribute('data-name'))"
+/>
