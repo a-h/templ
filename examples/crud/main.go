@@ -31,7 +31,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 	pool, err := sqlitex.NewPool(dbURI, sqlitex.PoolOptions{})
 	if err != nil {
 		log.Error("Failed to open database", slog.Any("error", err))
-
+		return err
 	}
 	store := sqlitekv.New(pool)
 	if err := store.Init(ctx); err != nil {
