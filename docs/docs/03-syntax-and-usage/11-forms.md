@@ -211,6 +211,7 @@ The `run` function first initializes the database connection.
 pool, err := sqlitex.NewPool(dbURI, sqlitex.PoolOptions{})
 if err != nil {
     log.Error("Failed to open database", slog.Any("error", err))
+    return err
 }
 store := sqlitekv.New(pool)
 if err := store.Init(ctx); err != nil {
@@ -397,6 +398,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
     if err != nil {
       h.Log.Error("Failed to get contact", slog.String("id", id), slog.Any("error", err))
       http.Error(w, err.Error(), http.StatusInternalServerError)
+      return err
     }
     if !ok {
       http.Redirect(w, r, "/contacts/edit", http.StatusSeeOther)
@@ -626,6 +628,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
   if err != nil {
     h.Log.Error("Failed to get contact", slog.String("id", id), slog.Any("error", err))
     http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
   }
   if !ok {
     http.Redirect(w, r, "/contacts", http.StatusSeeOther)
