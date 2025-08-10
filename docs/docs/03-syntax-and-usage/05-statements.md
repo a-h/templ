@@ -71,7 +71,7 @@ Note the missing `{` on line 4.
 
 The following code also produces an error, since the text run starts with `if`, but no opening `{` is found.
 
-```templ title="paragraph.templ"
+```templ title="broken-paragraph.templ"
 package main
 
 templ text(b bool) {
@@ -86,16 +86,13 @@ This also applies to `for` and `switch` statements.
 To resolve the issue:
 
 * Use a Go string expression.
-* Capitalise `if`, `switch`, or `for`.
 
-```templ title="paragraph.templ"
-package main
+```templ title="string expression"
+<p>{ "if a tree fell in the woods" }</p>
+```
 
-templ display(price float64, count int) {
-	<p>Switch to Linux</p>
-	<p>{ `switch to Linux` }</p>
-	<p>{ "for a day" }</p>
-	<p>{ fmt.Sprintf("%f", price) }{ "for" }{ fmt.Sprintf("%d", count) }</p>
-	<p>{ fmt.Sprintf("%f for %d", price, count) }</p>
-}
+* Capitalise `if`.
+
+```templ title="capitalised if"
+<p>If a tree fell in the woods</p>
 ```
