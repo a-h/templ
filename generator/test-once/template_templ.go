@@ -42,7 +42,7 @@ func hello(label, name string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n\t\t\tfunction hello(name) {\n\t\t\t\talert('Hello, ' + name + '!');\n\t\t\t}\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script>\n\t\t\tfunction hello(name) {\n\t\t\t\talert(\"Hello, \" + name + \"!\");\n\t\t\t}\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

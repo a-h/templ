@@ -51,6 +51,7 @@ func TestSkipDir(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			actual := ShouldSkip(test.dir)
 			if test.expected != actual {
 				t.Errorf("expected %v, got %v", test.expected, actual)

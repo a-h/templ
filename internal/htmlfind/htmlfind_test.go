@@ -88,6 +88,7 @@ func TestFind(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			r := strings.NewReader(tt.input)
 			results, err := htmlfind.AllReader(r, tt.find)
 			if err != nil {

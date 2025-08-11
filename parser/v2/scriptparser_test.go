@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -420,4 +421,10 @@ func FuzzScriptParser(f *testing.F) {
 	f.Fuzz(func(t *testing.T, input string) {
 		_, _, _ = scriptElement.Parse(parse.NewInput(input))
 	})
+}
+
+func clean(b []byte) string {
+	b = bytes.ReplaceAll(b, []byte("$\n"), []byte("\n"))
+	b = bytes.TrimSuffix(b, []byte("\n"))
+	return string(b)
 }

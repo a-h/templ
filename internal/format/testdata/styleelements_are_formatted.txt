@@ -1,0 +1,27 @@
+-- in --
+package test
+
+templ style(data string) {
+	<style>
+   body   {
+  margin: 0;
+   font-family: system-ui, sans-serif;
+		background-color: #f4f4f4;
+  color: #333;
+}
+	</style>
+}
+
+-- out --
+package test
+
+templ style(data string) {
+	<style>
+		body {
+			margin: 0;
+			font-family: system-ui, sans-serif;
+			background-color: #f4f4f4;
+			color: #333;
+		}
+	</style>
+}

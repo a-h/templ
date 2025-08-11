@@ -3,6 +3,7 @@ package syncset
 import "testing"
 
 func TestSet(t *testing.T) {
+	t.Parallel()
 	t.Run("Get", func(t *testing.T) {
 		t.Run("Returns false for non-existent items", func(t *testing.T) {
 			s := New[string]()

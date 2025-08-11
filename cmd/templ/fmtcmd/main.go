@@ -8,37 +8,66 @@ import (
 	"log/slog"
 	"os"
 	"runtime"
-	"sync"
 	"time"
 
-	"github.com/a-h/templ/cmd/templ/imports"
 	"github.com/a-h/templ/cmd/templ/processor"
-	parser "github.com/a-h/templ/parser/v2"
+	"github.com/a-h/templ/internal/format"
 	"github.com/natefinch/atomic"
 )
 
 type Arguments struct {
-	FailIfChanged bool
-	ToStdout      bool
-	StdinFilepath string
-	Files         []string
-	WorkerCount   int
+	FailIfChanged    bool
+	ToStdout         bool
+	StdinFilepath    string
+	Files            []string
+	WorkerCount      int
+	PrettierCommand  string
+	PrettierRequired bool
 }
 
 func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (err error) {
 	// If no files are provided, read from stdin and write to stdout.
-	if len(args.Files) == 0 {
-		out, _ := format(writeToWriter(stdout), readFromReader(stdin, args.StdinFilepath), true)
-		return out
+	formatterConfig := format.Config{
+		PrettierCommand:  args.PrettierCommand,
+		PrettierRequired: args.PrettierRequired,
 	}
-	process := func(fileName string) (error, bool) {
-		read := readFromFile(fileName)
-		write := writeToFile
-		if args.ToStdout {
-			write = writeToWriter(stdout)
+	if len(args.Files) == 0 {
+		src, err := io.ReadAll(stdin)
+		if err != nil {
+			return fmt.Errorf("failed to read from stdin: %w", err)
 		}
-		writeIfUnchanged := args.ToStdout
-		return format(write, read, writeIfUnchanged)
+		formatted, _, err := format.Templ(src, args.StdinFilepath, formatterConfig)
+		if err != nil {
+			return fmt.Errorf("failed to format stdin: %w", err)
+		}
+		if _, err = stdout.Write(formatted); err != nil {
+			return fmt.Errorf("failed to write to stdout: %w", err)
+		}
+		return nil
+	}
+	// If files are provided, process each file.
+	process := func(fileName string) (error, bool) {
+		src, err := os.ReadFile(fileName)
+		if err != nil {
+			return fmt.Errorf("failed to read file %q: %w", fileName, err), false
+		}
+		formatted, changed, err := format.Templ(src, fileName, formatterConfig)
+		if err != nil {
+			return fmt.Errorf("failed to format file %q: %w", fileName, err), false
+		}
+		if !changed && !args.ToStdout {
+			return nil, false
+		}
+		if args.ToStdout {
+			if _, err := stdout.Write(formatted); err != nil {
+				return fmt.Errorf("failed to write to stdout: %w", err), false
+			}
+			return nil, true
+		}
+		if err := atomic.WriteFile(fileName, bytes.NewBuffer(formatted)); err != nil {
+			return fmt.Errorf("failed to write file %q: %w", fileName, err), false
+		}
+		return nil, true
 	}
 	dir := args.Files[0]
 	return NewFormatter(log, dir, process, args.WorkerCount, args.FailIfChanged).Run()
@@ -100,70 +129,4 @@ func (f *Formatter) Run() (err error) {
 	}
 
 	return nil
-}
-
-type reader func() (fileName, src string, err error)
-
-func readFromReader(r io.Reader, stdinFilepath string) func() (fileName, src string, err error) {
-	return func() (fileName, src string, err error) {
-		b, err := io.ReadAll(r)
-		if err != nil {
-			return "", "", fmt.Errorf("failed to read stdin: %w", err)
-		}
-		return stdinFilepath, string(b), nil
-	}
-}
-
-func readFromFile(name string) reader {
-	return func() (fileName, src string, err error) {
-		b, err := os.ReadFile(name)
-		if err != nil {
-			return "", "", fmt.Errorf("failed to read file %q: %w", fileName, err)
-		}
-		return name, string(b), nil
-	}
-}
-
-type writer func(fileName, tgt string) error
-
-var mu sync.Mutex
-
-func writeToWriter(w io.Writer) func(fileName, tgt string) error {
-	return func(fileName, tgt string) error {
-		mu.Lock()
-		defer mu.Unlock()
-		_, err := w.Write([]byte(tgt))
-		return err
-	}
-}
-
-func writeToFile(fileName, tgt string) error {
-	return atomic.WriteFile(fileName, bytes.NewBufferString(tgt))
-}
-
-func format(write writer, read reader, writeIfUnchanged bool) (err error, fileChanged bool) {
-	fileName, src, err := read()
-	if err != nil {
-		return err, false
-	}
-	t, err := parser.ParseString(src)
-	if err != nil {
-		return err, false
-	}
-	t.Filepath = fileName
-	t, err = imports.Process(t)
-	if err != nil {
-		return err, false
-	}
-	w := new(bytes.Buffer)
-	if err = t.Write(w); err != nil {
-		return fmt.Errorf("formatting error: %w", err), false
-	}
-
-	fileChanged = (src != w.String())
-
-	if !writeIfUnchanged && !fileChanged {
-		return nil, fileChanged
-	}
-	return write(fileName, w.String()), fileChanged
 }

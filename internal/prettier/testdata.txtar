@@ -1,0 +1,12 @@
+-- js-1.js --
+function foo(){return 1;}
+-- js-1.js --
+function foo() {
+	return 1;
+}
+-- css-1.css --
+body{color:red;}
+-- css-1.css --
+body {
+	color: red;
+}
