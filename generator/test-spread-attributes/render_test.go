@@ -4,6 +4,8 @@ import (
 	_ "embed"
 	"testing"
 
+	"os"
+
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator/htmldiff"
 )
@@ -47,11 +49,14 @@ func Test(t *testing.T) {
 		"optional-from-func-true": func() bool { return true },
 	})
 
-	diff, err := htmldiff.Diff(component, expected)
+	actual, diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if diff != "" {
+		if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual.html: %v", err)
+		}
 		t.Error(diff)
 	}
 }
@@ -95,11 +100,14 @@ func TestOrderedAttributes(t *testing.T) {
 		{Key: "optional-from-func-true", Value: func() bool { return true }},
 	})
 
-	diff, err := htmldiff.Diff(component, expectedOrderedAttributes)
+	actual, diff, err := htmldiff.Diff(component, expectedOrderedAttributes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if diff != "" {
+		if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual.html: %v", err)
+		}
 		t.Error(diff)
 	}
 }
@@ -128,11 +136,14 @@ func TestNumericAttributeTypes(t *testing.T) {
 		"bool-false":    false,
 	})
 
-	diff, err := htmldiff.Diff(component, expectedNumericAttributes)
+	actual, diff, err := htmldiff.Diff(component, expectedNumericAttributes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if diff != "" {
+		if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual.html: %v", err)
+		}
 		t.Error(diff)
 	}
 }

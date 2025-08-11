@@ -1,0 +1,21 @@
+-- in --
+package test
+
+templ script(data string) {
+	<script>
+  function log(  something)     {
+	  console.log(something   );
+		}
+	</script>
+}
+
+-- out --
+package test
+
+templ script(data string) {
+	<script>
+		function log(something) {
+			console.log(something);
+		}
+	</script>
+}

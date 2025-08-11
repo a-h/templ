@@ -544,6 +544,7 @@ func TestTemplDocLazyLoaderSync(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.loader.Sync(context.Background(), tt.params)
 
 			if tt.wantErrContains != "" {
@@ -666,6 +667,7 @@ func TestTemplDocLazyLoaderUnload(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := tt.loader.Unload(context.Background(), tt.params)
 
 			if tt.wantErrContains != "" {
@@ -724,6 +726,7 @@ func TestTemplDocLazyLoaderHasLoaded(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tt.expected, tt.loader.HasLoaded(tt.doc))
 		})
 	}

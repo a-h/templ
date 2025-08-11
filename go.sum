@@ -1,5 +1,3 @@
-github.com/a-h/htmlformat v0.0.0-20250209131833-673be874c677 h1:H1EoxMpNo/TnCZEgSaKsomi+dQ05dXiVSKDN86Lap9A=
-github.com/a-h/htmlformat v0.0.0-20250209131833-673be874c677/go.mod h1:FMIm5afKmEfarNbIXOaPHFY8X7fo+fRQB6I9MPG2nB0=
 github.com/a-h/parse v0.0.0-20250122154542-74294addb73e h1:HjVbSQHy+dnlS6C3XajZ69NYAb5jbGNfHanvm1+iYlo=
 github.com/a-h/parse v0.0.0-20250122154542-74294addb73e/go.mod h1:3mnrkvGpurZ4ZrTDbYU84xhwXW2TjTKShSwjRi2ihfQ=
 github.com/andybalholm/brotli v1.1.0 h1:eLKJA0d02Lf0mVpIDgYnqXcUn0GqVmEFny3VuID1U3M=

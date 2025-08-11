@@ -10,12 +10,12 @@ import (
 	"strings"
 
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/internal/imports"
 	"github.com/a-h/templ/internal/lazyloader"
 	lsp "github.com/a-h/templ/lsp/protocol"
 	"github.com/a-h/templ/lsp/uri"
 
 	"github.com/a-h/templ"
-	"github.com/a-h/templ/cmd/templ/imports"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/parser/v2"
 )

@@ -4,18 +4,20 @@ templ Example() {
 	<html>
 		<head></head>
 		<body>
-			<style><!-- Some stuff --></style>
 			<style>
-        .customClass {
-          border: 1px solid black;
-        }
-      </style>
+				<!-- Some stuff -->
+			</style>
+			<style>
+				.customClass {
+					border: 1px solid black;
+				}
+			</style>
 			<script>
-        $("div").marquee();
-        function test() {
-              window.open("https://example.com")
-        }
-      </script>
+				$("div").marquee();
+				function test() {
+					window.open("https://example.com");
+				}
+			</script>
 			<h1>Hello</h1>
 			@templ.Raw("<div>World</div>")
 		</body>
