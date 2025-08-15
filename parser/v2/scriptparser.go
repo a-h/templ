@@ -126,6 +126,7 @@ loop:
 		}
 
 		// Read JavaScript characters.
+	charLoop:
 		for {
 			before := pi.Index()
 
@@ -136,7 +137,12 @@ loop:
 			}
 			if ok {
 				sb.WriteString(r)
-				continue
+				continue charLoop
+			}
+
+			// Check for EOF.
+			if _, ok, _ = parse.EOF[string]().Parse(pi); ok {
+				return nil, false, parse.Error("script: unclosed <script> element", pi.Position())
 			}
 
 			// Check for a character.
@@ -144,39 +150,37 @@ loop:
 			if err != nil {
 				return nil, false, err
 			}
-			if ok {
-				if c == string(jsQuoteDouble) || c == string(jsQuoteSingle) || c == string(jsQuoteBacktick) {
-					// Start or exit a string literal.
-					if stringLiteralDelimiter == jsQuoteNone {
-						stringLiteralDelimiter = jsQuote(c)
-					} else if stringLiteralDelimiter == jsQuote(c) {
-						stringLiteralDelimiter = jsQuoteNone
-					}
-				}
-				peeked, _ := pi.Peek(1)
-				peeked = c + peeked
-
-				_, isEOF, _ := parse.EOF[string]().Parse(pi)
-				breakForGo := peeked == "{{"
-				breakForHTML := stringLiteralDelimiter == jsQuoteNone && peeked == "</"
-				breakForComment := stringLiteralDelimiter == jsQuoteNone && (peeked == "//" || peeked == "/*")
-
-				if isEOF || breakForGo || breakForHTML || breakForComment {
-					if sb.Len() > 0 {
-						e.Contents = append(e.Contents, NewScriptContentsScriptCode(sb.String()))
-						sb.Reset()
-					}
-					if isEOF {
-						break loop
-					}
-					pi.Seek(before)
-					continue loop
-				}
-				sb.WriteString(c)
+			if !ok {
+				continue charLoop
 			}
-			if _, ok, _ = parse.EOF[string]().Parse(pi); ok {
-				return nil, false, parse.Error("script: unclosed <script> element", pi.Position())
+			if c == string(jsQuoteDouble) || c == string(jsQuoteSingle) || c == string(jsQuoteBacktick) {
+				// Start or exit a string literal.
+				if stringLiteralDelimiter == jsQuoteNone {
+					stringLiteralDelimiter = jsQuote(c)
+				} else if stringLiteralDelimiter == jsQuote(c) {
+					stringLiteralDelimiter = jsQuoteNone
+				}
 			}
+			peeked, _ := pi.Peek(1)
+			peeked = c + peeked
+
+			_, isEOF, _ := parse.EOF[string]().Parse(pi)
+			breakForGo := peeked == "{{"
+			breakForHTML := stringLiteralDelimiter == jsQuoteNone && peeked == "</"
+			breakForComment := stringLiteralDelimiter == jsQuoteNone && (peeked == "//" || peeked == "/*")
+
+			if isEOF || breakForGo || breakForHTML || breakForComment {
+				if sb.Len() > 0 {
+					e.Contents = append(e.Contents, NewScriptContentsScriptCode(sb.String()))
+					sb.Reset()
+				}
+				if isEOF {
+					break loop
+				}
+				pi.Seek(before)
+				continue loop
+			}
+			sb.WriteString(c)
 		}
 	}
 
