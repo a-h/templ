@@ -32,30 +32,29 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	var name string
 	if name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
-		return
+		return n, false, err
 	}
 
 	if name != "script" {
 		pi.Seek(start)
-		ok = false
-		return
+		return n, false, nil
 	}
 
 	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
 		pi.Seek(start)
-		return
+		return n, false, err
 	}
 
 	// Optional whitespace.
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
 		pi.Seek(start)
-		return
+		return n, false, err
 	}
 
 	// >
 	if _, ok, err = gt.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
-		return
+		return n, false, parse.Error("<script>: unclosed element - missing '>'", pi.Position())
 	}
 
 	// If there's a type attribute and it's not a JS attribute (e.g. text/javascript), we need to parse the contents as raw text.
@@ -89,18 +88,25 @@ loop:
 		//  - \ - Start of an escape sequence, we can just take the value.
 		//  - Anything else - Add it to the script.
 
-		if _, ok, err = jsEndTag.Parse(pi); err != nil || ok {
+		_, ok, err = jsEndTag.Parse(pi)
+		if err != nil {
+			return nil, false, err
+		}
+		if ok {
 			// We've reached the end of the script.
 			break loop
 		}
 
-		if _, ok, err = endTagStart.Parse(pi); err != nil || ok {
-			// We've reached the end of the script, but the end tag is probably invalid.
-			break loop
+		_, ok, err = endTagStart.Parse(pi)
+		if err != nil {
+			return nil, false, err
+		}
+		if ok {
+			return nil, false, parse.Error("<script>: invalid end tag, expected </script> not found", pi.Position())
 		}
 
-		var code Node
-		code, ok, err = goCodeInJavaScript.Parse(pi)
+		// Try for a Go code expression, i.e. {{ goCode }}.
+		code, ok, err := goCodeInJavaScript.Parse(pi)
 		if err != nil {
 			return nil, false, err
 		}
@@ -110,8 +116,7 @@ loop:
 		}
 
 		// Try for a comment.
-		var comment string
-		comment, ok, err = jsComment.Parse(pi)
+		comment, ok, err := jsComment.Parse(pi)
 		if err != nil {
 			return nil, false, err
 		}
@@ -120,46 +125,62 @@ loop:
 			continue loop
 		}
 
-		// Read JavaScript chracaters.
+		// Read JavaScript characters.
+	charLoop:
 		for {
 			before := pi.Index()
-			var c string
-			c, ok, err := jsCharacter.Parse(pi)
+
+			// Check for a regular expression literal.
+			r, ok, err := regexpLiteral.Parse(pi)
 			if err != nil {
 				return nil, false, err
 			}
 			if ok {
-				_, isEOF, _ := parse.EOF[string]().Parse(pi)
-				if c == `"` || c == "'" || c == "`" {
-					// Start or exit a string literal.
-					if stringLiteralDelimiter == jsQuoteNone {
-						stringLiteralDelimiter = jsQuote(c)
-					} else if stringLiteralDelimiter == jsQuote(c) {
-						stringLiteralDelimiter = jsQuoteNone
-					}
-				}
-				peeked, _ := pi.Peek(1)
-				peeked = c + peeked
-
-				breakForGo := peeked == "{{"
-				breakForHTML := stringLiteralDelimiter == jsQuoteNone && (peeked == "</" || peeked == "//" || peeked == "/*")
-
-				if isEOF || breakForGo || breakForHTML {
-					if sb.Len() > 0 {
-						e.Contents = append(e.Contents, NewScriptContentsScriptCode(sb.String()))
-						sb.Reset()
-					}
-					if isEOF {
-						break loop
-					}
-					pi.Seek(before)
-					continue loop
-				}
-				sb.WriteString(c)
+				sb.WriteString(r)
+				continue charLoop
 			}
+
+			// Check for EOF.
 			if _, ok, _ = parse.EOF[string]().Parse(pi); ok {
 				return nil, false, parse.Error("script: unclosed <script> element", pi.Position())
 			}
+
+			// Check for a character.
+			c, ok, err := jsCharacter.Parse(pi)
+			if err != nil {
+				return nil, false, err
+			}
+			if !ok {
+				return nil, false, parse.Error("script: expected to parse a character, but didn't", pi.Position())
+			}
+			if c == string(jsQuoteDouble) || c == string(jsQuoteSingle) || c == string(jsQuoteBacktick) {
+				// Start or exit a string literal.
+				if stringLiteralDelimiter == jsQuoteNone {
+					stringLiteralDelimiter = jsQuote(c)
+				} else if stringLiteralDelimiter == jsQuote(c) {
+					stringLiteralDelimiter = jsQuoteNone
+				}
+			}
+
+			peeked, peekOK := pi.Peek(1)
+			isEOF := !peekOK
+			peeked = c + peeked
+			breakForGo := peeked == "{{"
+			breakForHTML := stringLiteralDelimiter == jsQuoteNone && peeked == "</"
+			breakForComment := stringLiteralDelimiter == jsQuoteNone && (peeked == "//" || peeked == "/*")
+			if isEOF || breakForGo || breakForHTML || breakForComment {
+				if sb.Len() > 0 {
+					e.Contents = append(e.Contents, NewScriptContentsScriptCode(sb.String()))
+					sb.Reset()
+				}
+				if isEOF {
+					break loop
+				}
+				pi.Seek(before)
+				continue loop
+			}
+
+			sb.WriteString(c)
 		}
 	}
 
@@ -238,3 +259,74 @@ var (
 	jsEndOfMultiLineComment = parse.StringFrom(parse.Or(parse.String("*/"), parse.EOF[string]()))
 	jsMultiLineComment      = parse.StringFrom(jsStartMultiLineComment, parse.StringUntil(jsEndOfMultiLineComment), jsEndOfMultiLineComment, parse.OptionalWhitespace)
 )
+
+var regexpLiteral = parse.Func(func(in *parse.Input) (regexp string, ok bool, err error) {
+	startIndex := in.Index()
+
+	// Take the initial '/'.
+	s, ok := in.Take(1)
+	if !ok || s != "/" {
+		in.Seek(startIndex)
+		return "", false, nil
+	}
+	// Peek the next char. If it's also a '/', then this is not a regex literal, but the start of a comment.
+	p, ok := in.Peek(1)
+	if !ok || p == "/" {
+		in.Seek(startIndex)
+		return "", false, nil
+	}
+	var literal strings.Builder
+	literal.WriteString(s)
+
+	var inClass, escaped bool
+
+	for {
+		s, ok := in.Take(1)
+		if !ok {
+			// Restore position if no closing '/'.
+			in.Seek(startIndex)
+			return "", false, nil
+		}
+
+		literal.WriteString(s)
+
+		if escaped {
+			escaped = false
+			continue
+		}
+
+		switch s {
+		case "\n", "\r":
+			// Newline in a regex is not allowed, so we restore the position and return false.
+			in.Seek(startIndex)
+			return "", false, nil
+		case "\\":
+			escaped = true
+		case "[":
+			inClass = true
+		case "]":
+			inClass = false
+		case "/":
+			if !inClass {
+				// We've reached the end of the regex, but there may be flags after it.
+				// Read flags until we hit a non-flag character.
+				flags, ok, err := regexpFlags.Parse(in)
+				if err != nil {
+					return "", false, err
+				}
+				if ok {
+					literal.WriteString(flags)
+				}
+				output := literal.String()
+				if strings.Contains(output, "{{") && strings.Contains(output, "}}") {
+					// If the regex contains a Go expression, don't treat it as a regex literal.
+					in.Seek(startIndex)
+					return "", false, nil
+				}
+				return output, true, nil
+			}
+		}
+	}
+})
+
+var regexpFlags = parse.StringFrom(parse.Repeat(0, 5, parse.RuneIn("gimuy")))

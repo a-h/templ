@@ -54,8 +54,8 @@ func TestScriptElementParserPlain(t *testing.T) {
 			}
 
 			expected := clean(a.Files[1].Data)
-			if diff := cmp.Diff(actual.String(), string(expected)); diff != "" {
-				t.Fatalf("%s:\n%s", file, diff)
+			if diff := cmp.Diff(string(expected), actual.String()); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}
@@ -68,7 +68,7 @@ func TestScriptElementParser(t *testing.T) {
 		expected *ScriptElement
 	}{
 		{
-			name:  "script: no content",
+			name:  "no content",
 			input: `<script></script>`,
 			expected: &ScriptElement{
 				Range: Range{
@@ -78,7 +78,7 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "script: vbscript",
+			name:  "vbscript",
 			input: `<script type="vbscript">dim x = 1</script>`,
 			expected: &ScriptElement{
 				Attributes: []Attribute{
@@ -99,7 +99,7 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "script: go expression",
+			name:  "go expression",
 			input: `<script>{{ name }}</script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
@@ -120,7 +120,7 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "script: go expression with explicit type",
+			name:  "go expression with explicit type",
 			input: `<script type="text/javascript">{{ name }}</script>`,
 			expected: &ScriptElement{
 				Attributes: []Attribute{&ConstantAttribute{
@@ -150,7 +150,7 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "script: go expression with module type",
+			name:  "go expression with module type",
 			input: `<script type="module">{{ name }}</script>`,
 			expected: &ScriptElement{
 				Attributes: []Attribute{&ConstantAttribute{
@@ -180,7 +180,7 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "script: go expression with javascript type",
+			name:  "go expression with javascript type",
 			input: `<script type="javascript">{{ name }}</script>`,
 			expected: &ScriptElement{
 				Attributes: []Attribute{&ConstantAttribute{
@@ -210,7 +210,7 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
-			name: "script: go expression - multiline 1",
+			name: "go expression - multiline 1",
 			input: `<script>
 {{ name }}
 </script>`,
@@ -235,7 +235,7 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "script: go expression in single quoted string",
+			name:  "go expression in single quoted string",
 			input: `<script>var x = '{{ name }}';</script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
@@ -258,7 +258,7 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
-			name:  "script: go expression in double quoted string",
+			name:  "go expression in double quoted string",
 			input: `<script>var x = "{{ name }}";</script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
@@ -281,7 +281,7 @@ func TestScriptElementParser(t *testing.T) {
 			},
 		},
 		{
-			name: "script: go expression in double quoted multiline string",
+			name: "go expression in double quoted multiline string",
 			input: `<script>var x = "This is a test \
 {{ name }} \
 to see if it works";</script>`,
@@ -307,7 +307,7 @@ to see if it works";</script>`,
 			},
 		},
 		{
-			name:  "script: go expression in backtick quoted string",
+			name:  "go expression in backtick quoted string",
 			input: `<script>var x = ` + "`" + "{{ name }}" + "`" + `;</script>`,
 			expected: &ScriptElement{
 				Contents: []ScriptContents{
@@ -330,7 +330,7 @@ to see if it works";</script>`,
 			},
 		},
 		{
-			name: "script: single line commented out go expressions are ignored",
+			name: "single line commented out go expressions are ignored",
 			input: `<script>
 // {{ name }}
 </script>`,
@@ -346,7 +346,7 @@ to see if it works";</script>`,
 			},
 		},
 		{
-			name: "script: multiline commented out go expressions are ignored",
+			name: "multiline commented out go expressions are ignored",
 			input: `<script>
 /* There's some content
 {{ name }}
@@ -364,7 +364,7 @@ but it's commented out */
 			},
 		},
 		{
-			name: "script: non js content is parsed raw",
+			name: "non js content is parsed raw",
 			input: `<script type="text/hyperscript">
 set tier_1 to #tier-1's value
 </script>`,
@@ -383,10 +383,35 @@ set tier_1 to #tier-1's value
 				},
 			},
 		},
+		{
+			name: "regexp expressions",
+			input: `<script>
+const result = call(1000 / 10, {{ data }}, 1000 / 10);
+</script>`,
+			expected: &ScriptElement{
+				Contents: []ScriptContents{
+					NewScriptContentsScriptCode("\nconst result = call(1000 / 10, "),
+					NewScriptContentsGo(&GoCode{
+						Expression: Expression{
+							Value: "data",
+							Range: Range{
+								From: Position{Index: 43, Line: 1, Col: 34},
+								To:   Position{Index: 47, Line: 1, Col: 38},
+							},
+						},
+					}, false),
+					NewScriptContentsScriptCode(", 1000 / 10);\n"),
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 73, Line: 2, Col: 9},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			input := parse.NewInput(tt.input)
 			result, ok, err := scriptElement.Parse(input)
 			if err != nil {
@@ -397,6 +422,96 @@ set tier_1 to #tier-1's value
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
 				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestScriptElementRegexpParser(t *testing.T) {
+	tests := []struct {
+		name       string
+		input      string
+		expected   string
+		expectedOK bool
+	}{
+		{
+			name:       "no content is considered to be a comment",
+			input:      `//`,
+			expectedOK: false,
+		},
+		{
+			name:       "must not be multiline",
+			input:      "/div>\n</div>",
+			expectedOK: false,
+		},
+		{
+			name:       "match a single char",
+			input:      `/a/`,
+			expected:   `/a/`,
+			expectedOK: true,
+		},
+		{
+			name:       "match a simple regex",
+			input:      `/a|b/`,
+			expected:   `/a|b/`,
+			expectedOK: true,
+		},
+		{
+			name:       "match a complex regex",
+			input:      `/a(b|c)*d{2,4}/`,
+			expected:   `/a(b|c)*d{2,4}/`,
+			expectedOK: true,
+		},
+		{
+			name:       "match a regex with flags",
+			input:      `/a/i`,
+			expected:   `/a/i`,
+			expectedOK: true,
+		},
+		{
+			name:       "match a regex with multiple flags",
+			input:      `/a/gmi`,
+			expected:   `/a/gmi`,
+			expectedOK: true,
+		},
+		{
+			name:       "escaped slashes",
+			input:      `/a\/b\/c/`,
+			expected:   `/a\/b\/c/`,
+			expectedOK: true,
+		},
+		{
+			name:       "no match: missing closing slash",
+			input:      `/a|b`,
+			expected:   "",
+			expectedOK: false,
+		},
+		{
+			name:       "no match: missing opening slash",
+			input:      `a|b/`,
+			expected:   "",
+			expectedOK: false,
+		},
+		{
+			name:       "must not contain interpolated go expressions",
+			input:      `/a{{ b }}/`,
+			expected:   "",
+			expectedOK: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			input := parse.NewInput(tt.input)
+			result, ok, err := regexpLiteral.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
+			}
+			if ok != tt.expectedOK {
+				t.Fatalf("expected ok to be %v, got %v", tt.expectedOK, ok)
+			}
+			if result != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, result)
 			}
 		})
 	}
