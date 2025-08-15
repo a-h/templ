@@ -107,6 +107,10 @@ default:
 								},
 								IndentChildren: true,
 								TrailingSpace:  SpaceVertical,
+								Range: Range{
+									From: Position{Index: 29, Line: 2, Col: 1},
+									To:   Position{Index: 67, Line: 5, Col: 0},
+								},
 							},
 						},
 					},
@@ -184,6 +188,10 @@ default:
 								},
 								IndentChildren: true,
 								TrailingSpace:  SpaceVertical,
+								Range: Range{
+									From: Position{Index: 36, Line: 2, Col: 0},
+									To:   Position{Index: 72, Line: 5, Col: 0},
+								},
 							},
 						},
 					},

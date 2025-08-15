@@ -555,5 +555,6 @@ func addTrailingSpaceAndValidate(start parse.Position, e *Element, pi *parse.Inp
 		return e, false, err
 	}
 
+	e.Range = NewRange(start, pi.Position())
 	return e, true, nil
 }
