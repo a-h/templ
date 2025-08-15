@@ -31,7 +31,7 @@ func Templ(src []byte, fileName string, config Config) (output []byte, changed b
 		return nil, false, err
 	}
 
-	if err = applyPrettier(t, src, config); err != nil {
+	if err = applyPrettier(t, config); err != nil {
 		return nil, false, err
 	}
 
@@ -44,13 +44,17 @@ func Templ(src []byte, fileName string, config Config) (output []byte, changed b
 	return out, changed, nil
 }
 
-func applyPrettier(t *parser.TemplateFile, src []byte, config Config) (err error) {
+func applyPrettier(t *parser.TemplateFile, config Config) (err error) {
 	// Check to see if prettier can be run.
 	if config.PrettierCommand == "" {
 		config.PrettierCommand = prettier.DefaultCommand
 	}
-	if config.PrettierRequired && !prettier.IsAvailable(config.PrettierCommand) {
-		return fmt.Errorf("prettier command is not available, please install it or set a different command using the -prettier-command flag")
+	if !prettier.IsAvailable(config.PrettierCommand) {
+		if config.PrettierRequired {
+			return fmt.Errorf("prettier command %q is not available, please install it or set a different command using the -prettier-command flag", config.PrettierCommand)
+		}
+		// Prettier is not available, skip applying it.
+		return nil
 	}
 
 	nodeFormatter := visitor.New()
