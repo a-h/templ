@@ -317,7 +317,13 @@ var regexpLiteral = parse.Func(func(in *parse.Input) (regexp string, ok bool, er
 				if ok {
 					literal.WriteString(flags)
 				}
-				return literal.String(), true, nil
+				output := literal.String()
+				if strings.Contains(output, "{{") && strings.Contains(output, "}}") {
+					// If the regex contains a Go expression, don't treat it as a regex literal.
+					in.Seek(startIndex)
+					return "", false, nil
+				}
+				return output, true, nil
 			}
 		}
 	}

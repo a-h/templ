@@ -383,6 +383,31 @@ set tier_1 to #tier-1's value
 				},
 			},
 		},
+		{
+			name: "regexp expressions",
+			input: `<script>
+const result = call(1000 / 10, {{ data }}, 1000 / 10);
+</script>`,
+			expected: &ScriptElement{
+				Contents: []ScriptContents{
+					NewScriptContentsScriptCode("\nconst result = call(1000 / 10, "),
+					NewScriptContentsGo(&GoCode{
+						Expression: Expression{
+							Value: "data",
+							Range: Range{
+								From: Position{Index: 43, Line: 1, Col: 34},
+								To:   Position{Index: 47, Line: 1, Col: 38},
+							},
+						},
+					}, false),
+					NewScriptContentsScriptCode(", 1000 / 10);\n"),
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 73, Line: 2, Col: 9},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -464,6 +489,12 @@ func TestScriptElementRegexpParser(t *testing.T) {
 		{
 			name:       "no match: missing opening slash",
 			input:      `a|b/`,
+			expected:   "",
+			expectedOK: false,
+		},
+		{
+			name:       "must not contain interpolated go expressions",
+			input:      `/a{{ b }}/`,
 			expected:   "",
 			expectedOK: false,
 		},
