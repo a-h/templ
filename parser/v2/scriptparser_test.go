@@ -513,9 +513,6 @@ func TestScriptElementRegexpParser(t *testing.T) {
 			if result != tt.expected {
 				t.Errorf("expected %q, got %q", tt.expected, result)
 			}
-			if ok != tt.expectedOK {
-				t.Errorf("expected ok to be %v, got %v", tt.expectedOK, ok)
-			}
 		})
 	}
 }

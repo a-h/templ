@@ -151,7 +151,7 @@ loop:
 				return nil, false, err
 			}
 			if !ok {
-				continue charLoop
+				return nil, false, parse.Error("script: expected to parse a character, but didn't", pi.Position())
 			}
 			if c == string(jsQuoteDouble) || c == string(jsQuoteSingle) || c == string(jsQuoteBacktick) {
 				// Start or exit a string literal.
@@ -161,14 +161,13 @@ loop:
 					stringLiteralDelimiter = jsQuoteNone
 				}
 			}
-			peeked, _ := pi.Peek(1)
-			peeked = c + peeked
 
-			_, isEOF, _ := parse.EOF[string]().Parse(pi)
+			peeked, peekOK := pi.Peek(1)
+			isEOF := !peekOK
+			peeked = c + peeked
 			breakForGo := peeked == "{{"
 			breakForHTML := stringLiteralDelimiter == jsQuoteNone && peeked == "</"
 			breakForComment := stringLiteralDelimiter == jsQuoteNone && (peeked == "//" || peeked == "/*")
-
 			if isEOF || breakForGo || breakForHTML || breakForComment {
 				if sb.Len() > 0 {
 					e.Contents = append(e.Contents, NewScriptContentsScriptCode(sb.String()))
@@ -180,6 +179,7 @@ loop:
 				pi.Seek(before)
 				continue loop
 			}
+
 			sb.WriteString(c)
 		}
 	}
