@@ -1,0 +1,10 @@
+-- in --
+<script>
+const regex = /data-client-id="([^"]+)"/;
+const clientIdMatch = evt.detail.message.match(regex);
+</script>
+-- out --
+
+const regex = /data-client-id="([^"]+)"/;
+const clientIdMatch = evt.detail.message.match(regex);
+
