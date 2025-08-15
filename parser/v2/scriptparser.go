@@ -310,22 +310,17 @@ var regexpLiteral = parse.Func(func(in *parse.Input) (regexp string, ok bool, er
 			if !inClass {
 				// We've reached the end of the regex, but there may be flags after it.
 				// Read flags until we hit a non-flag character.
-			flagsLoop:
-				for {
-					s, ok := in.Peek(1)
-					if !ok || !strings.ContainsAny(s, "gimuy") {
-						break flagsLoop
-					}
-					s, ok = in.Take(1)
-					if !ok {
-						// Restore position if no flags.
-						in.Seek(startIndex)
-						return "", false, nil
-					}
-					literal.WriteString(s)
+				flags, ok, err := regexpFlags.Parse(in)
+				if err != nil {
+					return "", false, err
+				}
+				if ok {
+					literal.WriteString(flags)
 				}
 				return literal.String(), true, nil
 			}
 		}
 	}
 })
+
+var regexpFlags = parse.StringFrom(parse.Repeat(0, 5, parse.RuneIn("gimuy")))
