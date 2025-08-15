@@ -31,3 +31,20 @@ func Test(t *testing.T) {
 		})
 	}
 }
+
+func TestIsAvailable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping IsAvailable test in short mode")
+	}
+	t.Run("non-existent commands return false", func(t *testing.T) {
+		var nonExistentCommand = "templ_non_existent_command --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME"
+		if IsAvailable(nonExistentCommand) {
+			t.Errorf("IsAvailable should return false for non-existent command %q", nonExistentCommand)
+		}
+	})
+	t.Run("existing commands return true", func(t *testing.T) {
+		if !IsAvailable(DefaultCommand) {
+			t.Errorf("IsAvailable should return true for existing command %q", DefaultCommand)
+		}
+	})
+}
