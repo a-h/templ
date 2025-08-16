@@ -1260,6 +1260,7 @@ type IfExpression struct {
 	Then       []Node
 	ElseIfs    []ElseIfExpression
 	Else       []Node
+	Range      Range
 }
 
 type ElseIfExpression struct {
