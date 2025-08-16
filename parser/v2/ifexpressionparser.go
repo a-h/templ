@@ -67,6 +67,7 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err erro
 		return r, true, parse.Error("if: expected closing brace", pi.Position())
 	}
 
+	r.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return r, true, nil
 }
 
