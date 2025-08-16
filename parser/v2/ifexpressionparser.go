@@ -109,6 +109,7 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, matche
 	}
 	r.Then = thenNodes.Nodes
 
+	r.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return r, true, nil
 }
 
