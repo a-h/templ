@@ -1260,11 +1260,13 @@ type IfExpression struct {
 	Then       []Node
 	ElseIfs    []ElseIfExpression
 	Else       []Node
+	Range      Range
 }
 
 type ElseIfExpression struct {
 	Expression Expression
 	Then       []Node
+	Range      Range
 }
 
 func (n IfExpression) ChildNodes() []Node {
