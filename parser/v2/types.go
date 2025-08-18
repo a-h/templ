@@ -1116,9 +1116,9 @@ type AttributeComment struct {
 
 func (ac *AttributeComment) String() string {
 	if ac.Multiline {
-		return "/* " + ac.Comment + " */"
+		return "/*" + ac.Comment + "*/"
 	}
-	return "// " + ac.Comment
+	return "//" + ac.Comment
 }
 
 func (ac *AttributeComment) Write(w io.Writer, indent int) error {
