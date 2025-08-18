@@ -402,6 +402,31 @@ type attributesParser struct{}
 
 func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool, err error) {
 	for {
+		// Try to parse and handle any comments first.
+		for {
+			if _, _, err = parse.OptionalWhitespace.Parse(in); err != nil {
+				return
+			}
+
+			commentStart := in.Index()
+			if node, commentOk, commentErr := goComment.Parse(in); commentErr != nil {
+				return attributes, false, commentErr
+			} else if commentOk {
+				// Found a Go comment, add it as an attribute comment
+				if goNode, ok := node.(*GoComment); ok {
+					attributes = append(attributes, &AttributeComment{
+						Comment:   goNode.Contents,
+						Multiline: goNode.Multiline,
+					})
+				}
+				continue
+			}
+
+			in.Seek(commentStart)
+			break
+		}
+
+		// Parse attribute
 		var attr Attribute
 		attr, ok, err = attribute.Parse(in)
 		if err != nil {
