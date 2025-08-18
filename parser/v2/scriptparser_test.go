@@ -346,6 +346,22 @@ to see if it works";</script>`,
 			},
 		},
 		{
+			name: "single line comments after expressions are allowed",
+			input: `<script>
+const category = path.split('/')[2]; // example comment
+</script>`,
+			expected: &ScriptElement{
+				Contents: []ScriptContents{
+					NewScriptContentsScriptCode("\nconst category = path.split('/')[2]; "),
+					NewScriptContentsScriptCode("// example comment\n"),
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 74, Line: 2, Col: 9},
+				},
+			},
+		},
+		{
 			name: "multiline commented out go expressions are ignored",
 			input: `<script>
 /* There's some content

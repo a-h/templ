@@ -1,0 +1,8 @@
+-- in --
+<script>
+const category = path.split('/')[2]; // example comment
+</script>
+-- out --
+
+const category = path.split('/')[2]; // example comment
+

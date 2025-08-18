@@ -130,14 +130,17 @@ loop:
 		for {
 			before := pi.Index()
 
+			// If we're outside of a string literal, check for a regexp literal.
 			// Check for a regular expression literal.
-			r, ok, err := regexpLiteral.Parse(pi)
-			if err != nil {
-				return nil, false, err
-			}
-			if ok {
-				sb.WriteString(r)
-				continue charLoop
+			if stringLiteralDelimiter == jsQuoteNone {
+				r, ok, err := regexpLiteral.Parse(pi)
+				if err != nil {
+					return nil, false, err
+				}
+				if ok {
+					sb.WriteString(r)
+					continue charLoop
+				}
 			}
 
 			// Check for EOF.
