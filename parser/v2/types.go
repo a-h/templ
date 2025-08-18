@@ -1108,7 +1108,7 @@ func (ca *ConditionalAttribute) Copy() Attribute {
 	}
 }
 
-// AttributeComment represents a comment within element attributes
+// AttributeComment represents a comment within element attributes.
 type AttributeComment struct {
 	Comment   string
 	Multiline bool
@@ -1126,7 +1126,7 @@ func (ac *AttributeComment) Write(w io.Writer, indent int) error {
 }
 
 func (ac *AttributeComment) Visit(v Visitor) error {
-	// Comments don't need to be visited
+	// Comments don't need to be visited.
 	return nil
 }
 

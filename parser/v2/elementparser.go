@@ -426,7 +426,6 @@ func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool,
 			break
 		}
 
-		// Parse attribute
 		var attr Attribute
 		attr, ok, err = attribute.Parse(in)
 		if err != nil {
