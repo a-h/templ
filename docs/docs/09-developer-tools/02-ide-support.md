@@ -5,7 +5,7 @@
 There's a VS Code extension, just make sure you've already installed templ and that it's on your path.
 
 - https://marketplace.visualstudio.com/items?itemName=a-h.templ
-- https://github.com/a-h/templ-vscode
+- https://github.com/templ-go/templ-vscode
 
 VSCodium users can find the extension on the Open VSX Registry at https://open-vsx.org/extension/a-h/templ
 
