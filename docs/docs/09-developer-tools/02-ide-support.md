@@ -86,6 +86,13 @@ To resolve this issue, add the following code to your configuration. This is als
 vim.filetype.add({ extension = { templ = "templ" } })
 ```
 
+## jetbrains
+Intellij language support for templ
+
+- https://github.com/templ-go/templ-jetbrains
+- https://plugins.jetbrains.com/plugin/23088-templ
+
+
 ##### Other LSPs within .templ files
 
 These LSPs can be used *in conjunction* with the templ lsp and tree-sitter. Here's how to set them up.
