@@ -74,6 +74,10 @@ func TestIfExpression(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 49, Line: 4, Col: 1},
+				},
 			},
 		},
 		{
@@ -140,6 +144,10 @@ func TestIfExpression(t *testing.T) {
 						TrailingSpace: SpaceVertical,
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 37, Line: 4, Col: 1},
+				},
 			},
 		},
 		{
@@ -174,6 +182,10 @@ func TestIfExpression(t *testing.T) {
 						},
 						TrailingSpace: SpaceVertical,
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 21, Line: 2, Col: 1},
 				},
 			},
 		},
@@ -237,6 +249,10 @@ func TestIfExpression(t *testing.T) {
 							To:   Position{Index: 48, Line: 4, Col: 0},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 49, Line: 4, Col: 1},
 				},
 			},
 		},
@@ -303,6 +319,10 @@ func TestIfExpression(t *testing.T) {
 						},
 						TrailingSpace: SpaceVertical,
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 36, Line: 4, Col: 1},
 				},
 			},
 		},
@@ -382,8 +402,16 @@ func TestIfExpression(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 14, Line: 1, Col: 5},
+							To:   Position{Index: 54, Line: 3, Col: 6},
+						},
 					},
 					&Whitespace{Value: "\n\t\t\t\t"},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 60, Line: 4, Col: 5},
 				},
 			},
 		},
@@ -437,7 +465,15 @@ func TestIfExpression(t *testing.T) {
 								TrailingSpace: SpaceVertical,
 							},
 						},
+						Range: Range{
+							From: Position{Index: 18, Line: 2, Col: 0},
+							To:   Position{Index: 43, Line: 4, Col: 0},
+						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 44, Line: 4, Col: 1},
 				},
 			},
 		},
@@ -493,6 +529,10 @@ func TestIfExpression(t *testing.T) {
 								TrailingSpace: SpaceVertical,
 							},
 						},
+						Range: Range{
+							From: Position{Index: 18, Line: 2, Col: 0},
+							To:   Position{Index: 43, Line: 4, Col: 0},
+						},
 					},
 					{
 						Expression: Expression{
@@ -515,7 +555,15 @@ func TestIfExpression(t *testing.T) {
 								TrailingSpace: SpaceVertical,
 							},
 						},
+						Range: Range{
+							From: Position{Index: 43, Line: 4, Col: 0},
+							To:   Position{Index: 68, Line: 6, Col: 0},
+						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 69, Line: 6, Col: 1},
 				},
 			},
 		},
@@ -573,6 +621,10 @@ func TestIfExpression(t *testing.T) {
 								TrailingSpace: SpaceVertical,
 							},
 						},
+						Range: Range{
+							From: Position{Index: 18, Line: 2, Col: 0},
+							To:   Position{Index: 43, Line: 4, Col: 0},
+						},
 					},
 					{
 						Expression: Expression{
@@ -595,6 +647,10 @@ func TestIfExpression(t *testing.T) {
 								TrailingSpace: SpaceVertical,
 							},
 						},
+						Range: Range{
+							From: Position{Index: 43, Line: 4, Col: 0},
+							To:   Position{Index: 68, Line: 6, Col: 0},
+						},
 					},
 				},
 				Else: []Node{
@@ -608,6 +664,10 @@ func TestIfExpression(t *testing.T) {
 						},
 						TrailingSpace: SpaceVertical,
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 87, Line: 8, Col: 1},
 				},
 			},
 		},
@@ -665,6 +725,10 @@ func TestIfExpression(t *testing.T) {
 						},
 						TrailingSpace: SpaceVertical,
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 54, Line: 4, Col: 2},
 				},
 			},
 		},
