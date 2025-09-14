@@ -29,9 +29,12 @@ func ExpressionOf(p parse.Parser[string]) parse.Parser[Expression] {
 var lt = parse.Rune('<')
 var gt = parse.Rune('>')
 var spaceOrTab = parse.Any(parse.Rune(' '), parse.Rune('\t'))
+var spaceOrTabOrNewLine = parse.Any(spaceOrTab, parse.Rune('\n'))
 var openBrace = parse.String("{")
 var optionalSpaces = parse.StringFrom(parse.Optional(
 	parse.AtLeast(1, spaceOrTab)))
+var optionalSpacesOrNewLine = parse.StringFrom(parse.Optional(
+	parse.AtLeast(1, spaceOrTabOrNewLine)))
 var openBraceWithPadding = parse.StringFrom(optionalSpaces,
 	openBrace,
 	optionalSpaces)
@@ -41,7 +44,7 @@ var closeBrace = parse.String("}")
 var closeBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, closeBrace)
 
 var dblOpenBrace = parse.String("{{")
-var dblOpenBraceWithOptionalPadding = parse.StringFrom(dblOpenBrace, optionalSpaces)
+var dblOpenBraceWithOptionalPaddingOrNewLine = parse.StringFrom(dblOpenBrace, optionalSpacesOrNewLine)
 
 var dblCloseBrace = parse.String("}}")
 var dblCloseBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, dblCloseBrace)
