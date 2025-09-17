@@ -68,6 +68,58 @@ func insertScriptTagIntoBody(nonce, body string) (updated string, err error) {
 	return buf.String(), nil
 }
 
+func isStreaming(r *http.Response, log *slog.Logger) bool {
+	if strings.Contains(strings.ToLower(r.Header.Get("Transfer-Encoding")), "chunked") {
+		log.DebugContext(r.Request.Context(), "Response is streaming because transfer encoding is chunked")
+		return true
+	}
+	// Some servers omit both TE and Content-Length, in Go that's -1.
+	if r.Header.Get("Content-Length") == "" && r.ContentLength == -1 {
+		log.DebugContext(r.Request.Context(), "Response is streaming because content length is unspecified")
+		return true
+	}
+	return false
+}
+
+func streamInsertAfterBodyOpen(nonce string, r io.Reader, w io.Writer) error {
+	z := html.NewTokenizer(r)
+	inserted := false
+	for {
+		tt := z.Next()
+		switch tt {
+		case html.ErrorToken:
+			if z.Err() == io.EOF {
+				return nil
+			}
+			return z.Err()
+		case html.StartTagToken:
+			t := z.Token()
+			_, err := w.Write([]byte(t.String()))
+			if err != nil {
+				return err
+			}
+			if t.Data == "body" && !inserted {
+				inserted = true
+				scriptNode := reloadScript(nonce)
+				var buf bytes.Buffer
+				if err := html.Render(&buf, scriptNode); err != nil {
+					return err
+				}
+				_, err = w.Write(buf.Bytes())
+				if err != nil {
+					return err
+				}
+			}
+		default:
+			t := z.Token()
+			_, err := w.Write([]byte(t.String()))
+			if err != nil {
+				return err
+			}
+		}
+	}
+}
+
 type passthroughWriteCloser struct {
 	io.Writer
 }
@@ -114,7 +166,43 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 	case "":
 		log.Debug("No content encoding header found")
 	default:
-		h.log.Warn(unsupportedContentEncoding, slog.String("encoding", r.Header.Get("Content-Encoding")))
+		log.Warn(unsupportedContentEncoding, slog.String("encoding", r.Header.Get("Content-Encoding")))
+	}
+
+	csp := r.Header.Get("Content-Security-Policy")
+	nonce := parseNonce(csp)
+
+	if isStreaming(r, log) {
+		// Create a pipe and replace the body with the read end of the pipe.
+		pr, pw := io.Pipe()
+		originalBody := r.Body
+		r.Body = pr
+
+		// Start a goroutine to read from the original body, modify it, and write to the pipe.
+		go func() {
+			defer func() {
+				_ = originalBody.Close()
+			}()
+			encr, err := newReader(originalBody)
+			if err != nil {
+				log.Debug("Failed to read streaming response", slog.Any("error", err))
+				_ = pw.CloseWithError(err)
+				return
+			}
+			enc := newWriter(pw)
+			defer func() {
+				_ = enc.Close()
+			}()
+
+			if err := streamInsertAfterBodyOpen(nonce, encr, enc); err != nil {
+				log.Debug("Failed to modify streaming response", slog.Any("error", err))
+				_ = pw.CloseWithError(err)
+				return
+			}
+			_ = pw.Close()
+		}()
+
+		return nil
 	}
 
 	// Read the encoded body.
@@ -131,8 +219,7 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 	}
 
 	// Update it.
-	csp := r.Header.Get("Content-Security-Policy")
-	updated, err := insertScriptTagIntoBody(parseNonce(csp), string(body))
+	updated, err := insertScriptTagIntoBody(nonce, string(body))
 	if err != nil {
 		log.Warn("Unable to insert reload script", slog.Any("error", err))
 		updated = string(body)
