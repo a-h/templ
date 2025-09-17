@@ -47,10 +47,22 @@ This assumes that your http server is running on `http://localhost:8080`. `--ope
 
 ### Tailwind CSS
 
-Tailwind requires a `tailwind.config.js` file at the root of your project, alongside an `input.css` file.
+Tailwind can be installed via your preferred package manager. The `@tailwindcss/cli` package requires `tailwindcss` as a local peer dependency, `tailwindcss` cannot be installed globally.
 
 ```bash
-npx --yes tailwindcss -i ./input.css -o ./assets/styles.css --minify --watch
+npm install tailwindcss @tailwindcss/cli
+```
+
+Tailwind requires some input CSS file, e.g. `input.css` with the following directive:
+
+```css
+@import "tailwindcss";
+```
+
+Then you can use the `@tailwindcss/cli` package to generate the css bundle.
+
+```bash
+npx --yes @tailwindcss/cli -i ./input.css -o ./assets/styles.css --minify --watch
 ```
 
 This will watch `input.css` as well as your `.templ` files and re-generate `assets/styles.css` whenever there's a change.
