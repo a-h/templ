@@ -1368,6 +1368,7 @@ type CaseExpression struct {
 type ForExpression struct {
 	Expression Expression
 	Children   []Node
+	Range      Range
 }
 
 func (fe ForExpression) ChildNodes() []Node {

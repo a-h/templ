@@ -52,5 +52,6 @@ func (forExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err err
 		return r, true, parse.Error("for: "+unterminatedMissingEnd, pi.Position())
 	}
 
+	r.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return r, true, nil
 }
