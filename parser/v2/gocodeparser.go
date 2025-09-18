@@ -18,7 +18,7 @@ var goCodeInJavaScript = getGoCodeParser(false)
 func getGoCodeParser(normalizeWhitespace bool) parse.Parser[Node] {
 	return parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 		// Check the prefix first.
-		if _, ok, err = dblOpenBraceWithOptionalPadding.Parse(pi); err != nil || !ok {
+		if _, ok, err = dblOpenBraceWithOptionalPaddingOrNewLine.Parse(pi); err != nil || !ok {
 			return
 		}
 

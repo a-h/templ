@@ -64,15 +64,14 @@ func TestGoCodeParser(t *testing.T) {
 			}}`,
 			expected: &GoCode{
 				Expression: Expression{
-					Value: `
-				p := func() {
+					Value: `p := func() {
 					dosomething()
 				}`,
 					Range: Range{
 						From: Position{
-							Index: 2,
-							Line:  0,
-							Col:   2,
+							Index: 7,
+							Line:  1,
+							Col:   4,
 						},
 						To: Position{
 							Index: 45,
@@ -95,15 +94,22 @@ func TestGoCodeParser(t *testing.T) {
 }}`,
 			expected: &GoCode{
 				Expression: Expression{
-					Value: `
-	one := "one"
+					Value: `one := "one"
 	two := "two"
 	// Comment in middle of expression.
 	four := "four"
 	// Comment at end of expression.`,
 					Range: Range{
-						From: Position{Index: 2, Line: 0, Col: 2},
-						To:   Position{Index: 117, Line: 5, Col: 33},
+						From: Position{
+							Index: 4,
+							Line:  1,
+							Col:   1,
+						},
+						To: Position{
+							Index: 117,
+							Line:  5,
+							Col:   33,
+						},
 					},
 				},
 				TrailingSpace: SpaceNone,
