@@ -477,11 +477,12 @@ func TestProxy(t *testing.T) {
 		}
 
 		streamingGap := 100 * time.Millisecond
+		var writerErr1, writerErr2 error
 		go func() {
 			defer reqWriter.Close()
-			io.WriteString(reqWriter, `<html><head></head><body>`)
+			_, writerErr1 = io.WriteString(reqWriter, `<html><head></head><body>`)
 			time.Sleep(streamingGap) // simulate streaming
-			io.WriteString(reqWriter, `</body></html>`)
+			_, writerErr2 = io.WriteString(reqWriter, `</body></html>`)
 		}()
 
 		// Assert
@@ -519,6 +520,13 @@ func TestProxy(t *testing.T) {
 		}
 		if largestGap < streamingGap {
 			t.Errorf("expected at least one gap of >%v between tokens, got largest gap of %v", streamingGap, largestGap)
+		}
+
+		if writerErr1 != nil {
+			t.Errorf("unexpected error writing part 1 of response: %v", writerErr1)
+		}
+		if writerErr2 != nil {
+			t.Errorf("unexpected error writing part 2 of response: %v", writerErr2)
 		}
 	})
 	t.Run("notify-proxy: sending POST request to /_templ/reload/events should receive reload sse event", func(t *testing.T) {
