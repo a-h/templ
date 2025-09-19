@@ -477,12 +477,12 @@ func TestProxy(t *testing.T) {
 		}
 
 		streamingGap := 100 * time.Millisecond
-		var writerErr1, writerErr2 error
+		var writerErr1, writerErr2, reqWriterErr error
 		go func() {
-			defer reqWriter.Close()
 			_, writerErr1 = io.WriteString(reqWriter, `<html><head></head><body>`)
 			time.Sleep(streamingGap) // simulate streaming
 			_, writerErr2 = io.WriteString(reqWriter, `</body></html>`)
+			reqWriterErr = reqWriter.Close()
 		}()
 
 		// Assert
@@ -527,6 +527,9 @@ func TestProxy(t *testing.T) {
 		}
 		if writerErr2 != nil {
 			t.Errorf("unexpected error writing part 2 of response: %v", writerErr2)
+		}
+		if reqWriterErr != nil {
+			t.Errorf("unexpected error closing request writer: %v", reqWriterErr)
 		}
 	})
 	t.Run("notify-proxy: sending POST request to /_templ/reload/events should receive reload sse event", func(t *testing.T) {
