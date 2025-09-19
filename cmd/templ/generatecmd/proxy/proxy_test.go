@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -442,6 +443,93 @@ func TestProxy(t *testing.T) {
 		}
 		if diff := cmp.Diff(expectedString, string(actualBody)); diff != "" {
 			t.Errorf("unexpected response body (-got +want):\n%s", diff)
+		}
+	})
+	t.Run("stream: body tags get the script inserted", func(t *testing.T) {
+		// Arrange
+		reqReader, reqWriter := io.Pipe()
+		r := &http.Response{
+			Body:   reqReader,
+			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
+		}
+		r.Header.Set("Content-Type", "text/html; charset=utf-8")
+		r.Header.Set("Transfer-Encoding", "chunked")
+
+		expectedString, err := insertScriptTagIntoBody("", `<html><head></head><body></body></html>`)
+		if err != nil {
+			t.Fatalf("unexpected error inserting script: %v", err)
+		}
+		if !strings.Contains(expectedString, getScriptTag(t, "")) {
+			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
+		}
+
+		// Act
+		log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		if err := h.modifyResponse(r); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		streamingGap := 100 * time.Millisecond
+		var writerErr1, writerErr2, reqWriterErr error
+		go func() {
+			_, writerErr1 = io.WriteString(reqWriter, `<html><head></head><body>`)
+			time.Sleep(streamingGap) // simulate streaming
+			_, writerErr2 = io.WriteString(reqWriter, `</body></html>`)
+			reqWriterErr = reqWriter.Close()
+		}()
+
+		// Assert
+		if got := r.Header.Get("Content-Length"); got != "" {
+			t.Errorf("expected Content-Length to be cleared for streaming, got %q", got)
+		}
+
+		// Read the response body as it comes in, and look for at least one gap of >streamingGap between tokens.
+		lastTime := time.Now()
+		largestGap := time.Duration(0)
+		sBB := &strings.Builder{}
+		z := html.NewTokenizer(r.Body)
+	tokenLoop:
+		for {
+			tt := z.Next()
+			if since := time.Since(lastTime); since > largestGap {
+				largestGap = since
+			}
+			lastTime = time.Now()
+
+			switch tt {
+			case html.ErrorToken:
+				if z.Err() == io.EOF {
+					break tokenLoop
+				}
+				t.Error("unexpected error token:", z.Err())
+			default:
+				if _, err := sBB.Write([]byte(z.Token().String())); err != nil {
+					t.Error("unexpected error writing token:", err)
+				}
+			}
+		}
+		if diff := cmp.Diff(expectedString, sBB.String()); diff != "" {
+			t.Errorf("unexpected response body (-got +want):\n%s", diff)
+		}
+		if largestGap < streamingGap {
+			t.Errorf("expected at least one gap of >%v between tokens, got largest gap of %v", streamingGap, largestGap)
+		}
+
+		if writerErr1 != nil {
+			t.Errorf("unexpected error writing part 1 of response: %v", writerErr1)
+		}
+		if writerErr2 != nil {
+			t.Errorf("unexpected error writing part 2 of response: %v", writerErr2)
+		}
+		if reqWriterErr != nil {
+			t.Errorf("unexpected error closing request writer: %v", reqWriterErr)
 		}
 	})
 	t.Run("notify-proxy: sending POST request to /_templ/reload/events should receive reload sse event", func(t *testing.T) {
