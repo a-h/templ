@@ -55,6 +55,42 @@ func (u URI) Filename() string {
 	return filepath.FromSlash(filename)
 }
 
+// ParseDocumentURI interprets a string as a DocumentURI, applying VS
+// Code workarounds; see [DocumentURI.UnmarshalText] for details.
+// If "s" is a file name, use [URIFromPath] instead.
+func ParseDocumentURI(s string) (URI, error) {
+	if s == "" {
+		return "", nil
+	}
+
+	if !strings.HasPrefix(s, "file://") {
+		return "", fmt.Errorf("DocumentURI scheme is not 'file': %s", s)
+	}
+
+	// VS Code sends URLs with only two slashes,
+	// which are invalid. golang/go#39789.
+	if !strings.HasPrefix(s, "file:///") {
+		s = "file:///" + s[len("file://"):]
+	}
+
+	// Even though the input is a URI, it may not be in canonical form. VS Code
+	// in particular over-escapes :, @, etc. Unescape and re-encode to canonicalize.
+	path, err := url.PathUnescape(s[len("file://"):])
+	if err != nil {
+		return "", err
+	}
+
+	// File URIs from Windows may have lowercase drive letters.
+	// Since drive letters are guaranteed to be case insensitive,
+	// we change them to uppercase to remain consistent.
+	// For example, file:///c:/x/y/z becomes file:///C:/x/y/z.
+	if isWindowsDriveURI(path) {
+		path = path[:1] + strings.ToUpper(string(path[1])) + path[2:]
+	}
+	u := url.URL{Scheme: FileScheme, Path: path}
+	return URI(u.String()), nil
+}
+
 func filename(uri URI) (string, error) {
 	u, err := url.ParseRequestURI(string(uri))
 	if err != nil {
@@ -83,6 +119,29 @@ func New(s string) URI {
 	}
 
 	return File(s)
+}
+
+// URIFromPath returns DocumentURI for the supplied file path.
+// Given "", it returns "".
+func URIFromPath(path string) URI {
+	if path == "" {
+		return ""
+	}
+	if !isWindowsDrivePath(path) {
+		if abs, err := filepath.Abs(path); err == nil {
+			path = abs
+		}
+	}
+	// Check the file path again, in case it became absolute.
+	if isWindowsDrivePath(path) {
+		path = "/" + strings.ToUpper(string(path[0])) + path[1:]
+	}
+	path = filepath.ToSlash(path)
+	u := url.URL{
+		Scheme: FileScheme,
+		Path:   path,
+	}
+	return URI(u.String())
 }
 
 // File parses and creates a new filesystem URI from path.
