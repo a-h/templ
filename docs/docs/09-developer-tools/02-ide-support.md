@@ -5,7 +5,7 @@
 There's a VS Code extension, just make sure you've already installed templ and that it's on your path.
 
 - https://marketplace.visualstudio.com/items?itemName=a-h.templ
-- https://github.com/a-h/templ-vscode
+- https://github.com/templ-go/templ-vscode
 
 VSCodium users can find the extension on the Open VSX Registry at https://open-vsx.org/extension/a-h/templ
 
@@ -85,6 +85,13 @@ To resolve this issue, add the following code to your configuration. This is als
 ```lua
 vim.filetype.add({ extension = { templ = "templ" } })
 ```
+
+## JetBrains
+
+IntelliJ / GoLand language support for templ:
+
+- https://github.com/templ-go/templ-jetbrains
+- https://plugins.jetbrains.com/plugin/23088-templ
 
 ##### Other LSPs within .templ files
 

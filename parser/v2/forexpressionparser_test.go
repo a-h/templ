@@ -45,6 +45,10 @@ func TestForExpressionParser(t *testing.T) {
 						TrailingSpace: "\n",
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 20, Line: 2, Col: 4},
+				},
 			},
 		},
 		{
@@ -79,6 +83,10 @@ func TestForExpressionParser(t *testing.T) {
 						TrailingSpace: "\n",
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 41, Line: 2, Col: 4},
+				},
 			},
 		},
 		{
@@ -112,6 +120,10 @@ func TestForExpressionParser(t *testing.T) {
 						Value:         "Ever",
 						TrailingSpace: "\n",
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 45, Line: 2, Col: 4},
 				},
 			},
 		},
@@ -170,6 +182,10 @@ func TestForExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 61, Line: 2, Col: 5},
+				},
 			},
 		},
 		{
@@ -226,6 +242,10 @@ func TestForExpressionParser(t *testing.T) {
 							To:   Position{Index: 59, Line: 2, Col: 4},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 60, Line: 2, Col: 5},
 				},
 			},
 		},

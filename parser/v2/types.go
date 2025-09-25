@@ -1289,11 +1289,13 @@ type IfExpression struct {
 	Then       []Node
 	ElseIfs    []ElseIfExpression
 	Else       []Node
+	Range      Range
 }
 
 type ElseIfExpression struct {
 	Expression Expression
 	Then       []Node
+	Range      Range
 }
 
 func (n IfExpression) ChildNodes() []Node {
@@ -1349,6 +1351,7 @@ func (n *IfExpression) Visit(v Visitor) error {
 type SwitchExpression struct {
 	Expression Expression
 	Cases      []CaseExpression
+	Range      Range
 }
 
 func (se SwitchExpression) ChildNodes() []Node {
@@ -1395,6 +1398,7 @@ type CaseExpression struct {
 type ForExpression struct {
 	Expression Expression
 	Children   []Node
+	Range      Range
 }
 
 func (fe ForExpression) ChildNodes() []Node {
