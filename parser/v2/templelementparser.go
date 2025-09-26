@@ -8,6 +8,8 @@ import (
 type templElementExpressionParser struct{}
 
 func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err error) {
+	start := pi.Position()
+
 	// Check the prefix first.
 	if _, matched, err = parse.Rune('@').Parse(pi); err != nil || !matched {
 		return nil, false, nil
@@ -26,6 +28,7 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, matched bo
 		return
 	}
 	if !hasOpenBrace {
+		r.Range = NewRange(start, pi.Position())
 		return r, true, nil
 	}
 
@@ -47,6 +50,8 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, matched bo
 		err = parse.Error("@"+r.Expression.Value+": missing end (expected '}')", pi.Position())
 		return r, true, err
 	}
+
+	r.Range = NewRange(start, pi.Position())
 
 	return r, true, nil
 }

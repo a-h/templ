@@ -1180,6 +1180,7 @@ type TemplElementExpression struct {
 	Expression Expression
 	// Children returns the elements in a block element.
 	Children []Node
+	Range    Range
 }
 
 func (tee TemplElementExpression) ChildNodes() []Node {
