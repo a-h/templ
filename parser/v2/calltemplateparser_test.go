@@ -32,6 +32,10 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 18, Line: 0, Col: 18},
+				},
 			},
 		},
 		{
@@ -53,6 +57,10 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 17, Line: 0, Col: 17},
+				},
 			},
 		},
 		{
@@ -73,6 +81,10 @@ func TestCallTemplateExpressionParser(t *testing.T) {
 							Col:   15,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 16, Line: 0, Col: 16},
 				},
 			},
 		},
