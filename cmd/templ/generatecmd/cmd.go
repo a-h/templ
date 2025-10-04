@@ -296,7 +296,7 @@ func (cmd Generate) handleEvents(ctx context.Context, events chan fsnotify.Event
 
 func (cmd *Generate) walkAndWatch(ctx context.Context, events chan fsnotify.Event, errs chan error) {
 	cmd.Log.Debug("Walking directory", slog.String("path", cmd.Args.Path), slog.Bool("devMode", cmd.Args.Watch))
-	if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.Args.WatchPattern, events); err != nil {
+	if err := watcher.WalkFiles(ctx, cmd.Args.Path, cmd.Args.WatchPattern, cmd.Args.IgnorePattern, events); err != nil {
 		cmd.Log.Error("WalkFiles failed, exiting", slog.Any("error", err))
 		errs <- FatalError{Err: fmt.Errorf("failed to walk files: %w", err)}
 		return
@@ -306,7 +306,7 @@ func (cmd *Generate) walkAndWatch(ctx context.Context, events chan fsnotify.Even
 		return
 	}
 	cmd.Log.Info("Watching files")
-	rw, err := watcher.Recursive(ctx, cmd.Args.WatchPattern, events, errs)
+	rw, err := watcher.Recursive(ctx, cmd.Args.WatchPattern, cmd.Args.IgnorePattern, events, errs)
 	if err != nil {
 		cmd.Log.Error("Recursive watcher setup failed, exiting", slog.Any("error", err))
 		errs <- FatalError{Err: fmt.Errorf("failed to setup recursive watcher: %w", err)}
