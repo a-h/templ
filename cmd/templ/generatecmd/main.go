@@ -37,6 +37,8 @@ Args:
     Set to true to watch the path for changes and regenerate code.
   -watch-pattern <regexp>
     Set the regexp pattern of files that will be watched for changes. (default: '(.+\.go$)|(.+\.templ$)|(.+_templ\.txt$)')
+  -ignore-pattern <regexp>
+    Set the regexp pattern of files to ignore when watching for changes. (default: '')
   -cmd <cmd>
     Set the command to run after generating code.
   -proxy
