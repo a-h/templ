@@ -120,7 +120,7 @@ func (w *RecursiveWatcher) loop() {
 			if !w.WatchPattern.MatchString(event.Name) {
 				continue
 			}
-			// Skip files that match the ignore pattern
+			// Skip files that match the ignore pattern.
 			if w.IgnorePattern != nil && w.IgnorePattern.MatchString(event.Name) {
 				continue
 			}

@@ -118,9 +118,11 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 	if err != nil {
 		return cmdArgs, log, *helpFlag, fmt.Errorf("invalid watch pattern %q: %w", *watchPatternFlag, err)
 	}
-	cmdArgs.IgnorePattern, err = regexp.Compile(*ignorePatternFlag)
-	if err != nil {
-		return cmdArgs, log, *helpFlag, fmt.Errorf("invalid ignore pattern %q: %w", *ignorePatternFlag, err)
+	if *ignorePatternFlag != "" {
+		cmdArgs.IgnorePattern, err = regexp.Compile(*ignorePatternFlag)
+		if err != nil {
+			return cmdArgs, log, *helpFlag, fmt.Errorf("invalid ignore pattern %q: %w", *ignorePatternFlag, err)
+		}
 	}
 
 	// Default to writing to files unless the stdout flag is set.
