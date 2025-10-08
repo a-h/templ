@@ -58,6 +58,7 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err 
 		return r, true, err
 	}
 
+	r.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return r, true, nil
 }
 

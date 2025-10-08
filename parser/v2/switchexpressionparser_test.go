@@ -33,6 +33,10 @@ func TestSwitchExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 20, Line: 1, Col: 1},
+				},
 			},
 		},
 		{
@@ -115,6 +119,10 @@ default:
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 68, Line: 5, Col: 1},
+				},
 			},
 		},
 		{
@@ -195,6 +203,10 @@ default:
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 73, Line: 5, Col: 1},
 				},
 			},
 		},
@@ -303,6 +315,10 @@ default:
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 62, Line: 5, Col: 1},
 				},
 			},
 		},

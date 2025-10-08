@@ -1322,6 +1322,7 @@ func (n *IfExpression) Visit(v Visitor) error {
 type SwitchExpression struct {
 	Expression Expression
 	Cases      []CaseExpression
+	Range      Range
 }
 
 func (se SwitchExpression) ChildNodes() []Node {
@@ -1368,6 +1369,7 @@ type CaseExpression struct {
 type ForExpression struct {
 	Expression Expression
 	Children   []Node
+	Range      Range
 }
 
 func (fe ForExpression) ChildNodes() []Node {

@@ -18,7 +18,7 @@ func main() {
 		// Create a channel to send deferred component renders to the template.
 		data := make(chan SlotContents)
 
-		// We know there are 3 slots, so start a WaitGround.
+		// We know there are 3 slots, so start a WaitGroup.
 		var wg sync.WaitGroup
 		wg.Add(3)
 

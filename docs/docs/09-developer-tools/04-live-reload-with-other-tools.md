@@ -47,10 +47,22 @@ This assumes that your http server is running on `http://localhost:8080`. `--ope
 
 ### Tailwind CSS
 
-Tailwind requires a `tailwind.config.js` file at the root of your project, alongside an `input.css` file.
+Tailwind can be installed via your preferred package manager. The `@tailwindcss/cli` package requires `tailwindcss` as a local peer dependency, `tailwindcss` cannot be installed globally.
 
 ```bash
-npx --yes tailwindcss -i ./input.css -o ./assets/styles.css --minify --watch
+npm install tailwindcss @tailwindcss/cli
+```
+
+Tailwind requires some input CSS file, e.g. `input.css` with the following directive:
+
+```css
+@import "tailwindcss";
+```
+
+Then you can use the `@tailwindcss/cli` package to generate the css bundle.
+
+```bash
+npx --yes @tailwindcss/cli -i ./input.css -o ./assets/styles.css --minify --watch
 ```
 
 This will watch `input.css` as well as your `.templ` files and re-generate `assets/styles.css` whenever there's a change.
@@ -70,7 +82,7 @@ This will watch `js/index.ts` and relevant files, and re-generate `assets/index.
 To watch and restart your Go server, when only the `go` files change you can use `air`:
 
 ```bash
-go run github.com/air-verse/air@v1.51.0 \
+go run github.com/air-verse/air@v1.63.0 \
   --build.cmd "go build -o tmp/bin/main" --build.bin "tmp/bin/main" --build.delay "100" \
   --build.exclude_dir "node_modules" \
   --build.include_ext "go" \
@@ -97,7 +109,7 @@ We also want the browser to automatically reload when the:
 To trigger the event, we can use the `air` command to use a different set of options, using the `templ` CLI to send a reload event to the browser.
 
 ```bash
-go run github.com/air-verse/air@v1.51.0 \
+go run github.com/air-verse/air@v1.63.0 \
   --build.cmd "templ generate --notify-proxy" \
   --build.bin "true" \
   --build.delay "100" \
@@ -175,7 +187,7 @@ live/templ:
 
 # run air to detect any go file changes to re-build and re-run the server.
 live/server:
-	go run github.com/air-verse/air@v1.51.0 \
+	go run github.com/air-verse/air@v1.63.0 \
 	--build.cmd "go build -o tmp/bin/main" --build.bin "tmp/bin/main" --build.delay "100" \
 	--build.exclude_dir "node_modules" \
 	--build.include_ext "go" \
@@ -192,7 +204,7 @@ live/esbuild:
 
 # watch for any js or css change in the assets/ folder, then reload the browser via templ proxy.
 live/sync_assets:
-	go run github.com/air-verse/air@v1.51.0 \
+	go run github.com/air-verse/air@v1.63.0 \
 	--build.cmd "templ generate --notify-proxy" \
 	--build.bin "true" \
 	--build.delay "100" \
