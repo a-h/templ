@@ -1159,6 +1159,7 @@ func (c *HTMLComment) Visit(v Visitor) error {
 type CallTemplateExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
+	Range      Range
 }
 
 func (cte *CallTemplateExpression) IsNode() bool { return true }
