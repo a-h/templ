@@ -1,0 +1,35 @@
+-- in --
+package main
+
+templ x() {
+	<div>{{
+    hello := "world"
+}}</div>
+	<div id="with-spaces">{{
+
+		hello = "world"
+		}}</div>
+	<div id="multiline-expressions-stay-multiline">
+		{{
+		hello = "world"
+		name := "foo"
+		}}
+	</div>
+}
+-- out --
+package main
+
+templ x() {
+	<div>
+		{{ hello := "world" }}
+	</div>
+	<div id="with-spaces">
+		{{ hello = "world" }}
+	</div>
+	<div id="multiline-expressions-stay-multiline">
+		{{
+			hello = "world"
+			name := "foo"
+		}}
+	</div>
+}

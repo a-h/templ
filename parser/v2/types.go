@@ -1414,7 +1414,6 @@ func (gc *GoCode) Write(w io.Writer, indent int) error {
 		if err != nil {
 			source = []byte(gc.Expression.Value)
 		}
-
 		return writeIndent(w, indent, `{{ `, string(source), ` }}`)
 	}
 	source, err := format.Source([]byte(strings.Repeat("\t", indent+1) + gc.Expression.Value))
