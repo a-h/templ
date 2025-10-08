@@ -668,6 +668,10 @@ func TestTemplateParser(t *testing.T) {
 										},
 									},
 								},
+								Range: Range{
+									From: Position{Index: 26, Line: 1, Col: 14},
+									To:   Position{Index: 47, Line: 1, Col: 35},
+								},
 							},
 							&Whitespace{Value: " "},
 							&Text{

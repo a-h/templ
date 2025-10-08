@@ -32,6 +32,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 14, Line: 0, Col: 14},
+				},
 			},
 		},
 		{
@@ -52,6 +56,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							Col:   24,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 24, Line: 0, Col: 24},
 				},
 			},
 		},
@@ -79,6 +87,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							Col:   4,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 60, Line: 3, Col: 4},
 				},
 			},
 		},
@@ -113,6 +125,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 						TrailingSpace: SpaceVertical,
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 30, Line: 2, Col: 1},
 				},
 			},
 		},
@@ -164,6 +180,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 43, Line: 2, Col: 3},
+				},
 			},
 		},
 		{
@@ -197,8 +217,16 @@ func TestTemplElementExpressionParser(t *testing.T) {
 								To:   Position{28, 1, 11},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 21, Line: 1, Col: 4},
+							To:   Position{Index: 28, Line: 1, Col: 11},
+						},
 					},
 					&Whitespace{Value: "\n\t\t\t"},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 33, Line: 2, Col: 4},
 				},
 			},
 		},
@@ -222,6 +250,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 21, Line: 0, Col: 21},
+				},
 			},
 		},
 		{
@@ -242,6 +274,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							Col:   31,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 31, Line: 0, Col: 31},
 				},
 			},
 		},
@@ -264,6 +300,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 31, Line: 0, Col: 31},
+				},
 			},
 		},
 		{
@@ -284,6 +324,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							Col:   15,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 15, Line: 0, Col: 15},
 				},
 			},
 		},
@@ -306,26 +350,9 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
-			},
-		},
-		{
-			name:  "templelement: supports a slice of structs/interfaces",
-			input: `@templates[0].CreateTemplate()`,
-			expected: &TemplElementExpression{
-				Expression: Expression{
-					Value: `templates[0].CreateTemplate()`,
-					Range: Range{
-						From: Position{
-							Index: 1,
-							Line:  0,
-							Col:   1,
-						},
-						To: Position{
-							Index: 30,
-							Line:  0,
-							Col:   30,
-						},
-					},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 19, Line: 0, Col: 19},
 				},
 			},
 		},
@@ -347,6 +374,35 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							Col:   30,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 30, Line: 0, Col: 30},
+				},
+			},
+		},
+		{
+			name:  "templelement: supports a slice of structs/interfaces",
+			input: `@templates[0].CreateTemplate()`,
+			expected: &TemplElementExpression{
+				Expression: Expression{
+					Value: `templates[0].CreateTemplate()`,
+					Range: Range{
+						From: Position{
+							Index: 1,
+							Line:  0,
+							Col:   1,
+						},
+						To: Position{
+							Index: 30,
+							Line:  0,
+							Col:   30,
+						},
+					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 30, Line: 0, Col: 30},
 				},
 			},
 		},
@@ -369,6 +425,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
 			},
 		},
 		{
@@ -381,6 +441,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						From: Position{1, 0, 1},
 						To:   Position{33, 0, 33},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 33, Line: 0, Col: 33},
 				},
 			},
 		},
@@ -421,6 +485,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 56, Line: 2, Col: 1},
+				},
 			},
 		},
 		{
@@ -439,6 +507,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						From: Position{1, 0, 1},
 						To:   Position{50, 3, 2},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 50, Line: 3, Col: 2},
 				},
 			},
 		},
