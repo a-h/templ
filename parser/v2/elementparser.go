@@ -417,6 +417,7 @@ func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool,
 					attributes = append(attributes, &AttributeComment{
 						Comment:   goNode.Contents,
 						Multiline: goNode.Multiline,
+						Range:     goNode.Range,
 					})
 				}
 				continue

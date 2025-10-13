@@ -1112,6 +1112,7 @@ func (ca *ConditionalAttribute) Copy() Attribute {
 type AttributeComment struct {
 	Comment   string
 	Multiline bool
+	Range     Range
 }
 
 func (ac *AttributeComment) String() string {
@@ -1134,6 +1135,7 @@ func (ac *AttributeComment) Copy() Attribute {
 	return &AttributeComment{
 		Comment:   ac.Comment,
 		Multiline: ac.Multiline,
+		Range:     ac.Range,
 	}
 }
 

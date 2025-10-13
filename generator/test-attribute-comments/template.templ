@@ -38,4 +38,32 @@ templ TestAttributeComments() {
 	>
 		Click me
 	</button>
+	<a
+		// Link with URL containing //
+		href="https://example.com/path"
+		title="// Title with comment-like text"
+		class="external-link"
+	>
+		External Link
+	</a>
+	<link
+		rel="stylesheet"
+		// CDN link with // in value
+		href="https://cdn.example.com/styles.css"
+	/>
+	<a
+		// Expression with URL
+		href={ "https://dynamic.example.com/path" }
+		// Comment after expression
+		target="_blank"
+	>
+		Dynamic Link
+	</a>
+	<img
+		src="https://images.example.com/photo.jpg"
+		// Alt text comment with //
+		alt="Photo//photo"
+		// Comment before data attribute with //
+		data-url="https://api.example.com/endpoint"
+	/>
 }
