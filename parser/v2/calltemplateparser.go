@@ -12,6 +12,8 @@ var callTemplateExpressionStart = parse.Or(parse.String("{! "), parse.String("{!
 type callTemplateExpressionParser struct{}
 
 func (p callTemplateExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
+	start := pi.Position()
+
 	// Check the prefix first.
 	if _, ok, err = callTemplateExpressionStart.Parse(pi); err != nil || !ok {
 		return
@@ -28,6 +30,8 @@ func (p callTemplateExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 		err = parse.Error("call template expression: missing closing brace", pi.Position())
 		return
 	}
+
+	r.Range = NewRange(start, pi.Position())
 
 	return r, true, nil
 }

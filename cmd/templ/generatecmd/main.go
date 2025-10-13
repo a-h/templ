@@ -37,6 +37,8 @@ Args:
     Set to true to watch the path for changes and regenerate code.
   -watch-pattern <regexp>
     Set the regexp pattern of files that will be watched for changes. (default: '(.+\.go$)|(.+\.templ$)|(.+_templ\.txt$)')
+  -ignore-pattern <regexp>
+    Set the regexp pattern of files to ignore when watching for changes. (default: '')
   -cmd <cmd>
     Set the command to run after generating code.
   -proxy
@@ -89,6 +91,7 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 	cmd.BoolVar(&cmdArgs.IncludeTimestamp, "include-timestamp", false, "")
 	cmd.BoolVar(&cmdArgs.Watch, "watch", false, "")
 	watchPatternFlag := cmd.String("watch-pattern", defaultWatchPattern, "")
+	ignorePatternFlag := cmd.String("ignore-pattern", "", "")
 	cmd.BoolVar(&cmdArgs.OpenBrowser, "open-browser", true, "")
 	cmd.StringVar(&cmdArgs.Command, "cmd", "", "")
 	cmd.StringVar(&cmdArgs.Proxy, "proxy", "", "")
@@ -115,6 +118,12 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 	if err != nil {
 		return cmdArgs, log, *helpFlag, fmt.Errorf("invalid watch pattern %q: %w", *watchPatternFlag, err)
 	}
+	if *ignorePatternFlag != "" {
+		cmdArgs.IgnorePattern, err = regexp.Compile(*ignorePatternFlag)
+		if err != nil {
+			return cmdArgs, log, *helpFlag, fmt.Errorf("invalid ignore pattern %q: %w", *ignorePatternFlag, err)
+		}
+	}
 
 	// Default to writing to files unless the stdout flag is set.
 	cmdArgs.FileWriter = FileWriter
@@ -134,6 +143,7 @@ type Arguments struct {
 	Path                            string
 	Watch                           bool
 	WatchPattern                    *regexp.Regexp
+	IgnorePattern                   *regexp.Regexp
 	OpenBrowser                     bool
 	Command                         string
 	ProxyBind                       string

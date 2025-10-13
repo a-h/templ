@@ -1188,6 +1188,7 @@ func (c *HTMLComment) Visit(v Visitor) error {
 type CallTemplateExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
+	Range      Range
 }
 
 func (cte *CallTemplateExpression) IsNode() bool { return true }
@@ -1209,6 +1210,7 @@ type TemplElementExpression struct {
 	Expression Expression
 	// Children returns the elements in a block element.
 	Children []Node
+	Range    Range
 }
 
 func (tee TemplElementExpression) ChildNodes() []Node {
@@ -1440,14 +1442,18 @@ func (gc *GoCode) Write(w io.Writer, indent int) error {
 	if isWhitespace(gc.Expression.Value) {
 		gc.Expression.Value = ""
 	}
-	source, err := format.Source([]byte(gc.Expression.Value))
+	if !gc.Multiline {
+		source, err := format.Source([]byte(gc.Expression.Value))
+		if err != nil {
+			source = []byte(gc.Expression.Value)
+		}
+		return writeIndent(w, indent, `{{ `, string(source), ` }}`)
+	}
+	source, err := format.Source([]byte(strings.Repeat("\t", indent+1) + gc.Expression.Value))
 	if err != nil {
 		source = []byte(gc.Expression.Value)
 	}
-	if !gc.Multiline {
-		return writeIndent(w, indent, `{{ `, string(source), ` }}`)
-	}
-	if err := writeIndent(w, indent, "{{"+string(source)+"\n"); err != nil {
+	if err := writeIndent(w, indent, "{{\n"+string(source)+"\n"); err != nil {
 		return err
 	}
 	return writeIndent(w, indent, "}}")
