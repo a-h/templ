@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/cmd/templ/lspcmd/pls"
@@ -25,27 +26,28 @@ type Info struct {
 		GOOS   string `json:"goos"`
 		GOARCH string `json:"goarch"`
 	} `json:"os"`
-	Go    ToolInfo `json:"go"`
-	Gopls ToolInfo `json:"gopls"`
-	Templ ToolInfo `json:"templ"`
+	Go       ToolInfo `json:"go"`
+	Gopls    ToolInfo `json:"gopls"`
+	Templ    ToolInfo `json:"templ"`
+	Prettier ToolInfo `json:"prettier"`
 }
 
 type ToolInfo struct {
-	Location string `json:"location"`
-	Version  string `json:"version"`
-	OK       bool   `json:"ok"`
-	Message  string `json:"message,omitempty"`
+	Location string     `json:"location"`
+	Version  string     `json:"version"`
+	Level    slog.Level `json:"level"`
+	Message  string     `json:"message,omitempty"`
 }
 
 func getGoInfo() (d ToolInfo) {
-	// Find Go.
+	d.Level = slog.LevelError
+
 	var err error
 	d.Location, err = exec.LookPath("go")
 	if err != nil {
 		d.Message = fmt.Sprintf("failed to find go: %v", err)
 		return
 	}
-	// Run go to find the version.
 	cmd := exec.Command(d.Location, "version")
 	v, err := cmd.Output()
 	if err != nil {
@@ -53,11 +55,13 @@ func getGoInfo() (d ToolInfo) {
 		return
 	}
 	d.Version = strings.TrimSpace(string(v))
-	d.OK = true
+	d.Level = slog.LevelInfo
 	return
 }
 
 func getGoplsInfo() (d ToolInfo) {
+	d.Level = slog.LevelError
+
 	var err error
 	d.Location, err = pls.FindGopls()
 	if err != nil {
@@ -71,19 +75,19 @@ func getGoplsInfo() (d ToolInfo) {
 		return
 	}
 	d.Version = strings.TrimSpace(string(v))
-	d.OK = true
+	d.Level = slog.LevelInfo
 	return
 }
 
 func getTemplInfo() (d ToolInfo) {
-	// Find templ.
+	d.Level = slog.LevelError
+
 	var err error
 	d.Location, err = findTempl()
 	if err != nil {
 		d.Message = err.Error()
 		return
 	}
-	// Run templ to find the version.
 	cmd := exec.Command(d.Location, "version")
 	v, err := cmd.Output()
 	if err != nil {
@@ -95,7 +99,7 @@ func getTemplInfo() (d ToolInfo) {
 		d.Message = fmt.Sprintf("version mismatch - you're running %q at the command line, but the version in the path is %q", templ.Version(), d.Version)
 		return
 	}
-	d.OK = true
+	d.Level = slog.LevelInfo
 	return
 }
 
@@ -118,12 +122,49 @@ func findTempl() (location string, err error) {
 	return "", fmt.Errorf("templ is not in the path (%q). You can install templ with `go install github.com/a-h/templ/cmd/templ@latest`", os.Getenv("PATH"))
 }
 
+func getPrettierInfo() (d ToolInfo) {
+	d.Level = slog.LevelWarn
+
+	var err error
+	d.Location, err = exec.LookPath("prettier")
+	if err != nil {
+		d.Message = fmt.Sprintf("failed to find prettier: %v", err)
+		return
+	}
+	cmd := exec.Command(d.Location, "--version")
+	v, err := cmd.Output()
+	if err != nil {
+		d.Message = fmt.Sprintf("failed to get prettier version: %v", err)
+		return
+	}
+	d.Version = strings.TrimSpace(string(v))
+	d.Level = slog.LevelInfo
+	return
+}
+
 func getInfo() (d Info) {
 	d.OS.GOOS = runtime.GOOS
 	d.OS.GOARCH = runtime.GOARCH
-	d.Go = getGoInfo()
-	d.Gopls = getGoplsInfo()
-	d.Templ = getTemplInfo()
+
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		d.Go = getGoInfo()
+	}()
+	go func() {
+		defer wg.Done()
+		d.Gopls = getGoplsInfo()
+	}()
+	go func() {
+		defer wg.Done()
+		d.Templ = getTemplInfo()
+	}()
+	go func() {
+		defer wg.Done()
+		d.Prettier = getPrettierInfo()
+	}()
+	wg.Wait()
 	return
 }
 
@@ -138,14 +179,11 @@ func Run(ctx context.Context, log *slog.Logger, stdout io.Writer, args Arguments
 	logInfo(ctx, log, "go", info.Go)
 	logInfo(ctx, log, "gopls", info.Gopls)
 	logInfo(ctx, log, "templ", info.Templ)
+	logInfo(ctx, log, "prettier", info.Prettier)
 	return nil
 }
 
 func logInfo(ctx context.Context, log *slog.Logger, name string, ti ToolInfo) {
-	level := slog.LevelInfo
-	if !ti.OK {
-		level = slog.LevelError
-	}
 	args := []any{
 		slog.String("location", ti.Location),
 		slog.String("version", ti.Version),
@@ -153,5 +191,5 @@ func logInfo(ctx context.Context, log *slog.Logger, name string, ti ToolInfo) {
 	if ti.Message != "" {
 		args = append(args, slog.String("message", ti.Message))
 	}
-	log.Log(ctx, level, name, args...)
+	log.Log(ctx, ti.Level, name, args...)
 }
