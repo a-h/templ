@@ -28,9 +28,39 @@ See an example of using https://github.com/gofiber/fiber with templ at:
 
 https://github.com/a-h/templ/tree/main/examples/integration-gofiber
 
-### github.com/gorilla/csrf
+### CSRF Protection
 
-`gorilla/csrf` is a HTTP middleware library that provides cross-site request forgery (CSRF) protection.
+#### Built-in with Go 1.25+
+
+Go 1.25 introduces built-in CSRF protection via [`net/http.CrossOriginProtection`](https://tip.golang.org/pkg/net/http#CrossOriginProtection). This middleware protects against Cross-Site Request Forgery attacks using modern browser Fetch metadata, without requiring tokens or cookies.
+
+```go title="main.go"
+package main
+
+import (
+  "fmt"
+  "net/http"
+  "time"
+)
+
+func main() {
+  mux := http.NewServeMux()
+  mux.Handle("/", templ.Handler(Form()))
+
+  fmt.Println("Listening on localhost:8000")
+  http.ListenAndServe("localhost:8000", http.NewCrossOriginProtection().Handler(mux))
+}
+```
+
+:::info
+`CrossOriginProtection` uses the browser's [`Sec-Fetch-Site`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-Fetch-Site) header to automatically detect cross-origin requests. Same-origin requests (e.g., from `localhost:8000` to `localhost:8000`) are allowed by default without additional configuration.
+
+For more advanced usage including trusted origin configuration, see the [`CrossOriginProtection` documentation](https://tip.golang.org/pkg/net/http#CrossOriginProtection).
+:::
+
+#### github.com/gorilla/csrf
+
+For projects using Go versions prior to 1.25, `gorilla/csrf` is a HTTP middleware library that provides cross-site request forgery (CSRF) protection.
 
 Follow the instructions at https://github.com/gorilla/csrf to add it to your project, by using the library as HTTP middleware.
 
