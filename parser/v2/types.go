@@ -1210,6 +1210,10 @@ func (tee *TemplElementExpression) Write(w io.Writer, indent int) error {
 		if _, err := io.WriteString(w, "\n"); err != nil {
 			return err
 		}
+		// Blank lines should not have any indentation.
+		if len(bytes.TrimSpace(sourceLines[i])) == 0 {
+			continue
+		}
 		if string(sourceLines[i]) != string(reformattedSourceLines[i]) {
 			if _, err := w.Write(sourceLines[i]); err != nil {
 				return err
