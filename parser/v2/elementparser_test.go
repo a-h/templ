@@ -2004,6 +2004,79 @@ func TestElementParser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "element: with single-line comment in attributes",
+			input: `<div // comment` + "\n" + `class="test"></div>`,
+			expected: &Element{
+				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				IndentAttrs: true,
+				Attributes: []Attribute{
+					&AttributeComment{
+						Comment:   " comment",
+						Multiline: false,
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 15, Line: 0, Col: 15},
+						},
+					},
+					&ConstantAttribute{
+						Value: "test",
+						Key: ConstantAttributeKey{
+							Name: "class",
+							NameRange: Range{
+								From: Position{Index: 16, Line: 1, Col: 0},
+								To:   Position{Index: 21, Line: 1, Col: 5},
+							},
+						},
+					},
+				},
+				Children: nil,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 35, Line: 1, Col: 19},
+				},
+			},
+		},
+		{
+			name:  "element: with multi-line comment in attributes",
+			input: `<div /* multi-line comment */ class="test"></div>`,
+			expected: &Element{
+				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				Attributes: []Attribute{
+					&AttributeComment{
+						Comment:   " multi-line comment ",
+						Multiline: true,
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 29, Line: 0, Col: 29},
+						},
+					},
+					&ConstantAttribute{
+						Value: "test",
+						Key: ConstantAttributeKey{
+							Name: "class",
+							NameRange: Range{
+								From: Position{Index: 30, Line: 0, Col: 30},
+								To:   Position{Index: 35, Line: 0, Col: 35},
+							},
+						},
+					},
+				},
+				Children: nil,
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 49, Line: 0, Col: 49},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
