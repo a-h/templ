@@ -49,7 +49,7 @@
         rec {
           default = templ;
 
-          templ = pkgs.buildGo124Module {
+          templ = pkgs.buildGo125Module {
             name = "templ";
             subPackages = [ "cmd/templ" ];
             src = gitignore.lib.gitignoreSource ./.;
