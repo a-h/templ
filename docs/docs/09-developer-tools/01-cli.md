@@ -2,6 +2,12 @@
 
 `templ` provides a command line interface. Most users will only need to run the `templ generate` command to generate Go code from `*.templ` files.
 
+:::tip
+
+If you installed templ using `go get -tool`, use `go tool templ` instead of `templ` for all commands. For example: `go tool templ generate`. See the [installation guide](../02-quick-start/01-installation.md#using-templ-as-a-go-tool) for more information.
+
+:::
+
 ```
 usage: templ <command> [<args>...]
 

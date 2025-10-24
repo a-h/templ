@@ -10,19 +10,17 @@ go install github.com/a-h/templ/cmd/templ@latest
 
 This installs templ into your path.
 
-## go install (as tool)
+## Using templ as a Go tool
+
+:::info
+This uses the [tool directive](https://tip.golang.org/doc/modules/managing-dependencies#tools) feature of Go added in v1.24. To run templ once installed, use `go tool templ` instead of `templ`.
+:::
 
 To install templ locally in your project, run:
 
 ```bash
 go get -tool github.com/a-h/templ/cmd/templ@latest
 ```
-
-:::info 
-This uses the [tool directive](https://tip.golang.org/doc/modules/managing-dependencies#tools) feature of Go added in v1.24. 
-
-To run templ once installed, use `go tool templ` instead of `templ`.
-:::
 
 ## GitHub binaries
 
