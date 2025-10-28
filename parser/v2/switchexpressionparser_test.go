@@ -322,6 +322,114 @@ default:
 				},
 			},
 		},
+		{
+			name: "switch: two cases with one fallthrough case",
+			input: `switch "stringy" {
+	case "a":
+		fallthrough
+	case "b":
+		{ "B" }
+}`,
+			expected: &SwitchExpression{
+				Expression: Expression{
+					Value: `"stringy"`,
+					Range: Range{
+						From: Position{
+							Index: 7,
+							Line:  0,
+							Col:   7,
+						},
+						To: Position{
+							Index: 16,
+							Line:  0,
+							Col:   16,
+						},
+					},
+				},
+				Cases: []CaseExpression{
+					{
+						Expression: Expression{
+							Value: "case \"a\":",
+							Range: Range{
+								From: Position{
+									Index: 20,
+									Line:  1,
+									Col:   1,
+								},
+								To: Position{
+									Index: 29,
+									Line:  1,
+									Col:   10,
+								},
+							},
+						},
+						Children: []Node{
+							&Whitespace{
+								Value: "\t\t",
+							},
+							&Fallthrough{
+								Range: Range{
+									From: Position{
+										Index: 32,
+										Line:  2,
+										Col:   2,
+									},
+									To: Position{
+										Index: 44,
+										Line:  3,
+										Col:   0,
+									},
+								},
+							},
+						},
+					},
+					{
+						Expression: Expression{
+							Value: "case \"b\":",
+							Range: Range{
+								From: Position{
+									Index: 45,
+									Line:  3,
+									Col:   1,
+								},
+								To: Position{
+									Index: 54,
+									Line:  3,
+									Col:   10,
+								},
+							},
+						},
+						Children: []Node{
+							&Whitespace{
+								Value: "\t\t",
+							},
+							&StringExpression{
+								Expression: Expression{
+									Value: `"B"`,
+									Range: Range{
+										From: Position{
+											Index: 59,
+											Line:  4,
+											Col:   4,
+										},
+										To: Position{
+											Index: 62,
+											Line:  4,
+											Col:   7,
+										},
+									},
+								},
+								TrailingSpace: SpaceVertical,
+							},
+						},
+					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 66, Line: 5, Col: 1},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -373,4 +481,74 @@ func TestIncompleteSwitch(t *testing.T) {
 			t.Fatal("expected a non match")
 		}
 	})
+}
+
+func TestSwitchWithImproperCaseFallthrough(t *testing.T) {
+	input := parse.NewInput(`switch "stringy" {
+	case "a":
+		fallthrough extra tokens
+	case "b":
+		{ "B" }
+}`)
+	_, matched, err := switchExpression.Parse(input)
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+	if !matched {
+		t.Fatal("expected a match, because we started with the text 'switch'")
+	}
+	pe, isParseError := err.(parse.ParseError)
+	if !isParseError {
+		t.Fatalf("expected a parse error, got %T", err)
+	}
+	if pe.Msg != "expected newline after fallthrough" {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestSwitchWithNonTerminalFallthrough(t *testing.T) {
+	input := parse.NewInput(`switch "stringy" {
+	case "a":
+		fallthrough
+		<span></span>
+	case "b":
+		{ "B" }
+}`)
+	_, matched, err := switchExpression.Parse(input)
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+	if !matched {
+		t.Fatal("expected a match, because we started with the text 'switch'")
+	}
+	pe, isParseError := err.(parse.ParseError)
+	if !isParseError {
+		t.Fatalf("expected a parse error, got %T", err)
+	}
+	if pe.Msg != "case: fallthrough can only be used as the last statement in a case block" {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestSwitchWithFallthroughInFinalCase(t *testing.T) {
+	input := parse.NewInput(`switch "stringy" {
+	case "a":
+		{ "A" }
+	case "b":
+		fallthrough
+}`)
+	_, matched, err := switchExpression.Parse(input)
+	if err == nil {
+		t.Fatal("expected an error, got nil")
+	}
+	if !matched {
+		t.Fatal("expected a match, because we started with the text 'switch'")
+	}
+	pe, isParseError := err.(parse.ParseError)
+	if !isParseError {
+		t.Fatalf("expected a parse error, got %T", err)
+	}
+	if pe.Msg != "switch: fallthrough cannot be used in the last case of a switch statement" {
+		t.Errorf("unexpected error: %v", err)
+	}
 }

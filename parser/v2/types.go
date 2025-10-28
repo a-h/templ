@@ -1150,6 +1150,19 @@ func (c *HTMLComment) Visit(v Visitor) error {
 	return v.VisitHTMLComment(c)
 }
 
+type Fallthrough struct {
+	Range Range
+}
+
+func (f *Fallthrough) IsNode() bool { return true }
+func (f *Fallthrough) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, "fallthrough")
+}
+
+func (f *Fallthrough) Visit(v Visitor) error {
+	return v.VisitFallthrough(f)
+}
+
 // Nodes.
 
 // CallTemplateExpression can be used to create and render a template using data.

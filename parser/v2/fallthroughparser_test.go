@@ -14,7 +14,7 @@ func TestFallthroughParser(t *testing.T) {
 		expected *Fallthrough
 	}{
 		{
-			name:  "basic fallthrough",
+			name: "basic fallthrough",
 			input: `fallthrough
 			`,
 			expected: &Fallthrough{
@@ -41,16 +41,16 @@ func TestFallthroughParser(t *testing.T) {
 
 func TestFallthroughParserErrors(t *testing.T) {
 	var tests = []struct {
-		name     string
-		input    string
+		name          string
+		input         string
 		expectedError error
-		expectedOK   bool
+		expectedOK    bool
 	}{
 		{
-			name:  "invalid fallthrough keyword",
-			input: `fallthroug`,
+			name:          "invalid fallthrough keyword",
+			input:         `fallthroug`,
 			expectedError: nil,
-			expectedOK:   false,
+			expectedOK:    false,
 		},
 		{
 			name:  "missing newline after fallthrough",
@@ -60,7 +60,7 @@ func TestFallthroughParserErrors(t *testing.T) {
 				Line:  0,
 				Col:   12,
 			}),
-			expectedOK:   true,
+			expectedOK: true,
 		},
 	}
 	for _, tt := range tests {

@@ -637,6 +637,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeWhitespace(indentLevel, n)
 	case *parser.Text:
 		err = g.writeText(indentLevel, n)
+	case *parser.Fallthrough:
+		err = g.writeFallthrough(indentLevel)
 	case *parser.GoComment:
 		// Do not render Go comments in the output HTML.
 		return
@@ -698,6 +700,11 @@ func (g *generator) writeDocType(indentLevel int, n *parser.DocType) (err error)
 		return err
 	}
 	return nil
+}
+
+func (g *generator) writeFallthrough(indentLevel int) (err error) {
+	_, err = g.w.WriteIndent(indentLevel, "fallthrough\n")
+	return err
 }
 
 func escapeQuotes(s string) string {
