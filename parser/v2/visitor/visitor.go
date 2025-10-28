@@ -188,6 +188,9 @@ func New() *Visitor {
 	v.ScriptTemplate = func(n *parser.ScriptTemplate) error {
 		return nil
 	}
+	v.Fallthrough = func(n *parser.Fallthrough) error {
+		return nil
+	}
 
 	return v
 }
@@ -225,6 +228,7 @@ type Visitor struct {
 	GoCode                   func(n *parser.GoCode) error
 	StringExpression         func(n *parser.StringExpression) error
 	ScriptTemplate           func(n *parser.ScriptTemplate) error
+	Fallthrough              func(n *parser.Fallthrough) error
 }
 
 var _ parser.Visitor = (*Visitor)(nil)
@@ -346,4 +350,8 @@ func (v *Visitor) VisitStringExpression(n *parser.StringExpression) error {
 
 func (v *Visitor) VisitScriptTemplate(n *parser.ScriptTemplate) error {
 	return v.ScriptTemplate(n)
+}
+
+func (v *Visitor) VisitFallthrough(n *parser.Fallthrough) error {
+	return v.Fallthrough(n)
 }

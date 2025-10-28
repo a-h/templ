@@ -32,4 +32,5 @@ type Visitor interface {
 	VisitGoCode(*GoCode) error
 	VisitStringExpression(*StringExpression) error
 	VisitScriptTemplate(*ScriptTemplate) error
+	VisitFallthrough(*Fallthrough) error
 }
