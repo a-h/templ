@@ -323,6 +323,126 @@ func TestHover(t *testing.T) {
 	}
 }
 
+func TestDefinitions(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	if err != nil {
+		t.Fatalf("failed to setup test: %v", err)
+		return
+	}
+	defer teardown(t)
+	defer cancel()
+
+	log.Info("Calling Definitions")
+
+	tests := []struct {
+		line      int
+		character int
+		filename  string
+		assert    func(t *testing.T, l []protocol.Location) (msg string, ok bool)
+	}{
+		{
+			line:      4,
+			character: 7,
+			filename:  "/remoteparent.templ",
+			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
+				expectedReference := []protocol.Location{
+					{
+						// This is the usage of the templ function in the main.go file.
+						URI: uri.URI("file://" + appDir + "/remotechild.templ"),
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint32(2),
+								Character: uint32(6),
+							},
+							End: protocol.Position{
+								Line:      uint32(2),
+								Character: uint32(12),
+							},
+						},
+					},
+				}
+				if diff := lspdiff.Definitions(expectedReference, actual); diff != "" {
+					return fmt.Sprintf("Expected: %+v\nActual: %+v", expectedReference, actual), false
+				}
+				return "", true
+			},
+		},
+		{
+			// This is the usage of the templ function in the main.go file.
+			line:      25,
+			character: 10,
+			filename:  "/main.go",
+			assert: func(t *testing.T, actual []protocol.Location) (msg string, ok bool) {
+				expectedReference := []protocol.Location{
+					{
+						// Creation of the templ component
+						URI: uri.URI("file://" + appDir + "/templates.templ"),
+						Range: protocol.Range{
+							Start: protocol.Position{
+								Line:      uint32(4),
+								Character: uint32(6),
+							},
+							End: protocol.Position{
+								Line:      uint32(4),
+								Character: uint32(10),
+							},
+						},
+					},
+				}
+				if diff := lspdiff.Definitions(expectedReference, actual); diff != "" {
+					return fmt.Sprintf("Expected: %+v\nActual: %+v", expectedReference, actual), false
+				}
+				return "", true
+			},
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("test-%d", i), func(t *testing.T) {
+			// Give CI/CD pipeline executors some time because they're often quite slow.
+			var ok bool
+			var msg string
+			for i := 0; i < 3; i++ {
+				if err != nil {
+					t.Error(err)
+					return
+				}
+				actual, err := server.Definition(ctx, &protocol.DefinitionParams{
+					TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+						TextDocument: protocol.TextDocumentIdentifier{
+							URI: uri.URI("file://" + appDir + test.filename),
+						},
+						// Positions are zero indexed.
+						Position: protocol.Position{
+							Line:      uint32(test.line - 1),
+							Character: uint32(test.character - 1),
+						},
+					},
+				})
+				if err != nil {
+					t.Errorf("failed to get references: %v", err)
+					return
+				}
+				msg, ok = test.assert(t, actual)
+				if !ok {
+					break
+				}
+				time.Sleep(time.Millisecond * 500)
+			}
+			if !ok {
+				t.Error(msg)
+			}
+		})
+	}
+}
+
 func TestReferences(t *testing.T) {
 	if testing.Short() {
 		return
