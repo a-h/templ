@@ -23,6 +23,12 @@ type SourceMapCache struct {
 func (fc *SourceMapCache) Set(uri string, m *parser.SourceMap) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
+
+	if m == nil {
+		delete(fc.uriToSourceMap, uri)
+		return
+	}
+
 	fc.uriToSourceMap[uri] = m
 }
 
