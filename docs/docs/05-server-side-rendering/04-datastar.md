@@ -11,11 +11,7 @@ Using Datastar requires:
 
 ## Installation
 
-Datastar is included with Templ components out of the box to speed up development. You can use `@datastar.ScriptCDNLatest()` or `ScriptCDNVersion(version string)` to include the latest version of the Datastar library in your HTML.
-
-:::info
-Advanced Datastar installation and usage help is covered in the user guide at https://data-star.dev/guide.
-:::
+Datastar can be installed by adding a `script` tag to your HTML. See the [installation instructions](https://data-star.dev/guide/getting_started#installation).
 
 ## Example Site
 
@@ -23,7 +19,7 @@ Advanced Datastar installation and usage help is covered in the user guide at ht
 
 ## Counter Example
 
-We are going to modify the [templ counter example](example-counter-application) to use Datastar, as per the [example](https://data-star.dev/examples/templ_counter).
+We are going to modify the [templ counter example](example-counter-application) to use Datastar, as per the [example on the site](https://data-star.dev/examples/templ_counter).
 
 ### Frontend
 
@@ -32,7 +28,7 @@ First, define some HTML with two buttons. One to update a global state, and one 
 ```templ title="components.templ"
 package site
 
-import datastar "github.com/starfederation/datastar/sdk/go"
+import "github.com/starfederation/datastar-go/datastar"
 
 type TemplCounterSignals struct {
 	Global uint32 `json:"global"`
@@ -105,7 +101,7 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/sessions"
-	datastar "github.com/starfederation/datastar/sdk/go"
+	"github.com/starfederation/datastar-go/datastar"
 )
 
 func setupExamplesTemplCounter(examplesRouter chi.Router, sessionSignals sessions.Store) error {
@@ -196,5 +192,3 @@ Since the page's elements aren't changing dynamically, we can use the `MarshalAn
 
 :::tip
 Datastar will merge updates to signals similar to a JSON merge patch. This means you can do dynamic partial updates to the store and the page will update accordingly. [Gabs](https://pkg.go.dev/github.com/Jeffail/gabs/v2#section-readme) is used here to handle dynamic JSON in Go.
-
-[^1]: You can control the data sent to the server by prefixing signals with `_`. This will prevent them from being sent to the server on every request.
