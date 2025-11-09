@@ -1,37 +1,29 @@
 # Datastar
 
-[Datastar](https://data-star.dev) is a hypermedia framework (similar to [htmx](https://htmx.org/)).
-
-Datastar can selectively replace content within a web page by combining fine-grained reactive signals with SSE. It's geared primarily to real-time applications where you'd normally reach for a SPA framework such as React/Vue/Svelte.
+[Datastar](https://data-star.dev) is a hypermedia framework for building reactive web apps. With reactive signals and DOM patching (using a morphing strategy), Datastar allows you to build everything from simple sites to real-time collaborative web apps.
 
 ## Usage
 
 Using Datastar requires:
 
 - Installation of the Datastar client-side library.
-- Modifying the HTML markup to instruct the library to perform partial screen updates.
+- Modifying the HTML markup to instruct the library to perform DOM patches.
 
 ## Installation
 
 Datastar is included with Templ components out of the box to speed up development. You can use `@datastar.ScriptCDNLatest()` or `ScriptCDNVersion(version string)` to include the latest version of the Datastar library in your HTML.
 
 :::info
-Advanced Datastar installation and usage help is covered in the user guide at https://data-star.dev.
+Advanced Datastar installation and usage help is covered in the user guide at https://data-star.dev/guide.
 :::
 
-## Datastar examples using Templ
+## Example Site
 
-The Datastar website is built using Datastar and templ, so you can see how it works in practice.
-
-The Datastar website contains a number of examples that demonstrate how to use Datastar. The examples are written in Go and use the templ package to generate the HTML.
-
-See examples at https://github.com/delaneyj/datastar/tree/main/backends/go/site
-
-This document will walk you through how to create a simple counter example using Datastar, following the [example](https://data-star.dev/examples/templ_counter) in the Datastar website.
+[Northstar](https://github.com/zangster300/northstar) is a boilerplate project for building real-time hypermedia applications with Datastar. All of the [examples](https://github.com/zangster300/northstar/tree/main/features) use templ.
 
 ## Counter Example
 
-We are going to modify the [templ counter example](example-counter-application) to use Datastar.
+We are going to modify the [templ counter example](example-counter-application) to use Datastar, as per the [example](https://data-star.dev/examples/templ_counter).
 
 ### Frontend
 
@@ -50,12 +42,12 @@ type TemplCounterSignals struct {
 templ templCounterExampleButtons() {
 	<div>
 		<button
-			data-on-click="@post('/examples/templ_counter/increment/global')" 
+			data-on:click="@post('/examples/templ_counter/increment/global')" 
 		>
 			Increment Global
 		</button>
 		<button
-			data-on-click={ datastar.PostSSE('/examples/templ_counter/increment/user') }
+			data-on:click={ datastar.PostSSE('/examples/templ_counter/increment/user') }
 			<!-- Alternative: Using Datastar SDK sugar--> 
 		>
 			Increment User
@@ -88,15 +80,15 @@ templ templCounterExampleInitialContents(signals TemplCounterSignals) {
 ```
 
 :::tip
-Note that Datastar doesn't promote the use of forms because they are ill-suited to nested reactive content. Instead, it sends all[^1] reactive state (as JSON) to the server on each request. This means far less bookkeeping and more predictable state management.
+Note that Datastar sends all[^1] signals to the server (as JSON) on each request. This means far less bookkeeping and more predictable state management.
 :::
 
 :::note
-`data-signals` is a special attribute that Datastar uses to merge one or more signals into the existing signals. In the example, we store $global and $user when we initially render the container. 
+[`data-signals`](https://data-star.dev/reference/attributes#data-signals) is a Datastar attribute that patches (adds, updates or removes) one or more signals into the existing signals. In the example, we store `$global` and `$user` when we initially render the container. 
 
-`data-on-click="@post('/examples/templ_counter/increment/global')"` is an attribute expression that says "When this element is clicked, send a POST request to the server to the specified URL". The `@post` is an action that is a sandboxed function that knows about things like signals.
+`data-on:click="@post('/examples/templ_counter/increment/global')"` is an attribute expression that says "When this element is clicked, send a POST request to the server to the specified URL". The `@post` is an action that is a sandboxed function that knows about things like signals.
 
-`data-text="$global"` is an attribute expression that says "replace the contents of this element with the value of the `global` signal in the store". This is a reactive signal that will update the page when the value changes, which we'll see in a moment.
+`data-text="$global"` is an attribute expression that says "replace the contents of this element with the value of the `global` signal". This is a reactive signal that will update the page when the value changes, which we'll see in a moment.
 :::
 
 ### Backend
@@ -205,4 +197,4 @@ Since the page's elements aren't changing dynamically, we can use the `MarshalAn
 :::tip
 Datastar will merge updates to signals similar to a JSON merge patch. This means you can do dynamic partial updates to the store and the page will update accordingly. [Gabs](https://pkg.go.dev/github.com/Jeffail/gabs/v2#section-readme) is used here to handle dynamic JSON in Go.
 
-[^1]: You can control the data sent to the server by prefixing local signals with `_`. This will prevent them from being sent to the server on every request.
+[^1]: You can control the data sent to the server by prefixing signals with `_`. This will prevent them from being sent to the server on every request.
