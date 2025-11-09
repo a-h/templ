@@ -13,7 +13,7 @@ Using Datastar requires:
 
 Datastar can be installed by adding a `script` tag to your HTML. See the [installation instructions](https://data-star.dev/guide/getting_started#installation).
 
-## Example Site
+## Example Project
 
 [Northstar](https://github.com/zangster300/northstar) is a boilerplate project for building real-time hypermedia applications with Datastar. All of the [examples](https://github.com/zangster300/northstar/tree/main/features) use templ.
 
@@ -192,3 +192,4 @@ Since the page's elements aren't changing dynamically, we can use the `MarshalAn
 
 :::tip
 Datastar will merge updates to signals similar to a JSON merge patch. This means you can do dynamic partial updates to the store and the page will update accordingly. [Gabs](https://pkg.go.dev/github.com/Jeffail/gabs/v2#section-readme) is used here to handle dynamic JSON in Go.
+:::
