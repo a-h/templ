@@ -1,6 +1,6 @@
 # Datastar
 
-[Datastar](https://data-star.dev) is a hypermedia framework that is similar to [HTMX](htmx).
+[Datastar](https://data-star.dev) is a hypermedia framework (similar to [htmx](https://htmx.org/)).
 
 Datastar can selectively replace content within a web page by combining fine-grained reactive signals with SSE. It's geared primarily to real-time applications where you'd normally reach for a SPA framework such as React/Vue/Svelte.
 

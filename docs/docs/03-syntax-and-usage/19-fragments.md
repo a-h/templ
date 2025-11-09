@@ -2,7 +2,7 @@
 
 The `templ.Fragment` component can be used to render a subsection of a template, discarding all other output.
 
-Fragments work well as an optimisation for HTMX, as discussed in https://htmx.org/essays/template-fragments/
+Fragments work well as an optimisation for htmx, as discussed in https://htmx.org/essays/template-fragments/
 
 ## Define fragments
 
@@ -102,7 +102,7 @@ templ Page() {
 
 If the `outer` fragment is selected for rendering, then the `inner` fragment is also rendered.
 
-## HTMX example
+## htmx example
 
 ```templ title="main.templ"
 package main
