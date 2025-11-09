@@ -29,7 +29,7 @@ func TestRoundTripper(t *testing.T) {
 		expectedSkip string
 	}{
 		{
-			name:         "HTMX requests skip modification",
+			name:         "htmx requests skip modification",
 			headers:      map[string]string{"HX-Request": "true"},
 			expectedSkip: "true",
 		},
@@ -39,7 +39,7 @@ func TestRoundTripper(t *testing.T) {
 			expectedSkip: "true",
 		},
 		{
-			name:         "Non-HTMX and Datastar requests do not skip modification",
+			name:         "Non-htmx and Datastar requests do not skip modification",
 			headers:      map[string]string{},
 			expectedSkip: "",
 		},

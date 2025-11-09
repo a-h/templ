@@ -622,7 +622,7 @@ if test {` + " " + `
 			},
 		},
 		{
-			name:   "HTMX wildcard attribute names are supported",
+			name:   "htmx wildcard attribute names are supported",
 			input:  ` hx-target-*="#errors"`,
 			parser: StripType(constantAttributeParser),
 			expected: &ConstantAttribute{
