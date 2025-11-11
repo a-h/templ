@@ -251,6 +251,8 @@ loop:
 				if err != nil {
 					cmd.Log.Error("Failed to start proxy", slog.Any("error", err))
 				}
+			} else if needsBrowserReload {
+				cmd.waitForProxy(p)
 			}
 			if needsBrowserReload {
 				cmd.Log.Debug("Sending reload event")
@@ -367,22 +369,28 @@ func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 		return p, nil
 	}
 	go func() {
-		cmd.Log.Debug("Waiting for proxy to be ready", slog.String("url", p.URL))
-		backoff := backoff.NewExponentialBackOff()
-		backoff.InitialInterval = time.Second
-		var client http.Client
-		client.Timeout = 1 * time.Second
-		for {
-			if _, err := client.Get(p.URL); err == nil {
-				break
-			}
-			d := backoff.NextBackOff()
-			cmd.Log.Debug("Proxy not ready, retrying", slog.String("url", p.URL), slog.Any("backoff", d))
-			time.Sleep(d)
-		}
+		cmd.waitForProxy(p)
 		if err := browser.OpenURL(p.URL); err != nil {
 			cmd.Log.Error("Failed to open browser", slog.Any("error", err))
 		}
 	}()
 	return p, nil
+}
+
+func (cmd *Generate) waitForProxy(p *proxy.Handler) {
+	cmd.Log.Debug("Waiting for proxy to be ready", slog.String("url", p.URL))
+	backoff := backoff.NewExponentialBackOff()
+	backoff.InitialInterval = time.Second
+	var client http.Client
+	client.Timeout = 1 * time.Second
+	for {
+		if resp, err := client.Get(p.URL); err == nil {
+			if resp.StatusCode != http.StatusBadGateway {
+				break
+			}
+		}
+		d := backoff.NextBackOff()
+		cmd.Log.Debug("Proxy not ready, retrying", slog.String("url", p.URL), slog.Any("backoff", d))
+		time.Sleep(d)
+	}
 }
