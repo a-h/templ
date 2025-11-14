@@ -195,6 +195,10 @@ func TestTemplElementExpressionParser(t *testing.T) {
 										To:   Position{Index: 26, Line: 1, Col: 10},
 									},
 								},
+								Range: Range{
+									From: Position{Index: 22, Line: 1, Col: 6},
+									To:   Position{Index: 36, Line: 1, Col: 20},
+								},
 							},
 						},
 						TrailingSpace: SpaceVertical,

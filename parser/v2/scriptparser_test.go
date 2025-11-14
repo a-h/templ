@@ -91,6 +91,10 @@ func TestScriptElementParser(t *testing.T) {
 								To:   Position{Index: 12, Line: 0, Col: 12},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 23, Line: 0, Col: 23},
+						},
 					},
 				},
 				Contents: []ScriptContents{
@@ -131,6 +135,10 @@ func TestScriptElementParser(t *testing.T) {
 							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
 					},
+					Range: Range{
+						From: Position{Index: 8, Line: 0, Col: 8},
+						To:   Position{Index: 30, Line: 0, Col: 30},
+					},
 				}},
 				Contents: []ScriptContents{
 					NewScriptContentsGo(&GoCode{
@@ -161,6 +169,10 @@ func TestScriptElementParser(t *testing.T) {
 							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
 					},
+					Range: Range{
+						From: Position{Index: 8, Line: 0, Col: 8},
+						To:   Position{Index: 21, Line: 0, Col: 21},
+					},
 				}},
 				Contents: []ScriptContents{
 					NewScriptContentsGo(&GoCode{
@@ -190,6 +202,10 @@ func TestScriptElementParser(t *testing.T) {
 							From: Position{Index: 8, Line: 0, Col: 8},
 							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
+					},
+					Range: Range{
+						From: Position{Index: 8, Line: 0, Col: 8},
+						To:   Position{Index: 25, Line: 0, Col: 25},
 					},
 				}},
 				Contents: []ScriptContents{
@@ -392,6 +408,10 @@ set tier_1 to #tier-1's value
 							From: Position{Index: 8, Line: 0, Col: 8},
 							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
+					},
+					Range: Range{
+						From: Position{Index: 8, Line: 0, Col: 8},
+						To:   Position{Index: 31, Line: 0, Col: 31},
 					},
 				}},
 				Contents: []ScriptContents{

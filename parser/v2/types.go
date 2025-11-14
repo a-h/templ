@@ -889,6 +889,7 @@ type ConstantAttribute struct {
 	Key         AttributeKey
 	Value       string
 	SingleQuote bool
+	Range       Range
 }
 
 func (ca *ConstantAttribute) String() string {
@@ -912,6 +913,7 @@ func (ca *ConstantAttribute) Copy() Attribute {
 		Value:       ca.Value,
 		SingleQuote: ca.SingleQuote,
 		Key:         ca.Key,
+		Range:       ca.Range,
 	}
 }
 
