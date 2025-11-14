@@ -1115,7 +1115,7 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 47, Line: 1, Col: 7},
 						},
 						Attributes: []Attribute{&SpreadAttributes{
-							Expression{
+							Expression: Expression{
 								Value: "children",
 								Range: Range{
 									From: Position{
@@ -1129,6 +1129,10 @@ func TestTemplateParser(t *testing.T) {
 										Col:   18,
 									},
 								},
+							},
+							Range: Range{
+								From: Position{Index: 48, Line: 1, Col: 8},
+								To:   Position{Index: 63, Line: 1, Col: 23},
 							},
 						}},
 						Children: []Node{

@@ -365,7 +365,7 @@ if test {` + " " + `
 			input:  ` { spread... }"`,
 			parser: StripType(spreadAttributesParser),
 			expected: &SpreadAttributes{
-				Expression{
+				Expression: Expression{
 					Value: "spread",
 					Range: Range{
 						From: Position{
@@ -379,6 +379,10 @@ if test {` + " " + `
 							Col:   9,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 14, Line: 0, Col: 14},
 				},
 			},
 		},
@@ -1035,6 +1039,10 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 21, Line: 0, Col: 21},
+						},
 					},
 					&SpreadAttributes{
 						Expression: Expression{
@@ -1051,6 +1059,10 @@ func TestElementParser(t *testing.T) {
 									Col:   32,
 								},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 22, Line: 0, Col: 22},
+							To:   Position{Index: 37, Line: 0, Col: 37},
 						},
 					},
 				},
