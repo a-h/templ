@@ -233,6 +233,7 @@ func (p *Package) Visit(v Visitor) error {
 
 // Whitespace.
 type Whitespace struct {
+	Range Range
 	Value string
 }
 

@@ -46,7 +46,19 @@ func TestIfExpression(t *testing.T) {
 						},
 
 						Children: []Node{
-							&Whitespace{Value: "\n  "},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 18,
+									Line:  1,
+									Col:   6,
+								},
+								To: Position{
+									Index: 21,
+									Line:  2,
+									Col:   2,
+								},
+							},
+								Value: "\n  "},
 							&StringExpression{
 								Expression: Expression{
 									Value: `"span content"`,
@@ -104,7 +116,19 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 10,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
@@ -173,7 +197,19 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					&Whitespace{Value: "  "},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 13,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 15,
+							Line:  1,
+							Col:   2,
+						},
+					},
+						Value: "  "},
 					&Text{
 						Value: "text",
 						Range: Range{
@@ -222,7 +258,19 @@ func TestIfExpression(t *testing.T) {
 						},
 
 						Children: []Node{
-							&Whitespace{Value: "\n  "},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 18,
+									Line:  1,
+									Col:   6,
+								},
+								To: Position{
+									Index: 21,
+									Line:  2,
+									Col:   2,
+								},
+							},
+								Value: "\n  "},
 							&StringExpression{
 								Expression: Expression{
 									Value: `"span content"`,
@@ -280,7 +328,19 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 8,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 9,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
@@ -350,7 +410,19 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					&Whitespace{Value: "\t\t\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 14,
+							Line:  1,
+							Col:   5,
+						},
+					},
+						Value: "\t\t\t\t\t"},
 					&IfExpression{
 						Expression: Expression{
 							Value: `p.B`,
@@ -368,7 +440,19 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							&Whitespace{Value: "\t\t\t\t\t\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 23,
+									Line:  2,
+									Col:   0,
+								},
+								To: Position{
+									Index: 29,
+									Line:  2,
+									Col:   6,
+								},
+							},
+								Value: "\t\t\t\t\t\t"},
 							&Element{
 								Name: "div",
 								NameRange: Range{
@@ -407,7 +491,19 @@ func TestIfExpression(t *testing.T) {
 							To:   Position{Index: 54, Line: 3, Col: 6},
 						},
 					},
-					&Whitespace{Value: "\n\t\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 54,
+							Line:  3,
+							Col:   6,
+						},
+						To: Position{
+							Index: 59,
+							Line:  4,
+							Col:   4,
+						},
+					},
+						Value: "\n\t\t\t\t"},
 				},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -431,7 +527,19 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 10,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
@@ -453,7 +561,19 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							&Whitespace{Value: "\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 34,
+									Line:  3,
+									Col:   0,
+								},
+								To: Position{
+									Index: 35,
+									Line:  3,
+									Col:   1,
+								},
+							},
+								Value: "\t"},
 							&StringExpression{
 								Expression: Expression{
 									Value: `"B"`,
@@ -495,7 +615,19 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 10,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
@@ -517,7 +649,19 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							&Whitespace{Value: "\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 34,
+									Line:  3,
+									Col:   0,
+								},
+								To: Position{
+									Index: 35,
+									Line:  3,
+									Col:   1,
+								},
+							},
+								Value: "\t"},
 							&StringExpression{
 								Expression: Expression{
 									Value: `"B"`,
@@ -543,7 +687,19 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							&Whitespace{Value: "\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 59,
+									Line:  5,
+									Col:   0,
+								},
+								To: Position{
+									Index: 60,
+									Line:  5,
+									Col:   1,
+								},
+							},
+								Value: "\t"},
 							&StringExpression{
 								Expression: Expression{
 									Value: `"C"`,
@@ -587,7 +743,19 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 10,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&StringExpression{
 						Expression: Expression{
 							Value: `"A"`,
@@ -609,7 +777,19 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							&Whitespace{Value: "\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 34,
+									Line:  3,
+									Col:   0,
+								},
+								To: Position{
+									Index: 35,
+									Line:  3,
+									Col:   1,
+								},
+							},
+								Value: "\t"},
 							&StringExpression{
 								Expression: Expression{
 									Value: `"B"`,
@@ -635,7 +815,19 @@ func TestIfExpression(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							&Whitespace{Value: "\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 59,
+									Line:  5,
+									Col:   0,
+								},
+								To: Position{
+									Index: 60,
+									Line:  5,
+									Col:   1,
+								},
+							},
+								Value: "\t"},
 							&StringExpression{
 								Expression: Expression{
 									Value: `"C"`,
@@ -695,7 +887,19 @@ func TestIfExpression(t *testing.T) {
 					},
 				},
 				Then: []Node{
-					&Whitespace{Value: "\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 9,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 11,
+							Line:  1,
+							Col:   2,
+						},
+					},
+						Value: "\t\t"},
 					&GoComment{
 						Contents:  " this is a comment",
 						Multiline: false,
@@ -704,7 +908,19 @@ func TestIfExpression(t *testing.T) {
 							To:   Position{Index: 31, Line: 1, Col: 22},
 						},
 					},
-					&Whitespace{Value: "\n\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 31,
+							Line:  1,
+							Col:   22,
+						},
+						To: Position{
+							Index: 33,
+							Line:  2,
+							Col:   1,
+						},
+					},
+						Value: "\n\t"},
 				},
 				Else: []Node{
 					&StringExpression{

@@ -116,7 +116,19 @@ func TestTemplElementExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\n\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 16,
+							Line:  0,
+							Col:   16,
+						},
+						To: Position{
+							Index: 18,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\n\t"},
 					&Text{
 						Value: "some words",
 						Range: Range{
@@ -154,7 +166,19 @@ func TestTemplElementExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\n\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 15,
+							Line:  0,
+							Col:   15,
+						},
+						To: Position{
+							Index: 19,
+							Line:  1,
+							Col:   3,
+						},
+					},
+						Value: "\n\t\t\t"},
 					&Element{
 						Name: "a",
 						NameRange: Range{
@@ -208,7 +232,19 @@ func TestTemplElementExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\n\t\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 16,
+							Line:  0,
+							Col:   16,
+						},
+						To: Position{
+							Index: 21,
+							Line:  1,
+							Col:   4,
+						},
+					},
+						Value: "\n\t\t\t\t"},
 					&TemplElementExpression{
 						Expression: Expression{
 							Value: "other2",
@@ -222,7 +258,19 @@ func TestTemplElementExpressionParser(t *testing.T) {
 							To:   Position{Index: 28, Line: 1, Col: 11},
 						},
 					},
-					&Whitespace{Value: "\n\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 28,
+							Line:  1,
+							Col:   11,
+						},
+						To: Position{
+							Index: 32,
+							Line:  2,
+							Col:   3,
+						},
+					},
+						Value: "\n\t\t\t"},
 				},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -462,7 +510,19 @@ func TestTemplElementExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\n  "},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 35,
+							Line:  0,
+							Col:   35,
+						},
+						To: Position{
+							Index: 38,
+							Line:  1,
+							Col:   2,
+						},
+					},
+						Value: "\n  "},
 					&Element{
 						Name: "div",
 						NameRange: Range{
