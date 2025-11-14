@@ -302,7 +302,19 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 30, Line: 1, Col: 4},
 						},
 						Children: []Node{
-							&Whitespace{Value: "\n  "},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 31,
+									Line:  1,
+									Col:   5,
+								},
+								To: Position{
+									Index: 34,
+									Line:  2,
+									Col:   2,
+								},
+							},
+								Value: "\n  "},
 							&StringExpression{
 								Expression: Expression{
 									Value: `"div content"`,
@@ -328,7 +340,19 @@ func TestTemplateParser(t *testing.T) {
 									To:   Position{Index: 59, Line: 3, Col: 7},
 								},
 								Children: []Node{
-									&Whitespace{Value: "\n\t"},
+									&Whitespace{Range: Range{
+										From: Position{
+											Index: 60,
+											Line:  3,
+											Col:   8,
+										},
+										To: Position{
+											Index: 62,
+											Line:  4,
+											Col:   1,
+										},
+									},
+										Value: "\n\t"},
 									&StringExpression{
 										Expression: Expression{
 											Value: `"span content"`,
@@ -396,7 +420,19 @@ func TestTemplateParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 26,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 27,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&IfExpression{
 						Expression: Expression{
 							Value: `p.Test`,
@@ -414,7 +450,19 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						Then: []Node{
-							&Whitespace{Value: "\t\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 39,
+									Line:  2,
+									Col:   0,
+								},
+								To: Position{
+									Index: 41,
+									Line:  2,
+									Col:   2,
+								},
+							},
+								Value: "\t\t"},
 							&Element{
 								Name: "span",
 								NameRange: Range{
@@ -422,7 +470,19 @@ func TestTemplateParser(t *testing.T) {
 									To:   Position{Index: 46, Line: 2, Col: 7},
 								},
 								Children: []Node{
-									&Whitespace{"\n\t\t\t"},
+									&Whitespace{Range: Range{
+										From: Position{
+											Index: 47,
+											Line:  2,
+											Col:   8,
+										},
+										To: Position{
+											Index: 51,
+											Line:  3,
+											Col:   3,
+										},
+									},
+										Value: "\n\t\t\t"},
 									&StringExpression{
 										Expression: Expression{
 											Value: `"span content"`,
@@ -455,9 +515,19 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 82, Line: 5, Col: 2},
 						},
 					},
-					&Whitespace{
-						Value: "\n",
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 82,
+							Line:  5,
+							Col:   2,
+						},
+						To: Position{
+							Index: 83,
+							Line:  6,
+							Col:   0,
+						},
 					},
+						Value: "\n"},
 				},
 			},
 		},
@@ -488,7 +558,19 @@ func TestTemplateParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 26,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 27,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&Element{
 						Name: "input",
 						NameRange: Range{
@@ -589,7 +671,19 @@ func TestTemplateParser(t *testing.T) {
 					&DocType{
 						Value: "html",
 					},
-					&Whitespace{Value: "\n"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 30,
+							Line:  1,
+							Col:   15,
+						},
+						To: Position{
+							Index: 31,
+							Line:  2,
+							Col:   0,
+						},
+					},
+						Value: "\n"},
 				},
 			},
 		},
@@ -629,9 +723,19 @@ func TestTemplateParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{
-						Value: " ",
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 12,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 13,
+							Line:  1,
+							Col:   1,
+						},
 					},
+						Value: " "},
 					&Element{
 						Name: "a",
 						NameRange: Range{
@@ -651,7 +755,19 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						Children: []Node{
-							&Whitespace{Value: " "},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 25,
+									Line:  1,
+									Col:   13,
+								},
+								To: Position{
+									Index: 26,
+									Line:  1,
+									Col:   14,
+								},
+							},
+								Value: " "},
 							&TemplElementExpression{
 								Expression: Expression{
 									Value: `Icon("home", Inline)`,
@@ -673,7 +789,19 @@ func TestTemplateParser(t *testing.T) {
 									To:   Position{Index: 47, Line: 1, Col: 35},
 								},
 							},
-							&Whitespace{Value: " "},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 47,
+									Line:  1,
+									Col:   35,
+								},
+								To: Position{
+									Index: 48,
+									Line:  1,
+									Col:   36,
+								},
+							},
+								Value: " "},
 							&Text{
 								Value: "Home",
 								Range: Range{
@@ -709,7 +837,19 @@ func TestTemplateParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 12,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 13,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&GoComment{
 						Contents:  " Comment",
 						Multiline: false,
@@ -718,7 +858,19 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 23, Line: 1, Col: 11},
 						},
 					},
-					&Whitespace{Value: "\n"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 23,
+							Line:  1,
+							Col:   11,
+						},
+						To: Position{
+							Index: 24,
+							Line:  2,
+							Col:   0,
+						},
+					},
+						Value: "\n"},
 				},
 			},
 		},
@@ -740,7 +892,19 @@ func TestTemplateParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 12,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 13,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&GoComment{
 						Contents:  " Comment ",
 						Multiline: true,
@@ -749,7 +913,19 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 26, Line: 1, Col: 14},
 						},
 					},
-					&Whitespace{Value: "\n"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 26,
+							Line:  1,
+							Col:   14,
+						},
+						To: Position{
+							Index: 27,
+							Line:  2,
+							Col:   0,
+						},
+					},
+						Value: "\n"},
 				},
 			},
 		},
@@ -773,7 +949,19 @@ func TestTemplateParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 12,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 13,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&GoComment{
 						Contents:  " Line 1\n\t\t Line 2\n\t",
 						Multiline: true,
@@ -782,7 +970,19 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 36, Line: 3, Col: 3},
 						},
 					},
-					&Whitespace{Value: "\n"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 36,
+							Line:  3,
+							Col:   3,
+						},
+						To: Position{
+							Index: 37,
+							Line:  4,
+							Col:   0,
+						},
+					},
+						Value: "\n"},
 				},
 			},
 		},
@@ -807,7 +1007,19 @@ func TestTemplateParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 12,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 13,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&HTMLComment{
 						Contents: " Single line ",
 						Range: Range{
@@ -815,7 +1027,19 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 33, Line: 1, Col: 21},
 						},
 					},
-					&Whitespace{Value: "\n\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 33,
+							Line:  1,
+							Col:   21,
+						},
+						To: Position{
+							Index: 35,
+							Line:  2,
+							Col:   1,
+						},
+					},
+						Value: "\n\t"},
 					&HTMLComment{
 						Contents: "\n\t\tMultiline\n\t",
 						Range: Range{
@@ -823,7 +1047,19 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 56, Line: 4, Col: 4},
 						},
 					},
-					&Whitespace{Value: "\n"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 56,
+							Line:  4,
+							Col:   4,
+						},
+						To: Position{
+							Index: 57,
+							Line:  5,
+							Col:   0,
+						},
+					},
+						Value: "\n"},
 				},
 			},
 		},
@@ -855,7 +1091,19 @@ func TestTemplateParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 40,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 42,
+							Line:  1,
+							Col:   2,
+						},
+					},
+						Value: "\t\t"},
 					&Element{
 						Name: "span",
 						NameRange: Range{
@@ -880,9 +1128,33 @@ func TestTemplateParser(t *testing.T) {
 							},
 						}},
 						Children: []Node{
-							&Whitespace{"\n\t\t\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 64,
+									Line:  1,
+									Col:   24,
+								},
+								To: Position{
+									Index: 68,
+									Line:  2,
+									Col:   3,
+								},
+							},
+								Value: "\n\t\t\t"},
 							&ChildrenExpression{},
-							&Whitespace{Value: "\n\t\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 83,
+									Line:  2,
+									Col:   18,
+								},
+								To: Position{
+									Index: 86,
+									Line:  3,
+									Col:   2,
+								},
+							},
+								Value: "\n\t\t"},
 						},
 						IndentChildren: true,
 						TrailingSpace:  SpaceVertical,
@@ -912,7 +1184,19 @@ func TestTemplateParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 15,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 16,
+							Line:  1,
+							Col:   1,
+						},
+					},
+						Value: "\t"},
 					&Element{
 						Name: "br",
 						NameRange: Range{

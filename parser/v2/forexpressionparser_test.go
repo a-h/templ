@@ -35,7 +35,19 @@ func TestForExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t\t\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 6,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 11,
+							Line:  1,
+							Col:   5,
+						},
+					},
+						Value: "\t\t\t\t\t"},
 					&Text{
 						Range: Range{
 							From: Position{Index: 11, Line: 1, Col: 5},
@@ -73,7 +85,19 @@ func TestForExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t\t\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 27,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 32,
+							Line:  1,
+							Col:   5,
+						},
+					},
+						Value: "\t\t\t\t\t"},
 					&Text{
 						Range: Range{
 							From: Position{Index: 32, Line: 1, Col: 5},
@@ -111,7 +135,19 @@ func TestForExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t\t\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 31,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 36,
+							Line:  1,
+							Col:   5,
+						},
+					},
+						Value: "\t\t\t\t\t"},
 					&Text{
 						Range: Range{
 							From: Position{Index: 36, Line: 1, Col: 5},
@@ -149,7 +185,19 @@ func TestForExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t\t\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 31,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 36,
+							Line:  1,
+							Col:   5,
+						},
+					},
+						Value: "\t\t\t\t\t"},
 					&Element{
 						Name: "div",
 						NameRange: Range{
@@ -210,7 +258,19 @@ func TestForExpressionParser(t *testing.T) {
 					},
 				},
 				Children: []Node{
-					&Whitespace{Value: "\t\t\t\t\t"},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 30,
+							Line:  1,
+							Col:   0,
+						},
+						To: Position{
+							Index: 35,
+							Line:  1,
+							Col:   5,
+						},
+					},
+						Value: "\t\t\t\t\t"},
 					&Element{
 						Name: "div",
 						NameRange: Range{
