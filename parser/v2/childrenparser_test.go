@@ -14,19 +14,34 @@ func TestChildrenExpressionParser(t *testing.T) {
 		expected *ChildrenExpression
 	}{
 		{
-			name:     "standard",
-			input:    `{ children...}`,
-			expected: &ChildrenExpression{},
+			name:  "standard",
+			input: `{ children...}`,
+			expected: &ChildrenExpression{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 14, Line: 0, Col: 14},
+				},
+			},
 		},
 		{
-			name:     "condensed",
-			input:    `{children...}`,
-			expected: &ChildrenExpression{},
+			name:  "condensed",
+			input: `{children...}`,
+			expected: &ChildrenExpression{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 13, Line: 0, Col: 13},
+				},
+			},
 		},
 		{
-			name:     "extra spaces",
-			input:    `{  children...  }`,
-			expected: &ChildrenExpression{},
+			name:  "extra spaces",
+			input: `{  children...  }`,
+			expected: &ChildrenExpression{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 17, Line: 0, Col: 17},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -48,7 +63,7 @@ func TestChildrenExpressionParser(t *testing.T) {
 }
 
 func TestChildrenExpressionParserAllocsOK(t *testing.T) {
-	RunParserAllocTest(t, childrenExpression, true, 2, `{ children... }`)
+	RunParserAllocTest(t, childrenExpression, true, 3, `{ children... }`)
 }
 
 func TestChildrenExpressionParserAllocsSkip(t *testing.T) {

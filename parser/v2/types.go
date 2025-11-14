@@ -1266,10 +1266,12 @@ func (tee *TemplElementExpression) Visit(v Visitor) error {
 
 // ChildrenExpression can be used to rended the children of a templ element.
 // { children ... }
-type ChildrenExpression struct{}
+type ChildrenExpression struct {
+	Range Range
+}
 
 func (*ChildrenExpression) IsNode() bool { return true }
-func (*ChildrenExpression) Write(w io.Writer, indent int) error {
+func (ce *ChildrenExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "{ children... }"); err != nil {
 		return err
 	}
