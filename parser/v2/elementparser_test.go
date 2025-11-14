@@ -169,6 +169,10 @@ func TestAttributeParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 3, Line: 1, Col: 2},
+					To:   Position{Index: 44, Line: 3, Col: 3},
+				},
 			},
 		},
 		{
@@ -241,6 +245,10 @@ if test {` + " " + `
 							},
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 1, Line: 1, Col: 0},
+					To:   Position{Index: 58, Line: 5, Col: 1},
 				},
 			},
 		},
@@ -1236,6 +1244,10 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 27, Line: 1, Col: 2},
+							To:   Position{Index: 68, Line: 3, Col: 3},
+						},
 					},
 				},
 				IndentAttrs: true,
@@ -1349,6 +1361,10 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 30, Line: 1, Col: 3},
+							To:   Position{Index: 65, Line: 3, Col: 4},
+						},
 					},
 				},
 				IndentAttrs: true,
@@ -1424,6 +1440,10 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 30, Line: 1, Col: 3},
+							To:   Position{Index: 101, Line: 5, Col: 4},
+						},
 					},
 				},
 				IndentAttrs: true,
@@ -1484,6 +1504,10 @@ func TestElementParser(t *testing.T) {
 									},
 								},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 29, Line: 1, Col: 3},
+							To:   Position{Index: 64, Line: 3, Col: 4},
 						},
 					},
 				},
