@@ -275,7 +275,7 @@ func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 		// Execute the request.
 		resp, err = http.DefaultTransport.RoundTrip(req)
-		if err != nil {
+		if err != nil || resp.StatusCode == http.StatusBadGateway {
 			time.Sleep(rt.initialDelay * time.Duration(math.Pow(rt.backoffExponent, float64(retries))))
 			continue
 		}

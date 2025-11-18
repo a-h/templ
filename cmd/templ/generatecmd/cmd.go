@@ -373,8 +373,10 @@ func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 		var client http.Client
 		client.Timeout = 1 * time.Second
 		for {
-			if _, err := client.Get(p.URL); err == nil {
-				break
+			if resp, err := client.Get(p.URL); err == nil {
+				if resp.StatusCode != http.StatusBadGateway {
+					break
+				}
 			}
 			d := backoff.NextBackOff()
 			cmd.Log.Debug("Proxy not ready, retrying", slog.String("url", p.URL), slog.Any("backoff", d))
