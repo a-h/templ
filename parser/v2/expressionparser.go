@@ -29,7 +29,7 @@ func ExpressionOf(p parse.Parser[string]) parse.Parser[Expression] {
 var lt = parse.Rune('<')
 var gt = parse.Rune('>')
 var spaceOrTab = parse.Any(parse.Rune(' '), parse.Rune('\t'))
-var spaceOrTabOrNewLine = parse.Any(spaceOrTab, parse.Rune('\n'))
+var spaceOrTabOrNewLine = parse.Any(spaceOrTab, parse.String("\r\n"), parse.Rune('\n'))
 var openBrace = parse.String("{")
 var optionalSpaces = parse.StringFrom(parse.Optional(
 	parse.AtLeast(1, spaceOrTab)))
