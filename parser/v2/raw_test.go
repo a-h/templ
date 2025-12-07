@@ -22,7 +22,8 @@ func TestRawElementParser(t *testing.T) {
 			name:  "style tag",
 			input: `<style type="text/css">contents</style>`,
 			expected: &RawElement{
-				Name: "style",
+				Name:      "style",
+				NameRange: Range{From: Position{Index: 1, Col: 1}, To: Position{Index: 6, Col: 6}},
 				Attributes: []Attribute{
 					&ConstantAttribute{
 						Value: "text/css",
@@ -43,7 +44,9 @@ func TestRawElementParser(t *testing.T) {
 						},
 					},
 				},
-				Contents: "contents",
+				Contents:      "contents",
+				OpenTagRange:  Range{To: Position{Index: 23, Col: 23}},
+				CloseTagRange: Range{From: Position{Index: 31, Col: 31}, To: Position{Index: 39, Col: 39}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 39, Line: 0, Col: 39},
@@ -54,7 +57,8 @@ func TestRawElementParser(t *testing.T) {
 			name:  "style tag containing mismatched braces",
 			input: `<style type="text/css">` + ignoredContent + "</style>",
 			expected: &RawElement{
-				Name: "style",
+				Name:      "style",
+				NameRange: Range{From: Position{Index: 1, Col: 1}, To: Position{Index: 6, Col: 6}},
 				Attributes: []Attribute{
 					&ConstantAttribute{
 						Value: "text/css",
@@ -75,7 +79,9 @@ func TestRawElementParser(t *testing.T) {
 						},
 					},
 				},
-				Contents: ignoredContent,
+				Contents:      ignoredContent,
+				OpenTagRange:  Range{To: Position{Index: 23, Col: 23}},
+				CloseTagRange: Range{From: Position{Index: 44, Line: 3, Col: 1}, To: Position{Index: 52, Line: 3, Col: 9}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 52, Line: 3, Col: 9},

@@ -12,11 +12,12 @@ import (
 
 // Element open tag.
 type elementOpenTag struct {
-	Name        string
-	Attributes  []Attribute
-	IndentAttrs bool
-	NameRange   Range
-	Void        bool
+	Name         string
+	Attributes   []Attribute
+	IndentAttrs  bool
+	NameRange    Range
+	OpenTagRange Range
+	SelfClosing  bool
 }
 
 var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, matched bool, err error) {
@@ -25,10 +26,12 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, m
 		return e, false, nil
 	}
 
+	startIndex := pi.Index()
 	// <
 	if _, matched, err = lt.Parse(pi); err != nil || !matched {
 		return
 	}
+	openTagStart := pi.PositionAt(startIndex)
 
 	// Element name.
 	l := pi.Position().Line
@@ -65,7 +68,8 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, m
 		return e, true, err
 	}
 	if matched {
-		e.Void = true
+		e.OpenTagRange = NewRange(openTagStart, pi.Position())
+		e.SelfClosing = true
 		return e, true, nil
 	}
 
@@ -79,6 +83,8 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, m
 		err = parse.Error(fmt.Sprintf("<%s>: malformed open element", e.Name), pi.Position())
 		return
 	}
+
+	e.OpenTagRange = NewRange(openTagStart, pi.Position())
 
 	return e, true, nil
 })
@@ -560,17 +566,19 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 	r := &Element{
-		Name:        ot.Name,
-		Attributes:  ot.Attributes,
-		IndentAttrs: ot.IndentAttrs,
-		NameRange:   ot.NameRange,
+		Name:         ot.Name,
+		Attributes:   ot.Attributes,
+		IndentAttrs:  ot.IndentAttrs,
+		NameRange:    ot.NameRange,
+		OpenTagRange: ot.OpenTagRange,
+		SelfClosing:  ot.SelfClosing,
 	}
 
 	// Once we've got an open tag, the rest must be present.
 	l := pi.Position().Line
 
 	// If the element is self-closing, even if it's not really a void element (br, hr etc.), we can return early.
-	if ot.Void || r.IsVoidElement() {
+	if ot.SelfClosing || r.IsVoidElement() {
 		// Escape early, no need to try to parse children for self-closing elements.
 		return addTrailingSpaceAndValidate(start, r, pi)
 	}
@@ -595,6 +603,7 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 
 	// Close tag.
+	closeTagStart := pi.Position()
 	_, ok, err = closer.Parse(pi)
 	if err != nil {
 		return r, true, err
@@ -603,6 +612,8 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		err = parse.Error(fmt.Sprintf("<%s>: expected end tag not present or invalid tag contents", r.Name), pi.Position())
 		return r, true, err
 	}
+	closeTagRange := NewRange(closeTagStart, pi.Position())
+	r.CloseTagRange = &closeTagRange
 
 	return addTrailingSpaceAndValidate(start, r, pi)
 }

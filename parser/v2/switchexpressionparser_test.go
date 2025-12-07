@@ -139,6 +139,8 @@ default:
 								},
 								IndentChildren: true,
 								TrailingSpace:  SpaceVertical,
+								OpenTagRange:   Range{From: Position{Index: 29, Line: 2, Col: 1}, To: Position{Index: 35, Line: 2, Col: 7}},
+								CloseTagRange:  &Range{From: Position{Index: 59, Line: 4, Col: 1}, To: Position{Index: 66, Line: 4, Col: 8}},
 								Range: Range{
 									From: Position{Index: 29, Line: 2, Col: 1},
 									To:   Position{Index: 67, Line: 5, Col: 0},
@@ -240,6 +242,8 @@ default:
 								},
 								IndentChildren: true,
 								TrailingSpace:  SpaceVertical,
+								OpenTagRange:   Range{From: Position{Index: 36, Line: 2}, To: Position{Index: 42, Line: 2, Col: 6}},
+								CloseTagRange:  &Range{From: Position{Index: 64, Line: 4}, To: Position{Index: 71, Line: 4, Col: 7}},
 								Range: Range{
 									From: Position{Index: 36, Line: 2, Col: 0},
 									To:   Position{Index: 72, Line: 5, Col: 0},

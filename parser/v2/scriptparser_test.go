@@ -71,6 +71,8 @@ func TestScriptElementParser(t *testing.T) {
 			name:  "no content",
 			input: `<script></script>`,
 			expected: &ScriptElement{
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 8, Col: 8}, To: Position{Index: 17, Col: 17}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 17, Line: 0, Col: 17},
@@ -104,6 +106,8 @@ func TestScriptElementParser(t *testing.T) {
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("dim x = 1"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 24, Col: 24}},
+				CloseTagRange: Range{From: Position{Index: 33, Col: 33}, To: Position{Index: 42, Col: 42}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 42, Line: 0, Col: 42},
@@ -129,6 +133,8 @@ func TestScriptElementParser(t *testing.T) {
 						},
 					}, false),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 18, Col: 18}, To: Position{Index: 27, Col: 27}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 27, Line: 0, Col: 27},
@@ -171,6 +177,8 @@ func TestScriptElementParser(t *testing.T) {
 						},
 					}, false),
 				},
+				OpenTagRange:  Range{To: Position{Index: 31, Col: 31}},
+				CloseTagRange: Range{From: Position{Index: 41, Col: 41}, To: Position{Index: 50, Col: 50}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 50, Line: 0, Col: 50},
@@ -213,6 +221,8 @@ func TestScriptElementParser(t *testing.T) {
 						},
 					}, false),
 				},
+				OpenTagRange:  Range{To: Position{Index: 22, Col: 22}},
+				CloseTagRange: Range{From: Position{Index: 32, Col: 32}, To: Position{Index: 41, Col: 41}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 41, Line: 0, Col: 41},
@@ -255,6 +265,8 @@ func TestScriptElementParser(t *testing.T) {
 						},
 					}, false),
 				},
+				OpenTagRange:  Range{To: Position{Index: 26, Col: 26}},
+				CloseTagRange: Range{From: Position{Index: 36, Col: 36}, To: Position{Index: 45, Col: 45}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 45, Line: 0, Col: 45},
@@ -284,6 +296,8 @@ func TestScriptElementParser(t *testing.T) {
 						},
 					}, false),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 20, Line: 2}, To: Position{Index: 29, Line: 2, Col: 9}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 29, Line: 2, Col: 9},
@@ -311,6 +325,8 @@ func TestScriptElementParser(t *testing.T) {
 					}, true),
 					NewScriptContentsScriptCode("';"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 29, Col: 29}, To: Position{Index: 38, Col: 38}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 38, Line: 0, Col: 38},
@@ -338,6 +354,8 @@ func TestScriptElementParser(t *testing.T) {
 					}, true),
 					NewScriptContentsScriptCode("\";"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 29, Col: 29}, To: Position{Index: 38, Col: 38}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 38, Line: 0, Col: 38},
@@ -368,6 +386,8 @@ to see if it works";</script>`,
 					}, true),
 					NewScriptContentsScriptCode("\\\nto see if it works\";"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 67, Line: 2, Col: 20}, To: Position{Index: 76, Line: 2, Col: 29}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 76, Line: 2, Col: 29},
@@ -395,6 +415,8 @@ to see if it works";</script>`,
 					}, true),
 					NewScriptContentsScriptCode("`;"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 29, Col: 29}, To: Position{Index: 38, Col: 38}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 38, Line: 0, Col: 38},
@@ -411,6 +433,8 @@ to see if it works";</script>`,
 					NewScriptContentsScriptCode("\n"),
 					NewScriptContentsScriptCode("// {{ name }}\n"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 23, Line: 2}, To: Position{Index: 32, Line: 2, Col: 9}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 32, Line: 2, Col: 9},
@@ -427,6 +451,8 @@ const category = path.split('/')[2]; // example comment
 					NewScriptContentsScriptCode("\nconst category = path.split('/')[2]; "),
 					NewScriptContentsScriptCode("// example comment\n"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 65, Line: 2}, To: Position{Index: 74, Line: 2, Col: 9}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 74, Line: 2, Col: 9},
@@ -445,6 +471,8 @@ but it's commented out */
 					NewScriptContentsScriptCode("\n"),
 					NewScriptContentsScriptCode("/* There's some content\n{{ name }}\nbut it's commented out */\n"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 70, Line: 4}, To: Position{Index: 79, Line: 4, Col: 9}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 79, Line: 4, Col: 9},
@@ -477,6 +505,8 @@ set tier_1 to #tier-1's value
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("\nset tier_1 to #tier-1's value\n"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 32, Col: 32}},
+				CloseTagRange: Range{From: Position{Index: 63, Line: 2}, To: Position{Index: 72, Line: 2, Col: 9}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 72, Line: 2, Col: 9},
@@ -506,6 +536,8 @@ const result = call(1000 / 10, {{ data }}, 1000 / 10);
 					}, false),
 					NewScriptContentsScriptCode(", 1000 / 10);\n"),
 				},
+				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
+				CloseTagRange: Range{From: Position{Index: 64, Line: 2}, To: Position{Index: 73, Line: 2, Col: 9}},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 73, Line: 2, Col: 9},

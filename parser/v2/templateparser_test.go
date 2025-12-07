@@ -202,6 +202,8 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						OpenTagRange:  Range{From: Position{Index: 26, Line: 1}, To: Position{Index: 32, Line: 1, Col: 6}},
+						CloseTagRange: &Range{From: Position{Index: 50, Line: 1, Col: 24}, To: Position{Index: 57, Line: 1, Col: 31}},
 						Range: Range{
 							From: Position{Index: 26, Line: 1, Col: 0},
 							To:   Position{Index: 58, Line: 2, Col: 0},
@@ -264,6 +266,8 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceHorizontal,
+						OpenTagRange:  Range{From: Position{Index: 26, Col: 26}, To: Position{Index: 32, Col: 32}},
+						CloseTagRange: &Range{From: Position{Index: 50, Col: 50}, To: Position{Index: 57, Col: 57}},
 						Range: Range{
 							From: Position{Index: 26, Line: 0, Col: 26},
 							To:   Position{Index: 58, Line: 0, Col: 58},
@@ -390,6 +394,8 @@ func TestTemplateParser(t *testing.T) {
 								},
 								IndentChildren: true,
 								TrailingSpace:  SpaceVertical,
+								OpenTagRange:   Range{From: Position{Index: 54, Line: 3, Col: 2}, To: Position{Index: 60, Line: 3, Col: 8}},
+								CloseTagRange:  &Range{From: Position{Index: 83, Line: 5, Col: 2}, To: Position{Index: 90, Line: 5, Col: 9}},
 								Range: Range{
 									From: Position{Index: 54, Line: 3, Col: 2},
 									To:   Position{Index: 91, Line: 6, Col: 0},
@@ -398,6 +404,8 @@ func TestTemplateParser(t *testing.T) {
 						},
 						IndentChildren: true,
 						TrailingSpace:  SpaceVertical,
+						OpenTagRange:   Range{From: Position{Index: 26, Line: 1}, To: Position{Index: 31, Line: 1, Col: 5}},
+						CloseTagRange:  &Range{From: Position{Index: 91, Line: 6}, To: Position{Index: 97, Line: 6, Col: 6}},
 						Range: Range{
 							From: Position{Index: 26, Line: 1, Col: 0},
 							To:   Position{Index: 98, Line: 7, Col: 0},
@@ -524,6 +532,8 @@ func TestTemplateParser(t *testing.T) {
 								},
 								IndentChildren: true,
 								TrailingSpace:  SpaceVertical,
+								OpenTagRange:   Range{From: Position{Index: 41, Line: 2, Col: 2}, To: Position{Index: 47, Line: 2, Col: 8}},
+								CloseTagRange:  &Range{From: Position{Index: 72, Line: 4, Col: 2}, To: Position{Index: 79, Line: 4, Col: 9}},
 								Range: Range{
 									From: Position{Index: 41, Line: 2, Col: 2},
 									To:   Position{Index: 81, Line: 5, Col: 1},
@@ -636,10 +646,12 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						OpenTagRange:  Range{From: Position{Index: 27, Line: 1, Col: 1}, To: Position{Index: 58, Line: 1, Col: 32}},
 						Range: Range{
 							From: Position{Index: 27, Line: 1, Col: 1},
 							To:   Position{Index: 60, Line: 2, Col: 1},
 						},
+						SelfClosing: true,
 					},
 					&Element{
 						Name: "input",
@@ -686,10 +698,12 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						OpenTagRange:  Range{From: Position{Index: 60, Line: 2, Col: 1}, To: Position{Index: 91, Line: 2, Col: 32}},
 						Range: Range{
 							From: Position{Index: 60, Line: 2, Col: 1},
 							To:   Position{Index: 92, Line: 3, Col: 0},
 						},
+						SelfClosing: true,
 					},
 				},
 			},
@@ -863,6 +877,8 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						OpenTagRange:  Range{From: Position{Index: 13, Line: 1, Col: 1}, To: Position{Index: 25, Line: 1, Col: 13}},
+						CloseTagRange: &Range{From: Position{Index: 52, Line: 1, Col: 40}, To: Position{Index: 56, Line: 1, Col: 44}},
 						Range: Range{
 							From: Position{Index: 13, Line: 1, Col: 1},
 							To:   Position{Index: 57, Line: 2, Col: 0},
@@ -924,6 +940,14 @@ func TestTemplateParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						OpenTagRange: Range{
+							From: Position{Index: 13, Line: 1, Col: 1},
+							To:   Position{Index: 18, Line: 1, Col: 6},
+						},
+						CloseTagRange: &Range{
+							From: Position{Index: 31, Line: 1, Col: 19},
+							To:   Position{Index: 37, Line: 1, Col: 25},
+						},
 						Range: Range{
 							From: Position{Index: 13, Line: 1, Col: 1},
 							To:   Position{Index: 38, Line: 2, Col: 0},
@@ -1280,6 +1304,8 @@ func TestTemplateParser(t *testing.T) {
 						},
 						IndentChildren: true,
 						TrailingSpace:  SpaceVertical,
+						OpenTagRange:   Range{From: Position{Index: 42, Line: 1, Col: 2}, To: Position{Index: 64, Line: 1, Col: 24}},
+						CloseTagRange:  &Range{From: Position{Index: 86, Line: 3, Col: 2}, To: Position{Index: 93, Line: 3, Col: 9}},
 						Range: Range{
 							From: Position{Index: 42, Line: 1, Col: 2},
 							To:   Position{Index: 94, Line: 4, Col: 0},
@@ -1326,6 +1352,7 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 19, Line: 1, Col: 4},
 						},
 						TrailingSpace: SpaceNone,
+						OpenTagRange:  Range{From: Position{Index: 16, Line: 1, Col: 1}, To: Position{Index: 20, Line: 1, Col: 5}},
 						Range: Range{
 							From: Position{Index: 16, Line: 1, Col: 1},
 							To:   Position{Index: 25, Line: 1, Col: 10},
@@ -1338,6 +1365,7 @@ func TestTemplateParser(t *testing.T) {
 							To:   Position{Index: 28, Line: 1, Col: 13},
 						},
 						TrailingSpace: SpaceVertical,
+						OpenTagRange:  Range{From: Position{Index: 25, Line: 1, Col: 10}, To: Position{Index: 29, Line: 1, Col: 14}},
 						Range: Range{
 							From: Position{Index: 25, Line: 1, Col: 10},
 							To:   Position{Index: 30, Line: 2, Col: 0},
