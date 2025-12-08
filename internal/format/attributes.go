@@ -57,7 +57,7 @@ func Attributes(children []parser.Node, prettierCommand string) error {
 	// Build synthetic HTML: one <div> per attribute.
 	var sb strings.Builder
 	for i, e := range entries {
-		sb.WriteString(fmt.Sprintf(`<div data-templ-id="%d" %s="%s"></div>`, i, e.key, html.EscapeString(e.attr.Value)))
+		fmt.Fprintf(&sb, `<div data-templ-id="%d" %s="%s"></div>`, i, e.key, html.EscapeString(e.attr.Value))
 		sb.WriteByte('\n')
 	}
 

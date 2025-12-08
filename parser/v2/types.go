@@ -364,8 +364,11 @@ func (c *ExpressionCSSProperty) Visit(v Visitor) error {
 
 // <!DOCTYPE html>
 type DocType struct {
-	Range Range
-	Value string
+	Range      Range
+	Value      string
+	OpenRange  Range
+	ValueRange Range
+	CloseRange Range
 }
 
 func (dt *DocType) IsNode() bool { return true }

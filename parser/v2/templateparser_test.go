@@ -739,7 +739,10 @@ func TestTemplateParser(t *testing.T) {
 							From: Position{Index: 15, Line: 1, Col: 0},
 							To:   Position{Index: 30, Line: 1, Col: 15},
 						},
-						Value: "html",
+						Value:      "html",
+						OpenRange:  Range{From: Position{Index: 15, Line: 1}, To: Position{Index: 24, Line: 1, Col: 9}},
+						ValueRange: Range{From: Position{Index: 25, Line: 1, Col: 10}, To: Position{Index: 29, Line: 1, Col: 14}},
+						CloseRange: Range{From: Position{Index: 29, Line: 1, Col: 14}, To: Position{Index: 30, Line: 1, Col: 15}},
 					},
 					&Whitespace{Range: Range{
 						From: Position{
