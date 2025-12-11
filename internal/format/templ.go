@@ -16,6 +16,14 @@ type Config struct {
 	PrettierCommand string
 	// PrettierRequired indicates that formatting using Prettier must be applied.
 	PrettierRequired bool
+	// NormalizeSpacing enables consistent blank line spacing around component blocks.
+	NormalizeSpacing bool
+	// NormalizeOperators enables standardized spacing around + operators.
+	NormalizeOperators bool
+	// NormalizeHTMLTags enables conversion of XML-style self-closing tags to HTML5 style.
+	NormalizeHTMLTags bool
+	// CleanupBlankLines enables removal of excessive blank lines.
+	CleanupBlankLines bool
 }
 
 // Templ formats templ source, returning the formatted output, whether it changed, and an error if any.
@@ -40,8 +48,39 @@ func Templ(src []byte, fileName string, config Config) (output []byte, changed b
 		return nil, false, fmt.Errorf("formatting error: %w", err)
 	}
 	out := w.Bytes()
+
+	// Apply post-parse formatting passes
+	out = applyFormattingPasses(out, config)
+
 	changed = !bytes.Equal(src, out)
 	return out, changed, nil
+}
+
+// applyFormattingPasses applies formatting passes to normalize spacing, operators, and HTML tags.
+func applyFormattingPasses(src []byte, config Config) []byte {
+	result := src
+
+	// Pass 1: Normalize spacing around component blocks
+	if config.NormalizeSpacing {
+		result = normalizeComponentSpacing(result)
+	}
+
+	// Pass 2: Normalize operator spacing
+	if config.NormalizeOperators {
+		result = normalizeOperatorSpacing(result)
+	}
+
+	// Pass 3: Normalize HTML tags
+	if config.NormalizeHTMLTags {
+		result = normalizeHTMLTags(result)
+	}
+
+	// Pass 4: Clean up blank lines
+	if config.CleanupBlankLines {
+		result = cleanupBlankLines(result)
+	}
+
+	return result
 }
 
 func applyPrettier(t *parser.TemplateFile, config Config) (err error) {

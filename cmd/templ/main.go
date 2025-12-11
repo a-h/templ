@@ -176,6 +176,14 @@ Args:
     Set the command to use for formatting HTML, CSS, and JS blocks. Default is "prettier --stdin-filepath $TEMPL_PRETTIER_FILENAME".
   -prettier-required
     Set to true to return an error the prettier command is not available. Default is false.
+  -normalize-spacing
+    Enable consistent blank line spacing around component blocks. (default false)
+  -normalize-operators
+    Enable standardized spacing around + operators. (default false)
+  -normalize-html-tags
+    Convert XML-style self-closing tags to HTML5 style. (default false)
+  -cleanup-blanks
+    Remove excessive blank lines in component blocks. (default false)
   -fail
     Fails with exit code 1 if files are changed. (e.g. in CI)
   -help
@@ -193,6 +201,10 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	prettierRequired := cmd.Bool("prettier-required", false, "")
 	stdoutFlag := cmd.Bool("stdout", false, "")
 	stdinFilepath := cmd.String("stdin-filepath", "", "")
+	normalizeSpacing := cmd.Bool("normalize-spacing", false, "")
+	normalizeOperators := cmd.Bool("normalize-operators", false, "")
+	normalizeHTMLTags := cmd.Bool("normalize-html-tags", false, "")
+	cleanupBlanks := cmd.Bool("cleanup-blanks", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
 		_, _ = fmt.Fprint(stderr, fmtUsageText)
@@ -206,13 +218,17 @@ func fmtCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	log := sloghandler.NewLogger(*logLevelFlag, *verboseFlag, stderr)
 
 	err = fmtcmd.Run(log, stdin, stdout, fmtcmd.Arguments{
-		ToStdout:         *stdoutFlag,
-		Files:            cmd.Args(),
-		WorkerCount:      *workerCountFlag,
-		StdinFilepath:    *stdinFilepath,
-		FailIfChanged:    *failIfChanged,
-		PrettierCommand:  *prettierCommand,
-		PrettierRequired: *prettierRequired,
+		ToStdout:          *stdoutFlag,
+		Files:             cmd.Args(),
+		WorkerCount:       *workerCountFlag,
+		StdinFilepath:     *stdinFilepath,
+		FailIfChanged:     *failIfChanged,
+		PrettierCommand:   *prettierCommand,
+		PrettierRequired:  *prettierRequired,
+		NormalizeSpacing:  *normalizeSpacing,
+		NormalizeOperators: *normalizeOperators,
+		NormalizeHTMLTags: *normalizeHTMLTags,
+		CleanupBlanks:     *cleanupBlanks,
 	})
 	if err != nil {
 		return 1

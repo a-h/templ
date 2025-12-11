@@ -16,20 +16,28 @@ import (
 )
 
 type Arguments struct {
-	FailIfChanged    bool
-	ToStdout         bool
-	StdinFilepath    string
-	Files            []string
-	WorkerCount      int
-	PrettierCommand  string
-	PrettierRequired bool
+	FailIfChanged      bool
+	ToStdout           bool
+	StdinFilepath      string
+	Files              []string
+	WorkerCount        int
+	PrettierCommand    string
+	PrettierRequired   bool
+	NormalizeSpacing   bool
+	NormalizeOperators bool
+	NormalizeHTMLTags  bool
+	CleanupBlanks      bool
 }
 
 func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (err error) {
 	// If no files are provided, read from stdin and write to stdout.
 	formatterConfig := format.Config{
-		PrettierCommand:  args.PrettierCommand,
-		PrettierRequired: args.PrettierRequired,
+		PrettierCommand:    args.PrettierCommand,
+		PrettierRequired:   args.PrettierRequired,
+		NormalizeSpacing:   args.NormalizeSpacing,
+		NormalizeOperators: args.NormalizeOperators,
+		NormalizeHTMLTags:  args.NormalizeHTMLTags,
+		CleanupBlankLines:  args.CleanupBlanks,
 	}
 	if len(args.Files) == 0 {
 		src, err := io.ReadAll(stdin)
