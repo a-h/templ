@@ -76,7 +76,7 @@ templ templCounterExampleInitialContents(signals TemplCounterSignals) {
 ```
 
 :::tip
-Note that Datastar sends all[^1] signals to the server (as JSON) on each request. This means far less bookkeeping and more predictable state management.
+Note that Datastar sends all[^1] signals to the server (as JSON) on each request. This means far less bookkeeping and more predictable state management than when using html forms. 
 :::
 
 :::note
