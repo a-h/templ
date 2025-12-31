@@ -433,7 +433,6 @@ default:
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput(tt.input)
 			actual, matched, err := switchExpression.Parse(input)
@@ -525,7 +524,7 @@ func TestSwitchWithNonTerminalFallthrough(t *testing.T) {
 	if !isParseError {
 		t.Fatalf("expected a parse error, got %T", err)
 	}
-	if pe.Msg != "case: fallthrough can only be used as the last statement in a case block" {
+	if pe.Msg != fallthroughMustBeLastInCaseError {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
@@ -548,7 +547,7 @@ func TestSwitchWithFallthroughInFinalCase(t *testing.T) {
 	if !isParseError {
 		t.Fatalf("expected a parse error, got %T", err)
 	}
-	if pe.Msg != "switch: fallthrough cannot be used in the last case of a switch statement" {
+	if pe.Msg != fallthroughInLastCaseError {
 		t.Errorf("unexpected error: %v", err)
 	}
 }

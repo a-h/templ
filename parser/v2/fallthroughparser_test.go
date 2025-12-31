@@ -14,11 +14,24 @@ func TestFallthroughParser(t *testing.T) {
 		expected *Fallthrough
 	}{
 		{
-			name: "basic fallthrough",
-			input: `fallthrough
-			`,
+			name:  "basic fallthrough",
+			input: "fallthrough\n",
 			expected: &Fallthrough{
 				Range: NewRange(parse.Position{Index: 0, Line: 0, Col: 0}, parse.Position{Index: 12, Line: 1, Col: 0}),
+			},
+		},
+		{
+			name:  "fallthrough with spaces before newline",
+			input: "fallthrough    \n",
+			expected: &Fallthrough{
+				Range: NewRange(parse.Position{Index: 0, Line: 0, Col: 0}, parse.Position{Index: 16, Line: 1, Col: 0}),
+			},
+		},
+		{
+			name:  "fallthrough with tabs before newline",
+			input: "fallthrough\t\t\t\n",
+			expected: &Fallthrough{
+				Range: NewRange(parse.Position{Index: 0, Line: 0, Col: 0}, parse.Position{Index: 15, Line: 1, Col: 0}),
 			},
 		},
 	}

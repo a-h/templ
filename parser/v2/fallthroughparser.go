@@ -13,7 +13,7 @@ var fallthroughExpression = parse.Func(func(pi *parse.Input) (n Node, ok bool, e
 	}
 
 	// Eat terminating newline.
-	_, _, _ = parse.ZeroOrMore(parse.String(" ")).Parse(pi)
+	_, _, _ = parse.ZeroOrMore(parse.RuneIn(" \t")).Parse(pi)
 	_, ok, err = parse.NewLine.Parse(pi)
 	if err != nil || !ok {
 		err = parse.Error("expected newline after fallthrough", pi.Position())
