@@ -54,3 +54,26 @@ templ counts(global, session int) {
 The example can be viewed at https://d3qfg6xxljj3ky.cloudfront.net
 
 Complete source code including AWS CDK code to set up the infrastructure is available at https://github.com/a-h/templ/tree/main/examples/counter
+
+## Using hx-on attributes
+
+htmx supports inline JavaScript event handlers using the `hx-on:*` attributes such as `hx-on:click`, `hx-on:submit`, etc.
+
+Attributes starting with `on` or `hx-on:` are treated as script attributes and expect a `templ.ComponentScript` type.
+
+For static JavaScript, use a string literal:
+
+```templ
+<button hx-on:click="alert('Hello')">Click me</button>
+```
+
+For dynamic JavaScript with server-side data, use `templ.JSFuncCall`:
+
+```templ
+<script>
+	function showMessage(msg) {
+		alert(msg);
+	}
+</script>
+<button hx-on:click={ templ.JSFuncCall("showMessage", "Hello from Go") }>Click me</button>
+```
