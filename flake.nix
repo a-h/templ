@@ -2,7 +2,7 @@
   description = "templ";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
@@ -12,13 +12,9 @@
       url = "github:a-h/version/0.0.10";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    xc = {
-      url = "github:joerdav/xc";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, version, xc }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, version }:
     let
       allSystems = [
         "x86_64-linux" # 64-bit Intel/AMD Linux
@@ -38,7 +34,6 @@
               (final: prev: {
                 gopls = pkgs-unstable.gopls;
                 version = version.packages.${system}.default; # Used to apply version numbers to the repo.
-                xc = xc.packages.${system}.xc;
               })
             ];
           };

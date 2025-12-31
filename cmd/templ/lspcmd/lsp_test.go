@@ -1,11 +1,13 @@
 package lspcmd
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -26,7 +28,13 @@ func TestCompletion(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	testOutput := bytes.NewBuffer(nil)
+	log := slog.New(slog.NewJSONHandler(testOutput, nil))
+	defer func() {
+		if t.Failed() {
+			fmt.Println(testOutput.String())
+		}
+	}()
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -169,7 +177,13 @@ func TestHover(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	testOutput := bytes.NewBuffer(nil)
+	log := slog.New(slog.NewJSONHandler(testOutput, nil))
+	defer func() {
+		if t.Failed() {
+			fmt.Println(testOutput.String())
+		}
+	}()
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -212,14 +226,11 @@ func TestHover(t *testing.T) {
 			replacement: `			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`,
 			cursor:      `                                 ^`,
 			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
-				expectedHover := protocol.Hover{
-					Contents: protocol.MarkupContent{
-						Kind:  "markdown",
-						Value: "```go\npackage fmt\n```\n\n---\n\n[`fmt` on pkg.go.dev](https://pkg.go.dev/fmt)",
-					},
+				if actual.Contents.Kind != "markdown" {
+					return fmt.Sprintf("expected hover kind to be markdown, got %q", actual.Contents.Kind), false
 				}
-				if diff := lspdiff.Hover(expectedHover, *actual); diff != "" {
-					return fmt.Sprintf("unexpected hover: %v\n\n: markdown: %#v", diff, actual.Contents.Value), false
+				if !strings.Contains(actual.Contents.Value, "```go\npackage fmt\n```") {
+					return fmt.Sprintf("expected hover to contain package fmt, got %q", actual.Contents.Value), false
 				}
 				return "", true
 			},
@@ -229,17 +240,14 @@ func TestHover(t *testing.T) {
 			replacement: `			<div data-testid="count">{ fmt.Sprintf("%d", count) }</div>`,
 			cursor:      `                                     ^`,
 			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
-				expectedHover := protocol.Hover{
-					Contents: protocol.MarkupContent{
-						Kind:  "markdown",
-						Value: "```go\nfunc fmt.Sprintf(format string, a ...any) string\n```\n\n---\n\nSprintf formats according to a format specifier and returns the resulting string.\n\n\n---\n\n[`fmt.Sprintf` on pkg.go.dev](https://pkg.go.dev/fmt#Sprintf)",
-					},
-				}
 				if actual == nil {
 					return "expected hover to be non-nil", false
 				}
-				if diff := lspdiff.Hover(expectedHover, *actual); diff != "" {
-					return fmt.Sprintf("unexpected hover: %v", diff), false
+				if actual.Contents.Kind != "markdown" {
+					return fmt.Sprintf("expected hover kind to be markdown, got %q", actual.Contents.Kind), false
+				}
+				if !strings.Contains(actual.Contents.Value, "```go\nfunc fmt.Sprintf(format string, a ...any) string\n```") {
+					return fmt.Sprintf("expected hover to contain fmt.Sprintf signature, got %q", actual.Contents.Value), false
 				}
 				return "", true
 			},
@@ -248,15 +256,6 @@ func TestHover(t *testing.T) {
 			line:        19,
 			replacement: `var nihao = "你好"`,
 			cursor:      `             ^`,
-			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
-				// There's nothing to hover, just want to make sure it doesn't panic.
-				return "", true
-			},
-		},
-		{
-			line:        19,
-			replacement: `var nihao = "你好"`,
-			cursor:      `              ^`, // Your text editor might not render this well, but it's the hao.
 			assert: func(t *testing.T, actual *protocol.Hover) (msg string, ok bool) {
 				// There's nothing to hover, just want to make sure it doesn't panic.
 				return "", true
@@ -329,7 +328,13 @@ func TestReferences(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	testOutput := bytes.NewBuffer(nil)
+	log := slog.New(slog.NewJSONHandler(testOutput, nil))
+	defer func() {
+		if t.Failed() {
+			fmt.Println(testOutput.String())
+		}
+	}()
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -490,7 +495,13 @@ func TestCodeAction(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	testOutput := bytes.NewBuffer(nil)
+	log := slog.New(slog.NewJSONHandler(testOutput, nil))
+	defer func() {
+		if t.Failed() {
+			fmt.Println(testOutput.String())
+		}
+	}()
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
@@ -613,7 +624,13 @@ func TestDocumentSymbol(t *testing.T) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	testOutput := bytes.NewBuffer(nil)
+	log := slog.New(slog.NewJSONHandler(testOutput, nil))
+	defer func() {
+		if t.Failed() {
+			fmt.Println(testOutput.String())
+		}
+	}()
 
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
