@@ -163,7 +163,7 @@ func render(p person) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, ">Else</div><div data-script=\"on click\n                do something\n             end\"></div><h2>HTMX Wildcard attribute</h2><form")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, ">Else</div><div data-script=\"on click\n                do something\n             end\"></div><h2>htmx Wildcard attribute</h2><form")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
