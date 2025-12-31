@@ -364,6 +364,7 @@ func (c *ExpressionCSSProperty) Visit(v Visitor) error {
 
 // <!DOCTYPE html>
 type DocType struct {
+	Range Range
 	Value string
 }
 

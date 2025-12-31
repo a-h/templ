@@ -669,6 +669,10 @@ func TestTemplateParser(t *testing.T) {
 				},
 				Children: []Node{
 					&DocType{
+						Range: Range{
+							From: Position{Index: 15, Line: 1, Col: 0},
+							To:   Position{Index: 30, Line: 1, Col: 15},
+						},
 						Value: "html",
 					},
 					&Whitespace{Range: Range{

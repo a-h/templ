@@ -17,6 +17,10 @@ func TestDocTypeParser(t *testing.T) {
 			name:  "HTML 5 doctype - uppercase",
 			input: `<!DOCTYPE html>`,
 			expected: &DocType{
+				Range: Range{
+					From: Position{},
+					To:   Position{Index: 15, Line: 0, Col: 15},
+				},
 				Value: "html",
 			},
 		},
@@ -24,6 +28,10 @@ func TestDocTypeParser(t *testing.T) {
 			name:  "HTML 5 doctype - lowercase",
 			input: `<!doctype html>`,
 			expected: &DocType{
+				Range: Range{
+					From: Position{},
+					To:   Position{Index: 15, Line: 0, Col: 15},
+				},
 				Value: "html",
 			},
 		},
@@ -31,6 +39,10 @@ func TestDocTypeParser(t *testing.T) {
 			name:  "HTML 4.01 doctype",
 			input: `<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">`,
 			expected: &DocType{
+				Range: Range{
+					From: Position{},
+					To:   Position{Index: 102, Line: 0, Col: 102},
+				},
 				Value: `HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"`,
 			},
 		},
@@ -38,6 +50,10 @@ func TestDocTypeParser(t *testing.T) {
 			name:  "XHTML 1.1",
 			input: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">`,
 			expected: &DocType{
+				Range: Range{
+					From: Position{},
+					To:   Position{Index: 97, Line: 0, Col: 97},
+				},
 				Value: `html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"`,
 			},
 		},
