@@ -81,7 +81,19 @@ default:
 							},
 						},
 						Children: []Node{
-							&Whitespace{Value: "\t"},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 28,
+									Line:  2,
+									Col:   0,
+								},
+								To: Position{
+									Index: 29,
+									Line:  2,
+									Col:   1,
+								},
+							},
+								Value: "\t"},
 							&Element{
 								Name: "span",
 								NameRange: Range{
@@ -89,7 +101,19 @@ default:
 									To:   Position{Index: 34, Line: 2, Col: 6},
 								},
 								Children: []Node{
-									&Whitespace{Value: "\n\t  "},
+									&Whitespace{Range: Range{
+										From: Position{
+											Index: 35,
+											Line:  2,
+											Col:   7,
+										},
+										To: Position{
+											Index: 39,
+											Line:  3,
+											Col:   3,
+										},
+									},
+										Value: "\n\t  "},
 									&StringExpression{
 										Expression: Expression{
 											Value: `"span content"`,
@@ -174,7 +198,19 @@ default:
 									To:   Position{Index: 41, Line: 2, Col: 5},
 								},
 								Children: []Node{
-									&Whitespace{Value: "\n  "},
+									&Whitespace{Range: Range{
+										From: Position{
+											Index: 42,
+											Line:  2,
+											Col:   6,
+										},
+										To: Position{
+											Index: 45,
+											Line:  3,
+											Col:   2,
+										},
+									},
+										Value: "\n  "},
 									&StringExpression{
 										Expression: Expression{
 											Value: `"span content"`,
@@ -253,6 +289,18 @@ default:
 						},
 						Children: []Node{
 							&Whitespace{
+								Range: Range{
+									From: Position{
+										Index: 30,
+										Line:  2,
+										Col:   0,
+									},
+									To: Position{
+										Index: 32,
+										Line:  2,
+										Col:   2,
+									},
+								},
 								Value: "\t\t",
 							},
 							&StringExpression{
@@ -293,6 +341,18 @@ default:
 						},
 						Children: []Node{
 							&Whitespace{
+								Range: Range{
+									From: Position{
+										Index: 51,
+										Line:  4,
+										Col:   0,
+									},
+									To: Position{
+										Index: 53,
+										Line:  4,
+										Col:   2,
+									},
+								},
 								Value: "\t\t",
 							},
 							&StringExpression{

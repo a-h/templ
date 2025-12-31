@@ -1608,7 +1608,19 @@ func TestElementParser(t *testing.T) {
 					To:   Position{Index: 2, Line: 0, Col: 2},
 				},
 				Children: []Node{
-					&Whitespace{Value: " "},
+					&Whitespace{Range: Range{
+						From: Position{
+							Index: 3,
+							Line:  0,
+							Col:   3,
+						},
+						To: Position{
+							Index: 4,
+							Line:  0,
+							Col:   4,
+						},
+					},
+						Value: " "},
 					&Element{
 						Name: "b",
 						NameRange: Range{
@@ -1617,7 +1629,19 @@ func TestElementParser(t *testing.T) {
 						},
 
 						Children: []Node{
-							&Whitespace{Value: " "},
+							&Whitespace{Range: Range{
+								From: Position{
+									Index: 7,
+									Line:  0,
+									Col:   7,
+								},
+								To: Position{
+									Index: 8,
+									Line:  0,
+									Col:   8,
+								},
+							},
+								Value: " "},
 						},
 						TrailingSpace: SpaceHorizontal,
 						Range: Range{
