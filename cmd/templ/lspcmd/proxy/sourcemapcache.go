@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/a-h/templ/parser/v2"
@@ -23,6 +24,12 @@ type SourceMapCache struct {
 func (fc *SourceMapCache) Set(uri string, m *parser.SourceMap) {
 	fc.m.Lock()
 	defer fc.m.Unlock()
+
+	if m == nil {
+		delete(fc.uriToSourceMap, uri)
+		return
+	}
+
 	fc.uriToSourceMap[uri] = m
 }
 
@@ -48,5 +55,6 @@ func (fc *SourceMapCache) URIs() (uris []string) {
 		uris[i] = k
 		i++
 	}
+	slices.Sort(uris)
 	return uris
 }
