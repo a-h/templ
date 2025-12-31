@@ -425,6 +425,18 @@ default:
 						},
 						Children: []Node{
 							&Whitespace{
+								Range: Range{
+									From: Position{
+										Index: 30,
+										Line:  2,
+										Col:   0,
+									},
+									To: Position{
+										Index: 32,
+										Line:  2,
+										Col:   2,
+									},
+								},
 								Value: "\t\t",
 							},
 							&Fallthrough{
@@ -461,6 +473,18 @@ default:
 						},
 						Children: []Node{
 							&Whitespace{
+								Range: Range{
+									From: Position{
+										Index: 55,
+										Line:  4,
+										Col:   0,
+									},
+									To: Position{
+										Index: 57,
+										Line:  4,
+										Col:   2,
+									},
+								},
 								Value: "\t\t",
 							},
 							&StringExpression{
