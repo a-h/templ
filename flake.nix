@@ -74,6 +74,7 @@
             pkgs.gopls
             pkgs.goreleaser
             pkgs.gotestsum
+            pkgs.govulncheck
             pkgs.ko # Used to build Docker images.
             pkgs.nodejs # Used to build templ-docs.
             pkgs.nodePackages.prettier # Used for formatting JS and CSS.

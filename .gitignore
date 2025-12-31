@@ -34,3 +34,7 @@ go.work
 
 # templ txt files.
 *_templ.txt
+
+# Example output binaries.
+/examples/integration-gin/integration-gin
+/examples/integration-echo/integration-echo

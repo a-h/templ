@@ -37,7 +37,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 		log.Error("Failed to open database", slog.Any("error", err))
 		return err
 	}
-	store := sqlitekv.New(pool)
+	store := sqlitekv.NewStore(pool)
 	if err := store.Init(ctx); err != nil {
 		log.Error("Failed to initialize store", slog.Any("error", err))
 		return err
