@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"slices"
 	"sync"
 
 	"github.com/a-h/templ/parser/v2"
@@ -54,5 +55,6 @@ func (fc *SourceMapCache) URIs() (uris []string) {
 		uris[i] = k
 		i++
 	}
+	slices.Sort(uris)
 	return uris
 }
