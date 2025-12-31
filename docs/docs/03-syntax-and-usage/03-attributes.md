@@ -199,7 +199,7 @@ This may introduce security vulnerabilities to your program.
 If you use a constant value, e.g. `<a href="javascript:alert('hello')">`, templ will not modify it, and it will be rendered as is.
 
 :::tip
-Non-standard HTML attributes can contain URLs, for example HTMX's `hx-*` attributes).
+Non-standard HTML attributes can contain URLs, for example htmx's `hx-*` attributes).
 
 To sanitize URLs in that context, use the `templ.URL(urlString)` function.
 
@@ -263,7 +263,7 @@ CSS handling is discussed in detail in [CSS style management](/syntax-and-usage/
 
 ## JSON attributes
 
-To set an attribute's value to a JSON string (e.g. for HTMX's [hx-vals](https://htmx.org/attributes/hx-vals) or Alpine's [x-data](https://alpinejs.dev/directives/data)), serialize the value to a string using a function.
+To set an attribute's value to a JSON string (e.g. for htmx's [hx-vals](https://htmx.org/attributes/hx-vals) or Alpine's [x-data](https://alpinejs.dev/directives/data)), serialize the value to a string using a function.
 
 ```go
 func countriesJSON() string {

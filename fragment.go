@@ -27,7 +27,7 @@ type FragmentContext struct {
 }
 
 // Fragment defines a fragment within a template that can be rendered conditionally based on the id.
-// You can use it to render a specific part of a page, e.g. to reduce the amount of HTML returned from a HTMX-initiated request.
+// You can use it to render a specific part of a page, e.g. to reduce the amount of HTML returned from a htmx-initiated request.
 // Any non-matching contents of the template are rendered, but discarded by the FramentWriter.
 func Fragment(id any) Component {
 	return &fragment{
