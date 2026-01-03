@@ -523,6 +523,13 @@ func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (
 			if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
 				return err
 			}
+		case KeyValue[string, error]:
+			if value.Value != nil {
+				return value.Value
+			}
+			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value.Key), `"`); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
