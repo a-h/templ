@@ -551,16 +551,17 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 			if !ok {
 				continue
 			}
-			pkg := getPackageFromItemDetail(item.Detail)
-			imp := addImport(doc.Lines, pkg)
-			item.AdditionalTextEdits = []lsp.TextEdit{
-				{
-					Range: lsp.Range{
-						Start: lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
-						End:   lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+			if pkg := getPackageFromItemDetail(item.Detail); pkg != nil {
+				imp := addImport(doc.Lines, *pkg)
+				item.AdditionalTextEdits = []lsp.TextEdit{
+					{
+						Range: lsp.Range{
+							Start: lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+							End:   lsp.Position{Line: uint32(imp.LineIndex), Character: 0},
+						},
+						NewText: imp.Text,
 					},
-					NewText: imp.Text,
-				},
+				}
 			}
 		}
 		result.Items[i] = item
@@ -582,13 +583,16 @@ func stripTemplStringable(s string) string {
 	return s
 }
 
-var completionWithImport = regexp.MustCompile(`^.*\(from\s(".+")\)$`)
+var completionWithFromImport = regexp.MustCompile(`^.*\(from\s(".+")\)$`)
+var completionWithoutFromImport = regexp.MustCompile(`^(".+")$`)
 
-func getPackageFromItemDetail(pkg string) string {
-	if m := completionWithImport.FindStringSubmatch(pkg); len(m) == 2 {
-		return m[1]
+func getPackageFromItemDetail(detail string) *string {
+	if m := completionWithFromImport.FindStringSubmatch(detail); len(m) == 2 {
+		return &m[1]
+	} else if m := completionWithoutFromImport.FindStringSubmatch(detail); len(m) == 2 {
+		return &m[1]
 	}
-	return pkg
+	return nil
 }
 
 type importInsert struct {

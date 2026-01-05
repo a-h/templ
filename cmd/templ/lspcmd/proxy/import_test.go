@@ -267,27 +267,31 @@ import "other"
 func TestGetPackageFromItemDetail(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected string
+		expected *string
 	}{
 		{
 			input:    `"fmt"`,
-			expected: `"fmt"`,
+			expected: ptr(`"fmt"`),
 		},
 		{
 			input:    `func(state fmt.State, verb rune) string (from "fmt")`,
-			expected: `"fmt"`,
+			expected: ptr(`"fmt"`),
 		},
 		{
 			input:    `non matching`,
-			expected: `non matching`,
+			expected: nil,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
 			actual := getPackageFromItemDetail(test.input)
-			if test.expected != actual {
-				t.Errorf("expected %q, got %q", test.expected, actual)
+			if test.expected != actual && (test.expected == nil || actual == nil || *test.expected != *actual) {
+				t.Errorf("expected %v, got %v", test.expected, actual)
 			}
 		})
 	}
+}
+
+func ptr[T any](x T) *T {
+	return &x
 }
