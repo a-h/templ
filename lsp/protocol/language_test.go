@@ -5,15 +5,14 @@ package protocol
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 
-	"encoding/json"
+	"github.com/a-h/templ/lsp/uri"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-
-	"github.com/a-h/templ/lsp/uri"
 )
 
 func TestCompletionParams(t *testing.T) {

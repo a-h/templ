@@ -4,11 +4,11 @@
 package protocol
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
 
-	"encoding/json"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 )

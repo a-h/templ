@@ -4,15 +4,14 @@
 package protocol
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"testing"
 
-	"encoding/json"
+	"github.com/a-h/templ/lsp/uri"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-
-	"github.com/a-h/templ/lsp/uri"
 )
 
 func TestWorkspaceFolders(t *testing.T) {

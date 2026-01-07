@@ -4,10 +4,10 @@
 package protocol
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
-	"encoding/json"
 	"github.com/google/go-cmp/cmp"
 )
 

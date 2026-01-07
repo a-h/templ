@@ -4,12 +4,11 @@
 package protocol
 
 import (
+	"encoding/json"
 	"testing"
 
-	"encoding/json"
-	"github.com/google/go-cmp/cmp"
-
 	"github.com/a-h/templ/lsp/uri"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestPosition(t *testing.T) {
