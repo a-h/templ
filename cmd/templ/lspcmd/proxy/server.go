@@ -589,7 +589,8 @@ var completionWithoutFromImport = regexp.MustCompile(`^(".+")$`)
 func getPackageFromItemDetail(detail string) *string {
 	if m := completionWithFromImport.FindStringSubmatch(detail); len(m) == 2 {
 		return &m[1]
-	} else if m := completionWithoutFromImport.FindStringSubmatch(detail); len(m) == 2 {
+	}
+	if m := completionWithoutFromImport.FindStringSubmatch(detail); len(m) == 2 {
 		return &m[1]
 	}
 	return nil
