@@ -111,8 +111,7 @@ func streamInsertAfterBodyOpen(nonce string, r io.Reader, w io.Writer) error {
 				}
 			}
 		default:
-			t := z.Token()
-			_, err := w.Write([]byte(t.String()))
+			_, err := w.Write(z.Raw())
 			if err != nil {
 				return err
 			}
