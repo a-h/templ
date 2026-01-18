@@ -802,7 +802,7 @@ var x = localStorage.getItem('test');
 var y = true && false;
 alert("test");
 </script>`)
-		for range 50 {
+		for i := range 50 {
 			inputBuilder.WriteString(fmt.Sprintf("<div>%d padding</div>\n", i))
 		}
 		inputBuilder.WriteString("</body></html>")
