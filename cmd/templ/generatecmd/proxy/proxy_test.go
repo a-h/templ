@@ -757,3 +757,99 @@ func TestParseNonce(t *testing.T) {
 		})
 	}
 }
+
+func TestStreamInsertAfterBodyOpen(t *testing.T) {
+	t.Run("script tags with special characters are not escaped", func(t *testing.T) {
+		input := `<html>
+<head><title>Test</title></head>
+<body>
+<script>
+var x = localStorage.getItem('test');
+var y = true && false;
+</script>
+</body>
+</html>`
+
+		var output bytes.Buffer
+		err := streamInsertAfterBodyOpen("", strings.NewReader(input), &output)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		result := output.String()
+
+		if !strings.Contains(result, "localStorage.getItem('test')") {
+			t.Errorf("expected single quotes to not be escaped, got: %s", result)
+		}
+		if strings.Contains(result, "&#39;") {
+			t.Errorf("single quotes should not be escaped to &#39;, got: %s", result)
+		}
+		if !strings.Contains(result, "true && false") {
+			t.Errorf("expected && to not be escaped, got: %s", result)
+		}
+		if strings.Contains(result, "&amp;&amp;") {
+			t.Errorf("&& should not be escaped to &amp;&amp;, got: %s", result)
+		}
+	})
+
+	t.Run("large HTML with script tags maintains character integrity", func(t *testing.T) {
+		var inputBuilder strings.Builder
+		inputBuilder.WriteString(`<html>
+<head><title>Test</title></head>
+<body>
+<script>
+var x = localStorage.getItem('test');
+var y = true && false;
+alert("test");
+</script>`)
+		for range 50 {
+			inputBuilder.WriteString(fmt.Sprintf("<div>%d padding</div>\n", i))
+		}
+		inputBuilder.WriteString("</body></html>")
+		input := inputBuilder.String()
+
+		var output bytes.Buffer
+		err := streamInsertAfterBodyOpen("", strings.NewReader(input), &output)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		result := output.String()
+
+		if !strings.Contains(result, "localStorage.getItem('test')") {
+			t.Errorf("expected single quotes to not be escaped in large document")
+		}
+		if strings.Contains(result, "&#39;") {
+			t.Errorf("single quotes should not be escaped to &#39; in large document")
+		}
+		if !strings.Contains(result, "true && false") {
+			t.Errorf("expected && to not be escaped in large document")
+		}
+		if strings.Contains(result, "&amp;&amp;") {
+			t.Errorf("&& should not be escaped to &amp;&amp; in large document")
+		}
+		if !strings.Contains(result, `alert("test")`) {
+			t.Errorf("expected double quotes to not be escaped in large document")
+		}
+	})
+
+	t.Run("script with nonce attribute is inserted correctly", func(t *testing.T) {
+		input := `<html><body><p>Content</p></body></html>`
+		nonce := "test-nonce-123"
+
+		var output bytes.Buffer
+		err := streamInsertAfterBodyOpen(nonce, strings.NewReader(input), &output)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		result := output.String()
+
+		if !strings.Contains(result, `nonce="`+nonce+`"`) {
+			t.Errorf("expected nonce attribute to be present with value %s, got: %s", nonce, result)
+		}
+		if !strings.Contains(result, `src="/_templ/reload/script.js"`) {
+			t.Errorf("expected script src to be present, got: %s", result)
+		}
+	})
+}
