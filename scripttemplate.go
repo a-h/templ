@@ -80,9 +80,8 @@ func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScr
 	_, v := getContext(ctx)
 	sb := new(strings.Builder)
 	for _, s := range scripts {
-		if !v.hasScriptBeenRendered(s.Name) {
+		if v.shouldRenderScript(s.Name) {
 			sb.WriteString(s.Function)
-			v.addScript(s.Name)
 		}
 	}
 	if sb.Len() > 0 {
