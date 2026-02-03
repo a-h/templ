@@ -1,0 +1,28 @@
+-- in --
+package p
+
+templ wrapper(content func(string) templ.Component) {
+	<div>
+		@content("hello")
+	</div>
+}
+
+templ f() {
+	@wrapper(templ(msg string) {
+		<span>{ msg }</span>
+	})
+}
+-- out --
+package p
+
+templ wrapper(content func(string) templ.Component) {
+	<div>
+		@content("hello")
+	</div>
+}
+
+templ f() {
+	@wrapper(templ(msg string) {
+		<span>{ msg }</span>
+	})
+}

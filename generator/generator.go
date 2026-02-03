@@ -625,6 +625,10 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeCallTemplateExpression(indentLevel, n)
 	case *parser.TemplElementExpression:
 		err = g.writeTemplElementExpression(indentLevel, n)
+	case *parser.AnonymousTemplate:
+		err = g.writeAnonymousTemplate(indentLevel, n)
+	case *parser.AnonymousTemplateInvocation:
+		err = g.writeAnonymousTemplateInvocation(indentLevel, n)
 	case *parser.IfExpression:
 		err = g.writeIfExpression(indentLevel, n, next)
 	case *parser.SwitchExpression:
@@ -833,6 +837,24 @@ func (g *generator) writeTemplElementExpression(indentLevel int, n *parser.Templ
 
 func (g *generator) writeBlockTemplElementExpression(indentLevel int, n *parser.TemplElementExpression) (err error) {
 	var r parser.Range
+
+	// First, generate embedded template variables if any
+	exprValue := n.Expression.Value
+	if len(n.EmbeddedTemplates) > 0 {
+		for placeholder, anon := range n.EmbeddedTemplates {
+			// Generate: placeholder := func(params) templ.Component { ... }
+			if _, err = g.w.WriteIndent(indentLevel, placeholder+" := "); err != nil {
+				return err
+			}
+			if err = g.writeAnonymousTemplate(indentLevel, anon); err != nil {
+				return err
+			}
+			if _, err = g.w.Write("\n"); err != nil {
+				return err
+			}
+		}
+	}
+
 	childrenName := g.createVariableName()
 	if _, err = g.w.WriteIndent(indentLevel, childrenName+" := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
 		return err
@@ -862,7 +884,7 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n *parser.
 	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
 		return err
 	}
-	if r, err = g.w.Write(n.Expression.Value); err != nil {
+	if r, err = g.w.Write(exprValue); err != nil {
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
@@ -877,15 +899,104 @@ func (g *generator) writeBlockTemplElementExpression(indentLevel int, n *parser.
 }
 
 func (g *generator) writeSelfClosingTemplElementExpression(indentLevel int, n *parser.TemplElementExpression) (err error) {
+	// First, generate embedded template variables if any
+	exprValue := n.Expression.Value
+	if len(n.EmbeddedTemplates) > 0 {
+		for placeholder, anon := range n.EmbeddedTemplates {
+			// Generate: placeholder := func(params) templ.Component { ... }
+			if _, err = g.w.WriteIndent(indentLevel, placeholder+" := "); err != nil {
+				return err
+			}
+			if err = g.writeAnonymousTemplate(indentLevel, anon); err != nil {
+				return err
+			}
+			if _, err = g.w.Write("\n"); err != nil {
+				return err
+			}
+		}
+	}
+
 	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
 		return err
 	}
 	// Template expression.
 	var r parser.Range
+	if r, err = g.w.Write(exprValue); err != nil {
+		return err
+	}
+	g.sourceMap.Add(n.Expression, r)
+	// .Render(ctx, templ_7745c5c3_Buffer)
+	if _, err = g.w.Write(".Render(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) writeAnonymousTemplate(indentLevel int, n *parser.AnonymousTemplate) (err error) {
+	var r parser.Range
+	// func(params) templ.Component {
+	if r, err = g.w.Write("func"); err != nil {
+		return err
+	}
 	if r, err = g.w.Write(n.Expression.Value); err != nil {
 		return err
 	}
 	g.sourceMap.Add(n.Expression, r)
+	if _, err = g.w.Write(" templ.Component {\n"); err != nil {
+		return err
+	}
+	indentLevel++
+	// return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+	if _, err = g.w.WriteIndent(indentLevel, "return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {\n"); err != nil {
+		return err
+	}
+	indentLevel++
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context\n"); err != nil {
+		return err
+	}
+	if err := g.writeTemplBuffer(indentLevel); err != nil {
+		return err
+	}
+	// ctx = templ.InitializeContext(ctx)
+	if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeContext(ctx)\n"); err != nil {
+		return err
+	}
+	if err = g.writeNodes(indentLevel, stripLeadingAndTrailingWhitespace(n.Children), nil); err != nil {
+		return err
+	}
+	// return nil
+	if _, err = g.w.WriteIndent(indentLevel, "return nil\n"); err != nil {
+		return err
+	}
+	indentLevel--
+	if _, err = g.w.WriteIndent(indentLevel, "})\n"); err != nil {
+		return err
+	}
+	indentLevel--
+	if _, err = g.w.WriteIndent(indentLevel, "}"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *generator) writeAnonymousTemplateInvocation(indentLevel int, n *parser.AnonymousTemplateInvocation) (err error) {
+	// templ_7745c5c3_Err = func(params) templ.Component { ... }(args).Render(ctx, templ_7745c5c3_Buffer)
+	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = `); err != nil {
+		return err
+	}
+	// Write the anonymous template function
+	if err = g.writeAnonymousTemplate(indentLevel, n.Template); err != nil {
+		return err
+	}
+	// Write the call expression (args)
+	var r parser.Range
+	if r, err = g.w.Write(n.CallExpression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(n.CallExpression, r)
 	// .Render(ctx, templ_7745c5c3_Buffer)
 	if _, err = g.w.Write(".Render(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
 		return err

@@ -1,0 +1,44 @@
+-- in --
+package p
+
+templ nestedWrapper(outer func() templ.Component, inner func() templ.Component) {
+	<div class="outer">
+		@outer()
+		<div class="inner">
+			@inner()
+		</div>
+	</div>
+}
+
+templ f() {
+	@nestedWrapper(
+		templ() {
+			<span>first</span>
+		},
+		templ() {
+			<span>second</span>
+		},
+	)
+}
+-- out --
+package p
+
+templ nestedWrapper(outer func() templ.Component, inner func() templ.Component) {
+	<div class="outer">
+		@outer()
+		<div class="inner">
+			@inner()
+		</div>
+	</div>
+}
+
+templ f() {
+	@nestedWrapper(
+		templ() {
+			<span>first</span>
+		},
+		templ() {
+			<span>second</span>
+		},
+	)
+}

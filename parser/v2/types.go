@@ -1206,14 +1206,64 @@ type TemplElementExpression struct {
 	Expression Expression
 	// Children returns the elements in a block element.
 	Children []Node
-	Range    Range
+	// EmbeddedTemplates contains any anonymous templates embedded in the expression.
+	// Each key is a placeholder variable name used in Expression.Value, and the value
+	// is the corresponding anonymous template.
+	EmbeddedTemplates map[string]*AnonymousTemplate
+	Range             Range
 }
 
 func (tee TemplElementExpression) ChildNodes() []Node {
 	return tee.Children
 }
 func (tee *TemplElementExpression) IsNode() bool { return true }
+
+// expandEmbeddedTemplates takes an expression with placeholder names and substitutes
+// them back with the original templ(...) { ... } syntax.
+func (tee *TemplElementExpression) expandEmbeddedTemplates(expr string, baseIndent int) (string, error) {
+	if len(tee.EmbeddedTemplates) == 0 {
+		return expr, nil
+	}
+
+	result := expr
+	for placeholder, tmpl := range tee.EmbeddedTemplates {
+		// Find the placeholder in the current result string and determine its indent level
+		placeholderIndent := baseIndent
+		idx := strings.Index(result, placeholder)
+		if idx > 0 {
+			// Count backwards to find the start of the line
+			lineStart := idx
+			for lineStart > 0 && result[lineStart-1] != '\n' {
+				lineStart--
+			}
+			// Count leading tabs
+			tabCount := 0
+			for i := lineStart; i < idx && result[i] == '\t'; i++ {
+				tabCount++
+			}
+			if tabCount > 0 {
+				placeholderIndent = tabCount
+			}
+		}
+
+		// Render the embedded template to a string
+		var buf bytes.Buffer
+		if err := tmpl.writeInline(&buf, placeholderIndent); err != nil {
+			return "", err
+		}
+		// Replace the placeholder with the rendered template
+		result = strings.Replace(result, placeholder, buf.String(), 1)
+	}
+	return result, nil
+}
+
 func (tee *TemplElementExpression) Write(w io.Writer, indent int) error {
+	// If we have embedded templates, we need to handle them specially
+	// because gofmt doesn't understand the templ() { ... } syntax
+	if len(tee.EmbeddedTemplates) > 0 {
+		return tee.writeWithEmbeddedTemplates(w, indent)
+	}
+
 	source, err := format.Source([]byte(tee.Expression.Value))
 	if err != nil {
 		source = []byte(tee.Expression.Value)
@@ -1264,8 +1314,136 @@ func (tee *TemplElementExpression) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+// writeWithEmbeddedTemplates handles writing expressions that contain embedded templates.
+// We can't use gofmt on these because it doesn't understand the templ() { ... } syntax.
+func (tee *TemplElementExpression) writeWithEmbeddedTemplates(w io.Writer, indent int) error {
+	// Expand embedded templates in the expression
+	exprValue, err := tee.expandEmbeddedTemplates(tee.Expression.Value, indent)
+	if err != nil {
+		return err
+	}
+
+	// Write with proper indentation, handling multiline expressions
+	lines := strings.Split(exprValue, "\n")
+	for i, line := range lines {
+		if i == 0 {
+			if err := writeIndent(w, indent, "@"+line); err != nil {
+				return err
+			}
+		} else {
+			if _, err := io.WriteString(w, "\n"); err != nil {
+				return err
+			}
+			// Preserve the indentation from the expanded template
+			if len(strings.TrimSpace(line)) > 0 {
+				if _, err := io.WriteString(w, line); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if len(tee.Children) == 0 {
+		return nil
+	}
+	if _, err := io.WriteString(w, " {\n"); err != nil {
+		return err
+	}
+	if err := writeNodesIndented(w, indent+1, tee.Children); err != nil {
+		return err
+	}
+	if err := writeIndent(w, indent, "}"); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (tee *TemplElementExpression) Visit(v Visitor) error {
 	return v.VisitTemplElementExpression(tee)
+}
+
+// AnonymousTemplate is an inline anonymous template that returns func(...params) templ.Component.
+//
+//	templ() { <div>content</div> }
+//	templ(name string) { <div>{ name }</div> }
+type AnonymousTemplate struct {
+	// Expression contains the function parameters, e.g., "()" or "(name string)".
+	Expression Expression
+	// Children contains the template body nodes.
+	Children []Node
+	Range    Range
+}
+
+func (at AnonymousTemplate) ChildNodes() []Node {
+	return at.Children
+}
+
+func (at *AnonymousTemplate) IsNode() bool { return true }
+
+// writeInline writes the anonymous template inline (without leading indentation on first line),
+// suitable for embedding within an expression.
+func (at *AnonymousTemplate) writeInline(w io.Writer, indent int) error {
+	// Write "templ(...) {" without leading indent on first line
+	if _, err := io.WriteString(w, "templ"+at.Expression.Value+" {\n"); err != nil {
+		return err
+	}
+	if err := writeNodesIndented(w, indent+1, at.Children); err != nil {
+		return err
+	}
+	if err := writeIndent(w, indent, "}"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (at *AnonymousTemplate) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "templ", at.Expression.Value, " {\n"); err != nil {
+		return err
+	}
+	if err := writeNodesIndented(w, indent+1, at.Children); err != nil {
+		return err
+	}
+	if err := writeIndent(w, indent, "}"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (at *AnonymousTemplate) Visit(v Visitor) error {
+	return v.VisitAnonymousTemplate(at)
+}
+
+// AnonymousTemplateInvocation represents an immediately invoked anonymous template.
+// @templ(params) { body }(args) calls the anonymous template with the given arguments.
+type AnonymousTemplateInvocation struct {
+	// Template is the anonymous template being invoked.
+	Template *AnonymousTemplate
+	// CallExpression contains the invocation arguments, e.g., "()" or "(arg1, arg2)".
+	CallExpression Expression
+	Range          Range
+}
+
+func (ati AnonymousTemplateInvocation) ChildNodes() []Node {
+	return ati.Template.ChildNodes()
+}
+
+func (ati *AnonymousTemplateInvocation) IsNode() bool { return true }
+
+func (ati *AnonymousTemplateInvocation) Write(w io.Writer, indent int) error {
+	if err := writeIndent(w, indent, "@templ", ati.Template.Expression.Value, " {\n"); err != nil {
+		return err
+	}
+	if err := writeNodesIndented(w, indent+1, ati.Template.Children); err != nil {
+		return err
+	}
+	if err := writeIndent(w, indent, "}", ati.CallExpression.Value); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ati *AnonymousTemplateInvocation) Visit(v Visitor) error {
+	return v.VisitAnonymousTemplateInvocation(ati)
 }
 
 // ChildrenExpression can be used to render the children of a templ element.

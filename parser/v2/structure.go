@@ -22,6 +22,8 @@ var (
 	_ Node = (*HTMLComment)(nil)
 	_ Node = (*CallTemplateExpression)(nil)
 	_ Node = (*TemplElementExpression)(nil)
+	_ Node = (*AnonymousTemplate)(nil)
+	_ Node = (*AnonymousTemplateInvocation)(nil)
 	_ Node = (*ChildrenExpression)(nil)
 	_ Node = (*IfExpression)(nil)
 	_ Node = (*SwitchExpression)(nil)

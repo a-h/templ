@@ -1,0 +1,202 @@
+package testanonymoustemplate
+
+import "fmt"
+
+// Test immediately invoked anonymous template (no parameters)
+templ immediateInvoke() {
+	@templ() {
+		<span>immediately invoked</span>
+	}()
+}
+
+// Test immediately invoked with parameter
+templ immediateWithParam() {
+	@templ(name string) {
+		<span>Hello, { name }!</span>
+	}("World")
+}
+
+// Test immediately invoked with multiple parameters
+templ immediateMultiParam() {
+	@templ(a, b string) {
+		<span>{ a } and { b }</span>
+	}("first", "second")
+}
+
+// Wrapper component that accepts a component (using func signature)
+templ wrapperFunc(content func() templ.Component) {
+	<div class="wrapper">
+		@content()
+	</div>
+}
+
+// Test passing anonymous template function as argument
+templ passAsArg() {
+	@wrapperFunc(templ() {
+		<span>passed as arg</span>
+	})
+}
+
+// Test passing anonymous template with parameters as argument
+templ passWithParamsAsArg() {
+	@wrapperFunc(templ() {
+		<span>hello from arg</span>
+	})
+}
+
+// Nested wrapper - accepts two components
+templ nestedWrapper(outer func() templ.Component, inner func() templ.Component) {
+	<div class="outer">
+		@outer()
+		<div class="inner">
+			@inner()
+		</div>
+	</div>
+}
+
+// Test multiple embedded templates in one call
+templ multipleEmbedded() {
+	@nestedWrapper(
+		templ() {
+			<span>outer content</span>
+		},
+		templ() {
+			<span>inner content</span>
+		},
+	)
+}
+
+// Deep nesting wrapper
+templ deepWrapper(content func() templ.Component) {
+	<section class="deep">
+		@content()
+	</section>
+}
+
+// Test nested embedded templates - an embedded template that itself calls wrapperFunc with another embedded template
+templ nestedEmbeddedTemplates() {
+	@wrapperFunc(templ() {
+		<div class="level1">
+			@wrapperFunc(templ() {
+				<span>deeply nested</span>
+			})
+		</div>
+	})
+}
+
+// Test triple nesting
+templ tripleNested() {
+	@deepWrapper(templ() {
+		<div class="a">
+			@deepWrapper(templ() {
+				<div class="b">
+					@deepWrapper(templ() {
+						<span>triple deep</span>
+					})
+				</div>
+			})
+		</div>
+	})
+}
+
+// Test embedded template with expression inside
+templ embeddedWithExpression() {
+	@wrapperFunc(templ() {
+		for i := 0; i < 3; i++ {
+			<span>{ fmt.Sprint(i) }</span>
+		}
+	})
+}
+
+// Test embedded template with conditional
+templ embeddedWithConditional() {
+	@wrapperFunc(templ() {
+		if true {
+			<span>conditional true</span>
+		} else {
+			<span>conditional false</span>
+		}
+	})
+}
+
+// Test closure over loop variable
+templ closureInLoop() {
+	for i := 0; i < 3; i++ {
+		@wrapperFunc(templ() {
+			<span data-index={ fmt.Sprint(i) }>item</span>
+		})
+	}
+}
+
+// Test empty anonymous template body
+templ emptyEmbedded() {
+	@wrapperFunc(templ() {
+	})
+}
+
+// Test switch/case inside anonymous template
+templ embeddedWithSwitch() {
+	@wrapperFunc(templ() {
+		switch "hello" {
+			case "hello":
+				<span>matched hello</span>
+			case "world":
+				<span>matched world</span>
+			default:
+				<span>no match</span>
+		}
+	})
+}
+
+// Test templ.Raw() inside anonymous template
+templ embeddedWithRaw() {
+	@wrapperFunc(templ() {
+		@templ.Raw("<em>raw html</em>")
+	})
+}
+
+// Main test template
+templ template() {
+	<div id="immediate-invoke">
+		@immediateInvoke()
+	</div>
+	<div id="immediate-with-param">
+		@immediateWithParam()
+	</div>
+	<div id="immediate-multi-param">
+		@immediateMultiParam()
+	</div>
+	<div id="pass-as-arg">
+		@passAsArg()
+	</div>
+	<div id="pass-with-params">
+		@passWithParamsAsArg()
+	</div>
+	<div id="multiple-embedded">
+		@multipleEmbedded()
+	</div>
+	<div id="nested-embedded">
+		@nestedEmbeddedTemplates()
+	</div>
+	<div id="triple-nested">
+		@tripleNested()
+	</div>
+	<div id="embedded-with-expression">
+		@embeddedWithExpression()
+	</div>
+	<div id="embedded-with-conditional">
+		@embeddedWithConditional()
+	</div>
+	<div id="closure-in-loop">
+		@closureInLoop()
+	</div>
+	<div id="empty-embedded">
+		@emptyEmbedded()
+	</div>
+	<div id="embedded-with-switch">
+		@embeddedWithSwitch()
+	</div>
+	<div id="embedded-with-raw">
+		@embeddedWithRaw()
+	</div>
+}

@@ -1,0 +1,16 @@
+-- in --
+package p
+
+templ f() {
+	@templ(name string) {
+		<span>{ name }</span>
+	}("World")
+}
+-- out --
+package p
+
+templ f() {
+	@templ(name string) {
+		<span>{ name }</span>
+	}("World")
+}

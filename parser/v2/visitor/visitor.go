@@ -138,6 +138,17 @@ func New() *Visitor {
 		}
 		return nil
 	}
+	v.AnonymousTemplate = func(n *parser.AnonymousTemplate) error {
+		for _, child := range n.Children {
+			if err := child.Visit(v); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	v.AnonymousTemplateInvocation = func(n *parser.AnonymousTemplateInvocation) error {
+		return v.VisitAnonymousTemplate(n.Template)
+	}
 	v.ChildrenExpression = func(n *parser.ChildrenExpression) error {
 		return nil
 	}
@@ -198,37 +209,39 @@ func New() *Visitor {
 // Visitor implements the parser.Visitor interface. Each function corresponds to a node type in the parse tree.
 // Override these functions to provide custom behavior when visiting nodes.
 type Visitor struct {
-	TemplateFile             func(n *parser.TemplateFile) error
-	TemplateFileGoExpression func(n *parser.TemplateFileGoExpression) error
-	Package                  func(n *parser.Package) error
-	Whitespace               func(n *parser.Whitespace) error
-	CSSTemplate              func(n *parser.CSSTemplate) error
-	ConstantCSSProperty      func(n *parser.ConstantCSSProperty) error
-	ExpressionCSSProperty    func(n *parser.ExpressionCSSProperty) error
-	DocType                  func(n *parser.DocType) error
-	HTMLTemplate             func(n *parser.HTMLTemplate) error
-	Text                     func(n *parser.Text) error
-	Element                  func(n *parser.Element) error
-	RawElement               func(n *parser.RawElement) error
-	ScriptElement            func(n *parser.ScriptElement) error
-	BoolConstantAttribute    func(n *parser.BoolConstantAttribute) error
-	ConstantAttribute        func(n *parser.ConstantAttribute) error
-	BoolExpressionAttribute  func(n *parser.BoolExpressionAttribute) error
-	ExpressionAttribute      func(n *parser.ExpressionAttribute) error
-	SpreadAttributes         func(n *parser.SpreadAttributes) error
-	ConditionalAttribute     func(n *parser.ConditionalAttribute) error
-	GoComment                func(n *parser.GoComment) error
-	HTMLComment              func(n *parser.HTMLComment) error
-	CallTemplateExpression   func(n *parser.CallTemplateExpression) error
-	TemplElementExpression   func(n *parser.TemplElementExpression) error
-	ChildrenExpression       func(n *parser.ChildrenExpression) error
-	IfExpression             func(n *parser.IfExpression) error
-	SwitchExpression         func(n *parser.SwitchExpression) error
-	ForExpression            func(n *parser.ForExpression) error
-	GoCode                   func(n *parser.GoCode) error
-	StringExpression         func(n *parser.StringExpression) error
-	ScriptTemplate           func(n *parser.ScriptTemplate) error
-	Fallthrough              func(n *parser.Fallthrough) error
+	TemplateFile                func(n *parser.TemplateFile) error
+	TemplateFileGoExpression    func(n *parser.TemplateFileGoExpression) error
+	Package                     func(n *parser.Package) error
+	Whitespace                  func(n *parser.Whitespace) error
+	CSSTemplate                 func(n *parser.CSSTemplate) error
+	ConstantCSSProperty         func(n *parser.ConstantCSSProperty) error
+	ExpressionCSSProperty       func(n *parser.ExpressionCSSProperty) error
+	DocType                     func(n *parser.DocType) error
+	HTMLTemplate                func(n *parser.HTMLTemplate) error
+	Text                        func(n *parser.Text) error
+	Element                     func(n *parser.Element) error
+	RawElement                  func(n *parser.RawElement) error
+	ScriptElement               func(n *parser.ScriptElement) error
+	BoolConstantAttribute       func(n *parser.BoolConstantAttribute) error
+	ConstantAttribute           func(n *parser.ConstantAttribute) error
+	BoolExpressionAttribute     func(n *parser.BoolExpressionAttribute) error
+	ExpressionAttribute         func(n *parser.ExpressionAttribute) error
+	SpreadAttributes            func(n *parser.SpreadAttributes) error
+	ConditionalAttribute        func(n *parser.ConditionalAttribute) error
+	GoComment                   func(n *parser.GoComment) error
+	HTMLComment                 func(n *parser.HTMLComment) error
+	CallTemplateExpression      func(n *parser.CallTemplateExpression) error
+	TemplElementExpression      func(n *parser.TemplElementExpression) error
+	AnonymousTemplate           func(n *parser.AnonymousTemplate) error
+	AnonymousTemplateInvocation func(n *parser.AnonymousTemplateInvocation) error
+	ChildrenExpression          func(n *parser.ChildrenExpression) error
+	IfExpression                func(n *parser.IfExpression) error
+	SwitchExpression            func(n *parser.SwitchExpression) error
+	ForExpression               func(n *parser.ForExpression) error
+	GoCode                      func(n *parser.GoCode) error
+	StringExpression            func(n *parser.StringExpression) error
+	ScriptTemplate              func(n *parser.ScriptTemplate) error
+	Fallthrough                 func(n *parser.Fallthrough) error
 }
 
 var _ parser.Visitor = (*Visitor)(nil)
@@ -322,6 +335,14 @@ func (v *Visitor) VisitCallTemplateExpression(n *parser.CallTemplateExpression) 
 
 func (v *Visitor) VisitTemplElementExpression(n *parser.TemplElementExpression) error {
 	return v.TemplElementExpression(n)
+}
+
+func (v *Visitor) VisitAnonymousTemplate(n *parser.AnonymousTemplate) error {
+	return v.AnonymousTemplate(n)
+}
+
+func (v *Visitor) VisitAnonymousTemplateInvocation(n *parser.AnonymousTemplateInvocation) error {
+	return v.AnonymousTemplateInvocation(n)
 }
 
 func (v *Visitor) VisitChildrenExpression(n *parser.ChildrenExpression) error {

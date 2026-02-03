@@ -1,0 +1,40 @@
+-- in --
+package p
+
+templ wrapper(content func() templ.Component) {
+	<div>
+		@content()
+	</div>
+}
+
+templ f() {
+@templ() {
+<span>badly indented immediate</span>
+}()
+}
+
+templ g() {
+@wrapper(templ() {
+<span>badly indented embedded</span>
+})
+}
+-- out --
+package p
+
+templ wrapper(content func() templ.Component) {
+	<div>
+		@content()
+	</div>
+}
+
+templ f() {
+	@templ() {
+		<span>badly indented immediate</span>
+	}()
+}
+
+templ g() {
+	@wrapper(templ() {
+		<span>badly indented embedded</span>
+	})
+}

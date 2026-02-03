@@ -79,6 +79,7 @@ var templateNodeParsers = []parse.Parser[Node]{
 	goCode,                 // {{ myval := x.myval }}
 	stringExpression,       // { "abc" }
 	whitespaceExpression,   // { " " }
+	anonymousTemplate,      // templ() { ... } or templ(x string) { ... }
 	fallthroughExpression,  // fallthrough keyword in switch case statement
 	textParser,             // anything &amp; everything accepted...
 }

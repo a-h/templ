@@ -629,3 +629,133 @@ func TestTemplElementExpressionParserFailures(t *testing.T) {
 		})
 	}
 }
+
+func TestAnonymousTemplateInvocationParser(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		// Verify key properties instead of full deep comparison
+		wantParams   string
+		wantCallExpr string
+		wantChildren int
+		wantNodeType string // "invocation" or "embedded"
+	}{
+		{
+			name: "immediately invoked, no params",
+			input: `@templ() {
+	<div>content</div>
+}()`,
+			wantParams:   "()",
+			wantCallExpr: "()",
+			wantChildren: 1, // the div element (whitespace nodes are also children)
+			wantNodeType: "invocation",
+		},
+		{
+			name: "immediately invoked with single param",
+			input: `@templ(x int) {
+	<span>{ x }</span>
+}(42)`,
+			wantParams:   "(x int)",
+			wantCallExpr: "(42)",
+			wantChildren: 1,
+			wantNodeType: "invocation",
+		},
+		{
+			name: "immediately invoked with multiple params",
+			input: `@templ(a, b string) {
+	<span>hello</span>
+}("hello", "world")`,
+			wantParams:   "(a, b string)",
+			wantCallExpr: `("hello", "world")`,
+			wantChildren: 1,
+			wantNodeType: "invocation",
+		},
+		{
+			name: "immediately invoked, empty body",
+			input: `@templ() {
+}()`,
+			wantParams:   "()",
+			wantCallExpr: "()",
+			wantChildren: 0,
+			wantNodeType: "invocation",
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			input := parse.NewInput(tt.input)
+			actual, matched, err := templElementExpression.Parse(input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !matched {
+				t.Fatalf("expected match, got no match")
+			}
+			inv, ok := actual.(*AnonymousTemplateInvocation)
+			if !ok {
+				t.Fatalf("expected *AnonymousTemplateInvocation, got %T", actual)
+			}
+			if inv.Template.Expression.Value != tt.wantParams {
+				t.Errorf("params: got %q, want %q", inv.Template.Expression.Value, tt.wantParams)
+			}
+			if inv.CallExpression.Value != tt.wantCallExpr {
+				t.Errorf("call expression: got %q, want %q", inv.CallExpression.Value, tt.wantCallExpr)
+			}
+			// Count non-whitespace children
+			nonWS := 0
+			for _, child := range inv.Template.Children {
+				if _, isWS := child.(*Whitespace); !isWS {
+					nonWS++
+				}
+			}
+			if nonWS != tt.wantChildren {
+				t.Errorf("non-whitespace children: got %d, want %d", nonWS, tt.wantChildren)
+			}
+		})
+	}
+}
+
+func TestEmbeddedTemplateInExpression(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          string
+		wantExprPrefix string // what the expression starts with after extraction
+		wantEmbedded   int    // number of embedded templates
+	}{
+		{
+			name:           "single embedded template in function call",
+			input:          "@wrapperFunc(templ() {\n\t<span>content</span>\n})\n",
+			wantExprPrefix: "wrapperFunc(templ_embedded_0)",
+			wantEmbedded:   1,
+		},
+		{
+			name:           "multiple embedded templates in function call",
+			input:          "@nestedWrapper(\n\ttempl() {\n\t\t<span>outer</span>\n\t},\n\ttempl() {\n\t\t<span>inner</span>\n\t},\n)\n",
+			wantExprPrefix: "nestedWrapper(",
+			wantEmbedded:   2,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			input := parse.NewInput(tt.input)
+			actual, matched, err := templElementExpression.Parse(input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !matched {
+				t.Fatalf("expected match, got no match")
+			}
+			te, ok := actual.(*TemplElementExpression)
+			if !ok {
+				t.Fatalf("expected *TemplElementExpression, got %T", actual)
+			}
+			if len(te.Expression.Value) < len(tt.wantExprPrefix) || te.Expression.Value[:len(tt.wantExprPrefix)] != tt.wantExprPrefix {
+				t.Errorf("expression: got %q, want prefix %q", te.Expression.Value, tt.wantExprPrefix)
+			}
+			if len(te.EmbeddedTemplates) != tt.wantEmbedded {
+				t.Errorf("embedded templates: got %d, want %d", len(te.EmbeddedTemplates), tt.wantEmbedded)
+			}
+		})
+	}
+}

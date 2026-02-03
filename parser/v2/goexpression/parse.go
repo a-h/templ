@@ -264,6 +264,40 @@ func Func(content string) (name, expr string, err error) {
 	return name, expr, err
 }
 
+// AnonymousFuncParams parses the parameters of an anonymous function.
+// e.g., "func(x string, y int)" returns "(x string, y int)"
+// The content should start with "func".
+func AnonymousFuncParams(content string) (expr string, err error) {
+	prefix := "package main\nvar _ = "
+	src := prefix + content + "{}"
+
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
+	if node == nil {
+		return expr, parseErr
+	}
+
+	inspectFirstNode(node, func(n ast.Node) bool {
+		fn, ok := n.(*ast.FuncLit)
+		if !ok {
+			return true
+		}
+		// Positions are 1-based in Go's AST, so subtract 1 and also the prefix length
+		start := int(fn.Type.Params.Pos()) - 1 - len(prefix)
+		end := int(fn.Type.Params.End()) - 1 - len(prefix)
+		if start < 0 || end > len(content) {
+			err = errors.New("parser error: function parameters")
+			return false
+		}
+		expr = strings.Clone(content[start:end])
+		return false
+	})
+
+	if expr == "" && err == nil {
+		err = errors.New("could not parse function parameters")
+	}
+	return expr, err
+}
+
 func latestEnd(start int, nodes ...ast.Node) (end int) {
 	end = start
 	for _, n := range nodes {

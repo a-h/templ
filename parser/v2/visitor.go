@@ -25,6 +25,8 @@ type Visitor interface {
 	VisitHTMLComment(*HTMLComment) error
 	VisitCallTemplateExpression(*CallTemplateExpression) error
 	VisitTemplElementExpression(*TemplElementExpression) error
+	VisitAnonymousTemplate(*AnonymousTemplate) error
+	VisitAnonymousTemplateInvocation(*AnonymousTemplateInvocation) error
 	VisitChildrenExpression(*ChildrenExpression) error
 	VisitIfExpression(*IfExpression) error
 	VisitSwitchExpression(*SwitchExpression) error

@@ -1,0 +1,36 @@
+-- in --
+package p
+
+templ wrapper(content func() templ.Component) {
+	<div>
+		@content()
+	</div>
+}
+
+templ f() {
+	@wrapper(templ() {
+		<div class="level1">
+			@wrapper(templ() {
+				<span>deeply nested</span>
+			})
+		</div>
+	})
+}
+-- out --
+package p
+
+templ wrapper(content func() templ.Component) {
+	<div>
+		@content()
+	</div>
+}
+
+templ f() {
+	@wrapper(templ() {
+		<div class="level1">
+			@wrapper(templ() {
+				<span>deeply nested</span>
+			})
+		</div>
+	})
+}

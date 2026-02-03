@@ -1,0 +1,16 @@
+-- in --
+package p
+
+templ f() {
+	@templ() {
+		<span>content</span>
+	}()
+}
+-- out --
+package p
+
+templ f() {
+	@templ() {
+		<span>content</span>
+	}()
+}

@@ -49,17 +49,22 @@ func (e ErrUnbalanced) Error() string {
 
 func NewExpressionParser() *ExpressionParser {
 	return &ExpressionParser{
-		Stack:    make(Stack[token.Token], 0),
-		Previous: token.PERIOD,
-		Fns:      make(Stack[int], 0),
+		Stack:        make(Stack[token.Token], 0),
+		Previous:     token.PERIOD,
+		Fns:          make(Stack[int], 0),
+		TemplDepths:  make(Stack[int], 0),
+		PendingTempl: false,
 	}
 }
 
 type ExpressionParser struct {
-	Stack    Stack[token.Token]
-	End      int
-	Previous token.Token
-	Fns      Stack[int] // Stack of function depths.
+	Stack        Stack[token.Token]
+	End          int
+	Previous     token.Token
+	PreviousLit  string     // Literal of previous token (for IDENT).
+	Fns          Stack[int] // Stack of function depths.
+	TemplDepths  Stack[int] // Stack of templ literal depths.
+	PendingTempl bool       // True if we just saw "templ" and are waiting for "(".
 }
 
 func (ep *ExpressionParser) setEnd(pos token.Pos, tok token.Token, lit string) {
@@ -71,7 +76,7 @@ func (ep *ExpressionParser) hasSpaceBeforeCurrentToken(pos token.Pos) bool {
 }
 
 func (ep *ExpressionParser) isTopLevel() bool {
-	return len(ep.Fns) == 0 && len(ep.Stack) == 0
+	return len(ep.Fns) == 0 && len(ep.Stack) == 0 && len(ep.TemplDepths) == 0
 }
 
 func (ep *ExpressionParser) Insert(
@@ -81,6 +86,7 @@ func (ep *ExpressionParser) Insert(
 ) (stop bool, err error) {
 	defer func() {
 		ep.Previous = tok
+		ep.PreviousLit = lit
 	}()
 
 	// If we've reach the end of the file, terminate reading.
@@ -100,11 +106,32 @@ func (ep *ExpressionParser) Insert(
 		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
+
+	// Handle `templ` identifier - if followed by `(`, treat like func.
+	// First check if we're seeing `templ` identifier.
+	if tok == token.IDENT && lit == "templ" {
+		ep.PendingTempl = true
+		ep.setEnd(pos, tok, lit)
+		return false, nil
+	}
+
 	// If we're opening a pair, we don't stop until we've closed it.
 	if _, isOpener := goTokenOpenToClose[tok]; isOpener {
+		// Check if this is `templ(` - the `(` after `templ`.
+		if tok == token.LPAREN && ep.PendingTempl {
+			ep.PendingTempl = false
+			// Push the current depth onto TemplDepths to track we're in a templ literal.
+			ep.TemplDepths.Push(len(ep.Stack))
+			ep.Stack.Push(tok)
+			ep.setEnd(pos, tok, lit)
+			return false, nil
+		}
+		ep.PendingTempl = false
+
 		// If we're at an open brace, at the top level, where a space has been used, stop.
 		if tok == token.LBRACE && ep.isTopLevel() {
 			// Previous was paren, e.g. () {
+			// But NOT if we just closed a templ's params - check if we're in templ context.
 			if ep.Previous == token.RPAREN {
 				return true, nil
 			}
@@ -115,10 +142,25 @@ func (ep *ExpressionParser) Insert(
 				return true, nil
 			}
 		}
+		// If we're at an open brace after `)` and we're in a templ literal context,
+		// this is the start of the template body - continue parsing.
+		if tok == token.LBRACE && ep.Previous == token.RPAREN && len(ep.TemplDepths) > 0 {
+			// Check if we just closed the templ's parameter list.
+			// The templ depth was pushed when stack had N items, now we should have N items again.
+			templDepth := ep.TemplDepths.Peek()
+			if len(ep.Stack) == templDepth {
+				// This brace is the start of the template body.
+				ep.Stack.Push(tok)
+				ep.setEnd(pos, tok, lit)
+				return false, nil
+			}
+		}
 		ep.Stack.Push(tok)
 		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
+	ep.PendingTempl = false
+
 	if opener, isCloser := goTokenCloseToOpen[tok]; isCloser {
 		if len(ep.Stack) == 0 {
 			// We've got a close token, but there's nothing to close, so we must be done.
@@ -136,12 +178,16 @@ func (ep *ExpressionParser) Insert(
 			if len(ep.Stack) == ep.Fns.Peek() {
 				ep.Fns.Pop()
 			}
+			// If we're closing a templ literal, pop the templ depth.
+			if len(ep.Stack) == ep.TemplDepths.Peek() {
+				ep.TemplDepths.Pop()
+			}
 		}
 		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}
 	// If we're in a function literal slice, or pair, we allow anything until we close it.
-	if len(ep.Fns) > 0 || len(ep.Stack) > 0 {
+	if len(ep.Fns) > 0 || len(ep.Stack) > 0 || len(ep.TemplDepths) > 0 {
 		ep.setEnd(pos, tok, lit)
 		return false, nil
 	}

@@ -1,0 +1,28 @@
+-- in --
+package p
+
+templ wrapper(content func() templ.Component) {
+	<div>
+		@content()
+	</div>
+}
+
+templ f() {
+	@wrapper(templ() {
+		<span>embedded content</span>
+	})
+}
+-- out --
+package p
+
+templ wrapper(content func() templ.Component) {
+	<div>
+		@content()
+	</div>
+}
+
+templ f() {
+	@wrapper(templ() {
+		<span>embedded content</span>
+	})
+}

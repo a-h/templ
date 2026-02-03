@@ -704,6 +704,44 @@ var funcTests = []testInput{
 	},
 }
 
+var templLiteralTests = []testInput{
+	{
+		name:  "templ literal as argument",
+		input: `wrapper(templ() { <span>content</span> })`,
+	},
+	{
+		name:  "templ literal with params as argument",
+		input: `wrapper(templ(name string) { <span>{ name }</span> })`,
+	},
+	{
+		name:  "nested templ literals",
+		input: `outer(templ() { @inner(templ() { <span>nested</span> }) })`,
+	},
+	{
+		name:  "templ literal with multiple args",
+		input: `wrapper(someVar, templ() { <div>content</div> }, anotherVar)`,
+	},
+	{
+		name:  "templ literal immediately invoked as argument",
+		input: `wrapper(templ(x int) { <span>{ fmt.Sprint(x) }</span> }(42))`,
+	},
+}
+
+func TestTemplLiteral(t *testing.T) {
+	prefix := ""
+	suffixes := []string{
+		"",
+		" }",
+		"</div>",
+		" some text after",
+	}
+	for _, test := range templLiteralTests {
+		for i, suffix := range suffixes {
+			t.Run(fmt.Sprintf("%s_%d", test.name, i), run(test, prefix, suffix, TemplExpression))
+		}
+	}
+}
+
 func FuzzFuncs(f *testing.F) {
 	prefix := "func "
 	suffixes := []string{
