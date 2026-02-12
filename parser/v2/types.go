@@ -1012,6 +1012,7 @@ func (ea *ExpressionAttribute) Copy() Attribute {
 // <a { spread... } />
 type SpreadAttributes struct {
 	Expression Expression
+	Range      Range
 }
 
 func (sa *SpreadAttributes) String() string {
@@ -1029,6 +1030,7 @@ func (sa *SpreadAttributes) Visit(v Visitor) error {
 func (sa *SpreadAttributes) Copy() Attribute {
 	return &SpreadAttributes{
 		Expression: sa.Expression,
+		Range:      sa.Range,
 	}
 }
 

@@ -337,6 +337,7 @@ var spreadAttributesParser = parse.Func(func(pi *parse.Input) (attr *SpreadAttri
 		return
 	}
 
+	attrStart := pi.Index()
 	// Eat the first brace.
 	if _, ok, err = openBraceWithOptionalPadding.Parse(pi); err != nil ||
 		!ok {
@@ -367,6 +368,7 @@ var spreadAttributesParser = parse.Func(func(pi *parse.Input) (attr *SpreadAttri
 		err = parse.Error("attribute spread expression: missing closing brace", pi.Position())
 		return
 	}
+	attr.Range = NewRange(pi.PositionAt(attrStart), pi.Position())
 
 	return attr, true, nil
 })
