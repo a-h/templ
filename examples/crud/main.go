@@ -6,10 +6,6 @@ import (
 	"net/http"
 	"os"
 
-	"crypto/rand"
-
-	"github.com/gorilla/csrf"
-
 	"github.com/a-h/kv/sqlitekv"
 	"github.com/a-h/templ/examples/crud/db"
 	"github.com/a-h/templ/examples/crud/routes/contacts"
@@ -21,6 +17,12 @@ import (
 
 var dbURI = "file:data.db?mode=rwc"
 var addr = "localhost:8080"
+var origins = []string{
+	"http://localhost:8080",
+	"http://127.0.0.1:8080",
+	"http://localhost:7331",
+	"http://127.0.0.1:7331",
+}
 
 func main() {
 	log := slog.Default()
@@ -62,22 +64,14 @@ func run(ctx context.Context, log *slog.Logger) error {
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	// Manage CSRF protection.
-	csrfKey := mustGenerateCSRFKey()
-	csrfMiddleware := csrf.Protect(csrfKey, csrf.TrustedOrigins([]string{"localhost:8080", "127.0.0.1:8080", "localhost:7331", "127.0.0.1:7331"}), csrf.FieldName("_csrf"))
+	csrfProtection := http.NewCrossOriginProtection()
+	for _, origin := range origins {
+		if err := csrfProtection.AddTrustedOrigin(origin); err != nil {
+			log.Error("Failed to add CSRF trusted origin", slog.String("origin", origin), slog.Any("error", err))
+			return err
+		}
+	}
 
 	log.Info("Starting server", slog.String("address", addr))
-	return http.ListenAndServe(addr, csrfMiddleware(mux))
-}
-
-// mustGenerateCSRFKey generates a 32-byte key for CSRF protection.
-func mustGenerateCSRFKey() []byte {
-	key := make([]byte, 32)
-	n, err := rand.Read(key)
-	if err != nil {
-		panic(err)
-	}
-	if n != 32 {
-		panic("unable to read 32 bytes for CSRF key")
-	}
-	return key
+	return http.ListenAndServe(addr, csrfProtection.Handler(mux))
 }

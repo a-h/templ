@@ -1,13 +1,12 @@
 module github.com/a-h/templ/examples/crud
 
-go 1.24.0
+go 1.25.0
 
-toolchain go1.24.4
+toolchain go1.25.7
 
 require (
 	github.com/a-h/kv v0.0.0-20251001131013-326dbe4b4060
 	github.com/a-h/templ v0.3.924
-	github.com/gorilla/csrf v1.7.3
 	github.com/gorilla/schema v1.4.1
 	github.com/segmentio/ksuid v1.0.4
 	zombiezen.com/go/sqlite v1.4.2
@@ -16,7 +15,6 @@ require (
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
