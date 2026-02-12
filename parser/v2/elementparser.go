@@ -259,6 +259,7 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r *BoolExp
 		return
 	}
 
+	attrStart := pi.Index()
 	r = &BoolExpressionAttribute{}
 
 	// Attribute name.
@@ -284,6 +285,7 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r *BoolExp
 		pi.Seek(start)
 		return
 	}
+	r.Range = NewRange(pi.PositionAt(attrStart), pi.Position())
 
 	return r, true, nil
 })

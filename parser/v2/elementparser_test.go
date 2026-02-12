@@ -271,6 +271,10 @@ if test {` + " " + `
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 18, Line: 0, Col: 18},
+				},
 			},
 		},
 		{
@@ -299,6 +303,10 @@ if test {` + " " + `
 							Col:   15,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 16, Line: 0, Col: 16},
 				},
 			},
 		},
@@ -329,6 +337,10 @@ if test {` + " " + `
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 18, Line: 0, Col: 18},
+				},
 			},
 		},
 		{
@@ -357,6 +369,10 @@ if test {` + " " + `
 							Col:   16,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 20, Line: 0, Col: 20},
 				},
 			},
 		},
@@ -870,6 +886,10 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 21, Line: 0, Col: 21},
+						},
 					},
 				},
 				Range: Range{
@@ -1113,6 +1133,10 @@ func TestElementParser(t *testing.T) {
 									Col:   27,
 								},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 12, Line: 0, Col: 12},
+							To:   Position{Index: 29, Line: 0, Col: 29},
 						},
 					},
 					&ConstantAttribute{
