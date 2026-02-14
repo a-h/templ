@@ -69,6 +69,8 @@ func WriteString(w io.Writer, index int, s string) (err error) {
 		// If the file is outside the watch mode root, write the string directly.
 		// If watch mode root is not set, then we fall back to the previous behaviour to avoid breaking existing setups.
 		watchModeRoot := os.Getenv("TEMPL_DEV_MODE_WATCH_ROOT")
+		// Ensure watch mode root is also properly evaluated for symlinks for consistent comparison.
+		watchModeRoot, _ = filepath.EvalSymlinks(watchModeRoot)
 		if watchModeRoot != "" && !strings.HasPrefix(path, watchModeRoot) {
 			_, err = io.WriteString(w, s)
 			return err
