@@ -18,8 +18,9 @@ import (
 var developmentMode = os.Getenv("TEMPL_DEV_MODE") == "true"
 
 func GetDevModeTextFileName(templFileName string) string {
-	if strings.HasSuffix(templFileName, "_templ.go") {
-		templFileName = strings.TrimSuffix(templFileName, "_templ.go") + ".templ"
+	fmt.Printf("templ: development mode enabled for %q\n", templFileName)
+	if prefix, ok := strings.CutSuffix(templFileName, "_templ.go"); ok {
+		templFileName = prefix + ".templ"
 	}
 	absFileName, err := filepath.Abs(templFileName)
 	if err != nil {
@@ -64,6 +65,13 @@ func WriteString(w io.Writer, index int, s string) (err error) {
 		path, err := filepath.EvalSymlinks(path)
 		if err != nil {
 			return fmt.Errorf("templ: failed to eval symlinks for %q: %w", path, err)
+		}
+		// If the file is outside the watch mode root, write the string directly.
+		// If watch mode root is not set, then we fall back to the previous behaviour to avoid breaking existing setups.
+		watchModeRoot := os.Getenv("TEMPL_DEV_MODE_WATCH_ROOT")
+		if watchModeRoot != "" && !strings.HasPrefix(path, watchModeRoot) {
+			_, err = io.WriteString(w, s)
+			return err
 		}
 
 		txtFilePath := GetDevModeTextFileName(path)
