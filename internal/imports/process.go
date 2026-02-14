@@ -33,23 +33,42 @@ func convertTemplToGoURI(templURI string) (isTemplFile bool, goURI string) {
 
 var fset = token.NewFileSet()
 
-func updateImports(name, src string) (updated []*ast.ImportSpec, err error) {
+// isPackageUsedInAST checks if a package name is referenced in the AST.
+// It walks the AST looking for selector expressions like pkgName.Something.
+func isPackageUsedInAST(file *ast.File, pkgName string) bool {
+	used := false
+	ast.Inspect(file, func(n ast.Node) bool {
+		// Look for selector expressions like pkgName.Something
+		if sel, ok := n.(*ast.SelectorExpr); ok {
+			if ident, ok := sel.X.(*ast.Ident); ok {
+				if ident.Name == pkgName {
+					used = true
+					return false // Stop walking once we find usage
+				}
+			}
+		}
+		return true // Continue walking
+	})
+	return used
+}
+
+func updateImports(name, src string) (updated []*ast.ImportSpec, parsedFile *ast.File, err error) {
 	// Apply auto imports.
 	updatedGoCode, err := imports.Process(name, []byte(src), nil)
 	if err != nil {
-		return updated, fmt.Errorf("failed to process go code %q: %w", src, err)
+		return updated, nil, fmt.Errorf("failed to process go code %q: %w", src, err)
 	}
 	// Get updated imports.
-	gofile, err := goparser.ParseFile(fset, name, updatedGoCode, goparser.ImportsOnly)
+	gofile, err := goparser.ParseFile(fset, name, updatedGoCode, goparser.ParseComments)
 	if err != nil {
-		return updated, fmt.Errorf("failed to get imports from updated go code: %w", err)
+		return updated, nil, fmt.Errorf("failed to get imports from updated go code: %w", err)
 	}
 	for _, imp := range gofile.Imports {
 		if !slices.Contains(internalImports, strings.Trim(imp.Path.Value, "\"")) {
 			updated = append(updated, imp)
 		}
 	}
-	return updated, nil
+	return updated, gofile, nil
 }
 
 func Process(t *parser.TemplateFile) (*parser.TemplateFile, error) {
@@ -77,12 +96,13 @@ func Process(t *parser.TemplateFile) (*parser.TemplateFile, error) {
 	// Generate code.
 	gw := bytes.NewBuffer(nil)
 	var updatedImports []*ast.ImportSpec
+	var generatedCodeAST *ast.File
 	var eg errgroup.Group
 	eg.Go(func() (err error) {
 		if _, err := generator.Generate(t, gw); err != nil {
 			return fmt.Errorf("failed to generate go code: %w", err)
 		}
-		updatedImports, err = updateImports(fileName, gw.String())
+		updatedImports, generatedCodeAST, err = updateImports(fileName, gw.String())
 		if err != nil {
 			return fmt.Errorf("failed to get imports from generated go code: %w", err)
 		}
@@ -110,6 +130,27 @@ func Process(t *parser.TemplateFile) (*parser.TemplateFile, error) {
 			name, path, err := getImportDetails(imp)
 			if err != nil {
 				return t, err
+			}
+			// Check if this is a hyphenated import that might still be used
+			// (goimports can't match css-classes to cssclasses)
+			if strings.Contains(path, "-") {
+				// Extract the package name from the import path
+				lastSlash := strings.LastIndex(path, "/")
+				pkgName := path
+				if lastSlash >= 0 {
+					pkgName = path[lastSlash+1:]
+				}
+				// Determine the identifier used in code (either explicit name or derived from path)
+				identName := name
+				if identName == "" {
+					// No explicit import name, so use hyphen-removed package name
+					identName = strings.ReplaceAll(pkgName, "-", "")
+				}
+				// Check if the package is actually used by parsing the AST
+				if isPackageUsedInAST(generatedCodeAST, identName) {
+					// Import is used, don't delete it
+					continue
+				}
 			}
 			astutil.DeleteNamedImport(fset, firstGoNodeInTemplate, name, path)
 		}
