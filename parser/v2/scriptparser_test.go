@@ -100,6 +100,10 @@ func TestScriptElementParser(t *testing.T) {
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("dim x = 1"),
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 42, Line: 0, Col: 42},
+				},
 			},
 		},
 		{
@@ -416,6 +420,10 @@ set tier_1 to #tier-1's value
 				}},
 				Contents: []ScriptContents{
 					NewScriptContentsScriptCode("\nset tier_1 to #tier-1's value\n"),
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 72, Line: 2, Col: 9},
 				},
 			},
 		},
