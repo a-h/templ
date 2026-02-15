@@ -20,6 +20,10 @@ var expectedCSS = `.red_050e5e03 { color: red; }
 `
 
 func Test(t *testing.T) {
+	if !prettier.IsAvailable(prettier.DefaultCommand) {
+		t.Skip("prettier is not available, skipping test")
+	}
+
 	var wg errgroup.Group
 
 	// Format the expected value.
