@@ -1,0 +1,58 @@
+-- in --
+package main
+
+templ test() {
+	<form
+		class="flex"
+		// This comment explains why the action is necessary
+		action="javascript:void(0)"
+		/* Multi-line comment
+		   for detailed explanations */
+		method="post"
+		// Comment before id
+		id="test-form"
+	>
+		<input type="text" />
+	</form>
+	<div
+		// Comment at start
+		id="main"
+		/* Multi-line comment */
+		class="container"
+		// Comment before expression
+		data-value={ "dynamic" }
+		// Comment before boolean
+		hidden
+	>
+		Content
+	</div>
+}
+-- out --
+package main
+
+templ test() {
+	<form
+		class="flex"
+		// This comment explains why the action is necessary
+		action="javascript:void(0)"
+		/* Multi-line comment
+		   for detailed explanations */
+		method="post"
+		// Comment before id
+		id="test-form"
+	>
+		<input type="text"/>
+	</form>
+	<div
+		// Comment at start
+		id="main"
+		/* Multi-line comment */
+		class="container"
+		// Comment before expression
+		data-value={ "dynamic" }
+		// Comment before boolean
+		hidden
+	>
+		Content
+	</div>
+}
