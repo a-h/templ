@@ -336,13 +336,13 @@ func TestReferences(t *testing.T) {
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 		return
 	}
 	defer teardown(t)
+	defer cancel()
 
 	log.Info("Calling References")
 
