@@ -5,13 +5,31 @@ import (
 	"html"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/a-h/templ/internal/htmlfind"
 )
 
-const DefaultCommand = "prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME"
+const defaultPosixCommand = "prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME"
+
+var shellNameToCommand = map[string]string{
+	"nu": "prettier --use-tabs --stdin-filepath $env.TEMPL_PRETTIER_FILENAME",
+}
+
+// DefaultCommand returns the default prettier command appropriate for the current shell.
+func DefaultCommand() string {
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "/bin/sh"
+	}
+	shellName := filepath.Base(shell)
+	if shellCommand, ok := shellNameToCommand[shellName]; ok {
+		return shellCommand
+	}
+	return defaultPosixCommand
+}
 
 func IsAvailable(command string) bool {
 	executable := strings.Fields(command)[0]
@@ -31,7 +49,11 @@ func IsAvailable(command string) bool {
 //	npx prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME
 //	prettier --config ./frontend/.prettierrc --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME
 func Run(input, fileName, command string) (formatted string, err error) {
-	cmd := getCommand(runtime.GOOS, command)
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "/bin/sh"
+	}
+	cmd := getCommand(runtime.GOOS, shell, command)
 	cmd.Env = append(os.Environ(), fmt.Sprintf("TEMPL_PRETTIER_FILENAME=%s", fileName))
 	cmd.Stdin = strings.NewReader(input)
 	output, err := cmd.CombinedOutput()
@@ -41,13 +63,9 @@ func Run(input, fileName, command string) (formatted string, err error) {
 	return string(output), nil
 }
 
-func getCommand(goos, command string) *exec.Cmd {
+func getCommand(goos, shell, command string) *exec.Cmd {
 	if goos == "windows" {
 		return exec.Command("cmd.exe", "/C", command)
-	}
-	shell := os.Getenv("SHELL")
-	if shell == "" {
-		shell = "/bin/sh"
 	}
 	return exec.Command(shell, "-c", command)
 }
