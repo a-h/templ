@@ -93,7 +93,6 @@
       # ];
       overlays.default = final: prev: {
         templ = self.packages.${final.stdenv.system}.templ;
-        templ-docs = self.packages.${final.stdenv.system}.templ-docs;
       };
     };
 }
