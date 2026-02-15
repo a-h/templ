@@ -2,6 +2,7 @@ package generatecmd
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -355,10 +356,28 @@ func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 	if err != nil {
 		return nil, FatalError{Err: fmt.Errorf("failed to parse proxy URL: %w", err)}
 	}
-	p = proxy.New(cmd.Log, cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
+	scheme := "http"
+	if cmd.Args.ProxyTLSCrt != "" && cmd.Args.ProxyTLSKey != "" {
+		scheme = "https"
+	}
+	p = proxy.New(cmd.Log, scheme, cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
 	go func() {
 		cmd.Log.Info("Proxying", slog.String("from", p.URL), slog.String("to", p.Target.String()))
-		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort), p); err != nil {
+		server := &http.Server{
+			Addr:    fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort),
+			Handler: p,
+		}
+		// Configure TLS if certificates are provided.
+		if cmd.Args.ProxyTLSCrt != "" && cmd.Args.ProxyTLSKey != "" {
+			cert, err := tls.LoadX509KeyPair(cmd.Args.ProxyTLSCrt, cmd.Args.ProxyTLSKey)
+			if err != nil {
+				cmd.Log.Error("Failed to load TLS certificates", slog.Any("error", err))
+				return
+			}
+			server.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}}
+		}
+		err := server.ListenAndServe()
+		if err != nil {
 			cmd.Log.Error("Proxy failed", slog.Any("error", err))
 		}
 	}()
@@ -372,6 +391,12 @@ func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 		backoff.InitialInterval = time.Second
 		var client http.Client
 		client.Timeout = 1 * time.Second
+		// Skip certificate verification for HTTPS with self-signed certificates on localhost.
+		if cmd.Args.ProxyTLSCrt != "" && cmd.Args.ProxyTLSKey != "" {
+			client.Transport = &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}
+		}
 		for {
 			if resp, err := client.Get(p.URL); err == nil {
 				if resp.StatusCode != http.StatusBadGateway {

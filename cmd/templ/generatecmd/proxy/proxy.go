@@ -270,7 +270,7 @@ outer:
 	return nonce
 }
 
-func New(log *slog.Logger, bind string, port int, target *url.URL) (h *Handler) {
+func New(log *slog.Logger, scheme string, bind string, port int, target *url.URL) (h *Handler) {
 	p := httputil.NewSingleHostReverseProxy(target)
 	p.ErrorLog = stdlog.New(os.Stderr, "Proxy to target error: ", 0)
 	p.Transport = &roundTripper{
@@ -280,7 +280,7 @@ func New(log *slog.Logger, bind string, port int, target *url.URL) (h *Handler) 
 	}
 	h = &Handler{
 		log:    log,
-		URL:    fmt.Sprintf("http://%s:%d", bind, port),
+		URL:    fmt.Sprintf("%s://%s:%d", scheme, bind, port),
 		Target: target,
 		p:      p,
 		sse:    sse.New(),
