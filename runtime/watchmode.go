@@ -17,8 +17,26 @@ import (
 
 var developmentMode = os.Getenv("TEMPL_DEV_MODE") == "true"
 
+var defaultStringLoader = NewStringLoader(os.Getenv("TEMPL_DEV_MODE_WATCH_ROOT"))
+
+// WriteString writes the string to the writer. If development mode is enabled
+// s is replaced with the string at the index in the _templ.txt file.
+func WriteString(w io.Writer, index int, s string) (err error) {
+	if developmentMode {
+		_, path, _, _ := runtime.Caller(1)
+		if !strings.HasSuffix(path, "_templ.go") {
+			return errors.New("templ: attempt to use WriteString from a non templ file")
+		}
+		s, err = defaultStringLoader.GetWatchedString(path, index, s)
+		if err != nil {
+			return fmt.Errorf("templ: failed to get watched string: %w", err)
+		}
+	}
+	_, err = io.WriteString(w, s)
+	return err
+}
+
 func GetDevModeTextFileName(templFileName string) string {
-	fmt.Printf("templ: development mode enabled for %q\n", templFileName)
 	if prefix, ok := strings.CutSuffix(templFileName, "_templ.go"); ok {
 		templFileName = prefix + ".templ"
 	}
@@ -54,63 +72,66 @@ func normalizePath(p string) string {
 	return p
 }
 
-// WriteString writes the string to the writer. If development mode is enabled
-// s is replaced with the string at the index in the _templ.txt file.
-func WriteString(w io.Writer, index int, s string) (err error) {
-	if developmentMode {
-		_, path, _, _ := runtime.Caller(1)
-		if !strings.HasSuffix(path, "_templ.go") {
-			return errors.New("templ: attempt to use WriteString from a non templ file")
-		}
-		path, err := filepath.EvalSymlinks(path)
-		if err != nil {
-			return fmt.Errorf("templ: failed to eval symlinks for %q: %w", path, err)
-		}
-		// If the file is outside the watch mode root, write the string directly.
-		// If watch mode root is not set, then we fall back to the previous behaviour to avoid breaking existing setups.
-		watchModeRoot := os.Getenv("TEMPL_DEV_MODE_WATCH_ROOT")
-		// Ensure watch mode root is also properly evaluated for symlinks for consistent comparison.
-		watchModeRoot, _ = filepath.EvalSymlinks(watchModeRoot)
-		if watchModeRoot != "" && !strings.HasPrefix(path, watchModeRoot) {
-			_, err = io.WriteString(w, s)
-			return err
-		}
-
-		txtFilePath := GetDevModeTextFileName(path)
-		literals, err := getWatchedStrings(txtFilePath)
-		if err != nil {
-			return fmt.Errorf("templ: failed to get watched strings for %q: %w", path, err)
-		}
-		if index > len(literals) {
-			return fmt.Errorf("templ: failed to find line %d in %s", index, txtFilePath)
-		}
-
-		s, err = strconv.Unquote(`"` + literals[index-1] + `"`)
-		if err != nil {
-			return err
-		}
-	}
-	_, err = io.WriteString(w, s)
-	return err
-}
-
-var (
-	watchModeCache  = map[string]watchState{}
-	watchStateMutex sync.Mutex
-)
-
 type watchState struct {
 	modTime time.Time
 	strings []string
 }
 
-func getWatchedStrings(txtFilePath string) ([]string, error) {
-	watchStateMutex.Lock()
-	defer watchStateMutex.Unlock()
+type StringLoader struct {
+	watchModeRoot    string
+	watchModeRootErr error
+	cache            map[string]watchState
+	cacheMutex       sync.Mutex
+}
 
-	state, cached := watchModeCache[txtFilePath]
+func NewStringLoader(devModeWatchRootPath string) (sl *StringLoader) {
+	sl = &StringLoader{
+		cache: make(map[string]watchState),
+	}
+	if devModeWatchRootPath == "" {
+		return sl
+	}
+	resolvedRoot, err := filepath.EvalSymlinks(devModeWatchRootPath)
+	if err != nil {
+		sl.watchModeRootErr = fmt.Errorf("templ: failed to eval symlinks for watch mode root %q: %w", devModeWatchRootPath, err)
+		return sl
+	}
+	sl.watchModeRoot = resolvedRoot
+	return sl
+}
+
+func (sl *StringLoader) GetWatchedString(templFilePath string, index int, defaultValue string) (string, error) {
+	if sl.watchModeRootErr != nil {
+		return "", sl.watchModeRootErr
+	}
+	path, err := filepath.EvalSymlinks(templFilePath)
+	if err != nil {
+		return "", fmt.Errorf("templ: failed to eval symlinks for %q: %w", path, err)
+	}
+	// If the file is outside the watch mode root, write the string directly.
+	// If watch mode root is not set, fall back to the previous behaviour to avoid breaking existing setups.
+	if sl.watchModeRoot != "" && !strings.HasPrefix(path, sl.watchModeRoot) {
+		return defaultValue, nil
+	}
+
+	txtFilePath := GetDevModeTextFileName(path)
+	literals, err := sl.getWatchedStrings(txtFilePath)
+	if err != nil {
+		return "", fmt.Errorf("templ: failed to get watched strings for %q: %w", path, err)
+	}
+	if index > len(literals) {
+		return "", fmt.Errorf("templ: failed to find line %d in %s", index, txtFilePath)
+	}
+	return strconv.Unquote(`"` + literals[index-1] + `"`)
+}
+
+func (sl *StringLoader) getWatchedStrings(txtFilePath string) ([]string, error) {
+	sl.cacheMutex.Lock()
+	defer sl.cacheMutex.Unlock()
+
+	state, cached := sl.cache[txtFilePath]
 	if !cached {
-		return cacheStrings(txtFilePath)
+		return sl.cacheStrings(txtFilePath)
 	}
 
 	if time.Since(state.modTime) < time.Millisecond*100 {
@@ -126,10 +147,10 @@ func getWatchedStrings(txtFilePath string) ([]string, error) {
 		return state.strings, nil
 	}
 
-	return cacheStrings(txtFilePath)
+	return sl.cacheStrings(txtFilePath)
 }
 
-func cacheStrings(txtFilePath string) ([]string, error) {
+func (sl *StringLoader) cacheStrings(txtFilePath string) ([]string, error) {
 	txtFile, err := os.Open(txtFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("templ: failed to open %s: %w", txtFilePath, err)
@@ -149,7 +170,7 @@ func cacheStrings(txtFilePath string) ([]string, error) {
 	}
 
 	literals := strings.Split(string(all), "\n")
-	watchModeCache[txtFilePath] = watchState{
+	sl.cache[txtFilePath] = watchState{
 		modTime: info.ModTime(),
 		strings: literals,
 	}
