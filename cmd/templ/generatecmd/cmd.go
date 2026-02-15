@@ -3,6 +3,7 @@ package generatecmd
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -350,6 +351,22 @@ func (cmd *Generate) deleteWatchModeTextFiles() error {
 	})
 }
 
+func (cmd *Generate) createTLSTransport() *http.Transport {
+	certPEM, err := os.ReadFile(cmd.Args.ProxyTLSCrt)
+	if err != nil {
+		cmd.Log.Error("Failed to read TLS certificate file", slog.Any("error", err))
+		return nil
+	}
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(certPEM) {
+		cmd.Log.Error("Failed to append certificate to pool")
+		return nil
+	}
+	return &http.Transport{
+		TLSClientConfig: &tls.Config{RootCAs: certPool},
+	}
+}
+
 func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 	var target *url.URL
 	target, err = url.Parse(cmd.Args.Proxy)
@@ -391,11 +408,9 @@ func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 		backoff.InitialInterval = time.Second
 		var client http.Client
 		client.Timeout = 1 * time.Second
-		// Skip certificate verification for HTTPS with self-signed certificates on localhost.
+		// Configure TLS with CA pool for self-signed certificates on localhost.
 		if cmd.Args.ProxyTLSCrt != "" && cmd.Args.ProxyTLSKey != "" {
-			client.Transport = &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			}
+			client.Transport = cmd.createTLSTransport()
 		}
 		for {
 			if resp, err := client.Get(p.URL); err == nil {
