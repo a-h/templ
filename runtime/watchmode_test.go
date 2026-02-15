@@ -42,18 +42,26 @@ func TestGetWatchedString(t *testing.T) {
 			// the file's mod time to determine whether to use the cache or read
 			// from disk.
 			testFile := filepath.Join(tmpDir, tt.fileName)
-			os.MkdirAll(filepath.Dir(testFile), 0755)
-			os.WriteFile(testFile, []byte("test"), 0644)
+			if err := os.MkdirAll(filepath.Dir(testFile), 0755); err != nil {
+				t.Fatalf("failed to create directory: %v", err)
+			}
+			if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+				t.Fatalf("failed to write test file: %v", err)
+			}
 
 			resolvedPath, err := filepath.EvalSymlinks(testFile)
 			if err != nil {
 				t.Fatalf("failed to eval symlinks for test file: %v", err)
 			}
 			txtFile := GetDevModeTextFileName(resolvedPath)
-			os.WriteFile(txtFile, []byte("txt_file_value"), 0644)
+			if err := os.WriteFile(txtFile, []byte("txt_file_value"), 0644); err != nil {
+				t.Fatalf("failed to write txt file: %v", err)
+			}
 
 			watchRootPath := filepath.Join(tmpDir, tt.watchRoot)
-			os.MkdirAll(watchRootPath, 0755)
+			if err := os.MkdirAll(watchRootPath, 0755); err != nil {
+				t.Fatalf("failed to create watch root directory: %v", err)
+			}
 			loader := NewStringLoader(watchRootPath)
 
 			// Act.
