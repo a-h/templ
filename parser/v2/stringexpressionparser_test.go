@@ -33,6 +33,10 @@ func TestStringExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 10, Line: 0, Col: 10},
+				},
 			},
 		},
 		{
@@ -54,6 +58,10 @@ func TestStringExpressionParser(t *testing.T) {
 							Col:   7,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 8, Line: 0, Col: 8},
 				},
 			},
 		},
@@ -78,6 +86,10 @@ func TestStringExpressionParser(t *testing.T) {
 							Col:   5,
 						},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 29, Line: 2, Col: 7},
 				},
 			},
 		},
