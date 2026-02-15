@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/a-h/templ/generator/htmldiff"
+	"github.com/a-h/templ/internal/prettier"
 )
 
 //go:embed expected.html
@@ -14,6 +15,10 @@ var expected string
 
 func Test(t *testing.T) {
 	t.Parallel()
+	if !prettier.IsAvailable(prettier.DefaultCommand) {
+		t.Skip("prettier is not available, skipping test")
+	}
+
 	component := BasicTemplate(`javascript: alert("xss");`)
 
 	actual, diff, err := htmldiff.Diff(component, expected)
