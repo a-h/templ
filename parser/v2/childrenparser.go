@@ -13,12 +13,13 @@ var childrenExpressionParser = parse.StringFrom(
 )
 
 var childrenExpression = parse.Func(func(in *parse.Input) (n Node, ok bool, err error) {
-	r := &ChildrenExpression{}
 	start := in.Position()
 	_, ok, err = childrenExpressionParser.Parse(in)
 	if err != nil || !ok {
 		return
 	}
-	r.Range = NewRange(start, in.Position())
+	r := &ChildrenExpression{
+		Range: NewRange(start, in.Position()),
+	}
 	return r, true, nil
 })

@@ -1271,7 +1271,7 @@ type ChildrenExpression struct {
 }
 
 func (*ChildrenExpression) IsNode() bool { return true }
-func (ce *ChildrenExpression) Write(w io.Writer, indent int) error {
+func (*ChildrenExpression) Write(w io.Writer, indent int) error {
 	if err := writeIndent(w, indent, "{ children... }"); err != nil {
 		return err
 	}
