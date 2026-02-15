@@ -863,7 +863,8 @@ func (e ExpressionAttributeKey) String() string {
 
 // <hr noshade/>
 type BoolConstantAttribute struct {
-	Key AttributeKey
+	Key   AttributeKey
+	Range Range
 }
 
 func (bca *BoolConstantAttribute) String() string {
@@ -880,7 +881,8 @@ func (bca *BoolConstantAttribute) Visit(v Visitor) error {
 
 func (bca *BoolConstantAttribute) Copy() Attribute {
 	return &BoolConstantAttribute{
-		Key: bca.Key,
+		Key:   bca.Key,
+		Range: bca.Range,
 	}
 }
 
