@@ -1264,7 +1264,7 @@ func (tee *TemplElementExpression) Visit(v Visitor) error {
 	return v.VisitTemplElementExpression(tee)
 }
 
-// ChildrenExpression can be used to rended the children of a templ element.
+// ChildrenExpression can be used to render the children of a templ element.
 // { children ... }
 type ChildrenExpression struct {
 	Range Range
