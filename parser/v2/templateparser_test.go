@@ -587,6 +587,10 @@ func TestTemplateParser(t *testing.T) {
 										To:   Position{Index: 38, Line: 1, Col: 12},
 									},
 								},
+								Range: Range{
+									From: Position{Index: 34, Line: 1, Col: 8},
+									To:   Position{Index: 45, Line: 1, Col: 19},
+								},
 							},
 							&ConstantAttribute{
 								Value: "a",
@@ -596,6 +600,10 @@ func TestTemplateParser(t *testing.T) {
 										From: Position{Index: 46, Line: 1, Col: 20},
 										To:   Position{Index: 51, Line: 1, Col: 25},
 									},
+								},
+								Range: Range{
+									From: Position{Index: 46, Line: 1, Col: 20},
+									To:   Position{Index: 55, Line: 1, Col: 29},
 								},
 							},
 						},
@@ -621,6 +629,10 @@ func TestTemplateParser(t *testing.T) {
 										To:   Position{Index: 71, Line: 2, Col: 12},
 									},
 								},
+								Range: Range{
+									From: Position{Index: 67, Line: 2, Col: 8},
+									To:   Position{Index: 78, Line: 2, Col: 19},
+								},
 							},
 							&ConstantAttribute{
 								Value: "b",
@@ -630,6 +642,10 @@ func TestTemplateParser(t *testing.T) {
 										From: Position{Index: 79, Line: 2, Col: 20},
 										To:   Position{Index: 84, Line: 2, Col: 25},
 									},
+								},
+								Range: Range{
+									From: Position{Index: 79, Line: 2, Col: 20},
+									To:   Position{Index: 88, Line: 2, Col: 29},
 								},
 							},
 						},
@@ -755,6 +771,10 @@ func TestTemplateParser(t *testing.T) {
 										From: Position{Index: 16, Line: 1, Col: 4},
 										To:   Position{Index: 20, Line: 1, Col: 8},
 									},
+								},
+								Range: Range{
+									From: Position{Index: 16, Line: 1, Col: 4},
+									To:   Position{Index: 24, Line: 1, Col: 12},
 								},
 							},
 						},

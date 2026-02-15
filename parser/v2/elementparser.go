@@ -139,6 +139,7 @@ var (
 			return
 		}
 
+		attrStart := pi.Index()
 		attr = &ConstantAttribute{}
 
 		// Attribute name.
@@ -169,6 +170,7 @@ var (
 
 		// Only use single quotes if actually required, due to double quote in the value (prefer double quotes).
 		attr.SingleQuote = attr.SingleQuote && strings.Contains(attr.Value, "\"")
+		attr.Range = NewRange(pi.PositionAt(attrStart), pi.Position())
 
 		return attr, true, nil
 	})
