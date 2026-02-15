@@ -327,7 +327,6 @@ func TestReferences(t *testing.T) {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
 	testOutput := bytes.NewBuffer(nil)
 	log := slog.New(slog.NewJSONHandler(testOutput, nil))
 	defer func() {
@@ -336,6 +335,7 @@ func TestReferences(t *testing.T) {
 		}
 	}()
 
+	ctx, cancel := context.WithCancel(context.Background())
 	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)

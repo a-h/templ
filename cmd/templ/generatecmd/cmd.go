@@ -239,6 +239,19 @@ loop:
 				if err := os.Setenv("TEMPL_DEV_MODE", "true"); err != nil {
 					cmd.Log.Error("Error setting TEMPL_DEV_MODE environment variable", slog.Any("error", err))
 				}
+				// Check that the path is absolute.
+				// It should have already been made absolute at the start of the Run method, but just in case, we need to make sure it's absolute before setting it as an environment variable.
+				if !filepath.IsAbs(cmd.Args.Path) {
+					cmd.Log.Error("Path is not absolute, this may cause issues with the command execution", slog.String("path", cmd.Args.Path))
+				}
+				// Evaluate symlinks to match the behavior in runtime/watchmode.go.
+				watchRoot := cmd.Args.Path
+				if resolved, err := filepath.EvalSymlinks(watchRoot); err == nil {
+					watchRoot = resolved
+				}
+				if err := os.Setenv("TEMPL_DEV_MODE_WATCH_ROOT", watchRoot); err != nil {
+					cmd.Log.Error("Error setting TEMPL_DEV_MODE_WATCH_ROOT environment variable", slog.Any("error", err))
+				}
 			}
 			if _, err := run.Run(ctx, cmd.Args.Path, cmd.Args.Command); err != nil {
 				cmd.Log.Error("Error executing command", slog.Any("error", err))
