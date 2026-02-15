@@ -17,7 +17,9 @@ import (
 
 var developmentMode = os.Getenv("TEMPL_DEV_MODE") == "true"
 
-var defaultStringLoader = NewStringLoader(os.Getenv("TEMPL_DEV_MODE_WATCH_ROOT"))
+var stringLoaderOnce = sync.OnceValue(func() *StringLoader {
+	return NewStringLoader(os.Getenv("TEMPL_DEV_MODE_WATCH_ROOT"))
+})
 
 // WriteString writes the string to the writer. If development mode is enabled
 // s is replaced with the string at the index in the _templ.txt file.
@@ -27,7 +29,7 @@ func WriteString(w io.Writer, index int, s string) (err error) {
 		if !strings.HasSuffix(path, "_templ.go") {
 			return errors.New("templ: attempt to use WriteString from a non templ file")
 		}
-		s, err = defaultStringLoader.GetWatchedString(path, index, s)
+		s, err = stringLoaderOnce().GetWatchedString(path, index, s)
 		if err != nil {
 			return fmt.Errorf("templ: failed to get watched string: %w", err)
 		}
