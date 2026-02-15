@@ -35,21 +35,22 @@ var fset = token.NewFileSet()
 
 // isPackageUsedInAST checks if a package name is referenced in the AST.
 // It walks the AST looking for selector expressions like pkgName.Something.
-func isPackageUsedInAST(file *ast.File, pkgName string) bool {
-	used := false
+func isPackageUsedInAST(file *ast.File, pkgName string) (isPackageUsed bool) {
 	ast.Inspect(file, func(n ast.Node) bool {
 		// Look for selector expressions like pkgName.Something
 		if sel, ok := n.(*ast.SelectorExpr); ok {
 			if ident, ok := sel.X.(*ast.Ident); ok {
 				if ident.Name == pkgName {
-					used = true
-					return false // Stop walking once we find usage
+					isPackageUsed = true
+					// Stop walking.
+					return false
 				}
 			}
 		}
-		return true // Continue walking
+		// Continue walking.
+		return true
 	})
-	return used
+	return isPackageUsed
 }
 
 func updateImports(name, src string) (updated []*ast.ImportSpec, parsedFile *ast.File, err error) {
@@ -132,23 +133,11 @@ func Process(t *parser.TemplateFile) (*parser.TemplateFile, error) {
 				return t, err
 			}
 			// Check if this is a hyphenated import that might still be used
-			// (goimports can't match css-classes to cssclasses)
+			// (goimports can't match css-classes to cssclasses).
 			if strings.Contains(path, "-") {
-				// Extract the package name from the import path
-				lastSlash := strings.LastIndex(path, "/")
-				pkgName := path
-				if lastSlash >= 0 {
-					pkgName = path[lastSlash+1:]
-				}
-				// Determine the identifier used in code (either explicit name or derived from path)
-				identName := name
-				if identName == "" {
-					// No explicit import name, so use hyphen-removed package name
-					identName = strings.ReplaceAll(pkgName, "-", "")
-				}
-				// Check if the package is actually used by parsing the AST
+				identName := getPackageIdentifier(name, path)
 				if isPackageUsedInAST(generatedCodeAST, identName) {
-					// Import is used, don't delete it
+					// Import is used, don't delete it.
 					continue
 				}
 			}
@@ -204,12 +193,26 @@ func getImportDetails(imp *ast.ImportSpec) (name, importPath string, err error) 
 	return name, importPath, nil
 }
 
+func getPackageIdentifier(name, importPath string) string {
+	// If there's an explicit alias, use it.
+	if name != "" {
+		return name
+	}
+	// Extract package name from path.
+	lastSlash := strings.LastIndex(importPath, "/")
+	pkgName := importPath
+	if lastSlash >= 0 {
+		pkgName = importPath[lastSlash+1:]
+	}
+	// Remove hyphens for the implicit identifier.
+	return strings.ReplaceAll(pkgName, "-", "")
+}
+
 func containsImport(imports []*ast.ImportSpec, spec *ast.ImportSpec) bool {
 	for _, imp := range imports {
 		if imp.Path.Value == spec.Path.Value {
 			return true
 		}
 	}
-
 	return false
 }
