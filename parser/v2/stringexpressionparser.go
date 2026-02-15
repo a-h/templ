@@ -5,6 +5,8 @@ import (
 )
 
 var stringExpression = parse.Func(func(pi *parse.Input) (n Node, matched bool, err error) {
+	start := pi.Index()
+
 	// Check the prefix first.
 	if _, matched, err = parse.Or(parse.String("{ "), parse.String("{")).Parse(pi); err != nil || !matched {
 		return
@@ -35,6 +37,8 @@ var stringExpression = parse.Func(func(pi *parse.Input) (n Node, matched bool, e
 	if err != nil {
 		return r, true, err
 	}
+
+	r.Range = NewRange(pi.PositionAt(start), pi.Position())
 
 	return r, true, nil
 })

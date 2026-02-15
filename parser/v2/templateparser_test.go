@@ -195,6 +195,10 @@ func TestTemplateParser(t *testing.T) {
 										},
 									},
 								},
+								Range: Range{
+									From: Position{Index: 32, Line: 1, Col: 6},
+									To:   Position{Index: 50, Line: 1, Col: 24},
+								},
 							},
 						},
 						TrailingSpace: SpaceVertical,
@@ -252,6 +256,10 @@ func TestTemplateParser(t *testing.T) {
 											Col:   48,
 										},
 									},
+								},
+								Range: Range{
+									From: Position{Index: 32, Line: 0, Col: 32},
+									To:   Position{Index: 50, Line: 0, Col: 50},
 								},
 							},
 						},
@@ -332,6 +340,10 @@ func TestTemplateParser(t *testing.T) {
 									},
 								},
 								TrailingSpace: SpaceVertical,
+								Range: Range{
+									From: Position{Index: 34, Line: 2, Col: 2},
+									To:   Position{Index: 54, Line: 3, Col: 2},
+								},
 							},
 							&Element{
 								Name: "span",
@@ -370,6 +382,10 @@ func TestTemplateParser(t *testing.T) {
 											},
 										},
 										TrailingSpace: SpaceVertical,
+										Range: Range{
+											From: Position{Index: 62, Line: 4, Col: 1},
+											To:   Position{Index: 83, Line: 5, Col: 2},
+										},
 									},
 								},
 								IndentChildren: true,
@@ -500,6 +516,10 @@ func TestTemplateParser(t *testing.T) {
 											},
 										},
 										TrailingSpace: SpaceVertical,
+										Range: Range{
+											From: Position{Index: 51, Line: 3, Col: 3},
+											To:   Position{Index: 72, Line: 4, Col: 2},
+										},
 									},
 								},
 								IndentChildren: true,

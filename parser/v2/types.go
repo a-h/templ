@@ -1471,6 +1471,7 @@ type StringExpression struct {
 	Expression Expression
 	// TrailingSpace lists what happens after the expression.
 	TrailingSpace TrailingSpace
+	Range         Range
 }
 
 func (se *StringExpression) Trailing() TrailingSpace {
