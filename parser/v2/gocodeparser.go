@@ -17,6 +17,8 @@ var goCodeInJavaScript = getGoCodeParser(false)
 
 func getGoCodeParser(normalizeWhitespace bool) parse.Parser[Node] {
 	return parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
+		start := pi.Index()
+
 		// Check the prefix first.
 		if _, ok, err = dblOpenBraceWithOptionalPaddingOrNewLine.Parse(pi); err != nil || !ok {
 			return
@@ -54,6 +56,8 @@ func getGoCodeParser(normalizeWhitespace bool) parse.Parser[Node] {
 		} else {
 			r.TrailingSpace = TrailingSpace(ws)
 		}
+
+		r.Range = NewRange(pi.PositionAt(start), pi.Position())
 
 		return r, true, nil
 	})
