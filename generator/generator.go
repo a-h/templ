@@ -1189,6 +1189,15 @@ func (g *generator) writeBoolConstantAttribute(indentLevel int, attr *parser.Boo
 	return g.writeAttributeKey(indentLevel, attr.Key)
 }
 
+// normalizeClassValue collapses all sequences of whitespace characters (spaces,
+// tabs, newlines) into a single space and trims leading/trailing whitespace.
+// This reduces the size of the generated HTML without changing the semantics of
+// the class attribute, since class names are whitespace-separated tokens.
+func normalizeClassValue(s string) string {
+	fields := strings.Fields(s)
+	return strings.Join(fields, " ")
+}
+
 func (g *generator) writeConstantAttribute(indentLevel int, attr *parser.ConstantAttribute) (err error) {
 	if err = g.writeAttributeKey(indentLevel, attr.Key); err != nil {
 		return err
@@ -1197,7 +1206,11 @@ func (g *generator) writeConstantAttribute(indentLevel int, attr *parser.Constan
 	if attr.SingleQuote {
 		quote = "'"
 	}
-	value := escapeQuotes("=" + quote + attr.Value + quote)
+	attrValue := attr.Value
+	if k, ok := attr.Key.(parser.ConstantAttributeKey); ok && k.Name == "class" {
+		attrValue = normalizeClassValue(attrValue)
+	}
+	value := escapeQuotes("=" + quote + attrValue + quote)
 	if _, err = g.w.WriteStringLiteral(indentLevel, value); err != nil {
 		return err
 	}

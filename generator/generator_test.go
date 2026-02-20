@@ -105,3 +105,50 @@ func TestIsExpressionAttributeValueURL(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeClassValue(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "single line unchanged",
+			input:    "flex w-full h-full",
+			expected: "flex w-full h-full",
+		},
+		{
+			name:     "multiline with tabs",
+			input:    "\n\t\t\tflex w-full h-full\n\t\t\tjustify-center items-center\n\t\t\thover:bg-blue-50\n\t\t",
+			expected: "flex w-full h-full justify-center items-center hover:bg-blue-50",
+		},
+		{
+			name:     "leading and trailing whitespace",
+			input:    "  foo  bar  baz  ",
+			expected: "foo bar baz",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "only whitespace",
+			input:    "  \t\n  ",
+			expected: "",
+		},
+		{
+			name:     "single class",
+			input:    "active",
+			expected: "active",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := normalizeClassValue(tc.input)
+			if got != tc.expected {
+				t.Errorf("normalizeClassValue(%q) = %q, want %q", tc.input, got, tc.expected)
+			}
+		})
+	}
+}
