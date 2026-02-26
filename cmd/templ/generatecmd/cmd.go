@@ -392,9 +392,12 @@ func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 				return
 			}
 			server.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}}
+			if err = server.ListenAndServeTLS(cmd.Args.ProxyTLSCrt, cmd.Args.ProxyTLSKey); err != nil {
+				cmd.Log.Error("Proxy failed", slog.Any("error", err))
+			}
+			return
 		}
-		err := server.ListenAndServe()
-		if err != nil {
+		if err := server.ListenAndServe(); err != nil {
 			cmd.Log.Error("Proxy failed", slog.Any("error", err))
 		}
 	}()
