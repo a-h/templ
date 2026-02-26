@@ -9,12 +9,17 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator/htmldiff"
+	"github.com/a-h/templ/internal/prettier"
 )
 
 //go:embed expected.html
 var expected string
 
 func TestExample(t *testing.T) {
+	if !prettier.IsAvailable(prettier.DefaultCommand) {
+		t.Skip("prettier is not available, skipping test")
+	}
+
 	// Create the templ component.
 	templComponent := greeting()
 	html, err := templ.ToGoHTML(context.Background(), templComponent)

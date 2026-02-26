@@ -8,6 +8,10 @@ import (
 )
 
 func Test(t *testing.T) {
+	if !IsAvailable(DefaultCommand) {
+		t.Skip("prettier is not available, skipping test")
+	}
+
 	archive, err := txtar.ParseFile("testdata.txtar")
 	if err != nil {
 		t.Fatalf("failed to read testdata.txtar: %v", err)

@@ -8,12 +8,17 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator/htmldiff"
+	"github.com/a-h/templ/internal/prettier"
 )
 
 //go:embed expected.html
 var expected string
 
 func Test(t *testing.T) {
+	if !prettier.IsAvailable(prettier.DefaultCommand) {
+		t.Skip("prettier is not available, skipping test")
+	}
+
 	component := BasicTemplate(templ.Attributes{
 		// Should render as `bool` as the value is true, and the conditional render is also true.
 		"bool": templ.KV(true, true),

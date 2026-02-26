@@ -11,12 +11,17 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator/htmldiff"
+	"github.com/a-h/templ/internal/prettier"
 )
 
 //go:embed complete.html
 var complete string
 
 func Test(t *testing.T) {
+	if !prettier.IsAvailable(prettier.DefaultCommand) {
+		t.Skip("prettier is not available, skipping test")
+	}
+
 	tests := []struct {
 		name     string
 		handler  http.Handler
