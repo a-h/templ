@@ -90,7 +90,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -126,7 +126,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -169,7 +169,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		if err = h.modifyResponse(r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -213,7 +213,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		if err = h.modifyResponse(r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -258,7 +258,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		if err = h.modifyResponse(r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -295,7 +295,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -358,7 +358,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err = h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -426,7 +426,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err = h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -471,7 +471,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		if err := h.modifyResponse(r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -543,7 +543,7 @@ func TestProxy(t *testing.T) {
 			t.Fatalf("unexpected error parsing URL: %v", err)
 		}
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		handler := New(log, "0.0.0.0", 0, u)
+		handler := New(log, "http", "0.0.0.0", 0, u)
 		proxyServer := httptest.NewServer(handler)
 		defer proxyServer.Close()
 
@@ -641,7 +641,7 @@ func TestProxy(t *testing.T) {
 		// Act
 		lh := newTestLogHandler(slog.LevelInfo)
 		log := slog.New(lh)
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
