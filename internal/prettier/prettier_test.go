@@ -44,7 +44,7 @@ func TestIsAvailable(t *testing.T) {
 	})
 	t.Run("existing commands return true", func(t *testing.T) {
 		if !IsAvailable("ls -lah") {
-			t.Errorf("IsAvailable should return true for existing command %q", DefaultCommand)
+			t.Errorf("IsAvailable should return true for existing command %q", DefaultCommand())
 		}
 	})
 }

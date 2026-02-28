@@ -11,7 +11,7 @@ import (
 )
 
 func TestFormatting(t *testing.T) {
-	if !prettier.IsAvailable(prettier.DefaultCommand) {
+	if !prettier.IsAvailable(prettier.DefaultCommand()) {
 		t.Skip("Prettier is not available, skipping formatting tests")
 	}
 	files, _ := filepath.Glob("testdata/*.txt")
