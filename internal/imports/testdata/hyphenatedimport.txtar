@@ -1,0 +1,16 @@
+-- fmt.templ --
+package test
+
+import "github.com/a-h/templ/cmd/templ/testproject/css-classes"
+
+templ Hello() {
+	{ cssclasses.Header }
+}
+-- fmt.templ --
+package test
+
+import "github.com/a-h/templ/cmd/templ/testproject/css-classes"
+
+templ Hello() {
+	{ cssclasses.Header }
+}

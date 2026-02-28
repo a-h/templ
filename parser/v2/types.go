@@ -863,7 +863,8 @@ func (e ExpressionAttributeKey) String() string {
 
 // <hr noshade/>
 type BoolConstantAttribute struct {
-	Key AttributeKey
+	Key   AttributeKey
+	Range Range
 }
 
 func (bca *BoolConstantAttribute) String() string {
@@ -880,7 +881,8 @@ func (bca *BoolConstantAttribute) Visit(v Visitor) error {
 
 func (bca *BoolConstantAttribute) Copy() Attribute {
 	return &BoolConstantAttribute{
-		Key: bca.Key,
+		Key:   bca.Key,
+		Range: bca.Range,
 	}
 }
 
@@ -889,6 +891,7 @@ type ConstantAttribute struct {
 	Key         AttributeKey
 	Value       string
 	SingleQuote bool
+	Range       Range
 }
 
 func (ca *ConstantAttribute) String() string {
@@ -912,6 +915,7 @@ func (ca *ConstantAttribute) Copy() Attribute {
 		Value:       ca.Value,
 		SingleQuote: ca.SingleQuote,
 		Key:         ca.Key,
+		Range:       ca.Range,
 	}
 }
 
@@ -1264,9 +1268,11 @@ func (tee *TemplElementExpression) Visit(v Visitor) error {
 	return v.VisitTemplElementExpression(tee)
 }
 
-// ChildrenExpression can be used to rended the children of a templ element.
+// ChildrenExpression can be used to render the children of a templ element.
 // { children ... }
-type ChildrenExpression struct{}
+type ChildrenExpression struct {
+	Range Range
+}
 
 func (*ChildrenExpression) IsNode() bool { return true }
 func (*ChildrenExpression) Write(w io.Writer, indent int) error {

@@ -5,11 +5,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/a-h/templ/internal/prettier"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/txtar"
 )
 
 func TestFormatting(t *testing.T) {
+	if !prettier.IsAvailable(prettier.DefaultCommand) {
+		t.Skip("Prettier is not available, skipping formatting tests")
+	}
 	files, _ := filepath.Glob("testdata/*.txt")
 	if len(files) == 0 {
 		t.Errorf("no test files found")
