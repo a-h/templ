@@ -21,7 +21,7 @@ func Test(t *testing.T) {
 			expectedData := archive.Files[i+1].Data
 			input := strings.TrimSpace(string(inputData))
 			expected := strings.TrimSpace(string(expectedData))
-			actual, err := Run(input, archive.Files[i].Name, DefaultCommand)
+			actual, err := Run(input, archive.Files[i].Name, DefaultCommand())
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -47,4 +47,73 @@ func TestIsAvailable(t *testing.T) {
 			t.Errorf("IsAvailable should return true for existing command %q", DefaultCommand)
 		}
 	})
+}
+
+func TestGetCommand(t *testing.T) {
+	tests := []struct {
+		name     string
+		goos     string
+		shell    string
+		command  string
+		wantPath string
+		wantArgs []string
+	}{
+		{
+			name:     "nushell uses a custom command",
+			goos:     "linux",
+			shell:    "/usr/bin/nu",
+			command:  shellNameToCommand["nu"],
+			wantPath: "/usr/bin/nu",
+			wantArgs: []string{"/usr/bin/nu", "-c", shellNameToCommand["nu"]},
+		},
+		{
+			name:     "bash uses the default posix command",
+			goos:     "linux",
+			shell:    "/bin/bash",
+			command:  defaultPosixCommand,
+			wantPath: "/bin/bash",
+			wantArgs: []string{"/bin/bash", "-c", defaultPosixCommand},
+		},
+		{
+			name:     "zsh uses the default posix command",
+			goos:     "linux",
+			shell:    "/bin/zsh",
+			command:  defaultPosixCommand,
+			wantPath: "/bin/zsh",
+			wantArgs: []string{"/bin/zsh", "-c", defaultPosixCommand},
+		},
+		{
+			name:     "empty shell defaults to the default posix command",
+			goos:     "linux",
+			shell:    "",
+			command:  defaultPosixCommand,
+			wantPath: "/bin/sh",
+			wantArgs: []string{"/bin/sh", "-c", defaultPosixCommand},
+		},
+		{
+			name:     "windows uses cmd.exe regardless of shell",
+			goos:     "windows",
+			shell:    "C:\\Program Files\\PowerShell\\pwsh.exe",
+			command:  "prettier --stdin-filepath test.html",
+			wantPath: "cmd.exe",
+			wantArgs: []string{"cmd.exe", "/C", "prettier --stdin-filepath test.html"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := getCommand(tt.goos, tt.shell, tt.command)
+			if cmd.Path != tt.wantPath {
+				t.Errorf("got path %q, want %q", cmd.Path, tt.wantPath)
+			}
+			if len(cmd.Args) != len(tt.wantArgs) {
+				t.Errorf("got %d args, want %d", len(cmd.Args), len(tt.wantArgs))
+			}
+			for i, arg := range cmd.Args {
+				if i < len(tt.wantArgs) && arg != tt.wantArgs[i] {
+					t.Errorf("arg %d: got %q, want %q", i, arg, tt.wantArgs[i])
+				}
+			}
+		})
+	}
 }
