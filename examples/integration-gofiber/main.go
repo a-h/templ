@@ -2,14 +2,14 @@ package main
 
 import (
 	"github.com/a-h/templ"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/log"
 )
 
 func main() {
 	app := fiber.New()
 
-	app.Get("/:name?", func(c *fiber.Ctx) error {
+	app.Get("/:name?", func(c fiber.Ctx) error {
 		name := c.Params("name")
 		c.Locals("name", name)
 		if name == "" {
@@ -22,12 +22,12 @@ func main() {
 	log.Fatal(app.Listen(":3000"))
 }
 
-func NotFoundMiddleware(c *fiber.Ctx) error {
+func NotFoundMiddleware(c fiber.Ctx) error {
 	c.Status(fiber.StatusNotFound)
 	return Render(c, NotFound())
 }
 
-func Render(c *fiber.Ctx, component templ.Component) error {
+func Render(c fiber.Ctx, component templ.Component) error {
 	c.Set("Content-Type", "text/html")
 	return component.Render(c.Context(), c.Response().BodyWriter())
 }
