@@ -97,6 +97,8 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 	cmd.StringVar(&cmdArgs.Proxy, "proxy", "", "")
 	cmd.IntVar(&cmdArgs.ProxyPort, "proxyport", 7331, "")
 	cmd.StringVar(&cmdArgs.ProxyBind, "proxybind", "127.0.0.1", "")
+	cmd.StringVar(&cmdArgs.ProxyTLSCrt, "proxy-tls-crt", "", "")
+	cmd.StringVar(&cmdArgs.ProxyTLSKey, "proxy-tls-key", "", "")
 	cmd.BoolVar(&cmdArgs.NotifyProxy, "notify-proxy", false, "")
 	cmd.IntVar(&cmdArgs.WorkerCount, "w", runtime.NumCPU(), "")
 	cmd.IntVar(&cmdArgs.PPROFPort, "pprof", 0, "")
@@ -134,6 +136,14 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 		cmdArgs.FileWriter = WriterFileWriter(stdout)
 	}
 
+	// Validate TLS certificate flags.
+	if (cmdArgs.ProxyTLSCrt == "") != (cmdArgs.ProxyTLSKey == "") {
+		return Arguments{}, log, *helpFlag, fmt.Errorf("both -proxy-tls-crt and -proxy-tls-key must be provided together")
+	}
+	if cmdArgs.ProxyTLSCrt != "" && cmdArgs.Proxy == "" {
+		return Arguments{}, log, *helpFlag, fmt.Errorf("-proxy-tls-crt and -proxy-tls-key can only be used with the -proxy flag")
+	}
+
 	return cmdArgs, log, *helpFlag, nil
 }
 
@@ -149,6 +159,8 @@ type Arguments struct {
 	ProxyBind                       string
 	ProxyPort                       int
 	Proxy                           string
+	ProxyTLSCrt                     string
+	ProxyTLSKey                     string
 	NotifyProxy                     bool
 	WorkerCount                     int
 	GenerateSourceMapVisualisations bool
