@@ -139,6 +139,7 @@ var (
 			return
 		}
 
+		attrStart := pi.Index()
 		attr = &ConstantAttribute{}
 
 		// Attribute name.
@@ -169,6 +170,7 @@ var (
 
 		// Only use single quotes if actually required, due to double quote in the value (prefer double quotes).
 		attr.SingleQuote = attr.SingleQuote && strings.Contains(attr.Value, "\"")
+		attr.Range = NewRange(pi.PositionAt(attrStart), pi.Position())
 
 		return attr, true, nil
 	})
@@ -220,6 +222,7 @@ var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr *BoolCo
 		return
 	}
 
+	attrStart := pi.Index()
 	attr = &BoolConstantAttribute{}
 
 	// Attribute name.
@@ -243,6 +246,7 @@ var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr *BoolCo
 		err = parse.Error(fmt.Sprintf("boolConstantAttributeParser: expected attribute name to end with space, newline, '/>' or '>', but got %q", next), pi.Position())
 		return attr, false, err
 	}
+	attr.Range = NewRange(pi.PositionAt(attrStart), pi.Position())
 
 	return attr, true, nil
 })

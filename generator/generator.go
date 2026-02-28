@@ -1197,7 +1197,14 @@ func (g *generator) writeConstantAttribute(indentLevel int, attr *parser.Constan
 	if attr.SingleQuote {
 		quote = "'"
 	}
-	value := escapeQuotes("=" + quote + attr.Value + quote)
+
+	// Strip superfluous whitespace from class attributes.
+	attrValue := attr.Value
+	if k, ok := attr.Key.(parser.ConstantAttributeKey); ok && strings.EqualFold(k.Name, "class") {
+		attrValue = strings.Join(strings.Fields(attrValue), " ")
+	}
+
+	value := escapeQuotes("=" + quote + attrValue + quote)
 	if _, err = g.w.WriteStringLiteral(indentLevel, value); err != nil {
 		return err
 	}

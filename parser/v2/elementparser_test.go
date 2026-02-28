@@ -61,6 +61,10 @@ func TestAttributeParser(t *testing.T) {
 								To:   Position{Index: 6, Line: 0, Col: 6},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 20, Line: 0, Col: 20},
+						},
 					},
 				},
 			},
@@ -85,6 +89,10 @@ func TestAttributeParser(t *testing.T) {
 								To:   Position{Index: 11, Line: 0, Col: 11},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 25, Line: 0, Col: 25},
+						},
 					},
 					&ConstantAttribute{
 						Value: "{'foo': true}",
@@ -94,6 +102,10 @@ func TestAttributeParser(t *testing.T) {
 								From: Position{Index: 26, Line: 0, Col: 26},
 								To:   Position{Index: 32, Line: 0, Col: 32},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 26, Line: 0, Col: 26},
+							To:   Position{Index: 48, Line: 0, Col: 48},
 						},
 					},
 				},
@@ -119,6 +131,10 @@ func TestAttributeParser(t *testing.T) {
 								To:   Position{Index: 7, Line: 0, Col: 7},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 13, Line: 0, Col: 13},
+						},
 					},
 					&ConstantAttribute{
 						Value: "padding: 10px",
@@ -128,6 +144,10 @@ func TestAttributeParser(t *testing.T) {
 								From: Position{Index: 14, Line: 0, Col: 14},
 								To:   Position{Index: 19, Line: 0, Col: 19},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 14, Line: 0, Col: 14},
+							To:   Position{Index: 35, Line: 0, Col: 35},
 						},
 					},
 				},
@@ -166,6 +186,10 @@ func TestAttributeParser(t *testing.T) {
 								From: Position{Index: 23, Line: 2, Col: 3},
 								To:   Position{Index: 28, Line: 2, Col: 8},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 23, Line: 2, Col: 3},
+							To:   Position{Index: 40, Line: 2, Col: 20},
 						},
 					},
 				},
@@ -211,6 +235,10 @@ if test {` + " " + `
 								To:   Position{Index: 18, Line: 2, Col: 6},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 13, Line: 2, Col: 1},
+							To:   Position{Index: 29, Line: 2, Col: 17},
+						},
 					},
 					&BoolConstantAttribute{
 						Key: ConstantAttributeKey{
@@ -219,6 +247,10 @@ if test {` + " " + `
 								From: Position{Index: 31, Line: 3, Col: 1},
 								To:   Position{Index: 38, Line: 3, Col: 8},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 31, Line: 3, Col: 1},
+							To:   Position{Index: 38, Line: 3, Col: 8},
 						},
 					},
 					&ExpressionAttribute{
@@ -423,6 +455,10 @@ if test {` + " " + `
 						To:   Position{Index: 5, Line: 0, Col: 5},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 12, Line: 0, Col: 12},
+				},
 			},
 		},
 		{
@@ -438,6 +474,10 @@ if test {` + " " + `
 						From: Position{Index: 1, Line: 0, Col: 1},
 						To:   Position{Index: 5, Line: 0, Col: 5},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 32, Line: 0, Col: 32},
 				},
 			},
 		},
@@ -455,6 +495,10 @@ if test {` + " " + `
 						To:   Position{Index: 5, Line: 0, Col: 5},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 14, Line: 0, Col: 14},
+				},
 			},
 		},
 		{
@@ -470,6 +514,10 @@ if test {` + " " + `
 						To:   Position{Index: 21, Line: 0, Col: 21},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 29, Line: 0, Col: 29},
+				},
 			},
 		},
 		{
@@ -484,6 +532,10 @@ if test {` + " " + `
 						From: Position{Index: 1, Line: 0, Col: 1},
 						To:   Position{Index: 5, Line: 0, Col: 5},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 8, Line: 0, Col: 8},
 				},
 			},
 		},
@@ -502,6 +554,10 @@ if test {` + " " + `
 						From: Position{Index: 1, Line: 0, Col: 1},
 						To:   Position{Index: 12, Line: 0, Col: 12},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 69, Line: 2, Col: 17},
 				},
 			},
 		},
@@ -524,6 +580,10 @@ if test {` + " " + `
 								From: Position{Index: 5, Line: 0, Col: 5},
 								To:   Position{Index: 9, Line: 0, Col: 9},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 9, Line: 0, Col: 9},
 						},
 					},
 				},
@@ -558,6 +618,10 @@ if test {` + " " + `
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 14, Line: 0, Col: 14},
+						},
 					},
 				},
 			},
@@ -581,6 +645,10 @@ if test {` + " " + `
 								From: Position{Index: 9, Line: 1, Col: 2},
 								To:   Position{Index: 17, Line: 1, Col: 10},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 9, Line: 1, Col: 2},
+							To:   Position{Index: 17, Line: 1, Col: 10},
 						},
 					},
 				},
@@ -610,6 +678,10 @@ if test {` + " " + `
 								To:   Position{Index: 18, Line: 1, Col: 10},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 10, Line: 1, Col: 2},
+							To:   Position{Index: 18, Line: 1, Col: 10},
+						},
 					},
 				},
 				Range: Range{
@@ -632,6 +704,10 @@ if test {` + " " + `
 						To:   Position{Index: 5, Line: 0, Col: 5},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
 			},
 		},
 		{
@@ -646,6 +722,10 @@ if test {` + " " + `
 						From: Position{Index: 1, Line: 0, Col: 1},
 						To:   Position{Index: 5, Line: 0, Col: 5},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 13, Line: 0, Col: 13},
 				},
 			},
 		},
@@ -662,6 +742,10 @@ if test {` + " " + `
 						To:   Position{Index: 12, Line: 0, Col: 12},
 					},
 				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 22, Line: 0, Col: 22},
+				},
 			},
 		},
 		{
@@ -676,6 +760,10 @@ if test {` + " " + `
 						From: Position{Index: 1, Line: 0, Col: 1},
 						To:   Position{Index: 5, Line: 0, Col: 5},
 					},
+				},
+				Range: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 9, Line: 0, Col: 9},
 				},
 			},
 		},
@@ -736,6 +824,10 @@ func TestElementParser(t *testing.T) {
 								From: Position{Index: 3, Line: 0, Col: 3},
 								To:   Position{Index: 7, Line: 0, Col: 7},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 14, Line: 0, Col: 14},
 						},
 					},
 				},
@@ -833,6 +925,10 @@ func TestElementParser(t *testing.T) {
 								From: Position{Index: 4, Line: 0, Col: 4},
 								To:   Position{Index: 11, Line: 0, Col: 11},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 11, Line: 0, Col: 11},
 						},
 					},
 				},
@@ -1023,6 +1119,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 7, Line: 0, Col: 7},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 14, Line: 0, Col: 14},
+						},
 					},
 					&ConstantAttribute{
 						Value: "text-underline: auto",
@@ -1032,6 +1132,10 @@ func TestElementParser(t *testing.T) {
 								From: Position{Index: 15, Line: 0, Col: 15},
 								To:   Position{Index: 20, Line: 0, Col: 20},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 15, Line: 0, Col: 15},
+							To:   Position{Index: 43, Line: 0, Col: 43},
 						},
 					},
 				},
@@ -1118,6 +1222,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 11, Line: 0, Col: 11},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 11, Line: 0, Col: 11},
+						},
 					},
 					&BoolExpressionAttribute{
 						Key: ConstantAttributeKey{
@@ -1156,6 +1264,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 37, Line: 0, Col: 37},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 30, Line: 0, Col: 30},
+							To:   Position{Index: 45, Line: 0, Col: 45},
+						},
 					},
 				},
 				Range: Range{
@@ -1182,6 +1294,10 @@ func TestElementParser(t *testing.T) {
 								From: Position{Index: 3, Line: 0, Col: 3},
 								To:   Position{Index: 7, Line: 0, Col: 7},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 14, Line: 0, Col: 14},
 						},
 					},
 					&ExpressionAttribute{
@@ -1217,6 +1333,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 58, Line: 0, Col: 58},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 53, Line: 0, Col: 53},
+							To:   Position{Index: 81, Line: 0, Col: 81},
+						},
 					},
 				},
 				Range: Range{
@@ -1251,6 +1371,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 10, Line: 0, Col: 10},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 24, Line: 0, Col: 24},
+						},
 					},
 					&ConditionalAttribute{
 						Expression: Expression{
@@ -1277,6 +1401,10 @@ func TestElementParser(t *testing.T) {
 										From: Position{Index: 47, Line: 2, Col: 3},
 										To:   Position{Index: 52, Line: 2, Col: 8},
 									},
+								},
+								Range: Range{
+									From: Position{Index: 47, Line: 2, Col: 3},
+									To:   Position{Index: 64, Line: 2, Col: 20},
 								},
 							},
 						},
@@ -1337,6 +1465,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 9, Line: 0, Col: 9},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 25, Line: 0, Col: 25},
+						},
 					},
 				},
 				Range: Range{
@@ -1368,6 +1500,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 9, Line: 0, Col: 9},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 25, Line: 0, Col: 25},
+						},
 					},
 					&ConditionalAttribute{
 						Expression: Expression{
@@ -1394,6 +1530,10 @@ func TestElementParser(t *testing.T) {
 										From: Position{Index: 44, Line: 2, Col: 4},
 										To:   Position{Index: 49, Line: 2, Col: 9},
 									},
+								},
+								Range: Range{
+									From: Position{Index: 44, Line: 2, Col: 4},
+									To:   Position{Index: 60, Line: 2, Col: 20},
 								},
 							},
 						},
@@ -1435,6 +1575,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 9, Line: 0, Col: 9},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 25, Line: 0, Col: 25},
+						},
 					},
 					&ConditionalAttribute{
 						Expression: Expression{
@@ -1462,6 +1606,10 @@ func TestElementParser(t *testing.T) {
 										To:   Position{Index: 49, Line: 2, Col: 9},
 									},
 								},
+								Range: Range{
+									From: Position{Index: 44, Line: 2, Col: 4},
+									To:   Position{Index: 60, Line: 2, Col: 20},
+								},
 							},
 						},
 						Else: []Attribute{
@@ -1473,6 +1621,10 @@ func TestElementParser(t *testing.T) {
 										From: Position{Index: 77, Line: 4, Col: 4},
 										To:   Position{Index: 82, Line: 4, Col: 9},
 									},
+								},
+								Range: Range{
+									From: Position{Index: 77, Line: 4, Col: 4},
+									To:   Position{Index: 96, Line: 4, Col: 23},
 								},
 							},
 						},
@@ -1512,6 +1664,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 8, Line: 0, Col: 8},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 24, Line: 0, Col: 24},
+						},
 					},
 					&ConditionalAttribute{
 						Expression: Expression{
@@ -1538,6 +1694,10 @@ func TestElementParser(t *testing.T) {
 										From: Position{Index: 43, Line: 2, Col: 4},
 										To:   Position{Index: 48, Line: 2, Col: 9},
 									},
+								},
+								Range: Range{
+									From: Position{Index: 43, Line: 2, Col: 4},
+									To:   Position{Index: 59, Line: 2, Col: 20},
 								},
 							},
 						},
@@ -1836,6 +1996,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 12, Line: 0, Col: 12},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 20, Line: 0, Col: 20},
+						},
 					},
 					&ConstantAttribute{
 						Value: "email",
@@ -1846,6 +2010,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 23, Line: 0, Col: 23},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 21, Line: 0, Col: 21},
+							To:   Position{Index: 31, Line: 0, Col: 31},
+						},
 					},
 					&ConstantAttribute{
 						Value: "email",
@@ -1855,6 +2023,10 @@ func TestElementParser(t *testing.T) {
 								From: Position{Index: 32, Line: 0, Col: 32},
 								To:   Position{Index: 36, Line: 0, Col: 36},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 32, Line: 0, Col: 32},
+							To:   Position{Index: 44, Line: 0, Col: 44},
 						},
 					},
 					&ExpressionAttribute{
@@ -1890,6 +2062,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 102, Line: 0, Col: 102},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 91, Line: 0, Col: 91},
+							To:   Position{Index: 119, Line: 0, Col: 119},
+						},
 					},
 					&ConstantAttribute{
 						Value: "off",
@@ -1899,6 +2075,10 @@ func TestElementParser(t *testing.T) {
 								From: Position{Index: 120, Line: 0, Col: 120},
 								To:   Position{Index: 132, Line: 0, Col: 132},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 120, Line: 0, Col: 120},
+							To:   Position{Index: 138, Line: 0, Col: 138},
 						},
 					},
 				},
@@ -1932,6 +2112,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 12, Line: 1, Col: 5},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 8, Line: 1, Col: 1},
+							To:   Position{Index: 20, Line: 1, Col: 13},
+						},
 					},
 					&ConstantAttribute{
 						Value: "email",
@@ -1942,6 +2126,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 25, Line: 2, Col: 3},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 23, Line: 2, Col: 1},
+							To:   Position{Index: 33, Line: 2, Col: 11},
+						},
 					},
 					&ConstantAttribute{
 						Value: "email",
@@ -1951,6 +2139,10 @@ func TestElementParser(t *testing.T) {
 								From: Position{Index: 36, Line: 3, Col: 1},
 								To:   Position{Index: 40, Line: 3, Col: 5},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 36, Line: 3, Col: 1},
+							To:   Position{Index: 48, Line: 3, Col: 13},
 						},
 					},
 				},
@@ -1979,6 +2171,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 11, Line: 0, Col: 11},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 20, Line: 0, Col: 20},
+						},
 					},
 				},
 				Range: Range{
@@ -2006,6 +2202,10 @@ func TestElementParser(t *testing.T) {
 								To:   Position{Index: 11, Line: 0, Col: 11},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 4, Line: 0, Col: 4},
+							To:   Position{Index: 20, Line: 0, Col: 20},
+						},
 					},
 					&BoolConstantAttribute{
 						Key: ConstantAttributeKey{
@@ -2014,6 +2214,10 @@ func TestElementParser(t *testing.T) {
 								From: Position{Index: 20, Line: 0, Col: 20},
 								To:   Position{Index: 28, Line: 0, Col: 28},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 20, Line: 0, Col: 20},
+							To:   Position{Index: 28, Line: 0, Col: 28},
 						},
 					},
 					&ExpressionAttribute{

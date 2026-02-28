@@ -76,7 +76,7 @@ func TestImport(t *testing.T) {
 		assertions func(t *testing.T, updated string)
 	}{
 		{
-			name: "un-named imports are removed",
+			name: "hyphenated imports are retained when used",
 			src: `package main
 
 import "fmt"
@@ -88,8 +88,10 @@ templ Page(count int) {
 }
 `,
 			assertions: func(t *testing.T, updated string) {
-				if count := strings.Count(updated, "github.com/a-h/templ/cmd/templ/testproject/css-classes"); count != 0 {
-					t.Errorf("expected un-named import to be removed, but got %d instance of it", count)
+				// The import should be retained because cssclasses.Header uses it
+				// It should either be unnamed or named (cssclasses)
+				if count := strings.Count(updated, "github.com/a-h/templ/cmd/templ/testproject/css-classes"); count == 0 {
+					t.Errorf("expected hyphenated import to be retained, but it was removed")
 				}
 			},
 		},
