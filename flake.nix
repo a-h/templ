@@ -32,9 +32,6 @@
             inherit system;
             overlays = [
               (final: prev: {
-                # The default Go is 1.25, but there are benefits to 1.26.
-                # When we next bump nixpkgs, we can remove this overlay and use the default again.
-                go = prev.go_1_26;
                 gopls = pkgs-unstable.gopls;
                 version = version.packages.${system}.default; # Used to apply version numbers to the repo.
               })
