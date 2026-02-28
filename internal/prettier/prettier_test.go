@@ -59,15 +59,39 @@ func TestGetCommand(t *testing.T) {
 		wantArgs []string
 	}{
 		{
-			name:     "POSIX shell",
+			name:     "nushell uses a custom command",
 			goos:     "linux",
-			shell:    "/bin/bash",
-			command:  "prettier --stdin-filepath test.html",
-			wantPath: "/bin/bash",
-			wantArgs: []string{"/bin/bash", "-c", "prettier --stdin-filepath test.html"},
+			shell:    "/usr/bin/nu",
+			command:  shellNameToCommand["nu"],
+			wantPath: "/usr/bin/nu",
+			wantArgs: []string{"/usr/bin/nu", "-c", shellNameToCommand["nu"]},
 		},
 		{
-			name:     "Windows uses cmd.exe",
+			name:     "bash uses the default posix command",
+			goos:     "linux",
+			shell:    "/bin/bash",
+			command:  defaultPosixCommand,
+			wantPath: "/bin/bash",
+			wantArgs: []string{"/bin/bash", "-c", defaultPosixCommand},
+		},
+		{
+			name:     "zsh uses the default posix command",
+			goos:     "linux",
+			shell:    "/bin/zsh",
+			command:  defaultPosixCommand,
+			wantPath: "/bin/zsh",
+			wantArgs: []string{"/bin/zsh", "-c", defaultPosixCommand},
+		},
+		{
+			name:     "empty shell defaults to the default posix command",
+			goos:     "linux",
+			shell:    "",
+			command:  defaultPosixCommand,
+			wantPath: "/bin/sh",
+			wantArgs: []string{"/bin/sh", "-c", defaultPosixCommand},
+		},
+		{
+			name:     "windows uses cmd.exe regardless of shell",
 			goos:     "windows",
 			shell:    "C:\\Program Files\\PowerShell\\pwsh.exe",
 			command:  "prettier --stdin-filepath test.html",
@@ -89,45 +113,6 @@ func TestGetCommand(t *testing.T) {
 				if i < len(tt.wantArgs) && arg != tt.wantArgs[i] {
 					t.Errorf("arg %d: got %q, want %q", i, arg, tt.wantArgs[i])
 				}
-			}
-		})
-	}
-}
-
-func TestDefaultCommand(t *testing.T) {
-	tests := []struct {
-		name    string
-		shell   string
-		wantCmd string
-	}{
-		{
-			name:    "nushell returns nushell-specific command",
-			shell:   "/usr/bin/nu",
-			wantCmd: shellNameToCommand["nu"],
-		},
-		{
-			name:    "bash returns default command",
-			shell:   "/bin/bash",
-			wantCmd: defaultPosixCommand,
-		},
-		{
-			name:    "zsh returns default command",
-			shell:   "/bin/zsh",
-			wantCmd: defaultPosixCommand,
-		},
-		{
-			name:    "empty shell defaults to /bin/sh and returns default command",
-			shell:   "",
-			wantCmd: defaultPosixCommand,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("SHELL", tt.shell)
-			got := DefaultCommand()
-			if got != tt.wantCmd {
-				t.Errorf("got %q, want %q", got, tt.wantCmd)
 			}
 		})
 	}

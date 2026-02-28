@@ -49,11 +49,7 @@ func IsAvailable(command string) bool {
 //	npx prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME
 //	prettier --config ./frontend/.prettierrc --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME
 func Run(input, fileName, command string) (formatted string, err error) {
-	shell := os.Getenv("SHELL")
-	if shell == "" {
-		shell = "/bin/sh"
-	}
-	cmd := getCommand(runtime.GOOS, shell, command)
+	cmd := getCommand(runtime.GOOS, os.Getenv("SHELL"), command)
 	cmd.Env = append(os.Environ(), fmt.Sprintf("TEMPL_PRETTIER_FILENAME=%s", fileName))
 	cmd.Stdin = strings.NewReader(input)
 	output, err := cmd.CombinedOutput()
@@ -64,6 +60,9 @@ func Run(input, fileName, command string) (formatted string, err error) {
 }
 
 func getCommand(goos, shell, command string) *exec.Cmd {
+	if shell == "" {
+		shell = "/bin/sh"
+	}
 	if goos == "windows" {
 		return exec.Command("cmd.exe", "/C", command)
 	}
