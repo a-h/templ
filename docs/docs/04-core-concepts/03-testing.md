@@ -197,11 +197,14 @@ templ uses this strategy to check for regressions in behaviour between releases,
 
 To make it easier to compare the output against the expected HTML, templ uses a HTML formatting library before executing the diff.
 
+The `htmldiff.Diff` function requires `prettier` to be installed and available in the shell's PATH. See https://prettier.io/docs/en/install for installation instructions.
+
 ```go
 package testcomment
 
 import (
 	_ "embed"
+	"os"
 	"testing"
 
 	"github.com/a-h/templ/generator/htmldiff"
@@ -213,11 +216,14 @@ var expected string
 func Test(t *testing.T) {
 	component := render("sample content")
 
-	diff, err := htmldiff.Diff(component, expected)
+	actual, diff, err := htmldiff.Diff(component, expected)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if diff != "" {
+		if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual.html: %v", err)
+		}
 		t.Error(diff)
 	}
 }
