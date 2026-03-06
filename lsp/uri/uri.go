@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"unicode"
 )
@@ -146,11 +145,6 @@ func URIFromPath(path string) URI {
 
 // File parses and creates a new filesystem URI from path.
 func File(path string) URI {
-	const goRootPragma = "$GOROOT"
-	if len(path) >= len(goRootPragma) && strings.EqualFold(goRootPragma, path[:len(goRootPragma)]) {
-		path = runtime.GOROOT() + path[len(goRootPragma):]
-	}
-
 	if !isWindowsDrivePath(path) {
 		if abs, err := filepath.Abs(path); err == nil {
 			path = abs
