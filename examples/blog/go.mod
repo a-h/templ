@@ -1,6 +1,6 @@
 module github.com/a-h/templ/examples/blog
 
-go 1.23.3
+go 1.25.0
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.1
@@ -9,7 +9,7 @@ require (
 
 require (
 	github.com/andybalholm/cascadia v1.3.3 // indirect
-	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
 )
 
 replace github.com/a-h/templ => ../../
