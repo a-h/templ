@@ -54,15 +54,12 @@ func GetNonce(ctx context.Context) (nonce string) {
 }
 
 func WithChildren(ctx context.Context, children Component) context.Context {
-	ctx, v := getContext(ctx)
-	v.children = &children
-	return ctx
+	ctx, _ = getContext(ctx) // Ensure contextValue exists before adding children
+	return context.WithValue(ctx, childrenKey, &children)
 }
 
 func ClearChildren(ctx context.Context) context.Context {
-	_, v := getContext(ctx)
-	v.children = nil
-	return ctx
+	return context.WithValue(ctx, childrenKey, nil)
 }
 
 // NopComponent is a component that doesn't render anything.
@@ -70,11 +67,15 @@ var NopComponent = ComponentFunc(func(ctx context.Context, w io.Writer) error { 
 
 // GetChildren from the context.
 func GetChildren(ctx context.Context) Component {
-	_, v := getContext(ctx)
-	if v.children == nil {
+	v := ctx.Value(childrenKey)
+	if v == nil {
 		return NopComponent
 	}
-	return *v.children
+	children := v.(*Component)
+	if children == nil {
+		return NopComponent
+	}
+	return *children
 }
 
 // EscapeString escapes HTML text within templates.
@@ -548,10 +549,13 @@ type contextKeyType int
 
 const contextKey = contextKeyType(0)
 
+type childrenKeyType int
+
+const childrenKey = childrenKeyType(0)
+
 type contextValue struct {
 	ss          map[string]struct{}
 	onceHandles map[*OnceHandle]struct{}
-	children    *Component
 	nonce       string
 }
 
