@@ -32,6 +32,13 @@ func TestGoCodeParser(t *testing.T) {
 						},
 					},
 				},
+				Range: Range{
+					To: Position{
+						Index: 17,
+						Line:  0,
+						Col:   17,
+					},
+				},
 			},
 		},
 		{
@@ -51,6 +58,13 @@ func TestGoCodeParser(t *testing.T) {
 							Line:  0,
 							Col:   11,
 						},
+					},
+				},
+				Range: Range{
+					To: Position{
+						Index: 13,
+						Line:  0,
+						Col:   13,
 					},
 				},
 			},
@@ -81,6 +95,13 @@ func TestGoCodeParser(t *testing.T) {
 					},
 				},
 				Multiline: true,
+				Range: Range{
+					To: Position{
+						Index: 51,
+						Line:  4,
+						Col:   5,
+					},
+				},
 			},
 		},
 		{
@@ -114,6 +135,13 @@ func TestGoCodeParser(t *testing.T) {
 				},
 				TrailingSpace: SpaceNone,
 				Multiline:     true,
+				Range: Range{
+					To: Position{
+						Index: 120,
+						Line:  6,
+						Col:   2,
+					},
+				},
 			},
 		},
 	}
