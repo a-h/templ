@@ -1120,6 +1120,37 @@ func (ca *ConditionalAttribute) Copy() Attribute {
 	}
 }
 
+// AttributeComment represents a comment within element attributes.
+type AttributeComment struct {
+	Comment   string
+	Multiline bool
+	Range     Range
+}
+
+func (ac *AttributeComment) String() string {
+	if ac.Multiline {
+		return "/*" + ac.Comment + "*/"
+	}
+	return "//" + ac.Comment
+}
+
+func (ac *AttributeComment) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, ac.String())
+}
+
+func (ac *AttributeComment) Visit(v Visitor) error {
+	// Comments don't need to be visited.
+	return nil
+}
+
+func (ac *AttributeComment) Copy() Attribute {
+	return &AttributeComment{
+		Comment:   ac.Comment,
+		Multiline: ac.Multiline,
+		Range:     ac.Range,
+	}
+}
+
 func CopyAttributes(attrs []Attribute) (copies []Attribute) {
 	copies = make([]Attribute, len(attrs))
 	for i, a := range attrs {
