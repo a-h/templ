@@ -40,10 +40,13 @@ type fragment struct {
 }
 
 func (f *fragment) Render(ctx context.Context, w io.Writer) (err error) {
+	children := GetChildren(ctx)
+	ctx = ClearChildren(ctx)
+
 	// If not in a fragment context, if we're a child fragment, or in a mismatching fragment context, render children normally.
 	fragmentCtx := getFragmentContext(ctx)
 	if fragmentCtx == nil || fragmentCtx.Active || !slices.Contains(fragmentCtx.IDs, f.ID) {
-		return GetChildren(ctx).Render(ctx, w)
+		return children.Render(ctx, w)
 	}
 
 	// Instruct child fragments to render their contents normally, because the writer
@@ -52,7 +55,7 @@ func (f *fragment) Render(ctx context.Context, w io.Writer) (err error) {
 	defer func() {
 		fragmentCtx.Active = false
 	}()
-	return GetChildren(ctx).Render(ctx, fragmentCtx.W)
+	return children.Render(ctx, fragmentCtx.W)
 }
 
 // getFragmentContext retrieves the FragmentContext from the provided context. It returns nil if no
