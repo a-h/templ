@@ -276,6 +276,10 @@ if test {` + " " + `
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 40, Line: 4, Col: 1},
+							To:   Position{Index: 56, Line: 4, Col: 17},
+						},
 					},
 				},
 				Range: Range{
@@ -1092,6 +1096,10 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 3, Line: 0, Col: 3},
+							To:   Position{Index: 18, Line: 0, Col: 18},
+						},
 					},
 				},
 				Range: Range{
@@ -1322,6 +1330,10 @@ func TestElementParser(t *testing.T) {
 									Col:   50,
 								},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 15, Line: 0, Col: 15},
+							To:   Position{Index: 52, Line: 0, Col: 52},
 						},
 					},
 					&ConstantAttribute{
@@ -2052,6 +2064,10 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 45, Line: 0, Col: 45},
+							To:   Position{Index: 90, Line: 0, Col: 90},
+						},
 					},
 					&ConstantAttribute{
 						Value: "your@email.com",
@@ -2243,6 +2259,10 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 29, Line: 0, Col: 29},
+							To:   Position{Index: 54, Line: 0, Col: 54},
+						},
 					},
 				},
 				Range: Range{
@@ -2283,6 +2303,10 @@ func TestElementParser(t *testing.T) {
 									Col:   22,
 								},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 24, Line: 0, Col: 24},
 						},
 					},
 				},

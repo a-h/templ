@@ -304,6 +304,7 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 		return
 	}
 
+	attrStart := pi.Index()
 	attr = &ExpressionAttribute{}
 
 	// Attribute name.
@@ -331,6 +332,8 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 		err = parse.Error("string expression attribute: missing closing brace", pi.Position())
 		return
 	}
+
+	attr.Range = NewRange(pi.PositionAt(attrStart), pi.Position())
 
 	return attr, true, nil
 })

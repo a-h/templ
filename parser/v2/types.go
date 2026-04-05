@@ -950,6 +950,7 @@ func (bea *BoolExpressionAttribute) Copy() Attribute {
 type ExpressionAttribute struct {
 	Key        AttributeKey
 	Expression Expression
+	Range      Range
 }
 
 func (ea *ExpressionAttribute) String() string {
@@ -1012,6 +1013,7 @@ func (ea *ExpressionAttribute) Copy() Attribute {
 	return &ExpressionAttribute{
 		Expression: ea.Expression,
 		Key:        ea.Key,
+		Range:      ea.Range,
 	}
 }
 
