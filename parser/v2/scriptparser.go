@@ -68,6 +68,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 		// Cut the end element.
 		_, _, _ = jsEndTag.Parse(pi)
 
+		e.Range = NewRange(pi.PositionAt(start), pi.Position())
 		return e, true, nil
 	}
 
