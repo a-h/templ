@@ -1435,6 +1435,7 @@ type GoCode struct {
 	// TrailingSpace lists what happens after the expression.
 	TrailingSpace TrailingSpace
 	Multiline     bool
+	Range         Range
 }
 
 func (gc *GoCode) Trailing() TrailingSpace {

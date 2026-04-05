@@ -115,6 +115,10 @@ func TestScriptElementParser(t *testing.T) {
 								To:   Position{Index: 15, Line: 0, Col: 15},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 18, Line: 0, Col: 18},
+						},
 					}, false),
 				},
 				Range: Range{
@@ -148,6 +152,10 @@ func TestScriptElementParser(t *testing.T) {
 								From: Position{Index: 34, Line: 0, Col: 34},
 								To:   Position{Index: 38, Line: 0, Col: 38},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 31, Line: 0, Col: 31},
+							To:   Position{Index: 41, Line: 0, Col: 41},
 						},
 					}, false),
 				},
@@ -183,6 +191,10 @@ func TestScriptElementParser(t *testing.T) {
 								To:   Position{Index: 29, Line: 0, Col: 29},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 22, Line: 0, Col: 22},
+							To:   Position{Index: 32, Line: 0, Col: 32},
+						},
 					}, false),
 				},
 				Range: Range{
@@ -217,6 +229,10 @@ func TestScriptElementParser(t *testing.T) {
 								To:   Position{Index: 33, Line: 0, Col: 33},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 26, Line: 0, Col: 26},
+							To:   Position{Index: 36, Line: 0, Col: 36},
+						},
 					}, false),
 				},
 				Range: Range{
@@ -242,6 +258,10 @@ func TestScriptElementParser(t *testing.T) {
 							},
 						},
 						TrailingSpace: SpaceVertical,
+						Range: Range{
+							From: Position{Index: 9, Line: 1, Col: 0},
+							To:   Position{Index: 20, Line: 2, Col: 0},
+						},
 					}, false),
 				},
 				Range: Range{
@@ -263,6 +283,10 @@ func TestScriptElementParser(t *testing.T) {
 								From: Position{Index: 20, Line: 0, Col: 20},
 								To:   Position{Index: 24, Line: 0, Col: 24},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 17, Line: 0, Col: 17},
+							To:   Position{Index: 27, Line: 0, Col: 27},
 						},
 					}, true),
 					NewScriptContentsScriptCode("';"),
@@ -286,6 +310,10 @@ func TestScriptElementParser(t *testing.T) {
 								From: Position{Index: 20, Line: 0, Col: 20},
 								To:   Position{Index: 24, Line: 0, Col: 24},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 17, Line: 0, Col: 17},
+							To:   Position{Index: 27, Line: 0, Col: 27},
 						},
 					}, true),
 					NewScriptContentsScriptCode("\";"),
@@ -313,6 +341,10 @@ to see if it works";</script>`,
 							},
 						},
 						TrailingSpace: SpaceHorizontal,
+						Range: Range{
+							From: Position{Index: 34, Line: 1, Col: 0},
+							To:   Position{Index: 45, Line: 1, Col: 11},
+						},
 					}, true),
 					NewScriptContentsScriptCode("\\\nto see if it works\";"),
 				},
@@ -335,6 +367,10 @@ to see if it works";</script>`,
 								From: Position{Index: 20, Line: 0, Col: 20},
 								To:   Position{Index: 24, Line: 0, Col: 24},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 17, Line: 0, Col: 17},
+							To:   Position{Index: 27, Line: 0, Col: 27},
 						},
 					}, true),
 					NewScriptContentsScriptCode("`;"),
@@ -434,6 +470,10 @@ const result = call(1000 / 10, {{ data }}, 1000 / 10);
 								From: Position{Index: 43, Line: 1, Col: 34},
 								To:   Position{Index: 47, Line: 1, Col: 38},
 							},
+						},
+						Range: Range{
+							From: Position{Index: 40, Line: 1, Col: 31},
+							To:   Position{Index: 50, Line: 1, Col: 41},
 						},
 					}, false),
 					NewScriptContentsScriptCode(", 1000 / 10);\n"),
