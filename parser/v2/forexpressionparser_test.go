@@ -221,6 +221,10 @@ func TestForExpressionParser(t *testing.T) {
 										},
 									},
 								},
+								Range: Range{
+									From: Position{Index: 41, Line: 1, Col: 10},
+									To:   Position{Index: 49, Line: 1, Col: 18},
+								},
 							},
 						},
 						TrailingSpace: SpaceVertical,
@@ -293,6 +297,10 @@ func TestForExpressionParser(t *testing.T) {
 											Col:   16,
 										},
 									},
+								},
+								Range: Range{
+									From: Position{Index: 40, Line: 1, Col: 10},
+									To:   Position{Index: 48, Line: 1, Col: 18},
 								},
 							},
 						},

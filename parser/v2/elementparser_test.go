@@ -1981,6 +1981,10 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 15, Line: 0, Col: 15},
+						},
 					},
 				},
 				Range: Range{
