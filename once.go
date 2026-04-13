@@ -52,10 +52,9 @@ type OnceHandle struct {
 func (o *OnceHandle) Once() Component {
 	return ComponentFunc(func(ctx context.Context, w io.Writer) (err error) {
 		_, v := getContext(ctx)
-		if v.getHasBeenRendered(o) {
+		if !v.shouldRenderOnce(o) {
 			return nil
 		}
-		v.setHasBeenRendered(o)
 		if o.c != nil {
 			return o.c.Render(ctx, w)
 		}
