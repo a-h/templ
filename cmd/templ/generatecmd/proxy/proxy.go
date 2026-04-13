@@ -181,6 +181,7 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 		go func() {
 			defer func() {
 				_ = originalBody.Close()
+				_ = pw.Close()
 			}()
 			encr, err := newReader(originalBody)
 			if err != nil {
@@ -198,7 +199,6 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 				_ = pw.CloseWithError(err)
 				return
 			}
-			_ = pw.Close()
 		}()
 
 		return nil
