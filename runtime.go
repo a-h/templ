@@ -54,7 +54,8 @@ func GetNonce(ctx context.Context) (nonce string) {
 }
 
 func WithChildren(ctx context.Context, children Component) context.Context {
-	ctx, _ = getContext(ctx) // Ensure contextValue exists before adding children
+	// Ensure contextValue exists before adding children.
+	ctx, _ = getContext(ctx)
 	return context.WithValue(ctx, childrenKey, &children)
 }
 
