@@ -17,14 +17,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/a-h/templ/cmd/templ/visualize"
 	"github.com/a-h/templ/generator"
 	"github.com/a-h/templ/internal/syncmap"
 	"github.com/a-h/templ/internal/syncset"
 	"github.com/a-h/templ/parser/v2"
 	"github.com/a-h/templ/runtime"
-	"github.com/fsnotify/fsnotify"
-	"golang.org/x/sync/errgroup"
 )
 
 type FileWriterFunc func(name string, contents []byte) error
@@ -88,6 +89,8 @@ type FSEventHandler struct {
 }
 
 type GenerateResult struct {
+	// GoFileWritten indicates that the generated Go file was written because its content changed.
+	GoFileWritten bool
 	// WatchedFileUpdated indicates that a file matching the watch pattern was updated.
 	WatchedFileUpdated bool
 	// TemplFileTextUpdated indicates that text literals were updated.
@@ -214,7 +217,13 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 
 	// Hash output, and write out the file if the goCodeHash has changed.
 	goCodeHash := sha256.Sum256(formattedGoCode)
+	if _, ok := h.hashes.Get(targetFileName); !ok {
+		if existingContent, readErr := os.ReadFile(targetFileName); readErr == nil {
+			h.hashes.CompareAndSwap(targetFileName, syncmap.UpdateIfChanged, sha256.Sum256(existingContent))
+		}
+	}
 	if h.hashes.CompareAndSwap(targetFileName, syncmap.UpdateIfChanged, goCodeHash) {
+		result.GoFileWritten = true
 		if err = h.writer(targetFileName, formattedGoCode); err != nil {
 			return result, nil, fmt.Errorf("failed to write target file %q: %w", targetFileName, err)
 		}

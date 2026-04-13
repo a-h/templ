@@ -17,8 +17,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/a-h/templ/internal/skipdir"
-	templruntime "github.com/a-h/templ/runtime"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/cli/browser"
+	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/a-h/templ"
@@ -27,9 +28,8 @@ import (
 	"github.com/a-h/templ/cmd/templ/generatecmd/run"
 	"github.com/a-h/templ/cmd/templ/generatecmd/watcher"
 	"github.com/a-h/templ/generator"
-	"github.com/cenkalti/backoff/v4"
-	"github.com/cli/browser"
-	"github.com/fsnotify/fsnotify"
+	"github.com/a-h/templ/internal/skipdir"
+	templruntime "github.com/a-h/templ/runtime"
 )
 
 func NewGenerate(log *slog.Logger, args Arguments) (g *Generate, err error) {
@@ -47,6 +47,7 @@ type Generate struct {
 
 type GenerationEvent struct {
 	Event                fsnotify.Event
+	GoFileWritten        bool
 	WatchedFileUpdated   bool
 	TemplFileTextUpdated bool
 	TemplFileGoUpdated   bool
@@ -187,15 +188,19 @@ loop:
 		case ge := <-postGeneration:
 			if ge == nil {
 				cmd.Log.Debug("Post-generation event channel closed, exiting")
+				if grouped != nil {
+					return grouped, updates, true, nil
+				}
 				return nil, 0, false, nil
 			}
 			if grouped == nil {
 				grouped = ge
 			}
+			grouped.GoFileWritten = grouped.GoFileWritten || ge.GoFileWritten
 			grouped.WatchedFileUpdated = grouped.WatchedFileUpdated || ge.WatchedFileUpdated
 			grouped.TemplFileTextUpdated = grouped.TemplFileTextUpdated || ge.TemplFileTextUpdated
 			grouped.TemplFileGoUpdated = grouped.TemplFileGoUpdated || ge.TemplFileGoUpdated
-			if grouped.WatchedFileUpdated || grouped.TemplFileTextUpdated || grouped.TemplFileGoUpdated {
+			if ge.GoFileWritten {
 				updates++
 			}
 			// Now we have received an event, wait for 100ms.
@@ -203,7 +208,7 @@ loop:
 			timeout = time.NewTimer(time.Millisecond * 100)
 		case <-timeout.C:
 			// If grouped is nil, or if no updates were made, reset the timer and continue waiting.
-			if grouped == nil || (!grouped.WatchedFileUpdated && !grouped.TemplFileTextUpdated && !grouped.TemplFileGoUpdated) {
+			if grouped == nil || (!grouped.GoFileWritten && !grouped.WatchedFileUpdated && !grouped.TemplFileTextUpdated && !grouped.TemplFileGoUpdated) {
 				timeout = time.NewTimer(time.Hour * 24 * 365)
 				continue loop
 			}
@@ -232,7 +237,7 @@ loop:
 		// If the text in a templ file, or any other changes have happened, reload the browser.
 		needsBrowserReload := grouped.TemplFileTextUpdated || grouped.TemplFileGoUpdated || grouped.WatchedFileUpdated
 
-		cmd.Log.Info("Post-generation event received, processing...", slog.Bool("needsRestart", needsRestart), slog.Bool("needsBrowserReload", needsBrowserReload))
+		cmd.Log.Info("Post-generation event received, processing...", slog.Int("updates", updated), slog.Bool("needsRestart", needsRestart), slog.Bool("needsBrowserReload", needsBrowserReload))
 		updates += updated
 
 		if cmd.Args.Command != "" && needsRestart {
@@ -291,12 +296,13 @@ func (cmd Generate) handleEvents(ctx context.Context, events chan fsnotify.Event
 			if err != nil {
 				errs <- err
 			}
-			if !r.WatchedFileUpdated && !r.TemplFileTextUpdated && !r.TemplFileGoUpdated {
+			if !r.GoFileWritten && !r.WatchedFileUpdated && !r.TemplFileTextUpdated && !r.TemplFileGoUpdated {
 				cmd.Log.Debug("File not updated", slog.String("file", event.Name))
 				return
 			}
 			e := &GenerationEvent{
 				Event:                event,
+				GoFileWritten:        r.GoFileWritten,
 				WatchedFileUpdated:   r.WatchedFileUpdated,
 				TemplFileTextUpdated: r.TemplFileTextUpdated,
 				TemplFileGoUpdated:   r.TemplFileGoUpdated,
