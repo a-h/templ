@@ -57,6 +57,9 @@ Args:
     Port to run the pprof server on.
   -keep-orphaned-files
     Keeps orphaned generated templ files. (default false)
+  -check
+    Checks that generated files are up to date, without writing changes.
+    Returns a non-zero exit code if any files need regenerating.
   -v
     Set log verbosity level to "debug". (default "info")
   -log-level
@@ -77,6 +80,10 @@ Examples:
   Watch the current directory and subdirectories for changes and regenerate code:
 
     templ generate -watch
+
+  Check generated code is up to date (e.g. in CI):
+
+    templ generate -check
 `
 
 const defaultWatchPattern = `(.+\.go$)|(.+\.templ$)`
@@ -104,6 +111,7 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 	cmd.IntVar(&cmdArgs.PPROFPort, "pprof", 0, "")
 	cmd.BoolVar(&cmdArgs.KeepOrphanedFiles, "keep-orphaned-files", false, "")
 	cmd.BoolVar(&cmdArgs.Lazy, "lazy", false, "")
+	cmd.BoolVar(&cmdArgs.Check, "check", false, "")
 	verboseFlag := cmd.Bool("v", false, "")
 	logLevelFlag := cmd.String("log-level", "info", "")
 	helpFlag := cmd.Bool("help", false, "")
@@ -115,6 +123,12 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 
 	if cmdArgs.Watch && cmdArgs.FileName != "" {
 		return Arguments{}, log, *helpFlag, fmt.Errorf("cannot watch a single file, remove the -f or -watch flag")
+	}
+	if cmdArgs.Check && cmdArgs.Watch {
+		return Arguments{}, log, *helpFlag, fmt.Errorf("cannot use -check with -watch")
+	}
+	if cmdArgs.Check && *toStdoutFlag {
+		return Arguments{}, log, *helpFlag, fmt.Errorf("cannot use -check with -stdout")
 	}
 	cmdArgs.WatchPattern, err = regexp.Compile(*watchPatternFlag)
 	if err != nil {
@@ -151,6 +165,7 @@ type Arguments struct {
 	FileName                        string
 	FileWriter                      FileWriterFunc
 	Path                            string
+	Check                           bool
 	Watch                           bool
 	WatchPattern                    *regexp.Regexp
 	IgnorePattern                   *regexp.Regexp
@@ -194,6 +209,24 @@ func Run(ctx context.Context, stdout, stderr io.Writer, args []string) (err erro
 	}
 	if help {
 		_, _ = fmt.Fprint(stdout, generateUsageText)
+		return nil
+	}
+	if cmdArgs.Check {
+		var getChanged func() []string
+		cmdArgs.FileWriter, getChanged = NewCheckWriter()
+		g, err := NewGenerate(log, cmdArgs)
+		if err != nil {
+			return err
+		}
+		if err := g.Run(ctx); err != nil {
+			return err
+		}
+		if changed := getChanged(); len(changed) > 0 {
+			for _, f := range changed {
+				log.Error("file is not up to date", slog.String("file", f))
+			}
+			return fmt.Errorf("generated files are not up to date: %d file(s) need regenerating", len(changed))
+		}
 		return nil
 	}
 	g, err := NewGenerate(log, cmdArgs)

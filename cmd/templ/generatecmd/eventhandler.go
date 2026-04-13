@@ -15,6 +15,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -39,6 +40,30 @@ func WriterFileWriter(w io.Writer) FileWriterFunc {
 		_, err := w.Write(contents)
 		return err
 	}
+}
+
+// NewCheckWriter returns a FileWriterFunc that compares generated output against
+// existing files without writing, and a function to retrieve the list of files
+// that differ.
+func NewCheckWriter() (writer FileWriterFunc, getChanged func() []string) {
+	var mu sync.Mutex
+	var changed []string
+
+	writer = func(name string, contents []byte) error {
+		existing, err := os.ReadFile(name)
+		if err != nil || !bytes.Equal(existing, contents) {
+			mu.Lock()
+			defer mu.Unlock()
+			changed = append(changed, name)
+		}
+		return nil
+	}
+	getChanged = func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		return changed
+	}
+	return writer, getChanged
 }
 
 func NewFSEventHandler(

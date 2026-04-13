@@ -58,6 +58,45 @@ func TestGenerate(t *testing.T) {
 			t.Fatalf("templates_templ.go was not created: %v", err)
 		}
 	})
+	t.Run("check succeeds when files are up to date", func(t *testing.T) {
+		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
+		if err != nil {
+			t.Fatalf("failed to create test project: %v", err)
+		}
+		defer os.RemoveAll(dir)
+
+		// First, generate the file so it is up to date.
+		err = Run(context.Background(), io.Discard, io.Discard, []string{"-f", path.Join(dir, "templates.templ")})
+		if err != nil {
+			t.Fatalf("failed to generate: %v", err)
+		}
+
+		// Now run in check mode; it should succeed.
+		err = Run(context.Background(), io.Discard, io.Discard, []string{"-check", "-f", path.Join(dir, "templates.templ")})
+		if err != nil {
+			t.Fatalf("expected check to pass, got error: %v", err)
+		}
+	})
+	t.Run("check fails when files are out of date", func(t *testing.T) {
+		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
+		if err != nil {
+			t.Fatalf("failed to create test project: %v", err)
+		}
+		defer os.RemoveAll(dir)
+
+		// Delete the generated file to simulate stale output.
+		if err := os.Remove(path.Join(dir, "templates_templ.go")); err != nil {
+			t.Fatalf("failed to remove generated file: %v", err)
+		}
+
+		err = Run(context.Background(), io.Discard, io.Discard, []string{"-check", "-f", path.Join(dir, "templates.templ")})
+		if err == nil {
+			t.Fatal("expected check to fail when generated file is missing")
+		}
+		if !strings.Contains(err.Error(), "not up to date:") {
+			t.Fatalf("expected 'not up to date' error, got: %v", err)
+		}
+	})
 	t.Run("can generate a file in watch mode", func(t *testing.T) {
 		// templ generate -f templates.templ
 		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
@@ -109,6 +148,53 @@ func TestGenerate(t *testing.T) {
 		_, err = os.Stat(path.Join(dir, devModeTextFileName))
 		if err == nil {
 			t.Error("templates_templ.txt was not removed")
+		}
+	})
+}
+
+func TestCheckWriter(t *testing.T) {
+	t.Run("returns no changed files when content matches", func(t *testing.T) {
+		dir := t.TempDir()
+		f := path.Join(dir, "test.go")
+		content := []byte("package main\n")
+		if err := os.WriteFile(f, content, 0o644); err != nil {
+			t.Fatalf("failed to write file: %v", err)
+		}
+
+		writer, getChanged := NewCheckWriter()
+		if err := writer(f, content); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if changed := getChanged(); len(changed) != 0 {
+			t.Fatalf("expected no changed files, got %v", changed)
+		}
+	})
+	t.Run("records filename when content differs", func(t *testing.T) {
+		dir := t.TempDir()
+		f := path.Join(dir, "test.go")
+		if err := os.WriteFile(f, []byte("old content"), 0o644); err != nil {
+			t.Fatalf("failed to write file: %v", err)
+		}
+
+		writer, getChanged := NewCheckWriter()
+		if err := writer(f, []byte("new content")); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		changed := getChanged()
+		if len(changed) != 1 || changed[0] != f {
+			t.Fatalf("expected [%s], got %v", f, changed)
+		}
+	})
+	t.Run("records filename when file does not exist", func(t *testing.T) {
+		f := path.Join(t.TempDir(), "nonexistent.go")
+
+		writer, getChanged := NewCheckWriter()
+		if err := writer(f, []byte("content")); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		changed := getChanged()
+		if len(changed) != 1 || changed[0] != f {
+			t.Fatalf("expected [%s], got %v", f, changed)
 		}
 	})
 }
@@ -270,6 +356,27 @@ func TestArgs(t *testing.T) {
 		}
 		if args.Command != "echo hello" {
 			t.Fatalf("expected command to be 'echo hello', got '%s'", args.Command)
+		}
+	})
+	t.Run("-check sets Check to true", func(t *testing.T) {
+		args, _, _, err := NewArguments(io.Discard, io.Discard, []string{"-check"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !args.Check {
+			t.Fatal("expected Check to be true")
+		}
+	})
+	t.Run("-check with -watch returns an error", func(t *testing.T) {
+		_, _, _, err := NewArguments(io.Discard, io.Discard, []string{"-check", "-watch"})
+		if err == nil {
+			t.Fatal("expected error when -check and -watch are both set")
+		}
+	})
+	t.Run("-check with -stdout returns an error", func(t *testing.T) {
+		_, _, _, err := NewArguments(io.Discard, io.Discard, []string{"-check", "-stdout", "-f", "test.templ"})
+		if err == nil {
+			t.Fatal("expected error when -check and -stdout are both set")
 		}
 	})
 }
