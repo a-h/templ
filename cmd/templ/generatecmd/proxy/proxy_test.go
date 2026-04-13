@@ -532,6 +532,71 @@ func TestProxy(t *testing.T) {
 			t.Errorf("unexpected error closing request writer: %v", reqWriterErr)
 		}
 	})
+	t.Run("stream gzip: chunked gzip response has the script inserted", func(t *testing.T) {
+		// Arrange: simulate a backend that sends a chunked, gzip-compressed HTML response.
+		reqReader, reqWriter := io.Pipe()
+		r := &http.Response{
+			Body:          reqReader,
+			Header:        make(http.Header),
+			ContentLength: -1,
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
+		}
+		r.Header.Set("Content-Type", "text/html; charset=utf-8")
+		r.Header.Set("Content-Encoding", "gzip")
+		r.Header.Set("Transfer-Encoding", "chunked")
+
+		body := `<html><head></head><body></body></html>`
+		expectedString, err := insertScriptTagIntoBody("", body)
+		if err != nil {
+			t.Fatalf("unexpected error inserting script: %v", err)
+		}
+		if !strings.Contains(expectedString, getScriptTag(t, "")) {
+			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
+		}
+
+		// Act
+		log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		if err := h.modifyResponse(r); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Write gzip-compressed HTML to the pipe in chunks to simulate a streaming backend.
+		var writerErr error
+		go func() {
+			gzw := gzip.NewWriter(reqWriter)
+			if _, err := io.WriteString(gzw, body); err != nil {
+				writerErr = err
+			}
+			if err := gzw.Close(); err != nil {
+				writerErr = err
+			}
+			if err := reqWriter.Close(); err != nil {
+				writerErr = err
+			}
+		}()
+
+		// Assert: read the modified response and decompress it.
+		gr, err := gzip.NewReader(r.Body)
+		if err != nil {
+			t.Fatalf("unexpected error creating gzip reader: %v", err)
+		}
+		actualBody, err := io.ReadAll(gr)
+		if err != nil {
+			t.Fatalf("unexpected error reading response: %v", err)
+		}
+		if diff := cmp.Diff(expectedString, string(actualBody)); diff != "" {
+			t.Errorf("unexpected response body (-got +want):\n%s", diff)
+		}
+		if writerErr != nil {
+			t.Errorf("unexpected error writing gzip to pipe: %v", writerErr)
+		}
+	})
 	t.Run("notify-proxy: sending POST request to /_templ/reload/events should receive reload sse event", func(t *testing.T) {
 		// Arrange 1: create a test proxy server.
 		dummyHandler := func(w http.ResponseWriter, r *http.Request) {}
