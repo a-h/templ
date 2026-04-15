@@ -663,6 +663,24 @@ func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
 	return fmt.Sprint(s), errors.Join(errs...)
 }
 
+// ResolveAttributeValue converts an attribute expression value to an
+// HTML-escaped string suitable for use in an attribute value. It handles
+// ComponentScript values by returning their Call field (already escaped),
+// and falls back to HTML-escaping fmt.Sprint for other types.
+func ResolveAttributeValue(v any, errs ...error) (string, error) {
+	if err := errors.Join(errs...); err != nil {
+		return "", err
+	}
+	switch v := v.(type) {
+	case ComponentScript:
+		return v.Call, nil
+	case string:
+		return EscapeString(v), nil
+	default:
+		return EscapeString(fmt.Sprint(v)), nil
+	}
+}
+
 // Error returned during template rendering.
 type Error struct {
 	Err error
