@@ -8,12 +8,15 @@ import (
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Create a channel to send deferred component renders to the template.
-		data := make(chan SlotContents)
+		expectedSlots := 3
 
-		// We know there are 3 slots, so start a WaitGroup.
+		// Create a channel to send deferred component renders to the template.
+		// Use a buffered channel so the goroutines can finish without being blocked.
+		data := make(chan SlotContents, expectedSlots)
+
+		// We know the number of slots, so start a WaitGroup.
 		var wg sync.WaitGroup
-		wg.Add(3)
+		wg.Add(expectedSlots)
 
 		// Start the async processes.
 		// Sidebar.
