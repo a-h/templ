@@ -1301,8 +1301,8 @@ func (g *generator) writeExpressionAttributeValueDefault(indentLevel int, attr *
 	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
 		return err
 	}
-	// vn, templ_7745c5c3_Err = templ.JoinStringErrs(
-	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
+	// vn, templ_7745c5c3_Err = templ.ResolveAttributeValue(
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.ResolveAttributeValue("); err != nil {
 		return err
 	}
 	// p.Name()
@@ -1321,7 +1321,7 @@ func (g *generator) writeExpressionAttributeValueDefault(indentLevel int, attr *
 	}
 
 	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
-	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+vn+")\n"); err != nil {
 		return err
 	}
 	return g.writeErrorHandler(indentLevel)

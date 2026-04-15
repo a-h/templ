@@ -24,4 +24,5 @@ templ TestComponent() {
 		}
 	</script>
 	<button onclick={ templ.JSFuncCall("onClickEventHandler", templ.JSExpression("event"), "1234") }>Pass event handler</button>
+	<div x-data={ templ.JSFuncCall("alert", "Hello, World!") }>test</div>
 }
