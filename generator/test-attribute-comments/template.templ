@@ -1,0 +1,69 @@
+package testattributecomments
+
+templ TestAttributeComments() {
+	<form
+		class="flex"
+		// This comment here explains why the following attribute is necessary,
+		// namely to prevent submit when hitting the enter key.
+		action="javascript:void(0)"
+		/* This is a multi-line comment
+		   that spans multiple lines
+		   within the attributes */
+		method="post"
+		// Another single line comment
+		id="test-form"
+	>
+		<input type="text" name="field1"/>
+	</form>
+	<div
+		// Comment at the start
+		id="main"
+		/* Multi-line comment */
+		class="container"
+		// Comment before expression
+		data-value={ "dynamic" }
+		// Comment before boolean
+		hidden
+		// Final comment
+	>
+		Content
+	</div>
+	<button
+		type="button"
+		// This explains the onclick handler
+		onclick="handleClick()"
+		/* This is a safety measure
+		   to prevent accidental submits */
+		disabled={ false }
+	>
+		Click me
+	</button>
+	<a
+		// Link with URL containing //
+		href="https://example.com/path"
+		title="// Title with comment-like text"
+		class="external-link"
+	>
+		External Link
+	</a>
+	<link
+		rel="stylesheet"
+		// CDN link with // in value
+		href="https://cdn.example.com/styles.css"
+	/>
+	<a
+		// Expression with URL
+		href={ "https://dynamic.example.com/path" }
+		// Comment after expression
+		target="_blank"
+	>
+		Dynamic Link
+	</a>
+	<img
+		src="https://images.example.com/photo.jpg"
+		// Alt text comment with //
+		alt="Photo//photo"
+		// Comment before data attribute with //
+		data-url="https://api.example.com/endpoint"
+	/>
+}
