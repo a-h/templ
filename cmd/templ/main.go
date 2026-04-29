@@ -16,6 +16,7 @@ import (
 	"github.com/a-h/templ/cmd/templ/infocmd"
 	"github.com/a-h/templ/cmd/templ/lspcmd"
 	"github.com/a-h/templ/cmd/templ/sloghandler"
+	"github.com/a-h/templ/internal/format"
 	"github.com/fatih/color"
 )
 
@@ -241,6 +242,10 @@ Args:
     Enable http debug server by setting a listen address (e.g. localhost:7474)
   -no-preload
     Disable preloading of templ files on server startup and use custom GOPACKAGESDRIVER for lazy loading (useful for large monorepos). GOPACKAGESDRIVER environment variable must be set.
+  -prettier-command
+    Set the command to use for formatting HTML, CSS, and JS blocks. Default is "prettier --stdin-filepath $TEMPL_PRETTIER_FILENAME".
+  -prettier-required
+    Set to true to return an error the prettier command is not available. Default is false.
 `
 
 func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int) {
@@ -253,6 +258,8 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 	pprofFlag := cmd.Bool("pprof", false, "")
 	httpDebugFlag := cmd.String("http", "", "")
 	noPreloadFlag := cmd.Bool("no-preload", false, "")
+	prettierCommand := cmd.String("prettier-command", "", "")
+	prettierRequired := cmd.Bool("prettier-required", false, "")
 	err := cmd.Parse(args)
 	if err != nil {
 		_, _ = fmt.Fprint(stderr, lspUsageText)
@@ -271,6 +278,10 @@ func lspCmd(stdin io.Reader, stdout, stderr io.Writer, args []string) (code int)
 		PPROF:         *pprofFlag,
 		HTTPDebug:     *httpDebugFlag,
 		NoPreload:     *noPreloadFlag && os.Getenv("GOPACKAGESDRIVER") != "",
+		FormatConfig: format.Config{
+			PrettierCommand:  *prettierCommand,
+			PrettierRequired: *prettierRequired,
+		},
 	})
 	if err != nil {
 		_, _ = fmt.Fprintln(stderr, err.Error())

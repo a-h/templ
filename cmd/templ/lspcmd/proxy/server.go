@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/internal/format"
 	"github.com/a-h/templ/internal/imports"
 	"github.com/a-h/templ/internal/lazyloader"
 	lsp "github.com/a-h/templ/lsp/protocol"
@@ -44,9 +45,10 @@ type Server struct {
 	NoPreload          bool
 	preLoadURIs        []*lsp.DidOpenTextDocumentParams
 	templDocLazyLoader lazyloader.TemplDocLazyLoader
+	formatConf         format.Config
 }
 
-func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache, noPreload bool) (s *Server) {
+func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagnosticCache *DiagnosticCache, noPreload bool, formatConf format.Config) (s *Server) {
 	return &Server{
 		Log:             log,
 		Target:          target,
@@ -55,6 +57,7 @@ func NewServer(log *slog.Logger, target lsp.Server, cache *SourceMapCache, diagn
 		TemplSource:     newDocumentContents(log),
 		GoSource:        make(map[string]string),
 		NoPreload:       noPreload,
+		formatConf:      formatConf,
 	}
 }
 
@@ -1066,6 +1069,10 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 		return
 	}
 	if !ok {
+		return
+	}
+	if err = format.ApplyPrettier(template, p.formatConf); err != nil {
+		p.Log.Error("prettier failure", slog.Any("error", err))
 		return
 	}
 	p.Log.Info("attempting to organise imports", slog.String("uri", template.Filepath))
