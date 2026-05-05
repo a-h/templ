@@ -66,7 +66,12 @@ func Run(ctx context.Context, workingDir string, input string) (cmd *exec.Cmd, e
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		return cmd, err
+	}
+
 	running[input] = cmd
-	err = cmd.Start()
+
 	return
 }
