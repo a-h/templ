@@ -79,7 +79,12 @@ func Run(ctx context.Context, workingDir string, input string) (cmd *exec.Cmd, e
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	if err := cmd.Start(); err != nil {
+		return cmd, err
+	}
+
 	running[input] = cmd
-	err = cmd.Start()
+
 	return
 }
