@@ -607,6 +607,10 @@ func TestTemplateParser(t *testing.T) {
 										To:   Position{Index: 38, Line: 1, Col: 12},
 									},
 								},
+								ValueRange: Range{
+									From: Position{Index: 40, Line: 1, Col: 14},
+									To:   Position{Index: 44, Line: 1, Col: 18},
+								},
 								Range: Range{
 									From: Position{Index: 34, Line: 1, Col: 8},
 									To:   Position{Index: 45, Line: 1, Col: 19},
@@ -620,6 +624,10 @@ func TestTemplateParser(t *testing.T) {
 										From: Position{Index: 46, Line: 1, Col: 20},
 										To:   Position{Index: 51, Line: 1, Col: 25},
 									},
+								},
+								ValueRange: Range{
+									From: Position{Index: 53, Line: 1, Col: 27},
+									To:   Position{Index: 54, Line: 1, Col: 28},
 								},
 								Range: Range{
 									From: Position{Index: 46, Line: 1, Col: 20},
@@ -649,6 +657,10 @@ func TestTemplateParser(t *testing.T) {
 										To:   Position{Index: 71, Line: 2, Col: 12},
 									},
 								},
+								ValueRange: Range{
+									From: Position{Index: 73, Line: 2, Col: 14},
+									To:   Position{Index: 77, Line: 2, Col: 18},
+								},
 								Range: Range{
 									From: Position{Index: 67, Line: 2, Col: 8},
 									To:   Position{Index: 78, Line: 2, Col: 19},
@@ -662,6 +674,10 @@ func TestTemplateParser(t *testing.T) {
 										From: Position{Index: 79, Line: 2, Col: 20},
 										To:   Position{Index: 84, Line: 2, Col: 25},
 									},
+								},
+								ValueRange: Range{
+									From: Position{Index: 86, Line: 2, Col: 27},
+									To:   Position{Index: 87, Line: 2, Col: 28},
 								},
 								Range: Range{
 									From: Position{Index: 79, Line: 2, Col: 20},
@@ -791,6 +807,10 @@ func TestTemplateParser(t *testing.T) {
 										From: Position{Index: 16, Line: 1, Col: 4},
 										To:   Position{Index: 20, Line: 1, Col: 8},
 									},
+								},
+								ValueRange: Range{
+									From: Position{Index: 22, Line: 1, Col: 10},
+									To:   Position{Index: 23, Line: 1, Col: 11},
 								},
 								Range: Range{
 									From: Position{Index: 16, Line: 1, Col: 4},

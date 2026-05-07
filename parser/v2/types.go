@@ -890,6 +890,7 @@ func (bca *BoolConstantAttribute) Copy() Attribute {
 type ConstantAttribute struct {
 	Key         AttributeKey
 	Value       string
+	ValueRange  Range
 	SingleQuote bool
 	Range       Range
 }
@@ -913,6 +914,7 @@ func (ca *ConstantAttribute) Visit(v Visitor) error {
 func (ca *ConstantAttribute) Copy() Attribute {
 	return &ConstantAttribute{
 		Value:       ca.Value,
+		ValueRange:  ca.ValueRange,
 		SingleQuote: ca.SingleQuote,
 		Key:         ca.Key,
 		Range:       ca.Range,
@@ -948,9 +950,10 @@ func (bea *BoolExpressionAttribute) Copy() Attribute {
 
 // href={ ... }
 type ExpressionAttribute struct {
-	Key        AttributeKey
-	Expression Expression
-	Range      Range
+	Key              AttributeKey
+	Expression       Expression
+	InitializerRange Range
+	Range            Range
 }
 
 func (ea *ExpressionAttribute) String() string {
@@ -1011,9 +1014,10 @@ func (ea *ExpressionAttribute) Visit(v Visitor) error {
 
 func (ea *ExpressionAttribute) Copy() Attribute {
 	return &ExpressionAttribute{
-		Expression: ea.Expression,
-		Key:        ea.Key,
-		Range:      ea.Range,
+		Expression:       ea.Expression,
+		Key:              ea.Key,
+		InitializerRange: ea.InitializerRange,
+		Range:            ea.Range,
 	}
 }
 
