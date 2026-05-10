@@ -1,6 +1,7 @@
 package prettier
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -132,6 +133,82 @@ func TestElementReturnsContentOnly(t *testing.T) {
 	}
 }
 
+func TestDefaultCommand(t *testing.T) {
+	bothAvailable := func(name string) (string, error) {
+		if name == "prettier" || name == "prettierd" {
+			return "/usr/bin/" + name, nil
+		}
+		return "", fmt.Errorf("not found")
+	}
+	onlyPrettier := func(name string) (string, error) {
+		if name == "prettier" {
+			return "/usr/bin/prettier", nil
+		}
+		return "", fmt.Errorf("not found")
+	}
+	onlyPrettierd := func(name string) (string, error) {
+		if name == "prettierd" {
+			return "/usr/bin/prettierd", nil
+		}
+		return "", fmt.Errorf("not found")
+	}
+	neitherAvailable := func(name string) (string, error) {
+		return "", fmt.Errorf("not found")
+	}
+
+	tests := []struct {
+		name     string
+		shell    string
+		lookPath func(string) (string, error)
+		want     string
+	}{
+		{
+			name:     "prefers prettier when both are available",
+			shell:    "/bin/bash",
+			lookPath: bothAvailable,
+			want:     "prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME",
+		},
+		{
+			name:     "uses prettier when only prettier is available",
+			shell:    "/bin/bash",
+			lookPath: onlyPrettier,
+			want:     "prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME",
+		},
+		{
+			name:     "falls back to prettierd when prettier is not available",
+			shell:    "/bin/bash",
+			lookPath: onlyPrettierd,
+			want:     "prettierd --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME",
+		},
+		{
+			name:     "returns prettier command when neither is available",
+			shell:    "/bin/bash",
+			lookPath: neitherAvailable,
+			want:     "prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME",
+		},
+		{
+			name:     "nushell uses prettierd when prettier is not available",
+			shell:    "/usr/bin/nu",
+			lookPath: onlyPrettierd,
+			want:     "prettierd --use-tabs --stdin-filepath $env.TEMPL_PRETTIER_FILENAME",
+		},
+		{
+			name:     "nushell prefers prettier when both are available",
+			shell:    "/usr/bin/nu",
+			lookPath: bothAvailable,
+			want:     "prettier --use-tabs --stdin-filepath $env.TEMPL_PRETTIER_FILENAME",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := defaultCommand(tt.shell, tt.lookPath)
+			if got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetCommand(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -145,33 +222,33 @@ func TestGetCommand(t *testing.T) {
 			name:     "nushell uses a custom command",
 			goos:     "linux",
 			shell:    "/usr/bin/nu",
-			command:  shellNameToCommand["nu"],
+			command:  nuCommands["prettier"],
 			wantPath: "/usr/bin/nu",
-			wantArgs: []string{"/usr/bin/nu", "-c", shellNameToCommand["nu"]},
+			wantArgs: []string{"/usr/bin/nu", "-c", nuCommands["prettier"]},
 		},
 		{
 			name:     "bash uses the default posix command",
 			goos:     "linux",
 			shell:    "/bin/bash",
-			command:  defaultPosixCommand,
+			command:  posixCommands["prettier"],
 			wantPath: "/bin/bash",
-			wantArgs: []string{"/bin/bash", "-c", defaultPosixCommand},
+			wantArgs: []string{"/bin/bash", "-c", posixCommands["prettier"]},
 		},
 		{
 			name:     "zsh uses the default posix command",
 			goos:     "linux",
 			shell:    "/bin/zsh",
-			command:  defaultPosixCommand,
+			command:  posixCommands["prettier"],
 			wantPath: "/bin/zsh",
-			wantArgs: []string{"/bin/zsh", "-c", defaultPosixCommand},
+			wantArgs: []string{"/bin/zsh", "-c", posixCommands["prettier"]},
 		},
 		{
 			name:     "empty shell defaults to the default posix command",
 			goos:     "linux",
 			shell:    "",
-			command:  defaultPosixCommand,
+			command:  posixCommands["prettier"],
 			wantPath: "/bin/sh",
-			wantArgs: []string{"/bin/sh", "-c", defaultPosixCommand},
+			wantArgs: []string{"/bin/sh", "-c", posixCommands["prettier"]},
 		},
 		{
 			name:     "windows uses cmd.exe regardless of shell",

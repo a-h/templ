@@ -12,23 +12,42 @@ import (
 	"github.com/a-h/templ/internal/htmlfind"
 )
 
-const defaultPosixCommand = "prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME"
+var posixCommands = map[string]string{
+	"prettier":  "prettier --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME",
+	"prettierd": "prettierd --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME",
+}
 
-var shellNameToCommand = map[string]string{
-	"nu": "prettier --use-tabs --stdin-filepath $env.TEMPL_PRETTIER_FILENAME",
+var nuCommands = map[string]string{
+	"prettier":  "prettier --use-tabs --stdin-filepath $env.TEMPL_PRETTIER_FILENAME",
+	"prettierd": "prettierd --use-tabs --stdin-filepath $env.TEMPL_PRETTIER_FILENAME",
+}
+
+var shellNameToCommands = map[string]map[string]string{
+	"nu": nuCommands,
 }
 
 // DefaultCommand returns the default prettier command appropriate for the current shell.
+// It prefers prettier over prettierd, falling back to prettierd if prettier is not found.
 func DefaultCommand() string {
-	shell := os.Getenv("SHELL")
+	return defaultCommand(os.Getenv("SHELL"), exec.LookPath)
+}
+
+func defaultCommand(shell string, lookPath func(string) (string, error)) string {
 	if shell == "" {
 		shell = "/bin/sh"
 	}
 	shellName := filepath.Base(shell)
-	if shellCommand, ok := shellNameToCommand[shellName]; ok {
-		return shellCommand
+	commands := posixCommands
+	if shellCommands, ok := shellNameToCommands[shellName]; ok {
+		commands = shellCommands
 	}
-	return defaultPosixCommand
+	for _, name := range []string{"prettier", "prettierd"} {
+		if _, err := lookPath(name); err == nil {
+			return commands[name]
+		}
+	}
+	// Neither found, return the prettier command so error messages reference it.
+	return commands["prettier"]
 }
 
 func IsAvailable(command string) bool {
