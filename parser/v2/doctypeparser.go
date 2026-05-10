@@ -27,6 +27,7 @@ var docType = parse.Func(func(pi *parse.Input) (n Node, ok bool, err error) {
 		err = parse.Error("unclosed DOCTYPE", start)
 		return
 	}
+	r.Range = NewRange(start, pi.Position())
 
 	return r, true, nil
 })

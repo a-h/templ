@@ -233,6 +233,7 @@ func (p *Package) Visit(v Visitor) error {
 
 // Whitespace.
 type Whitespace struct {
+	Range Range
 	Value string
 }
 
@@ -363,6 +364,7 @@ func (c *ExpressionCSSProperty) Visit(v Visitor) error {
 
 // <!DOCTYPE html>
 type DocType struct {
+	Range Range
 	Value string
 }
 
@@ -861,7 +863,8 @@ func (e ExpressionAttributeKey) String() string {
 
 // <hr noshade/>
 type BoolConstantAttribute struct {
-	Key AttributeKey
+	Key   AttributeKey
+	Range Range
 }
 
 func (bca *BoolConstantAttribute) String() string {
@@ -878,7 +881,8 @@ func (bca *BoolConstantAttribute) Visit(v Visitor) error {
 
 func (bca *BoolConstantAttribute) Copy() Attribute {
 	return &BoolConstantAttribute{
-		Key: bca.Key,
+		Key:   bca.Key,
+		Range: bca.Range,
 	}
 }
 
@@ -886,7 +890,9 @@ func (bca *BoolConstantAttribute) Copy() Attribute {
 type ConstantAttribute struct {
 	Key         AttributeKey
 	Value       string
+	ValueRange  Range
 	SingleQuote bool
+	Range       Range
 }
 
 func (ca *ConstantAttribute) String() string {
@@ -908,8 +914,10 @@ func (ca *ConstantAttribute) Visit(v Visitor) error {
 func (ca *ConstantAttribute) Copy() Attribute {
 	return &ConstantAttribute{
 		Value:       ca.Value,
+		ValueRange:  ca.ValueRange,
 		SingleQuote: ca.SingleQuote,
 		Key:         ca.Key,
+		Range:       ca.Range,
 	}
 }
 
@@ -917,6 +925,7 @@ func (ca *ConstantAttribute) Copy() Attribute {
 type BoolExpressionAttribute struct {
 	Key        AttributeKey
 	Expression Expression
+	Range      Range
 }
 
 func (bea *BoolExpressionAttribute) String() string {
@@ -935,13 +944,16 @@ func (bea *BoolExpressionAttribute) Copy() Attribute {
 	return &BoolExpressionAttribute{
 		Expression: bea.Expression,
 		Key:        bea.Key,
+		Range:      bea.Range,
 	}
 }
 
 // href={ ... }
 type ExpressionAttribute struct {
-	Key        AttributeKey
-	Expression Expression
+	Key                 AttributeKey
+	Expression          Expression
+	AttributeStartRange Range
+	Range               Range
 }
 
 func (ea *ExpressionAttribute) String() string {
@@ -1002,14 +1014,17 @@ func (ea *ExpressionAttribute) Visit(v Visitor) error {
 
 func (ea *ExpressionAttribute) Copy() Attribute {
 	return &ExpressionAttribute{
-		Expression: ea.Expression,
-		Key:        ea.Key,
+		Expression:          ea.Expression,
+		Key:                 ea.Key,
+		AttributeStartRange: ea.AttributeStartRange,
+		Range:               ea.Range,
 	}
 }
 
 // <a { spread... } />
 type SpreadAttributes struct {
 	Expression Expression
+	Range      Range
 }
 
 func (sa *SpreadAttributes) String() string {
@@ -1027,6 +1042,7 @@ func (sa *SpreadAttributes) Visit(v Visitor) error {
 func (sa *SpreadAttributes) Copy() Attribute {
 	return &SpreadAttributes{
 		Expression: sa.Expression,
+		Range:      sa.Range,
 	}
 }
 
@@ -1038,6 +1054,7 @@ type ConditionalAttribute struct {
 	Expression Expression
 	Then       []Attribute
 	Else       []Attribute
+	Range      Range
 }
 
 func (ca *ConditionalAttribute) String() string {
@@ -1105,6 +1122,7 @@ func (ca *ConditionalAttribute) Copy() Attribute {
 		Expression: ca.Expression,
 		Then:       CopyAttributes(ca.Then),
 		Else:       CopyAttributes(ca.Else),
+		Range:      ca.Range,
 	}
 }
 
@@ -1181,6 +1199,19 @@ func (c *HTMLComment) Visit(v Visitor) error {
 	return v.VisitHTMLComment(c)
 }
 
+type Fallthrough struct {
+	Range Range
+}
+
+func (f *Fallthrough) IsNode() bool { return true }
+func (f *Fallthrough) Write(w io.Writer, indent int) error {
+	return writeIndent(w, indent, "fallthrough")
+}
+
+func (f *Fallthrough) Visit(v Visitor) error {
+	return v.VisitFallthrough(f)
+}
+
 // Nodes.
 
 // CallTemplateExpression can be used to create and render a template using data.
@@ -1241,6 +1272,10 @@ func (tee *TemplElementExpression) Write(w io.Writer, indent int) error {
 		if _, err := io.WriteString(w, "\n"); err != nil {
 			return err
 		}
+		// Blank lines should not have any indentation.
+		if len(bytes.TrimSpace(sourceLines[i])) == 0 {
+			continue
+		}
 		if string(sourceLines[i]) != string(reformattedSourceLines[i]) {
 			if _, err := w.Write(sourceLines[i]); err != nil {
 				return err
@@ -1270,9 +1305,11 @@ func (tee *TemplElementExpression) Visit(v Visitor) error {
 	return v.VisitTemplElementExpression(tee)
 }
 
-// ChildrenExpression can be used to rended the children of a templ element.
+// ChildrenExpression can be used to render the children of a templ element.
 // { children ... }
-type ChildrenExpression struct{}
+type ChildrenExpression struct {
+	Range Range
+}
 
 func (*ChildrenExpression) IsNode() bool { return true }
 func (*ChildrenExpression) Write(w io.Writer, indent int) error {
@@ -1433,6 +1470,7 @@ type GoCode struct {
 	// TrailingSpace lists what happens after the expression.
 	TrailingSpace TrailingSpace
 	Multiline     bool
+	Range         Range
 }
 
 func (gc *GoCode) Trailing() TrailingSpace {
@@ -1471,6 +1509,7 @@ type StringExpression struct {
 	Expression Expression
 	// TrailingSpace lists what happens after the expression.
 	TrailingSpace TrailingSpace
+	Range         Range
 }
 
 func (se *StringExpression) Trailing() TrailingSpace {

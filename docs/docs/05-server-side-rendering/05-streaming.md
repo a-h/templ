@@ -119,20 +119,22 @@ templ Page(data chan SlotContents) {
 		</head>
 		<body>
 			<h1>Page</h1>
-			@templ.Flush() {
-				<template shadowrootmode="open">
-					@Slot("a")
-					@Slot("b")
-					@Slot("c")
-				</template>
-			}
-			for sc := range data {
+			<div>
 				@templ.Flush() {
-					<div slot={ sc.Name }>
-						@sc.Contents
-					</div>
+					<template shadowrootmode="open">
+						@Slot("a")
+						@Slot("b")
+						@Slot("c")
+					</template>
 				}
-			}
+				for sc := range data {
+					@templ.Flush() {
+						<div slot={ sc.Name }>
+							@sc.Contents
+						</div>
+					}
+				}
+			</div>
 		</body>
 	</html>
 }

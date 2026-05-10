@@ -1,17 +1,17 @@
-# HTMX
+# htmx
 
-https://htmx.org can be used to selectively replace content within a web page, instead of replacing the whole page in the browser. This avoids "full-page postbacks", where the whole of the browser window is updated when a button is clicked, and results in a better user experience by reducing screen "flicker", or losing scroll position.
+[htmx](https://htmx.org) can be used to selectively replace content within a web page, instead of replacing the whole page in the browser. This avoids "full-page postbacks", where the whole of the browser window is updated when a button is clicked, and results in a better user experience by reducing screen "flicker", or losing scroll position.
 
 ## Usage
 
-Using HTMX requires:
+Using htmx requires:
 
-* Installation of the HTMX client-side library.
+* Installation of the htmx client-side library.
 * Modifying the HTML markup to instruct the library to perform partial screen updates.
 
 ## Installation
 
-To install the HTMX library, download the `htmx.min.js` file and serve it via HTTP.
+To install the htmx library, download the `htmx.min.js` file and serve it via HTTP.
 
 Then add a `<script>` tag to the `<head>` section of your HTML with the `src` attribute pointing at the file.
 
@@ -20,16 +20,16 @@ Then add a `<script>` tag to the `<head>` section of your HTML with the `src` at
 ```
 
 :::info
-Advanced HTMX installation and usage help is covered in the user guide at https://htmx.org.
+Advanced htmx installation and usage help is covered in the user guide at https://htmx.org.
 :::
 
 ## Count example
 
 To update the counts on the page without a full postback, the `hx-post="/"` and `hx-select="#countsForm"` attributes must be added to the `<form>` element, along with an `id` attribute to uniquely identify the element.
 
-Adding these attributes instructs the HTMX library to replace the browser's HTTP form POST and subsequent refresh with a request from HTMX instead. HTMX issues a HTTP POST operation to the `/` endpoint, and replaces the `<form>` element with the HTML that is returned.
+Adding these attributes instructs the htmx library to replace the browser's HTTP form POST and subsequent refresh with a request from htmx instead. htmx issues a HTTP POST operation to the `/` endpoint, and replaces the `<form>` element with the HTML that is returned.
 
-The `/` endpoint returns a complete HTML page instead of just the updated `<form>` element HTML. The `hx-select="#countsForm"` instructs HTMX to extract the HTML content within the `countsForm` element that is returned by the web server to replace the `<form>` element.
+The `/` endpoint returns a complete HTML page instead of just the updated `<form>` element HTML. The `hx-select="#countsForm"` instructs htmx to extract the HTML content within the `countsForm` element that is returned by the web server to replace the `<form>` element.
 
 ```templ title="components/components.templ"
 templ counts(global, session int) {
@@ -54,3 +54,26 @@ templ counts(global, session int) {
 The example can be viewed at https://d3qfg6xxljj3ky.cloudfront.net
 
 Complete source code including AWS CDK code to set up the infrastructure is available at https://github.com/a-h/templ/tree/main/examples/counter
+
+## Using hx-on attributes
+
+htmx supports inline JavaScript event handlers using the `hx-on:*` attributes such as `hx-on:click`, `hx-on:submit`, etc.
+
+Attributes starting with `on` or `hx-on:` are treated as script attributes and expect a `templ.ComponentScript` type.
+
+For static JavaScript, use a string literal:
+
+```templ
+<button hx-on:click="alert('Hello')">Click me</button>
+```
+
+For dynamic JavaScript with server-side data, use `templ.JSFuncCall`:
+
+```templ
+<script>
+	function showMessage(msg) {
+		alert(msg);
+	}
+</script>
+<button hx-on:click={ templ.JSFuncCall("showMessage", "Hello from Go") }>Click me</button>
+```

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,7 +30,7 @@ func TestRoundTripper(t *testing.T) {
 		expectedSkip string
 	}{
 		{
-			name:         "HTMX requests skip modification",
+			name:         "htmx requests skip modification",
 			headers:      map[string]string{"HX-Request": "true"},
 			expectedSkip: "true",
 		},
@@ -39,7 +40,7 @@ func TestRoundTripper(t *testing.T) {
 			expectedSkip: "true",
 		},
 		{
-			name:         "Non-HTMX and Datastar requests do not skip modification",
+			name:         "Non-htmx and Datastar requests do not skip modification",
 			headers:      map[string]string{},
 			expectedSkip: "",
 		},
@@ -89,7 +90,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -125,7 +126,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -168,7 +169,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		if err = h.modifyResponse(r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -212,7 +213,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		if err = h.modifyResponse(r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -257,7 +258,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		if err = h.modifyResponse(r); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -294,7 +295,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -357,7 +358,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err = h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -425,7 +426,7 @@ func TestProxy(t *testing.T) {
 
 		// Act
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err = h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -444,6 +445,158 @@ func TestProxy(t *testing.T) {
 			t.Errorf("unexpected response body (-got +want):\n%s", diff)
 		}
 	})
+	t.Run("stream: body tags get the script inserted", func(t *testing.T) {
+		// Arrange
+		reqReader, reqWriter := io.Pipe()
+		r := &http.Response{
+			Body:   reqReader,
+			Header: make(http.Header),
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
+		}
+		r.Header.Set("Content-Type", "text/html; charset=utf-8")
+		r.Header.Set("Transfer-Encoding", "chunked")
+
+		expectedString, err := insertScriptTagIntoBody("", `<html><head></head><body></body></html>`)
+		if err != nil {
+			t.Fatalf("unexpected error inserting script: %v", err)
+		}
+		if !strings.Contains(expectedString, getScriptTag(t, "")) {
+			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
+		}
+
+		// Act
+		log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		if err := h.modifyResponse(r); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		streamingGap := 100 * time.Millisecond
+		var writerErr1, writerErr2, reqWriterErr error
+		go func() {
+			_, writerErr1 = io.WriteString(reqWriter, `<html><head></head><body>`)
+			time.Sleep(streamingGap) // simulate streaming
+			_, writerErr2 = io.WriteString(reqWriter, `</body></html>`)
+			reqWriterErr = reqWriter.Close()
+		}()
+
+		// Assert
+		if got := r.Header.Get("Content-Length"); got != "" {
+			t.Errorf("expected Content-Length to be cleared for streaming, got %q", got)
+		}
+
+		// Read the response body as it comes in, and look for at least one gap of >streamingGap between tokens.
+		lastTime := time.Now()
+		largestGap := time.Duration(0)
+		sBB := &strings.Builder{}
+		z := html.NewTokenizer(r.Body)
+	tokenLoop:
+		for {
+			tt := z.Next()
+			if since := time.Since(lastTime); since > largestGap {
+				largestGap = since
+			}
+			lastTime = time.Now()
+
+			switch tt {
+			case html.ErrorToken:
+				if z.Err() == io.EOF {
+					break tokenLoop
+				}
+				t.Error("unexpected error token:", z.Err())
+			default:
+				if _, err := sBB.Write([]byte(z.Token().String())); err != nil {
+					t.Error("unexpected error writing token:", err)
+				}
+			}
+		}
+		if diff := cmp.Diff(expectedString, sBB.String()); diff != "" {
+			t.Errorf("unexpected response body (-got +want):\n%s", diff)
+		}
+		if largestGap < streamingGap {
+			t.Errorf("expected at least one gap of >%v between tokens, got largest gap of %v", streamingGap, largestGap)
+		}
+
+		if writerErr1 != nil {
+			t.Errorf("unexpected error writing part 1 of response: %v", writerErr1)
+		}
+		if writerErr2 != nil {
+			t.Errorf("unexpected error writing part 2 of response: %v", writerErr2)
+		}
+		if reqWriterErr != nil {
+			t.Errorf("unexpected error closing request writer: %v", reqWriterErr)
+		}
+	})
+	t.Run("stream gzip: chunked gzip response has the script inserted", func(t *testing.T) {
+		// Arrange: simulate a backend that sends a chunked, gzip-compressed HTML response.
+		reqReader, reqWriter := io.Pipe()
+		r := &http.Response{
+			Body:          reqReader,
+			Header:        make(http.Header),
+			ContentLength: -1,
+			Request: &http.Request{
+				URL: &url.URL{
+					Scheme: "http",
+					Host:   "example.com",
+				},
+			},
+		}
+		r.Header.Set("Content-Type", "text/html; charset=utf-8")
+		r.Header.Set("Content-Encoding", "gzip")
+		r.Header.Set("Transfer-Encoding", "chunked")
+
+		body := `<html><head></head><body></body></html>`
+		expectedString, err := insertScriptTagIntoBody("", body)
+		if err != nil {
+			t.Fatalf("unexpected error inserting script: %v", err)
+		}
+		if !strings.Contains(expectedString, getScriptTag(t, "")) {
+			t.Fatalf("expected the script tag to be inserted, but it wasn't: %q", expectedString)
+		}
+
+		// Act
+		log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		if err := h.modifyResponse(r); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Write gzip-compressed HTML to the pipe in chunks to simulate a streaming backend.
+		var writerErr error
+		go func() {
+			gzw := gzip.NewWriter(reqWriter)
+			if _, err := io.WriteString(gzw, body); err != nil {
+				writerErr = err
+			}
+			if err := gzw.Close(); err != nil {
+				writerErr = err
+			}
+			if err := reqWriter.Close(); err != nil {
+				writerErr = err
+			}
+		}()
+
+		// Assert: read the modified response and decompress it.
+		gr, err := gzip.NewReader(r.Body)
+		if err != nil {
+			t.Fatalf("unexpected error creating gzip reader: %v", err)
+		}
+		actualBody, err := io.ReadAll(gr)
+		if err != nil {
+			t.Fatalf("unexpected error reading response: %v", err)
+		}
+		if diff := cmp.Diff(expectedString, string(actualBody)); diff != "" {
+			t.Errorf("unexpected response body (-got +want):\n%s", diff)
+		}
+		if writerErr != nil {
+			t.Errorf("unexpected error writing gzip to pipe: %v", writerErr)
+		}
+	})
 	t.Run("notify-proxy: sending POST request to /_templ/reload/events should receive reload sse event", func(t *testing.T) {
 		// Arrange 1: create a test proxy server.
 		dummyHandler := func(w http.ResponseWriter, r *http.Request) {}
@@ -455,7 +608,7 @@ func TestProxy(t *testing.T) {
 			t.Fatalf("unexpected error parsing URL: %v", err)
 		}
 		log := slog.New(slog.NewJSONHandler(io.Discard, nil))
-		handler := New(log, "0.0.0.0", 0, u)
+		handler := New(log, "http", "0.0.0.0", 0, u)
 		proxyServer := httptest.NewServer(handler)
 		defer proxyServer.Close()
 
@@ -553,7 +706,7 @@ func TestProxy(t *testing.T) {
 		// Act
 		lh := newTestLogHandler(slog.LevelInfo)
 		log := slog.New(lh)
-		h := New(log, "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
+		h := New(log, "http", "127.0.0.1", 7474, &url.URL{Scheme: "http", Host: "example.com"})
 		err := h.modifyResponse(r)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -668,4 +821,100 @@ func TestParseNonce(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStreamInsertAfterBodyOpen(t *testing.T) {
+	t.Run("script tags with special characters are not escaped", func(t *testing.T) {
+		input := `<html>
+<head><title>Test</title></head>
+<body>
+<script>
+var x = localStorage.getItem('test');
+var y = true && false;
+</script>
+</body>
+</html>`
+
+		var output bytes.Buffer
+		err := streamInsertAfterBodyOpen("", strings.NewReader(input), &output)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		result := output.String()
+
+		if !strings.Contains(result, "localStorage.getItem('test')") {
+			t.Errorf("expected single quotes to not be escaped, got: %s", result)
+		}
+		if strings.Contains(result, "&#39;") {
+			t.Errorf("single quotes should not be escaped to &#39;, got: %s", result)
+		}
+		if !strings.Contains(result, "true && false") {
+			t.Errorf("expected && to not be escaped, got: %s", result)
+		}
+		if strings.Contains(result, "&amp;&amp;") {
+			t.Errorf("&& should not be escaped to &amp;&amp;, got: %s", result)
+		}
+	})
+
+	t.Run("large HTML with script tags maintains character integrity", func(t *testing.T) {
+		var inputBuilder strings.Builder
+		inputBuilder.WriteString(`<html>
+<head><title>Test</title></head>
+<body>
+<script>
+var x = localStorage.getItem('test');
+var y = true && false;
+alert("test");
+</script>`)
+		for i := range 50 {
+			inputBuilder.WriteString(fmt.Sprintf("<div>%d padding</div>\n", i))
+		}
+		inputBuilder.WriteString("</body></html>")
+		input := inputBuilder.String()
+
+		var output bytes.Buffer
+		err := streamInsertAfterBodyOpen("", strings.NewReader(input), &output)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		result := output.String()
+
+		if !strings.Contains(result, "localStorage.getItem('test')") {
+			t.Errorf("expected single quotes to not be escaped in large document")
+		}
+		if strings.Contains(result, "&#39;") {
+			t.Errorf("single quotes should not be escaped to &#39; in large document")
+		}
+		if !strings.Contains(result, "true && false") {
+			t.Errorf("expected && to not be escaped in large document")
+		}
+		if strings.Contains(result, "&amp;&amp;") {
+			t.Errorf("&& should not be escaped to &amp;&amp; in large document")
+		}
+		if !strings.Contains(result, `alert("test")`) {
+			t.Errorf("expected double quotes to not be escaped in large document")
+		}
+	})
+
+	t.Run("script with nonce attribute is inserted correctly", func(t *testing.T) {
+		input := `<html><body><p>Content</p></body></html>`
+		nonce := "test-nonce-123"
+
+		var output bytes.Buffer
+		err := streamInsertAfterBodyOpen(nonce, strings.NewReader(input), &output)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		result := output.String()
+
+		if !strings.Contains(result, `nonce="`+nonce+`"`) {
+			t.Errorf("expected nonce attribute to be present with value %s, got: %s", nonce, result)
+		}
+		if !strings.Contains(result, `src="/_templ/reload/script.js"`) {
+			t.Errorf("expected script src to be present, got: %s", result)
+		}
+	})
 }

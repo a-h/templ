@@ -1,0 +1,88 @@
+-- in --
+package main
+
+type Params struct {
+	Foo string
+}
+
+templ Child(p Params) {
+	<p>{ p.Foo }</p>
+}
+
+templ Parent(p Params) {
+	{{
+		bar := (func() string {
+			if p.Foo == "" {
+				return "Bar"
+			}
+
+			return p.Foo
+		})()
+		baz := Params{
+			Foo: (func() string {
+				if p.Foo == "" {
+					return "Baz"
+				}
+
+				return p.Foo
+			})(),
+		}
+	}}
+	<div>
+		@Child(Params{
+			Foo: (func() string {
+				if p.Foo == "" {
+					return "Foo"
+				}
+
+				return p.Foo
+			})(),
+		})
+		<p>{ bar }</p>
+		<p>{ baz.Foo }</p>
+	</div>
+}
+-- out --
+package main
+
+type Params struct {
+	Foo string
+}
+
+templ Child(p Params) {
+	<p>{ p.Foo }</p>
+}
+
+templ Parent(p Params) {
+	{{
+		bar := (func() string {
+			if p.Foo == "" {
+				return "Bar"
+			}
+
+			return p.Foo
+		})()
+		baz := Params{
+			Foo: (func() string {
+				if p.Foo == "" {
+					return "Baz"
+				}
+
+				return p.Foo
+			})(),
+		}
+	}}
+	<div>
+		@Child(Params{
+			Foo: (func() string {
+				if p.Foo == "" {
+					return "Foo"
+				}
+
+				return p.Foo
+			})(),
+		})
+		<p>{ bar }</p>
+		<p>{ baz.Foo }</p>
+	</div>
+}

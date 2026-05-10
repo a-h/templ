@@ -16,6 +16,7 @@ func (conditionalAttributeParser) Parse(pi *parse.Input) (r *ConditionalAttribut
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
 		return
 	}
+	attrStart := pi.Index()
 	if !peekPrefix(pi, "if ") {
 		pi.Seek(start)
 		return
@@ -65,6 +66,7 @@ func (conditionalAttributeParser) Parse(pi *parse.Input) (r *ConditionalAttribut
 		err = parse.Error("attribute if: missing end (expected '}')", pi.Position())
 		return
 	}
+	r.Range = NewRange(pi.PositionAt(attrStart), pi.Position())
 
 	return r, true, nil
 }

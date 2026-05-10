@@ -34,6 +34,10 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 							},
 						},
 					},
+					Range: Range{
+						From: Position{Index: 18, Line: 0, Col: 18},
+						To:   Position{Index: 47, Line: 0, Col: 47},
+					},
 				},
 			},
 		},
@@ -57,6 +61,10 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 								Col:   27,
 							},
 						},
+					},
+					Range: Range{
+						From: Position{Index: 19, Line: 1, Col: 0},
+						To:   Position{Index: 48, Line: 1, Col: 29},
 					},
 				},
 			},
@@ -262,6 +270,10 @@ background-color: { constants.BackgroundColor };
 									},
 								},
 							},
+							Range: Range{
+								From: Position{Index: 31, Line: 1, Col: 18},
+								To:   Position{Index: 60, Line: 1, Col: 47},
+							},
 						},
 					},
 				},
@@ -311,6 +323,10 @@ background-color: { prop };
 										Col:   24,
 									},
 								},
+							},
+							Range: Range{
+								From: Position{Index: 42, Line: 1, Col: 18},
+								To:   Position{Index: 50, Line: 1, Col: 26},
 							},
 						},
 					},

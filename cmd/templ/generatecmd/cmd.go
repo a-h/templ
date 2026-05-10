@@ -2,6 +2,8 @@ package generatecmd
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -15,8 +17,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/a-h/templ/internal/skipdir"
-	templruntime "github.com/a-h/templ/runtime"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/cli/browser"
+	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/a-h/templ"
@@ -25,9 +28,8 @@ import (
 	"github.com/a-h/templ/cmd/templ/generatecmd/run"
 	"github.com/a-h/templ/cmd/templ/generatecmd/watcher"
 	"github.com/a-h/templ/generator"
-	"github.com/cenkalti/backoff/v4"
-	"github.com/cli/browser"
-	"github.com/fsnotify/fsnotify"
+	"github.com/a-h/templ/internal/skipdir"
+	templruntime "github.com/a-h/templ/runtime"
 )
 
 func NewGenerate(log *slog.Logger, args Arguments) (g *Generate, err error) {
@@ -45,6 +47,7 @@ type Generate struct {
 
 type GenerationEvent struct {
 	Event                fsnotify.Event
+	GoFileWritten        bool
 	WatchedFileUpdated   bool
 	TemplFileTextUpdated bool
 	TemplFileGoUpdated   bool
@@ -185,15 +188,19 @@ loop:
 		case ge := <-postGeneration:
 			if ge == nil {
 				cmd.Log.Debug("Post-generation event channel closed, exiting")
+				if grouped != nil {
+					return grouped, updates, true, nil
+				}
 				return nil, 0, false, nil
 			}
 			if grouped == nil {
 				grouped = ge
 			}
+			grouped.GoFileWritten = grouped.GoFileWritten || ge.GoFileWritten
 			grouped.WatchedFileUpdated = grouped.WatchedFileUpdated || ge.WatchedFileUpdated
 			grouped.TemplFileTextUpdated = grouped.TemplFileTextUpdated || ge.TemplFileTextUpdated
 			grouped.TemplFileGoUpdated = grouped.TemplFileGoUpdated || ge.TemplFileGoUpdated
-			if grouped.WatchedFileUpdated || grouped.TemplFileTextUpdated || grouped.TemplFileGoUpdated {
+			if ge.GoFileWritten {
 				updates++
 			}
 			// Now we have received an event, wait for 100ms.
@@ -201,7 +208,7 @@ loop:
 			timeout = time.NewTimer(time.Millisecond * 100)
 		case <-timeout.C:
 			// If grouped is nil, or if no updates were made, reset the timer and continue waiting.
-			if grouped == nil || (!grouped.WatchedFileUpdated && !grouped.TemplFileTextUpdated && !grouped.TemplFileGoUpdated) {
+			if grouped == nil || (!grouped.GoFileWritten && !grouped.WatchedFileUpdated && !grouped.TemplFileTextUpdated && !grouped.TemplFileGoUpdated) {
 				timeout = time.NewTimer(time.Hour * 24 * 365)
 				continue loop
 			}
@@ -230,7 +237,7 @@ loop:
 		// If the text in a templ file, or any other changes have happened, reload the browser.
 		needsBrowserReload := grouped.TemplFileTextUpdated || grouped.TemplFileGoUpdated || grouped.WatchedFileUpdated
 
-		cmd.Log.Info("Post-generation event received, processing...", slog.Bool("needsRestart", needsRestart), slog.Bool("needsBrowserReload", needsBrowserReload))
+		cmd.Log.Info("Post-generation event received, processing...", slog.Int("updates", updated), slog.Bool("needsRestart", needsRestart), slog.Bool("needsBrowserReload", needsBrowserReload))
 		updates += updated
 
 		if cmd.Args.Command != "" && needsRestart {
@@ -238,6 +245,19 @@ loop:
 			if cmd.Args.Watch {
 				if err := os.Setenv("TEMPL_DEV_MODE", "true"); err != nil {
 					cmd.Log.Error("Error setting TEMPL_DEV_MODE environment variable", slog.Any("error", err))
+				}
+				// Check that the path is absolute.
+				// It should have already been made absolute at the start of the Run method, but just in case, we need to make sure it's absolute before setting it as an environment variable.
+				if !filepath.IsAbs(cmd.Args.Path) {
+					cmd.Log.Error("Path is not absolute, this may cause issues with the command execution", slog.String("path", cmd.Args.Path))
+				}
+				// Evaluate symlinks to match the behavior in runtime/watchmode.go.
+				watchRoot := cmd.Args.Path
+				if resolved, err := filepath.EvalSymlinks(watchRoot); err == nil {
+					watchRoot = resolved
+				}
+				if err := os.Setenv("TEMPL_DEV_MODE_WATCH_ROOT", watchRoot); err != nil {
+					cmd.Log.Error("Error setting TEMPL_DEV_MODE_WATCH_ROOT environment variable", slog.Any("error", err))
 				}
 			}
 			if _, err := run.Run(ctx, cmd.Args.Path, cmd.Args.Command); err != nil {
@@ -276,12 +296,13 @@ func (cmd Generate) handleEvents(ctx context.Context, events chan fsnotify.Event
 			if err != nil {
 				errs <- err
 			}
-			if !r.WatchedFileUpdated && !r.TemplFileTextUpdated && !r.TemplFileGoUpdated {
+			if !r.GoFileWritten && !r.WatchedFileUpdated && !r.TemplFileTextUpdated && !r.TemplFileGoUpdated {
 				cmd.Log.Debug("File not updated", slog.String("file", event.Name))
 				return
 			}
 			e := &GenerationEvent{
 				Event:                event,
+				GoFileWritten:        r.GoFileWritten,
 				WatchedFileUpdated:   r.WatchedFileUpdated,
 				TemplFileTextUpdated: r.TemplFileTextUpdated,
 				TemplFileGoUpdated:   r.TemplFileGoUpdated,
@@ -349,16 +370,53 @@ func (cmd *Generate) deleteWatchModeTextFiles() error {
 	})
 }
 
+func (cmd *Generate) createTLSTransport() *http.Transport {
+	certPEM, err := os.ReadFile(cmd.Args.ProxyTLSCrt)
+	if err != nil {
+		cmd.Log.Error("Failed to read TLS certificate file", slog.Any("error", err))
+		return nil
+	}
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(certPEM) {
+		cmd.Log.Error("Failed to append certificate to pool")
+		return nil
+	}
+	return &http.Transport{
+		TLSClientConfig: &tls.Config{RootCAs: certPool},
+	}
+}
+
 func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 	var target *url.URL
 	target, err = url.Parse(cmd.Args.Proxy)
 	if err != nil {
 		return nil, FatalError{Err: fmt.Errorf("failed to parse proxy URL: %w", err)}
 	}
-	p = proxy.New(cmd.Log, cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
+	scheme := "http"
+	if cmd.Args.ProxyTLSCrt != "" && cmd.Args.ProxyTLSKey != "" {
+		scheme = "https"
+	}
+	p = proxy.New(cmd.Log, scheme, cmd.Args.ProxyBind, cmd.Args.ProxyPort, target)
 	go func() {
 		cmd.Log.Info("Proxying", slog.String("from", p.URL), slog.String("to", p.Target.String()))
-		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort), p); err != nil {
+		server := &http.Server{
+			Addr:    fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort),
+			Handler: p,
+		}
+		// Configure TLS if certificates are provided.
+		if cmd.Args.ProxyTLSCrt != "" && cmd.Args.ProxyTLSKey != "" {
+			cert, err := tls.LoadX509KeyPair(cmd.Args.ProxyTLSCrt, cmd.Args.ProxyTLSKey)
+			if err != nil {
+				cmd.Log.Error("Failed to load TLS certificates", slog.Any("error", err))
+				return
+			}
+			server.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}}
+			if err = server.ListenAndServeTLS(cmd.Args.ProxyTLSCrt, cmd.Args.ProxyTLSKey); err != nil {
+				cmd.Log.Error("Proxy failed", slog.Any("error", err))
+			}
+			return
+		}
+		if err := server.ListenAndServe(); err != nil {
 			cmd.Log.Error("Proxy failed", slog.Any("error", err))
 		}
 	}()
@@ -372,9 +430,15 @@ func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 		backoff.InitialInterval = time.Second
 		var client http.Client
 		client.Timeout = 1 * time.Second
+		// Configure TLS with CA pool for self-signed certificates on localhost.
+		if cmd.Args.ProxyTLSCrt != "" && cmd.Args.ProxyTLSKey != "" {
+			client.Transport = cmd.createTLSTransport()
+		}
 		for {
-			if _, err := client.Get(p.URL); err == nil {
-				break
+			if resp, err := client.Get(p.URL); err == nil {
+				if resp.StatusCode != http.StatusBadGateway {
+					break
+				}
 			}
 			d := backoff.NextBackOff()
 			cmd.Log.Debug("Proxy not ready, retrying", slog.String("url", p.URL), slog.Any("backoff", d))

@@ -27,7 +27,7 @@ type FragmentContext struct {
 }
 
 // Fragment defines a fragment within a template that can be rendered conditionally based on the id.
-// You can use it to render a specific part of a page, e.g. to reduce the amount of HTML returned from a HTMX-initiated request.
+// You can use it to render a specific part of a page, e.g. to reduce the amount of HTML returned from a htmx-initiated request.
 // Any non-matching contents of the template are rendered, but discarded by the FramentWriter.
 func Fragment(id any) Component {
 	return &fragment{
@@ -40,10 +40,13 @@ type fragment struct {
 }
 
 func (f *fragment) Render(ctx context.Context, w io.Writer) (err error) {
+	children := GetChildren(ctx)
+	ctx = ClearChildren(ctx)
+
 	// If not in a fragment context, if we're a child fragment, or in a mismatching fragment context, render children normally.
 	fragmentCtx := getFragmentContext(ctx)
 	if fragmentCtx == nil || fragmentCtx.Active || !slices.Contains(fragmentCtx.IDs, f.ID) {
-		return GetChildren(ctx).Render(ctx, w)
+		return children.Render(ctx, w)
 	}
 
 	// Instruct child fragments to render their contents normally, because the writer
@@ -52,7 +55,7 @@ func (f *fragment) Render(ctx context.Context, w io.Writer) (err error) {
 	defer func() {
 		fragmentCtx.Active = false
 	}()
-	return GetChildren(ctx).Render(ctx, fragmentCtx.W)
+	return children.Render(ctx, fragmentCtx.W)
 }
 
 // getFragmentContext retrieves the FragmentContext from the provided context. It returns nil if no

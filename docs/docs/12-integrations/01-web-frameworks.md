@@ -28,70 +28,47 @@ See an example of using https://github.com/gofiber/fiber with templ at:
 
 https://github.com/a-h/templ/tree/main/examples/integration-gofiber
 
-### github.com/gorilla/csrf
+### CSRF Protection
 
-`gorilla/csrf` is a HTTP middleware library that provides cross-site request forgery (CSRF) protection.
-
-Follow the instructions at https://github.com/gorilla/csrf to add it to your project, by using the library as HTTP middleware.
+Go 1.25 includes built-in cross-site request forgery (CSRF) protection via `http.CrossOriginProtection`.
 
 ```go title="main.go"
 package main
 
 import (
-  "crypto/rand"
-  "fmt"
   "net/http"
-  "github.com/gorilla/csrf"
+  "log"
 )
-
-func mustGenerateCSRFKey() (key []byte) {
-  key = make([]byte, 32)
-  n, err := rand.Read(key)
-  if err != nil {
-    panic(err)
-  }
-  if n != 32 {
-    panic("unable to read 32 bytes for CSRF key")
-  }
-  return
-}
 
 func main() {
   r := http.NewServeMux()
   r.Handle("/", templ.Handler(Form()))
 
-  csrfMiddleware := csrf.Protect(mustGenerateCSRFKey(), csrf.TrustedOrigins([]string{"localhost:8000"}))
-  withCSRFProtection := csrfMiddleware(r)
+  // Configure CSRF protection with trusted origins.
+  csrfProtection := http.NewCrossOriginProtection()
+  if err := csrfProtection.AddTrustedOrigin("http://localhost:8000"); err != nil {
+    log.Fatalf("failed to add trusted origin: %v", err)
+  }
 
-  fmt.Println("Listening on localhost:8000")
-  http.ListenAndServe("localhost:8000", withCSRFProtection)
+  http.ListenAndServe("localhost:8000", csrfProtection.Handler(r))
 }
 ```
 
-Creating a `CSRF` templ component makes it easy to include the CSRF token in your forms.
+The built-in protection uses modern browser security headers (Sec-Fetch-Site) and does not require hidden form fields or tokens in your HTML:
 
 ```templ title="form.templ"
 templ Form() {
   <h1>CSRF Example</h1>
   <form method="post" action="/">
-    @CSRF()
     <div>
-      If you inspect the HTML form, you will see a hidden field with the value: { ctx.Value("gorilla.csrf.Token").(string) }
+      This form is protected by the built-in CSRF protection which uses the Sec-Fetch-Site header.
     </div>
-    <input type="submit" value="Submit with CSRF token"/>
+    <input type="submit" value="Submit"/>
   </form>
-  <form method="post" action="/">
-    <div>
-      You can also submit the form without the CSRF token to validate that the CSRF protection is working.
-    </div>
-    <input type="submit" value="Submit without CSRF token"/>
-  </form>
-}
-
-templ CSRF() {
-  <input type="hidden" name="gorilla.csrf.Token" value={ ctx.Value("gorilla.csrf.Token").(string) }/>
 }
 ```
+
+For applications requiring Go 1.24 or earlier, you can use the `github.com/gorilla/csrf` library instead.
 
 ## Project scaffolding
 

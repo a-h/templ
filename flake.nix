@@ -2,7 +2,7 @@
   description = "templ";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
@@ -12,13 +12,9 @@
       url = "github:a-h/version/0.0.10";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    xc = {
-      url = "github:joerdav/xc";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, version, xc }:
+  outputs = { self, nixpkgs, nixpkgs-unstable, gitignore, version }:
     let
       allSystems = [
         "x86_64-linux" # 64-bit Intel/AMD Linux
@@ -38,7 +34,6 @@
               (final: prev: {
                 gopls = pkgs-unstable.gopls;
                 version = version.packages.${system}.default; # Used to apply version numbers to the repo.
-                xc = xc.packages.${system}.xc;
               })
             ];
           };
@@ -49,11 +44,11 @@
         rec {
           default = templ;
 
-          templ = pkgs.buildGo124Module {
+          templ = pkgs.buildGoModule {
             name = "templ";
             subPackages = [ "cmd/templ" ];
             src = gitignore.lib.gitignoreSource ./.;
-            vendorHash = "sha256-pVZjZCXT/xhBCMyZdR7kEmB9jqhTwRISFp63bQf6w5A=";
+            vendorHash = "sha256-i4uDGZb3VZUvIyO2Tt53VR1Do/3OYtj6JccGoFnnlbs=";
             env = {
               CGO_ENABLED = 0;
             };
@@ -79,6 +74,7 @@
             pkgs.gopls
             pkgs.goreleaser
             pkgs.gotestsum
+            pkgs.govulncheck
             pkgs.ko # Used to build Docker images.
             pkgs.nodejs # Used to build templ-docs.
             pkgs.nodePackages.prettier # Used for formatting JS and CSS.
@@ -97,7 +93,6 @@
       # ];
       overlays.default = final: prev: {
         templ = self.packages.${final.stdenv.system}.templ;
-        templ-docs = self.packages.${final.stdenv.system}.templ-docs;
       };
     };
 }

@@ -1,0 +1,46 @@
+package testclasswhitespace
+
+// Test that whitespace is stripped from class attributes.
+templ MultilineClassAttribute() {
+	<div
+		class="
+			flex w-full h-full
+			justify-center items-center
+			hover:bg-blue-50
+		"
+	>Multiline class attribute</div>
+}
+
+templ ExtraSpaces() {
+	<div class="a    b    c">Extra spaces between classes</div>
+}
+
+templ LeadingTrailingSpaces() {
+	<div class="   a b c   ">Leading and trailing spaces</div>
+}
+
+templ TabsAndNewlines() {
+	<div
+		class="a
+	b
+
+	c"
+	>Tabs and newlines</div>
+}
+
+templ CaseInsensitive() {
+	<div CLASS="a  b  c">Uppercase CLASS attribute</div>
+}
+
+templ OtherAttributesUnchanged() {
+	<div data-class="a  b  c">Non-class attributes unchanged</div>
+}
+
+templ TestComponent() {
+	@MultilineClassAttribute()
+	@ExtraSpaces()
+	@LeadingTrailingSpaces()
+	@TabsAndNewlines()
+	@CaseInsensitive()
+	@OtherAttributesUnchanged()
+}

@@ -1,6 +1,6 @@
 # Using React with templ
 
-templ is great for server-side rendering. Combined with [HTMX](https://htmx.org/), it's even more powerful, since HTMX can be used to replace elements within the page with updated HTML fetched from the server, providing many of the benefits of React with reduced overall complexity. See [/server-side-rendering/htmx](/server-side-rendering/htmx) for an example.
+templ is great for server-side rendering. Combined with [htmx](https://htmx.org/), it's even more powerful, since htmx can be used to replace elements within the page with updated HTML fetched from the server, providing many of the benefits of React with reduced overall complexity. See [/server-side-rendering/htmx](/server-side-rendering/htmx) for an example.
 
 However, React has a huge ecosystem of rich interactive components, so being able to tap into the ecosystem is very useful.
 

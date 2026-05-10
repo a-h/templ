@@ -9,13 +9,130 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/a-h/templ/cmd/templ/generatecmd"
 	"github.com/a-h/templ/generator"
-	"github.com/fsnotify/fsnotify"
-	"github.com/google/go-cmp/cmp"
 )
+
+func TestGoFileWritten(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
+
+	templContent := []byte(`package testgofilewritten
+
+templ hello() {
+	<div>Hello</div>
+}
+`)
+	file, err := os.CreateTemp("", "*.templ")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	templFileName := file.Name()
+	goFileName := strings.TrimSuffix(templFileName, ".templ") + "_templ.go"
+	defer func() {
+		_ = file.Close()
+		if err := os.Remove(templFileName); err != nil {
+			t.Logf("Warning: failed to remove temp file %s: %v", templFileName, err)
+		}
+		if err := os.Remove(goFileName); err != nil {
+			t.Logf("Warning: failed to remove generated file %s: %v", goFileName, err)
+		}
+	}()
+
+	if _, err = file.Write(templContent); err != nil {
+		t.Fatalf("failed to write templ content: %v", err)
+	}
+	if err = file.Sync(); err != nil {
+		t.Fatalf("failed to sync file: %v", err)
+	}
+
+	dir := filepath.Dir(templFileName)
+	fseh := generatecmd.NewFSEventHandler(log, dir, false, []generator.GenerateOpt{}, false, false, generatecmd.FileWriter, false)
+
+	t.Run("first generation writes the Go file", func(t *testing.T) {
+		result, err := fseh.HandleEvent(context.Background(), fsnotify.Event{Name: templFileName, Op: fsnotify.Create})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result.GoFileWritten {
+			t.Fatal("expected GoFileWritten to be true on first generation")
+		}
+		if _, err := os.Stat(goFileName); err != nil {
+			t.Fatalf("expected generated Go file to exist: %v", err)
+		}
+	})
+
+	t.Run("second generation with unchanged content does not write", func(t *testing.T) {
+		now := time.Now().Add(time.Second)
+		if err := os.Chtimes(templFileName, now, now); err != nil {
+			t.Fatalf("failed to update file times: %v", err)
+		}
+		result, err := fseh.HandleEvent(context.Background(), fsnotify.Event{Name: templFileName, Op: fsnotify.Write})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.GoFileWritten {
+			t.Fatal("expected GoFileWritten to be false when content is unchanged")
+		}
+	})
+
+	t.Run("fresh handler skips write when Go file on disk is up to date", func(t *testing.T) {
+		goFileInfoBefore, err := os.Stat(goFileName)
+		if err != nil {
+			t.Fatalf("failed to stat generated Go file: %v", err)
+		}
+
+		now := time.Now().Add(2 * time.Second)
+		if err := os.Chtimes(templFileName, now, now); err != nil {
+			t.Fatalf("failed to update file times: %v", err)
+		}
+
+		freshHandler := generatecmd.NewFSEventHandler(log, dir, false, []generator.GenerateOpt{}, false, false, generatecmd.FileWriter, false)
+		result, err := freshHandler.HandleEvent(context.Background(), fsnotify.Event{Name: templFileName, Op: fsnotify.Create})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if result.GoFileWritten {
+			t.Fatal("expected GoFileWritten to be false when Go file on disk is already up to date")
+		}
+
+		goFileInfoAfter, err := os.Stat(goFileName)
+		if err != nil {
+			t.Fatalf("failed to stat generated Go file: %v", err)
+		}
+		if goFileInfoAfter.ModTime() != goFileInfoBefore.ModTime() {
+			t.Fatal("expected Go file not to be rewritten")
+		}
+	})
+
+	t.Run("fresh handler writes when templ content has changed", func(t *testing.T) {
+		changedContent := []byte(`package testgofilewritten
+
+templ hello() {
+	<div>Hello, World</div>
+}
+`)
+		if err := os.WriteFile(templFileName, changedContent, 0o644); err != nil {
+			t.Fatalf("failed to write changed templ content: %v", err)
+		}
+
+		freshHandler := generatecmd.NewFSEventHandler(log, dir, false, []generator.GenerateOpt{}, false, false, generatecmd.FileWriter, false)
+		result, err := freshHandler.HandleEvent(context.Background(), fsnotify.Event{Name: templFileName, Op: fsnotify.Create})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result.GoFileWritten {
+			t.Fatal("expected GoFileWritten to be true when templ content has changed")
+		}
+	})
+}
 
 // extractErrorList unwraps errors until it finds a scanner.ErrorList
 func extractErrorList(err error) (scanner.ErrorList, bool) {

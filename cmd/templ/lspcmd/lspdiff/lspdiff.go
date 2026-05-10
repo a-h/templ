@@ -8,13 +8,6 @@ import (
 
 // This package provides a way to compare LSP	protocol messages, ignoring irrelevant fields.
 
-func Hover(expected, actual protocol.Hover) string {
-	return cmp.Diff(expected, actual,
-		cmpopts.IgnoreFields(protocol.Hover{}, "Range"),
-		cmpopts.IgnoreFields(protocol.MarkupContent{}, "Kind"),
-	)
-}
-
 func CodeAction(expected, actual []protocol.CodeAction) string {
 	return cmp.Diff(expected, actual)
 }

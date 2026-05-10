@@ -5,7 +5,7 @@ This example demonstrates how to implement a simple CRUD (Create, Read, Update, 
 - Dependency injection in Go applications
 - Example code structure
 - Server-side form validation
-- Use of HTMX to carry out in-place HTML updates
+- Use of htmx to carry out in-place HTML updates
 
 ## Tasks
 

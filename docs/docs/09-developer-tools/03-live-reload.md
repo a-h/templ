@@ -100,6 +100,22 @@ In order for templ to successfully inject the reload JavaScript into the HTML re
 - The response must be compressed with no compression, or a supported compression algorithm (e.g. gzip).
 :::
 
+### Using HTTPS with the proxy
+
+If you need to use HTTPS with the proxy (for example, when testing OAuth redirects that require HTTPS), you can provide TLS certificate and key files using the `--proxy-tls-crt` and `--proxy-tls-key` flags:
+
+```bash
+templ generate --watch --proxy="http://localhost:8080" --cmd="go run ." --proxy-tls-crt="./certs/cert.pem" --proxy-tls-key="./certs/key.pem"
+```
+
+This will start the proxy on `https://localhost:7331` instead of `http://localhost:7331`.
+
+:::note
+- Both `--proxy-tls-crt` and `--proxy-tls-key` flags must be provided together.
+- The flags can only be used when the `--proxy` flag is also specified.
+- For self-signed certificates on localhost, the browser will show a security warning. You can proceed by clicking "Advanced" and then "Continue" (or the equivalent for your browser).
+:::
+
 ## Live reload process
 
 The live reload process can be shown in the following diagram:

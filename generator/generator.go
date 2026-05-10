@@ -637,6 +637,8 @@ func (g *generator) writeNode(indentLevel int, current parser.Node, next parser.
 		err = g.writeWhitespace(indentLevel, n)
 	case *parser.Text:
 		err = g.writeText(indentLevel, n)
+	case *parser.Fallthrough:
+		err = g.writeFallthrough(indentLevel)
 	case *parser.GoComment:
 		// Do not render Go comments in the output HTML.
 		return
@@ -698,6 +700,11 @@ func (g *generator) writeDocType(indentLevel int, n *parser.DocType) (err error)
 		return err
 	}
 	return nil
+}
+
+func (g *generator) writeFallthrough(indentLevel int) (err error) {
+	_, err = g.w.WriteIndent(indentLevel, "fallthrough\n")
+	return err
 }
 
 func escapeQuotes(s string) string {
@@ -1190,7 +1197,14 @@ func (g *generator) writeConstantAttribute(indentLevel int, attr *parser.Constan
 	if attr.SingleQuote {
 		quote = "'"
 	}
-	value := escapeQuotes("=" + quote + attr.Value + quote)
+
+	// Strip superfluous whitespace from class attributes.
+	attrValue := attr.Value
+	if k, ok := attr.Key.(parser.ConstantAttributeKey); ok && strings.EqualFold(k.Name, "class") {
+		attrValue = strings.Join(strings.Fields(attrValue), " ")
+	}
+
+	value := escapeQuotes("=" + quote + attrValue + quote)
 	if _, err = g.w.WriteStringLiteral(indentLevel, value); err != nil {
 		return err
 	}
@@ -1287,8 +1301,8 @@ func (g *generator) writeExpressionAttributeValueDefault(indentLevel int, attr *
 	if _, err = g.w.WriteIndent(indentLevel, "var "+vn+" string\n"); err != nil {
 		return err
 	}
-	// vn, templ_7745c5c3_Err = templ.JoinStringErrs(
-	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.JoinStringErrs("); err != nil {
+	// vn, templ_7745c5c3_Err = templ.ResolveAttributeValue(
+	if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err = templ.ResolveAttributeValue("); err != nil {
 		return err
 	}
 	// p.Name()
@@ -1307,7 +1321,7 @@ func (g *generator) writeExpressionAttributeValueDefault(indentLevel int, attr *
 	}
 
 	// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(vn)
-	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString("+vn+"))\n"); err != nil {
+	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+vn+")\n"); err != nil {
 		return err
 	}
 	return g.writeErrorHandler(indentLevel)
