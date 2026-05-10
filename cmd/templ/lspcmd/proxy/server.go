@@ -1071,14 +1071,14 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 	if !ok {
 		return
 	}
-	if err = format.ApplyPrettier(template, p.formatConf); err != nil {
-		p.Log.Error("prettier failure", slog.Any("error", err))
-		return
-	}
 	p.Log.Info("attempting to organise imports", slog.String("uri", template.Filepath))
 	template, err = imports.Process(template)
 	if err != nil {
 		p.Log.Error("organise imports failure", slog.Any("error", err))
+		return
+	}
+	if err = format.ApplyPrettier(template, p.formatConf); err != nil {
+		p.Log.Error("prettier failure", slog.Any("error", err))
 		return
 	}
 	w := new(strings.Builder)
