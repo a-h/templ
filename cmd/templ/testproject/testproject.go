@@ -39,6 +39,9 @@ func Create(moduleRoot string) (dir string, err error) {
 			data = bytes.ReplaceAll(data, []byte("{moduleRoot}"), []byte(moduleRoot))
 			target = filepath.Join(dir, "go.mod")
 		}
+		if file.Name() == "formatting.templ.txt" {
+			target = filepath.Join(dir, "formatting.templ")
+		}
 		err = os.WriteFile(target, data, 0660)
 		if err != nil {
 			return dir, fmt.Errorf("failed to copy file: %w", err)
