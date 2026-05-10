@@ -49,6 +49,89 @@ func TestIsAvailable(t *testing.T) {
 	})
 }
 
+func TestElementReturnsContentOnly(t *testing.T) {
+	tests := []struct {
+		name            string
+		content         string
+		depth           int
+		prettierCommand string
+		expected        string
+	}{
+		{
+			name:            "unchanged content at depth 0 returns original content",
+			content:         "\n\tconsole.log(\"hello\");\n",
+			depth:           0,
+			prettierCommand: "cat",
+			expected:        "\n\tconsole.log(\"hello\");\n",
+		},
+		{
+			name:            "unchanged content at depth 1 returns original content",
+			content:         "\n\tconsole.log(\"hello\");\n",
+			depth:           1,
+			prettierCommand: "cat",
+			expected:        "\n\tconsole.log(\"hello\");\n",
+		},
+		{
+			name:            "unchanged content at depth 2 returns original content",
+			content:         "\n\tconsole.log(\"hello\");\n",
+			depth:           2,
+			prettierCommand: "cat",
+			expected:        "\n\tconsole.log(\"hello\");\n",
+		},
+	}
+
+	prettierAvailable := IsAvailable(DefaultCommand())
+	if prettierAvailable {
+		tests = append(tests, []struct {
+			name            string
+			content         string
+			depth           int
+			prettierCommand string
+			expected        string
+		}{
+			{
+				name:            "simple console.log at depth 0",
+				content:         "\n\tconsole.log(\"Hello, World!\");\n",
+				depth:           0,
+				prettierCommand: DefaultCommand(),
+			},
+			{
+				name:            "simple console.log at depth 2",
+				content:         "\n\t\tconsole.log(\"Hello, World!\");\n\t",
+				depth:           2,
+				prettierCommand: DefaultCommand(),
+			},
+			{
+				name:            "functions with empty bodies at depth 1",
+				content:         "\n\t\tfunction func1(e) {\n\t\t}\n\t\tfunction func2() {\n\t\t}\n\t",
+				depth:           1,
+				prettierCommand: DefaultCommand(),
+			},
+		}...)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Element("script", "", tt.content, tt.depth, tt.prettierCommand)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tt.expected != "" && got != tt.expected {
+				t.Errorf("got %q, expected %q", got, tt.expected)
+			}
+			if strings.Contains(got, "data-templ-depth") {
+				t.Errorf("data-templ-depth leaked into output:\n%s", got)
+			}
+			if strings.Contains(got, "<script>") || strings.Contains(got, "</script>") {
+				t.Errorf("script tags leaked into content:\n%s", got)
+			}
+			if strings.Contains(got, "<div") || strings.Contains(got, "</div>") {
+				t.Errorf("div tags leaked into content:\n%s", got)
+			}
+		})
+	}
+}
+
 func TestGetCommand(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -1519,10 +1519,7 @@ func (se *StringExpression) Trailing() TrailingSpace {
 func (se *StringExpression) IsNode() bool                  { return true }
 func (se *StringExpression) IsStyleDeclarationValue() bool { return true }
 func (se *StringExpression) Write(w io.Writer, indent int) error {
-	if isWhitespace(se.Expression.Value) {
-		se.Expression.Value = ""
-	}
-	return writeIndent(w, indent, `{ `, se.Expression.Value, ` }`)
+	return writeIndent(w, indent, `{ `, strings.TrimSpace(se.Expression.Value), ` }`)
 }
 
 func (se *StringExpression) Visit(v Visitor) error {

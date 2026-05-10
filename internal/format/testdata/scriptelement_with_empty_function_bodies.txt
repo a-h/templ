@@ -1,0 +1,21 @@
+-- in --
+package templates
+
+templ anything() {
+	<script>
+		function func1(e) {
+		}
+		function func2() {
+		}
+	</script>
+}
+
+-- out --
+package templates
+
+templ anything() {
+	<script>
+		function func1(e) {}
+		function func2() {}
+	</script>
+}

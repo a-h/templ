@@ -42,6 +42,14 @@ func TestFormatting(t *testing.T) {
 					t.Errorf("Expected %d lines, got %d lines", len(expectedLines), len(actualLines))
 				}
 			}
+
+			secondPass, _, err := Templ(actual, "", Config{PrettierRequired: true})
+			if err != nil {
+				t.Fatalf("failed to format output a second time: %v", err)
+			}
+			if diff := cmp.Diff(string(actual), string(secondPass)); diff != "" {
+				t.Errorf("expected formatting to be idempotent, but second pass differs:\n%s", diff)
+			}
 		})
 	}
 }

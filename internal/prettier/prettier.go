@@ -106,7 +106,7 @@ func Element(name string, typeAttrValue string, content string, depth int, prett
 		return "", fmt.Errorf("prettier error: %w", err)
 	}
 	if before == after {
-		return before, nil
+		return content, nil
 	}
 
 	// Chop off the start and end divs we added to get prettier to format the content with correct
@@ -114,14 +114,14 @@ func Element(name string, typeAttrValue string, content string, depth int, prett
 	matcher := htmlfind.Element(name)
 	nodes, err := htmlfind.AllReader(strings.NewReader(after), matcher)
 	if err != nil {
-		return before, fmt.Errorf("htmlfind error: %w", err)
+		return content, fmt.Errorf("htmlfind error: %w", err)
 	}
 	if len(nodes) != 1 {
-		return before, fmt.Errorf("expected 1 %q node, got %d", name, len(nodes))
+		return content, fmt.Errorf("expected 1 %q node, got %d", name, len(nodes))
 	}
 	scriptNode := nodes[0]
 	if scriptNode.FirstChild == nil {
-		return before, fmt.Errorf("%q node has no children", name)
+		return content, fmt.Errorf("%q node has no children", name)
 	}
 	var sb strings.Builder
 	for node := range scriptNode.ChildNodes() {

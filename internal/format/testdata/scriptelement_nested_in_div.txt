@@ -1,0 +1,29 @@
+-- in --
+package test
+
+templ TestScriptSimple() {
+	<div>
+		<h1>Test Page</h1>
+		<script>
+			console.log("Hello, World!");
+			function test() {
+				return "test";
+			}
+		</script>
+	</div>
+}
+
+-- out --
+package test
+
+templ TestScriptSimple() {
+	<div>
+		<h1>Test Page</h1>
+		<script>
+			console.log("Hello, World!");
+			function test() {
+				return "test";
+			}
+		</script>
+	</div>
+}
