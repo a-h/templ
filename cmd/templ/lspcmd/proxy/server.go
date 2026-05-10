@@ -418,7 +418,7 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 			continue
 		}
 		for di, diag := range r.Diagnostics {
-			r.Diagnostics[di].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, diag.Range)
+			r.Diagnostics[di].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, diag.Range)
 		}
 		convertWorkspaceEdit(p.SourceMapCache, p.Log, r.Edit)
 		updatedResults = append(updatedResults, r)
@@ -447,7 +447,7 @@ func (p *Server) CodeLens(ctx context.Context, params *lsp.CodeLensParams) (resu
 		return
 	}
 	for i, cl := range result {
-		cl.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, cl.Range)
+		cl.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, cl.Range)
 		result[i] = cl
 	}
 	return
@@ -481,7 +481,7 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 	}
 	for i, r := range result {
 		if r.TextEdit != nil {
-			r.TextEdit.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, r.TextEdit.Range)
+			r.TextEdit.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.TextEdit.Range)
 		}
 		result[i] = r
 	}
@@ -540,12 +540,12 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		item.FilterText = stripTemplStringable(item.FilterText)
 		if item.TextEdit != nil {
 			if item.TextEdit.TextEdit != nil {
-				item.TextEdit.TextEdit.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, item.TextEdit.TextEdit.Range)
+				item.TextEdit.TextEdit.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, item.TextEdit.TextEdit.Range)
 				item.TextEdit.TextEdit.NewText = stripTemplStringable(item.TextEdit.TextEdit.NewText)
 			}
 			if item.TextEdit.InsertReplaceEdit != nil {
-				item.TextEdit.InsertReplaceEdit.Insert = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, item.TextEdit.InsertReplaceEdit.Insert)
-				item.TextEdit.InsertReplaceEdit.Replace = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, item.TextEdit.InsertReplaceEdit.Replace)
+				item.TextEdit.InsertReplaceEdit.Insert = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, item.TextEdit.InsertReplaceEdit.Insert)
+				item.TextEdit.InsertReplaceEdit.Replace = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, item.TextEdit.InsertReplaceEdit.Replace)
 				item.TextEdit.InsertReplaceEdit.NewText = stripTemplStringable(item.TextEdit.InsertReplaceEdit.NewText)
 			}
 		}
@@ -885,7 +885,7 @@ func (p *Server) DocumentColor(ctx context.Context, params *lsp.DocumentColorPar
 		return
 	}
 	for i, r := range result {
-		result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, r.Range)
+		result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.Range)
 	}
 	return
 }
@@ -911,7 +911,7 @@ func (p *Server) DocumentHighlight(ctx context.Context, params *lsp.DocumentHigh
 	}
 	if isTempl {
 		for i, r := range result {
-			result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, r.Range)
+			result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.Range)
 		}
 	}
 	return
@@ -953,7 +953,7 @@ func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLi
 		return
 	}
 	result.Target = templURI
-	result.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, result.Range)
+	result.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, result.Range)
 	return
 }
 
@@ -982,7 +982,7 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 		}
 		if s.SymbolInformation != nil {
 			s.SymbolInformation.Location.URI = templURI
-			s.SymbolInformation.Location.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, s.SymbolInformation.Location.Range)
+			s.SymbolInformation.Location.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, s.SymbolInformation.Location.Range)
 			result = append(result, s)
 		}
 	}
@@ -1013,7 +1013,7 @@ func (p *Server) convertSymbolRange(templURI lsp.DocumentURI, s *lsp.DocumentSym
 	}
 	// Within the symbol, we can select sub-sections.
 	// These are Go expressions, in the standard source map.
-	s.SelectionRange = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, s.SelectionRange)
+	s.SelectionRange = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, s.SelectionRange)
 	for i := range s.Children {
 		p.convertSymbolRange(templURI, &s.Children[i])
 		if !isRangeWithin(s.Range, s.Children[i].Range) {
@@ -1119,7 +1119,7 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 		return
 	}
 	if result != nil && result.Range != nil && isTempl {
-		r := convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, *result.Range)
+		r := convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, *result.Range)
 		result.Range = &r
 	}
 	return
@@ -1165,7 +1165,7 @@ func (p *Server) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTyp
 	}
 	if isTempl {
 		for i, r := range result {
-			result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, r.Range)
+			result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.Range)
 		}
 	}
 	return
@@ -1188,7 +1188,7 @@ func (p *Server) PrepareRename(ctx context.Context, params *lsp.PrepareRenamePar
 		return
 	}
 	if isTempl {
-		output := convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, *result)
+		output := convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, *result)
 		return &output, nil
 	}
 	return
@@ -1212,7 +1212,7 @@ func (p *Server) RangeFormatting(ctx context.Context, params *lsp.DocumentRangeF
 		return
 	}
 	for i, r := range result {
-		result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log,templURI, r.Range)
+		result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.Range)
 	}
 	return
 }
