@@ -25,7 +25,7 @@ jobs:
       - uses: sigstore/cosign-installer@v3.7.0
         with:
           cosign-release: v2.2.3
-      - uses: goreleaser/goreleaser-action@v5
+      - uses: goreleaser/goreleaser-action@v7
         with:
           version: v1.24.0
           args: release --clean
