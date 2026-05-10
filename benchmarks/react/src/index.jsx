@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as Server from 'react-dom/server'
-import Benchmark from 'benchmark';
+import { performance } from 'node:perf_hooks';
 
 const component = (p) =>
         <div>
@@ -16,19 +16,20 @@ const p = {
         Email: "luiz@example.com",
 };
 
+// Warm up.
+for (let i = 0; i < 1000; i++) {
+        Server.renderToString(component(p));
+}
+
 // Benchmark.
-// Outputs...
-// Render test x 114,131 ops/sec ±0.27% (97 runs sampled)
-// There are 1,000,000,000 nanoseconds in a second.
-// 1,000,000,000ns / 114,131 ops = 8,757.5 ns per operation.
-// The templ equivalent is 340 ns per operation.
-const suite = new Benchmark.Suite;
+const iterations = 100000;
+const start = performance.now();
+for (let i = 0; i < iterations; i++) {
+        Server.renderToString(component(p));
+}
+const elapsed = performance.now() - start;
+const opsPerSec = Math.round(iterations / (elapsed / 1000));
+const nsPerOp = Math.round((elapsed / iterations) * 1e6);
 
-const test = suite.add('Render test',
-        () => Server.renderToString(component(p)))
-
-test.on('cycle', (event) => {
-        console.log(String(event.target));
-});
-
-test.run();
+console.log(`Render test x ${opsPerSec.toLocaleString()} ops/sec`);
+console.log(`${nsPerOp.toLocaleString()} ns/op`);

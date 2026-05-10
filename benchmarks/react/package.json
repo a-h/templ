@@ -4,16 +4,14 @@
   "description": "",
   "main": "./src/index.jsx",
   "scripts": {
-    "build": "esbuild ./src/index.jsx --bundle --outfile=index.js",
+    "build": "esbuild ./src/index.jsx --bundle --platform=node --outfile=index.js",
     "start": "node index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "benchmark": "^2.1.4",
     "esbuild": "0.25.0",
-    "microtime": "^3.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   }
 }
