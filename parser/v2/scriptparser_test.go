@@ -91,6 +91,10 @@ func TestScriptElementParser(t *testing.T) {
 								To:   Position{Index: 12, Line: 0, Col: 12},
 							},
 						},
+						ValueRange: Range{
+							From: Position{Index: 14, Line: 0, Col: 14},
+							To:   Position{Index: 22, Line: 0, Col: 22},
+						},
 						Range: Range{
 							From: Position{Index: 8, Line: 0, Col: 8},
 							To:   Position{Index: 23, Line: 0, Col: 23},
@@ -143,6 +147,10 @@ func TestScriptElementParser(t *testing.T) {
 							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
 					},
+					ValueRange: Range{
+						From: Position{Index: 14, Line: 0, Col: 14},
+						To:   Position{Index: 29, Line: 0, Col: 29},
+					},
 					Range: Range{
 						From: Position{Index: 8, Line: 0, Col: 8},
 						To:   Position{Index: 30, Line: 0, Col: 30},
@@ -181,6 +189,10 @@ func TestScriptElementParser(t *testing.T) {
 							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
 					},
+					ValueRange: Range{
+						From: Position{Index: 14, Line: 0, Col: 14},
+						To:   Position{Index: 20, Line: 0, Col: 20},
+					},
 					Range: Range{
 						From: Position{Index: 8, Line: 0, Col: 8},
 						To:   Position{Index: 21, Line: 0, Col: 21},
@@ -218,6 +230,10 @@ func TestScriptElementParser(t *testing.T) {
 							From: Position{Index: 8, Line: 0, Col: 8},
 							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
+					},
+					ValueRange: Range{
+						From: Position{Index: 14, Line: 0, Col: 14},
+						To:   Position{Index: 24, Line: 0, Col: 24},
 					},
 					Range: Range{
 						From: Position{Index: 8, Line: 0, Col: 8},
@@ -448,6 +464,10 @@ set tier_1 to #tier-1's value
 							From: Position{Index: 8, Line: 0, Col: 8},
 							To:   Position{Index: 12, Line: 0, Col: 12},
 						},
+					},
+					ValueRange: Range{
+						From: Position{Index: 14, Line: 0, Col: 14},
+						To:   Position{Index: 30, Line: 0, Col: 30},
 					},
 					Range: Range{
 						From: Position{Index: 8, Line: 0, Col: 8},

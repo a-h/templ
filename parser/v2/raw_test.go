@@ -33,6 +33,10 @@ func TestRawElementParser(t *testing.T) {
 								To:   Position{Index: 11, Line: 0, Col: 11},
 							},
 						},
+						ValueRange: Range{
+							From: Position{Index: 13, Line: 0, Col: 13},
+							To:   Position{Index: 21, Line: 0, Col: 21},
+						},
 						Range: Range{
 							From: Position{Index: 7, Line: 0, Col: 7},
 							To:   Position{Index: 22, Line: 0, Col: 22},
@@ -60,6 +64,10 @@ func TestRawElementParser(t *testing.T) {
 								From: Position{Index: 7, Line: 0, Col: 7},
 								To:   Position{Index: 11, Line: 0, Col: 11},
 							},
+						},
+						ValueRange: Range{
+							From: Position{Index: 13, Line: 0, Col: 13},
+							To:   Position{Index: 21, Line: 0, Col: 21},
 						},
 						Range: Range{
 							From: Position{Index: 7, Line: 0, Col: 7},
