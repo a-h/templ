@@ -45,6 +45,15 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, m
 	if pi.Position().Line != l {
 		e.IndentAttrs = true
 	}
+	// Conditional attributes are always multi-line when formatted, so indent all attributes.
+	if !e.IndentAttrs {
+		for _, a := range e.Attributes {
+			if _, ok := a.(*ConditionalAttribute); ok {
+				e.IndentAttrs = true
+				break
+			}
+		}
+	}
 
 	// Optional whitespace.
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {

@@ -1,0 +1,20 @@
+-- in --
+package test
+
+templ conditionalAttributes(mode string) {
+	<div id="waveform-loading" if mode == "file" { style="display:flex;" } else { style="display:none;" }>
+	</div>
+}
+-- out --
+package test
+
+templ conditionalAttributes(mode string) {
+	<div
+		id="waveform-loading"
+		if mode == "file" {
+			style="display:flex;"
+		} else {
+			style="display:none;"
+		}
+	></div>
+}
