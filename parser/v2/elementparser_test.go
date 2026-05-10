@@ -2690,7 +2690,6 @@ func TestElementParser(t *testing.T) {
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 35, Line: 0, Col: 35},
-
 				},
 			},
 		},
