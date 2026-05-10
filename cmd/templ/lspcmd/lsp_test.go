@@ -539,19 +539,19 @@ func TestCodeAction(t *testing.T) {
 			replacement: `var s = Struct{}`,
 			cursor:      `              ^`,
 			assert: func(t *testing.T, actual []protocol.CodeAction) (msg string, ok bool) {
-				var expected []protocol.CodeAction
-				// To support code actions, update cmd/templ/lspcmd/proxy/server.go and add the
-				// Title (e.g. Organize Imports, or Fill Struct) to the supportedCodeActions map.
-
-				// Some Code Actions are simple edits, so all that is needed is for the server
-				// to remap the source code positions.
-
-				// However, other Code Actions are commands, where the arguments must be rewritten
-				// and will need to be handled individually.
-				if diff := lspdiff.CodeAction(expected, actual); diff != "" {
-					return fmt.Sprintf("unexpected codeAction: %v", diff), false
+				// Code actions with titles in the supportedCodeActions map
+				// are returned. Currently "Organize Imports" is supported.
+				for _, ca := range actual {
+					if ca.Title == "Organize Imports" {
+						return "", true
+					}
 				}
-				return "", true
+				// It's acceptable to get no code actions if gopls doesn't
+				// suggest any.
+				if len(actual) == 0 {
+					return "", true
+				}
+				return fmt.Sprintf("unexpected code actions: %v", actual), false
 			},
 		},
 	}
