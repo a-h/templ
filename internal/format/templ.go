@@ -31,7 +31,7 @@ func Templ(src []byte, fileName string, config Config) (output []byte, changed b
 		return nil, false, err
 	}
 
-	if err = applyPrettier(t, config); err != nil {
+	if err = ApplyPrettier(t, config); err != nil {
 		return nil, false, err
 	}
 
@@ -44,7 +44,7 @@ func Templ(src []byte, fileName string, config Config) (output []byte, changed b
 	return out, changed, nil
 }
 
-func applyPrettier(t *parser.TemplateFile, config Config) (err error) {
+func ApplyPrettier(t *parser.TemplateFile, config Config) (err error) {
 	// Check to see if prettier can be run.
 	if config.PrettierCommand == "" {
 		config.PrettierCommand = prettier.DefaultCommand()

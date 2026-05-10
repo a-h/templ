@@ -16,6 +16,8 @@ import (
 	"github.com/a-h/templ/cmd/templ/generatecmd/modcheck"
 	"github.com/a-h/templ/cmd/templ/lspcmd/lspdiff"
 	"github.com/a-h/templ/cmd/templ/testproject"
+	"github.com/a-h/templ/internal/format"
+	"github.com/a-h/templ/internal/prettier"
 	"github.com/a-h/templ/lsp/jsonrpc2"
 	"github.com/a-h/templ/lsp/protocol"
 	"github.com/a-h/templ/lsp/uri"
@@ -36,7 +38,7 @@ func TestCompletion(t *testing.T) {
 		}
 	}()
 
-	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log, Arguments{})
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 	}
@@ -185,7 +187,7 @@ func TestHover(t *testing.T) {
 		}
 	}()
 
-	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log, Arguments{})
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 	}
@@ -336,7 +338,7 @@ func TestReferences(t *testing.T) {
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log, Arguments{})
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 		return
@@ -503,7 +505,7 @@ func TestCodeAction(t *testing.T) {
 		}
 	}()
 
-	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log, Arguments{})
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 	}
@@ -632,7 +634,7 @@ func TestDocumentSymbol(t *testing.T) {
 		}
 	}()
 
-	ctx, appDir, _, server, teardown, err := Setup(ctx, log)
+	ctx, appDir, _, server, teardown, err := Setup(ctx, log, Arguments{})
 	if err != nil {
 		t.Fatalf("failed to setup test: %v", err)
 	}
@@ -757,6 +759,138 @@ func TestDocumentSymbol(t *testing.T) {
 	}
 }
 
+func TestFormatting(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+
+	tests := []struct {
+		name       string
+		formatConf format.Config
+	}{
+		{
+			name: "without prettier",
+		},
+		{
+			name:       "with prettier",
+			formatConf: format.Config{PrettierRequired: true},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.formatConf.PrettierRequired && !prettier.IsAvailable(prettier.DefaultCommand()) {
+				t.Skip("prettier is not available")
+			}
+
+			ctx, cancel := context.WithCancel(context.Background())
+			testOutput := bytes.NewBuffer(nil)
+			log := slog.New(slog.NewJSONHandler(testOutput, nil))
+			defer func() {
+				if t.Failed() {
+					fmt.Println(testOutput.String())
+				}
+			}()
+
+			ctx, appDir, _, server, teardown, err := Setup(ctx, log, Arguments{
+				FormatConfig: test.formatConf,
+			})
+			if err != nil {
+				t.Fatalf("failed to setup test: %v", err)
+			}
+			defer teardown(t)
+			defer cancel()
+
+			templFile, err := os.ReadFile(appDir + "/formatting.templ")
+			if err != nil {
+				t.Fatalf("failed to read file %q: %v", appDir+"/formatting.templ", err)
+			}
+			err = server.DidOpen(ctx, &protocol.DidOpenTextDocumentParams{
+				TextDocument: protocol.TextDocumentItem{
+					URI:        uri.URI("file://" + appDir + "/formatting.templ"),
+					LanguageID: "templ",
+					Version:    1,
+					Text:       string(templFile),
+				},
+			})
+			if err != nil {
+				t.Fatalf("failed to register open file: %v", err)
+			}
+
+			log.Info("Calling Formatting")
+			var edits []protocol.TextEdit
+			for range 3 {
+				edits, err = server.Formatting(ctx, &protocol.DocumentFormattingParams{
+					TextDocument: protocol.TextDocumentIdentifier{
+						URI: uri.URI("file://" + appDir + "/formatting.templ"),
+					},
+				})
+				if err != nil {
+					t.Fatalf("failed to format: %v", err)
+				}
+				if len(edits) > 0 {
+					break
+				}
+				time.Sleep(time.Millisecond * 500)
+			}
+			if len(edits) == 0 {
+				t.Fatal("expected formatting edits, got none")
+			}
+
+			// Apply edits to the original content.
+			actual := applyTextEdits(string(templFile), edits)
+
+			// Produce expected output using format.Templ (the same formatter templ fmt uses).
+			expected, _, err := format.Templ(templFile, "formatting.templ", test.formatConf)
+			if err != nil {
+				t.Fatalf("failed to format with format.Templ: %v", err)
+			}
+
+			if diff := cmp.Diff(string(expected), actual); diff != "" {
+				t.Errorf("formatting mismatch (-expected +actual):\n%s", diff)
+			}
+		})
+	}
+}
+
+func applyTextEdits(content string, edits []protocol.TextEdit) string {
+	lines := strings.Split(content, "\n")
+	for _, edit := range edits {
+		startLine := int(edit.Range.Start.Line)
+		startChar := int(edit.Range.Start.Character)
+		endLine := int(edit.Range.End.Line)
+		endChar := int(edit.Range.End.Character)
+
+		// Build the text before the edit range.
+		var before string
+		if startLine < len(lines) {
+			line := lines[startLine]
+			if startChar <= len(line) {
+				before = strings.Join(lines[:startLine], "\n")
+				if startLine > 0 {
+					before += "\n"
+				}
+				before += line[:startChar]
+			}
+		}
+
+		// Build the text after the edit range.
+		var after string
+		if endLine < len(lines) {
+			line := lines[endLine]
+			if endChar <= len(line) {
+				after = line[endChar:]
+				if endLine+1 < len(lines) {
+					after += "\n" + strings.Join(lines[endLine+1:], "\n")
+				}
+			}
+		}
+
+		content = before + edit.NewText + after
+		lines = strings.Split(content, "\n")
+	}
+	return content
+}
+
 func runeIndexToUTF8ByteIndex(s string, runeIndex int) (lspChar uint32, err error) {
 	for i, r := range []rune(s) {
 		if i == runeIndex {
@@ -841,7 +975,7 @@ func (tc TestClient) WorkspaceFolders(ctx context.Context) (result []protocol.Wo
 	return nil, nil
 }
 
-func Setup(ctx context.Context, log *slog.Logger) (clientCtx context.Context, appDir string, client protocol.Client, server protocol.Server, teardown func(t *testing.T), err error) {
+func Setup(ctx context.Context, log *slog.Logger, args Arguments) (clientCtx context.Context, appDir string, client protocol.Client, server protocol.Server, teardown func(t *testing.T), err error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return ctx, appDir, client, server, teardown, fmt.Errorf("could not find working dir: %w", err)
@@ -874,7 +1008,7 @@ func Setup(ctx context.Context, log *slog.Logger) (clientCtx context.Context, ap
 		defer wg.Done()
 		log.Info("Running")
 		// Create the server that the client needs.
-		cmdErr = run(ctx, log, serverStream, Arguments{})
+		cmdErr = run(ctx, log, serverStream, args)
 		if cmdErr != nil {
 			log.Error("Failed to run", slog.Any("error", cmdErr))
 		}
