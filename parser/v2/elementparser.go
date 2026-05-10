@@ -317,6 +317,7 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 	}
 
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		pi.Seek(start)
 		return attr, false, err
 	}
 
@@ -327,6 +328,7 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 	}
 
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		pi.Seek(start)
 		return attr, false, err
 	}
 
@@ -336,6 +338,7 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 	}
 
 	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		pi.Seek(start)
 		return attr, false, err
 	}
 
@@ -353,7 +356,7 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 		return
 	}
 	initializerEndIndex := pi.Index()
-	attr.InitializerRange = NewRange(pi.PositionAt(initializerStartIndex), pi.PositionAt(initializerEndIndex))
+	attr.AttributeStartRange = NewRange(pi.PositionAt(initializerStartIndex), pi.PositionAt(initializerEndIndex))
 
 	attr.Range = NewRange(pi.PositionAt(attrStart), pi.Position())
 

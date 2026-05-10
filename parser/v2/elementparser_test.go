@@ -304,7 +304,7 @@ if test {` + " " + `
 								},
 							},
 						},
-						InitializerRange: Range{
+						AttributeStartRange: Range{
 							From: Position{Index: 44, Line: 4, Col: 5},
 							To:   Position{Index: 56, Line: 4, Col: 17},
 						},
@@ -1172,7 +1172,7 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
-						InitializerRange: Range{
+						AttributeStartRange: Range{
 							From: Position{Index: 7, Line: 0, Col: 7},
 							To:   Position{Index: 18, Line: 0, Col: 18},
 						},
@@ -1427,7 +1427,7 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
-						InitializerRange: Range{
+						AttributeStartRange: Range{
 							From: Position{Index: 20, Line: 0, Col: 20},
 							To:   Position{Index: 52, Line: 0, Col: 52},
 						},
@@ -2224,7 +2224,7 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
-						InitializerRange: Range{
+						AttributeStartRange: Range{
 							From: Position{Index: 50, Line: 0, Col: 50},
 							To:   Position{Index: 90, Line: 0, Col: 90},
 						},
@@ -2451,7 +2451,7 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
-						InitializerRange: Range{
+						AttributeStartRange: Range{
 							From: Position{Index: 44, Line: 0, Col: 44},
 							To:   Position{Index: 54, Line: 0, Col: 54},
 						},
@@ -2500,7 +2500,7 @@ func TestElementParser(t *testing.T) {
 								},
 							},
 						},
-						InitializerRange: Range{
+						AttributeStartRange: Range{
 							From: Position{Index: 12, Line: 0, Col: 12},
 							To:   Position{Index: 24, Line: 0, Col: 24},
 						},

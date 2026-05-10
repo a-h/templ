@@ -950,10 +950,10 @@ func (bea *BoolExpressionAttribute) Copy() Attribute {
 
 // href={ ... }
 type ExpressionAttribute struct {
-	Key              AttributeKey
-	Expression       Expression
-	InitializerRange Range
-	Range            Range
+	Key                 AttributeKey
+	Expression          Expression
+	AttributeStartRange Range
+	Range               Range
 }
 
 func (ea *ExpressionAttribute) String() string {
@@ -1014,10 +1014,10 @@ func (ea *ExpressionAttribute) Visit(v Visitor) error {
 
 func (ea *ExpressionAttribute) Copy() Attribute {
 	return &ExpressionAttribute{
-		Expression:       ea.Expression,
-		Key:              ea.Key,
-		InitializerRange: ea.InitializerRange,
-		Range:            ea.Range,
+		Expression:          ea.Expression,
+		Key:                 ea.Key,
+		AttributeStartRange: ea.AttributeStartRange,
+		Range:               ea.Range,
 	}
 }
 
