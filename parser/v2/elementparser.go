@@ -110,6 +110,7 @@ type attributeValueParser struct {
 	EqualsAndQuote parse.Parser[string]
 	Suffix         parse.Parser[string]
 	UseSingleQuote bool
+	ConsumeSuffix  bool
 }
 
 func (avp attributeValueParser) Parse(pi *parse.Input) (value string, valueRange Range, ok bool, err error) {
@@ -128,6 +129,9 @@ func (avp attributeValueParser) Parse(pi *parse.Input) (value string, valueRange
 		pi.Seek(start)
 		return
 	}
+	if !avp.ConsumeSuffix {
+		pi.Seek(valueEnd)
+	}
 	return value, valueRange, true, nil
 }
 
@@ -135,13 +139,13 @@ func (avp attributeValueParser) Parse(pi *parse.Input) (value string, valueRange
 var (
 	attributeValueParsers = []attributeValueParser{
 		// Double quoted.
-		{EqualsAndQuote: parse.StringFrom(parse.OptionalWhitespace, parse.String(`="`)), Suffix: parse.String(`"`), UseSingleQuote: false},
+		{EqualsAndQuote: parse.StringFrom(parse.OptionalWhitespace, parse.String(`="`)), Suffix: parse.String(`"`), UseSingleQuote: false, ConsumeSuffix: true},
 		// Single quoted.
-		{EqualsAndQuote: parse.StringFrom(parse.OptionalWhitespace, parse.String(`='`)), Suffix: parse.String(`'`), UseSingleQuote: true},
+		{EqualsAndQuote: parse.StringFrom(parse.OptionalWhitespace, parse.String(`='`)), Suffix: parse.String(`'`), UseSingleQuote: true, ConsumeSuffix: true},
 		// Unquoted.
 		// A valid unquoted attribute value in HTML is any string of text that is not an empty string,
 		// and that doesn’t contain spaces, tabs, line feeds, form feeds, carriage returns, ", ', `, =, <, or >.
-		{EqualsAndQuote: parse.StringFrom(parse.OptionalWhitespace, parse.String("=")), Suffix: parse.Any(parse.RuneIn(" \t\n\r\"'`=<>/"), parse.EOF[string]()), UseSingleQuote: false},
+		{EqualsAndQuote: parse.StringFrom(parse.OptionalWhitespace, parse.String("=")), Suffix: parse.Any(parse.RuneIn(" \t\n\r\"'`=<>/"), parse.EOF[string]()), UseSingleQuote: false, ConsumeSuffix: false},
 	}
 	constantAttributeParser = parse.Func(func(pi *parse.Input) (attr *ConstantAttribute, ok bool, err error) {
 		start := pi.Index()

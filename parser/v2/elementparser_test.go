@@ -2377,7 +2377,7 @@ func TestElementParser(t *testing.T) {
 						},
 						Range: Range{
 							From: Position{Index: 4, Line: 0, Col: 4},
-							To:   Position{Index: 20, Line: 0, Col: 20},
+							To:   Position{Index: 19, Line: 0, Col: 19},
 						},
 					},
 				},
@@ -2412,7 +2412,7 @@ func TestElementParser(t *testing.T) {
 						},
 						Range: Range{
 							From: Position{Index: 4, Line: 0, Col: 4},
-							To:   Position{Index: 20, Line: 0, Col: 20},
+							To:   Position{Index: 19, Line: 0, Col: 19},
 						},
 					},
 					&BoolConstantAttribute{
@@ -2513,6 +2513,94 @@ func TestElementParser(t *testing.T) {
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 31, Line: 0, Col: 31},
+				},
+			},
+		},
+		{
+			name:  "element: non-self-closing with unquoted attribute",
+			input: `<div id=main></div>`,
+			expected: &Element{
+				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				Attributes: []Attribute{
+					&ConstantAttribute{
+						Value: "main",
+						Key: ConstantAttributeKey{
+							Name: "id",
+							NameRange: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 7, Line: 0, Col: 7},
+							},
+						},
+						ValueRange: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
+					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 19, Line: 0, Col: 19},
+				},
+			},
+		},
+		{
+			name:  "element: non-self-closing with multiple unquoted attributes",
+			input: `<div id=main class=container></div>`,
+			expected: &Element{
+				Name: "div",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 4, Line: 0, Col: 4},
+				},
+				Attributes: []Attribute{
+					&ConstantAttribute{
+						Value: "main",
+						Key: ConstantAttributeKey{
+							Name: "id",
+							NameRange: Range{
+								From: Position{Index: 5, Line: 0, Col: 5},
+								To:   Position{Index: 7, Line: 0, Col: 7},
+							},
+						},
+						ValueRange: Range{
+							From: Position{Index: 8, Line: 0, Col: 8},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
+						Range: Range{
+							From: Position{Index: 5, Line: 0, Col: 5},
+							To:   Position{Index: 12, Line: 0, Col: 12},
+						},
+					},
+					&ConstantAttribute{
+						Value: "container",
+						Key: ConstantAttributeKey{
+							Name: "class",
+							NameRange: Range{
+								From: Position{Index: 13, Line: 0, Col: 13},
+								To:   Position{Index: 18, Line: 0, Col: 18},
+							},
+						},
+						ValueRange: Range{
+							From: Position{Index: 19, Line: 0, Col: 19},
+							To:   Position{Index: 28, Line: 0, Col: 28},
+						},
+						Range: Range{
+							From: Position{Index: 13, Line: 0, Col: 13},
+							To:   Position{Index: 28, Line: 0, Col: 28},
+						},
+					},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 35, Line: 0, Col: 35},
 				},
 			},
 		},
@@ -2662,6 +2750,11 @@ func TestElementFormatting(t *testing.T) {
 			input: `<div data-line-data='&'></div>`,
 			// templ formatting prefers double quotes.
 			expected: `<div data-line-data="&"></div>`,
+		},
+		{
+			name:     "unquoted attributes are formatted with double quotes",
+			input:    `<div id=main></div>`,
+			expected: `<div id="main"></div>`,
 		},
 	}
 	for _, tt := range tests {
