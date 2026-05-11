@@ -1,0 +1,13 @@
+-- in --
+package test
+
+templ hello() {
+	<div style="display:flex;justify-content:center;"></div>
+}
+
+-- out --
+package test
+
+templ hello() {
+	<div style="display: flex; justify-content: center"></div>
+}

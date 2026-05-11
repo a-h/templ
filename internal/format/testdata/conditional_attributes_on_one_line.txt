@@ -12,9 +12,9 @@ templ conditionalAttributes(mode string) {
 	<div
 		id="waveform-loading"
 		if mode == "file" {
-			style="display:flex;"
+			style="display: flex"
 		} else {
-			style="display:none;"
+			style="display: none"
 		}
 	></div>
 }

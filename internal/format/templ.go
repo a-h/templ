@@ -65,6 +65,10 @@ func ApplyPrettier(t *parser.TemplateFile, config Config) (err error) {
 		for _, child := range n.Children {
 			calculateNodeDepth(child, nodeToDepth, 1)
 		}
+		// Format constant attribute values in a single prettier batch.
+		if err := Attributes(n.Children, config.PrettierCommand); err != nil {
+			return err
+		}
 		// Now that we have the depth of each node, we can format them.
 		for _, child := range n.Children {
 			if err := child.Visit(nodeFormatter); err != nil {

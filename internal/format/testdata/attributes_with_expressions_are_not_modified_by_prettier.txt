@@ -1,0 +1,13 @@
+-- in --
+package test
+
+templ hello(classes string) {
+	<div class={ classes } style="display:flex;" data-value={ getValue() }></div>
+}
+
+-- out --
+package test
+
+templ hello(classes string) {
+	<div class={ classes } style="display: flex" data-value={ getValue() }></div>
+}

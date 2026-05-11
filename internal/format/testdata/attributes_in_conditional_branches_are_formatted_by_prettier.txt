@@ -1,0 +1,25 @@
+-- in --
+package test
+
+templ hello(active bool) {
+	<div
+		if active {
+			style="display:flex;color:red;"
+		} else {
+			style="display:none;color:blue;"
+		}
+	></div>
+}
+
+-- out --
+package test
+
+templ hello(active bool) {
+	<div
+		if active {
+			style="display: flex; color: red"
+		} else {
+			style="display: none; color: blue"
+		}
+	></div>
+}
