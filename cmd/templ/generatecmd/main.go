@@ -40,7 +40,8 @@ Args:
   -ignore-pattern <regexp>
     Set the regexp pattern of files to ignore when watching for changes. (default: '')
   -cmd <cmd>
-    Set the command to run after generating code.
+    Set the command to run after generating code. The command is executed via
+    the system shell ($SHELL on Unix, %COMSPEC% on Windows).
   -proxy
     Set the URL to proxy after generating code and executing the command.
   -proxyport

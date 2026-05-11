@@ -59,6 +59,10 @@ func TestGoRun(t *testing.T) {
 			name: "Badly behaved programs get shut down",
 			cmd:  "go run . -badly-behaved",
 		},
+		{
+			name: "Shell constructs work",
+			cmd:  "go run . && echo done",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

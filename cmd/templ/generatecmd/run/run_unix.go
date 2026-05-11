@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -46,7 +45,9 @@ func ignoreExited(err error) error {
 	if errors.Is(err, syscall.ESRCH) {
 		return nil
 	}
-	// Ignore *exec.ExitError
+	if errors.Is(err, syscall.EPERM) {
+		return nil
+	}
 	if _, ok := err.(*exec.ExitError); ok {
 		return nil
 	}
@@ -64,14 +65,11 @@ func Run(ctx context.Context, workingDir string, input string) (cmd *exec.Cmd, e
 
 		delete(running, input)
 	}
-	parts := strings.Fields(input)
-	executable := parts[0]
-	args := []string{}
-	if len(parts) > 1 {
-		args = append(args, parts[1:]...)
+	shell := os.Getenv("SHELL")
+	if shell == "" {
+		shell = "/bin/sh"
 	}
-
-	cmd = exec.CommandContext(ctx, executable, args...)
+	cmd = exec.CommandContext(ctx, shell, "-c", input)
 	// Wait for the process to finish gracefully before termination.
 	cmd.WaitDelay = time.Second * 3
 	cmd.Env = os.Environ()

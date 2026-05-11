@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -53,14 +52,11 @@ func Run(ctx context.Context, workingDir string, input string) (cmd *exec.Cmd, e
 		}
 		delete(running, input)
 	}
-	parts := strings.Fields(input)
-	executable := parts[0]
-	args := []string{}
-	if len(parts) > 1 {
-		args = append(args, parts[1:]...)
+	shell := os.Getenv("COMSPEC")
+	if shell == "" {
+		shell = "cmd.exe"
 	}
-
-	cmd = exec.Command(executable, args...)
+	cmd = exec.Command(shell, "/C", input)
 	cmd.Env = os.Environ()
 	cmd.Dir = workingDir
 	cmd.Stdin = os.Stdin

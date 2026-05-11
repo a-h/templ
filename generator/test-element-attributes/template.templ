@@ -10,19 +10,19 @@ css unimportant() {
 
 templ render(p person) {
 	<div
-		style="width: 100;"
+		style="width: 100"
 		if p.important {
 			class={ important() }
 		}
 	>Important</div>
 	<div
-		style="width: 100;"
+		style="width: 100"
 		if !p.important {
 			class={ unimportant }
 		}
 	>Unimportant</div>
 	<div
-		style="width: 100;"
+		style="width: 100"
 		if p.important {
 			class={ important }
 		} else {
