@@ -146,6 +146,19 @@ func (cp *cssProcessor) Add(item any) {
 		for _, className := range keys {
 			cp.AddClassName(className, c[className])
 		}
+	case map[CSSClass]bool:
+		// In Go, map keys are iterated in a randomized order.
+		// So the keys in the map must be sorted to produce consistent output.
+		keys := make([]CSSClass, 0, len(c))
+		for key := range c {
+			keys = append(keys, key)
+		}
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i].ClassName() < keys[j].ClassName()
+		})
+		for _, key := range keys {
+			cp.AddClassName(key.ClassName(), c[key])
+		}
 	case []KeyValue[string, bool]:
 		for _, kv := range c {
 			cp.AddClassName(kv.Key, kv.Value)
@@ -386,6 +399,13 @@ func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...an
 			// Skip. This is a class name, not a CSS class.
 		case map[string]bool:
 			// Skip. These are class names, not CSS classes.
+		case map[CSSClass]bool:
+			for key, enabled := range ccc {
+				if !enabled {
+					continue
+				}
+				renderCSSItemsToBuilder(sb, v, key)
+			}
 		case KeyValue[string, bool]:
 			// Skip. These are class names, not CSS classes.
 		case []KeyValue[string, bool]:

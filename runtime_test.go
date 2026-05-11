@@ -333,6 +333,18 @@ func TestClassesFunction(t *testing.T) {
 			expected: "c",
 		},
 		{
+			name: "map[CSSClass]bool enables and disables classes",
+			input: []any{
+				"a",
+				map[templ.CSSClass]bool{
+					templ.Class("b"): true,
+					templ.Class("a"): false,
+					templ.ComponentCSSClass{ID: "classC", Class: templ.SafeCSS(".classC{color:red;}")}: true,
+				},
+			},
+			expected: "b classC",
+		},
+		{
 			name: "unknown types for classes get rendered as --templ-css-class-unknown-type",
 			input: []any{
 				123,
