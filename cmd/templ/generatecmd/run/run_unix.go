@@ -33,11 +33,12 @@ func KillAll() (err error) {
 }
 
 func kill(cmd *exec.Cmd) (err error) {
+	pgid := -cmd.Process.Pid
 	errs := make([]error, 4)
-	errs[0] = ignoreExited(cmd.Process.Signal(syscall.SIGINT))
-	errs[1] = ignoreExited(cmd.Process.Signal(syscall.SIGTERM))
+	errs[0] = ignoreExited(syscall.Kill(pgid, syscall.SIGINT))
+	errs[1] = ignoreExited(syscall.Kill(pgid, syscall.SIGTERM))
 	errs[2] = ignoreExited(cmd.Wait())
-	errs[3] = ignoreExited(syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL))
+	errs[3] = ignoreExited(syscall.Kill(pgid, syscall.SIGKILL))
 	return errors.Join(errs...)
 }
 
