@@ -68,13 +68,11 @@ func getGoplsInfo() (d ToolInfo) {
 		d.Message = fmt.Sprintf("failed to find gopls: %v", err)
 		return
 	}
-	cmd := exec.Command(d.Location, "version")
-	v, err := cmd.Output()
+	d.Version, err = pls.GoplsVersion(d.Location)
 	if err != nil {
 		d.Message = fmt.Sprintf("failed to get gopls version: %v", err)
 		return
 	}
-	d.Version = strings.TrimSpace(string(v))
 	d.Level = slog.LevelInfo
 	return
 }

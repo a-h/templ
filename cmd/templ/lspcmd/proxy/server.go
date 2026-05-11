@@ -42,6 +42,8 @@ type Server struct {
 	DiagnosticCache    *DiagnosticCache
 	TemplSource        *DocumentContents
 	GoSource           map[string]string
+	GoplsPath          string
+	GoplsVersion       string
 	NoPreload          bool
 	preLoadURIs        []*lsp.DidOpenTextDocumentParams
 	templDocLazyLoader lazyloader.TemplDocLazyLoader
@@ -330,6 +332,8 @@ func (p *Server) Initialized(ctx context.Context, params *lsp.InitializedParams)
 	defer p.Log.Info("client -> server: Initialized end")
 	goInitErr := p.Target.Initialized(ctx, params)
 
+	p.notifyGoplsVersion(ctx)
+
 	for i, doParams := range p.preLoadURIs {
 		doErr := p.Target.DidOpen(ctx, doParams)
 		if doErr != nil {
@@ -339,6 +343,26 @@ func (p *Server) Initialized(ctx context.Context, params *lsp.InitializedParams)
 	}
 
 	return goInitErr
+}
+
+func (p *Server) notifyGoplsVersion(ctx context.Context) {
+	client := lsp.ClientFromContext(ctx)
+	if client == nil {
+		return
+	}
+
+	if p.GoplsVersion == "" {
+		_ = client.LogMessage(ctx, &lsp.LogMessageParams{
+			Type:    lsp.MessageTypeWarning,
+			Message: fmt.Sprintf("templ: could not determine gopls version at %s. If you experience errors, upgrade with: go install golang.org/x/tools/gopls@latest", p.GoplsPath),
+		})
+		return
+	}
+
+	_ = client.LogMessage(ctx, &lsp.LogMessageParams{
+		Type:    lsp.MessageTypeInfo,
+		Message: fmt.Sprintf("templ: using gopls %s (%s)", p.GoplsVersion, p.GoplsPath),
+	})
 }
 
 func (p *Server) Shutdown(ctx context.Context) (err error) {
