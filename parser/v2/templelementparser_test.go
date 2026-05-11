@@ -32,6 +32,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 14, Line: 0, Col: 14},
@@ -57,6 +58,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 24, Line: 0, Col: 24},
@@ -88,6 +90,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceVertical,
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 60, Line: 3, Col: 4},
@@ -261,24 +264,12 @@ func TestTemplElementExpressionParser(t *testing.T) {
 								To:   Position{28, 1, 11},
 							},
 						},
+						TrailingSpace: SpaceVertical,
 						Range: Range{
 							From: Position{Index: 21, Line: 1, Col: 4},
 							To:   Position{Index: 28, Line: 1, Col: 11},
 						},
 					},
-					&Whitespace{Range: Range{
-						From: Position{
-							Index: 28,
-							Line:  1,
-							Col:   11,
-						},
-						To: Position{
-							Index: 32,
-							Line:  2,
-							Col:   3,
-						},
-					},
-						Value: "\n\t\t\t"},
 				},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
@@ -306,6 +297,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 						},
 					},
 				},
+				TrailingSpace: SpaceHorizontal,
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 21, Line: 0, Col: 21},

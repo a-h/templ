@@ -71,6 +71,145 @@ templ Hello(name string) {
 	}
 }
 
+func TestIsTrailingSpaceNeeded(t *testing.T) {
+	inlineText := &parser.Text{Value: "hello", TrailingSpace: parser.SpaceHorizontal}
+	newlineText := &parser.Text{Value: "hello", TrailingSpace: parser.SpaceVertical}
+	inlineStringExpr := &parser.StringExpression{TrailingSpace: parser.SpaceHorizontal}
+	selfClosingTempl := &parser.TemplElementExpression{
+		Expression:    parser.Expression{Value: "icon()"},
+		TrailingSpace: parser.SpaceHorizontal,
+	}
+	selfClosingTemplNewline := &parser.TemplElementExpression{
+		Expression:    parser.Expression{Value: "icon()"},
+		TrailingSpace: parser.SpaceVertical,
+	}
+	blockTempl := &parser.TemplElementExpression{
+		Expression: parser.Expression{Value: "wrapper()"},
+		Children:   []parser.Node{inlineText},
+	}
+	inlineElement := &parser.Element{Name: "span"}
+	blockElement := &parser.Element{Name: "div"}
+	ifExpr := &parser.IfExpression{}
+
+	tests := []struct {
+		name     string
+		current  parser.Node
+		next     parser.Node
+		expected bool
+	}{
+		{
+			name:     "inline text needs space before self-closing templ expression",
+			current:  inlineText,
+			next:     selfClosingTempl,
+			expected: true,
+		},
+		{
+			name:     "self-closing templ expression needs space before text",
+			current:  selfClosingTempl,
+			next:     inlineText,
+			expected: true,
+		},
+		{
+			name:     "newline-separated text does not need space before self-closing templ expression",
+			current:  newlineText,
+			next:     selfClosingTempl,
+			expected: false,
+		},
+		{
+			name:     "newline-trailing self-closing templ expression needs space before text",
+			current:  selfClosingTemplNewline,
+			next:     inlineText,
+			expected: true,
+		},
+		{
+			name:     "inline string expression needs space before self-closing templ expression",
+			current:  inlineStringExpr,
+			next:     selfClosingTempl,
+			expected: true,
+		},
+		{
+			name:     "self-closing templ expression needs space before string expression",
+			current:  selfClosingTempl,
+			next:     inlineStringExpr,
+			expected: true,
+		},
+		{
+			name:     "inline text does not need space before block templ expression",
+			current:  inlineText,
+			next:     blockTempl,
+			expected: false,
+		},
+		{
+			name:     "block templ expression does not need space before text",
+			current:  blockTempl,
+			next:     inlineText,
+			expected: false,
+		},
+		{
+			name:     "self-closing templ expression does not need space before inline element",
+			current:  selfClosingTempl,
+			next:     inlineElement,
+			expected: false,
+		},
+		{
+			name:     "self-closing templ expression does not need space before block element",
+			current:  selfClosingTempl,
+			next:     blockElement,
+			expected: false,
+		},
+		{
+			name:     "text needs space before text",
+			current:  inlineText,
+			next:     inlineText,
+			expected: true,
+		},
+		{
+			name:     "text needs space before inline element",
+			current:  inlineText,
+			next:     inlineElement,
+			expected: true,
+		},
+		{
+			name:     "text does not need space before block element",
+			current:  inlineText,
+			next:     blockElement,
+			expected: false,
+		},
+		{
+			name:     "text needs space before if expression",
+			current:  inlineText,
+			next:     ifExpr,
+			expected: true,
+		},
+		{
+			name:     "adjacent self-closing templ expressions do not need space",
+			current:  selfClosingTempl,
+			next:     selfClosingTempl,
+			expected: false,
+		},
+		{
+			name:     "nil current does not need space",
+			current:  nil,
+			next:     inlineText,
+			expected: false,
+		},
+		{
+			name:     "nil next does not need space",
+			current:  inlineText,
+			next:     nil,
+			expected: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isTrailingSpaceNeeded(tt.current, tt.next)
+			if got != tt.expected {
+				t.Errorf("got %t, expected %t", got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestIsExpressionAttributeValueURL(t *testing.T) {
 	testCases := []struct {
 		elementName    string

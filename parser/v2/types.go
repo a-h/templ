@@ -465,6 +465,7 @@ var (
 	_ WhitespaceTrailer = (*Element)(nil)
 	_ WhitespaceTrailer = (*Text)(nil)
 	_ WhitespaceTrailer = (*StringExpression)(nil)
+	_ WhitespaceTrailer = (*TemplElementExpression)(nil)
 )
 
 // Text node within the document.
@@ -1242,12 +1243,16 @@ type TemplElementExpression struct {
 	// Expression returns a template to execute.
 	Expression Expression
 	// Children returns the elements in a block element.
-	Children []Node
-	Range    Range
+	Children      []Node
+	TrailingSpace TrailingSpace
+	Range         Range
 }
 
 func (tee TemplElementExpression) ChildNodes() []Node {
 	return tee.Children
+}
+func (tee TemplElementExpression) Trailing() TrailingSpace {
+	return tee.TrailingSpace
 }
 func (tee *TemplElementExpression) IsNode() bool { return true }
 func (tee *TemplElementExpression) Write(w io.Writer, indent int) error {

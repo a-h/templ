@@ -1,0 +1,28 @@
+package testtextinlineexpression
+
+templ icon() {
+	<svg></svg>
+}
+
+templ InlineComponentAfterText() {
+	<div>
+		Label: @icon()
+	</div>
+}
+
+const InlineComponentAfterTextExpected = `<div>Label: <svg></svg></div>`
+
+templ EmailAddress() {
+	<span>user@example.com</span>
+}
+
+const EmailAddressExpected = `<span>user@example.com</span>`
+
+templ InlineComponentBetweenText() {
+	<div>
+		Before @icon()
+		after
+	</div>
+}
+
+const InlineComponentBetweenTextExpected = `<div>Before <svg></svg> after</div>`

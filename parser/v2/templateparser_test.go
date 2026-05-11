@@ -848,24 +848,12 @@ func TestTemplateParser(t *testing.T) {
 										},
 									},
 								},
+								TrailingSpace: " ",
 								Range: Range{
 									From: Position{Index: 26, Line: 1, Col: 14},
 									To:   Position{Index: 47, Line: 1, Col: 35},
 								},
 							},
-							&Whitespace{Range: Range{
-								From: Position{
-									Index: 47,
-									Line:  1,
-									Col:   35,
-								},
-								To: Position{
-									Index: 48,
-									Line:  1,
-									Col:   36,
-								},
-							},
-								Value: " "},
 							&Text{
 								Value: "Home",
 								Range: Range{
@@ -878,6 +866,67 @@ func TestTemplateParser(t *testing.T) {
 						Range: Range{
 							From: Position{Index: 13, Line: 1, Col: 1},
 							To:   Position{Index: 57, Line: 2, Col: 0},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "template: inline templ element expression after text",
+			input: `templ x() {
+	<div>Left: @left()</div>
+}`,
+			expected: &HTMLTemplate{
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 39, Line: 2, Col: 1},
+				},
+				Expression: Expression{
+					Value: "x()",
+					Range: Range{
+						From: Position{Index: 6, Line: 0, Col: 6},
+						To:   Position{Index: 9, Line: 0, Col: 9},
+					},
+				},
+				Children: []Node{
+					&Whitespace{Range: Range{
+						From: Position{Index: 12, Line: 1, Col: 0},
+						To:   Position{Index: 13, Line: 1, Col: 1},
+					},
+						Value: "\t"},
+					&Element{
+						Name: "div",
+						NameRange: Range{
+							From: Position{Index: 14, Line: 1, Col: 2},
+							To:   Position{Index: 17, Line: 1, Col: 5},
+						},
+						Children: []Node{
+							&Text{
+								Value: "Left:",
+								Range: Range{
+									From: Position{Index: 18, Line: 1, Col: 6},
+									To:   Position{Index: 23, Line: 1, Col: 11},
+								},
+								TrailingSpace: " ",
+							},
+							&TemplElementExpression{
+								Expression: Expression{
+									Value: "left()",
+									Range: Range{
+										From: Position{Index: 25, Line: 1, Col: 13},
+										To:   Position{Index: 31, Line: 1, Col: 19},
+									},
+								},
+								Range: Range{
+									From: Position{Index: 24, Line: 1, Col: 12},
+									To:   Position{Index: 31, Line: 1, Col: 19},
+								},
+							},
+						},
+						TrailingSpace: SpaceVertical,
+						Range: Range{
+							From: Position{Index: 13, Line: 1, Col: 1},
+							To:   Position{Index: 38, Line: 2, Col: 0},
 						},
 					},
 				},

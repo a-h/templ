@@ -92,6 +92,42 @@ func TestTextParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "Text ends before inline templ element expression",
+			input: "Left: @left()",
+			expected: &Text{
+				Value: "Left:",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
+				TrailingSpace: " ",
+			},
+		},
+		{
+			name:  "Text containing @ without preceding space is plain text",
+			input: "user@example.com\n",
+			expected: &Text{
+				Value: "user@example.com",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 16, Line: 0, Col: 16},
+				},
+				TrailingSpace: "\n",
+			},
+		},
+		{
+			name:  "Text ends before tab-prefixed templ element expression",
+			input: "Left:\t@left()",
+			expected: &Text{
+				Value: "Left:",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
+				TrailingSpace: " ",
+			},
+		},
+		{
 			name:  "Multiline text is collected line by line (Windows)",
 			input: "Line 1\r\nLine 2",
 			expected: &Text{

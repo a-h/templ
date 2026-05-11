@@ -34,6 +34,38 @@ templ right() {
 </div>
 ```
 
+## Inline components
+
+Components can appear inline with text when `@` is preceded by whitespace.
+
+```templ
+templ icon() {
+	<svg>...</svg>
+}
+
+templ showInline() {
+	<div>Label: @icon() Home</div>
+}
+```
+
+```html title="Output"
+<div>Label: <svg>...</svg> Home</div>
+```
+
+`@` at the start of an element's content (e.g., `<div>@component</div>`) also works because `@` is the first item after the tag open.
+
+Email addresses and other text containing `@` without a preceding space are preserved as plain text.
+
+```templ
+templ atSignExamples() {
+	// No space before @, so treated as text.
+	<span>user@example.com</span>
+	// Space before @ is interpreted as a component call.
+	// To render a literal @ after a space, use a string expression.
+	<span>Follow { "@username" } on Twitter</span>
+}
+```
+
 ## Children
 
 Children can be passed to a component for it to wrap.
