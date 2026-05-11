@@ -96,6 +96,17 @@ templ fmt -fail .
 
 If `prettierd`, `prettier` or `npx` is found in your `PATH`, `templ fmt` will use prettier to format `script` and `style` elements in files.
 
+### Ignoring files
+
+To exclude files or directories from formatting, create a `.templignore_fmt` file in the root of the directory being formatted. The file uses glob patterns, with `#` comments and blank lines ignored.
+
+```title=".templignore_fmt"
+# Ignore generated test fixtures.
+generator/test-*
+```
+
+Similarly, `templ generate` respects a `.templignore_generate` file.
+
 ## Language Server for IDE integration
 
 `templ lsp` provides a Language Server Protocol (LSP) implementation to support IDE integrations.

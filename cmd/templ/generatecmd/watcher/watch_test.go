@@ -18,7 +18,7 @@ func TestWatchDebouncesDuplicates(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("failed to compile watch pattern: %w", err))
 	}
-	rw, err := Recursive(ctx, watchPattern, nil, events, errors)
+	rw, err := Recursive(ctx, watchPattern, nil, nil, events, errors)
 	if err != nil {
 		t.Fatal(fmt.Errorf("failed to create recursive watcher: %w", err))
 	}
@@ -71,7 +71,7 @@ func TestWatchDoesNotDebounceDifferentEvents(t *testing.T) {
 		if err != nil {
 			t.Fatal(fmt.Errorf("failed to compile watch pattern: %w", err))
 		}
-		rw, err := Recursive(ctx, watchPattern, nil, events, errors)
+		rw, err := Recursive(ctx, watchPattern, nil, nil, events, errors)
 		if err != nil {
 			t.Fatal(fmt.Errorf("failed to create recursive watcher: %w", err))
 		}
@@ -107,7 +107,7 @@ func TestWatchDoesNotDebounceSeparateEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(fmt.Errorf("failed to compile watch pattern: %w", err))
 	}
-	rw, err := Recursive(ctx, watchPattern, nil, events, errors)
+	rw, err := Recursive(ctx, watchPattern, nil, nil, events, errors)
 	if err != nil {
 		t.Fatal(fmt.Errorf("failed to create recursive watcher: %w", err))
 	}
@@ -148,7 +148,7 @@ func TestWatchIgnoresFilesMatchingIgnorePattern(t *testing.T) {
 		t.Fatal(fmt.Errorf("failed to compile ignore pattern: %w", err))
 	}
 
-	rw, err := Recursive(ctx, watchPattern, ignorePattern, events, errors)
+	rw, err := Recursive(ctx, watchPattern, ignorePattern, nil, events, errors)
 	if err != nil {
 		t.Fatal(fmt.Errorf("failed to create recursive watcher: %w", err))
 	}
@@ -187,7 +187,7 @@ func TestIgnorePatternTakesPrecedenceOverWatchPattern(t *testing.T) {
 	watchPattern := regexp.MustCompile(`.*\.templ$`)
 	ignorePattern := regexp.MustCompile(`.*\.ignore\.templ$`)
 
-	rw, err := Recursive(ctx, watchPattern, ignorePattern, events, errors)
+	rw, err := Recursive(ctx, watchPattern, ignorePattern, nil, events, errors)
 	if err != nil {
 		t.Fatal(err)
 	}

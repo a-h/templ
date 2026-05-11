@@ -17,24 +17,30 @@ type Result struct {
 	ChangesMade bool
 }
 
-func Process(dir string, f func(fileName string) (error, bool), workerCount int, results chan<- Result) {
+func Process(dir string, f func(fileName string) (error, bool), workerCount int, shouldSkip func(string) bool, results chan<- Result) {
 	templates := make(chan string)
 	go func() {
 		defer close(templates)
-		if err := FindTemplates(dir, templates); err != nil {
+		if err := FindTemplates(dir, shouldSkip, templates); err != nil {
 			results <- Result{Error: err}
 		}
 	}()
 	ProcessChannel(templates, dir, f, workerCount, results)
 }
 
-func FindTemplates(srcPath string, output chan<- string) (err error) {
+func FindTemplates(srcPath string, shouldSkip func(string) bool, output chan<- string) (err error) {
 	return filepath.WalkDir(srcPath, func(currentPath string, info fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() && skipdir.ShouldSkip(currentPath) {
 			return filepath.SkipDir
+		}
+		if shouldSkip != nil && shouldSkip(currentPath) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 		if !info.IsDir() && strings.HasSuffix(currentPath, ".templ") {
 			output <- currentPath

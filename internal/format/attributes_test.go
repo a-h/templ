@@ -290,6 +290,45 @@ func TestAttributes(t *testing.T) {
 			},
 		},
 		{
+			name: "mixed-case attribute keys survive HTML parser lowercasing",
+			children: []parser.Node{
+				&parser.Element{
+					Name: "select",
+					Attributes: []parser.Attribute{
+						&parser.ConstantAttribute{
+							Key:   parser.ConstantAttributeKey{Name: "optionC"},
+							Value: "test",
+						},
+						&parser.ConstantAttribute{
+							Key:   parser.ConstantAttributeKey{Name: "onMouseover"},
+							Value: "handler()",
+						},
+						&parser.ConstantAttribute{
+							Key:   parser.ConstantAttributeKey{Name: "CLASS"},
+							Value: "my-class",
+						},
+					},
+				},
+			},
+			command: "cat",
+			check: func(t *testing.T, children []parser.Node) {
+				t.Helper()
+				attrs := children[0].(*parser.Element).Attributes
+				ca0 := attrs[0].(*parser.ConstantAttribute)
+				if ca0.Value != "test" {
+					t.Errorf("optionC: got %q, expected %q", ca0.Value, "test")
+				}
+				ca1 := attrs[1].(*parser.ConstantAttribute)
+				if ca1.Value != "handler()" {
+					t.Errorf("onMouseover: got %q, expected %q", ca1.Value, "handler()")
+				}
+				ca2 := attrs[2].(*parser.ConstantAttribute)
+				if ca2.Value != "my-class" {
+					t.Errorf("CLASS: got %q, expected %q", ca2.Value, "my-class")
+				}
+			},
+		},
+		{
 			name: "mixed attribute types only collect constant attributes",
 			children: []parser.Node{
 				&parser.Element{

@@ -8,7 +8,7 @@ import (
 func TestFindTemplates(t *testing.T) {
 	t.Run("returns an error if the directory does not exist", func(t *testing.T) {
 		output := make(chan string)
-		err := FindTemplates("nonexistent", output)
+		err := FindTemplates("nonexistent", nil, output)
 		if err == nil {
 			t.Fatal("expected error, but got nil")
 		}

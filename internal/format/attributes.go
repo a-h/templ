@@ -97,9 +97,12 @@ func Attributes(children []parser.Node, prettierCommand string) error {
 	return nil
 }
 
+// getAttr returns the value of the attribute with the given key. The comparison
+// is case-insensitive because golang.org/x/net/html lowercases attribute keys
+// during parsing.
 func getAttr(n *nethtml.Node, key string) (val string, ok bool) {
 	for _, a := range n.Attr {
-		if a.Key == key {
+		if strings.EqualFold(a.Key, key) {
 			return a.Val, true
 		}
 	}

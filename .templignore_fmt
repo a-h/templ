@@ -1,0 +1,2 @@
+# Do not format generator test fixtures.
+generator/test-*

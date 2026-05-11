@@ -12,6 +12,7 @@ import (
 
 	"github.com/a-h/templ/cmd/templ/processor"
 	"github.com/a-h/templ/internal/format"
+	"github.com/a-h/templ/internal/ignorefile"
 	"github.com/natefinch/atomic"
 )
 
@@ -70,7 +71,11 @@ func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (e
 		return nil, true
 	}
 	dir := args.Files[0]
-	return NewFormatter(log, dir, process, args.WorkerCount, args.FailIfChanged).Run()
+	shouldSkip, err := ignorefile.ShouldSkipFunc(dir, ".templignore_fmt")
+	if err != nil {
+		return fmt.Errorf("failed to parse .templignore_fmt: %w", err)
+	}
+	return NewFormatter(log, dir, process, args.WorkerCount, args.FailIfChanged, shouldSkip).Run()
 }
 
 type Formatter struct {
@@ -79,15 +84,17 @@ type Formatter struct {
 	Process      func(fileName string) (error, bool)
 	WorkerCount  int
 	FailIfChange bool
+	ShouldSkip   func(string) bool
 }
 
-func NewFormatter(log *slog.Logger, dir string, process func(fileName string) (error, bool), workerCount int, failIfChange bool) *Formatter {
+func NewFormatter(log *slog.Logger, dir string, process func(fileName string) (error, bool), workerCount int, failIfChange bool, shouldSkip func(string) bool) *Formatter {
 	f := &Formatter{
 		Log:          log,
 		Dir:          dir,
 		Process:      process,
 		WorkerCount:  workerCount,
 		FailIfChange: failIfChange,
+		ShouldSkip:   shouldSkip,
 	}
 	if f.WorkerCount == 0 {
 		f.WorkerCount = runtime.NumCPU()
@@ -101,7 +108,7 @@ func (f *Formatter) Run() (err error) {
 	start := time.Now()
 	results := make(chan processor.Result)
 	f.Log.Debug("Walking directory", slog.String("path", f.Dir))
-	go processor.Process(f.Dir, f.Process, f.WorkerCount, results)
+	go processor.Process(f.Dir, f.Process, f.WorkerCount, f.ShouldSkip, results)
 	var successCount, errorCount int
 	for r := range results {
 		if r.ChangesMade {

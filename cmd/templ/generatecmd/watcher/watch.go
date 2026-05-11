@@ -17,6 +17,7 @@ func Recursive(
 	ctx context.Context,
 	watchPattern *regexp.Regexp,
 	ignorePattern *regexp.Regexp,
+	shouldSkip func(string) bool,
 	out chan fsnotify.Event,
 	errors chan error,
 ) (w *RecursiveWatcher, err error) {
@@ -29,6 +30,7 @@ func Recursive(
 		w:             fsnw,
 		WatchPattern:  watchPattern,
 		IgnorePattern: ignorePattern,
+		ShouldSkip:    shouldSkip,
 		Events:        out,
 		Errors:        errors,
 		timers:        make(map[timerKey]*time.Timer),
@@ -44,7 +46,7 @@ func Recursive(
 
 // WalkFiles walks the file tree rooted at path, sending a Create event for each
 // file it encounters.
-func WalkFiles(ctx context.Context, rootPath string, watchPattern, ignorePattern *regexp.Regexp, out chan fsnotify.Event) (err error) {
+func WalkFiles(ctx context.Context, rootPath string, watchPattern, ignorePattern *regexp.Regexp, shouldSkip func(string) bool, out chan fsnotify.Event) (err error) {
 	return fs.WalkDir(os.DirFS(rootPath), ".", func(path string, info os.DirEntry, err error) error {
 		if err != nil {
 			return nil
@@ -55,6 +57,12 @@ func WalkFiles(ctx context.Context, rootPath string, watchPattern, ignorePattern
 		}
 		if info.IsDir() && skipdir.ShouldSkip(absPath) {
 			return filepath.SkipDir
+		}
+		if shouldSkip != nil && shouldSkip(path) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 		if !watchPattern.MatchString(absPath) {
 			return nil
@@ -75,6 +83,7 @@ type RecursiveWatcher struct {
 	w             *fsnotify.Watcher
 	WatchPattern  *regexp.Regexp
 	IgnorePattern *regexp.Regexp
+	ShouldSkip    func(string) bool
 	Events        chan fsnotify.Event
 	Errors        chan error
 	timerMu       sync.Mutex
@@ -151,16 +160,16 @@ func (w *RecursiveWatcher) loop() {
 }
 
 func (w *RecursiveWatcher) Add(dir string) error {
-	return filepath.WalkDir(dir, func(dir string, info os.DirEntry, err error) error {
+	return filepath.WalkDir(dir, func(currentPath string, info os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
 		if !info.IsDir() {
 			return nil
 		}
-		if skipdir.ShouldSkip(dir) {
+		if skipdir.ShouldSkip(currentPath) {
 			return filepath.SkipDir
 		}
-		return w.w.Add(dir)
+		return w.w.Add(currentPath)
 	})
 }
