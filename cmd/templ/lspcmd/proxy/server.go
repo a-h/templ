@@ -111,28 +111,28 @@ func (p *Server) convertTemplRangeToGoRange(templURI lsp.DocumentURI, input lsp.
 	return
 }
 
-func (p *Server) convertGoRangeToTemplRange(templURI lsp.DocumentURI, input lsp.Range) (output lsp.Range) {
-	output = input
-	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
-	if !ok {
-		p.Log.Warn("go->templ: sourcemap not found in cache")
-		return
+// proxyPositionRequest determines how to forward a position-based request.
+// For .templ files, it converts the position to the corresponding Go position.
+// For non-templ files (e.g. .go), it returns the position unchanged so the
+// request can be forwarded to gopls as-is.
+// Returns ok=false only when position mapping fails for a .templ file.
+func (p *Server) proxyPositionRequest(templURI lsp.DocumentURI, pos lsp.Position) (isTempl bool, goURI lsp.DocumentURI, goPos lsp.Position, ok bool) {
+	isTemplFile, goFileURI := convertTemplToGoURI(templURI)
+	if !isTemplFile {
+		return false, templURI, pos, true
 	}
-	// Map from the source position to target Go position.
-	start, startPositionMapped := sourceMap.SourcePositionFromTarget(input.Start.Line, input.Start.Character)
-	if startPositionMapped {
-		output.Start.Line = start.Line
-		output.Start.Character = start.Col
+	sourceMap, smOk := p.SourceMapCache.Get(string(templURI))
+	if !smOk {
+		p.Log.Warn("proxyPositionRequest: sourcemap not found in cache", slog.String("uri", string(templURI)))
+		return true, templURI, pos, false
 	}
-	end, endPositionMapped := sourceMap.SourcePositionFromTarget(input.End.Line, input.End.Character)
-	if endPositionMapped {
-		output.End.Line = end.Line
-		output.End.Character = end.Col
+	to, toOk := sourceMap.TargetPositionFromSource(pos.Line, pos.Character)
+	if !toOk {
+		p.Log.Info("proxyPositionRequest: position not found in sourcemap",
+			slog.String("from", fmt.Sprintf("%d:%d", pos.Line, pos.Character)))
+		return true, templURI, pos, false
 	}
-	if !startPositionMapped || !endPositionMapped {
-		p.Log.Warn("go->templ: range not found in sourcemap", slog.Any("range", input))
-	}
-	return
+	return true, goFileURI, lsp.Position{Line: to.Line, Character: to.Col}, true
 }
 
 // parseTemplate parses the templ file content, and notifies the end user via the LSP about how it went.
@@ -261,6 +261,13 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 
 	result.ServerInfo.Name = "templ-lsp"
 	result.ServerInfo.Version = templ.Version()
+	// Advertise Go file support so editors can register for .go files
+	// and route them through the proxy for cross-file navigation.
+	result.Capabilities.Experimental = map[string]any{
+		"templ": map[string]any{
+			"goFileSupport": true,
+		},
+	}
 
 	return result, err
 }
@@ -395,7 +402,9 @@ func (p *Server) SetTrace(ctx context.Context, params *lsp.SetTraceParams) (err 
 	return p.Target.SetTrace(ctx, params)
 }
 
-var supportedCodeActions = map[string]bool{}
+var supportedCodeActions = map[string]bool{
+	"Organize Imports": true,
+}
 
 func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (result []lsp.CodeAction, err error) {
 	p.Log.Info("client -> server: CodeAction", slog.Any("params", params))
@@ -413,7 +422,7 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 	}
 	isTemplFile, goURI := convertTemplToGoURI(templURI)
 	if !isTemplFile {
-		return p.Target.CodeAction(ctx, params)
+		return nil, nil
 	}
 	var ok bool
 	if params.Range, ok = p.convertTemplRangeToGoRange(templURI, params.Range); !ok {
@@ -435,20 +444,10 @@ func (p *Server) CodeAction(ctx context.Context, params *lsp.CodeActionParams) (
 		if !supportedCodeActions[r.Title] {
 			continue
 		}
-		// Rewrite the Diagnostics range field.
 		for di, diag := range r.Diagnostics {
-			r.Diagnostics[di].Range = p.convertGoRangeToTemplRange(templURI, diag.Range)
+			r.Diagnostics[di].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, diag.Range)
 		}
-		// Rewrite the DocumentChanges.
-		if r.Edit != nil {
-			for dci, dc := range r.Edit.DocumentChanges {
-				for ei, edit := range dc.Edits {
-					dc.Edits[ei].Range = p.convertGoRangeToTemplRange(templURI, edit.Range)
-				}
-				dc.TextDocument.URI = templURI
-				r.Edit.DocumentChanges[dci] = dc
-			}
-		}
+		convertWorkspaceEdit(p.SourceMapCache, p.Log, r.Edit)
 		updatedResults = append(updatedResults, r)
 	}
 	return updatedResults, nil
@@ -475,7 +474,7 @@ func (p *Server) CodeLens(ctx context.Context, params *lsp.CodeLensParams) (resu
 		return
 	}
 	for i, cl := range result {
-		cl.Range = p.convertGoRangeToTemplRange(templURI, cl.Range)
+		cl.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, cl.Range)
 		result[i] = cl
 	}
 	return
@@ -509,7 +508,7 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 	}
 	for i, r := range result {
 		if r.TextEdit != nil {
-			r.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, r.TextEdit.Range)
+			r.TextEdit.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.TextEdit.Range)
 		}
 		result[i] = r
 	}
@@ -519,6 +518,10 @@ func (p *Server) ColorPresentation(ctx context.Context, params *lsp.ColorPresent
 func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (result *lsp.CompletionList, err error) {
 	p.Log.Info("client -> server: Completion")
 	defer p.Log.Info("client -> server: Completion end")
+	isTemplFile, _ := convertTemplToGoURI(params.TextDocument.URI)
+	if !isTemplFile {
+		return nil, nil
+	}
 	if params.Context != nil && params.Context.TriggerCharacter == "<" {
 		result = &lsp.CompletionList{
 			Items: htmlSnippets,
@@ -564,12 +567,12 @@ func (p *Server) Completion(ctx context.Context, params *lsp.CompletionParams) (
 		item.FilterText = stripTemplStringable(item.FilterText)
 		if item.TextEdit != nil {
 			if item.TextEdit.TextEdit != nil {
-				item.TextEdit.TextEdit.Range = p.convertGoRangeToTemplRange(templURI, item.TextEdit.TextEdit.Range)
+				item.TextEdit.TextEdit.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, item.TextEdit.TextEdit.Range)
 				item.TextEdit.TextEdit.NewText = stripTemplStringable(item.TextEdit.TextEdit.NewText)
 			}
 			if item.TextEdit.InsertReplaceEdit != nil {
-				item.TextEdit.InsertReplaceEdit.Insert = p.convertGoRangeToTemplRange(templURI, item.TextEdit.InsertReplaceEdit.Insert)
-				item.TextEdit.InsertReplaceEdit.Replace = p.convertGoRangeToTemplRange(templURI, item.TextEdit.InsertReplaceEdit.Replace)
+				item.TextEdit.InsertReplaceEdit.Insert = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, item.TextEdit.InsertReplaceEdit.Insert)
+				item.TextEdit.InsertReplaceEdit.Replace = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, item.TextEdit.InsertReplaceEdit.Replace)
 				item.TextEdit.InsertReplaceEdit.NewText = stripTemplStringable(item.TextEdit.InsertReplaceEdit.NewText)
 			}
 		}
@@ -668,62 +671,38 @@ func (p *Server) CompletionResolve(ctx context.Context, params *lsp.CompletionIt
 func (p *Server) Declaration(ctx context.Context, params *lsp.DeclarationParams) (result []lsp.Location /* Declaration | DeclarationLink[] | null */, err error) {
 	p.Log.Info("client -> server: Declaration")
 	defer p.Log.Info("client -> server: Declaration end")
-	// Rewrite the request.
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
-	}
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
 		return nil, nil
 	}
-	// Call gopls and get the result.
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
 	result, err = p.Target.Declaration(ctx, params)
-	if err != nil {
+	if err != nil || result == nil {
 		return
 	}
-	if result == nil {
-		return
-	}
-	for i, r := range result {
-		if isTemplGoFile, templURI := convertTemplGoToTemplURI(r.URI); isTemplGoFile {
-			result[i].URI = templURI
-			result[i].Range = p.convertGoRangeToTemplRange(templURI, r.Range)
-		}
-	}
+	convertLocationResults(p.SourceMapCache, p.Log, result)
 	return
 }
 
 func (p *Server) Definition(ctx context.Context, params *lsp.DefinitionParams) (result []lsp.Location /* Definition | DefinitionLink[] | null */, err error) {
 	p.Log.Info("client -> server: Definition")
 	defer p.Log.Info("client -> server: Definition end")
-	// Rewrite the request.
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
-	}
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
-		return result, nil
+		return nil, nil
 	}
-	// Call gopls and get the result.
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
 	result, err = p.Target.Definition(ctx, params)
-	if err != nil {
+	if err != nil || result == nil {
 		return
 	}
-	if result == nil {
-		return
-	}
-	for i, r := range result {
-		if isTemplGoFile, templURI := convertTemplGoToTemplURI(r.URI); isTemplGoFile {
-			result[i].URI = templURI
-			result[i].Range = p.convertGoRangeToTemplRange(templURI, r.Range)
-		}
-	}
+	convertLocationResults(p.SourceMapCache, p.Log, result)
 	return
 }
 
@@ -737,8 +716,7 @@ func (p *Server) DidChange(ctx context.Context, params *lsp.DidChangeTextDocumen
 	}
 	isTemplFile, goURI := convertTemplToGoURI(templURI)
 	if !isTemplFile {
-		p.Log.Error("not a templ file")
-		return
+		return p.Target.DidChange(ctx, params)
 	}
 	// Apply content changes to the cached template.
 	d, err := p.TemplSource.Apply(string(templURI), params.ContentChanges)
@@ -818,9 +796,10 @@ func (p *Server) DidClose(ctx context.Context, params *lsp.DidCloseTextDocumentP
 			p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
 			return err
 		}
-
+		if isTemplFile, _ := convertTemplToGoURI(templURI); !isTemplFile {
+			return p.Target.DidClose(ctx, params)
+		}
 		params.TextDocument.URI = templURI
-
 		return p.templDocLazyLoader.Unload(ctx, params)
 	}
 
@@ -855,6 +834,9 @@ func (p *Server) DidOpen(ctx context.Context, params *lsp.DidOpenTextDocumentPar
 	defer p.Log.Info("client -> server: DidOpen end")
 
 	if p.NoPreload {
+		if isTemplFile, _ := convertTemplToGoURI(templURI); !isTemplFile {
+			return p.Target.DidOpen(ctx, params)
+		}
 		params.TextDocument.URI = templURI
 		return p.templDocLazyLoader.Load(ctx, params)
 	}
@@ -930,7 +912,7 @@ func (p *Server) DocumentColor(ctx context.Context, params *lsp.DocumentColorPar
 		return
 	}
 	for i, r := range result {
-		result[i].Range = p.convertGoRangeToTemplRange(templURI, r.Range)
+		result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.Range)
 	}
 	return
 }
@@ -938,17 +920,37 @@ func (p *Server) DocumentColor(ctx context.Context, params *lsp.DocumentColorPar
 func (p *Server) DocumentHighlight(ctx context.Context, params *lsp.DocumentHighlightParams) (result []lsp.DocumentHighlight, err error) {
 	p.Log.Info("client -> server: DocumentHighlight")
 	defer p.Log.Info("client -> server: DocumentHighlight end")
+	if isNonTemplGoURI(params.TextDocument.URI) {
+		return nil, nil
+	}
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
+	}
+	templURI := params.TextDocument.URI
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
+	result, err = p.Target.DocumentHighlight(ctx, params)
+	if err != nil || result == nil {
+		return
+	}
+	if isTempl {
+		for i, r := range result {
+			result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.Range)
+		}
+	}
 	return
 }
 
 func (p *Server) DocumentLink(ctx context.Context, params *lsp.DocumentLinkParams) (result []lsp.DocumentLink, err error) {
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
-	}
-	p.Log.Info("client -> server: DocumentLink", slog.String("uri", string(templURI)))
+	p.Log.Info("client -> server: DocumentLink", slog.String("uri", string(params.TextDocument.URI)))
 	defer p.Log.Info("client -> server: DocumentLink end")
+	if isTemplFile, _ := convertTemplToGoURI(params.TextDocument.URI); !isTemplFile {
+		return nil, nil
+	}
+	// No document links for templ files.
 	return
 }
 
@@ -978,7 +980,7 @@ func (p *Server) DocumentLinkResolve(ctx context.Context, params *lsp.DocumentLi
 		return
 	}
 	result.Target = templURI
-	result.Range = p.convertGoRangeToTemplRange(templURI, result.Range)
+	result.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, result.Range)
 	return
 }
 
@@ -1007,7 +1009,7 @@ func (p *Server) DocumentSymbol(ctx context.Context, params *lsp.DocumentSymbolP
 		}
 		if s.SymbolInformation != nil {
 			s.SymbolInformation.Location.URI = templURI
-			s.SymbolInformation.Location.Range = p.convertGoRangeToTemplRange(templURI, s.SymbolInformation.Location.Range)
+			s.SymbolInformation.Location.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, s.SymbolInformation.Location.Range)
 			result = append(result, s)
 		}
 	}
@@ -1038,7 +1040,7 @@ func (p *Server) convertSymbolRange(templURI lsp.DocumentURI, s *lsp.DocumentSym
 	}
 	// Within the symbol, we can select sub-sections.
 	// These are Go expressions, in the standard source map.
-	s.SelectionRange = p.convertGoRangeToTemplRange(templURI, s.SelectionRange)
+	s.SelectionRange = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, s.SelectionRange)
 	for i := range s.Children {
 		p.convertSymbolRange(templURI, &s.Children[i])
 		if !isRangeWithin(s.Range, s.Children[i].Range) {
@@ -1072,14 +1074,19 @@ func (p *Server) ExecuteCommand(ctx context.Context, params *lsp.ExecuteCommandP
 func (p *Server) FoldingRanges(ctx context.Context, params *lsp.FoldingRangeParams) (result []lsp.FoldingRange, err error) {
 	p.Log.Info("client -> server: FoldingRanges")
 	defer p.Log.Info("client -> server: FoldingRanges end")
+	if isTemplFile, _ := convertTemplToGoURI(params.TextDocument.URI); !isTemplFile {
+		return nil, nil
+	}
 	// There are no folding ranges in templ files.
-	// return p.Target.FoldingRanges(ctx, params)
 	return []lsp.FoldingRange{}, nil
 }
 
 func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingParams) (result []lsp.TextEdit, err error) {
 	p.Log.Info("client -> server: Formatting")
 	defer p.Log.Info("client -> server: Formatting end")
+	if isTemplFile, _ := convertTemplToGoURI(params.TextDocument.URI); !isTemplFile {
+		return nil, nil
+	}
 	// Format the current document.
 	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
 	if err != nil {
@@ -1126,27 +1133,24 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *lsp.Hover, err error) {
 	p.Log.Info("client -> server: Hover")
 	defer p.Log.Info("client -> server: Hover end")
-	// Rewrite the request.
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
+	if isNonTemplGoURI(params.TextDocument.URI) {
+		return nil, nil
 	}
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
 		return nil, nil
 	}
-	// Call gopls.
+	templURI := params.TextDocument.URI
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
 	result, err = p.Target.Hover(ctx, params)
 	if err != nil {
 		return
 	}
-	// Rewrite the response.
-	if result != nil && result.Range != nil {
-		p.Log.Info("hover: result returned")
-		r := p.convertGoRangeToTemplRange(templURI, *result.Range)
-		p.Log.Info("hover: setting range")
+	if result != nil && result.Range != nil && isTempl {
+		r := convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, *result.Range)
 		result.Range = &r
 	}
 	return
@@ -1155,59 +1159,45 @@ func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *ls
 func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationParams) (result []lsp.Location, err error) {
 	p.Log.Info("client -> server: Implementation")
 	defer p.Log.Info("client -> server: Implementation end")
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
-	}
-	// Rewrite the request.
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
 		return nil, nil
 	}
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
 	result, err = p.Target.Implementation(ctx, params)
-	if err != nil {
+	if err != nil || result == nil {
 		return
 	}
-	if result == nil {
-		return
-	}
-	// Rewrite the response.
-	for i, r := range result {
-		r.URI = templURI
-		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
-		result[i] = r
-	}
+	convertLocationResults(p.SourceMapCache, p.Log, result)
 	return
 }
 
 func (p *Server) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTypeFormattingParams) (result []lsp.TextEdit, err error) {
 	p.Log.Info("client -> server: OnTypeFormatting")
 	defer p.Log.Info("client -> server: OnTypeFormatting end")
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
+	if isNonTemplGoURI(params.TextDocument.URI) {
+		return nil, nil
 	}
-	// Rewrite the request.
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
 		return nil, nil
 	}
-	// Get the response.
+	templURI := params.TextDocument.URI
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
 	result, err = p.Target.OnTypeFormatting(ctx, params)
-	if err != nil {
+	if err != nil || result == nil {
 		return
 	}
-	if result == nil {
-		return
-	}
-	// Rewrite the response.
-	for i, r := range result {
-		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
-		result[i] = r
+	if isTempl {
+		for i, r := range result {
+			result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.Range)
+		}
 	}
 	return
 }
@@ -1215,108 +1205,100 @@ func (p *Server) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTyp
 func (p *Server) PrepareRename(ctx context.Context, params *lsp.PrepareRenameParams) (result *lsp.Range, err error) {
 	p.Log.Info("client -> server: PrepareRename")
 	defer p.Log.Info("client -> server: PrepareRename end")
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
-	}
-	// Rewrite the request.
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
 		return nil, nil
 	}
-	// Get the response.
+	templURI := params.TextDocument.URI
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
 	result, err = p.Target.PrepareRename(ctx, params)
-	if err != nil {
+	if err != nil || result == nil {
 		return
 	}
-	if result == nil {
-		return
+	if isTempl {
+		output := convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, *result)
+		return &output, nil
 	}
-	// Rewrite the response.
-	output := p.convertGoRangeToTemplRange(templURI, *result)
-	return &output, nil
+	return
 }
 
 func (p *Server) RangeFormatting(ctx context.Context, params *lsp.DocumentRangeFormattingParams) (result []lsp.TextEdit, err error) {
 	p.Log.Info("client -> server: RangeFormatting")
 	defer p.Log.Info("client -> server: RangeFormatting end")
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
+	templURI := params.TextDocument.URI
+	isTemplFile, goURI := convertTemplToGoURI(templURI)
+	if !isTemplFile {
+		return nil, nil
+	}
+	var ok bool
+	if params.Range, ok = p.convertTemplRangeToGoRange(templURI, params.Range); !ok {
 		return
 	}
-	// Rewrite the request.
-	var isTemplURI bool
-	isTemplURI, params.TextDocument.URI = convertTemplToGoURI(templURI)
-	if !isTemplURI {
-		err = fmt.Errorf("not a templ file")
-		return
-	}
-	// Call gopls.
+	params.TextDocument.URI = goURI
 	result, err = p.Target.RangeFormatting(ctx, params)
 	if err != nil {
 		return
 	}
-	// Rewrite the response.
 	for i, r := range result {
-		r.Range = p.convertGoRangeToTemplRange(templURI, r.Range)
-		result[i] = r
+		result[i].Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r.Range)
 	}
-	return result, err
+	return
 }
 
 func (p *Server) References(ctx context.Context, params *lsp.ReferenceParams) (result []lsp.Location, err error) {
 	p.Log.Info("client -> server: References")
 	defer p.Log.Info("client -> server: References end")
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
-	}
-	// Rewrite the request.
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
 		return nil, nil
 	}
-	// Call gopls.
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
 	result, err = p.Target.References(ctx, params)
-	if err != nil {
+	if err != nil || result == nil {
 		return
 	}
-	// Rewrite the response.
-	for i, r := range result {
-		isTemplURI, templURI := convertTemplGoToTemplURI(r.URI)
-		if isTemplURI {
-			p.Log.Info(fmt.Sprintf("references-%d - range conversion for %s", i, r.URI))
-			r.URI, r.Range = templURI, p.convertGoRangeToTemplRange(templURI, r.Range)
-		}
-		p.Log.Info(fmt.Sprintf("references-%d: %+v", i, r))
-		result[i] = r
-	}
-	return result, err
+	convertLocationResults(p.SourceMapCache, p.Log, result)
+	return
 }
 
 func (p *Server) Rename(ctx context.Context, params *lsp.RenameParams) (result *lsp.WorkspaceEdit, err error) {
 	p.Log.Info("client -> server: Rename")
 	defer p.Log.Info("client -> server: Rename end")
-	return p.Target.Rename(ctx, params)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
+	}
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
+	result, err = p.Target.Rename(ctx, params)
+	if err != nil {
+		return
+	}
+	convertWorkspaceEdit(p.SourceMapCache, p.Log, result)
+	return
 }
 
 func (p *Server) SignatureHelp(ctx context.Context, params *lsp.SignatureHelpParams) (result *lsp.SignatureHelp, err error) {
 	p.Log.Info("client -> server: SignatureHelp")
 	defer p.Log.Info("client -> server: SignatureHelp end")
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
+	if isNonTemplGoURI(params.TextDocument.URI) {
+		return nil, nil
 	}
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
 		return nil, nil
+	}
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
 	}
 	return p.Target.SignatureHelp(ctx, params)
 }
@@ -1324,33 +1306,43 @@ func (p *Server) SignatureHelp(ctx context.Context, params *lsp.SignatureHelpPar
 func (p *Server) Symbols(ctx context.Context, params *lsp.WorkspaceSymbolParams) (result []lsp.SymbolInformation, err error) {
 	p.Log.Info("client -> server: Symbols")
 	defer p.Log.Info("client -> server: Symbols end")
-	return p.Target.Symbols(ctx, params)
+	result, err = p.Target.Symbols(ctx, params)
+	if err != nil || result == nil {
+		return
+	}
+	for i, s := range result {
+		if isTemplGoFile, templURI := convertTemplGoToTemplURI(s.Location.URI); isTemplGoFile {
+			result[i].Location.URI = templURI
+			result[i].Location.Range = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, s.Location.Range)
+		}
+	}
+	return
 }
 
 func (p *Server) TypeDefinition(ctx context.Context, params *lsp.TypeDefinitionParams) (result []lsp.Location, err error) {
 	p.Log.Info("client -> server: TypeDefinition")
 	defer p.Log.Info("client -> server: TypeDefinition end")
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
-	}
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
 		return nil, nil
 	}
-	return p.Target.TypeDefinition(ctx, params)
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
+	result, err = p.Target.TypeDefinition(ctx, params)
+	if err != nil || result == nil {
+		return
+	}
+	convertLocationResults(p.SourceMapCache, p.Log, result)
+	return
 }
 
 func (p *Server) WillSave(ctx context.Context, params *lsp.WillSaveTextDocumentParams) (err error) {
 	p.Log.Info("client -> server: WillSave")
 	defer p.Log.Info("client -> server: WillSave end")
-	var ok bool
-	ok, params.TextDocument.URI = convertTemplToGoURI(params.TextDocument.URI)
-	if !ok {
-		p.Log.Error("not a templ file")
-		return nil
+	if isTemplFile, goURI := convertTemplToGoURI(params.TextDocument.URI); isTemplFile {
+		params.TextDocument.URI = goURI
 	}
 	return p.Target.WillSave(ctx, params)
 }
@@ -1412,19 +1404,55 @@ func (p *Server) CodeLensRefresh(ctx context.Context) (err error) {
 func (p *Server) PrepareCallHierarchy(ctx context.Context, params *lsp.CallHierarchyPrepareParams) (result []lsp.CallHierarchyItem, err error) {
 	p.Log.Info("client -> server: PrepareCallHierarchy")
 	defer p.Log.Info("client -> server: PrepareCallHierarchy end")
-	return p.Target.PrepareCallHierarchy(ctx, params)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil, nil
+	}
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
+	}
+	result, err = p.Target.PrepareCallHierarchy(ctx, params)
+	if err != nil || result == nil {
+		return
+	}
+	for i := range result {
+		convertCallHierarchyItem(p.SourceMapCache, p.Log, &result[i])
+	}
+	return
 }
 
 func (p *Server) IncomingCalls(ctx context.Context, params *lsp.CallHierarchyIncomingCallsParams) (result []lsp.CallHierarchyIncomingCall, err error) {
 	p.Log.Info("client -> server: IncomingCalls")
 	defer p.Log.Info("client -> server: IncomingCalls end")
-	return p.Target.IncomingCalls(ctx, params)
+	result, err = p.Target.IncomingCalls(ctx, params)
+	if err != nil || result == nil {
+		return
+	}
+	for i := range result {
+		// Check the original URI before converting the item.
+		isTemplGoFile, templURI := convertTemplGoToTemplURI(result[i].From.URI)
+		convertCallHierarchyItem(p.SourceMapCache, p.Log, &result[i].From)
+		if isTemplGoFile {
+			for j, r := range result[i].FromRanges {
+				result[i].FromRanges[j] = convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, r)
+			}
+		}
+	}
+	return
 }
 
 func (p *Server) OutgoingCalls(ctx context.Context, params *lsp.CallHierarchyOutgoingCallsParams) (result []lsp.CallHierarchyOutgoingCall, err error) {
 	p.Log.Info("client -> server: OutgoingCalls")
 	defer p.Log.Info("client -> server: OutgoingCalls end")
-	return p.Target.OutgoingCalls(ctx, params)
+	result, err = p.Target.OutgoingCalls(ctx, params)
+	if err != nil || result == nil {
+		return
+	}
+	for i := range result {
+		convertCallHierarchyItem(p.SourceMapCache, p.Log, &result[i].To)
+	}
+	return
 }
 
 func (p *Server) SemanticTokensFull(ctx context.Context, params *lsp.SemanticTokensParams) (result *lsp.SemanticTokens, err error) {
@@ -1475,15 +1503,16 @@ func (p *Server) LinkedEditingRange(ctx context.Context, params *lsp.LinkedEditi
 func (p *Server) Moniker(ctx context.Context, params *lsp.MonikerParams) (result []lsp.Moniker, err error) {
 	p.Log.Info("client -> server: Moniker")
 	defer p.Log.Info("client -> server: Moniker end")
-	templURI, err := uri.ParseDocumentURI(string(params.TextDocument.URI))
-	if err != nil {
-		p.Log.Error("invalid uri", slog.String("uri", string(params.TextDocument.URI)))
-		return
+	if isNonTemplGoURI(params.TextDocument.URI) {
+		return nil, nil
 	}
-	var ok bool
-	ok, params.TextDocument.URI, params.Position = p.updatePosition(templURI, params.Position)
+	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
 	if !ok {
 		return nil, nil
+	}
+	if isTempl {
+		params.TextDocument.URI = goURI
+		params.Position = goPos
 	}
 	return p.Target.Moniker(ctx, params)
 }
