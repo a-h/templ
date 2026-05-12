@@ -15,12 +15,15 @@ import (
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Create a channel to send deferred component renders to the template.
-		data := make(chan SlotContents)
+		expectedSlots := 3
 
-		// We know there are 3 slots, so start a WaitGroup.
+		// Create a channel to send deferred component renders to the template.
+		// Use a buffered channel so the goroutines can finish without being blocked.
+		data := make(chan SlotContents, expectedSlots)
+
+		// We know the number of slots, so start a WaitGroup.
 		var wg sync.WaitGroup
-		wg.Add(3)
+		wg.Add(expectedSlots)
 
 		// Start the async processes.
 		// Sidebar.
@@ -101,7 +104,7 @@ func Slot(name string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 70, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 73, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
@@ -114,7 +117,7 @@ func Slot(name string) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 71, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 74, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -298,7 +301,7 @@ func Page(data chan SlotContents) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(sc.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 105, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 108, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 				if templ_7745c5c3_Err != nil {
