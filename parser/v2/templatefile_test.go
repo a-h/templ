@@ -1,7 +1,9 @@
 package parser
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -239,5 +241,22 @@ func TestDefaultPackageName(t *testing.T) {
 				t.Errorf("expected %q got %q", tt.expected, actual)
 			}
 		})
+	}
+}
+
+func TestTemplateFileParserLargeFileWithManyTemplates(t *testing.T) {
+	var sb strings.Builder
+	sb.WriteString("package main\n\n")
+	for i := 0; i < 80; i++ {
+		_, _ = fmt.Fprintf(&sb, "templ Component%d() {\n", i)
+		for j := 0; j < 40; j++ {
+			_, _ = fmt.Fprintf(&sb, "\t<p>Some HTML content for component %d row %d.</p>\n", i, j)
+		}
+		sb.WriteString("}\n\n")
+	}
+
+	_, err := ParseString(sb.String())
+	if err != nil {
+		t.Fatalf("expected large template file to parse: %v", err)
 	}
 }

@@ -2,6 +2,8 @@ package parser
 
 import (
 	"fmt"
+	"go/scanner"
+	"go/token"
 	"strings"
 
 	"github.com/a-h/parse"
@@ -13,13 +15,54 @@ func parseGoFuncDecl(prefix string, pi *parse.Input) (name string, expression Ex
 	from := pi.Index()
 	src, _ := pi.Peek(-1)
 	src = strings.TrimPrefix(src, prefix)
-	name, expr, err := goexpression.Func("func " + src)
+	decl, err := funcDeclSource(src)
+	if err != nil {
+		return name, expression, parse.Error(fmt.Sprintf("invalid %s declaration: %v", prefix, err.Error()), pi.Position())
+	}
+	name, expr, err := goexpression.Func("func " + decl + "{}")
 	if err != nil {
 		return name, expression, parse.Error(fmt.Sprintf("invalid %s declaration: %v", prefix, err.Error()), pi.Position())
 	}
 	pi.Take(len(prefix) + len(expr))
 	to := pi.Position()
 	return name, NewExpression(expr, pi.PositionAt(from+len(prefix)), to), nil
+}
+
+func funcDeclSource(src string) (string, error) {
+	var s scanner.Scanner
+	fset := token.NewFileSet()
+	file := fset.AddFile("", fset.Base(), len(src))
+	s.Init(file, []byte(src), nil, scanner.ScanComments)
+
+	var parenDepth, bracketDepth, braceDepth int
+	for {
+		pos, tok, _ := s.Scan()
+		switch tok {
+		case token.EOF:
+			return "", fmt.Errorf("function body open brace not found")
+		case token.LPAREN:
+			parenDepth++
+		case token.RPAREN:
+			if parenDepth > 0 {
+				parenDepth--
+			}
+		case token.LBRACK:
+			bracketDepth++
+		case token.RBRACK:
+			if bracketDepth > 0 {
+				bracketDepth--
+			}
+		case token.LBRACE:
+			if parenDepth == 0 && bracketDepth == 0 && braceDepth == 0 {
+				return src[:int(pos)-1], nil
+			}
+			braceDepth++
+		case token.RBRACE:
+			if braceDepth > 0 {
+				braceDepth--
+			}
+		}
+	}
 }
 
 func parseTemplFuncDecl(pi *parse.Input) (name string, expression Expression, err error) {
