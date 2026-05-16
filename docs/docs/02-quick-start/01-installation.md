@@ -122,33 +122,39 @@ The permissions of the source code are set to a user with a UID of 65532, which 
 Note also the use of the `RUN ["templ", "generate"]` command instead of the common `RUN templ generate` command. This is because the templ Docker container does not contain a shell environment to keep its size minimal, so the command must be ran in the ["exec" form](https://docs.docker.com/reference/dockerfile/#shell-and-exec-form).
 
 ```Dockerfile
-# Fetch
-FROM golang:latest AS fetch-stage
-COPY go.mod go.sum /app
-WORKDIR /app
-RUN go mod download
+ARG TEMPL_VERSION=latest
 
-# Generate
-FROM ghcr.io/a-h/templ:latest AS generate-stage
-COPY --chown=65532:65532 . /app
+# If you want to bump the templ version before running `templ`, uncomment these and `COPY --from=prepare ...` from `template-builder` stage. (currently [it does not any effect](https://github.com/a-h/templ/discussions/1394#discussioncomment-16935844) other than showing a warning)
+#FROM golang:latest AS prepare
+#WORKDIR /app
+#COPY go.mod go.sum* /app
+#ARG TEMPL_VERSION
+#RUN go get -u github.com/a-h/templ@${TEMPL_VERSION}
+
+FROM ghcr.io/a-h/templ:${TEMPL_VERSION} AS template-builder
 WORKDIR /app
+COPY --chown=65532:65532 . /app
+#COPY --from=prepare /app/go.mod /app/go.sum* /app
 RUN ["templ", "generate"]
 
-# Build
-FROM golang:latest AS build-stage
-COPY --from=generate-stage /app /app
+FROM golang:latest AS builder
 WORKDIR /app
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/app
+COPY go.mod go.sum* /app
+RUN go mod download
+ARG TEMPL_VERSION
+RUN go get -u github.com/a-h/templ@${TEMPL_VERSION}
+COPY --from=template-builder /app .
+# the first command is required if "go.sum" file was not provided by context directory/repo because generated "go.sum" by "go mod download" lacks some information and needs to be completed by "go mod tidy"
+RUN CGO_ENABLED=0 go mod tidy && \
+    CGO_ENABLED=0 GOOS=linux go build -o /app/app
+# (Optional) run some tests
+#RUN go test -v ./...
 
-# Test
-FROM build-stage AS test-stage
-RUN go test -v ./...
-
-# Deploy
+# Production
 FROM gcr.io/distroless/base-debian12 AS deploy-stage
 WORKDIR /
-COPY --from=build-stage /app/app /app
-EXPOSE 8080
+COPY --from=builder /app/app /app
+EXPOSE 3000
 USER nonroot:nonroot
 ENTRYPOINT ["/app"]
 ```
