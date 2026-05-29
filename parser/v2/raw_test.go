@@ -44,6 +44,10 @@ func TestRawElementParser(t *testing.T) {
 					},
 				},
 				Contents: "contents",
+				ContentsRange: Range{
+					From: Position{Index: 23, Line: 0, Col: 23},
+					To:   Position{Index: 31, Line: 0, Col: 31},
+				},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 39, Line: 0, Col: 39},
@@ -76,6 +80,10 @@ func TestRawElementParser(t *testing.T) {
 					},
 				},
 				Contents: ignoredContent,
+				ContentsRange: Range{
+					From: Position{Index: 23, Line: 0, Col: 23},
+					To:   Position{Index: 44, Line: 3, Col: 1},
+				},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 52, Line: 3, Col: 9},
