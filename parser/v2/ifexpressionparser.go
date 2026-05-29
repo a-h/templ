@@ -54,13 +54,26 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err erro
 	}
 
 	// Read the optional 'Else' Nodes.
-	var elseNodes Nodes
-	if elseNodes, _, err = elseExpression.Parse(pi); err != nil {
-		// Populate the nodes anyway, so that the LSP can use them.
-		r.Else = elseNodes.Nodes
+	elseIdx := pi.Index()
+	var elseMatched bool
+	if _, elseMatched, err = elseKeyword.Parse(pi); err != nil {
 		return r, true, err
 	}
-	r.Else = elseNodes.Nodes
+	if elseMatched {
+		r.ElseRange = NewRange(pi.PositionAt(elseIdx), pi.Position())
+		if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+			return r, true, err
+		}
+		var elseNodes Nodes
+		np := newTemplateNodeParser(closeBraceWithOptionalPadding, "else expression closing brace")
+		if elseNodes, _, err = np.Parse(pi); err != nil {
+			r.Else = elseNodes.Nodes
+			return r, true, err
+		}
+		r.Else = elseNodes.Nodes
+	} else {
+		pi.Seek(elseIdx)
+	}
 
 	// Read the required closing brace.
 	if _, matched, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !matched {
@@ -112,6 +125,15 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, matche
 	r.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return r, true, nil
 }
+
+// elseKeyword matches "} else {" without consuming trailing whitespace, so the
+// caller can record its precise source range before the body begins.
+var elseKeyword = parse.All(
+	parse.Rune('}'),
+	parse.OptionalWhitespace,
+	parse.String("else"),
+	parse.OptionalWhitespace,
+	parse.Rune('{'))
 
 var endElseParser = parse.All(
 	parse.Rune('}'),

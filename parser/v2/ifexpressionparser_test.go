@@ -180,6 +180,10 @@ func TestIfExpression(t *testing.T) {
 						},
 					},
 				},
+				ElseRange: Range{
+					From: Position{Index: 18, Line: 2, Col: 0},
+					To:   Position{Index: 26, Line: 2, Col: 8},
+				},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 37, Line: 4, Col: 1},
@@ -404,9 +408,75 @@ func TestIfExpression(t *testing.T) {
 						},
 					},
 				},
+				ElseRange: Range{
+					From: Position{Index: 17, Line: 2, Col: 0},
+					To:   Position{Index: 25, Line: 2, Col: 8},
+				},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 36, Line: 4, Col: 1},
+				},
+			},
+		},
+		{
+			name: "if: else, keyword spans multiple lines",
+			input: `if p.A {
+	{ "A" }
+}
+else {
+	{ "B" }
+}`,
+			expected: &IfExpression{
+				Expression: Expression{
+					Value: `p.A`,
+					Range: Range{
+						From: Position{Index: 3, Line: 0, Col: 3},
+						To:   Position{Index: 6, Line: 0, Col: 6},
+					},
+				},
+				Then: []Node{
+					&Whitespace{Range: Range{
+						From: Position{Index: 9, Line: 1, Col: 0},
+						To:   Position{Index: 10, Line: 1, Col: 1},
+					}, Value: "\t"},
+					&StringExpression{
+						Expression: Expression{
+							Value: `"A"`,
+							Range: Range{
+								From: Position{Index: 12, Line: 1, Col: 3},
+								To:   Position{Index: 15, Line: 1, Col: 6},
+							},
+						},
+						TrailingSpace: SpaceVertical,
+						Range: Range{
+							From: Position{Index: 10, Line: 1, Col: 1},
+							To:   Position{Index: 18, Line: 2, Col: 0},
+						},
+					},
+				},
+				Else: []Node{
+					&StringExpression{
+						Expression: Expression{
+							Value: `"B"`,
+							Range: Range{
+								From: Position{Index: 30, Line: 4, Col: 3},
+								To:   Position{Index: 33, Line: 4, Col: 6},
+							},
+						},
+						TrailingSpace: SpaceVertical,
+						Range: Range{
+							From: Position{Index: 28, Line: 4, Col: 1},
+							To:   Position{Index: 36, Line: 5, Col: 0},
+						},
+					},
+				},
+				ElseRange: Range{
+					From: Position{Index: 18, Line: 2, Col: 0},
+					To:   Position{Index: 26, Line: 3, Col: 6},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 37, Line: 5, Col: 1},
 				},
 			},
 		},
@@ -921,6 +991,10 @@ func TestIfExpression(t *testing.T) {
 						},
 					},
 				},
+				ElseRange: Range{
+					From: Position{Index: 68, Line: 6, Col: 0},
+					To:   Position{Index: 76, Line: 6, Col: 8},
+				},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},
 					To:   Position{Index: 87, Line: 8, Col: 1},
@@ -1009,6 +1083,10 @@ func TestIfExpression(t *testing.T) {
 							To:   Position{Index: 53, Line: 4, Col: 1},
 						},
 					},
+				},
+				ElseRange: Range{
+					From: Position{Index: 33, Line: 2, Col: 1},
+					To:   Position{Index: 41, Line: 2, Col: 9},
 				},
 				Range: Range{
 					From: Position{Index: 0, Line: 0, Col: 0},

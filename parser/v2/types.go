@@ -795,10 +795,11 @@ func writeStrings(w io.Writer, ss ...string) error {
 }
 
 type RawElement struct {
-	Name       string
-	Attributes []Attribute
-	Contents   string
-	Range      Range
+	Name          string
+	Attributes    []Attribute
+	Contents      string
+	ContentsRange Range
+	Range         Range
 }
 
 func (e *RawElement) IsNode() bool { return true }
@@ -1335,6 +1336,7 @@ type IfExpression struct {
 	Then       []Node
 	ElseIfs    []ElseIfExpression
 	Else       []Node
+	ElseRange  Range // source position of the "} else {" keyword; zero if no else clause
 	Range      Range
 }
 
