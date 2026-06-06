@@ -678,6 +678,10 @@ type stringable interface {
 	ints | uints | floats | complexNumbers | ~string | ~bool
 }
 
+type attributeValue interface {
+	ints | uints | floats | complexNumbers | ~string | ~bool | ComponentScript
+}
+
 // JoinStringErrs joins an optional list of errors.
 func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
 	return fmt.Sprint(s), errors.Join(errs...)
@@ -687,11 +691,11 @@ func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
 // HTML-escaped string suitable for use in an attribute value. It handles
 // ComponentScript values by returning their Call field (already escaped),
 // and falls back to HTML-escaping fmt.Sprint for other types.
-func ResolveAttributeValue(v any, errs ...error) (string, error) {
+func ResolveAttributeValue[T attributeValue](v T, errs ...error) (string, error) {
 	if err := errors.Join(errs...); err != nil {
 		return "", err
 	}
-	switch v := v.(type) {
+	switch v := any(v).(type) {
 	case ComponentScript:
 		return v.Call, nil
 	case string:
