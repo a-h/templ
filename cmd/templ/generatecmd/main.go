@@ -58,6 +58,10 @@ Args:
     Port to run the pprof server on.
   -keep-orphaned-files
     Keeps orphaned generated templ files. (default false)
+  -no-format
+    Skips formatting of generated Go code. Source map positions will be
+    consistent with the unformatted output, which is useful for programmatic
+    consumers such as coverage tools and build system integrations (e.g. Bazel).
   -check
     Checks that generated files are up to date, without writing changes.
     Returns a non-zero exit code if any files need regenerating.
@@ -111,6 +115,7 @@ func NewArguments(stdout, stderr io.Writer, args []string) (cmdArgs Arguments, l
 	cmd.IntVar(&cmdArgs.WorkerCount, "w", runtime.NumCPU(), "")
 	cmd.IntVar(&cmdArgs.PPROFPort, "pprof", 0, "")
 	cmd.BoolVar(&cmdArgs.KeepOrphanedFiles, "keep-orphaned-files", false, "")
+	cmd.BoolVar(&cmdArgs.NoFormat, "no-format", false, "")
 	cmd.BoolVar(&cmdArgs.Lazy, "lazy", false, "")
 	cmd.BoolVar(&cmdArgs.Check, "check", false, "")
 	verboseFlag := cmd.Bool("v", false, "")
@@ -185,6 +190,7 @@ type Arguments struct {
 	// PPROFPort is the port to run the pprof server on.
 	PPROFPort         int
 	KeepOrphanedFiles bool
+	NoFormat          bool
 	Lazy              bool
 }
 

@@ -75,6 +75,7 @@ func NewFSEventHandler(
 	keepOrphanedFiles bool,
 	fileWriter FileWriterFunc,
 	lazy bool,
+	noFormat bool,
 ) *FSEventHandler {
 	if !path.IsAbs(dir) {
 		dir, _ = filepath.Abs(dir)
@@ -92,6 +93,7 @@ func NewFSEventHandler(
 		keepOrphanedFiles:     keepOrphanedFiles,
 		writer:                fileWriter,
 		lazy:                  lazy,
+		noFormat:              noFormat,
 	}
 	return fseh
 }
@@ -111,6 +113,7 @@ type FSEventHandler struct {
 	keepOrphanedFiles     bool
 	writer                FileWriterFunc
 	lazy                  bool
+	noFormat              bool
 }
 
 type GenerateResult struct {
@@ -234,10 +237,15 @@ func (h *FSEventHandler) generate(ctx context.Context, fileName string) (result 
 		return GenerateResult{}, nil, fmt.Errorf("%s generation error: %w", fileName, err)
 	}
 
-	formattedGoCode, err := format.Source(b.Bytes())
-	if err != nil {
-		err = remapErrorList(err, generatorOutput.SourceMap, fileName)
-		return GenerateResult{}, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
+	var formattedGoCode []byte
+	if h.noFormat {
+		formattedGoCode = b.Bytes()
+	} else {
+		formattedGoCode, err = format.Source(b.Bytes())
+		if err != nil {
+			err = remapErrorList(err, generatorOutput.SourceMap, fileName)
+			return GenerateResult{}, nil, fmt.Errorf("%s source formatting error %w", fileName, err)
+		}
 	}
 
 	// Hash output, and write out the file if the goCodeHash has changed.
