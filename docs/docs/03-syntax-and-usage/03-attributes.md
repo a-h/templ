@@ -125,6 +125,22 @@ templ component() {
 <hr style="padding: 10px" class="itIsTrue" />
 ```
 
+Use `else if` and `else` to choose between sets of attributes. Conditions are evaluated in order, and only the first matching branch is rendered.
+
+```templ
+templ status(severity int) {
+  <div
+    if severity == 0 {
+      class="success"
+    } else if severity == 1 {
+      class="warning"
+    } else {
+      class="error"
+    }
+  ></div>
+}
+```
+
 ## Attribute key expressions
 
 Use a string expression to dynamically set the key of an attribute.
