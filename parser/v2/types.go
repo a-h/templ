@@ -1054,7 +1054,14 @@ func (sa *SpreadAttributes) Copy() Attribute {
 type ConditionalAttribute struct {
 	Expression Expression
 	Then       []Attribute
+	ElseIfs    []ConditionalElseIfAttribute
 	Else       []Attribute
+	Range      Range
+}
+
+type ConditionalElseIfAttribute struct {
+	Expression Expression
+	Then       []Attribute
 	Range      Range
 }
 
@@ -1065,24 +1072,23 @@ func (ca *ConditionalAttribute) String() string {
 }
 
 func (ca *ConditionalAttribute) Write(w io.Writer, indent int) error {
-	if err := writeIndent(w, indent, "if "); err != nil {
-		return err
-	}
-	if _, err := w.Write([]byte(ca.Expression.Value)); err != nil {
-		return err
-	}
-	if _, err := w.Write([]byte(" {\n")); err != nil {
+	if err := writeIndent(w, indent, "if ", ca.Expression.Value, " {\n"); err != nil {
 		return err
 	}
 	{
 		indent++
-		for _, attr := range ca.Then {
-			if err := attr.Write(w, indent); err != nil {
-				return err
-			}
-			if _, err := w.Write([]byte("\n")); err != nil {
-				return err
-			}
+		if err := writeAttributesIndented(w, indent, ca.Then); err != nil {
+			return err
+		}
+		indent--
+	}
+	for _, elseIf := range ca.ElseIfs {
+		if err := writeIndent(w, indent, "} else if ", elseIf.Expression.Value, " {\n"); err != nil {
+			return err
+		}
+		indent++
+		if err := writeAttributesIndented(w, indent, elseIf.Then); err != nil {
+			return err
 		}
 		indent--
 	}
@@ -1098,13 +1104,8 @@ func (ca *ConditionalAttribute) Write(w io.Writer, indent int) error {
 	}
 	{
 		indent++
-		for _, attr := range ca.Else {
-			if err := attr.Write(w, indent); err != nil {
-				return err
-			}
-			if _, err := w.Write([]byte("\n")); err != nil {
-				return err
-			}
+		if err := writeAttributesIndented(w, indent, ca.Else); err != nil {
+			return err
 		}
 		indent--
 	}
@@ -1114,14 +1115,35 @@ func (ca *ConditionalAttribute) Write(w io.Writer, indent int) error {
 	return nil
 }
 
+func writeAttributesIndented(w io.Writer, indent int, attrs []Attribute) error {
+	for _, attr := range attrs {
+		if err := attr.Write(w, indent); err != nil {
+			return err
+		}
+		if _, err := w.Write([]byte("\n")); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (ca *ConditionalAttribute) Visit(v Visitor) error {
 	return v.VisitConditionalAttribute(ca)
 }
 
 func (ca *ConditionalAttribute) Copy() Attribute {
+	elseIfs := make([]ConditionalElseIfAttribute, len(ca.ElseIfs))
+	for i, elseIf := range ca.ElseIfs {
+		elseIfs[i] = ConditionalElseIfAttribute{
+			Expression: elseIf.Expression,
+			Then:       CopyAttributes(elseIf.Then),
+			Range:      elseIf.Range,
+		}
+	}
 	return &ConditionalAttribute{
 		Expression: ca.Expression,
 		Then:       CopyAttributes(ca.Then),
+		ElseIfs:    elseIfs,
 		Else:       CopyAttributes(ca.Else),
 		Range:      ca.Range,
 	}
