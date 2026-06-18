@@ -1,0 +1,7 @@
+module github.com/a-h/templ/examples/testing-args
+
+go 1.25.0
+
+replace github.com/a-h/templ => ../../
+
+require github.com/a-h/templ v0.0.0-00010101000000-000000000000
