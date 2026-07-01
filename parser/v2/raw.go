@@ -21,13 +21,16 @@ func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	if _, ok, err = lt.Parse(pi); err != nil || !ok {
 		return
 	}
+	openTagStart := pi.PositionAt(start)
 
 	// Element name.
 	e := &RawElement{}
+	nameStartIndex := pi.Index()
 	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
+	e.NameRange = NewRange(pi.PositionAt(nameStartIndex), pi.Position())
 
 	if e.Name != p.name {
 		pi.Seek(start)
@@ -51,6 +54,7 @@ func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		pi.Seek(start)
 		return
 	}
+	e.OpenTagRange = NewRange(openTagStart, pi.Position())
 
 	// Once we've got an open tag, parse anything until the end tag as the tag contents.
 	// It's going to be rendered out raw.
@@ -60,7 +64,9 @@ func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 		return
 	}
 	// Cut the end element.
+	closeTagStart := pi.Position()
 	_, _, _ = end.Parse(pi)
+	e.CloseTagRange = NewRange(closeTagStart, pi.Position())
 
 	e.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return e, true, nil

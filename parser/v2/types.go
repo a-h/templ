@@ -500,6 +500,9 @@ type Element struct {
 	IndentChildren bool
 	TrailingSpace  TrailingSpace
 	NameRange      Range
+	OpenTagRange   Range
+	CloseTagRange  *Range
+	SelfClosing    bool
 	Range          Range
 }
 
@@ -731,9 +734,11 @@ type ScriptContents struct {
 }
 
 type ScriptElement struct {
-	Attributes []Attribute
-	Contents   []ScriptContents
-	Range      Range
+	Attributes    []Attribute
+	Contents      []ScriptContents
+	OpenTagRange  Range
+	CloseTagRange Range
+	Range         Range
 }
 
 func (se *ScriptElement) IsNode() bool { return true }
@@ -795,10 +800,13 @@ func writeStrings(w io.Writer, ss ...string) error {
 }
 
 type RawElement struct {
-	Name       string
-	Attributes []Attribute
-	Contents   string
-	Range      Range
+	Name          string
+	Attributes    []Attribute
+	Contents      string
+	NameRange     Range
+	OpenTagRange  Range
+	CloseTagRange Range
+	Range         Range
 }
 
 func (e *RawElement) IsNode() bool { return true }

@@ -84,6 +84,8 @@ func TestIfExpression(t *testing.T) {
 						},
 						IndentChildren: true,
 						TrailingSpace:  SpaceVertical,
+						OpenTagRange:   Range{From: Position{Index: 12, Line: 1}, To: Position{Index: 18, Line: 1, Col: 6}},
+						CloseTagRange:  &Range{From: Position{Index: 40, Line: 3}, To: Position{Index: 47, Line: 3, Col: 7}},
 						Range: Range{
 							From: Position{Index: 12, Line: 1, Col: 0},
 							To:   Position{Index: 48, Line: 4, Col: 0},
@@ -308,6 +310,8 @@ func TestIfExpression(t *testing.T) {
 						},
 						IndentChildren: true,
 						TrailingSpace:  SpaceVertical,
+						OpenTagRange:   Range{From: Position{Index: 12, Line: 1}, To: Position{Index: 18, Line: 1, Col: 6}},
+						CloseTagRange:  &Range{From: Position{Index: 40, Line: 3}, To: Position{Index: 47, Line: 3, Col: 7}},
 						Range: Range{
 							From: Position{Index: 12, Line: 1, Col: 0},
 							To:   Position{Index: 48, Line: 4, Col: 0},
@@ -508,6 +512,8 @@ func TestIfExpression(t *testing.T) {
 									},
 								},
 								TrailingSpace: SpaceVertical,
+								OpenTagRange:  Range{From: Position{Index: 29, Line: 2, Col: 6}, To: Position{Index: 34, Line: 2, Col: 11}},
+								CloseTagRange: &Range{From: Position{Index: 41, Line: 2, Col: 18}, To: Position{Index: 47, Line: 2, Col: 24}},
 								Range: Range{
 									From: Position{Index: 29, Line: 2, Col: 6},
 									To:   Position{Index: 53, Line: 3, Col: 5},
