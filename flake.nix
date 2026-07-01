@@ -2,14 +2,14 @@
   description = "templ";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     version = {
-      url = "github:a-h/version/0.0.10";
+      url = "github:a-h/version";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -48,7 +48,7 @@
             name = "templ";
             subPackages = [ "cmd/templ" ];
             src = gitignore.lib.gitignoreSource ./.;
-            vendorHash = "sha256-i4uDGZb3VZUvIyO2Tt53VR1Do/3OYtj6JccGoFnnlbs=";
+            vendorHash = "sha256-byv5yA9y8kp/DHpICX5cgnoFdtv9ztVt3EXR6SWNTN8=";
             env = {
               CGO_ENABLED = 0;
             };
@@ -77,7 +77,7 @@
             pkgs.govulncheck
             pkgs.ko # Used to build Docker images.
             pkgs.nodejs # Used to build templ-docs.
-            pkgs.nodePackages.prettier # Used for formatting JS and CSS.
+            pkgs.prettier # Used for formatting JS and CSS.
             pkgs.version
             pkgs.xc
           ];
