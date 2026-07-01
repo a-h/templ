@@ -39,6 +39,8 @@ Args:
     Set the regexp pattern of files that will be watched for changes. (default: '(.+\.go$)|(.+\.templ$)|(.+_templ\.txt$)')
   -ignore-pattern <regexp>
     Set the regexp pattern of files to ignore when watching for changes. (default: '')
+  -open-browser
+    Set to false to prevent the browser from opening when using the -proxy flag. (default true)
   -cmd <cmd>
     Set the command to run after generating code. The command is executed via
     the system shell ($SHELL on Unix, %COMSPEC% on Windows).
@@ -48,6 +50,10 @@ Args:
     The port the proxy will listen on. (default 7331)
   -proxybind
     The address the proxy will listen on. (default 127.0.0.1)
+  -proxy-tls-crt <file>
+    Path to a TLS certificate file to serve the proxy over HTTPS. Must be used with -proxy-tls-key and -proxy.
+  -proxy-tls-key <file>
+    Path to a TLS key file to serve the proxy over HTTPS. Must be used with -proxy-tls-crt and -proxy.
   -notify-proxy
     If present, the command will issue a reload event to the proxy 127.0.0.1:7331, or use proxyport and proxybind to specify a different address.
   -w
