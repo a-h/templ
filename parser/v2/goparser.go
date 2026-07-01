@@ -36,10 +36,12 @@ func funcDeclSource(src string) (string, error) {
 
 	var parenDepth, bracketDepth, braceDepth int
 	for {
-		pos, tok, _ := s.Scan()
+		pos, tok, lit := s.Scan()
 		switch tok {
 		case token.EOF:
 			return "", fmt.Errorf("function body open brace not found")
+		case token.ILLEGAL:
+			return "", fmt.Errorf("illegal token %q in declaration", lit)
 		case token.LPAREN:
 			parenDepth++
 		case token.RPAREN:
