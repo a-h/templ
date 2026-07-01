@@ -15,7 +15,7 @@ func parseGoFuncDecl(prefix string, pi *parse.Input) (name string, expression Ex
 	from := pi.Index()
 	src, _ := pi.Peek(-1)
 	src = strings.TrimPrefix(src, prefix)
-	decl, err := funcDeclSource(src)
+	decl, err := extractFuncDeclSignature(src)
 	if err != nil {
 		return name, expression, parse.Error(fmt.Sprintf("invalid %s declaration: %v", prefix, err.Error()), pi.Position())
 	}
@@ -28,7 +28,7 @@ func parseGoFuncDecl(prefix string, pi *parse.Input) (name string, expression Ex
 	return name, NewExpression(expr, pi.PositionAt(from+len(prefix)), to), nil
 }
 
-func funcDeclSource(src string) (string, error) {
+func extractFuncDeclSignature(src string) (string, error) {
 	var s scanner.Scanner
 	fset := token.NewFileSet()
 	file := fset.AddFile("", fset.Base(), len(src))

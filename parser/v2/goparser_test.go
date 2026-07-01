@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestFuncDeclSource(t *testing.T) {
+func TestExtractFuncDeclSignature(t *testing.T) {
 	tests := []struct {
 		name     string
 		src      string
@@ -75,7 +75,7 @@ func TestFuncDeclSource(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := funcDeclSource(tt.src)
+			got, err := extractFuncDeclSignature(tt.src)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -86,7 +86,7 @@ func TestFuncDeclSource(t *testing.T) {
 	}
 }
 
-func TestFuncDeclSourceReturnsErrorWhenBodyBraceIsMissing(t *testing.T) {
+func TestExtractFuncDeclSignatureReturnsErrorWhenBodyBraceIsMissing(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
@@ -98,7 +98,7 @@ func TestFuncDeclSourceReturnsErrorWhenBodyBraceIsMissing(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := funcDeclSource(tt.src)
+			_, err := extractFuncDeclSignature(tt.src)
 			if err == nil {
 				t.Fatal("expected an error, got nil")
 			}
@@ -157,7 +157,7 @@ func TestParseStringExtractsComplexTemplSignatures(t *testing.T) {
 	}
 }
 
-func FuzzFuncDeclSource(f *testing.F) {
+func FuzzExtractFuncDeclSignature(f *testing.F) {
 	seeds := []string{
 		"Component() {\n}",
 		"Component[T any](v struct{ X int }) {\n}",
@@ -170,7 +170,7 @@ func FuzzFuncDeclSource(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, src string) {
-		decl, err := funcDeclSource(src)
+		decl, err := extractFuncDeclSignature(src)
 		if err != nil {
 			return
 		}
@@ -183,11 +183,11 @@ func FuzzFuncDeclSource(f *testing.F) {
 	})
 }
 
-func BenchmarkFuncDeclSource(b *testing.B) {
+func BenchmarkExtractFuncDeclSignature(b *testing.B) {
 	src := "Component[T any](name string, items []T, v struct{ X int }) {\n\t<p>Body</p>\n}"
 	b.ReportAllocs()
 	for b.Loop() {
-		if _, err := funcDeclSource(src); err != nil {
+		if _, err := extractFuncDeclSignature(src); err != nil {
 			b.Fatalf("unexpected error: %v", err)
 		}
 	}
