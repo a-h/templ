@@ -628,43 +628,41 @@ func TestNonce(t *testing.T) {
 func TestResolveAttributeValue(t *testing.T) {
 	tests := []struct {
 		name     string
-		v        any
-		errs     []error
+		run      func() (string, error)
 		expected string
 		wantErr  bool
 	}{
 		{
 			name:     "string value is HTML-escaped",
-			v:        `<script>alert("xss")</script>`,
+			run:      func() (string, error) { return templ.ResolveAttributeValue(`<script>alert("xss")</script>`) },
 			expected: `&lt;script&gt;alert(&#34;xss&#34;)&lt;/script&gt;`,
 		},
 		{
 			name:     "integer value is converted to string",
-			v:        42,
+			run:      func() (string, error) { return templ.ResolveAttributeValue(42) },
 			expected: "42",
 		},
 		{
 			name:     "bool value is converted to string",
-			v:        true,
+			run:      func() (string, error) { return templ.ResolveAttributeValue(true) },
 			expected: "true",
 		},
 		{
 			name: "ComponentScript returns pre-escaped Call field",
-			v: templ.ComponentScript{
-				Call: `alert(&#34;Hello&#34;)`,
+			run: func() (string, error) {
+				return templ.ResolveAttributeValue(templ.ComponentScript{Call: `alert(&#34;Hello&#34;)`})
 			},
 			expected: `alert(&#34;Hello&#34;)`,
 		},
 		{
 			name:    "error is returned",
-			v:       "value",
-			errs:    []error{errors.New("test error")},
+			run:     func() (string, error) { return templ.ResolveAttributeValue("value", errors.New("test error")) },
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := templ.ResolveAttributeValue(tt.v, tt.errs...)
+			got, err := tt.run()
 			if tt.wantErr {
 				if err == nil {
 					t.Fatal("expected error, got nil")
