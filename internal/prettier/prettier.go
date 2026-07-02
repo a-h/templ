@@ -94,7 +94,7 @@ func Element(name string, typeAttrValue string, content string, depth int, prett
 	// Add divs to the start and end of the script to ensure that prettier formats the content with
 	// correct indentation.
 	for i := range depth {
-		indentationWrapper.WriteString(fmt.Sprintf("<div data-templ-depth=\"%d\">", i))
+		fmt.Fprintf(&indentationWrapper, "<div data-templ-depth=\"%d\">", i)
 	}
 
 	// Write start tag with type attribute if present.

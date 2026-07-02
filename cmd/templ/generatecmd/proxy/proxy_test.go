@@ -868,7 +868,7 @@ var y = true && false;
 alert("test");
 </script>`)
 		for i := range 50 {
-			inputBuilder.WriteString(fmt.Sprintf("<div>%d padding</div>\n", i))
+			fmt.Fprintf(&inputBuilder, "<div>%d padding</div>\n", i)
 		}
 		inputBuilder.WriteString("</body></html>")
 		input := inputBuilder.String()
