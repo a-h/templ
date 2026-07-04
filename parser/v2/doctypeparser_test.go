@@ -22,6 +22,18 @@ func TestDocTypeParser(t *testing.T) {
 					To:   Position{Index: 15, Line: 0, Col: 15},
 				},
 				Value: "html",
+				OpenRange: Range{
+					From: Position{},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+				ValueRange: Range{
+					From: Position{Index: 10, Line: 0, Col: 10},
+					To:   Position{Index: 14, Line: 0, Col: 14},
+				},
+				CloseRange: Range{
+					From: Position{Index: 14, Line: 0, Col: 14},
+					To:   Position{Index: 15, Line: 0, Col: 15},
+				},
 			},
 		},
 		{
@@ -33,6 +45,41 @@ func TestDocTypeParser(t *testing.T) {
 					To:   Position{Index: 15, Line: 0, Col: 15},
 				},
 				Value: "html",
+				OpenRange: Range{
+					From: Position{},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+				ValueRange: Range{
+					From: Position{Index: 10, Line: 0, Col: 10},
+					To:   Position{Index: 14, Line: 0, Col: 14},
+				},
+				CloseRange: Range{
+					From: Position{Index: 14, Line: 0, Col: 14},
+					To:   Position{Index: 15, Line: 0, Col: 15},
+				},
+			},
+		},
+		{
+			name:  "HTML 5 doctype - extra space",
+			input: `<!DOCTYPE  html>`,
+			expected: &DocType{
+				Range: Range{
+					From: Position{},
+					To:   Position{Index: 16, Line: 0, Col: 16},
+				},
+				Value: " html",
+				OpenRange: Range{
+					From: Position{},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+				ValueRange: Range{
+					From: Position{Index: 10, Line: 0, Col: 10},
+					To:   Position{Index: 15, Line: 0, Col: 15},
+				},
+				CloseRange: Range{
+					From: Position{Index: 15, Line: 0, Col: 15},
+					To:   Position{Index: 16, Line: 0, Col: 16},
+				},
 			},
 		},
 		{
@@ -44,6 +91,18 @@ func TestDocTypeParser(t *testing.T) {
 					To:   Position{Index: 102, Line: 0, Col: 102},
 				},
 				Value: `HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"`,
+				OpenRange: Range{
+					From: Position{},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+				ValueRange: Range{
+					From: Position{Index: 10, Line: 0, Col: 10},
+					To:   Position{Index: 101, Line: 0, Col: 101},
+				},
+				CloseRange: Range{
+					From: Position{Index: 101, Line: 0, Col: 101},
+					To:   Position{Index: 102, Line: 0, Col: 102},
+				},
 			},
 		},
 		{
@@ -55,6 +114,18 @@ func TestDocTypeParser(t *testing.T) {
 					To:   Position{Index: 97, Line: 0, Col: 97},
 				},
 				Value: `html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"`,
+				OpenRange: Range{
+					From: Position{},
+					To:   Position{Index: 9, Line: 0, Col: 9},
+				},
+				ValueRange: Range{
+					From: Position{Index: 10, Line: 0, Col: 10},
+					To:   Position{Index: 96, Line: 0, Col: 96},
+				},
+				CloseRange: Range{
+					From: Position{Index: 96, Line: 0, Col: 96},
+					To:   Position{Index: 97, Line: 0, Col: 97},
+				},
 			},
 		},
 	}
