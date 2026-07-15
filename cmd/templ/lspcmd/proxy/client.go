@@ -59,14 +59,19 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 	for i, diagnostic := range params.Diagnostics {
 		p.Log.Info(fmt.Sprintf("client <- server: PublishDiagnostics: [%d]", i), slog.Any("diagnostic", diagnostic))
 	}
-	// Get the sourcemap from the cache.
-	uri := strings.TrimSuffix(string(params.URI), "_templ.go") + ".templ"
-	sourceMap, ok := p.SourceMapCache.Get(uri)
-	if !ok {
-		p.Log.Error("unable to complete because the sourcemap for the URI doesn't exist in the cache", slog.String("uri", uri))
-		return fmt.Errorf("unable to complete because the sourcemap for %q doesn't exist in the cache, has the didOpen notification been sent yet?", uri)
+	// Only convert diagnostics for _templ.go files. Diagnostics for regular
+	// .go files are dropped because the Go extension publishes those directly.
+	isTemplGoFile, templURI := convertTemplGoToTemplURI(params.URI)
+	if !isTemplGoFile {
+		return nil
 	}
-	params.URI = lsp.DocumentURI(uri)
+	// Get the sourcemap from the cache.
+	sourceMap, ok := p.SourceMapCache.Get(string(templURI))
+	if !ok {
+		p.Log.Error("unable to complete because the sourcemap for the URI doesn't exist in the cache", slog.String("uri", string(templURI)))
+		return fmt.Errorf("unable to complete because the sourcemap for %q doesn't exist in the cache, has the didOpen notification been sent yet?", templURI)
+	}
+	params.URI = templURI
 	// Rewrite the positions.
 	for i, item := range params.Diagnostics {
 		start, ok := sourceMap.SourcePositionFromTarget(item.Range.Start.Line, item.Range.Start.Character)
@@ -94,9 +99,8 @@ func (p Client) PublishDiagnostics(ctx context.Context, params *lsp.PublishDiagn
 		params.Diagnostics[i] = item
 		p.Log.Info(fmt.Sprintf("diagnostic [%d] rewritten", i), slog.Any("diagnostic", item))
 	}
-	params.Diagnostics = p.DiagnosticCache.AddTemplDiagnostics(uri, params.Diagnostics)
-	err = p.Target.PublishDiagnostics(ctx, params)
-	return err
+	params.Diagnostics = p.DiagnosticCache.AddTemplDiagnostics(string(templURI), params.Diagnostics)
+	return p.Target.PublishDiagnostics(ctx, params)
 }
 
 func (p Client) ShowMessage(ctx context.Context, params *lsp.ShowMessageParams) (err error) {
@@ -132,6 +136,7 @@ func (p Client) UnregisterCapability(ctx context.Context, params *lsp.Unregistra
 
 func (p Client) ApplyEdit(ctx context.Context, params *lsp.ApplyWorkspaceEditParams) (result *lsp.ApplyWorkspaceEditResponse, err error) {
 	p.Log.Info("client <- server: ApplyEdit")
+	convertWorkspaceEdit(p.SourceMapCache, p.Log, &params.Edit)
 	return p.Target.ApplyEdit(ctx, params)
 }
 
