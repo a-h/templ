@@ -157,7 +157,39 @@ func TestJSFunctionNameRegexp(t *testing.T) {
 			expected: true,
 		},
 		{
+			input:    "a",
+			expected: true,
+		},
+		{
+			input:    "$",
+			expected: true,
+		},
+		{
+			input:    "_",
+			expected: true,
+		},
+		{
+			input:    "$._",
+			expected: true,
+		},
+		{
 			input:    "console.log('hello')",
+			expected: false,
+		},
+		{
+			input:    "console.",
+			expected: false,
+		},
+		{
+			input:    ".log",
+			expected: false,
+		},
+		{
+			input:    "console..log",
+			expected: false,
+		},
+		{
+			input:    "1alert",
 			expected: false,
 		},
 		{

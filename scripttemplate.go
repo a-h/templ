@@ -147,4 +147,4 @@ func jsonEncodeParam(param any) string {
 }
 
 // isValidJSFunctionName returns true if the given string is a valid JavaScript function name, e.g. console.log, alert, etc.
-var jsFunctionName = regexp.MustCompile(`^([$_a-zA-Z][$_a-zA-Z0-9]+\.?)+$`)
+var jsFunctionName = regexp.MustCompile(`^[$_a-zA-Z][$_a-zA-Z0-9]*(\.[$_a-zA-Z][$_a-zA-Z0-9]*)*$`)
