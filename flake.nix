@@ -45,7 +45,8 @@
           default = templ;
 
           templ = pkgs.buildGoModule {
-            name = "templ";
+            pname = "templ";
+            version = builtins.readFile ./.version;
             subPackages = [ "cmd/templ" ];
             src = gitignore.lib.gitignoreSource ./.;
             vendorHash = "sha256-byv5yA9y8kp/DHpICX5cgnoFdtv9ztVt3EXR6SWNTN8=";
