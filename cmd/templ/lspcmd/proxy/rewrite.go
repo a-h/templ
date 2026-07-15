@@ -16,8 +16,8 @@ func convertTemplToGoURI(templURI lsp.DocumentURI) (isTemplFile bool, goURI lsp.
 	return true, lsp.DocumentURI(base + (strings.TrimSuffix(fileName, ".templ") + "_templ.go"))
 }
 
-// isNonTemplGoURI returns true if the URI refers to a .go file that is not a _templ.go file.
-func isNonTemplGoURI(docURI lsp.DocumentURI) bool {
+// isPlainGoFile returns true if the URI refers to a .go file that is not a _templ.go file.
+func isPlainGoFile(docURI lsp.DocumentURI) bool {
 	s := string(docURI)
 	return strings.HasSuffix(s, ".go") && !strings.HasSuffix(s, "_templ.go")
 }

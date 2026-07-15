@@ -893,7 +893,7 @@ func (p *Server) DocumentColor(ctx context.Context, params *lsp.DocumentColorPar
 func (p *Server) DocumentHighlight(ctx context.Context, params *lsp.DocumentHighlightParams) (result []lsp.DocumentHighlight, err error) {
 	p.Log.Info("client -> server: DocumentHighlight")
 	defer p.Log.Info("client -> server: DocumentHighlight end")
-	if isNonTemplGoURI(params.TextDocument.URI) {
+	if isPlainGoFile(params.TextDocument.URI) {
 		return nil, nil
 	}
 	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
@@ -1047,9 +1047,6 @@ func (p *Server) ExecuteCommand(ctx context.Context, params *lsp.ExecuteCommandP
 func (p *Server) FoldingRanges(ctx context.Context, params *lsp.FoldingRangeParams) (result []lsp.FoldingRange, err error) {
 	p.Log.Info("client -> server: FoldingRanges")
 	defer p.Log.Info("client -> server: FoldingRanges end")
-	if isTemplFile, _ := convertTemplToGoURI(params.TextDocument.URI); !isTemplFile {
-		return nil, nil
-	}
 	// There are no folding ranges in templ files.
 	return []lsp.FoldingRange{}, nil
 }
@@ -1102,7 +1099,7 @@ func (p *Server) Formatting(ctx context.Context, params *lsp.DocumentFormattingP
 func (p *Server) Hover(ctx context.Context, params *lsp.HoverParams) (result *lsp.Hover, err error) {
 	p.Log.Info("client -> server: Hover")
 	defer p.Log.Info("client -> server: Hover end")
-	if isNonTemplGoURI(params.TextDocument.URI) {
+	if isPlainGoFile(params.TextDocument.URI) {
 		return nil, nil
 	}
 	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
@@ -1147,7 +1144,7 @@ func (p *Server) Implementation(ctx context.Context, params *lsp.ImplementationP
 func (p *Server) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTypeFormattingParams) (result []lsp.TextEdit, err error) {
 	p.Log.Info("client -> server: OnTypeFormatting")
 	defer p.Log.Info("client -> server: OnTypeFormatting end")
-	if isNonTemplGoURI(params.TextDocument.URI) {
+	if isPlainGoFile(params.TextDocument.URI) {
 		return nil, nil
 	}
 	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
@@ -1258,7 +1255,7 @@ func (p *Server) Rename(ctx context.Context, params *lsp.RenameParams) (result *
 func (p *Server) SignatureHelp(ctx context.Context, params *lsp.SignatureHelpParams) (result *lsp.SignatureHelp, err error) {
 	p.Log.Info("client -> server: SignatureHelp")
 	defer p.Log.Info("client -> server: SignatureHelp end")
-	if isNonTemplGoURI(params.TextDocument.URI) {
+	if isPlainGoFile(params.TextDocument.URI) {
 		return nil, nil
 	}
 	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)
@@ -1472,7 +1469,7 @@ func (p *Server) LinkedEditingRange(ctx context.Context, params *lsp.LinkedEditi
 func (p *Server) Moniker(ctx context.Context, params *lsp.MonikerParams) (result []lsp.Moniker, err error) {
 	p.Log.Info("client -> server: Moniker")
 	defer p.Log.Info("client -> server: Moniker end")
-	if isNonTemplGoURI(params.TextDocument.URI) {
+	if isPlainGoFile(params.TextDocument.URI) {
 		return nil, nil
 	}
 	isTempl, goURI, goPos, ok := p.proxyPositionRequest(params.TextDocument.URI, params.Position)

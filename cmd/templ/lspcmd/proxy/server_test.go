@@ -40,6 +40,8 @@ type mockServer struct {
 	symbolsParams              *lsp.WorkspaceSymbolParams
 	signatureHelpParams        *lsp.SignatureHelpParams
 	codeActionParams           *lsp.CodeActionParams
+	onTypeFormattingParams     *lsp.DocumentOnTypeFormattingParams
+	monikerParams              *lsp.MonikerParams
 
 	// Return values.
 	definitionResult           []lsp.Location
@@ -240,7 +242,8 @@ func (m *mockServer) DocumentSymbol(context.Context, *lsp.DocumentSymbolParams) 
 func (m *mockServer) ExecuteCommand(context.Context, *lsp.ExecuteCommandParams) (any, error) {
 	return nil, nil
 }
-func (m *mockServer) OnTypeFormatting(context.Context, *lsp.DocumentOnTypeFormattingParams) ([]lsp.TextEdit, error) {
+func (m *mockServer) OnTypeFormatting(ctx context.Context, params *lsp.DocumentOnTypeFormattingParams) ([]lsp.TextEdit, error) {
+	m.onTypeFormattingParams = params
 	return nil, nil
 }
 func (m *mockServer) WillSaveWaitUntil(context.Context, *lsp.WillSaveTextDocumentParams) ([]lsp.TextEdit, error) {
@@ -272,7 +275,8 @@ func (m *mockServer) SemanticTokensRefresh(context.Context) error { return nil }
 func (m *mockServer) LinkedEditingRange(context.Context, *lsp.LinkedEditingRangeParams) (*lsp.LinkedEditingRanges, error) {
 	return nil, nil
 }
-func (m *mockServer) Moniker(context.Context, *lsp.MonikerParams) ([]lsp.Moniker, error) {
+func (m *mockServer) Moniker(ctx context.Context, params *lsp.MonikerParams) ([]lsp.Moniker, error) {
+	m.monikerParams = params
 	return nil, nil
 }
 func (m *mockServer) Request(context.Context, string, any) (any, error) { return nil, nil }
@@ -618,25 +622,6 @@ func TestWillSaveForwardsGoFiles(t *testing.T) {
 	}
 }
 
-func TestFoldingRangesDropsGoFiles(t *testing.T) {
-	mock := &mockServer{}
-	s := newTestServer(mock)
-	result, err := s.FoldingRanges(context.Background(), &lsp.FoldingRangeParams{
-		TextDocumentPositionParams: lsp.TextDocumentPositionParams{
-			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///project/main.go"},
-		},
-	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if mock.foldingRangesParams != nil {
-		t.Error("expected FoldingRanges to not be forwarded for .go files")
-	}
-	if result != nil {
-		t.Errorf("expected nil result for .go files, got %v", result)
-	}
-}
-
 func TestFoldingRangesReturnsEmptyForTemplFiles(t *testing.T) {
 	mock := &mockServer{}
 	s := newTestServer(mock)
@@ -926,6 +911,67 @@ func TestSignatureHelpDropsGoFiles(t *testing.T) {
 	}
 	if mock.signatureHelpParams != nil {
 		t.Error("expected SignatureHelp to not be forwarded for .go files")
+	}
+	if result != nil {
+		t.Errorf("expected nil result for .go files, got %v", result)
+	}
+}
+
+func TestHoverDropsGoFiles(t *testing.T) {
+	mock := &mockServer{
+		hoverResult: &lsp.Hover{},
+	}
+	s := newTestServer(mock)
+	result, err := s.Hover(context.Background(), &lsp.HoverParams{
+		TextDocumentPositionParams: lsp.TextDocumentPositionParams{
+			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///project/main.go"},
+			Position:     lsp.Position{Line: 10, Character: 5},
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mock.hoverParams != nil {
+		t.Error("expected Hover to not be forwarded for .go files")
+	}
+	if result != nil {
+		t.Errorf("expected nil result for .go files, got %v", result)
+	}
+}
+
+func TestOnTypeFormattingDropsGoFiles(t *testing.T) {
+	mock := &mockServer{}
+	s := newTestServer(mock)
+	result, err := s.OnTypeFormatting(context.Background(), &lsp.DocumentOnTypeFormattingParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: "file:///project/main.go"},
+		Position:     lsp.Position{Line: 10, Character: 5},
+		Ch:           "}",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mock.onTypeFormattingParams != nil {
+		t.Error("expected OnTypeFormatting to not be forwarded for .go files")
+	}
+	if result != nil {
+		t.Errorf("expected nil result for .go files, got %v", result)
+	}
+}
+
+func TestMonikerDropsGoFiles(t *testing.T) {
+	mock := &mockServer{}
+	s := newTestServer(mock)
+	result, err := s.Moniker(context.Background(), &lsp.MonikerParams{
+		TextDocumentPositionParams: lsp.TextDocumentPositionParams{
+			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///project/main.go"},
+			Position:     lsp.Position{Line: 10, Character: 5},
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mock.monikerParams != nil {
+		t.Error("expected Moniker to not be forwarded for .go files")
 	}
 	if result != nil {
 		t.Errorf("expected nil result for .go files, got %v", result)
