@@ -16,7 +16,9 @@ import (
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Create a channel to send deferred component renders to the template.
-		data := make(chan SlotContents)
+		// Buffer for the known 3 slots so a goroutine never blocks on send if
+		// the client disconnects before the template finishes reading.
+		data := make(chan SlotContents, 3)
 
 		// We know there are 3 slots, so start a WaitGroup.
 		var wg sync.WaitGroup
