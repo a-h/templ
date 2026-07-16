@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/a-h/templ/parser/v2"
@@ -68,6 +69,58 @@ templ Hello(name string) {
 	}
 	if len(op.SourceMap.Expressions) != 3 {
 		t.Errorf("expected an expression for the package name, template signature (Hello) and for the if (nam), got %#v", op.SourceMap.Expressions)
+	}
+}
+
+func TestWriteConditionalAttributeElseIf(t *testing.T) {
+	w := new(bytes.Buffer)
+	g := generator{
+		w:         NewRangeWriter(w),
+		sourceMap: parser.NewSourceMap(),
+	}
+	attr := &parser.ConditionalAttribute{
+		Expression: parser.Expression{Value: "a"},
+		Then: []parser.Attribute{
+			&parser.ConstantAttribute{
+				Key:   parser.ConstantAttributeKey{Name: "class"},
+				Value: "then",
+			},
+		},
+		ElseIfs: []parser.ConditionalElseIfAttribute{
+			{
+				Expression: parser.Expression{Value: "b"},
+				Then: []parser.Attribute{
+					&parser.ConstantAttribute{
+						Key:   parser.ConstantAttributeKey{Name: "class"},
+						Value: "else-if",
+					},
+				},
+			},
+		},
+		Else: []parser.Attribute{
+			&parser.ConstantAttribute{
+				Key:   parser.ConstantAttributeKey{Name: "class"},
+				Value: "else",
+			},
+		},
+	}
+
+	if err := g.writeConditionalAttribute(0, "div", attr); err != nil {
+		t.Fatalf("failed to write conditional attribute: %v", err)
+	}
+
+	output := w.String()
+	for _, expected := range []string{
+		"if a {\n",
+		"} else if b {\n",
+		"} else {\n",
+		`" class=\"then\""`,
+		`" class=\"else-if\""`,
+		`" class=\"else\""`,
+	} {
+		if !strings.Contains(output, expected) {
+			t.Errorf("expected generated output to contain %q, got:\n%s", expected, output)
+		}
 	}
 }
 

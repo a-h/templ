@@ -3054,6 +3054,52 @@ func TestElementFormatting(t *testing.T) {
 			input:    `<div id=main></div>`,
 			expected: `<div id="main"></div>`,
 		},
+		{
+			name: "conditional attribute else if is formatted on one line",
+			input: `<div
+  if lint.Severity == 0 {
+    class="text-green-600"
+  } else if lint.Severity == 1 {
+    class="text-yellow-600"
+  } else {
+    class="text-red-600"
+  }
+></div>`,
+			expected: `<div
+	if lint.Severity == 0 {
+		class="text-green-600"
+	} else if lint.Severity == 1 {
+		class="text-yellow-600"
+	} else {
+		class="text-red-600"
+	}
+></div>`,
+		},
+		{
+			name: "conditional attribute multiple else if branches are formatted on one line",
+			input: `<div
+  if lint.Severity == 0 {
+    class="text-green-600"
+  } else if lint.Severity == 1 {
+    class="text-yellow-600"
+  } else if lint.Severity == 2 {
+    class="text-orange-600"
+  } else {
+    class="text-red-600"
+  }
+></div>`,
+			expected: `<div
+	if lint.Severity == 0 {
+		class="text-green-600"
+	} else if lint.Severity == 1 {
+		class="text-yellow-600"
+	} else if lint.Severity == 2 {
+		class="text-orange-600"
+	} else {
+		class="text-red-600"
+	}
+></div>`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -3073,5 +3119,53 @@ func TestElementFormatting(t *testing.T) {
 				t.Error(diff)
 			}
 		})
+	}
+}
+
+func TestConditionalAttributeElseIfsParseAsBranches(t *testing.T) {
+	input := `<div
+	if lint.Severity == 0 {
+		class="text-green-600"
+	} else if lint.Severity == 1 {
+		class="text-yellow-600"
+	} else if lint.Severity == 2 {
+		class="text-orange-600"
+	} else {
+		class="text-red-600"
+	}
+></div>`
+
+	result, matched, err := element.Parse(parse.NewInput(input))
+	if err != nil {
+		t.Fatalf("parser error: %v", err)
+	}
+	if !matched {
+		t.Fatal("failed to parse element")
+	}
+	el, ok := result.(*Element)
+	if !ok {
+		t.Fatalf("expected Element, got %T", result)
+	}
+	if len(el.Attributes) != 1 {
+		t.Fatalf("expected 1 attribute, got %d", len(el.Attributes))
+	}
+	attr, ok := el.Attributes[0].(*ConditionalAttribute)
+	if !ok {
+		t.Fatalf("expected ConditionalAttribute, got %T", el.Attributes[0])
+	}
+	if got, want := attr.Expression.Value, "lint.Severity == 0"; got != want {
+		t.Fatalf("initial expression: got %q, want %q", got, want)
+	}
+	if got, want := len(attr.ElseIfs), 2; got != want {
+		t.Fatalf("else if count: got %d, want %d", got, want)
+	}
+	if got, want := attr.ElseIfs[0].Expression.Value, "lint.Severity == 1"; got != want {
+		t.Errorf("first else if expression: got %q, want %q", got, want)
+	}
+	if got, want := attr.ElseIfs[1].Expression.Value, "lint.Severity == 2"; got != want {
+		t.Errorf("second else if expression: got %q, want %q", got, want)
+	}
+	if got, want := len(attr.Else), 1; got != want {
+		t.Fatalf("else attribute count: got %d, want %d", got, want)
 	}
 }
