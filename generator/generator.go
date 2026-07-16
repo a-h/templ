@@ -477,6 +477,29 @@ func (g *generator) writeTemplate(nodeIdx int, t *parser.HTMLTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context\n"); err != nil {
 			return err
 		}
+		var allNames []string
+		if recv := extractReceiverName(t.Expression.Value); recv != "" {
+			allNames = append(allNames, recv)
+		}
+		allNames = append(allNames, extractParamNames(extractParamList(t.Expression.Value))...)
+		if len(allNames) > 0 {
+			if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_ArgsMap, templ_7745c5c3_ArgsOk := ctx.Value(\"_templ_args_map\").(map[string]any)\n"); err != nil {
+				return err
+			}
+			if _, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_ArgsMap != nil && templ_7745c5c3_ArgsOk {\n"); err != nil {
+				return err
+			}
+			indentLevel++
+			for _, name := range allNames {
+				if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("templruntime.SetTemplArg(templ_7745c5c3_ArgsMap, %q, %s)\n", name, name)); err != nil {
+					return err
+				}
+			}
+			indentLevel--
+			if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
+				return err
+			}
+		}
 		if _, err = g.w.WriteIndent(indentLevel, "if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {\n"); err != nil {
 			return err
 		}
@@ -1837,6 +1860,88 @@ func functionName(name string, body string) string {
 	h.Write([]byte(body))
 	hp := hex.EncodeToString(h.Sum(nil))[0:4]
 	return "__templ_" + name + "_" + hp
+}
+
+func extractReceiverName(expression string) string {
+	trimmed := strings.TrimSpace(expression)
+	if !strings.HasPrefix(trimmed, "(") {
+		return ""
+	}
+	depth := 0
+	for i, ch := range trimmed {
+		switch ch {
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth == 0 {
+				parts := strings.Fields(strings.TrimSpace(trimmed[1:i]))
+				if len(parts) >= 1 {
+					return parts[0]
+				}
+				return ""
+			}
+		}
+	}
+	return ""
+}
+
+func extractParamList(expression string) string {
+	lastClose := strings.LastIndex(expression, ")")
+	if lastClose == -1 {
+		return ""
+	}
+	depth := 0
+	for i := lastClose; i >= 0; i-- {
+		if expression[i] == ')' {
+			depth++
+		} else if expression[i] == '(' {
+			depth--
+			if depth == 0 {
+				return expression[i+1 : lastClose]
+			}
+		}
+	}
+	return ""
+}
+
+func extractParamNames(paramList string) []string {
+	if strings.TrimSpace(paramList) == "" {
+		return nil
+	}
+	var params []string
+	var current strings.Builder
+	depth := 0
+	for _, ch := range paramList {
+		switch ch {
+		case '(', '[', '{':
+			depth++
+			current.WriteRune(ch)
+		case ')', ']', '}':
+			depth--
+			current.WriteRune(ch)
+		case ',':
+			if depth == 0 {
+				params = append(params, strings.TrimSpace(current.String()))
+				current.Reset()
+			} else {
+				current.WriteRune(ch)
+			}
+		default:
+			current.WriteRune(ch)
+		}
+	}
+	if s := strings.TrimSpace(current.String()); s != "" {
+		params = append(params, s)
+	}
+	var names []string
+	for _, param := range params {
+		parts := strings.Fields(param)
+		if len(parts) >= 1 {
+			names = append(names, strings.TrimPrefix(parts[0], "..."))
+		}
+	}
+	return names
 }
 
 func stripTypes(parameters string) string {
