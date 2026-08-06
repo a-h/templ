@@ -2,37 +2,29 @@
 
 Component libraries in the templ ecosystem provide ready-to-use UI elements.
 
-## templUI
+## shadcn-templ
 
-![templUI Banner](/img/ecosystem/templui.png)
+![shadcn-templ Banner](/img/ecosystem/shadcn-templ.png)
 
 ### About
 
-templUI is the premier UI component library built specifically for templ. It combines the type-safety of Go with the interactivity of Alpine.js and the styling power of Tailwind CSS to create beautiful, responsive web applications.
+shadcn-templ (formerly templUI) is a 1:1 port of shadcn/ui for Go and templ. Same API surface, markup and styles as the original, with the Base UI client behavior ported to dependency-free vanilla JavaScript. The CLI copies component source into your project, so the code is yours.
 
 ### Features
 
-- **30+ Ready-made Components**: Buttons, cards, modals, charts, and more
-- **Enterprise-Ready**: Built for production with security in mind
-- **CSP Compliant**: Works seamlessly with Content Security Policy
-- **Type-Safe**: Full Go type system integration and checking
-- **Customizable**: Easily adapt to match your brand identity
+- **50+ components**, rebuilt 1:1 against shadcn/ui
+- **Eight visual styles** and a theme builder
+- **No npm, no Node**: server-rendered, dependency-free vanilla JS
+- **CLI with project templates, presets and a registry** that compiles every component for your chosen style
 
-### Example
+### Usage
 
-```go
-import "github.com/axzilla/templui/components"
-
-templ ExamplePage() {
-  @components.Button(components.ButtonProps{
-    Text: "Click me",
-    IconRight: icons.ArrowRight(icons.IconProps{Size: "16"}),
-  })
-}
+```shell
+go install github.com/axadrn/shadcn-templ/v2/cmd/shadcn-templ@latest
+shadcn-templ init my-app --template templ
 ```
 
 ### Links
 
-- [Documentation](https://templui.io)
-- [GitHub](https://github.com/axzilla/templui)
-- [Quick Start Template](https://github.com/axzilla/templui-quickstart)
+- [Documentation](https://shadcn-templ.com)
+- [GitHub](https://github.com/axadrn/shadcn-templ)
