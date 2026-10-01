@@ -31,6 +31,8 @@ shadcn-templ init my-app --template templ
 
 ## templ-components
 
+![templ-components Banner](/img/ecosystem/templ-components.png)
+
 ### About
 
 templ-components is a server-rendered UI component library built on templ, HTMX, and Tailwind CSS v4. It ships typed Go props, dark mode, CSP nonce support, and ARIA accessibility out of the box, with no client-side JavaScript framework — JavaScript only enhances the server-rendered HTML.
