@@ -44,6 +44,9 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err erro
 	if thenNodes, matched, err = np.Parse(pi); err != nil || !matched {
 		// Populate the nodes anyway, so that the LSP can use them.
 		r.Then = thenNodes.Nodes
+		if err != nil {
+			return r, true, err
+		}
 		return r, true, parse.Error("if: expected nodes, but none were found", pi.Position())
 	}
 	r.Then = thenNodes.Nodes
@@ -104,6 +107,9 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, matche
 	np := newTemplateNodeParser(untilElseIfElseOrEnd, "else expression or closing brace")
 	var thenNodes Nodes
 	if thenNodes, matched, err = np.Parse(pi); err != nil || !matched {
+		if err != nil {
+			return r, true, err
+		}
 		err = parse.Error("if: expected nodes, but none were found", pi.Position())
 		return
 	}

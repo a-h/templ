@@ -1412,6 +1412,62 @@ func TestTemplateParserErrors(t *testing.T) {
 }`,
 			expected: "<span>: malformed open element: line 3, col 0",
 		},
+		{
+			name: "template: text starting with for inside templ element children reports the unterminated error at the text",
+			input: `templ Name() {
+	@Card() {
+		<p>for details</p>
+	}
+}`,
+			expected: "for: " + unterminatedMissingCurly + ": line 3, col 5",
+		},
+		{
+			name: "template: text starting with if inside templ element children reports the unterminated error at the text",
+			input: `templ Name() {
+	@Card() {
+		<p>if you need help</p>
+	}
+}`,
+			expected: "if: " + unterminatedMissingCurly + ": line 3, col 5",
+		},
+		{
+			name: "template: text starting with switch inside templ element children reports the unterminated error at the text",
+			input: `templ Name() {
+	@Card() {
+		<p>switch to another plan</p>
+	}
+}`,
+			expected: "switch: " + unterminatedMissingCurly + ": line 3, col 5",
+		},
+		{
+			name: "template: text starting with for inside if children reports the unterminated error at the text",
+			input: `templ Name() {
+	if true {
+		<p>for details</p>
+	}
+}`,
+			expected: "for: " + unterminatedMissingCurly + ": line 3, col 5",
+		},
+		{
+			name: "template: text starting with for inside else if children reports the unterminated error at the text",
+			input: `templ Name() {
+	if true {
+		<p>ok</p>
+	} else if false {
+		<p>for details</p>
+	}
+}`,
+			expected: "for: " + unterminatedMissingCurly + ": line 5, col 5",
+		},
+		{
+			name: "template: text starting with for inside for children reports the unterminated error at the text",
+			input: `templ Name() {
+	for _, x := range xs {
+		<p>for details</p>
+	}
+}`,
+			expected: "for: " + unterminatedMissingCurly + ": line 3, col 5",
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

@@ -49,6 +49,9 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, matched bo
 	if nodes, matched, err = np.Parse(pi); err != nil || !matched {
 		// Populate the nodes anyway, so that the LSP can use them.
 		r.Children = nodes.Nodes
+		if err != nil {
+			return r, true, err
+		}
 		err = parse.Error("@"+r.Expression.Value+": expected nodes, but none were found", pi.Position())
 		return r, true, err
 	}
