@@ -23,7 +23,7 @@ See user documentation at https://templ.guide
 Set the version of templ to the current version.
 
 ```sh
-version set --template="0.3.%d"
+version set
 ```
 
 ### build
@@ -31,7 +31,7 @@ version set --template="0.3.%d"
 Build a local version.
 
 ```sh
-version set --template="0.3.%d"
+version set
 cd cmd/templ
 go build
 ```
@@ -47,7 +47,7 @@ rm -f ~/bin/templ
 # Clear LSP logs.
 rm -f cmd/templ/lspcmd/*.txt
 # Update version.
-version set --template="0.3.%d"
+version set
 # Install to $GOPATH/bin or $HOME/go/bin
 cd cmd/templ && go install
 ```
@@ -73,7 +73,7 @@ go run ./cmd/templ generate -include-version=false
 Run Go tests.
 
 ```sh
-version set --template="0.3.%d"
+version set
 go run ./cmd/templ generate -include-version=false
 go test ./...
 ```
@@ -83,7 +83,7 @@ go test ./...
 Run Go tests.
 
 ```sh
-version set --template="0.3.%d"
+version set
 go run ./cmd/templ generate -include-version=false
 go test ./... -short
 ```
@@ -169,7 +169,7 @@ git diff --exit-code
 Push a semantic version number to GitHub to trigger the release process.
 
 ```sh
-version push --template="0.3.%d" --prefix="v"
+version push --prefix="v"
 ```
 
 ### docs-run
