@@ -122,6 +122,130 @@ templ template () {
 				Range:   Range{Position{59, 5, 5}, Position{75, 5, 21}},
 			}},
 		},
+
+		// textCallDiagnoser and futureTextCallDiagnoser
+
+		{
+			name: "text call diagnosers: email addresses produce no diagnostics",
+			template: `
+package main
+
+templ template () {
+	<p>user@example.com</p>
+}`,
+			want: nil,
+		},
+		{
+			name: "text call diagnosers: component calls after whitespace produce no diagnostics",
+			template: `
+package main
+
+templ template () {
+	<p>Created @relativeTime(created)</p>
+}`,
+			want: nil,
+		},
+		{
+			name: "text call diagnosers: @ without an identifier produces no diagnostics",
+			template: `
+package main
+
+templ template () {
+	<p>(@)</p>
+}`,
+			want: nil,
+		},
+		{
+			name: "text call diagnosers: call after punctuation warns that it renders as text and that parsing will change",
+			template: `
+package main
+
+templ template () {
+	<p>Created (@relativeTime(created))</p>
+}`,
+			want: []Diagnostic{
+				{
+					Message: "`@relativeTime(` is rendered as text, not as a component call, because `@` does not follow whitespace. Place whitespace before `@` to call the component.",
+					Range:   Range{Position{48, 4, 13}, Position{61, 4, 26}},
+				},
+				{
+					Message: "A future templ release will parse `@relativeTime` as a component call, because `@` that does not follow a letter, digit, or underscore will start a component call. Use `{ \"@\" }` to render a literal `@`.",
+					Range:   Range{Position{48, 4, 13}, Position{61, 4, 26}},
+				},
+			},
+		},
+		{
+			name: "text call diagnosers: package-qualified call after punctuation warns for the qualified name",
+			template: `
+package main
+
+templ template () {
+	<p>(@components.Icon())</p>
+}`,
+			want: []Diagnostic{
+				{
+					Message: "`@components.Icon(` is rendered as text, not as a component call, because `@` does not follow whitespace. Place whitespace before `@` to call the component.",
+					Range:   Range{Position{40, 4, 5}, Position{56, 4, 21}},
+				},
+				{
+					Message: "A future templ release will parse `@components.Icon` as a component call, because `@` that does not follow a letter, digit, or underscore will start a component call. Use `{ \"@\" }` to render a literal `@`.",
+					Range:   Range{Position{40, 4, 5}, Position{56, 4, 21}},
+				},
+			},
+		},
+		{
+			name: "text call diagnosers: call after an expression and multi-byte text warns at the @ position",
+			template: `
+package main
+
+templ template () {
+	<p>Version { "v1" } · Created { created } (@snapshotRelativeTime(created))</p>
+}`,
+			want: []Diagnostic{
+				{
+					Message: "`@snapshotRelativeTime(` is rendered as text, not as a component call, because `@` does not follow whitespace. Place whitespace before `@` to call the component.",
+					Range:   Range{Position{80, 4, 45}, Position{101, 4, 66}},
+				},
+				{
+					Message: "A future templ release will parse `@snapshotRelativeTime` as a component call, because `@` that does not follow a letter, digit, or underscore will start a component call. Use `{ \"@\" }` to render a literal `@`.",
+					Range:   Range{Position{80, 4, 45}, Position{101, 4, 66}},
+				},
+			},
+		},
+		{
+			name: "text call diagnosers: handle after punctuation warns only that parsing will change",
+			template: `
+package main
+
+templ template () {
+	<p>Follow "@handle"</p>
+}`,
+			want: []Diagnostic{
+				{
+					Message: "A future templ release will parse `@handle` as a component call, because `@` that does not follow a letter, digit, or underscore will start a component call. Use `{ \"@\" }` to render a literal `@`.",
+					Range:   Range{Position{47, 4, 12}, Position{54, 4, 19}},
+				},
+			},
+		},
+		{
+			name: "text call diagnosers: trailing full stop is excluded from the name and each @ warns in order",
+			template: `
+package main
+
+templ template () {
+	<p>(@a) (@b.</p>
+}`,
+			want: []Diagnostic{
+				{
+					Message: "A future templ release will parse `@a` as a component call, because `@` that does not follow a letter, digit, or underscore will start a component call. Use `{ \"@\" }` to render a literal `@`.",
+					Range:   Range{Position{40, 4, 5}, Position{42, 4, 7}},
+				},
+				{
+					Message: "A future templ release will parse `@b` as a component call, because `@` that does not follow a letter, digit, or underscore will start a component call. Use `{ \"@\" }` to render a literal `@`.",
+					Range:   Range{Position{45, 4, 10}, Position{47, 4, 12}},
+				},
+			},
+		},
 		{
 			name: "voidElementWithChildrenDiagnoser: no diagnostics",
 			template: `
