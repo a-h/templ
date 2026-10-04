@@ -145,72 +145,88 @@ func TestJSFuncCall(t *testing.T) {
 
 func TestJSFunctionNameRegexp(t *testing.T) {
 	tests := []struct {
+		name     string
 		input    string
 		expected bool
 	}{
 		{
+			name:     "dotted member expressions are valid",
 			input:    "console.log",
 			expected: true,
 		},
 		{
+			name:     "bare identifiers are valid",
 			input:    "alert",
 			expected: true,
 		},
 		{
+			name:     "single-character identifiers are valid",
 			input:    "a",
 			expected: true,
 		},
 		{
+			name:     "a lone dollar sign is a valid identifier",
 			input:    "$",
 			expected: true,
 		},
 		{
+			name:     "a lone underscore is a valid identifier",
 			input:    "_",
 			expected: true,
 		},
 		{
+			name:     "dollar and underscore identifiers can be dotted together",
 			input:    "$._",
 			expected: true,
 		},
 		{
+			name:     "identifiers followed by a call expression are invalid",
 			input:    "console.log('hello')",
 			expected: false,
 		},
 		{
+			name:     "a trailing dot is invalid",
 			input:    "console.",
 			expected: false,
 		},
 		{
+			name:     "a leading dot is invalid",
 			input:    ".log",
 			expected: false,
 		},
 		{
+			name:     "consecutive dots are invalid",
 			input:    "console..log",
 			expected: false,
 		},
 		{
+			name:     "identifiers cannot start with a digit",
 			input:    "1alert",
 			expected: false,
 		},
 		{
+			name:     "script tag injection is invalid",
 			input:    "</script><div>Hello</div><script>",
 			expected: false,
 		},
 		{
+			name:     "attribute injection is invalid",
 			input:    `" onmouseover="alert('hello')`,
 			expected: false,
 		},
 		{
+			name:     "expressions returning a function are invalid",
 			input:    "(new Date()).getTime",
 			expected: false,
 		},
 		{
+			name:     "call expressions are invalid",
 			input:    "expressionThatReturnsAFunction()",
 			expected: false,
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			actual := jsFunctionName.MatchString(tt.input)
 			if actual != tt.expected {
