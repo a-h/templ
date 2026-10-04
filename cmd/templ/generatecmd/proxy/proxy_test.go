@@ -490,7 +490,10 @@ func TestProxy(t *testing.T) {
 			t.Errorf("expected Content-Length to be cleared for streaming, got %q", got)
 		}
 
-		// Read the response body as it comes in, and look for at least one gap of >streamingGap between tokens.
+		// Read the response body as it comes in, and look for at least one gap between tokens.
+		// The measured gap is shorter than streamingGap, because the writer starts sleeping while
+		// the reader is still tokenizing the first chunk, so the threshold allows for that.
+		minGap := streamingGap / 2
 		lastTime := time.Now()
 		largestGap := time.Duration(0)
 		sBB := &strings.Builder{}
@@ -518,8 +521,8 @@ func TestProxy(t *testing.T) {
 		if diff := cmp.Diff(expectedString, sBB.String()); diff != "" {
 			t.Errorf("unexpected response body (-got +want):\n%s", diff)
 		}
-		if largestGap < streamingGap {
-			t.Errorf("expected at least one gap of >%v between tokens, got largest gap of %v", streamingGap, largestGap)
+		if largestGap < minGap {
+			t.Errorf("expected at least one gap of >%v between tokens, got largest gap of %v", minGap, largestGap)
 		}
 
 		if writerErr1 != nil {
