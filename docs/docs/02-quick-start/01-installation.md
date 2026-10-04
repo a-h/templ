@@ -115,29 +115,29 @@ docker run -v `pwd`:/app -w=/app ghcr.io/a-h/templ:latest generate
 
 If you want to build templates using a multi-stage Docker build, you can use the `templ` image as a base image.
 
-Here's an example multi-stage Dockerfile. Note that in the `generate-stage` the source code is copied into the container, and the `templ generate` command is run. The `build-stage` then copies the generated code into the container and builds the application.
+Here's an example multi-stage Dockerfile. Note that in the `generate-stage` the source code is copied into the container, and the `templ generate` command is run. The `build-stage` downloads the Go modules listed in `go.mod` and `go.sum` before copying the generated code into the container, so Docker caches the module download until those files change. It then builds the application.
 
-The permissions of the source code are set to a user with a UID of 65532, which is the UID of the `nonroot` user in the `ghcr.io/a-h/templ:latest` image.
+The `deploy-stage` does not depend on the `test-stage`, so the tests only run when the `test-stage` is targeted, e.g. `docker build --target test-stage .`.
+
+The example pins the templ image to a release tag rather than `latest`. Use the same version as the `github.com/a-h/templ` module in your `go.mod`, e.g. if `go.mod` requires `github.com/a-h/templ v0.3.1020`, use `ghcr.io/a-h/templ:v0.3.1020`. If the versions differ, `templ generate` displays a warning, and the generated code may not compile against the version of the templ module in `go.mod`.
+
+The permissions of the source code are set to a user with a UID of 65532, which is the UID of the `nonroot` user in the `ghcr.io/a-h/templ` image.
 
 Note also the use of the `RUN ["templ", "generate"]` command instead of the common `RUN templ generate` command. This is because the templ Docker container does not contain a shell environment to keep its size minimal, so the command must be ran in the ["exec" form](https://docs.docker.com/reference/dockerfile/#shell-and-exec-form).
 
 ```Dockerfile
-# Fetch
-FROM golang:latest AS fetch-stage
-COPY go.mod go.sum /app
-WORKDIR /app
-RUN go mod download
-
 # Generate
-FROM ghcr.io/a-h/templ:latest AS generate-stage
+FROM ghcr.io/a-h/templ:v0.3.1020 AS generate-stage
 COPY --chown=65532:65532 . /app
 WORKDIR /app
 RUN ["templ", "generate"]
 
 # Build
 FROM golang:latest AS build-stage
-COPY --from=generate-stage /app /app
 WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY --from=generate-stage /app /app
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/app
 
 # Test
