@@ -14,6 +14,12 @@ import (
 type mockClient struct {
 	applyEditParams         *lsp.ApplyWorkspaceEditParams
 	publishDiagnosticParams *lsp.PublishDiagnosticsParams
+	showDocumentParams      *lsp.ShowDocumentParams
+}
+
+func (m *mockClient) ShowDocument(ctx context.Context, params *lsp.ShowDocumentParams) (*lsp.ShowDocumentResult, error) {
+	m.showDocumentParams = params
+	return &lsp.ShowDocumentResult{Success: true}, nil
 }
 
 func (m *mockClient) ApplyEdit(ctx context.Context, params *lsp.ApplyWorkspaceEditParams) (*lsp.ApplyWorkspaceEditResponse, error) {
@@ -159,5 +165,87 @@ func TestPublishDiagnosticsConvertsTemplGoFiles(t *testing.T) {
 	diag := mock.publishDiagnosticParams.Diagnostics[0]
 	if diag.Range.Start.Line != 5 || diag.Range.Start.Character != 10 {
 		t.Errorf("expected diagnostic start to be converted to templ position, got %v", diag.Range.Start)
+	}
+}
+
+func TestShowDocument(t *testing.T) {
+	goSelection := goRange()
+	templSelection := templRange()
+	tests := []struct {
+		name     string
+		input    lsp.ShowDocumentParams
+		expected lsp.ShowDocumentParams
+	}{
+		{
+			name: "_templ.go URIs and selections are converted to templ",
+			input: lsp.ShowDocumentParams{
+				URI:       "file:///project/component_templ.go",
+				TakeFocus: true,
+				Selection: &goSelection,
+			},
+			expected: lsp.ShowDocumentParams{
+				URI:       "file:///project/component.templ",
+				TakeFocus: true,
+				Selection: &templSelection,
+			},
+		},
+		{
+			name: "_templ.go URIs without a selection are converted to templ",
+			input: lsp.ShowDocumentParams{
+				URI: "file:///project/component_templ.go",
+			},
+			expected: lsp.ShowDocumentParams{
+				URI: "file:///project/component.templ",
+			},
+		},
+		{
+			name: "external URLs are forwarded unchanged",
+			input: lsp.ShowDocumentParams{
+				URI:      "https://pkg.go.dev/fmt",
+				External: true,
+			},
+			expected: lsp.ShowDocumentParams{
+				URI:      "https://pkg.go.dev/fmt",
+				External: true,
+			},
+		},
+		{
+			name: "go URIs are forwarded unchanged",
+			input: lsp.ShowDocumentParams{
+				URI:       "file:///project/main.go",
+				Selection: &goSelection,
+			},
+			expected: lsp.ShowDocumentParams{
+				URI:       "file:///project/main.go",
+				Selection: &goSelection,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &mockClient{}
+			cache := NewSourceMapCache()
+			cache.Set("file:///project/component.templ", newTestSourceMap())
+			client := Client{
+				Log:             slog.Default(),
+				Target:          mock,
+				SourceMapCache:  cache,
+				DiagnosticCache: NewDiagnosticCache(),
+			}
+
+			result, err := client.ShowDocument(context.Background(), &tt.input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !result.Success {
+				t.Error("expected the target client's result to be returned")
+			}
+			if mock.showDocumentParams == nil {
+				t.Fatal("expected ShowDocument to be forwarded")
+			}
+			if diff := cmp.Diff(tt.expected, *mock.showDocumentParams); diff != "" {
+				t.Errorf("unexpected params (-want +got):\n%s", diff)
+			}
+		})
 	}
 }

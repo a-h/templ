@@ -975,6 +975,11 @@ func (tc TestClient) WorkspaceFolders(ctx context.Context) (result []protocol.Wo
 	return nil, nil
 }
 
+func (tc TestClient) ShowDocument(ctx context.Context, params *protocol.ShowDocumentParams) (result *protocol.ShowDocumentResult, err error) {
+	tc.log.Info("client: Received ShowDocument", slog.Any("params", params))
+	return nil, nil
+}
+
 func Setup(ctx context.Context, log *slog.Logger, args Arguments) (clientCtx context.Context, appDir string, client protocol.Client, server protocol.Server, teardown func(t *testing.T), err error) {
 	wd, err := os.Getwd()
 	if err != nil {

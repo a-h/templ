@@ -149,3 +149,17 @@ func (p Client) WorkspaceFolders(ctx context.Context) (result []lsp.WorkspaceFol
 	p.Log.Info("client <- server: WorkspaceFolders")
 	return p.Target.WorkspaceFolders(ctx)
 }
+
+func (p Client) ShowDocument(ctx context.Context, params *lsp.ShowDocumentParams) (result *lsp.ShowDocumentResult, err error) {
+	p.Log.Info("client <- server: ShowDocument", slog.String("uri", string(params.URI)))
+	isTemplGoFile, templURI := convertTemplGoToTemplURI(params.URI)
+	if !isTemplGoFile {
+		return p.Target.ShowDocument(ctx, params)
+	}
+	params.URI = templURI
+	if params.Selection != nil {
+		r := convertGoRangeToTemplRange(p.SourceMapCache, p.Log, templURI, *params.Selection)
+		params.Selection = &r
+	}
+	return p.Target.ShowDocument(ctx, params)
+}

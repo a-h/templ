@@ -198,6 +198,18 @@ func clientDispatch(ctx context.Context, log *slog.Logger, client Client, reply 
 
 		return true, reply(ctx, resp, err)
 
+	case MethodShowDocument: // request
+		defer log.Debug(MethodShowDocument, slog.Any("error", err))
+
+		var params ShowDocumentParams
+		if err := dec.Decode(&params); err != nil {
+			return true, replyParseError(ctx, reply, err)
+		}
+
+		resp, err := client.ShowDocument(ctx, &params)
+
+		return true, reply(ctx, resp, err)
+
 	default:
 		return false, nil
 	}
@@ -217,6 +229,7 @@ type Client interface {
 	ApplyEdit(ctx context.Context, params *ApplyWorkspaceEditParams) (result *ApplyWorkspaceEditResponse, err error)
 	Configuration(ctx context.Context, params *ConfigurationParams) (result []any, err error)
 	WorkspaceFolders(ctx context.Context) (result []WorkspaceFolder, err error)
+	ShowDocument(ctx context.Context, params *ShowDocumentParams) (result *ShowDocumentResult, err error)
 }
 
 // list of client methods.
@@ -405,6 +418,20 @@ func (c *client) WorkspaceFolders(ctx context.Context) (result []WorkspaceFolder
 	defer c.logger.Debug("end "+MethodWorkspaceWorkspaceFolders, slog.Any("error", err))
 
 	if err := Call(ctx, c.Conn, MethodWorkspaceWorkspaceFolders, nil, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// ShowDocument sends the request from a server to a client to ask the client to display a particular document in the user interface.
+//
+// @since 3.16.0.
+func (c *client) ShowDocument(ctx context.Context, params *ShowDocumentParams) (result *ShowDocumentResult, err error) {
+	c.logger.Debug("call " + MethodShowDocument)
+	defer c.logger.Debug("end "+MethodShowDocument, slog.Any("error", err))
+
+	if err := Call(ctx, c.Conn, MethodShowDocument, params, &result); err != nil {
 		return nil, err
 	}
 
