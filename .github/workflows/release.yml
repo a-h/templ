@@ -7,29 +7,102 @@ on:
   workflow_dispatch:
 
 permissions:
-   contents: write
-   packages: write
+  contents: read
 
 jobs:
   release:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+
+      - uses: DeterminateSystems/determinate-nix-action@4d65ea9cab522b6d9f29a170aed23ededc1b27af # v3.23.0
         with:
-          go-version: 1.23
-          cache: false
-      - uses: ko-build/setup-ko@61b4d1d396f5b2e7d6bb6fefdce3dc38d1a13445 # v0.10
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-      - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
-        with:
-          version: v1.24.0
-          args: release --clean
+          diagnostic-endpoint: ""
+
+      - name: Release binaries
+        run: nix develop --command goreleaser release --clean
         env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-          COSIGN_PASSWORD: '${{ secrets.COSIGN_PASSWORD }}'
-          COSIGN_PRIVATE_KEY: '${{ secrets.COSIGN_PRIVATE_KEY }}'
-          COSIGN_PUBLIC_KEY: '${{ secrets.COSIGN_PUBLIC_KEY }}'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
+  image:
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: DeterminateSystems/determinate-nix-action@4d65ea9cab522b6d9f29a170aed23ededc1b27af # v3.23.0
+        with:
+          diagnostic-endpoint: ""
+
+      - name: Build image
+        run: nix build .#docker-image
+
+      - name: Push image
+        shell: nix develop --command bash -euo pipefail {0}
+        run: |
+          echo "$GITHUB_TOKEN" | crane auth login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          crane push result "ghcr.io/a-h/templ:$TAG-$ARCH"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          ARCH: ${{ matrix.arch }}
+
+  image-index:
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: DeterminateSystems/determinate-nix-action@4d65ea9cab522b6d9f29a170aed23ededc1b27af # v3.23.0
+        with:
+          diagnostic-endpoint: ""
+
+      - name: Push multi-arch image index, verify platforms, sign it, and attach SBOMs
+        shell: nix develop --command bash -euo pipefail {0}
+        run: |
+          echo "$GITHUB_TOKEN" | crane auth login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          digest=$(crane index append \
+            --manifest "ghcr.io/a-h/templ:$TAG-amd64" \
+            --manifest "ghcr.io/a-h/templ:$TAG-arm64" \
+            --tag "ghcr.io/a-h/templ:$TAG")
+          # Fail if the index does not contain an image for each platform.
+          for arch in amd64 arm64; do
+            crane digest --platform "linux/$arch" "$digest"
+          done
+          crane tag "ghcr.io/a-h/templ:$TAG" latest
+          cosign sign --yes --recursive --key env://COSIGN_PRIVATE_KEY "$digest"
+          for arch in amd64 arm64; do
+            ref="ghcr.io/a-h/templ@$(crane digest --platform "linux/$arch" "$digest")"
+            syft scan "registry:$ref" -o "spdx-json=sbom-$arch.spdx.json"
+            cosign attest --yes --type spdxjson --predicate "sbom-$arch.spdx.json" --key env://COSIGN_PRIVATE_KEY "$ref"
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}

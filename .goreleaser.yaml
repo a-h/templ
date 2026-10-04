@@ -1,3 +1,5 @@
+version: 2
+
 builds:
   - env:
       - CGO_ENABLED=0
@@ -21,17 +23,17 @@ signs:
     stdin: '{{ .Env.COSIGN_PASSWORD }}'
     output: true
     artifacts: checksum
+    signature: '${artifact}.sigstore.json'
     args:
       - sign-blob
       - --yes
       - --key
       - env://COSIGN_PRIVATE_KEY
-      - '--output-certificate=${certificate}'
-      - '--output-signature=${signature}'
+      - '--bundle=${signature}'
       - '${artifact}'
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -40,29 +42,8 @@ archives:
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
 
-kos:
-  - repository: ghcr.io/a-h/templ
-    platforms:
-    - linux/amd64
-    - linux/arm64
-    tags:
-    - latest
-    - '{{.Tag}}'
-    bare: true
-
-docker_signs:
-  - cmd: cosign
-    artifacts: all
-    output: true
-    args:
-      - sign
-      - --yes
-      - --key
-      - env://COSIGN_PRIVATE_KEY
-      - '${artifact}'
-
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
