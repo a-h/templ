@@ -263,18 +263,10 @@ CSS handling is discussed in detail in [CSS style management](/syntax-and-usage/
 
 ## JSON attributes
 
-To set an attribute's value to a JSON string (e.g. for htmx's [hx-vals](https://htmx.org/attributes/hx-vals) or Alpine's [x-data](https://alpinejs.dev/directives/data)), serialize the value to a string using a function.
-
-```go
-func countriesJSON() string {
-	countries := []string{"Czech Republic", "Slovakia", "United Kingdom", "Germany", "Austria", "Slovenia"}
-	bytes, _ := json.Marshal(countries)
-	return string(bytes)
-}
-```
+To set an attribute's value to a JSON string (e.g. for htmx's [hx-vals](https://htmx.org/attributes/hx-vals) or Alpine's [x-data](https://alpinejs.dev/directives/data)), use `templ.JSONString` to serialize the value.
 
 ```templ
-templ SearchBox() {
-	<search-webcomponent suggestions={ countriesJSON() } />
+templ SearchBox(countries []string) {
+	<search-webcomponent suggestions={ templ.JSONString(countries) } />
 }
 ```
