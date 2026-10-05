@@ -3,7 +3,9 @@ package generatecmd
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
+	"log/slog"
 	"os"
 	"path"
 	"regexp"
@@ -13,6 +15,7 @@ import (
 
 	"github.com/a-h/templ/cmd/templ/testproject"
 	"github.com/a-h/templ/runtime"
+	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -158,6 +161,81 @@ func TestGenerate(t *testing.T) {
 			t.Error("templates_templ.txt was not removed")
 		}
 	})
+	t.Run("a non-watch generate does not delete dev mode text files", func(t *testing.T) {
+		// A one-off `templ generate` must not delete the dev mode text files
+		// of a watch session that may still be running.
+		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
+		if err != nil {
+			t.Fatalf("failed to create test project: %v", err)
+		}
+		t.Cleanup(func() { removeDir(t, dir) })
+
+		// Simulate a running watch session by creating its dev mode text file.
+		txtFile := runtime.GetDevModeTextFileName(path.Join(dir, "templates.templ"))
+		if err := os.WriteFile(txtFile, []byte("existing content"), 0o644); err != nil {
+			t.Fatalf("failed to write dev mode text file: %v", err)
+		}
+		t.Cleanup(func() { removeFile(t, txtFile) })
+
+		if err := Run(context.Background(), io.Discard, io.Discard, []string{"-path", dir}); err != nil {
+			t.Fatalf("failed to run generate command: %v", err)
+		}
+		if _, err := os.Stat(txtFile); err != nil {
+			t.Fatalf("dev mode text file was deleted by a non-watch generate: %v", err)
+		}
+	})
+	t.Run("a missing dev mode text file is recreated on regeneration", func(t *testing.T) {
+		// If the dev mode text file is deleted externally, the next generation
+		// must rewrite it even when the template's literals are unchanged.
+		dir, err := testproject.Create("github.com/a-h/templ/cmd/templ/testproject")
+		if err != nil {
+			t.Fatalf("failed to create test project: %v", err)
+		}
+		t.Cleanup(func() { removeDir(t, dir) })
+
+		fseh := NewFSEventHandler(slog.New(slog.DiscardHandler), dir, true, nil, false, false, FileWriter, false)
+		templFile := path.Join(dir, "templates.templ")
+		txtFile := runtime.GetDevModeTextFileName(templFile)
+		t.Cleanup(func() { removeFile(t, txtFile) })
+
+		event := fsnotify.Event{Name: templFile, Op: fsnotify.Create}
+		if _, err := fseh.HandleEvent(context.Background(), event); err != nil {
+			t.Fatalf("first HandleEvent failed: %v", err)
+		}
+		if _, err := os.Stat(txtFile); err != nil {
+			t.Fatalf("dev mode text file was not created: %v", err)
+		}
+
+		// Delete the file, then regenerate. Content is unchanged (so the hash
+		// matches), but the mod time is bumped to trigger a new event.
+		if err := os.Remove(txtFile); err != nil {
+			t.Fatalf("failed to remove dev mode text file: %v", err)
+		}
+		future := time.Now().Add(time.Hour)
+		if err := os.Chtimes(templFile, future, future); err != nil {
+			t.Fatalf("failed to bump templ file mod time: %v", err)
+		}
+		if _, err := fseh.HandleEvent(context.Background(), event); err != nil {
+			t.Fatalf("second HandleEvent failed: %v", err)
+		}
+		if _, err := os.Stat(txtFile); err != nil {
+			t.Fatalf("dev mode text file was not recreated after deletion: %v", err)
+		}
+	})
+}
+
+func removeDir(t *testing.T, dir string) {
+	t.Helper()
+	if err := os.RemoveAll(dir); err != nil {
+		t.Errorf("failed to remove test project directory: %v", err)
+	}
+}
+
+func removeFile(t *testing.T, name string) {
+	t.Helper()
+	if err := os.Remove(name); err != nil && !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("failed to remove %q: %v", name, err)
+	}
 }
 
 func TestCheckWriter(t *testing.T) {
