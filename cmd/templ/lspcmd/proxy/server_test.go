@@ -2,13 +2,18 @@ package proxy
 
 import (
 	"context"
+	"io"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/a-h/templ/internal/format"
 	"github.com/a-h/templ/parser/v2"
 	"github.com/google/go-cmp/cmp"
 
 	lsp "github.com/a-h/templ/lsp/protocol"
+	"github.com/a-h/templ/lsp/uri"
 )
 
 // mockServer records the parameters it receives and returns preconfigured results.
@@ -284,7 +289,7 @@ func (m *mockServer) Request(context.Context, string, any) (any, error) { return
 // newTestServer creates a Server with a mock target and a pre-populated source map cache.
 // The source map maps templ line 5, cols 10..20 to Go line 15, cols 20..30.
 func newTestServer(mock *mockServer) *Server {
-	log := slog.Default()
+	log := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	cache := NewSourceMapCache()
 	cache.Set("file:///project/component.templ", newTestSourceMap())
 	return &Server{
@@ -1071,5 +1076,51 @@ func TestInitializeAdvertisesGoFileSupport(t *testing.T) {
 	goFileSupport, ok := templ["goFileSupport"].(bool)
 	if !ok || !goFileSupport {
 		t.Errorf("expected experimental.templ.goFileSupport to be true, got %v", templ["goFileSupport"])
+	}
+}
+
+func TestPreloadSkipsModuleCache(t *testing.T) {
+	workspace := t.TempDir()
+	moduleCachePath := filepath.Join(workspace, "go", "pkg", "mod")
+	moduleCacheTemplate := filepath.Join(moduleCachePath, "github.com", "a-h", "templ@v0.3.1020", "template.templ")
+	templateContents := "package test\n\ntempl Component() {\n\t<div>Hello</div>\n}\n"
+	t.Setenv("GOMODCACHE", moduleCachePath)
+	if err := os.MkdirAll(filepath.Dir(moduleCacheTemplate), 0o755); err != nil {
+		t.Fatalf("create template directory: %v", err)
+	}
+	if err := os.WriteFile(moduleCacheTemplate, []byte(templateContents), 0o600); err != nil {
+		t.Fatalf("write template: %v", err)
+	}
+
+	log := slog.Default()
+	server := NewServer(log, nil, NewSourceMapCache(), NewDiagnosticCache(), false, format.Config{})
+	server.preload(context.Background(), []lsp.WorkspaceFolder{{URI: string(uri.URIFromPath(workspace))}})
+
+	if len(server.preLoadURIs) != 0 {
+		t.Errorf("expected no templates to be preloaded, got %d", len(server.preLoadURIs))
+	}
+}
+
+func TestShouldSkipPreloadDir(t *testing.T) {
+	tests := []struct {
+		name            string
+		path            string
+		moduleCachePath string
+		expected        bool
+	}{
+		{name: "the module cache root is skipped", path: "/home/user/go/pkg/mod", moduleCachePath: "/home/user/go/pkg/mod", expected: true},
+		{name: "a trailing slash on the module cache root is skipped", path: "/home/user/go/pkg/mod/", moduleCachePath: "/home/user/go/pkg/mod", expected: true},
+		{name: "a sibling directory is not skipped", path: "/home/user/go/pkg/other", moduleCachePath: "/home/user/go/pkg/mod", expected: false},
+		{name: "an empty module cache path does not skip the workspace root", path: ".", moduleCachePath: "", expected: false},
+		{name: "vendor directories are skipped regardless of the module cache path", path: "/home/user/project/vendor", moduleCachePath: "", expected: true},
+		{name: "dot-prefixed directories are skipped regardless of the module cache path", path: "/home/user/project/.direnv", moduleCachePath: "", expected: true},
+		{name: "regular directories are not skipped", path: "/home/user/project/internal", moduleCachePath: "", expected: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if actual := shouldSkipPreloadDir(tt.path, tt.moduleCachePath); actual != tt.expected {
+				t.Errorf("expected %v, got %v", tt.expected, actual)
+			}
+		})
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/a-h/templ/internal/format"
 	"github.com/a-h/templ/internal/imports"
 	"github.com/a-h/templ/internal/lazyloader"
+	"github.com/a-h/templ/internal/skipdir"
 	lsp "github.com/a-h/templ/lsp/protocol"
 	"github.com/a-h/templ/lsp/uri"
 
@@ -272,7 +274,30 @@ func (p *Server) Initialize(ctx context.Context, params *lsp.InitializeParams) (
 	return result, err
 }
 
+// shouldSkipPreloadDir reports whether path should be excluded from the LSP's
+// workspace preload walk. It extends the general skipdir rules with the
+// current Go module cache path: dependency sources under GOMODCACHE cannot be
+// used as gopls overlays, so their templates must not be preloaded. This
+// matters even though skipdir.ShouldSkip already prunes dot-prefixed
+// directories, because a module cache can be relocated to a non-hidden path,
+// for example via GOMODCACHE or direnv's `layout go`.
+func shouldSkipPreloadDir(path, moduleCachePath string) bool {
+	if moduleCachePath != "" && filepath.Clean(path) == moduleCachePath {
+		return true
+	}
+	return skipdir.ShouldSkip(path)
+}
+
 func (p *Server) preload(ctx context.Context, workspaceFolders []lsp.WorkspaceFolder) {
+	out, err := exec.CommandContext(ctx, "go", "env", "GOMODCACHE").Output()
+	if err != nil {
+		p.Log.Warn("failed to find Go module cache path", slog.Any("error", err))
+	}
+	moduleCachePath := strings.TrimSpace(string(out))
+	if moduleCachePath != "" {
+		moduleCachePath = filepath.Clean(moduleCachePath)
+	}
+
 	for _, c := range workspaceFolders {
 		path, err := uri.ParseDocumentURI(c.URI)
 		if err != nil {
@@ -283,6 +308,9 @@ func (p *Server) preload(ctx context.Context, workspaceFolders []lsp.WorkspaceFo
 		werr := filepath.Walk(path.Filename(), func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
+			}
+			if info.IsDir() && shouldSkipPreloadDir(path, moduleCachePath) {
+				return filepath.SkipDir
 			}
 			p.Log.Info("found file", slog.String("path", path))
 			uri := uri.URIFromPath(path)
