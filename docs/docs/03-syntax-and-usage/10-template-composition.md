@@ -66,6 +66,12 @@ templ atSignExamples() {
 }
 ```
 
+`templ generate` warns when `@` followed by an identifier comes after punctuation, for example `(@component())`, because it is rendered as text instead of as a component call.
+
+:::caution
+A future templ release will treat `@` followed by an identifier as a component call unless the `@` follows a letter, digit, or underscore, matching the Razor template syntax. Email addresses such as `user@example.com` remain text, but text such as `(@component())` or `"@username"` will be parsed as a component call. `templ generate` warns about text affected by this change. Use a string expression, such as `{ "@username" }`, to render a literal `@`.
+:::
+
 ## Children
 
 Children can be passed to a component for it to wrap.
