@@ -7,7 +7,7 @@ import (
 )
 
 // onceHandleIndex is used to identify unique once handles in a program run.
-var onceHandleIndex int64
+var onceHandleIndex atomic.Int64
 
 type OnceOpt func(*OnceHandle)
 
@@ -24,7 +24,7 @@ func WithComponent(c Component) OnceOpt {
 // `Once` method are only rendered once per context.
 func NewOnceHandle(opts ...OnceOpt) *OnceHandle {
 	oh := &OnceHandle{
-		id: atomic.AddInt64(&onceHandleIndex, 1),
+		id: onceHandleIndex.Add(1),
 	}
 	for _, opt := range opts {
 		opt(oh)

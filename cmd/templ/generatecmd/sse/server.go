@@ -17,8 +17,8 @@ func New() *Handler {
 }
 
 type Handler struct {
-	counter  int64
 	m        *sync.Mutex
+	counter  atomic.Int64
 	requests map[int64]chan event
 }
 
@@ -49,7 +49,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	id := atomic.AddInt64(&s.counter, 1)
+	id := s.counter.Add(1)
 	s.m.Lock()
 	events := make(chan event)
 	s.requests[id] = events
