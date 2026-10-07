@@ -33,7 +33,7 @@ func main() {
 Running the code will start a web server on port 3000.
 
 ```bash
-go run *.go
+go run . *.go
 ```
 
 If you run another terminal session and run `curl` you can see the exact HTML that is returned matches the `hello` component, with the name "John".
