@@ -17,8 +17,8 @@ func New() *Handler {
 }
 
 type Handler struct {
-	m        *sync.Mutex
 	counter  int64
+	m        *sync.Mutex
 	requests map[int64]chan event
 }
 
