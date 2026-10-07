@@ -14,58 +14,70 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Create a channel to send deferred component renders to the template.
-		data := make(chan SlotContents)
-
-		// We know there are 3 slots, so start a WaitGroup.
-		var wg sync.WaitGroup
-		wg.Add(3)
-
-		// Start the async processes.
-		// Sidebar.
-		go func() {
-			defer wg.Done()
-			time.Sleep(time.Second * 3)
-			data <- SlotContents{
-				Name:     "a",
-				Contents: A(),
-			}
-		}()
-
-		// Content.
-		go func() {
-			defer wg.Done()
-			time.Sleep(time.Second * 2)
-			data <- SlotContents{
-				Name:     "b",
-				Contents: B(),
-			}
-		}()
-
-		// Footer.
-		go func() {
-			defer wg.Done()
-			time.Sleep(time.Second * 1)
-			data <- SlotContents{
-				Name:     "c",
-				Contents: C(),
-			}
-		}()
-
-		// Close the channel when all processes are done.
-		go func() {
-			wg.Wait()
-			close(data)
-		}()
-
-		// Pass the channel to the template.
-		component := Page(data)
-
-		// Serve using the streaming mode of the handler.
-		templ.Handler(component, templ.WithStreaming()).ServeHTTP(w, r)
-	})
+	http.HandleFunc("/", handleSuspense)
 	http.ListenAndServe("127.0.0.1:8080", nil)
+}
+
+func handleSuspense(w http.ResponseWriter, r *http.Request) {
+	// Create a channel to send deferred component renders to the template.
+	data := make(chan SlotContents)
+
+	// Start the async processes.
+	var wg sync.WaitGroup
+
+	// Sidebar.
+	// A goroutine can return without sending, for example, because the client
+	// disconnected. The channel still closes once every goroutine has returned,
+	// so the template and the deferred discard below both finish.
+	wg.Go(func() {
+		select {
+		case <-time.After(time.Second * 3):
+		case <-r.Context().Done():
+			return
+		}
+		data <- SlotContents{
+			Name:     "a",
+			Contents: A(),
+		}
+	})
+
+	// Content.
+	wg.Go(func() {
+		time.Sleep(time.Second * 2)
+		data <- SlotContents{
+			Name:     "b",
+			Contents: B(),
+		}
+	})
+
+	// Footer.
+	wg.Go(func() {
+		time.Sleep(time.Second * 1)
+		data <- SlotContents{
+			Name:     "c",
+			Contents: C(),
+		}
+	})
+
+	// Close the channel when all processes are done.
+	go func() {
+		wg.Wait()
+		close(data)
+	}()
+
+	// If rendering stops early, for example, because the client disconnected,
+	// the template doesn't read every slot. Discard the remaining slots, so that
+	// any goroutine that is sending can finish its send and exit.
+	defer func() {
+		for range data {
+		}
+	}()
+
+	// Pass the channel to the template.
+	component := Page(data)
+
+	// Serve using the streaming mode of the handler.
+	templ.Handler(component, templ.WithStreaming()).ServeHTTP(w, r)
 }
 
 type SlotContents struct {
@@ -101,7 +113,7 @@ func Slot(name string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 70, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 82, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
@@ -114,7 +126,7 @@ func Slot(name string) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 71, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 83, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -298,7 +310,7 @@ func Page(data chan SlotContents) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(sc.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 105, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `examples/suspense/main.templ`, Line: 117, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 				if templ_7745c5c3_Err != nil {
