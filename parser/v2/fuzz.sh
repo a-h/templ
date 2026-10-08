@@ -1,5 +1,8 @@
 #!/bin/bash
-echo Element
-go test -fuzz=FuzzElement -fuzztime=120s
-echo Script
-go test -fuzz=FuzzScript -fuzztime=120s
+set -euo pipefail
+cd "$(dirname "$0")"
+FUZZTIME="${FUZZTIME:-120s}"
+for target in FuzzElement FuzzExtractFuncDeclSignature FuzzScriptParser; do
+	echo "$target"
+	go test -run '^$' -fuzz "^${target}\$" -fuzztime "$FUZZTIME" .
+done

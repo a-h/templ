@@ -124,9 +124,21 @@ gotestsum --watch -- -coverprofile=coverage.out
 
 ### test-fuzz
 
+Run each fuzz test for FUZZTIME (default 120s).
+
 ```sh
 ./parser/v2/fuzz.sh
 ./parser/v2/goexpression/fuzz.sh
+./runtime/fuzzing/fuzz.sh
+```
+
+### test-fuzz-corpus
+
+Run the runtime fuzz tests against their seed and committed corpora, without fuzzing. The runtime fuzz tests are in a separate module, so `go test ./...` in the root module doesn't run them. The parser fuzz tests are in the root module, so `test` and `test-cover` run their corpora.
+
+```sh
+cd runtime/fuzzing
+go test ./...
 ```
 
 ### benchmark

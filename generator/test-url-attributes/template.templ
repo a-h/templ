@@ -1,0 +1,44 @@
+package testurlattributes
+
+// render covers GHSA-94c2-xg24-pwhv: a string in any attribute that
+// html/template treats as a URL must be sanitized, including data: image URLs,
+// which require templ.SafeURL.
+templ render(s string) {
+	<iframe src={ s }></iframe>
+	<iframe SRC={ s }></iframe>
+	<embed src={ s }/>
+	<div>
+		<map name="m"><area href={ s }/></map>
+	</div>
+	<div>
+		<object data={ s }></object>
+	</div>
+	<div>
+		<link rel="stylesheet" href={ s }/>
+	</div>
+	<base href={ s }/>
+	<svg>
+		<a href={ s }></a>
+		<a xlink:href={ s }></a>
+		<a>
+			<set attributeName="href" to={ s }></set>
+			<set attributeName=" href " to={ s }></set>
+			<animate attributeName="xlink:href" values={ "https://example.com;" + s }></animate>
+			<animate attributeName="opacity" to={ "0.5" }></animate>
+			<set { "attributeName" }="opacity" to={ s }></set>
+			<set to={ s }></set>
+			<set { templ.Attributes{}... } attributeName="opacity" to={ s }></set>
+		</a>
+	</svg>
+	<div><img src={ s }/></div>
+	<div><img src={ "data:image/gif;base64,R0lGODlhAQABAAAAACw=" }/></div>
+	<div><img src={ templ.SafeURL("data:image/gif;base64,R0lGODlhAQABAAAAACw=") }/></div>
+	<div><img src={ 42 }/></div>
+	<script src={ "https://example.com/script.js" }></script>
+	<div><video poster={ "data:image/gif;base64,R0lGODlhAQABAAAAACw=" }></video></div>
+	<div><video poster={ templ.SafeURL("data:image/gif;base64,R0lGODlhAQABAAAAACw=") }></video></div>
+	<blockquote cite={ s }></blockquote>
+	<div data={ s }></div>
+	<div data-url={ s }></div>
+	<div title={ s }></div>
+}

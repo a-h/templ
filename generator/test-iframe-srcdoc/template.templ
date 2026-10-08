@@ -1,0 +1,20 @@
+package testiframesrcdoc
+
+// render covers GHSA-94c2-xg24-pwhv: the browser parses the value of an
+// iframe srcdoc attribute as an HTML document in the context of the page, so a
+// string must be escaped as text, while a component is rendered as HTML.
+templ render(s string) {
+	<iframe srcdoc={ s }></iframe>
+	<iframe SRCDOC={ s }></iframe>
+	<iframe srcdoc={ templ.Raw(`<p class="trusted">Trusted</p>`) }></iframe>
+	<iframe srcdoc={ content() }></iframe>
+	<iframe srcdoc={ withError() }></iframe>
+}
+
+templ content() {
+	<p>Component</p>
+}
+
+func withError() (string, error) {
+	return "<b>text</b>", nil
+}

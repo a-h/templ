@@ -610,6 +610,71 @@ func TestScriptElementRendersGoExpressionsWithPositionAppropriateEscaping(t *tes
 			expected: `var a = ` + "`" + `${ "${x}"}\u0024\u007bx\u007d` + "`" + `;`,
 		},
 		{
+			name:     "a brace in a string inside a substitution does not keep the substitution open",
+			input:    "<script>var a = `${\"{\"}{{ name }}`;</script>",
+			expected: `var a = ` + "`" + `${"{"}\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a brace in a single quoted string inside a substitution does not keep the substitution open",
+			input:    "<script>var a = `${'{'}{{ name }}`;</script>",
+			expected: `var a = ` + "`" + `${'{'}\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a closing brace in a string inside a substitution does not end the substitution",
+			input:    "<script>var a = `${ \"}\" + {{ name }} }`;</script>",
+			expected: `var a = ` + "`" + `${ "}" + "${x}"}` + "`" + `;`,
+		},
+		{
+			name:     "a brace in a comment inside a substitution does not keep the substitution open",
+			input:    "<script>var a = `${ 1 /* { */ }{{ name }}`;</script>",
+			expected: `var a = ` + "`" + `${ 1 /* { */ }\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "an object literal inside a substitution keeps the substitution open until its own brace closes",
+			input:    "<script>var a = `${ f({ a: 1 }) + {{ x }} }{{ y }}`;</script>",
+			expected: `var a = ` + "`" + `${ f({ a: 1 }) + "${x}"}\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a value in a nested template literal inside a substitution is hex-escaped",
+			input:    "<script>var a = `${ `{{ x }}` }{{ y }}`;</script>",
+			expected: `var a = ` + "`" + `${ ` + "`" + `\u0024\u007bx\u007d` + "`" + ` }\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a value in a string inside a substitution is string escaped",
+			input:    "<script>var a = `${ \"{{ x }}\" }`;</script>",
+			expected: `var a = ` + "`" + `${ "${x}" }` + "`" + `;`,
+		},
+		{
+			name:     "comment markers in a string after a value remain string data",
+			input:    `<script>var a = "{{ x }}/*"; var b = {{ y }};</script>`,
+			expected: `var a = "${x}/*"; var b = "${x}";`,
+		},
+		{
+			name:     "a slash after a value is division, so a later quote is not mistaken for regexp text",
+			input:    `<script>var a = b / 2; var c = "/"; var d = {{ x }};</script>`,
+			expected: `var a = b / 2; var c = "/"; var d = "${x}";`,
+		},
+		{
+			name:     "a slash after a closing parenthesis is division",
+			input:    `<script>var a = (b) / 2; var c = "/"; var d = {{ x }};</script>`,
+			expected: `var a = (b) / 2; var c = "/"; var d = "${x}";`,
+		},
+		{
+			name:     "a slash after a keyword starts a regexp, so a quote inside it is not a string",
+			input:    `<script>function f(s) { return /"/.test(s); } var d = {{ x }};</script>`,
+			expected: `function f(s) { return /"/.test(s); } var d = "${x}";`,
+		},
+		{
+			name:     "a slash after an assignment starts a regexp, so a quote inside it is not a string",
+			input:    `<script>var r = /'/g; var d = {{ x }};</script>`,
+			expected: `var r = /'/g; var d = "${x}";`,
+		},
+		{
+			name:     "a slash after a value inside a substitution is division",
+			input:    "<script>var a = `${ b / 2 }{{ x }}`; var c = \"/\";</script>",
+			expected: `var a = ` + "`" + `${ b / 2 }\u0024\u007bx\u007d` + "`" + `; var c = "/";`,
+		},
+		{
 			name:     "a value inside a double quoted string is left alone, since $ and { aren't special there",
 			input:    `<script>var a = "{{ name }}";</script>`,
 			expected: `var a = "${x}";`,
@@ -649,96 +714,6 @@ func TestScriptElementRendersGoExpressionsWithPositionAppropriateEscaping(t *tes
 			}
 			if diff := cmp.Diff(tt.expected, actual.String()); diff != "" {
 				t.Error(diff)
-			}
-		})
-	}
-}
-
-func TestScriptElementRegexpParser(t *testing.T) {
-	tests := []struct {
-		name       string
-		input      string
-		expected   string
-		expectedOK bool
-	}{
-		{
-			name:       "no content is considered to be a comment",
-			input:      `//`,
-			expectedOK: false,
-		},
-		{
-			name:       "must not be multiline",
-			input:      "/div>\n</div>",
-			expectedOK: false,
-		},
-		{
-			name:       "match a single char",
-			input:      `/a/`,
-			expected:   `/a/`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a simple regex",
-			input:      `/a|b/`,
-			expected:   `/a|b/`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a complex regex",
-			input:      `/a(b|c)*d{2,4}/`,
-			expected:   `/a(b|c)*d{2,4}/`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a regex with flags",
-			input:      `/a/i`,
-			expected:   `/a/i`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a regex with multiple flags",
-			input:      `/a/gmi`,
-			expected:   `/a/gmi`,
-			expectedOK: true,
-		},
-		{
-			name:       "escaped slashes",
-			input:      `/a\/b\/c/`,
-			expected:   `/a\/b\/c/`,
-			expectedOK: true,
-		},
-		{
-			name:       "no match: missing closing slash",
-			input:      `/a|b`,
-			expected:   "",
-			expectedOK: false,
-		},
-		{
-			name:       "no match: missing opening slash",
-			input:      `a|b/`,
-			expected:   "",
-			expectedOK: false,
-		},
-		{
-			name:       "must not contain interpolated go expressions",
-			input:      `/a{{ b }}/`,
-			expected:   "",
-			expectedOK: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			input := parse.NewInput(tt.input)
-			result, ok, err := regexpLiteral.Parse(input)
-			if err != nil {
-				t.Fatalf("parser error: %v", err)
-			}
-			if ok != tt.expectedOK {
-				t.Fatalf("expected ok to be %v, got %v", tt.expectedOK, ok)
-			}
-			if result != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, result)
 			}
 		})
 	}
