@@ -1,0 +1,47 @@
+package fuzzing
+
+// The components below write a fuzzed attribute name and value through each
+// path that templ uses to render an attribute. The fuzz tests parse the output
+// with an HTML5 parser, the same way that a browser does, and assert that no
+// attribute was added, and that each value is inert. See GHSA-94c2-xg24-pwhv,
+// where a javascript: URL in attributes such as <iframe src> was not sanitized,
+// and a dynamic attribute name could add an event handler.
+
+templ DynamicAttribute(elementName string, name string, value string) {
+	switch elementName {
+		case "iframe":
+			<iframe { name }={ value }></iframe>
+		case "form":
+			<form { name }={ value }></form>
+		case "set":
+			<set { name }={ value }></set>
+		default:
+			<div { name }={ value }></div>
+	}
+}
+
+templ SpreadAttribute(elementName string, name string, value string) {
+	switch elementName {
+		case "iframe":
+			<iframe { templ.Attributes{name: value}... }></iframe>
+		case "form":
+			<form { templ.Attributes{name: value}... }></form>
+		case "set":
+			<set { templ.Attributes{name: value}... }></set>
+		default:
+			<div { templ.Attributes{name: value}... }></div>
+	}
+}
+
+templ ConstantNameAttributes(value string) {
+	<a href={ value }></a>
+	<a HREF={ value }></a>
+	<iframe src={ value }></iframe>
+	<iframe srcdoc={ value }></iframe>
+	<form action={ value }></form>
+	<button formaction={ value }></button>
+	<object data={ value }></object>
+	<set attributeName="href" to={ value }></set>
+	<animate attributeName="href" values={ value }></animate>
+	<div title={ value }></div>
+}

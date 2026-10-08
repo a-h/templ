@@ -1,11 +1,18 @@
 package testahref
 
-templ render() {
+templ render(s string) {
 	<form action="javascript:alert('unaffected');">Ignored</form>
 	<form action={ templ.URL("javascript:alert('should be sanitized')") }>Sanitized</form>
 	<form action={ templ.SafeURL("javascript:alert('should not be sanitized')") }>Unsanitized</form>
 	<form action={ safeUrl("javascript:alert('should not be sanitized')") }>with error unsanitized</form>
 	<form action={ stringUrl("javascript:alert('should be sanitized')") }>with error sanitized</form>
+	<form action={ s }>String sanitized</form>
+	<form ACTION={ s }>Uppercase attribute name sanitized</form>
+	<form>
+		<button formaction={ s }>Button formaction sanitized</button>
+		<input type="submit" formaction={ s }/>
+		<button FormAction={ s }>Mixed case button formaction sanitized</button>
+	</form>
 }
 
 func safeUrl(s string) (templ.SafeURL, error) {

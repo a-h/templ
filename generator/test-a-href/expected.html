@@ -1,3 +1,6 @@
 <a href="javascript:alert('unaffected');">Ignored</a>
 <a href="about:invalid#TemplFailedSanitizationURL">Sanitized</a>
 <a href="javascript:alert(&#39;should not be sanitized&#39;)">Unsanitized</a>
+<a href="about:invalid#TemplFailedSanitizationURL">String sanitized</a>
+<a HREF="about:invalid#TemplFailedSanitizationURL">Uppercase attribute name sanitized</a>
+<a Href="about:invalid#TemplFailedSanitizationURL">Mixed case attribute name sanitized</a>

@@ -59,7 +59,7 @@ Complete source code including AWS CDK code to set up the infrastructure is avai
 
 htmx supports inline JavaScript event handlers using the `hx-on:*` attributes such as `hx-on:click`, `hx-on:submit`, etc.
 
-Attributes starting with `on` or `hx-on:` are treated as script attributes and expect a `templ.ComponentScript` type.
+Attributes starting with `on`, `hx-on`, or `data-hx-on` are treated as script attributes and expect a `templ.ComponentScript` type. This includes all of the htmx event handler syntaxes: `hx-on`, `hx-on:click`, `hx-on::after-request`, `hx-on-click`, `hx-on--after-request`, `data-hx-on:click`, and `data-hx-on-click`. Attribute names are case insensitive.
 
 For static JavaScript, use a string literal:
 
@@ -77,3 +77,15 @@ For dynamic JavaScript with server-side data, use `templ.JSFuncCall`:
 </script>
 <button hx-on:click={ templ.JSFuncCall("showMessage", "Hello from Go") }>Click me</button>
 ```
+
+## Security
+
+templ only sanitizes htmx event handler attributes. Other htmx attributes also execute JavaScript, and templ HTML-escapes their values, but does not sanitize them:
+
+* `hx-vals` and `hx-headers` values that start with `js:` or `javascript:` are evaluated as JavaScript.
+* `hx-vars` values are evaluated as JavaScript.
+* Event filters in `hx-trigger`, e.g. `click[ctrlKey]`, are evaluated as JavaScript.
+
+htmx has a large number of attributes and extensions, so templ does not attempt to sanitize them. Never use untrusted input in htmx attributes that execute JavaScript. To pass data to `hx-vals`, use `templ.JSONString` to serialize the value as JSON.
+
+See the htmx [security documentation](https://htmx.org/docs/#security) for more information.

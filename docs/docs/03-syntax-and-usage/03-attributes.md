@@ -143,9 +143,52 @@ templ component() {
 <p data-testid="paragraph">Text</p>
 ```
 
-:::warning
-Currently, attribute types with special handling like `href`, `onClick`, and `on*` are not handled differently when defined with an expression key. So if you use a string expression to set the key of an attribute, it will be treated as a normal string attribute, without type specific escaping.
-:::
+The name of the attribute is not known until the template is rendered, so templ sanitizes the attribute at render time:
+
+* If the name would change the structure of the element, e.g. because it contains a space, a quote, or an `=` sign, templ replaces the name with `data-templ-failed-sanitization`.
+* If the attribute is a [URL attribute](#url-attributes), templ sanitizes the value as a URL.
+* If the attribute is an [event handler](#javascript-attributes), and the value is not a `templ.ComponentScript`, templ replaces the value with `/* templ: failed sanitization, use templ.JSFuncCall, or templ.JSUnsafeFuncCall for trusted JavaScript */`.
+* If the attribute is a `srcdoc` attribute, templ escapes a `string` value as text.
+* The `&` character can't be used in the name, because browsers don't decode character references in attribute names.
+
+```templ
+templ component(name string, value string) {
+  <a { name }={ value }>Text</a>
+}
+
+templ usage() {
+  @component("href", "javascript:alert(1)")
+  @component("onclick", "alert(1)")
+  @component("x onmouseover=alert(1) y", "value")
+}
+```
+
+```html title="Output"
+<a href="about:invalid#TemplFailedSanitizationURL">Text</a>
+<a onclick="/* templ: failed sanitization, use templ.JSFuncCall, or templ.JSUnsafeFuncCall for trusted JavaScript */">Text</a>
+<a data-templ-failed-sanitization="value">Text</a>
+```
+
+To set an event handler with an attribute key expression, pass a `templ.ComponentScript` as the value:
+
+* `templ.JSFuncCall("functionName", args...)` calls a JavaScript function, and JSON encodes the Go arguments, so it's safe to use with untrusted data. See [Pass Go data to a JavaScript event handler](/syntax-and-usage/script-templates#pass-go-data-to-a-javascript-event-handler).
+* `templ.JSUnsafeFuncCall("alert('hello')")` renders the string as JavaScript without escaping. Only use it for JavaScript that comes from a trusted source, never with user input. See [Call client side functions with server side data](/syntax-and-usage/script-templates#call-client-side-functions-with-server-side-data).
+
+```templ
+templ component(name string, message string) {
+  <button { name }={ templ.JSFuncCall("alert", message) }>Show message</button>
+  <button { name }={ templ.JSUnsafeFuncCall("alert('hello')") }>Say hello</button>
+}
+
+templ usage() {
+  @component("onclick", "Hello, World!")
+}
+```
+
+```html title="Output"
+<button onclick="alert(&#34;Hello, World!&#34;)">Show message</button>
+<button onclick="alert(&#39;hello&#39;)">Say hello</button>
+```
 
 ## Spread attributes
 
@@ -157,6 +200,10 @@ It's possible to spread any variable of type `templ.Attributes`. `templ.Attribut
 * If the value is a `bool`, the attribute is added as a boolean attribute if the value is true, e.g. `<div name>`.
 * If the value is a `templ.KeyValue[string, bool]`, the attribute is added if the boolean is true, e.g. `<div name="value">`.
 * If the value is a `templ.KeyValue[bool, bool]`, the attribute is added if both boolean values are true, as `<div name>`.
+* If the value is a `templ.SafeURL`, the attribute is added with the URL value, without URL sanitization.
+* If the value is a `templ.ComponentScript`, i.e. the result of `templ.JSFuncCall` or `templ.JSUnsafeFuncCall`, the attribute is added with the JavaScript as the value.
+
+Spread attributes are sanitized in the same way as [attribute key expressions](#attribute-key-expressions), so `templ.Attributes{"href": url}` is sanitized as a URL, and `templ.Attributes{"onclick": "alert(1)"}` is replaced, because the value is a `string`, not a `templ.ComponentScript`. To set an event handler, use `templ.JSFuncCall` to call a JavaScript function with Go data, e.g. `templ.Attributes{"onclick": templ.JSFuncCall("alert", message)}`, or `templ.JSUnsafeFuncCall` for JavaScript from a trusted source, e.g. `templ.Attributes{"onclick": templ.JSUnsafeFuncCall("alert('hello')")}`.
 
 ```templ
 templ component(shouldBeUsed bool, attrs templ.Attributes) {
@@ -188,7 +235,46 @@ templ component(p Person) {
 }
 ```
 
-When you pass a `string` to these attributes, templ will automatically sanitize the input URL, ensuring that the protocol is safe (e.g., `http`, `https`, or `mailto`) and does not contain potentially harmful protocols like `javascript:`.
+When you pass a `string` to these attributes, templ will automatically sanitize the input URL, ensuring that the protocol is safe (e.g., `http`, `https`, or `mailto`) and does not contain potentially harmful protocols like `javascript:`. A URL that fails sanitization is replaced with `about:invalid#TemplFailedSanitizationURL`.
+
+templ treats the same attributes as URLs as Go's `html/template` package does, on any element:
+
+* `action`, `archive`, `background`, `cite`, `classid`, `codebase`, `data`, `formaction`, `href`, `icon`, `longdesc`, `manifest`, `poster`, `profile`, `src`, `usemap`, and `xmlns`.
+* Namespaced attributes with one of the names above, e.g. `xlink:href`, and all `xmlns:*` attributes.
+* `data-*` attributes with one of the names above, e.g. `data-href`.
+* Any attribute with a name that contains `src`, `uri`, or `url`, e.g. `data-url`, because developers often store URLs in custom attributes, and JavaScript may navigate to them.
+
+`srcset` contains `src`, so templ sanitizes it as a single URL. `html/template` sanitizes each URL in a `srcset` separately.
+
+templ also sanitizes `to`, `from`, `values`, and `by` on SVG `<set>` and `<animate>` elements, which can set the `href` of their parent element, unless the `attributeName` attribute is a constant that can't refer to `href`, i.e. it isn't `href`, or `href` with a namespace prefix such as `xlink:href`, ignoring case and surrounding whitespace.
+
+Attribute names are case insensitive, so `<a HREF={ url }>` is sanitized in the same way as `<a href={ url }>`.
+
+`data:` and `blob:` URLs fail sanitization, including in `<img src>`. To use a `data:` URL, e.g. for an inline image, convert it to a `templ.SafeURL`.
+
+```templ
+templ component(url string) {
+  <a HREF={ url }>Link</a>
+  <iframe src={ url }></iframe>
+  <img src={ "data:image/gif;base64,R0lGODlhAQABAAAAACw=" }/>
+  <img src={ templ.SafeURL("data:image/gif;base64,R0lGODlhAQABAAAAACw=") }/>
+}
+
+templ usage() {
+  @component("javascript:alert(1)")
+}
+```
+
+```html title="Output"
+<a HREF="about:invalid#TemplFailedSanitizationURL">Link</a>
+<iframe src="about:invalid#TemplFailedSanitizationURL"></iframe>
+<img src="about:invalid#TemplFailedSanitizationURL">
+<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">
+```
+
+:::warning
+Sanitization only checks the URL scheme. A script from any `https:` URL executes in the page, so never use untrusted input for the source of a script, e.g. `<script src={ url }>`.
+:::
 
 :::caution
 To bypass URL sanitization, you can use `templ.SafeURL(myURL)` to mark that your string is safe to use.
@@ -228,7 +314,15 @@ Sanitization is the process of examining the URL scheme (protocol) and structure
 
 ## JavaScript attributes
 
-`onClick` and other `on*` handlers have special behaviour, they expect a reference to a `script` template.
+`onClick` and other `on*` handlers have special behaviour, they expect a `templ.ComponentScript`, such as a reference to a `script` template, or the result of `templ.JSFuncCall`.
+
+Attribute names are case insensitive, so `OnClick` and `ONCLICK` are handled in the same way as `onclick`. htmx event handler attributes are handled in the same way: `hx-on`, `hx-on:*`, `hx-on-*`, `data-hx-on:*`, and `data-hx-on-*`.
+
+:::warning
+templ does not know about the attributes of other JavaScript frameworks that execute their values, such as Alpine.js `x-on:*`, `@*`, `x-data`, and `x-init`, or Datastar `data-on-*`. templ HTML-escapes the values of these attributes, but does not prevent them from executing JavaScript, so never use untrusted input in them.
+
+The same applies to htmx. templ requires a `templ.ComponentScript` in htmx event handler attributes, but other htmx attributes also execute JavaScript, e.g. `hx-vals` and `hx-headers` values that start with `js:` or `javascript:`, `hx-vars`, and event filters in `hx-trigger`, such as `click[ctrlKey]`. templ does not sanitize these attributes, so never use untrusted input in them.
+:::
 
 :::info
 This ensures that any client-side JavaScript that is required for a component to function is only emitted once, that script name collisions are not possible, and that script input parameters are properly sanitized.
@@ -255,6 +349,34 @@ templ Button(text string) {
 <button onclick="__templ_withParameters_1056("test","Say hello",123)" onmouseover="__templ_withoutParameters_6bbf()" type="button">
  Say hello
 </button>
+```
+
+## iframe srcdoc attributes
+
+The browser parses the value of an `<iframe>` `srcdoc` attribute as an HTML document, in the context of the page. templ escapes a `string` value as text, so that it is displayed, and not parsed as HTML.
+
+To render HTML in a `srcdoc` attribute, pass a templ component. templ renders the component, and escapes the output for use in the attribute.
+
+```templ
+templ preview(text string) {
+  <iframe srcdoc={ text }></iframe>
+  <iframe srcdoc={ previewContent(text) }></iframe>
+}
+
+templ previewContent(text string) {
+  <p>{ text }</p>
+}
+
+templ usage() {
+  @preview("<b>Hello</b>")
+}
+```
+
+The first `<iframe>` displays the text `<b>Hello</b>`. The second displays a paragraph that contains the same text, because `previewContent` escapes `text`.
+
+```html title="Output"
+<iframe srcdoc="&amp;lt;b&amp;gt;Hello&amp;lt;/b&amp;gt;"></iframe>
+<iframe srcdoc="&lt;p&gt;&amp;lt;b&amp;gt;Hello&amp;lt;/b&amp;gt;&lt;/p&gt;"></iframe>
 ```
 
 ## CSS attributes

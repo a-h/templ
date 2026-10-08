@@ -49,3 +49,22 @@ templ render(p person) {
 		<input type="button" value="Unlock"/>
 	</form>
 }
+
+// dynamicKeys covers GHSA-94c2-xg24-pwhv: the name of an attribute key
+// expression is only known at render time, so the name must not be able to add
+// attributes, and the value must be sanitized based on the name.
+templ dynamicKeys(js string, injection string) {
+	<a { "href" }={ js }>href</a>
+	<a { "HREF" }={ js }>HREF</a>
+	<form { "action" }={ js }></form>
+	<div><turbo-stream { "action" }={ "append" }></turbo-stream></div>
+	<img { "src" }={ "data:image/gif;base64,R0lGODlhAQABAAAAACw=" }/>
+	<img { "src" }={ templ.SafeURL("data:image/gif;base64,R0lGODlhAQABAAAAACw=") }/>
+	<button { "onclick" }={ js }>onclick string</button>
+	<button { "onclick" }={ templ.JSFuncCall("alert", "hello") }>onclick ComponentScript</button>
+	<iframe { "srcdoc" }={ "<script>alert(1)</script>" }></iframe>
+	<div { injection }={ "value" }>invalid name with expression value</div>
+	<div { injection }="value">invalid name with constant value</div>
+	<div { injection }>invalid boolean name</div>
+	<div { injection }?={ true }>invalid boolean expression name</div>
+}
