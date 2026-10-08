@@ -9,6 +9,7 @@ import (
 	_ "embed"
 
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/runtime"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/tools/txtar"
 )
@@ -131,7 +132,7 @@ func TestScriptElementParser(t *testing.T) {
 							From: Position{Index: 8, Line: 0, Col: 8},
 							To:   Position{Index: 18, Line: 0, Col: 18},
 						},
-					}, false),
+					}, ScriptContentsContextExpression),
 				},
 				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
 				CloseTagRange: Range{From: Position{Index: 18, Col: 18}, To: Position{Index: 27, Col: 27}},
@@ -175,7 +176,7 @@ func TestScriptElementParser(t *testing.T) {
 							From: Position{Index: 31, Line: 0, Col: 31},
 							To:   Position{Index: 41, Line: 0, Col: 41},
 						},
-					}, false),
+					}, ScriptContentsContextExpression),
 				},
 				OpenTagRange:  Range{To: Position{Index: 31, Col: 31}},
 				CloseTagRange: Range{From: Position{Index: 41, Col: 41}, To: Position{Index: 50, Col: 50}},
@@ -219,7 +220,7 @@ func TestScriptElementParser(t *testing.T) {
 							From: Position{Index: 22, Line: 0, Col: 22},
 							To:   Position{Index: 32, Line: 0, Col: 32},
 						},
-					}, false),
+					}, ScriptContentsContextExpression),
 				},
 				OpenTagRange:  Range{To: Position{Index: 22, Col: 22}},
 				CloseTagRange: Range{From: Position{Index: 32, Col: 32}, To: Position{Index: 41, Col: 41}},
@@ -263,7 +264,7 @@ func TestScriptElementParser(t *testing.T) {
 							From: Position{Index: 26, Line: 0, Col: 26},
 							To:   Position{Index: 36, Line: 0, Col: 36},
 						},
-					}, false),
+					}, ScriptContentsContextExpression),
 				},
 				OpenTagRange:  Range{To: Position{Index: 26, Col: 26}},
 				CloseTagRange: Range{From: Position{Index: 36, Col: 36}, To: Position{Index: 45, Col: 45}},
@@ -294,7 +295,7 @@ func TestScriptElementParser(t *testing.T) {
 							From: Position{Index: 9, Line: 1, Col: 0},
 							To:   Position{Index: 20, Line: 2, Col: 0},
 						},
-					}, false),
+					}, ScriptContentsContextExpression),
 				},
 				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
 				CloseTagRange: Range{From: Position{Index: 20, Line: 2}, To: Position{Index: 29, Line: 2, Col: 9}},
@@ -322,7 +323,7 @@ func TestScriptElementParser(t *testing.T) {
 							From: Position{Index: 17, Line: 0, Col: 17},
 							To:   Position{Index: 27, Line: 0, Col: 27},
 						},
-					}, true),
+					}, ScriptContentsContextString),
 					NewScriptContentsScriptCode("';"),
 				},
 				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
@@ -351,7 +352,7 @@ func TestScriptElementParser(t *testing.T) {
 							From: Position{Index: 17, Line: 0, Col: 17},
 							To:   Position{Index: 27, Line: 0, Col: 27},
 						},
-					}, true),
+					}, ScriptContentsContextString),
 					NewScriptContentsScriptCode("\";"),
 				},
 				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
@@ -383,7 +384,7 @@ to see if it works";</script>`,
 							From: Position{Index: 34, Line: 1, Col: 0},
 							To:   Position{Index: 45, Line: 1, Col: 11},
 						},
-					}, true),
+					}, ScriptContentsContextString),
 					NewScriptContentsScriptCode("\\\nto see if it works\";"),
 				},
 				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
@@ -412,7 +413,7 @@ to see if it works";</script>`,
 							From: Position{Index: 17, Line: 0, Col: 17},
 							To:   Position{Index: 27, Line: 0, Col: 27},
 						},
-					}, true),
+					}, ScriptContentsContextTemplateLiteral),
 					NewScriptContentsScriptCode("`;"),
 				},
 				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
@@ -533,7 +534,7 @@ const result = call(1000 / 10, {{ data }}, 1000 / 10);
 							From: Position{Index: 40, Line: 1, Col: 31},
 							To:   Position{Index: 50, Line: 1, Col: 41},
 						},
-					}, false),
+					}, ScriptContentsContextExpression),
 					NewScriptContentsScriptCode(", 1000 / 10);\n"),
 				},
 				OpenTagRange:  Range{To: Position{Index: 8, Col: 8}},
@@ -557,6 +558,96 @@ const result = call(1000 / 10, {{ data }}, 1000 / 10);
 				t.Fatalf("failed to parse at %d", input.Index())
 			}
 			if diff := cmp.Diff(tt.expected, result); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+// scriptContentsContextEscape mirrors the Context-to-function mapping in
+// generator.go, so that the test below can show what a given Context
+// actually produces in rendered output, rather than asserting on the
+// Context enum value itself.
+func scriptContentsContextEscape(c ScriptContentsContext, value string) (string, error) {
+	switch c {
+	case ScriptContentsContextString:
+		return runtime.ScriptContentInsideStringLiteral(value)
+	case ScriptContentsContextTemplateLiteral:
+		return runtime.ScriptContentInsideTemplateLiteral(value)
+	default:
+		return runtime.ScriptContentOutsideStringLiteral(value)
+	}
+}
+
+// TestScriptElementRendersGoExpressionsWithPositionAppropriateEscaping covers
+// GHSA-jq3r-rjqp-mwgj. Each case supplies the literal value "${x}" for every
+// {{ }} expression in the input, and asserts the exact text that ends up in
+// the rendered <script> body. "${x}" is used because it shows the difference
+// a position's escaping makes: '$' and '{' have no special meaning inside an
+// ordinary quoted string or a JSON-encoded value, but inside a backtick
+// quoted template literal they must be hex-escaped, or the browser would
+// evaluate "${x}" as a JavaScript substitution instead of treating it as text.
+func TestScriptElementRendersGoExpressionsWithPositionAppropriateEscaping(t *testing.T) {
+	const value = "${x}"
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "a value directly inside a backtick template literal is hex-escaped so ${x} cannot be evaluated",
+			input:    "<script>var a = `{{ name }}`;</script>",
+			expected: `var a = ` + "`" + `\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a value inside a dollar-brace substitution is JSON encoded, so it is quoted rather than evaluated",
+			input:    "<script>var a = `${ {{ name }} }`;</script>",
+			expected: `var a = ` + "`" + `${ "${x}"}` + "`" + `;`,
+		},
+		{
+			name:     "a value after a dollar-brace substitution has closed is template-literal text again",
+			input:    "<script>var a = `${ {{ x }} }{{ y }}`;</script>",
+			expected: `var a = ` + "`" + `${ "${x}"}\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a value inside a double quoted string is left alone, since $ and { aren't special there",
+			input:    `<script>var a = "{{ name }}";</script>`,
+			expected: `var a = "${x}";`,
+		},
+		{
+			name:     "a value outside any string literal is JSON encoded",
+			input:    "<script>var a = {{ name }};</script>",
+			expected: `var a = "${x}";`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			input := parse.NewInput(tt.input)
+			result, ok, err := scriptElement.Parse(input)
+			if err != nil {
+				t.Fatalf("parser error: %v", err)
+			}
+			if !ok {
+				t.Fatalf("failed to parse at %d", input.Index())
+			}
+			se, isScriptElement := result.(*ScriptElement)
+			if !isScriptElement {
+				t.Fatalf("expected ScriptElement, got %T", result)
+			}
+			var actual strings.Builder
+			for _, c := range se.Contents {
+				if c.Value != nil {
+					actual.WriteString(*c.Value)
+					continue
+				}
+				escaped, err := scriptContentsContextEscape(c.Context, value)
+				if err != nil {
+					t.Fatalf("unexpected error escaping value: %v", err)
+				}
+				actual.WriteString(escaped)
+			}
+			if diff := cmp.Diff(tt.expected, actual.String()); diff != "" {
 				t.Error(diff)
 			}
 		})

@@ -1,18 +1,64 @@
 package fuzzing
 
-templ String(v any) {
+// The five components below each interpolate v into the JavaScript syntax
+// position that one of templruntime's ScriptContent* functions is responsible
+// for escaping, and return it from getValue(). This lets the fuzz test assert
+// a round trip: whatever string goes in must come back out unchanged, proving
+// that no part of it was evaluated as JavaScript along the way rather than
+// treated as inert data. See GHSA-jq3r-rjqp-mwgj, where a value inside a
+// backtick quoted template literal was escaped as an ordinary string, so an
+// embedded "${ ... }" substitution was evaluated as code instead of being
+// reproduced as text.
+
+templ StringOutsideStringLiteral(v string) {
 	<script>
-		function logValue() {
-			console.log("{{ v }}");
-			return "result_ok";
+		function getValue() {
+			return {{ v }};
 		}
 	</script>
 }
 
-templ Any(v any) {
+templ StringInsideDoubleQuotedString(v string) {
+	<script>
+		function getValue() {
+			return "{{ v }}";
+		}
+	</script>
+}
+
+templ StringInsideSingleQuotedString(v string) {
+	<script>
+		function getValue() {
+			return '{{ v }}';
+		}
+	</script>
+}
+
+templ StringInsideTemplateLiteral(v string) {
+	<script>
+		function getValue() {
+			return `{{ v }}`;
+		}
+	</script>
+}
+
+templ StringInsideTemplateLiteralSubstitution(v string) {
+	<script>
+		function getValue() {
+			return `${ {{ v }} }`;
+		}
+	</script>
+}
+
+// AnyInsideTemplateLiteral exercises the non-string (JSON marshalled) branch of
+// the template literal escaping path, which the typed string components above
+// don't reach. A non-string value doesn't have a simple round trip to assert
+// on, so this only proves that the script still parses and runs without
+// throwing.
+templ AnyInsideTemplateLiteral(v any) {
 	<script>
 		function logValue() {
-			console.log({{ v }});
+			const x = `{{ v }}`;
 			return "result_ok";
 		}
 	</script>

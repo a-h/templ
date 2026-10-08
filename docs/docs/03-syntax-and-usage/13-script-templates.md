@@ -199,6 +199,46 @@ The output would be:
 </script>
 ```
 
+Within a backtick quoted template literal, `{{ value }}` is also escaped for `$`, `{` and `}`, since those runes can otherwise start a `${ ... }` substitution. Within `${ ... }` substitutions, javascript is executed, so not escaping those characters could result in XSS.
+
+```templ title="input.templ"
+templ body(msg string) {
+  <script>
+    const message = `Your message: {{ msg }}`;
+    alert(message);
+  </script>
+}
+```
+
+The output would be:
+
+```html title="output.html" msg="Hello"
+<script>
+  const message = `Your message: Hello`;
+  alert(message);
+</script>
+```
+
+Inside a `${ ... }` substitution, `{{ value }}` is JSON encoded instead, the same as outside any string literal.
+
+```templ title="input.templ"
+templ body(msg string) {
+  <script>
+    const message = `Your message: ${ {{ msg }} }`;
+    alert(message);
+  </script>
+}
+```
+
+The output would be:
+
+```html title="output.html" msg="Hello"
+<script>
+  const message = `Your message: ${ "Hello" }`;
+  alert(message);
+</script>
+```
+
 :::tip
 It's better to pass data to the client in a HTML attribute or a script tag, as this separates the data from the JavaScript code, making it easier to maintain and debug.
 :::

@@ -59,9 +59,8 @@ loop:
 	if len(placeholderContent) == 0 {
 		se.Contents = []parser.ScriptContents{
 			{
-				Value:               &after,
-				GoCode:              nil,
-				InsideStringLiteral: false,
+				Value:  &after,
+				GoCode: nil,
 			},
 		}
 		return nil
@@ -75,9 +74,8 @@ loop:
 			continue
 		}
 		newContents = append(newContents, parser.ScriptContents{
-			Value:               &part,
-			GoCode:              nil,
-			InsideStringLiteral: false,
+			Value:  &part,
+			GoCode: nil,
 		})
 		// If we had a GoCode part, we need to add it back in.
 		if appliedPlaceholderCount < len(placeholderContent) {

@@ -1598,8 +1598,11 @@ func (g *generator) writeScriptContents(indentLevel int, c parser.ScriptContents
 		// Here, we need to get the result, which might be any type. We can use templ.ScriptContent to get the result.
 		// vn, templ_7745c5c3_Err := templruntime.ScriptContent(
 		fnCall := "templruntime.ScriptContentOutsideStringLiteral"
-		if c.InsideStringLiteral {
+		switch c.Context {
+		case parser.ScriptContentsContextString:
 			fnCall = "templruntime.ScriptContentInsideStringLiteral"
+		case parser.ScriptContentsContextTemplateLiteral:
+			fnCall = "templruntime.ScriptContentInsideTemplateLiteral"
 		}
 		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := "+fnCall+"("); err != nil {
 			return err

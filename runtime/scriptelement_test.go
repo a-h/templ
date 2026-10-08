@@ -92,6 +92,51 @@ func TestScriptContent(t *testing.T) {
 	}
 }
 
+// TestScriptContentInsideTemplateLiteral covers GHSA-jq3r-rjqp-mwgj: a Go value
+// interpolated into a backtick-quoted JavaScript template literal must have '$',
+// '{' and '}' escaped, since an unescaped "${ ... }" sequence is evaluated as a
+// JavaScript expression by the browser rather than treated as inert string data.
+func TestScriptContentInsideTemplateLiteral(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected string
+	}{
+		{
+			name:     "string with no special characters is untouched",
+			input:    "hello",
+			expected: `hello`,
+		},
+		{
+			name:     "dollar brace substitution syntax is escaped",
+			input:    "${alert(document.domain)}",
+			expected: `\u0024\u007balert(document.domain)\u007d`,
+		},
+		{
+			name:     "backtick is escaped so the literal cannot be closed early",
+			input:    "hello `world`",
+			expected: `hello \u0060world\u0060`,
+		},
+		{
+			name:     "closing brace alone is escaped",
+			input:    "}",
+			expected: `\u007d`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			actual, err := ScriptContentInsideTemplateLiteral(tt.input)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if actual != tt.expected {
+				t.Errorf("expected:\n%s\ngot:\n%s", tt.expected, actual)
+			}
+		})
+	}
+}
+
 func TestScriptContentErrors(t *testing.T) {
 	t.Run("inside string literal", func(t *testing.T) {
 		_, err := ScriptContentInsideStringLiteral("s", errors.New("error"))

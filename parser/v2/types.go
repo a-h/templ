@@ -718,22 +718,41 @@ func NewScriptContentsScriptCode(value string) ScriptContents {
 	}
 }
 
-func NewScriptContentsGo(code *GoCode, insideStringLiteral bool) ScriptContents {
+func NewScriptContentsGo(code *GoCode, context ScriptContentsContext) ScriptContents {
 	return ScriptContents{
-		GoCode:              code,
-		InsideStringLiteral: insideStringLiteral,
+		GoCode:  code,
+		Context: context,
 	}
 }
+
+// ScriptContentsContext describes the JavaScript syntax position that a Go
+// expression within a <script> element appears in, which determines how the
+// result of the expression must be escaped when it is written to the output.
+type ScriptContentsContext int
+
+const (
+	// ScriptContentsContextExpression is outside of any string literal, and
+	// outside of any template literal substitution. The result is JSON encoded.
+	ScriptContentsContextExpression ScriptContentsContext = iota
+	// ScriptContentsContextString is inside a single or double quoted string
+	// literal. The result is JS escaped and HTML escaped so that it can't
+	// contain </script>.
+	ScriptContentsContextString
+	// ScriptContentsContextTemplateLiteral is inside a backtick quoted
+	// template literal, outside of any ${ ... } substitution. The result is
+	// escaped the same way as ScriptContentsContextString, plus '$', '{' and
+	// '}', since those runes would otherwise be able to start a new
+	// substitution that is evaluated as JavaScript.
+	ScriptContentsContextTemplateLiteral
+)
 
 type ScriptContents struct {
 	// Value is the raw script contents. This is nil if the Type is Go.
 	Value *string
 	// GoCode is the Go expression. This is nil if the Type is JS.
 	GoCode *GoCode
-	// InsideStringLiteral denotes how the result of any Go expression should be escaped in the output.
-	//  - Not quoted: JSON encoded.
-	//  - InsideStringLiteral: JS escaped (newlines become \n, `"' becomes \`\"\' etc.), HTML escaped so that a string can't contain </script>.
-	InsideStringLiteral bool
+	// Context denotes how the result of any Go expression should be escaped in the output.
+	Context ScriptContentsContext
 }
 
 type ScriptElement struct {

@@ -13,6 +13,17 @@ templ Script[T any](name string, data T) {
 	</script>
 }
 
+// ScriptTemplateLiteralSubstitution covers GHSA-jq3r-rjqp-mwgj: a Go
+// expression inside a `${ ... }` substitution of a backtick quoted template
+// literal is in JavaScript expression position, so it must be JSON encoded
+// like any other expression, rather than escaped as string data.
+templ ScriptTemplateLiteralSubstitution[T any](name string, data T) {
+	<h1>{ name }</h1>
+	<script>
+		var e = `Total: ${ {{ data }} }`
+	</script>
+}
+
 templ AllTests() {
 	@Script("string data", "hello")
 	@Script("string data with quotes", "hello 'world'")
@@ -24,4 +35,6 @@ templ AllTests() {
 		Age  int
 	}{"Alice", 30})
 	@Script[*string]("null data", nil)
+	@Script("template literal substitution syntax data", "${alert(document.domain)}")
+	@ScriptTemplateLiteralSubstitution("template literal substitution data", "alert(document.domain)")
 }

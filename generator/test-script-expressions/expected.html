@@ -53,7 +53,7 @@
 	var a = { Name: "Alice", Age: 30 };
 	var b = "{\u0022Name\u0022:\u0022Alice\u0022,\u0022Age\u0022:30}";
 	var c = "{\u0022Name\u0022:\u0022Alice\u0022,\u0022Age\u0022:30}";
-	var d = `{\u0022Name\u0022:\u0022Alice\u0022,\u0022Age\u0022:30}`;
+	var d = `\u007b\u0022Name\u0022:\u0022Alice\u0022,\u0022Age\u0022:30\u007d`;
 </script>
 <script>
 	console.log({ Name: "Alice", Age: 30 });
@@ -67,4 +67,18 @@
 </script>
 <script>
 	console.log(null);
+</script>
+<h1>template literal substitution syntax data</h1>
+<script>
+	var a = "${alert(document.domain)}";
+	var b = "${alert(document.domain)}";
+	var c = "${alert(document.domain)}";
+	var d = `\u0024\u007balert(document.domain)\u007d`;
+</script>
+<script>
+	console.log("${alert(document.domain)}");
+</script>
+<h1>template literal substitution data</h1>
+<script>
+	var e = `Total: ${"alert(document.domain)"}`;
 </script>

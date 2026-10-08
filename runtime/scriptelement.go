@@ -7,27 +7,50 @@ import (
 	"unicode/utf8"
 )
 
+// scriptContext describes the JavaScript syntax position that a Go value is
+// being written into, which determines how the value must be escaped.
+type scriptContext int
+
+const (
+	// scriptContextExpression is outside of any string literal, so the value
+	// is JSON encoded and used directly as a JavaScript expression.
+	scriptContextExpression scriptContext = iota
+	// scriptContextString is inside a single or double quoted string literal.
+	scriptContextString
+	// scriptContextTemplateLiteral is inside a backtick quoted template literal,
+	// outside of any ${ ... } substitution.
+	scriptContextTemplateLiteral
+)
+
 func ScriptContentInsideStringLiteral[T any](v T, errs ...error) (string, error) {
-	return scriptContent(v, true, errs...)
+	return scriptContent(v, scriptContextString, errs...)
+}
+
+func ScriptContentInsideTemplateLiteral[T any](v T, errs ...error) (string, error) {
+	return scriptContent(v, scriptContextTemplateLiteral, errs...)
 }
 
 func ScriptContentOutsideStringLiteral[T any](v T, errs ...error) (string, error) {
-	return scriptContent(v, false, errs...)
+	return scriptContent(v, scriptContextExpression, errs...)
 }
 
-func scriptContent[T any](v T, insideStringLiteral bool, errs ...error) (string, error) {
+func scriptContent[T any](v T, context scriptContext, errs ...error) (string, error) {
 	if errors.Join(errs...) != nil {
 		return "", errors.Join(errs...)
 	}
-	if vs, ok := any(v).(string); ok && insideStringLiteral {
-		return replace(vs, jsStrReplacementTable), nil
+	table := jsStrReplacementTable
+	if context == scriptContextTemplateLiteral {
+		table = jsBqStrReplacementTable
+	}
+	if vs, ok := any(v).(string); ok && context != scriptContextExpression {
+		return replace(vs, table), nil
 	}
 	jd, err := json.Marshal(v)
 	if err != nil {
 		return "", err
 	}
-	if insideStringLiteral {
-		return replace(string(jd), jsStrReplacementTable), nil
+	if context != scriptContextExpression {
+		return replace(string(jd), table), nil
 	}
 	return string(jd), nil
 }
@@ -104,4 +127,34 @@ var jsStrReplacementTable = []string{
 	'<':  `\u003c`,
 	'>':  `\u003e`,
 	'\\': `\\`,
+}
+
+// jsBqStrReplacementTable escapes the same runes as jsStrReplacementTable, plus
+// '$', '{' and '}'. Those three runes are additionally dangerous inside a
+// backtick quoted JavaScript template literal, since an unescaped "${ ... }"
+// sequence is evaluated as a JavaScript expression rather than treated as
+// string data. See GHSA-jq3r-rjqp-mwgj and CVE-2023-24538, the equivalent
+// issue in Go's html/template package, which this table mirrors
+// (jsBqStrReplacementTable in html/template/js.go).
+var jsBqStrReplacementTable = []string{
+	0:    `\u0000`,
+	'\t': `\t`,
+	'\n': `\n`,
+	'\v': `\u000b`, // "\v" == "v" on IE 6.
+	'\f': `\f`,
+	'\r': `\r`,
+	// Encode HTML specials as hex so the output can be embedded
+	// in HTML attributes without further encoding.
+	'"':  `\u0022`,
+	'`':  `\u0060`,
+	'&':  `\u0026`,
+	'\'': `\u0027`,
+	'+':  `\u002b`,
+	'/':  `\/`,
+	'<':  `\u003c`,
+	'>':  `\u003e`,
+	'\\': `\\`,
+	'$':  `\u0024`,
+	'{':  `\u007b`,
+	'}':  `\u007d`,
 }

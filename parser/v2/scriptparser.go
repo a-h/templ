@@ -78,6 +78,12 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	// Parse the contents, we should get script text or Go expressions up until the closing tag.
 	var sb strings.Builder
 	var stringLiteralDelimiter jsQuote
+	// templateLiteralSubstitutionDepth tracks nesting of ${ ... } substitutions within a
+	// backtick quoted template literal. Zero means we're not inside a substitution. Go
+	// expressions found inside a substitution are in expression context (the same as
+	// outside of any string literal), not template-literal-string context, since the
+	// substitution's contents are evaluated as JavaScript rather than treated as string data.
+	var templateLiteralSubstitutionDepth int
 
 loop:
 	for {
@@ -118,7 +124,16 @@ loop:
 			return nil, false, err
 		}
 		if ok {
-			e.Contents = append(e.Contents, NewScriptContentsGo(code.(*GoCode), stringLiteralDelimiter != jsQuoteNone))
+			context := ScriptContentsContextExpression
+			switch {
+			case templateLiteralSubstitutionDepth > 0:
+				context = ScriptContentsContextExpression
+			case stringLiteralDelimiter == jsQuoteBacktick:
+				context = ScriptContentsContextTemplateLiteral
+			case stringLiteralDelimiter == jsQuoteSingle, stringLiteralDelimiter == jsQuoteDouble:
+				context = ScriptContentsContextString
+			}
+			e.Contents = append(e.Contents, NewScriptContentsGo(code.(*GoCode), context))
 			continue loop
 		}
 
@@ -163,6 +178,26 @@ loop:
 			if !ok {
 				return nil, false, parse.Error("script: expected to parse a character, but didn't", pi.Position())
 			}
+
+			// name = "${evil()}", v = "alert(1)". Both inputs look like they could run code.
+			// TemplateLiteral keeps them inert by escaping $, { and }; Expression keeps them
+			// inert by JSON-quoting them instead:
+			//
+			// Template                Context           Rendered                        Evaluates to        Consequence of alert(message)
+			// `Hi {{ name }}`         TemplateLiteral   `Hi \u0024\u007bevil()\u007d`   "Hi ${evil()}"      shows "Hi ${evil()}" - evil() never runs
+			// `Total: ${ {{ v }} }`   Expression        `Total: ${ "alert(1)" }`        "Total: alert(1)"   shows "Total: alert(1)" - alert(1) never runs
+			//
+			// Matching '}' ends the substitution; see brace-depth tracking below.
+			if stringLiteralDelimiter == jsQuoteBacktick && templateLiteralSubstitutionDepth == 0 && c == "$" {
+				if peeked, peekOK := pi.Peek(1); peekOK && peeked == "{" {
+					brace, _ := pi.Take(1)
+					sb.WriteString(c)
+					sb.WriteString(brace)
+					templateLiteralSubstitutionDepth = 1
+					continue charLoop
+				}
+			}
+
 			if c == string(jsQuoteDouble) || c == string(jsQuoteSingle) || c == string(jsQuoteBacktick) {
 				// Start or exit a string literal.
 				if stringLiteralDelimiter == jsQuoteNone {
@@ -188,6 +223,18 @@ loop:
 				}
 				pi.Seek(before)
 				continue loop
+			}
+
+			// Track brace nesting within a substitution so that an object literal or
+			// nested block doesn't prematurely end it; the substitution only ends once
+			// its own opening `{` has been matched by a `}` at the same depth.
+			if templateLiteralSubstitutionDepth > 0 {
+				switch c {
+				case "{":
+					templateLiteralSubstitutionDepth++
+				case "}":
+					templateLiteralSubstitutionDepth--
+				}
 			}
 
 			sb.WriteString(c)
