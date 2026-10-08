@@ -159,6 +159,7 @@ func TestSanitizedAttributes(t *testing.T) {
 		"href":    "javascript:alert(3)",
 		"onclick": "alert(4)",
 		"src":     "javascript:alert(5)",
+		"style":   "color: red\"></a><script>alert(6)</script>",
 	})
 
 	actual, diff, err := htmldiff.Diff(component, expectedSanitizedAttributes)
@@ -168,6 +169,23 @@ func TestSanitizedAttributes(t *testing.T) {
 	if diff != "" {
 		if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
 			t.Errorf("failed to write actual.html: %v", err)
+		}
+		t.Error(diff)
+	}
+}
+
+//go:embed expected_script_template.html
+var expectedScriptTemplate string
+
+func TestRenderScriptTemplate(t *testing.T) {
+	t.Parallel()
+	actual, diff, err := htmldiff.Diff(RenderScriptTemplate(), expectedScriptTemplate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff != "" {
+		if err := os.WriteFile("actual_script_template.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual_script_template.html: %v", err)
 		}
 		t.Error(diff)
 	}

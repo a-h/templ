@@ -44,3 +44,13 @@ templ SanitizedTemplate(spread templ.Attributes) {
 	<iframe { spread... }></iframe>
 	<img { spread... }/>
 }
+
+script handleSpreadClick() {
+	alert("spread");
+}
+
+// RenderScriptTemplate covers script templates in spread attributes. The function of
+// the script must be rendered before the element that calls it.
+templ RenderScriptTemplate() {
+	<button { templ.Attributes{"onclick": handleSpreadClick()}... }>spread script template</button>
+}

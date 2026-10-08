@@ -2,12 +2,41 @@
 <a href="about:invalid#TemplFailedSanitizationURL">HREF</a>
 <form action="about:invalid#TemplFailedSanitizationURL"></form>
 <div><turbo-stream action="append"></turbo-stream></div>
-<img src="about:invalid#TemplFailedSanitizationURL">
-<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">
-<button onclick="/* templ: failed sanitization, use templ.JSFuncCall, or templ.JSUnsafeFuncCall for trusted JavaScript */">onclick string</button>
+<img src="about:invalid#TemplFailedSanitizationURL" />
+<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" />
+<button
+	onclick="
+		/* templ: failed sanitization, use templ.JSFuncCall, or templ.JSUnsafeFuncCall for trusted JavaScript */
+	"
+>
+	onclick string
+</button>
 <button onclick="alert(&#34;hello&#34;)">onclick ComponentScript</button>
+<script>
+	function __templ_handleDynamicKeyClick_0a3a() {
+		alert("dynamic");
+	}
+</script>
+<button onclick="__templ_handleDynamicKeyClick_0a3a()">
+	onclick script template
+</button>
+<div
+	style="color: red\000022&amp;gt;\00003C/div&amp;gt;\00003Cscript&amp;gt;alert(1)\00003C/script&amp;gt;;"
+>
+	constant style string
+</div>
+<div
+	style="color: red\000022&amp;gt;\00003C/div&amp;gt;\00003Cscript&amp;gt;alert(1)\00003C/script&amp;gt;;"
+>
+	style string
+</div>
+<div style="color: red">style SafeCSS</div>
 <iframe srcdoc="&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;"></iframe>
-<div data-templ-failed-sanitization="value">invalid name with expression value</div>
-<div data-templ-failed-sanitization="value">invalid name with constant value</div>
+<div data-templ-failed-sanitization="value">
+	invalid name with expression value
+</div>
+<div data-templ-failed-sanitization="value">
+	invalid name with constant value
+</div>
 <div data-templ-failed-sanitization>invalid boolean name</div>
 <div data-templ-failed-sanitization>invalid boolean expression name</div>

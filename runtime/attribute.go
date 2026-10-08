@@ -20,18 +20,33 @@ func SanitizeAttributeName(name string) string {
 	return name
 }
 
+// RenderAttributeScripts renders the functions of templ.ComponentScript values
+// in spread attributes to w, so that the functions are defined before the
+// element that calls them. Generated code calls RenderAttributeScripts before
+// the opening tag of an element that has spread attributes.
+func RenderAttributeScripts(ctx context.Context, w io.Writer, attributes templ.Attributer) (err error) {
+	var scripts []templ.ComponentScript
+	for _, item := range attributes.Items() {
+		if script, ok := item.Value.(templ.ComponentScript); ok {
+			scripts = append(scripts, script)
+		}
+	}
+	return templ.RenderScriptItems(ctx, w, scripts...)
+}
+
 // RenderAttributes renders spread attributes on the named element. Attribute
 // names that would change the structure of the element are replaced with
 // templ.FailedSanitizationAttributeName. Attribute values are escaped and
 // sanitized in the same way as attributes with constant names, except that
 // event handler values that are not a templ.ComponentScript are replaced with
-// templ.FailedSanitizationJS.
+// templ.FailedSanitizationJS. The functions of templ.ComponentScript values
+// must be rendered with RenderAttributeScripts before the opening tag.
 func RenderAttributes(ctx context.Context, w io.Writer, elementName string, attributes templ.Attributer) (err error) {
 	for _, item := range attributes.Items() {
 		name := SanitizeAttributeName(item.Key)
 		value := item.Value
 		switch v := value.(type) {
-		case string, templ.SafeURL, templ.ComponentScript,
+		case string, templ.SafeURL, templ.SafeCSS, templ.ComponentScript,
 			int, int8, int16, int32, int64,
 			uint, uint8, uint16, uint32, uint64, uintptr,
 			float32, float64, complex64, complex128:
@@ -117,6 +132,12 @@ func resolveValue(ctx context.Context, attrContext htmlattr.Context, v any) (str
 			}
 			return templ.EscapeString(sb.String()), nil
 		}
+	case htmlattr.ContextStyle:
+		s, err := SanitizeStyleAttributeValues(v)
+		if err != nil {
+			return "", err
+		}
+		return templ.EscapeString(s), nil
 	case htmlattr.ContextURL, htmlattr.ContextAnimationValue:
 		if safeURL, ok := v.(templ.SafeURL); ok {
 			return templ.EscapeString(safeURL), nil

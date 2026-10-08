@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"errors"
+	"io"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/internal/htmlattr"
@@ -62,6 +63,22 @@ func (e AttributeExpression[T]) ResolveAnimationValue(ctx context.Context) (stri
 // on the name, in the same way as the value of a spread attribute.
 func (e AttributeExpression[T]) ResolveDynamic(ctx context.Context, elementName, name string) (string, error) {
 	return e.resolve(ctx, htmlattr.Classify(elementName, SanitizeAttributeName(name)))
+}
+
+// RenderScript renders the function of a templ.ComponentScript value to w, so
+// that the function is defined before the element that calls it. Values that
+// are not a templ.ComponentScript are not rendered. Generated code calls
+// RenderScript before the opening tag of an element that has an attribute with
+// a name that is only known at render time.
+func (e AttributeExpression[T]) RenderScript(ctx context.Context, w io.Writer) error {
+	if e.Err != nil {
+		return e.Err
+	}
+	script, ok := any(e.Value).(templ.ComponentScript)
+	if !ok {
+		return nil
+	}
+	return templ.RenderScriptItems(ctx, w, script)
 }
 
 func (e AttributeExpression[T]) resolve(ctx context.Context, attrContext htmlattr.Context) (string, error) {

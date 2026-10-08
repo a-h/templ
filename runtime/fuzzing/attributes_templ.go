@@ -36,6 +36,10 @@ func DynamicAttribute(elementName string, name string, value string) templ.Compo
 		ctx = templ.ClearChildren(ctx)
 		switch elementName {
 		case "iframe":
+			templ_7745c5c3_Err = templruntime.NewAttributeExpression(value).RenderScript(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/attributes.templ`, Line: 13, Col: 27}
+			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<iframe")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -67,6 +71,10 @@ func DynamicAttribute(elementName string, name string, value string) templ.Compo
 				return templ_7745c5c3_Err
 			}
 		case "form":
+			templ_7745c5c3_Err = templruntime.NewAttributeExpression(value).RenderScript(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/attributes.templ`, Line: 15, Col: 25}
+			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<form")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -98,6 +106,10 @@ func DynamicAttribute(elementName string, name string, value string) templ.Compo
 				return templ_7745c5c3_Err
 			}
 		case "set":
+			templ_7745c5c3_Err = templruntime.NewAttributeExpression(value).RenderScript(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/attributes.templ`, Line: 17, Col: 24}
+			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<set")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -129,6 +141,10 @@ func DynamicAttribute(elementName string, name string, value string) templ.Compo
 				return templ_7745c5c3_Err
 			}
 		default:
+			templ_7745c5c3_Err = templruntime.NewAttributeExpression(value).RenderScript(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/attributes.templ`, Line: 19, Col: 24}
+			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -187,6 +203,10 @@ func SpreadAttribute(elementName string, name string, value string) templ.Compon
 		ctx = templ.ClearChildren(ctx)
 		switch elementName {
 		case "iframe":
+			templ_7745c5c3_Err = templruntime.RenderAttributeScripts(ctx, templ_7745c5c3_Buffer, templ.Attributes{name: value})
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<iframe")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -200,6 +220,10 @@ func SpreadAttribute(elementName string, name string, value string) templ.Compon
 				return templ_7745c5c3_Err
 			}
 		case "form":
+			templ_7745c5c3_Err = templruntime.RenderAttributeScripts(ctx, templ_7745c5c3_Buffer, templ.Attributes{name: value})
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<form")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -213,6 +237,10 @@ func SpreadAttribute(elementName string, name string, value string) templ.Compon
 				return templ_7745c5c3_Err
 			}
 		case "set":
+			templ_7745c5c3_Err = templruntime.RenderAttributeScripts(ctx, templ_7745c5c3_Buffer, templ.Attributes{name: value})
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<set")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -226,6 +254,10 @@ func SpreadAttribute(elementName string, name string, value string) templ.Compon
 				return templ_7745c5c3_Err
 			}
 		default:
+			templ_7745c5c3_Err = templruntime.RenderAttributeScripts(ctx, templ_7745c5c3_Buffer, templ.Attributes{name: value})
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

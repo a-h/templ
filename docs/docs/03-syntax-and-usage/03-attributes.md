@@ -148,6 +148,7 @@ The name of the attribute is not known until the template is rendered, so templ 
 * If the name would change the structure of the element, e.g. because it contains a space, a quote, or an `=` sign, templ replaces the name with `data-templ-failed-sanitization`.
 * If the attribute is a [URL attribute](#url-attributes), templ sanitizes the value as a URL.
 * If the attribute is an [event handler](#javascript-attributes), and the value is not a `templ.ComponentScript`, templ replaces the value with `/* templ: failed sanitization, use templ.JSFuncCall, or templ.JSUnsafeFuncCall for trusted JavaScript */`.
+* If the attribute is a `style` attribute, templ sanitizes the value in the same way as a `style` attribute with a constant name. The value must be a `string` or a `templ.SafeCSS`.
 * If the attribute is a `srcdoc` attribute, templ escapes a `string` value as text.
 * The `&` character can't be used in the name, because browsers don't decode character references in attribute names.
 
@@ -314,7 +315,7 @@ Sanitization is the process of examining the URL scheme (protocol) and structure
 
 ## JavaScript attributes
 
-`onClick` and other `on*` handlers have special behaviour, they expect a `templ.ComponentScript`, such as a reference to a `script` template, or the result of `templ.JSFuncCall`.
+`onClick` and other `on*` handlers have special behavior. They expect a `templ.ComponentScript`, such as a reference to a `script` template, or the result of `templ.JSFuncCall`.
 
 Attribute names are case insensitive, so `OnClick` and `ONCLICK` are handled in the same way as `onclick`. htmx event handler attributes are handled in the same way: `hx-on`, `hx-on:*`, `hx-on-*`, `data-hx-on:*`, and `data-hx-on-*`.
 

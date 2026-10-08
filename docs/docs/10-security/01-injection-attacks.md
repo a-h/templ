@@ -77,6 +77,7 @@ Attributes with names that are only known at render time, i.e. [attribute key ex
 * An attribute name that would change the structure of the element, e.g. `x onclick=alert(1)`, is replaced with `data-templ-failed-sanitization`.
 * URL attribute values are sanitized with `templ.URL`.
 * Event handler values that are not a `templ.ComponentScript` are replaced with `/* templ: failed sanitization, use templ.JSFuncCall, or templ.JSUnsafeFuncCall for trusted JavaScript */`.
+* `style` values are sanitized in the same way as `style` attributes with constant names.
 
 templ does not know about the attributes of other JavaScript frameworks that execute their values, such as Alpine.js `x-on:*`, `@*`, `x-data`, and `x-init`, or Datastar `data-on-*`. Never use untrusted input in these attributes, or in `<script src>`.
 

@@ -1129,40 +1129,39 @@ func (g *generator) writeElementCSS(indentLevel int, attrs []parser.Attribute) (
 }
 
 func (g *generator) writeElementScript(indentLevel int, attrs []parser.Attribute) (err error) {
-	var scriptExpressions []string
+	var scripts attributeScripts
 	for _, attr := range attrs {
-		scriptExpressions = append(scriptExpressions, getAttributeScripts(attr)...)
-	}
-	if len(scriptExpressions) == 0 {
-		return
+		scripts.Collect(attr)
 	}
 	// Render the scripts before the element if required.
-	// templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, a, b, c)
-	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, "+strings.Join(scriptExpressions, ", ")+")\n"); err != nil {
-		return err
-	}
-	if err = g.writeErrorHandler(indentLevel); err != nil {
-		return err
-	}
-	return err
-}
-
-func getAttributeScripts(attr parser.Attribute) (scripts []string) {
-	if attr, ok := attr.(*parser.ConditionalAttribute); ok {
-		for _, attr := range attr.Then {
-			scripts = append(scripts, getAttributeScripts(attr)...)
+	if len(scripts.EventHandlers) > 0 {
+		// templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, a, b, c)
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, "+strings.Join(scripts.EventHandlers, ", ")+")\n"); err != nil {
+			return err
 		}
-		for _, attr := range attr.Else {
-			scripts = append(scripts, getAttributeScripts(attr)...)
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
 		}
 	}
-	if attr, ok := attr.(*parser.ExpressionAttribute); ok {
-		key, ok := attr.Key.(parser.ConstantAttributeKey)
-		if ok && htmlattr.Classify("", key.Name) == htmlattr.ContextEventHandler {
-			scripts = append(scripts, attr.Expression.Value)
+	for _, expression := range scripts.DynamicKeyValues {
+		// templ_7745c5c3_Err = templruntime.NewAttributeExpression(a).RenderScript(ctx, templ_7745c5c3_Buffer)
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templruntime.NewAttributeExpression("+expression.Value+").RenderScript(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
+			return err
+		}
+		if err = g.writeExpressionErrorHandler(indentLevel, expression); err != nil {
+			return err
 		}
 	}
-	return scripts
+	for _, expression := range scripts.Spreads {
+		// templ_7745c5c3_Err = templruntime.RenderAttributeScripts(ctx, templ_7745c5c3_Buffer, a)
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templruntime.RenderAttributeScripts(ctx, templ_7745c5c3_Buffer, "+expression.Value+")\n"); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (g *generator) writeAttributeKey(indentLevel int, attr parser.AttributeKey) (err error) {
