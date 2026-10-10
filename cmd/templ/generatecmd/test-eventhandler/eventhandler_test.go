@@ -54,7 +54,7 @@ templ hello() {
 	}
 
 	dir := filepath.Dir(templFileName)
-	fseh := generatecmd.NewFSEventHandler(log, dir, false, []generator.GenerateOpt{}, false, false, generatecmd.FileWriter, false)
+	fseh := generatecmd.NewFSEventHandler(log, dir, false, []generator.GenerateOpt{}, false, false, generatecmd.FileWriter, false, false)
 
 	t.Run("first generation writes the Go file", func(t *testing.T) {
 		result, err := fseh.HandleEvent(context.Background(), fsnotify.Event{Name: templFileName, Op: fsnotify.Create})
@@ -94,7 +94,7 @@ templ hello() {
 			t.Fatalf("failed to update file times: %v", err)
 		}
 
-		freshHandler := generatecmd.NewFSEventHandler(log, dir, false, []generator.GenerateOpt{}, false, false, generatecmd.FileWriter, false)
+		freshHandler := generatecmd.NewFSEventHandler(log, dir, false, []generator.GenerateOpt{}, false, false, generatecmd.FileWriter, false, false)
 		result, err := freshHandler.HandleEvent(context.Background(), fsnotify.Event{Name: templFileName, Op: fsnotify.Create})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -123,7 +123,7 @@ templ hello() {
 			t.Fatalf("failed to write changed templ content: %v", err)
 		}
 
-		freshHandler := generatecmd.NewFSEventHandler(log, dir, false, []generator.GenerateOpt{}, false, false, generatecmd.FileWriter, false)
+		freshHandler := generatecmd.NewFSEventHandler(log, dir, false, []generator.GenerateOpt{}, false, false, generatecmd.FileWriter, false, false)
 		result, err := freshHandler.HandleEvent(context.Background(), fsnotify.Event{Name: templFileName, Op: fsnotify.Create})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -173,7 +173,7 @@ func TestErrorLocationMapping(t *testing.T) {
 
 	slog := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{}))
 	var fw generatecmd.FileWriterFunc
-	fseh := generatecmd.NewFSEventHandler(slog, ".", false, []generator.GenerateOpt{}, false, false, fw, false)
+	fseh := generatecmd.NewFSEventHandler(slog, ".", false, []generator.GenerateOpt{}, false, false, fw, false, false)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
