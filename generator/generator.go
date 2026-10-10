@@ -1113,6 +1113,12 @@ func (g *generator) writeAttributesCSS(indentLevel int, attrs []parser.Attribute
 			if err != nil {
 				return err
 			}
+			for _, elseIf := range cattr.ElseIfs {
+				err = g.writeAttributesCSS(indentLevel, elseIf.Then)
+				if err != nil {
+					return err
+				}
+			}
 			err = g.writeAttributesCSS(indentLevel, cattr.Else)
 			if err != nil {
 				return err
@@ -1159,6 +1165,11 @@ func getAttributeScripts(attr parser.Attribute) (scripts []string) {
 	if attr, ok := attr.(*parser.ConditionalAttribute); ok {
 		for _, attr := range attr.Then {
 			scripts = append(scripts, getAttributeScripts(attr)...)
+		}
+		for _, elseIf := range attr.ElseIfs {
+			for _, attr := range elseIf.Then {
+				scripts = append(scripts, getAttributeScripts(attr)...)
+			}
 		}
 		for _, attr := range attr.Else {
 			scripts = append(scripts, getAttributeScripts(attr)...)
@@ -1467,6 +1478,26 @@ func (g *generator) writeConditionalAttribute(indentLevel int, elementName strin
 			return err
 		}
 		indentLevel--
+	}
+	for _, elseIf := range attr.ElseIfs {
+		// } else if x == y {
+		if _, err = g.w.WriteIndent(indentLevel, `} else if `); err != nil {
+			return err
+		}
+		if r, err = g.w.Write(elseIf.Expression.Value); err != nil {
+			return err
+		}
+		g.sourceMap.Add(elseIf.Expression, r)
+		if _, err = g.w.Write(` {` + "\n"); err != nil {
+			return err
+		}
+		{
+			indentLevel++
+			if err = g.writeElementAttributes(indentLevel, elementName, elseIf.Then); err != nil {
+				return err
+			}
+			indentLevel--
+		}
 	}
 	if len(attr.Else) > 0 {
 		// } else {
