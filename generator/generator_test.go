@@ -2,7 +2,11 @@ package generator
 
 import (
 	"bytes"
+	goparser "go/parser"
+	"go/token"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/a-h/templ/parser/v2"
 	"github.com/google/go-cmp/cmp"
@@ -242,5 +246,46 @@ func TestIsExpressionAttributeValueURL(t *testing.T) {
 		if output := isExpressionAttributeValueURL(testCase.elementName, testCase.attrName); output != testCase.expectedOutput {
 			t.Errorf("expected %t got %t", testCase.expectedOutput, output)
 		}
+	}
+}
+
+func TestGeneratorVersionCommentIsNotPackageDoc(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		opts  []GenerateOpt
+	}{
+		{
+			name:  "version",
+			input: "package main\n\ntempl Hello() {\n\t<p>Hello</p>\n}\n",
+			opts:  []GenerateOpt{WithVersion("v0.3.1")},
+		},
+		{
+			name:  "version and generated date",
+			input: "package main\n\ntempl Hello() {\n\t<p>Hello</p>\n}\n",
+			opts:  []GenerateOpt{WithVersion("v0.3.1"), WithTimestamp(time.Date(2026, 10, 11, 0, 0, 0, 0, time.UTC))},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tf, err := parser.ParseString(tt.input)
+			if err != nil {
+				t.Fatalf("failed to parse template: %v", err)
+			}
+			w := new(bytes.Buffer)
+			if _, err = Generate(tf, w, tt.opts...); err != nil {
+				t.Fatalf("failed to generate: %v", err)
+			}
+			if !strings.Contains(w.String(), "// templ: version: v0.3.1\n") {
+				t.Fatalf("expected version comment in output:\n%s", w.String())
+			}
+			f, err := goparser.ParseFile(token.NewFileSet(), "", w.Bytes(), goparser.ParseComments)
+			if err != nil {
+				t.Fatalf("failed to parse generated Go code: %v\n%s", err, w.String())
+			}
+			if f.Doc != nil {
+				t.Errorf("expected no package doc, got %q\ngenerated:\n%s", f.Doc.Text(), w.String())
+			}
+		})
 	}
 }
