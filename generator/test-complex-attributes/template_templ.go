@@ -23,10 +23,6 @@ func ComplexAttributes() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
-		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div x-data=\"{darkMode: localStorage.getItem('darkMode') || localStorage.setItem('darkMode', 'system')}\" x-init=\"$watch('darkMode', val => localStorage.setItem('darkMode', val))\" :class=\"{'dark': darkMode === 'dark' || (darkMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)}\"></div><div x-data=\"{ count: 0 }\"><button x-on:click=\"count++\">Increment</button> <span x-text=\"count\"></span></div><div x-data=\"{ count: 0 }\"><button @click=\"count++\">Increment</button> <span x-text=\"count\"></span></div>")
 		if templ_7745c5c3_Err != nil {

@@ -624,3 +624,48 @@ func TestNonce(t *testing.T) {
 		}
 	})
 }
+
+func TestGetChildren(t *testing.T) {
+	tests := []struct {
+		name string
+		ctx  context.Context
+	}{
+		{
+			name: "no children in the context",
+			ctx:  context.Background(),
+		},
+		{
+			name: "cleared children",
+			ctx:  templ.ClearChildren(templ.WithChildren(context.Background(), templ.Raw("child"))),
+		},
+		{
+			name: "nil children",
+			ctx:  templ.WithChildren(context.Background(), nil),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name+" returns a component that renders nothing", func(t *testing.T) {
+			children := templ.GetChildren(tt.ctx)
+			if children == nil {
+				t.Fatal("expected a non-nil component")
+			}
+			var w bytes.Buffer
+			if err := children.Render(tt.ctx, &w); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if w.Len() != 0 {
+				t.Errorf("expected no output, got %q", w.String())
+			}
+		})
+	}
+	t.Run("children are returned", func(t *testing.T) {
+		ctx := templ.WithChildren(context.Background(), templ.Raw("child"))
+		var w bytes.Buffer
+		if err := templ.GetChildren(ctx).Render(ctx, &w); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if w.String() != "child" {
+			t.Errorf("expected %q, got %q", "child", w.String())
+		}
+	})
+}

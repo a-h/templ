@@ -23,10 +23,6 @@ func TestAttributeComments() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
-		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form class=\"flex\" action=\"javascript:void(0)\" method=\"post\" id=\"test-form\"><input type=\"text\" name=\"field1\"></form><div id=\"main\" class=\"container\" data-value=\"")
 		if templ_7745c5c3_Err != nil {

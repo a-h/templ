@@ -75,6 +75,65 @@ templ Hello(name string) {
 	}
 }
 
+func TestGeneratorChildren(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name: "template without children",
+			input: `package main
+
+templ Hello() {
+	<div>Hello</div>
+}`,
+			expected: false,
+		},
+		{
+			name: "template with children",
+			input: `package main
+
+templ Layout() {
+	<div>{ children... }</div>
+}`,
+			expected: true,
+		},
+		{
+			name: "template with children in a nested block",
+			input: `package main
+
+templ Layout(ok bool) {
+	if ok {
+		@Wrapper() {
+			{ children... }
+		}
+	}
+}`,
+			expected: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tf, err := parser.ParseString(tt.input)
+			if err != nil {
+				t.Fatalf("failed to parse template: %v", err)
+			}
+			w := new(bytes.Buffer)
+			if _, err = Generate(tf, w); err != nil {
+				t.Fatalf("failed to generate: %v", err)
+			}
+			actual := strings.Contains(w.String(), "templ.GetChildren(ctx)")
+			if actual != tt.expected {
+				t.Errorf("expected GetChildren call: %v, got: %v\n%s", tt.expected, actual, w.String())
+			}
+			if strings.Contains(w.String(), "templ.NopComponent") {
+				t.Errorf("unexpected NopComponent fallback in generated code:\n%s", w.String())
+			}
+		})
+	}
+}
+
 func TestIsTrailingSpaceNeeded(t *testing.T) {
 	inlineText := &parser.Text{Value: "hello", TrailingSpace: parser.SpaceHorizontal}
 	newlineText := &parser.Text{Value: "hello", TrailingSpace: parser.SpaceVertical}
