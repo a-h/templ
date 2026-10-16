@@ -139,6 +139,7 @@
             pkgs.govulncheck
             pkgs.nodejs # Used to build templ-docs.
             pkgs.prettier # Used for formatting JS and CSS.
+            pkgs.statix # Used to lint Nix files.
             pkgs.syft # Used to generate SBOMs for Docker images.
             pkgs.version
             pkgs.xc
