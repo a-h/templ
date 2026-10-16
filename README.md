@@ -152,6 +152,7 @@ Run the lint operations that are run as part of the CI.
 
 ```sh
 golangci-lint run --verbose
+statix check .
 ```
 
 ### ensure-generated
