@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestGetWatchedString(t *testing.T) {
@@ -109,4 +110,97 @@ func TestWatchMode(t *testing.T) {
 			t.Errorf("got %q, want %q", actual, expected)
 		}
 	})
+}
+
+func TestGetWatchedStringStatThrottle(t *testing.T) {
+	// Regression test for https://github.com/a-h/templ/issues/1458:
+	// the .txt file must not be stat'ed on every render. Changes are still
+	// picked up once the 100ms throttle window elapses.
+	tmpDir := t.TempDir()
+
+	testFile := filepath.Join(tmpDir, "test_templ.go")
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+	resolvedPath, err := filepath.EvalSymlinks(testFile)
+	if err != nil {
+		t.Fatalf("failed to eval symlinks for test file: %v", err)
+	}
+	txtFile := GetDevModeTextFileName(resolvedPath)
+	if err := os.WriteFile(txtFile, []byte("value1"), 0644); err != nil {
+		t.Fatalf("failed to write txt file: %v", err)
+	}
+	// Age the file's mod time past the 100ms throttle window: in the real
+	// world the .txt file is almost always older than 100ms, which is why
+	// throttling on modTime never applied and every render stat'ed the file.
+	aged := time.Now().Add(-5 * time.Second)
+	if err := os.Chtimes(txtFile, aged, aged); err != nil {
+		t.Fatalf("failed to change txt file mod time: %v", err)
+	}
+
+	loader := NewStringLoader("")
+	actual, err := loader.GetWatchedString(testFile, 1, "default")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if actual != "value1" {
+		t.Fatalf("expected %q, got %q", "value1", actual)
+	}
+
+	// Overwrite with a guaranteed-newer mod time.
+	if err := os.WriteFile(txtFile, []byte("value2"), 0644); err != nil {
+		t.Fatalf("failed to overwrite txt file: %v", err)
+	}
+	future := time.Now().Add(2 * time.Second)
+	if err := os.Chtimes(txtFile, future, future); err != nil {
+		t.Fatalf("failed to change txt file mod time: %v", err)
+	}
+
+	// Within the throttle window the cached value is returned without a stat.
+	actual, err = loader.GetWatchedString(testFile, 1, "default")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if actual != "value1" {
+		t.Errorf("expected throttled %q, got %q (file was stat'ed on every call)", "value1", actual)
+	}
+
+	// After the throttle window, the change is picked up.
+	time.Sleep(150 * time.Millisecond)
+	actual, err = loader.GetWatchedString(testFile, 1, "default")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if actual != "value2" {
+		t.Errorf("expected %q after throttle window, got %q", "value2", actual)
+	}
+}
+
+func BenchmarkGetWatchedString(b *testing.B) {
+	tmpDir := b.TempDir()
+
+	testFile := filepath.Join(tmpDir, "test_templ.go")
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		b.Fatalf("failed to write test file: %v", err)
+	}
+	resolvedPath, err := filepath.EvalSymlinks(testFile)
+	if err != nil {
+		b.Fatalf("failed to eval symlinks for test file: %v", err)
+	}
+	txtFile := GetDevModeTextFileName(resolvedPath)
+	if err := os.WriteFile(txtFile, []byte("txt_file_value"), 0644); err != nil {
+		b.Fatalf("failed to write txt file: %v", err)
+	}
+
+	loader := NewStringLoader("")
+	if _, err := loader.GetWatchedString(testFile, 1, "default"); err != nil {
+		b.Fatalf("unexpected error: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := loader.GetWatchedString(testFile, 1, "default"); err != nil {
+			b.Fatalf("unexpected error: %v", err)
+		}
+	}
 }
