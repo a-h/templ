@@ -54,7 +54,7 @@ func If(content string) (start, end int, err error) {
 	if !strings.HasPrefix(content, "if") {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
-	return extract(content, func(body []ast.Stmt) (start, end int, err error) {
+	return extractBlock(content, func(body []ast.Stmt) (start, end int, err error) {
 		stmt, ok := body[0].(*ast.IfStmt)
 		if !ok {
 			return 0, 0, ErrExpectedNodeNotFound
@@ -69,7 +69,7 @@ func For(content string) (start, end int, err error) {
 	if !strings.HasPrefix(content, "for") {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
-	return extract(content, func(body []ast.Stmt) (start, end int, err error) {
+	return extractBlock(content, func(body []ast.Stmt) (start, end int, err error) {
 		stmt := body[0]
 		switch stmt := stmt.(type) {
 		case *ast.ForStmt:
@@ -89,7 +89,7 @@ func Switch(content string) (start, end int, err error) {
 	if !strings.HasPrefix(content, "switch") {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
-	return extract(content, func(body []ast.Stmt) (start, end int, err error) {
+	return extractBlock(content, func(body []ast.Stmt) (start, end int, err error) {
 		stmt := body[0]
 		switch stmt := stmt.(type) {
 		case *ast.SwitchStmt:
@@ -198,7 +198,7 @@ func SliceArgs(content string) (expr string, err error) {
 	prefix := "package main\nvar templ_args = []any{"
 	src := prefix + content + "}"
 
-	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors|parser.SkipObjectResolution)
 	if node == nil {
 		return expr, parseErr
 	}
@@ -239,7 +239,7 @@ func Func(content string) (name, expr string, err error) {
 	prefix := "package main\n"
 	src := prefix + content
 
-	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors|parser.SkipObjectResolution)
 	if node == nil {
 		return name, expr, parseErr
 	}
@@ -298,12 +298,60 @@ func inspectFirstNode(node ast.Node, f func(ast.Node) bool) {
 type Extractor func(body []ast.Stmt) (start, end int, err error)
 
 func extract(content string, extractor Extractor) (start, end int, err error) {
+	start, end, _, err = parseContainer(content, extractor)
+	return start, end, err
+}
+
+// extractBlock extracts a Go expression from the header of a statement that is
+// followed by a block, e.g. an if, for or switch statement.
+//
+// The content after the header is templ code, not Go code, so the header is
+// parsed with an empty block first, to avoid parsing the rest of the template.
+// If that fails, e.g. because the header contains a function literal, the
+// whole content is parsed instead.
+func extractBlock(content string, extractor Extractor) (start, end int, err error) {
+	if header, ok := blockHeader(content); ok {
+		start, end, parseErr, err := parseContainer(header+"{}\n}", extractor)
+		if parseErr == nil && err == nil {
+			return start, end, nil
+		}
+	}
+	return extract(content, extractor)
+}
+
+// blockHeader returns the content up to the first opening brace that isn't
+// nested within parentheses, brackets, or braces.
+func blockHeader(content string) (header string, ok bool) {
+	var s scanner.Scanner
+	fset := token.NewFileSet()
+	file := fset.AddFile("", fset.Base(), len(content))
+	s.Init(file, []byte(content), nil, 0)
+	var depth int
+	for {
+		pos, tok, _ := s.Scan()
+		switch tok {
+		case token.EOF:
+			return "", false
+		case token.LPAREN, token.LBRACK:
+			depth++
+		case token.RPAREN, token.RBRACK, token.RBRACE:
+			depth--
+		case token.LBRACE:
+			if depth == 0 {
+				return content[:int(pos)-1], true
+			}
+			depth++
+		}
+	}
+}
+
+func parseContainer(content string, extractor Extractor) (start, end int, parseErr, err error) {
 	prefix := "package main\nfunc templ_container() {\n"
 	src := prefix + content
 
-	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors|parser.SkipObjectResolution)
 	if node == nil {
-		return 0, 0, parseErr
+		return 0, 0, parseErr, parseErr
 	}
 
 	var found bool
@@ -326,7 +374,7 @@ func extract(content string, extractor Extractor) (start, end int, err error) {
 		return false
 	})
 	if !found {
-		return 0, 0, ErrExpectedNodeNotFound
+		return 0, 0, parseErr, ErrExpectedNodeNotFound
 	}
 
 	start -= len(prefix)
@@ -339,5 +387,5 @@ func extract(content string, extractor Extractor) (start, end int, err error) {
 		start = end
 	}
 
-	return start, end, err
+	return start, end, parseErr, err
 }
