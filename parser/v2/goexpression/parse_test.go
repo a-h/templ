@@ -24,6 +24,18 @@ var ifTests = []testInput{
 		name:  "if multiple",
 		input: `x && y && (!z)`,
 	},
+	{
+		name:  "if with function literal",
+		input: `f := func() bool { return true }; f()`,
+	},
+	{
+		name:  "if with slice literal",
+		input: `items := []string{"a", "b"}; len(items) > 0`,
+	},
+	{
+		name:  "if with composite literal in parentheses",
+		input: `v == (T{A: 1})`,
+	},
 }
 
 func TestIf(t *testing.T) {
@@ -92,6 +104,14 @@ var forTests = []testInput{
 		name:  "channel receive",
 		input: `x := range channel`,
 	},
+	{
+		name:  "range over slice literal",
+		input: `_, v := range []string{"a", "b"}`,
+	},
+	{
+		name:  "range over function call with function literal",
+		input: `v := range filter(items, func(s string) bool { return s != "" })`,
+	},
 }
 
 func TestFor(t *testing.T) {
@@ -144,6 +164,10 @@ var switchTests = []testInput{
 	{
 		name:  "type switch",
 		input: `x := x.(type)`,
+	},
+	{
+		name:  "switch with function literal",
+		input: `f := func() int { return 1 }; f()`,
 	},
 }
 
