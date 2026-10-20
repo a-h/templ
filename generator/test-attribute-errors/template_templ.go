@@ -44,7 +44,7 @@ func TestComponent(err error) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue("raw")
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templruntime.NewAttributeExpression("raw").Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-attribute-errors/template.templ`, Line: 16, Col: 23}
 		}
@@ -57,7 +57,7 @@ func TestComponent(err error) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(funcWithNoError())
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templruntime.NewAttributeExpression(funcWithNoError()).Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-attribute-errors/template.templ`, Line: 17, Col: 35}
 		}
@@ -70,7 +70,7 @@ func TestComponent(err error) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(funcWithError(err))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templruntime.NewAttributeExpression(funcWithError(err)).Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `generator/test-attribute-errors/template.templ`, Line: 18, Col: 36}
 		}

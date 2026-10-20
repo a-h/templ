@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/a-h/templ/parser/v2"
@@ -210,37 +211,40 @@ func TestIsTrailingSpaceNeeded(t *testing.T) {
 	}
 }
 
-func TestIsExpressionAttributeValueURL(t *testing.T) {
-	testCases := []struct {
-		elementName    string
-		attrName       string
-		expectedOutput bool
+// TestGenerateEventHandlerAttribute covers GHSA-94c2-xg24-pwhv, where only
+// lowercase on* and hx-on: attributes required a templ.ComponentScript, so
+// <div OnClick={ s }> rendered a string as an event handler. A string passed to
+// an event handler must fail to compile, which a render test can't show, so
+// this test asserts on the type of the generated variable.
+func TestGenerateEventHandlerAttribute(t *testing.T) {
+	tests := []struct {
+		name    string
+		element string
 	}{
-		{
-			elementName:    "a",
-			attrName:       "href",
-			expectedOutput: true,
-		},
-		{
-			elementName:    "a",
-			attrName:       "class",
-			expectedOutput: false,
-		},
-		{
-			elementName:    "div",
-			attrName:       "class",
-			expectedOutput: false,
-		},
-		{
-			elementName:    "p",
-			attrName:       "href",
-			expectedOutput: false,
-		},
+		{name: "onclick requires a templ.ComponentScript value", element: `<div onclick={ s }></div>`},
+		{name: "OnClick requires a templ.ComponentScript value", element: `<div OnClick={ s }></div>`},
+		{name: "ONCLICK requires a templ.ComponentScript value", element: `<div ONCLICK={ s }></div>`},
+		{name: "hx-on requires a templ.ComponentScript value", element: `<div hx-on={ s }></div>`},
+		{name: "hx-on:click requires a templ.ComponentScript value", element: `<div hx-on:click={ s }></div>`},
+		{name: "HX-ON:click requires a templ.ComponentScript value", element: `<div HX-ON:click={ s }></div>`},
+		{name: "hx-on-click requires a templ.ComponentScript value", element: `<div hx-on-click={ s }></div>`},
+		{name: "hx-on--before-request requires a templ.ComponentScript value", element: `<div hx-on--before-request={ s }></div>`},
+		{name: "data-hx-on:click requires a templ.ComponentScript value", element: `<div data-hx-on:click={ s }></div>`},
+		{name: "data-hx-on-click requires a templ.ComponentScript value", element: `<div data-hx-on-click={ s }></div>`},
 	}
-
-	for _, testCase := range testCases {
-		if output := isExpressionAttributeValueURL(testCase.elementName, testCase.attrName); output != testCase.expectedOutput {
-			t.Errorf("expected %t got %t", testCase.expectedOutput, output)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tf, err := parser.ParseString("package main\n\ntempl Test(s templ.ComponentScript) {\n\t" + tt.element + "\n}\n")
+			if err != nil {
+				t.Fatalf("failed to parse: %v", err)
+			}
+			w := new(bytes.Buffer)
+			if _, err = Generate(tf, w); err != nil {
+				t.Fatalf("failed to generate: %v", err)
+			}
+			if !strings.Contains(w.String(), " templ.ComponentScript = s\n") {
+				t.Errorf("expected the value to be assigned to a templ.ComponentScript, got:\n%s", w.String())
+			}
+		})
 	}
 }

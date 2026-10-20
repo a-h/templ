@@ -1,2 +1,5 @@
 # Do not format generator test fixtures.
 generator/test-*
+# Do not format runtime fuzzing fixtures, which rely on the exact JavaScript
+# string delimiters that prettier rewrites.
+runtime/fuzzing/*.templ

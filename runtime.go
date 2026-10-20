@@ -480,91 +480,16 @@ func writeStrings(w io.Writer, ss ...string) (err error) {
 	return nil
 }
 
-func RenderAttributes(ctx context.Context, w io.Writer, attributes Attributer) (err error) {
-	for _, item := range attributes.Items() {
-		key := item.Key
-		value := item.Value
-		switch value := value.(type) {
-		case string:
-			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value), `"`); err != nil {
-				return err
-			}
-		case *string:
-			if value == nil {
-				continue
-			}
-			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(*value), `"`); err != nil {
-				return err
-			}
-		case bool:
-			if !value {
-				continue
-			}
-			if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
-				return err
-			}
-		case *bool:
-			if value == nil || !*value {
-				continue
-			}
-			if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
-				return err
-			}
-		case int, int8, int16, int32, int64,
-			uint, uint8, uint16, uint32, uint64, uintptr,
-			float32, float64, complex64, complex128:
-			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
-				return err
-			}
-		case *int, *int8, *int16, *int32, *int64,
-			*uint, *uint8, *uint16, *uint32, *uint64, *uintptr,
-			*float32, *float64, *complex64, *complex128:
-			value = ptrValue(value)
-			if value == nil {
-				continue
-			}
-			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(fmt.Sprint(value)), `"`); err != nil {
-				return err
-			}
-		case KeyValue[string, bool]:
-			if !value.Value {
-				continue
-			}
-			if err = writeStrings(w, ` `, EscapeString(key), `="`, EscapeString(value.Key), `"`); err != nil {
-				return err
-			}
-		case KeyValue[bool, bool]:
-			if !value.Value || !value.Key {
-				continue
-			}
-			if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
-				return err
-			}
-		case func() bool:
-			if !value() {
-				continue
-			}
-			if err = writeStrings(w, ` `, EscapeString(key)); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
+// FailedSanitizationJS replaces the value of an event handler attribute, such
+// as onclick, that has a name that is only known at render time, if the value
+// is not a ComponentScript. Use JSFuncCall to call a JavaScript function with
+// arguments, or JSUnsafeFuncCall if the JavaScript comes from a trusted source.
+const FailedSanitizationJS = "/* templ: failed sanitization, use templ.JSFuncCall, or templ.JSUnsafeFuncCall for trusted JavaScript */"
 
-func ptrValue(v any) any {
-	if v == nil {
-		return nil
-	}
-	rv := reflect.ValueOf(v)
-	if rv.Kind() != reflect.Pointer {
-		return v
-	}
-	if rv.IsNil() {
-		return nil
-	}
-	return rv.Elem().Interface()
-}
+// FailedSanitizationAttributeName replaces an attribute name that is only
+// known at render time, if the name would change the structure of the element,
+// e.g. a name that contains a space or an equals sign.
+const FailedSanitizationAttributeName = "data-templ-failed-sanitization"
 
 // Context.
 
@@ -681,31 +606,9 @@ type stringable interface {
 	ints | uints | floats | complexNumbers | ~string | ~bool
 }
 
-type attributeValue interface {
-	ints | uints | floats | complexNumbers | ~string | ~bool | ComponentScript
-}
-
 // JoinStringErrs joins an optional list of errors.
 func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
 	return fmt.Sprint(s), errors.Join(errs...)
-}
-
-// ResolveAttributeValue converts an attribute expression value to an
-// HTML-escaped string suitable for use in an attribute value. It handles
-// ComponentScript values by returning their Call field (already escaped),
-// and falls back to HTML-escaping fmt.Sprint for other types.
-func ResolveAttributeValue[T attributeValue](v T, errs ...error) (string, error) {
-	if err := errors.Join(errs...); err != nil {
-		return "", err
-	}
-	switch v := any(v).(type) {
-	case ComponentScript:
-		return v.Call, nil
-	case string:
-		return EscapeString(v), nil
-	default:
-		return EscapeString(fmt.Sprint(v)), nil
-	}
 }
 
 // Error returned during template rendering.

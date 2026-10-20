@@ -744,6 +744,10 @@ const (
 	// '}', since those runes would otherwise be able to start a new
 	// substitution that is evaluated as JavaScript.
 	ScriptContentsContextTemplateLiteral
+	// ScriptContentsContextRegexp is inside the pattern of a regular expression
+	// literal. The result is escaped so that it matches itself, and can not end
+	// the regular expression.
+	ScriptContentsContextRegexp
 )
 
 type ScriptContents struct {

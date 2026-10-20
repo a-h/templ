@@ -12,7 +12,7 @@ import (
 var expected string
 
 func Test(t *testing.T) {
-	component := render()
+	component := render("javascript:alert(document.domain)")
 
 	actual, diff, err := htmldiff.Diff(component, expected)
 	if err != nil {

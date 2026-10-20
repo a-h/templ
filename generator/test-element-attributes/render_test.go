@@ -28,3 +28,21 @@ func Test(t *testing.T) {
 		t.Error(diff)
 	}
 }
+
+//go:embed expected_dynamic_keys.html
+var expectedDynamicKeys string
+
+func TestDynamicKeys(t *testing.T) {
+	component := dynamicKeys("javascript:alert(document.domain)", "x onmouseover=alert(document.domain) y")
+
+	actual, diff, err := htmldiff.Diff(component, expectedDynamicKeys)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff != "" {
+		if err := os.WriteFile("actual_dynamic_keys.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual_dynamic_keys.html: %v", err)
+		}
+		t.Error(diff)
+	}
+}

@@ -1,0 +1,57 @@
+package testattributeevaluation
+
+templ renderEventHandler(r *recorder) {
+	<button onclick={ r.CreateScript("handler") }>button</button>
+}
+
+templ renderConditionalEventHandler(r *recorder, show bool) {
+	<button
+		if show {
+			onclick={ r.CreateScript("then") }
+		} else {
+			onclick={ r.CreateScript("else") }
+		}
+	>button</button>
+}
+
+templ renderDynamicKey(r *recorder) {
+	<button { "onclick" }={ r.CreateScript("dynamic") }>button</button>
+}
+
+templ renderConditionalDynamicKey(r *recorder, show bool, err error) {
+	<button
+		if show {
+			{ "onclick" }={ r.CreateScriptOrError("dynamic", err) }
+		}
+	>button</button>
+}
+
+templ renderSpread(r *recorder) {
+	<button { r.CreateAttributes("spread")... }>button</button>
+}
+
+templ renderConditionalSpread(r *recorder, show bool) {
+	<button
+		if show {
+			{ r.CreateAttributes("spread")... }
+		}
+	>button</button>
+}
+
+templ renderClass(r *recorder) {
+	<div class={ r.CreateClass("class") }>div</div>
+}
+
+templ renderConditionalClass(r *recorder, show bool) {
+	<div
+		if show {
+			class={ r.CreateClass("then") }
+		} else {
+			class={ r.CreateClass("else") }
+		}
+	>div</div>
+}
+
+templ renderUppercaseClass(r *recorder) {
+	<div CLASS={ r.CreateClass("class") }>div</div>
+}

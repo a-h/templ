@@ -147,3 +147,46 @@ func TestNumericAttributeTypes(t *testing.T) {
 		t.Error(diff)
 	}
 }
+
+//go:embed expected_sanitized_attributes.html
+var expectedSanitizedAttributes string
+
+func TestSanitizedAttributes(t *testing.T) {
+	t.Parallel()
+	component := SanitizedTemplate(templ.Attributes{
+		"action":  "javascript:alert(1)",
+		"data":    "javascript:alert(2)",
+		"href":    "javascript:alert(3)",
+		"onclick": "alert(4)",
+		"src":     "javascript:alert(5)",
+		"style":   "color: red\"></a><script>alert(6)</script>",
+	})
+
+	actual, diff, err := htmldiff.Diff(component, expectedSanitizedAttributes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff != "" {
+		if err := os.WriteFile("actual.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual.html: %v", err)
+		}
+		t.Error(diff)
+	}
+}
+
+//go:embed expected_script_template.html
+var expectedScriptTemplate string
+
+func TestRenderScriptTemplate(t *testing.T) {
+	t.Parallel()
+	actual, diff, err := htmldiff.Diff(RenderScriptTemplate(), expectedScriptTemplate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff != "" {
+		if err := os.WriteFile("actual_script_template.html", []byte(actual), 0644); err != nil {
+			t.Errorf("failed to write actual_script_template.html: %v", err)
+		}
+		t.Error(diff)
+	}
+}

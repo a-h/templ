@@ -239,6 +239,10 @@ The output would be:
 </script>
 ```
 
+Within a regular expression literal, `{{ value }}` is escaped so that it matches itself, e.g. `/{{ "a.b" }}/` renders as `/a\.b/`.
+
+A `<script>` element can't contain a `<script` start tag after an unclosed `<!--`, including within a string or a comment, because the browser doesn't end the element at the next `</script>` end tag. See [Restrictions for contents of script elements](https://html.spec.whatwg.org/multipage/scripting.html#restrictions-for-contents-of-script-elements). For the same reason, `{{ value }}` can't directly follow `<`, e.g. write `a < {{ b }}` rather than `a <{{ b }}`. Within a string, write `</script` as `<\/script`, because the browser ends the element at `</script` followed by whitespace, `/`, or `>`, in any case.
+
 :::tip
 It's better to pass data to the client in a HTML attribute or a script tag, as this separates the data from the JavaScript code, making it easier to maintain and debug.
 :::

@@ -31,3 +31,26 @@ templ BasicTemplateOrdered(spread templ.OrderedAttributes) {
 		>text3</div>
 	</div>
 }
+
+// SanitizedTemplate covers GHSA-94c2-xg24-pwhv: spread attributes must be
+// sanitized in the same way as attributes with constant names on the same
+// element.
+templ SanitizedTemplate(spread templ.Attributes) {
+	<a { spread... }>a</a>
+	<form { spread... }></form>
+	<div><turbo-stream { spread... }></turbo-stream></div>
+	<object { spread... }></object>
+	<div { spread... }></div>
+	<iframe { spread... }></iframe>
+	<img { spread... }/>
+}
+
+script handleSpreadClick() {
+	alert("spread");
+}
+
+// RenderScriptTemplate covers script templates in spread attributes. The function of
+// the script must be rendered before the element that calls it.
+templ RenderScriptTemplate() {
+	<button { templ.Attributes{"onclick": handleSpreadClick()}... }>spread script template</button>
+}
