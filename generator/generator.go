@@ -162,6 +162,9 @@ func (g *generator) generate() (err error) {
 	if err = g.writeGeneratedDateComment(); err != nil {
 		return
 	}
+	if err = g.writeBlankLineAfterGeneratorComments(); err != nil {
+		return
+	}
 	if err = g.writeHeader(); err != nil {
 		return
 	}
@@ -203,6 +206,16 @@ func (g *generator) writeVersionComment() (err error) {
 func (g *generator) writeGeneratedDateComment() (err error) {
 	if g.options.GeneratedDate != "" {
 		_, err = g.w.Write("// templ: generated: " + g.options.GeneratedDate + "\n")
+	}
+	return err
+}
+
+// writeBlankLineAfterGeneratorComments separates the version and generated date
+// comments from the package clause, so that Go does not treat them as package
+// documentation.
+func (g *generator) writeBlankLineAfterGeneratorComments() (err error) {
+	if g.options.Version != "" || g.options.GeneratedDate != "" {
+		_, err = g.w.Write("\n")
 	}
 	return err
 }
