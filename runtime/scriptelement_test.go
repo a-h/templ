@@ -137,6 +137,76 @@ func TestScriptContentInsideTemplateLiteral(t *testing.T) {
 	}
 }
 
+// TestScriptContentInsideRegexp covers a Go value interpolated into the pattern of a
+// JavaScript regular expression literal. JSON encoding does not escape '/', so a
+// value could end the regular expression, and the rest of the value would execute.
+// The value must also match itself, rather than change the pattern.
+func TestScriptContentInsideRegexp(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected string
+	}{
+		{
+			name:     "string with no special characters is untouched",
+			input:    "hello",
+			expected: `hello`,
+		},
+		{
+			name:     "slashes are escaped so the regexp cannot be ended early",
+			input:    "/;alert(1);//",
+			expected: `\/;alert\(1\);\/\/`,
+		},
+		{
+			name:     "a backslash is escaped so it cannot escape the closing slash",
+			input:    `\`,
+			expected: `\\`,
+		},
+		{
+			name:     "metacharacters are escaped so they match themselves",
+			input:    "a.b*c+d?e^f$g|h",
+			expected: `a\.b\*c+d\?e\^f\$g\|h`,
+		},
+		{
+			name:     "brackets, braces, and parentheses are escaped so they cannot open a group, class, or quantifier",
+			input:    "[a]{1}(b)",
+			expected: `\[a\]\{1\}\(b\)`,
+		},
+		{
+			name:     "a hyphen is hex escaped so that it is valid in a regexp with the u flag",
+			input:    "a-z",
+			expected: `a\x2dz`,
+		},
+		{
+			name:     "a line terminator is escaped so that it cannot end the regexp",
+			input:    "a\nb",
+			expected: `a\nb`,
+		},
+		{
+			name:     "an HTML end tag is escaped so that it cannot end the script element",
+			input:    "</script>",
+			expected: `<\/script>`,
+		},
+		{
+			name:     "a number is JSON encoded and then escaped",
+			input:    1.5,
+			expected: `1\.5`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			actual, err := ScriptContentInsideRegexp(tt.input)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if actual != tt.expected {
+				t.Errorf("expected:\n%s\ngot:\n%s", tt.expected, actual)
+			}
+		})
+	}
+}
+
 func TestScriptContentErrors(t *testing.T) {
 	t.Run("inside string literal", func(t *testing.T) {
 		_, err := ScriptContentInsideStringLiteral("s", errors.New("error"))

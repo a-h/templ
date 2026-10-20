@@ -9,6 +9,7 @@ package fuzzing
 // backtick quoted template literal was escaped as an ordinary string, so an
 // embedded "${ ... }" substitution was evaluated as code instead of being
 // reproduced as text.
+
 templ StringOutsideStringLiteral(v string) {
 	<script>
 		function getValue() {
@@ -28,7 +29,7 @@ templ StringInsideDoubleQuotedString(v string) {
 templ StringInsideSingleQuotedString(v string) {
 	<script>
 		function getValue() {
-			return "{{ v }}";
+			return '{{ v }}';
 		}
 	</script>
 }
@@ -44,7 +45,7 @@ templ StringInsideTemplateLiteral(v string) {
 templ StringInsideTemplateLiteralSubstitution(v string) {
 	<script>
 		function getValue() {
-			return `${{{ v }}}`;
+			return `${ {{ v }} }`;
 		}
 	</script>
 }

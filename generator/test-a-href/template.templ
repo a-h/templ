@@ -1,7 +1,10 @@
 package testahref
 
-templ render() {
+templ render(s string) {
 	<a href="javascript:alert('unaffected');">Ignored</a>
 	<a href={ templ.URL("javascript:alert('should be sanitized')") }>Sanitized</a>
 	<a href={ templ.SafeURL("javascript:alert('should not be sanitized')") }>Unsanitized</a>
+	<a href={ s }>String sanitized</a>
+	<a HREF={ s }>Uppercase attribute name sanitized</a>
+	<a Href={ s }>Mixed case attribute name sanitized</a>
 }

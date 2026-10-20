@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bytes"
+	"github.com/a-h/templ/internal/jstokenizer"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -574,6 +575,8 @@ func scriptContentsContextEscape(c ScriptContentsContext, value string) (string,
 		return runtime.ScriptContentInsideStringLiteral(value)
 	case ScriptContentsContextTemplateLiteral:
 		return runtime.ScriptContentInsideTemplateLiteral(value)
+	case ScriptContentsContextRegexp:
+		return runtime.ScriptContentInsideRegexp(value)
 	default:
 		return runtime.ScriptContentOutsideStringLiteral(value)
 	}
@@ -610,6 +613,71 @@ func TestScriptElementRendersGoExpressionsWithPositionAppropriateEscaping(t *tes
 			expected: `var a = ` + "`" + `${ "${x}"}\u0024\u007bx\u007d` + "`" + `;`,
 		},
 		{
+			name:     "a brace in a string inside a substitution does not keep the substitution open",
+			input:    "<script>var a = `${\"{\"}{{ name }}`;</script>",
+			expected: `var a = ` + "`" + `${"{"}\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a brace in a single quoted string inside a substitution does not keep the substitution open",
+			input:    "<script>var a = `${'{'}{{ name }}`;</script>",
+			expected: `var a = ` + "`" + `${'{'}\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a closing brace in a string inside a substitution does not end the substitution",
+			input:    "<script>var a = `${ \"}\" + {{ name }} }`;</script>",
+			expected: `var a = ` + "`" + `${ "}" + "${x}"}` + "`" + `;`,
+		},
+		{
+			name:     "a brace in a comment inside a substitution does not keep the substitution open",
+			input:    "<script>var a = `${ 1 /* { */ }{{ name }}`;</script>",
+			expected: `var a = ` + "`" + `${ 1 /* { */ }\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "an object literal inside a substitution keeps the substitution open until its own brace closes",
+			input:    "<script>var a = `${ f({ a: 1 }) + {{ x }} }{{ y }}`;</script>",
+			expected: `var a = ` + "`" + `${ f({ a: 1 }) + "${x}"}\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a value in a nested template literal inside a substitution is hex-escaped",
+			input:    "<script>var a = `${ `{{ x }}` }{{ y }}`;</script>",
+			expected: `var a = ` + "`" + `${ ` + "`" + `\u0024\u007bx\u007d` + "`" + ` }\u0024\u007bx\u007d` + "`" + `;`,
+		},
+		{
+			name:     "a value in a string inside a substitution is string escaped",
+			input:    "<script>var a = `${ \"{{ x }}\" }`;</script>",
+			expected: `var a = ` + "`" + `${ "${x}" }` + "`" + `;`,
+		},
+		{
+			name:     "comment markers in a string after a value remain string data",
+			input:    `<script>var a = "{{ x }}/*"; var b = {{ y }};</script>`,
+			expected: `var a = "${x}/*"; var b = "${x}";`,
+		},
+		{
+			name:     "a slash after a value is division, so a later quote is not mistaken for regexp text",
+			input:    `<script>var a = b / 2; var c = "/"; var d = {{ x }};</script>`,
+			expected: `var a = b / 2; var c = "/"; var d = "${x}";`,
+		},
+		{
+			name:     "a slash after a closing parenthesis is division",
+			input:    `<script>var a = (b) / 2; var c = "/"; var d = {{ x }};</script>`,
+			expected: `var a = (b) / 2; var c = "/"; var d = "${x}";`,
+		},
+		{
+			name:     "a slash after a keyword starts a regexp, so a quote inside it is not a string",
+			input:    `<script>function f(s) { return /"/.test(s); } var d = {{ x }};</script>`,
+			expected: `function f(s) { return /"/.test(s); } var d = "${x}";`,
+		},
+		{
+			name:     "a slash after an assignment starts a regexp, so a quote inside it is not a string",
+			input:    `<script>var r = /'/g; var d = {{ x }};</script>`,
+			expected: `var r = /'/g; var d = "${x}";`,
+		},
+		{
+			name:     "a slash after a value inside a substitution is division",
+			input:    "<script>var a = `${ b / 2 }{{ x }}`; var c = \"/\";</script>",
+			expected: `var a = ` + "`" + `${ b / 2 }\u0024\u007bx\u007d` + "`" + `; var c = "/";`,
+		},
+		{
 			name:     "a value inside a double quoted string is left alone, since $ and { aren't special there",
 			input:    `<script>var a = "{{ name }}";</script>`,
 			expected: `var a = "${x}";`,
@@ -618,6 +686,21 @@ func TestScriptElementRendersGoExpressionsWithPositionAppropriateEscaping(t *tes
 			name:     "a value outside any string literal is JSON encoded",
 			input:    "<script>var a = {{ name }};</script>",
 			expected: `var a = "${x}";`,
+		},
+		{
+			name:     "a slash after the condition of an if statement starts a regexp, so a quote inside it is not a string",
+			input:    `<script>if (ok) /"/.test(s); var d = {{ x }};</script>`,
+			expected: `if (ok) /"/.test(s); var d = "${x}";`,
+		},
+		{
+			name:     "a value after an HTML open comment is JSON encoded",
+			input:    "<script><!-- \"\nvar d = {{ x }};</script>",
+			expected: "<!-- \"\nvar d = \"${x}\";",
+		},
+		{
+			name:     "a value in a regexp is regexp escaped",
+			input:    `<script>var r = /a{{ x }}/;</script>`,
+			expected: `var r = /a\$\{x\}/;`,
 		},
 	}
 	for _, tt := range tests {
@@ -654,96 +737,6 @@ func TestScriptElementRendersGoExpressionsWithPositionAppropriateEscaping(t *tes
 	}
 }
 
-func TestScriptElementRegexpParser(t *testing.T) {
-	tests := []struct {
-		name       string
-		input      string
-		expected   string
-		expectedOK bool
-	}{
-		{
-			name:       "no content is considered to be a comment",
-			input:      `//`,
-			expectedOK: false,
-		},
-		{
-			name:       "must not be multiline",
-			input:      "/div>\n</div>",
-			expectedOK: false,
-		},
-		{
-			name:       "match a single char",
-			input:      `/a/`,
-			expected:   `/a/`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a simple regex",
-			input:      `/a|b/`,
-			expected:   `/a|b/`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a complex regex",
-			input:      `/a(b|c)*d{2,4}/`,
-			expected:   `/a(b|c)*d{2,4}/`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a regex with flags",
-			input:      `/a/i`,
-			expected:   `/a/i`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a regex with multiple flags",
-			input:      `/a/gmi`,
-			expected:   `/a/gmi`,
-			expectedOK: true,
-		},
-		{
-			name:       "escaped slashes",
-			input:      `/a\/b\/c/`,
-			expected:   `/a\/b\/c/`,
-			expectedOK: true,
-		},
-		{
-			name:       "no match: missing closing slash",
-			input:      `/a|b`,
-			expected:   "",
-			expectedOK: false,
-		},
-		{
-			name:       "no match: missing opening slash",
-			input:      `a|b/`,
-			expected:   "",
-			expectedOK: false,
-		},
-		{
-			name:       "must not contain interpolated go expressions",
-			input:      `/a{{ b }}/`,
-			expected:   "",
-			expectedOK: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			input := parse.NewInput(tt.input)
-			result, ok, err := regexpLiteral.Parse(input)
-			if err != nil {
-				t.Fatalf("parser error: %v", err)
-			}
-			if ok != tt.expectedOK {
-				t.Fatalf("expected ok to be %v, got %v", tt.expectedOK, ok)
-			}
-			if result != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, result)
-			}
-		})
-	}
-}
-
 func FuzzScriptParser(f *testing.F) {
 	files, _ := filepath.Glob("scriptparsertestdata/*.txt")
 	if len(files) == 0 {
@@ -769,4 +762,152 @@ func clean(b []byte) string {
 	b = bytes.ReplaceAll(b, []byte("$\n"), []byte("\n"))
 	b = bytes.TrimSuffix(b, []byte("\n"))
 	return string(b)
+}
+
+func TestEveryJSTokenizerContextHasAScriptContentsContext(t *testing.T) {
+	for c := jstokenizer.ContextCode; c <= jstokenizer.ContextRegexp; c++ {
+		if _, ok := jsTokenizerContextToScriptContentsContext[c]; !ok {
+			t.Errorf("jstokenizer context %d has no script contents context, so values in it would be JSON encoded", c)
+		}
+	}
+}
+
+// TestScriptElementParserErrors covers <script after an unclosed <!-- in a script
+// element. The HTML parser of a browser reads <!-- as the start of escaped script
+// data, even within a JavaScript string or comment, and after <!-- and then
+// <script, a </script> end tag does not end the element. templ would end the
+// element where the browser does not, and escape the Go expressions that follow
+// as HTML rather than JavaScript. See
+// https://html.spec.whatwg.org/multipage/scripting.html#restrictions-for-contents-of-script-elements.
+func TestScriptElementParserErrors(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected error
+	}{
+		{
+			name:     "a script start tag after an HTML open comment in code is an error",
+			input:    "<script><!-- <script>\n</script>",
+			expected: parse.Error(errScriptStartTagInEscapedScriptData, parse.Position{Index: 13, Line: 0, Col: 13}),
+		},
+		{
+			name:     "a script start tag after an HTML open comment in a string is an error",
+			input:    `<script>var s = "<!--<script>";</script>`,
+			expected: parse.Error(errScriptStartTagInEscapedScriptData, parse.Position{Index: 21, Line: 0, Col: 21}),
+		},
+		{
+			name:     "a script start tag in a string after an HTML open comment in a JavaScript comment is an error",
+			input:    "<script>// <!--\nvar s = \"<script \";</script>",
+			expected: parse.Error(errScriptStartTagInEscapedScriptData, parse.Position{Index: 25, Line: 1, Col: 9}),
+		},
+		{
+			name:     "an uppercase script start tag after an HTML open comment is an error",
+			input:    `<script>var s = "<!--<SCRIPT/";</script>`,
+			expected: parse.Error(errScriptStartTagInEscapedScriptData, parse.Position{Index: 21, Line: 0, Col: 21}),
+		},
+		{
+			name:     "a Go expression between dashes is not assumed to close an HTML open comment",
+			input:    `<script>var s = "<!-- -{{ x }}-> <script>";</script>`,
+			expected: parse.Error(errScriptStartTagInEscapedScriptData, parse.Position{Index: 33, Line: 0, Col: 33}),
+		},
+		{
+			name:     "an uppercase script end tag in a string is an error, because the browser ends the element there",
+			input:    `<script>var s = "</SCRIPT>";</script>`,
+			expected: parse.Error(errScriptEndTagNotRecognized, parse.Position{Index: 17, Line: 0, Col: 17}),
+		},
+		{
+			name:     "a script end tag followed by a space in a string is an error, because the browser ends the element there",
+			input:    `<script>var s = "</script >";</script>`,
+			expected: parse.Error(errScriptEndTagNotRecognized, parse.Position{Index: 17, Line: 0, Col: 17}),
+		},
+		{
+			name:     "a script end tag after an HTML open comment is an error, because the browser ends the element there",
+			input:    "<script>var s = \"<!-- </script\t\";</script>",
+			expected: parse.Error(errScriptEndTagNotRecognized, parse.Position{Index: 22, Line: 0, Col: 22}),
+		},
+		{
+			name:     "a Go expression directly after part of a script end tag is an error, because its value could complete the tag",
+			input:    `<script>var s = "</scr{{ x }}";</script>`,
+			expected: parse.Error(errGoExpressionCompletesTag, parse.Position{Index: 22, Line: 0, Col: 22}),
+		},
+		{
+			name:     "a Go expression directly after a less than sign is an error, because its value could form an HTML open comment",
+			input:    `<script>var s = "<{{ x }}";</script>`,
+			expected: parse.Error(errGoExpressionCompletesTag, parse.Position{Index: 18, Line: 0, Col: 18}),
+		},
+		{
+			name:     "a Go expression directly after part of a script start tag is an error, because its value could complete the tag",
+			input:    `<script>var s = "<!-- <SCR{{ x }}";</script>`,
+			expected: parse.Error(errGoExpressionCompletesTag, parse.Position{Index: 26, Line: 0, Col: 26}),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, err := scriptElement.Parse(parse.NewInput(tt.input))
+			if diff := cmp.Diff(tt.expected, err); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+// TestScriptElementParserAcceptsHTMLComments covers HTML comment markers that do
+// not change where the browser ends a script element.
+func TestScriptElementParserAcceptsHTMLComments(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{
+			name:  "an HTML open comment without a script start tag is accepted",
+			input: `<script>var s = "<!--";</script>`,
+		},
+		{
+			name:  "a script start tag after a closed HTML comment is accepted",
+			input: `<script>var s = "<!-- --> <script>";</script>`,
+		},
+		{
+			name:  "a script start tag after an HTML comment that closes immediately is accepted",
+			input: `<script>var s = "<!--> <script>";</script>`,
+		},
+		{
+			name:  "a script start tag without an HTML open comment is accepted",
+			input: `<script>var s = "<script>";</script>`,
+		},
+		{
+			name:  "a Go expression after a less than sign and a space is accepted",
+			input: `<script>if (a < {{ x }}) {}</script>`,
+		},
+		{
+			name:  "a Go expression after a complete HTML open comment is accepted",
+			input: `<script>var s = "<!--{{ x }}";</script>`,
+		},
+		{
+			name:  "an end tag for another element in a string is accepted",
+			input: `<script>var s = "</div></scripts>";</script>`,
+		},
+		{
+			name:  "a Go expression after part of a script start tag without an HTML open comment is accepted, because only an escaped script start tag changes where the element ends",
+			input: `<script>var s = "<scr{{ x }}";</script>`,
+		},
+		{
+			name:  "a script start tag after an HTML open comment that was closed by --> with extra dashes is accepted",
+			input: `<script>var s = "<!-- ---> <script>";</script>`,
+		},
+		{
+			name:  "a tag that starts with script after an HTML open comment is accepted",
+			input: `<script>var s = "<!-- <scripts>";</script>`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, ok, err := scriptElement.Parse(parse.NewInput(tt.input))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !ok {
+				t.Fatal("expected the script element to be parsed")
+			}
+		})
+	}
 }

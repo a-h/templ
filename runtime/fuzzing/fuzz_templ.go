@@ -43,7 +43,7 @@ func StringOutsideStringLiteral(v string) templ.Component {
 		}
 		templ_7745c5c3_Var2, templ_7745c5c3_Err := templruntime.ScriptContentOutsideStringLiteral(v)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 15, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 16, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
@@ -84,7 +84,7 @@ func StringInsideDoubleQuotedString(v string) templ.Component {
 		}
 		templ_7745c5c3_Var4, templ_7745c5c3_Err := templruntime.ScriptContentInsideStringLiteral(v)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 23, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 24, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -119,19 +119,19 @@ func StringInsideSingleQuotedString(v string) templ.Component {
 			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script>\n\t\tfunction getValue() {\n\t\t\treturn \"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script>\n\t\tfunction getValue() {\n\t\t\treturn '")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Var6, templ_7745c5c3_Err := templruntime.ScriptContentInsideStringLiteral(v)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 31, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 32, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\";\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "';\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -166,7 +166,7 @@ func StringInsideTemplateLiteral(v string) templ.Component {
 		}
 		templ_7745c5c3_Var8, templ_7745c5c3_Err := templruntime.ScriptContentInsideTemplateLiteral(v)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 39, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 40, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 		if templ_7745c5c3_Err != nil {
@@ -201,19 +201,19 @@ func StringInsideTemplateLiteralSubstitution(v string) templ.Component {
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<script>\n\t\tfunction getValue() {\n\t\t\treturn `${")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<script>\n\t\tfunction getValue() {\n\t\t\treturn `${ ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Var10, templ_7745c5c3_Err := templruntime.ScriptContentOutsideStringLiteral(v)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 47, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 48, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "}`;\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " }`;\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -253,7 +253,7 @@ func AnyInsideTemplateLiteral(v any) templ.Component {
 		}
 		templ_7745c5c3_Var12, templ_7745c5c3_Err := templruntime.ScriptContentInsideTemplateLiteral(v)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 60, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `runtime/fuzzing/fuzz.templ`, Line: 61, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
