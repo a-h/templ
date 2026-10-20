@@ -562,6 +562,15 @@ func InitializeContext(ctx context.Context) context.Context {
 	return ctx
 }
 
+// InitializeDocumentContext returns a context for rendering a separate HTML document,
+// such as the srcdoc of an iframe. Scripts, CSS classes, and OnceHandle content
+// rendered in the parent document are not present in the separate document, so the
+// returned context does not share their deduplication state. The CSP nonce is kept,
+// because an iframe srcdoc document inherits the CSP of its parent.
+func InitializeDocumentContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, contextKey, &contextValue{nonce: GetNonce(ctx)})
+}
+
 func getContext(ctx context.Context) (context.Context, *contextValue) {
 	v, ok := ctx.Value(contextKey).(*contextValue)
 	if !ok {

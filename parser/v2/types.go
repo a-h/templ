@@ -748,6 +748,12 @@ const (
 	// literal. The result is escaped so that it matches itself, and can not end
 	// the regular expression.
 	ScriptContentsContextRegexp
+	// ScriptContentsContextRegexpStart is at the start of the pattern of a
+	// regular expression literal. The result is escaped the same way as
+	// ScriptContentsContextRegexp, and follows an empty group, so that an
+	// empty result can not join the opening '/' to the next character and
+	// start a comment.
+	ScriptContentsContextRegexpStart
 )
 
 type ScriptContents struct {

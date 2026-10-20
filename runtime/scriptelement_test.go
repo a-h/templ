@@ -165,7 +165,7 @@ func TestScriptContentInsideRegexp(t *testing.T) {
 		{
 			name:     "metacharacters are escaped so they match themselves",
 			input:    "a.b*c+d?e^f$g|h",
-			expected: `a\.b\*c+d\?e\^f\$g\|h`,
+			expected: `a\.b\*c\+d\?e\^f\$g\|h`,
 		},
 		{
 			name:     "brackets, braces, and parentheses are escaped so they cannot open a group, class, or quantifier",
@@ -185,7 +185,17 @@ func TestScriptContentInsideRegexp(t *testing.T) {
 		{
 			name:     "an HTML end tag is escaped so that it cannot end the script element",
 			input:    "</script>",
-			expected: `<\/script>`,
+			expected: `\u003c\/script\u003e`,
+		},
+		{
+			name:     "an HTML start tag is escaped so that it cannot start double escaped script data",
+			input:    "<script>",
+			expected: `\u003cscript\u003e`,
+		},
+		{
+			name:     "quotes and ampersands are hex escaped",
+			input:    `"'&`,
+			expected: `\u0022\u0027\u0026`,
 		},
 		{
 			name:     "a number is JSON encoded and then escaped",

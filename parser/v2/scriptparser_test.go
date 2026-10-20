@@ -577,6 +577,9 @@ func scriptContentsContextEscape(c ScriptContentsContext, value string) (string,
 		return runtime.ScriptContentInsideTemplateLiteral(value)
 	case ScriptContentsContextRegexp:
 		return runtime.ScriptContentInsideRegexp(value)
+	case ScriptContentsContextRegexpStart:
+		escaped, err := runtime.ScriptContentInsideRegexp(value)
+		return "(?:)" + escaped, err
 	default:
 		return runtime.ScriptContentOutsideStringLiteral(value)
 	}
@@ -765,7 +768,7 @@ func clean(b []byte) string {
 }
 
 func TestEveryJSTokenizerContextHasAScriptContentsContext(t *testing.T) {
-	for c := jstokenizer.ContextCode; c <= jstokenizer.ContextRegexp; c++ {
+	for c := jstokenizer.ContextCode; c <= jstokenizer.ContextRegexpStart; c++ {
 		if _, ok := jsTokenizerContextToScriptContentsContext[c]; !ok {
 			t.Errorf("jstokenizer context %d has no script contents context, so values in it would be JSON encoded", c)
 		}

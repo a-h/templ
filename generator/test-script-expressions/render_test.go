@@ -60,6 +60,36 @@ func TestScriptExpressionsAreEscapedForTheirPosition(t *testing.T) {
 			component: RenderInRegexp(`/;alert(1);//`),
 			expected:  `<script>var r = /a\/;alert\(1\);\/\//;</script>`,
 		},
+		{
+			name:      "data after division of a number with a trailing decimal point is JSON encoded",
+			component: RenderAfterNumberWithTrailingDecimalPoint("alert(1)"),
+			expected:  `<script>var a = 1. / 2; var c = "/"; var d = "alert(1)";</script>`,
+		},
+		{
+			name:      "empty data at the start of a regexp renders an empty group",
+			component: RenderAtRegexpStart(""),
+			expected:  `<script>var r = /(?:)/;</script>`,
+		},
+		{
+			name:      "data at the start of a regexp follows an empty group",
+			component: RenderAtRegexpStart("+"),
+			expected:  `<script>var r = /(?:)\+/;</script>`,
+		},
+		{
+			name:      "empty data at the start of a regexp before a quantifier does not start a comment",
+			component: RenderAtRegexpStartBeforeQuantifier(""),
+			expected:  `<script>var r = /(?:)*/;</script>`,
+		},
+		{
+			name:      "empty data in a character class adds no characters to the class",
+			component: RenderInRegexpClass(""),
+			expected:  `<script>var r = /[]/;</script>`,
+		},
+		{
+			name:      "a script start tag in a regexp after an HTML open comment is escaped",
+			component: RenderInRegexpAfterHTMLOpenComment("<script>"),
+			expected:  "<script><!--\nvar r = /a\\u003cscript\\u003e/;</script>",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
