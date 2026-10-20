@@ -1640,6 +1640,13 @@ func (g *generator) writeScriptContents(indentLevel int, c parser.ScriptContents
 			fnCall = "templruntime.ScriptContentInsideTemplateLiteral"
 		case parser.ScriptContentsContextRegexp:
 			fnCall = "templruntime.ScriptContentInsideRegexp"
+		case parser.ScriptContentsContextRegexpStart:
+			// An empty group keeps an empty value from joining the opening '/' to
+			// the next character, e.g. `//` or `/*`, which start a comment.
+			if err = g.writeText(indentLevel, &parser.Text{Value: "(?:)"}); err != nil {
+				return err
+			}
+			fnCall = "templruntime.ScriptContentInsideRegexp"
 		}
 		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := "+fnCall+"("); err != nil {
 			return err

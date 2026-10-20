@@ -119,7 +119,7 @@ func resolveValue(ctx context.Context, attrContext htmlattr.Context, v any) (str
 	case htmlattr.ContextSrcdoc:
 		if c, ok := v.(templ.Component); ok {
 			var sb strings.Builder
-			if err := c.Render(ctx, &sb); err != nil {
+			if err := c.Render(templ.InitializeDocumentContext(ctx), &sb); err != nil {
 				return "", err
 			}
 			return templ.EscapeString(sb.String()), nil

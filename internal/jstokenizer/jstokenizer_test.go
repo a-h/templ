@@ -165,6 +165,16 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 			expected: ContextCode,
 		},
 		{
+			name:     "a slash after a number with a trailing decimal point is division",
+			input:    `var a = 1. / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a property of a number is division",
+			input:    `var a = 1..x / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
 			name:     "a slash after a closing parenthesis is division",
 			input:    `var a = (b) / 2; var c = "/"; var d = {{ x }};`,
 			expected: ContextCode,
@@ -297,6 +307,21 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 		{
 			name:     "an escaped slash does not end a regexp",
 			input:    `var r = /\/{{ x }}/;`,
+			expected: ContextRegexp,
+		},
+		{
+			name:     "a value at the start of a regexp is in regexp start context",
+			input:    `var r = /{{ x }}/;`,
+			expected: ContextRegexpStart,
+		},
+		{
+			name:     "a value after a value at the start of a regexp is in regexp context",
+			input:    `var r = /{{ x }}{{ x }}/;`,
+			expected: ContextRegexp,
+		},
+		{
+			name:     "a value at the start of a character class is in regexp context",
+			input:    `var r = /[{{ x }}]/;`,
 			expected: ContextRegexp,
 		},
 		{

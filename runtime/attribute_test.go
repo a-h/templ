@@ -308,6 +308,33 @@ func TestRenderAttributesSrcdoc(t *testing.T) {
 			}
 		})
 	}
+	t.Run("srcdoc components render content that the parent document already rendered once", func(t *testing.T) {
+		once := templ.NewOnceHandle(templ.WithComponent(templ.Raw("<script>once</script>"))).Once()
+		ctx := templ.InitializeContext(context.Background())
+		if err := once.Render(ctx, io.Discard); err != nil {
+			t.Fatalf("failed to render in the parent document: %v", err)
+		}
+		var buf bytes.Buffer
+		if err := RenderAttributes(ctx, &buf, io.Discard, "iframe", templ.Attributes{"srcdoc": once}); err != nil {
+			t.Fatalf("RenderAttributes failed: %v", err)
+		}
+		if diff := cmp.Diff(` srcdoc="&lt;script&gt;once&lt;/script&gt;"`, buf.String()); diff != "" {
+			t.Error(diff)
+		}
+	})
+	t.Run("srcdoc components render with the nonce of the parent document", func(t *testing.T) {
+		nonce := templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
+			_, err := io.WriteString(w, templ.GetNonce(ctx))
+			return err
+		})
+		var buf bytes.Buffer
+		if err := RenderAttributes(templ.WithNonce(context.Background(), "abc"), &buf, io.Discard, "iframe", templ.Attributes{"srcdoc": nonce}); err != nil {
+			t.Fatalf("RenderAttributes failed: %v", err)
+		}
+		if diff := cmp.Diff(` srcdoc="abc"`, buf.String()); diff != "" {
+			t.Error(diff)
+		}
+	})
 	t.Run("components are not rendered in attributes other than srcdoc", func(t *testing.T) {
 		var buf bytes.Buffer
 		if err := RenderAttributes(context.Background(), &buf, io.Discard, "div", templ.Attributes{"title": templ.Raw("<p>x</p>")}); err != nil {

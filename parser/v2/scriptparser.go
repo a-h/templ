@@ -14,6 +14,7 @@ var jsTokenizerContextToScriptContentsContext = map[jstokenizer.Context]ScriptCo
 	jstokenizer.ContextString:          ScriptContentsContextString,
 	jstokenizer.ContextTemplateLiteral: ScriptContentsContextTemplateLiteral,
 	jstokenizer.ContextRegexp:          ScriptContentsContextRegexp,
+	jstokenizer.ContextRegexpStart:     ScriptContentsContextRegexpStart,
 }
 
 type scriptElementParser struct{}

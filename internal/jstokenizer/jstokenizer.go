@@ -43,6 +43,10 @@ const (
 	// ContextRegexp values are written into the pattern of a regular expression
 	// literal.
 	ContextRegexp
+	// ContextRegexpStart values are written at the start of the pattern of a regular
+	// expression literal. An empty value there would join the opening '/' to the next
+	// character, so that `/{{ x }}/` becomes the comment `//`.
+	ContextRegexpStart
 )
 
 type quote string
@@ -64,6 +68,9 @@ type Tokenizer struct {
 	// inRegexpClass is true within a [ ] character class of a regular expression, where
 	// '/' does not end the regular expression.
 	inRegexpClass bool
+	// atRegexpStart is true when nothing has been read since the '/' that opened the
+	// regular expression being read.
+	atRegexpStart bool
 	// substitutionBraceDepths holds an entry for each open ${ ... } substitution within a
 	// template literal, innermost last. The contents of a substitution are code, so quote
 	// is quoteNone within one. Each entry counts the unmatched '{' tokens in code since
@@ -112,6 +119,9 @@ func (t *Tokenizer) GetContext() Context {
 	case quoteSingle, quoteDouble:
 		return ContextString
 	case quoteRegexp:
+		if t.atRegexpStart {
+			return ContextRegexpStart
+		}
 		return ContextRegexp
 	}
 	return ContextCode
@@ -120,6 +130,7 @@ func (t *Tokenizer) GetContext() Context {
 // RecordValue records that a value has been inserted at the current position, such as
 // a Go expression. In code, a value ends an expression, so a '/' after it is a division.
 func (t *Tokenizer) RecordValue() {
+	t.atRegexpStart = false
 	if t.quote != quoteNone {
 		return
 	}
@@ -201,6 +212,7 @@ func (t *Tokenizer) readRegexpToken(pi *parse.Input) (token string, ok bool, err
 	if err != nil || !ok {
 		return token, ok, err
 	}
+	t.atRegexpStart = false
 	switch token {
 	case "[":
 		t.inRegexpClass = true
@@ -232,6 +244,16 @@ func (t *Tokenizer) readCodeToken(pi *parse.Input) (token string, ok bool, err e
 		return token, ok, err
 	}
 
+	token, ok, err = jsNumericLiteralWithDecimalPoint.Parse(pi)
+	if err != nil {
+		return token, false, err
+	}
+	if ok {
+		t.regexpAllowed = false
+		t.recordCodeToken(token)
+		return token, true, nil
+	}
+
 	token, ok, err = jsIdentifierName.Parse(pi)
 	if err != nil {
 		return token, false, err
@@ -254,6 +276,7 @@ func (t *Tokenizer) readCodeToken(pi *parse.Input) (token string, ok bool, err e
 		if t.regexpAllowed {
 			t.quote = quoteRegexp
 			t.inRegexpClass = false
+			t.atRegexpStart = true
 			break
 		}
 		t.regexpAllowed = true
@@ -359,6 +382,20 @@ var jsKeywordsPrecedingCondition = []string{
 	"if",
 	"while",
 	"with",
+}
+
+// jsNumericLiteralWithDecimalPoint reads a decimal number that contains a decimal point,
+// such as 1.5, 1., or 1.e3. Without it, the digits are read as an identifier, and the
+// '.' that follows as a property access, so a '/' after `1.` would start a regular
+// expression rather than a division.
+var jsNumericLiteralWithDecimalPoint = parse.StringFrom(
+	parse.StringFrom(parse.OneOrMore(parse.RuneWhere(isDecimalDigitOrSeparator))),
+	parse.String("."),
+	parse.StringFrom(parse.ZeroOrMore(parse.RuneWhere(isJSIdentifierRune))),
+)
+
+func isDecimalDigitOrSeparator(r rune) bool {
+	return (r >= '0' && r <= '9') || r == '_'
 }
 
 var jsIdentifierName = parse.StringFrom(parse.OneOrMore(parse.RuneWhere(isJSIdentifierRune)))

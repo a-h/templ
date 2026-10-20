@@ -174,9 +174,11 @@ var jsBqStrReplacementTable = []string{
 // jsRegexpReplacementTable escapes the runes that end a regular expression literal,
 // '/', '\', and line terminators, the runes that have a special meaning in a pattern,
 // so that the value matches itself, and the same HTML specials as
-// jsStrReplacementTable. It mirrors jsRegexpReplacementTable in html/template/js.go,
-// except that '-' is hex escaped, because the identity escape \- is a syntax error
-// outside a character class in a regular expression with the u or v flag.
+// jsStrReplacementTable, so that the value can't start a tag, such as <script> after
+// <!--, which changes where the browser ends the script element. It mirrors
+// jsRegexpReplacementTable in html/template/js.go, except that '-' is hex escaped,
+// because the identity escape \- is a syntax error outside a character class in a
+// regular expression with the u or v flag, and '+' is escaped as \+.
 var jsRegexpReplacementTable = []string{
 	0:    `\u0000`,
 	'\t': `\t`,
@@ -186,19 +188,19 @@ var jsRegexpReplacementTable = []string{
 	'\r': `\r`,
 	// Encode HTML specials as hex so the output can be embedded
 	// in HTML attributes without further encoding.
-	'"':  `"`,
+	'"':  `\u0022`,
 	'$':  `\$`,
-	'&':  `&`,
-	'\'': `'`,
+	'&':  `\u0026`,
+	'\'': `\u0027`,
 	'(':  `\(`,
 	')':  `\)`,
 	'*':  `\*`,
-	'+':  `+`,
+	'+':  `\+`,
 	'-':  `\x2d`,
 	'.':  `\.`,
 	'/':  `\/`,
-	'<':  `<`,
-	'>':  `>`,
+	'<':  `\u003c`,
+	'>':  `\u003e`,
 	'?':  `\?`,
 	'[':  `\[`,
 	'\\': `\\`,

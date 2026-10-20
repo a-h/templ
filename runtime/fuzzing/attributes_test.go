@@ -29,6 +29,9 @@ var attributeTestcases = []struct {
 	{"to", "https://example.com;javascript:alert(document.domain)"},
 	{"values", "0;javascript:alert(document.domain)"},
 	{"srcdoc", "<script>alert(document.domain)</script>"},
+	{"style", "color:red"},
+	{"srcset", "javascript:alert(document.domain)"},
+	{"srcset", "a.png 1x, javascript:alert(document.domain) 2x"},
 	{"onclick", "alert(document.domain)"},
 	{"OnClick", "alert(document.domain)"},
 	{"hx-on:click", "alert(document.domain)"},
@@ -162,6 +165,31 @@ func assertAttributeValueIsInert(t *testing.T, elementName, name, parsed, input 
 				t.Fatalf("<%s %s>: javascript URL was not sanitized: %q", elementName, name, parsed)
 			}
 		}
+	case htmlattr.ContextSrcset:
+		parsedCandidates := strings.Split(parsed, ",")
+		inputCandidates := strings.Split(input, ",")
+		if len(parsedCandidates) != len(inputCandidates) {
+			t.Fatalf("<%s %s>: expected %d candidates, got %q", elementName, name, len(inputCandidates), parsed)
+		}
+		for i, candidate := range parsedCandidates {
+			if candidate != inputCandidates[i] && strings.TrimLeft(candidate, " \t\n\f\r") != string(templ.FailedSanitizationURL) {
+				t.Fatalf("<%s %s>: expected candidate %q or %q, got %q", elementName, name, inputCandidates[i], templ.FailedSanitizationURL, candidate)
+			}
+		}
+	case htmlattr.ContextStyle:
+		if strings.ContainsFunc(input, isCSSEscaped) {
+			if strings.ContainsAny(parsed, `<"`) {
+				t.Fatalf("<%s %s>: style contains an unescaped character: input %q, got %q", elementName, name, input, parsed)
+			}
+			break
+		}
+		expected := strings.TrimSpace(input)
+		if expected != "" && !strings.HasSuffix(expected, ";") {
+			expected += ";"
+		}
+		if parsed != expected {
+			t.Fatalf("<%s %s>: expected %q, got %q", elementName, name, expected, parsed)
+		}
 	case htmlattr.ContextSrcdoc:
 		for n := range parseHTML(t, parsed).Descendants() {
 			if n.Type == html.TextNode {
@@ -227,6 +255,12 @@ func isJavaScriptURL(s string) bool {
 	}
 	scheme = asciiLower(scheme)
 	return scheme == "javascript" || scheme == "vbscript"
+}
+
+// isCSSEscaped returns true if a style attribute value escapes r as a CSS escape
+// sequence, so that the value does not round trip.
+func isCSSEscaped(r rune) bool {
+	return r == '<' || r == '"' || r == '\\' || r <= 0x1f || r == 0x7f || (r >= 0x80 && r <= 0x9f) || r == 0x2028 || r == 0x2029
 }
 
 func isC0ControlOrSpace(r rune) bool {

@@ -55,6 +55,42 @@ templ RenderAfterPropertyNamedReturn(data string) {
 	<script>var a = b.return / 2; var c = "/"; var d = {{ data }};</script>
 }
 
+// RenderAfterNumberWithTrailingDecimalPoint covers a '/' after a number that
+// ends with a decimal point, which is division. If the tokenizer reads the '.'
+// as a property access, the '/' starts a regular expression, the quote in the
+// string after it is skipped, and data in code is escaped as string content,
+// so that it executes.
+templ RenderAfterNumberWithTrailingDecimalPoint(data string) {
+	<script>var a = 1. / 2; var c = "/"; var d = {{ data }};</script>
+}
+
+// RenderAtRegexpStart covers data at the start of a regular expression
+// literal, where empty data would join the opening '/' to the next character.
+templ RenderAtRegexpStart(data string) {
+	<script>var r = /{{ data }}/;</script>
+}
+
+// RenderAtRegexpStartBeforeQuantifier covers data at the start of a regular
+// expression literal that is followed by '*', where empty data would start a
+// block comment.
+templ RenderAtRegexpStartBeforeQuantifier(data string) {
+	<script>var r = /{{ data }}*/;</script>
+}
+
+// RenderInRegexpClass covers data in a character class, where empty data must
+// stay empty, so that no characters are added to the class.
+templ RenderInRegexpClass(data string) {
+	<script>var r = /[{{ data }}]/;</script>
+}
+
+// RenderInRegexpAfterHTMLOpenComment covers data in a regular expression after
+// <!--, where a <script> start tag would stop </script> from ending the
+// element.
+templ RenderInRegexpAfterHTMLOpenComment(data string) {
+	<script><!--
+var r = /a{{ data }}/;</script>
+}
+
 // RenderAfterPostfixIncrement covers a '/' after a postfix increment, which is
 // division.
 templ RenderAfterPostfixIncrement(data string) {
