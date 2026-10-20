@@ -189,6 +189,141 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 			input:    `var a = /b/ / 2; var c = "/"; var d = {{ x }};`,
 			expected: ContextCode,
 		},
+		{
+			name:     "a slash after the condition of an if statement starts a regexp",
+			input:    `if (ok) /"/.test(s); var a = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after the condition of a while statement starts a regexp",
+			input:    `while (ok) /"/.test(s); var a = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after the head of a for statement starts a regexp",
+			input:    `for (;;) /"/.test(s); var a = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after the object of a with statement starts a regexp",
+			input:    `with (o) /"/.test(s); var a = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after the head of a for await statement starts a regexp",
+			input:    `for await (const a of b) /"/.test(a); var c = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a condition that contains parentheses starts a regexp",
+			input:    `if (f(a)) /"/.test(s); var a = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after parentheses within a condition is division",
+			input:    `if ((a) / 2) { var c = "/"; } var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a call to a method named if is division",
+			input:    `var a = b.if(c) / 2; var d = "/"; var e = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a property named return is division",
+			input:    `var a = b.return / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after an optional chained property named return is division",
+			input:    `var a = b?.return / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a postfix increment is division",
+			input:    `var a = i++ / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a postfix decrement is division",
+			input:    `var a = i-- / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after addition of a postfix increment starts a regexp",
+			input:    `var a = i+++/"/.source; var b = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "an HTML open comment comments out the rest of the line",
+			input:    "<!-- \"\nvar a = {{ x }};",
+			expected: ContextCode,
+		},
+		{
+			name:     "an HTML open comment after code comments out the rest of the line",
+			input:    "var a = b <!-- \"\nvar c = {{ x }};",
+			expected: ContextCode,
+		},
+		{
+			name:     "an HTML close comment at the start of a line comments out the rest of the line",
+			input:    "var a = b;\n--> \"\nvar c = {{ x }};",
+			expected: ContextCode,
+		},
+		{
+			name:     "an HTML close comment after whitespace at the start of a line comments out the rest of the line",
+			input:    "var a = b;\n  --> \"\nvar c = {{ x }};",
+			expected: ContextCode,
+		},
+		{
+			name:     "a postfix decrement followed by greater than within a line is not a comment",
+			input:    `var a = b --> 0; var c = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a value in a regexp is in regexp context",
+			input:    `var r = /a{{ x }}/;`,
+			expected: ContextRegexp,
+		},
+		{
+			name:     "a quote in a regexp before a value does not start a string",
+			input:    `var r = /"{{ x }}/;`,
+			expected: ContextRegexp,
+		},
+		{
+			name:     "a slash in a character class does not end a regexp",
+			input:    `var r = /[/]{{ x }}/;`,
+			expected: ContextRegexp,
+		},
+		{
+			name:     "an escaped slash does not end a regexp",
+			input:    `var r = /\/{{ x }}/;`,
+			expected: ContextRegexp,
+		},
+		{
+			name:     "a value after a regexp that contains a value is in code context",
+			input:    `var r = /{{ x }}/g; var a = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a regexp that contains a value is division",
+			input:    `var r = /{{ x }}/ / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after the flags of a regexp is division",
+			input:    `var r = /a/gi / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a quote after an escaped slash in a regexp does not start a string",
+			input:    `var r = /a\/"/; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a line terminator ends an unterminated regexp",
+			input:    "var r = /a\nvar c = {{ x }};",
+			expected: ContextCode,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -226,96 +361,6 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 			}
 			if actual != tt.expected {
 				t.Errorf("expected context %v, got %v", tt.expected, actual)
-			}
-		})
-	}
-}
-
-func TestRegexpLiteralParser(t *testing.T) {
-	tests := []struct {
-		name       string
-		input      string
-		expected   string
-		expectedOK bool
-	}{
-		{
-			name:       "no content is considered to be a comment",
-			input:      `//`,
-			expectedOK: false,
-		},
-		{
-			name:       "must not be multiline",
-			input:      "/div>\n</div>",
-			expectedOK: false,
-		},
-		{
-			name:       "match a single char",
-			input:      `/a/`,
-			expected:   `/a/`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a simple regex",
-			input:      `/a|b/`,
-			expected:   `/a|b/`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a complex regex",
-			input:      `/a(b|c)*d{2,4}/`,
-			expected:   `/a(b|c)*d{2,4}/`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a regex with flags",
-			input:      `/a/i`,
-			expected:   `/a/i`,
-			expectedOK: true,
-		},
-		{
-			name:       "match a regex with multiple flags",
-			input:      `/a/gmi`,
-			expected:   `/a/gmi`,
-			expectedOK: true,
-		},
-		{
-			name:       "escaped slashes",
-			input:      `/a\/b\/c/`,
-			expected:   `/a\/b\/c/`,
-			expectedOK: true,
-		},
-		{
-			name:       "no match: missing closing slash",
-			input:      `/a|b`,
-			expected:   "",
-			expectedOK: false,
-		},
-		{
-			name:       "no match: missing opening slash",
-			input:      `a|b/`,
-			expected:   "",
-			expectedOK: false,
-		},
-		{
-			name:       "must not contain interpolated go expressions",
-			input:      `/a{{ x }}/`,
-			expected:   "",
-			expectedOK: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			input := parse.NewInput(tt.input)
-			result, ok, err := regexpLiteral.Parse(input)
-			if err != nil {
-				t.Fatalf("parser error: %v", err)
-			}
-			if ok != tt.expectedOK {
-				t.Fatalf("expected ok to be %v, got %v", tt.expectedOK, ok)
-			}
-			if result != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, result)
 			}
 		})
 	}

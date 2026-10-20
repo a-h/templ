@@ -245,7 +245,7 @@ templ treats the same attributes as URLs as Go's `html/template` package does, o
 * `data-*` attributes with one of the names above, e.g. `data-href`.
 * Any attribute with a name that contains `src`, `uri`, or `url`, e.g. `data-url`, because developers often store URLs in custom attributes, and JavaScript may navigate to them.
 
-`srcset` contains `src`, so templ sanitizes it as a single URL. `html/template` sanitizes each URL in a `srcset` separately.
+In a `srcset`, templ sanitizes the URL of each image candidate, so `srcset={ "a.png 1x, " + url + " 2x" }` replaces only the candidate whose URL fails sanitization.
 
 templ also sanitizes `to`, `from`, `values`, and `by` on SVG `<set>` and `<animate>` elements, which can set the `href` of their parent element, unless the `attributeName` attribute is a constant that can't refer to `href`, i.e. it isn't `href`, or `href` with a namespace prefix such as `xlink:href`, ignoring case and surrounding whitespace.
 

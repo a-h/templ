@@ -34,6 +34,9 @@ templ render(s string) {
 	<div><img src={ "data:image/gif;base64,R0lGODlhAQABAAAAACw=" }/></div>
 	<div><img src={ templ.SafeURL("data:image/gif;base64,R0lGODlhAQABAAAAACw=") }/></div>
 	<div><img src={ 42 }/></div>
+	<div><img srcset={ "a.png 1x, https://example.com/b.png 2x" }/></div>
+	<div><img srcset={ "https://example.com/a.png 1x, " + s + " 2x" }/></div>
+	<picture><source SRCSET={ "https://example.com/a.png 1x, " + s + " 2x" }/></picture>
 	<script src={ "https://example.com/script.js" }></script>
 	<div><video poster={ "data:image/gif;base64,R0lGODlhAQABAAAAACw=" }></video></div>
 	<div><video poster={ templ.SafeURL("data:image/gif;base64,R0lGODlhAQABAAAAACw=") }></video></div>

@@ -13,6 +13,7 @@ var jsTokenizerContextToScriptContentsContext = map[jstokenizer.Context]ScriptCo
 	jstokenizer.ContextCode:            ScriptContentsContextExpression,
 	jstokenizer.ContextString:          ScriptContentsContextString,
 	jstokenizer.ContextTemplateLiteral: ScriptContentsContextTemplateLiteral,
+	jstokenizer.ContextRegexp:          ScriptContentsContextRegexp,
 }
 
 type scriptElementParser struct{}
@@ -76,6 +77,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	// Parse the contents, we should get script text or Go expressions up until the closing tag.
 	var sb strings.Builder
 	tokenizer := jstokenizer.New()
+	var scriptData scriptDataTracker
 	for {
 		closeTagStartIndex := pi.Index()
 		_, ok, err = jsEndTag.Parse(pi)
@@ -98,11 +100,15 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 			}
 		}
 
+		codeStartIndex := pi.Index()
 		code, ok, err := goCodeInJavaScript.Parse(pi)
 		if err != nil {
 			return nil, false, err
 		}
 		if ok {
+			if !scriptData.RecordValue() {
+				return nil, false, parse.Error(errGoExpressionCompletesTag, pi.PositionAt(codeStartIndex))
+			}
 			if sb.Len() > 0 {
 				e.Contents = append(e.Contents, NewScriptContentsScriptCode(sb.String()))
 				sb.Reset()
@@ -113,11 +119,15 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 			continue
 		}
 
+		commentStartIndex := pi.Index()
 		comment, ok, err := tokenizer.ReadComment(pi)
 		if err != nil {
 			return nil, false, err
 		}
 		if ok {
+			if tagIndex, result := scriptData.RecordText(commentStartIndex, comment); result != scriptDataContinues {
+				return nil, false, parse.Error(result.GetErrorMessage(), pi.PositionAt(tagIndex))
+			}
 			if sb.Len() > 0 {
 				e.Contents = append(e.Contents, NewScriptContentsScriptCode(sb.String()))
 				sb.Reset()
@@ -126,12 +136,16 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 			continue
 		}
 
+		tokenStartIndex := pi.Index()
 		token, ok, err := tokenizer.Read(pi)
 		if err != nil {
 			return nil, false, err
 		}
 		if !ok {
 			return nil, false, parse.Error("script: unclosed <script> element", pi.Position())
+		}
+		if tagIndex, result := scriptData.RecordText(tokenStartIndex, token); result != scriptDataContinues {
+			return nil, false, parse.Error(result.GetErrorMessage(), pi.PositionAt(tagIndex))
 		}
 		sb.WriteString(token)
 	}

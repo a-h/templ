@@ -20,33 +20,25 @@ func SanitizeAttributeName(name string) string {
 	return name
 }
 
-// RenderAttributeScripts renders the functions of templ.ComponentScript values
-// in spread attributes to w, so that the functions are defined before the
-// element that calls them. Generated code calls RenderAttributeScripts before
-// the opening tag of an element that has spread attributes.
-func RenderAttributeScripts(ctx context.Context, w io.Writer, attributes templ.Attributer) (err error) {
-	var scripts []templ.ComponentScript
-	for _, item := range attributes.Items() {
-		if script, ok := item.Value.(templ.ComponentScript); ok {
-			scripts = append(scripts, script)
-		}
-	}
-	return templ.RenderScriptItems(ctx, w, scripts...)
-}
-
 // RenderAttributes renders spread attributes on the named element. Attribute
 // names that would change the structure of the element are replaced with
 // templ.FailedSanitizationAttributeName. Attribute values are escaped and
 // sanitized in the same way as attributes with constant names, except that
 // event handler values that are not a templ.ComponentScript are replaced with
-// templ.FailedSanitizationJS. The functions of templ.ComponentScript values
-// must be rendered with RenderAttributeScripts before the opening tag.
-func RenderAttributes(ctx context.Context, w io.Writer, elementName string, attributes templ.Attributer) (err error) {
+// templ.FailedSanitizationJS. The functions of templ.ComponentScript values are
+// rendered to scriptWriter, which generated code writes before the opening tag
+// of the element, so that the functions are defined before the element calls
+// them.
+func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, elementName string, attributes templ.Attributer) (err error) {
 	for _, item := range attributes.Items() {
 		name := SanitizeAttributeName(item.Key)
 		value := item.Value
 		switch v := value.(type) {
-		case string, templ.SafeURL, templ.SafeCSS, templ.ComponentScript,
+		case templ.ComponentScript:
+			if err = templ.RenderScriptItems(ctx, scriptWriter, v); err != nil {
+				return err
+			}
+		case string, templ.SafeURL, templ.SafeCSS,
 			int, int8, int16, int32, int64,
 			uint, uint8, uint16, uint32, uint64, uintptr,
 			float32, float64, complex64, complex128:
@@ -138,7 +130,7 @@ func resolveValue(ctx context.Context, attrContext htmlattr.Context, v any) (str
 			return "", err
 		}
 		return templ.EscapeString(s), nil
-	case htmlattr.ContextURL, htmlattr.ContextAnimationValue:
+	case htmlattr.ContextURL, htmlattr.ContextAnimationValue, htmlattr.ContextSrcset:
 		if safeURL, ok := v.(templ.SafeURL); ok {
 			return templ.EscapeString(safeURL), nil
 		}
@@ -156,6 +148,8 @@ func resolveValue(ctx context.Context, attrContext htmlattr.Context, v any) (str
 		return templ.EscapeString(templ.EscapeString(s)), nil
 	case htmlattr.ContextURL:
 		return templ.EscapeString(templ.URL(s)), nil
+	case htmlattr.ContextSrcset:
+		return templ.EscapeString(sanitizeSrcset(s)), nil
 	case htmlattr.ContextAnimationValue:
 		items := strings.Split(s, ";")
 		for i, item := range items {
@@ -186,4 +180,68 @@ func formatAttributeValue(v any) (s string, ok bool) {
 		return fmt.Sprint(v), true
 	}
 	return "", false
+}
+
+// sanitizeSrcset sanitizes the URL of each image candidate in a srcset. It is
+// based on srcsetFilterAndEscaper and filterSrcsetElement in
+// html/template/url.go, with three differences: descriptors can also contain
+// '.', '+', and '-', so that density descriptors such as 1.5x are allowed; URLs
+// are not normalized, because the value is HTML-escaped afterwards; and a
+// rejected candidate is replaced with templ.FailedSanitizationURL.
+//
+// The candidates are scanned byte by byte, which is correct for UTF-8, because
+// the separators of a srcset are ASCII whitespace and commas. The value is
+// sanitized before it is HTML-escaped, so an entity such as &#32; in the value
+// is written as text, and can't become a separator.
+func sanitizeSrcset(s string) (sanitized string) {
+	var sb strings.Builder
+	for i, candidate := range strings.Split(s, ",") {
+		if i > 0 {
+			sb.WriteString(",")
+		}
+		writeSanitizedSrcsetCandidate(&sb, candidate)
+	}
+	return sb.String()
+}
+
+func writeSanitizedSrcsetCandidate(sb *strings.Builder, candidate string) {
+	start := 0
+	for start < len(candidate) && isHTMLSpace(candidate[start]) {
+		start++
+	}
+	end := len(candidate)
+	for i := start; i < len(candidate); i++ {
+		if isHTMLSpace(candidate[i]) {
+			end = i
+			break
+		}
+	}
+	if templ.URL(candidate[start:end]) != templ.FailedSanitizationURL && containsOnlySrcsetDescriptors(candidate[end:]) {
+		sb.WriteString(candidate)
+		return
+	}
+	sb.WriteString(candidate[:start])
+	sb.WriteString(string(templ.FailedSanitizationURL))
+}
+
+func containsOnlySrcsetDescriptors(s string) bool {
+	for i := range len(s) {
+		c := s[i]
+		if !isHTMLSpace(c) && !isASCIIAlnum(c) && c != '.' && c != '+' && c != '-' {
+			return false
+		}
+	}
+	return true
+}
+
+func isHTMLSpace(c byte) bool {
+	switch c {
+	case '\t', '\n', '\f', '\r', ' ':
+		return true
+	}
+	return false
+}
+
+func isASCIIAlnum(c byte) bool {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9')
 }

@@ -20,6 +20,8 @@ const (
 	// scriptContextTemplateLiteral is inside a backtick quoted template literal,
 	// outside of any ${ ... } substitution.
 	scriptContextTemplateLiteral
+	// scriptContextRegexp is inside the pattern of a regular expression literal.
+	scriptContextRegexp
 )
 
 func ScriptContentInsideStringLiteral[T any](v T, errs ...error) (string, error) {
@@ -28,6 +30,13 @@ func ScriptContentInsideStringLiteral[T any](v T, errs ...error) (string, error)
 
 func ScriptContentInsideTemplateLiteral[T any](v T, errs ...error) (string, error) {
 	return scriptContent(v, scriptContextTemplateLiteral, errs...)
+}
+
+// ScriptContentInsideRegexp escapes v for the pattern of a JavaScript regular
+// expression literal, so that it matches itself, and can not end the regular
+// expression.
+func ScriptContentInsideRegexp[T any](v T, errs ...error) (string, error) {
+	return scriptContent(v, scriptContextRegexp, errs...)
 }
 
 func ScriptContentOutsideStringLiteral[T any](v T, errs ...error) (string, error) {
@@ -39,8 +48,11 @@ func scriptContent[T any](v T, context scriptContext, errs ...error) (string, er
 		return "", errors.Join(errs...)
 	}
 	table := jsStrReplacementTable
-	if context == scriptContextTemplateLiteral {
+	switch context {
+	case scriptContextTemplateLiteral:
 		table = jsBqStrReplacementTable
+	case scriptContextRegexp:
+		table = jsRegexpReplacementTable
 	}
 	if vs, ok := any(v).(string); ok && context != scriptContextExpression {
 		return replace(vs, table), nil
@@ -157,4 +169,42 @@ var jsBqStrReplacementTable = []string{
 	'$':  `\u0024`,
 	'{':  `\u007b`,
 	'}':  `\u007d`,
+}
+
+// jsRegexpReplacementTable escapes the runes that end a regular expression literal,
+// '/', '\', and line terminators, the runes that have a special meaning in a pattern,
+// so that the value matches itself, and the same HTML specials as
+// jsStrReplacementTable. It mirrors jsRegexpReplacementTable in html/template/js.go,
+// except that '-' is hex escaped, because the identity escape \- is a syntax error
+// outside a character class in a regular expression with the u or v flag.
+var jsRegexpReplacementTable = []string{
+	0:    `\u0000`,
+	'\t': `\t`,
+	'\n': `\n`,
+	'\v': `\u000b`, // "\v" == "v" on IE 6.
+	'\f': `\f`,
+	'\r': `\r`,
+	// Encode HTML specials as hex so the output can be embedded
+	// in HTML attributes without further encoding.
+	'"':  `"`,
+	'$':  `\$`,
+	'&':  `&`,
+	'\'': `'`,
+	'(':  `\(`,
+	')':  `\)`,
+	'*':  `\*`,
+	'+':  `+`,
+	'-':  `\x2d`,
+	'.':  `\.`,
+	'/':  `\/`,
+	'<':  `<`,
+	'>':  `>`,
+	'?':  `\?`,
+	'[':  `\[`,
+	'\\': `\\`,
+	']':  `\]`,
+	'^':  `\^`,
+	'{':  `\{`,
+	'|':  `\|`,
+	'}':  `\}`,
 }

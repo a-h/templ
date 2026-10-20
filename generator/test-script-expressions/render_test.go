@@ -1,10 +1,13 @@
 package testscriptexpressions
 
 import (
+	"context"
 	_ "embed"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/a-h/templ"
 	"github.com/a-h/templ/generator/htmldiff"
 )
 
@@ -23,5 +26,50 @@ func Test(t *testing.T) {
 			t.Errorf("failed to write actual.html: %v", err)
 		}
 		t.Error(diff)
+	}
+}
+
+func TestScriptExpressionsAreEscapedForTheirPosition(t *testing.T) {
+	tests := []struct {
+		name      string
+		component templ.Component
+		expected  string
+	}{
+		{
+			name:      "data after the condition of an if statement is JSON encoded",
+			component: RenderAfterIfCondition("alert(1)"),
+			expected:  `<script>if (ok) /"/.test(s); var a = "alert(1)";</script>`,
+		},
+		{
+			name:      "data after division of a property named return is JSON encoded",
+			component: RenderAfterPropertyNamedReturn("alert(1)"),
+			expected:  `<script>var a = b.return / 2; var c = "/"; var d = "alert(1)";</script>`,
+		},
+		{
+			name:      "data after division of a postfix increment is JSON encoded",
+			component: RenderAfterPostfixIncrement("alert(1)"),
+			expected:  `<script>var a = i++ / 2; var c = "/"; var d = "alert(1)";</script>`,
+		},
+		{
+			name:      "data after an HTML open comment is JSON encoded",
+			component: RenderAfterHTMLOpenComment("alert(1)"),
+			expected:  "<script>\n\t<!-- \"\n\tvar a = \"alert(1)\";\n\t</script>",
+		},
+		{
+			name:      "data in a regexp can not end the regexp",
+			component: RenderInRegexp(`/;alert(1);//`),
+			expected:  `<script>var r = /a\/;alert\(1\);\/\//;</script>`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var actual strings.Builder
+			if err := tt.component.Render(context.Background(), &actual); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if actual.String() != tt.expected {
+				t.Errorf("expected:\n%s\ngot:\n%s", tt.expected, actual.String())
+			}
+		})
 	}
 }

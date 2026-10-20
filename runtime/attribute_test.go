@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/a-h/templ"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestRenderAttributes(t *testing.T) {
@@ -261,7 +264,7 @@ func TestRenderAttributes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			var buf bytes.Buffer
-			err := RenderAttributes(context.Background(), &buf, "div", tt.attributes)
+			err := RenderAttributes(context.Background(), &buf, io.Discard, "div", tt.attributes)
 			if err != nil {
 				t.Fatalf("RenderAttributes failed: %v", err)
 			}
@@ -297,7 +300,7 @@ func TestRenderAttributesSrcdoc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			if err := RenderAttributes(context.Background(), &buf, "iframe", templ.Attributes{"srcdoc": tt.value}); err != nil {
+			if err := RenderAttributes(context.Background(), &buf, io.Discard, "iframe", templ.Attributes{"srcdoc": tt.value}); err != nil {
 				t.Fatalf("RenderAttributes failed: %v", err)
 			}
 			if actual := buf.String(); actual != tt.expected {
@@ -307,7 +310,7 @@ func TestRenderAttributesSrcdoc(t *testing.T) {
 	}
 	t.Run("components are not rendered in attributes other than srcdoc", func(t *testing.T) {
 		var buf bytes.Buffer
-		if err := RenderAttributes(context.Background(), &buf, "div", templ.Attributes{"title": templ.Raw("<p>x</p>")}); err != nil {
+		if err := RenderAttributes(context.Background(), &buf, io.Discard, "div", templ.Attributes{"title": templ.Raw("<p>x</p>")}); err != nil {
 			t.Fatalf("RenderAttributes failed: %v", err)
 		}
 		if actual := buf.String(); actual != "" {
@@ -355,7 +358,7 @@ func TestRenderAttributesOnElements(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			if err := RenderAttributes(context.Background(), &buf, tt.elementName, attributes); err != nil {
+			if err := RenderAttributes(context.Background(), &buf, io.Discard, tt.elementName, attributes); err != nil {
 				t.Fatalf("RenderAttributes failed: %v", err)
 			}
 			if actual := buf.String(); actual != tt.expected {
@@ -388,7 +391,7 @@ func TestAttributeExpressionResolveDynamic(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewAttributeExpression(tt.value).ResolveDynamic(context.Background(), tt.elementName, tt.attrName)
+			got, err := NewAttributeExpression(tt.value).ResolveDynamic(context.Background(), io.Discard, tt.elementName, tt.attrName)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -398,7 +401,7 @@ func TestAttributeExpressionResolveDynamic(t *testing.T) {
 		})
 	}
 	t.Run("ComponentScript event handlers are rendered", func(t *testing.T) {
-		got, err := NewAttributeExpression(templ.JSFuncCall("alert", "hello")).ResolveDynamic(context.Background(), "button", "onclick")
+		got, err := NewAttributeExpression(templ.JSFuncCall("alert", "hello")).ResolveDynamic(context.Background(), io.Discard, "button", "onclick")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -407,7 +410,7 @@ func TestAttributeExpressionResolveDynamic(t *testing.T) {
 		}
 	})
 	t.Run("SafeURL values bypass URL sanitization", func(t *testing.T) {
-		got, err := NewAttributeExpression(templ.SafeURL("javascript:alert(1)")).ResolveDynamic(context.Background(), "a", "href")
+		got, err := NewAttributeExpression(templ.SafeURL("javascript:alert(1)")).ResolveDynamic(context.Background(), io.Discard, "a", "href")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -712,6 +715,188 @@ func TestAttributeExpressionResolve(t *testing.T) {
 		expectedErr := errors.New("expected")
 		if _, err := NewAttributeExpression("value", expectedErr).Resolve(context.Background()); !errors.Is(err, expectedErr) {
 			t.Errorf("expected error %v, got %v", expectedErr, err)
+		}
+	})
+}
+
+// TestScriptTemplateFunctionsAreRenderedToTheScriptWriter covers attributes with
+// names that are only known at render time. The value of the attribute calls the
+// function of a script template, so the function must be rendered before the
+// element, and from the same value as the call.
+func TestScriptTemplateFunctionsAreRenderedToTheScriptWriter(t *testing.T) {
+	script := templ.ComponentScript{
+		Name:     "handleClick",
+		Function: "function handleClick(){}",
+		Call:     "handleClick()",
+	}
+	tests := []struct {
+		name           string
+		render         func(w, scriptWriter io.Writer) error
+		expected       string
+		expectedScript string
+	}{
+		{
+			name: "a dynamic key value renders its function to the script writer",
+			render: func(w, scriptWriter io.Writer) error {
+				value, err := NewAttributeExpression(script).ResolveDynamic(context.Background(), scriptWriter, "button", "onclick")
+				if err != nil {
+					return err
+				}
+				_, err = io.WriteString(w, value)
+				return err
+			},
+			expected:       "handleClick()",
+			expectedScript: "<script>function handleClick(){}</script>",
+		},
+		{
+			name: "a dynamic key value that is not a script renders nothing to the script writer",
+			render: func(w, scriptWriter io.Writer) error {
+				value, err := NewAttributeExpression("value").ResolveDynamic(context.Background(), scriptWriter, "button", "title")
+				if err != nil {
+					return err
+				}
+				_, err = io.WriteString(w, value)
+				return err
+			},
+			expected: "value",
+		},
+		{
+			name: "a spread attribute renders its function to the script writer",
+			render: func(w, scriptWriter io.Writer) error {
+				return RenderAttributes(context.Background(), w, scriptWriter, "button", templ.Attributes{"onclick": script})
+			},
+			expected:       ` onclick="handleClick()"`,
+			expectedScript: "<script>function handleClick(){}</script>",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var w, scriptWriter strings.Builder
+			if err := tt.render(&w, &scriptWriter); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if w.String() != tt.expected {
+				t.Errorf("got %q, expected %q", w.String(), tt.expected)
+			}
+			if scriptWriter.String() != tt.expectedScript {
+				t.Errorf("got script %q, expected %q", scriptWriter.String(), tt.expectedScript)
+			}
+		})
+	}
+}
+
+// TestAttributeExpressionResolveSrcset covers srcset attributes, which hold a
+// comma separated list of image candidates. The URL of each candidate must be
+// sanitized, because a URL that is not the first in the list could otherwise
+// contain any scheme.
+func TestAttributeExpressionResolveSrcset(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    any
+		expected string
+	}{
+		{
+			name:     "a single URL is unchanged",
+			value:    "a.png",
+			expected: "a.png",
+		},
+		{
+			name:     "relative and absolute candidates with density descriptors are unchanged",
+			value:    "a.png 1x, https://example.com/b.png 1.5x",
+			expected: "a.png 1x, https://example.com/b.png 1.5x",
+		},
+		{
+			name:     "candidates with width descriptors are unchanged",
+			value:    "/a.png 480w, /b.png 800w",
+			expected: "/a.png 480w, /b.png 800w",
+		},
+		{
+			name:     "whitespace around candidates is unchanged",
+			value:    " a.png 1x ,\tb.png",
+			expected: " a.png 1x ,\tb.png",
+		},
+		{
+			name:     "a javascript URL after an https URL is replaced",
+			value:    "https://example.com/a.png 1x, javascript:alert(1) 2x",
+			expected: "https://example.com/a.png 1x, about:invalid#TemplFailedSanitizationURL",
+		},
+		{
+			name:     "a data URL is replaced",
+			value:    "a.png 1x, data:image/svg+xml,x 2x",
+			expected: "a.png 1x, about:invalid#TemplFailedSanitizationURL,x 2x",
+		},
+		{
+			name:     "a candidate with a descriptor that contains other characters is replaced",
+			value:    "a.png javascript:alert(1), b.png 2x",
+			expected: "about:invalid#TemplFailedSanitizationURL, b.png 2x",
+		},
+		{
+			name:     "the value is HTML escaped",
+			value:    `a.png?x=1&y="2" 1x`,
+			expected: "a.png?x=1&amp;y=&#34;2&#34; 1x",
+		},
+		{
+			name:     "an encoded space is not a separator, because the value is sanitized before it is HTML escaped",
+			value:    "https://example.com/a&#32;b.png 1x",
+			expected: "https://example.com/a&amp;#32;b.png 1x",
+		},
+		{
+			name:     "a non-breaking space is not a separator, as in the srcset parser of a browser",
+			value:    "a.png\u00a0javascript:alert(1) 1x",
+			expected: "about:invalid#TemplFailedSanitizationURL",
+		},
+		{
+			name:     "a multi-byte character in a URL is unchanged",
+			value:    "/caf\u00e9.png 1x, /\u65e5\u672c.png 2x",
+			expected: "/caf\u00e9.png 1x, /\u65e5\u672c.png 2x",
+		},
+		{
+			name:     "a multi-byte character in a descriptor replaces the candidate",
+			value:    "a.png 1\u00d7, b.png 2x",
+			expected: "about:invalid#TemplFailedSanitizationURL, b.png 2x",
+		},
+		{
+			name:     "a javascript URL after a comma without whitespace is replaced, although the browser reads both as one URL",
+			value:    "https://example.com/a.png,javascript:alert(1) 1x",
+			expected: "https://example.com/a.png,about:invalid#TemplFailedSanitizationURL",
+		},
+		{
+			name:     "an empty value is unchanged",
+			value:    "",
+			expected: "",
+		},
+		{
+			name:     "a SafeURL is not sanitized",
+			value:    templ.SafeURL("https://example.com/a.png 1x, javascript:alert(1) 2x"),
+			expected: "https://example.com/a.png 1x, javascript:alert(1) 2x",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got string
+			var err error
+			switch v := tt.value.(type) {
+			case string:
+				got, err = NewAttributeExpression(v).ResolveSrcset(context.Background())
+			case templ.SafeURL:
+				got, err = NewAttributeExpression(v).ResolveSrcset(context.Background())
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if diff := cmp.Diff(tt.expected, got); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+	t.Run("spread srcset attributes are sanitized in the same way", func(t *testing.T) {
+		var w strings.Builder
+		err := RenderAttributes(context.Background(), &w, io.Discard, "img", templ.Attributes{"srcset": "https://example.com/a.png 1x, javascript:alert(1) 2x"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if diff := cmp.Diff(` srcset="https://example.com/a.png 1x, about:invalid#TemplFailedSanitizationURL"`, w.String()); diff != "" {
+			t.Error(diff)
 		}
 	})
 }

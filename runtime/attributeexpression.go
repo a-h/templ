@@ -49,6 +49,13 @@ func (e AttributeExpression[T]) ResolveURL(ctx context.Context) (string, error) 
 	return e.resolve(ctx, htmlattr.ContextURL)
 }
 
+// ResolveSrcset converts the value of a srcset attribute, which holds a comma
+// separated list of image candidates, to an HTML-escaped string. The URL of each
+// candidate is sanitized with templ.URL. A templ.SafeURL is not sanitized.
+func (e AttributeExpression[T]) ResolveSrcset(ctx context.Context) (string, error) {
+	return e.resolve(ctx, htmlattr.ContextSrcset)
+}
+
 // ResolveAnimationValue converts the value of an SVG animation attribute, such
 // as the to attribute of a set element, to an HTML-escaped string. SVG
 // animations can set the href of their parent element, so each item in the
@@ -60,25 +67,20 @@ func (e AttributeExpression[T]) ResolveAnimationValue(ctx context.Context) (stri
 
 // ResolveDynamic converts the value of an attribute with a name that is only
 // known at render time to an HTML-escaped string. The value is sanitized based
-// on the name, in the same way as the value of a spread attribute.
-func (e AttributeExpression[T]) ResolveDynamic(ctx context.Context, elementName, name string) (string, error) {
-	return e.resolve(ctx, htmlattr.Classify(elementName, SanitizeAttributeName(name)))
-}
-
-// RenderScript renders the function of a templ.ComponentScript value to w, so
-// that the function is defined before the element that calls it. Values that
-// are not a templ.ComponentScript are not rendered. Generated code calls
-// RenderScript before the opening tag of an element that has an attribute with
-// a name that is only known at render time.
-func (e AttributeExpression[T]) RenderScript(ctx context.Context, w io.Writer) error {
+// on the name, in the same way as the value of a spread attribute. If the value
+// is a templ.ComponentScript, its function is rendered to scriptWriter, which
+// generated code writes before the opening tag of the element, so that the
+// function is defined before the element calls it.
+func (e AttributeExpression[T]) ResolveDynamic(ctx context.Context, scriptWriter io.Writer, elementName, name string) (string, error) {
 	if e.Err != nil {
-		return e.Err
+		return "", e.Err
 	}
-	script, ok := any(e.Value).(templ.ComponentScript)
-	if !ok {
-		return nil
+	if script, ok := any(e.Value).(templ.ComponentScript); ok {
+		if err := templ.RenderScriptItems(ctx, scriptWriter, script); err != nil {
+			return "", err
+		}
 	}
-	return templ.RenderScriptItems(ctx, w, script)
+	return e.resolve(ctx, htmlattr.Classify(elementName, SanitizeAttributeName(name)))
 }
 
 func (e AttributeExpression[T]) resolve(ctx context.Context, attrContext htmlattr.Context) (string, error) {

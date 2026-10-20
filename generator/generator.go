@@ -1021,20 +1021,8 @@ func (g *generator) writeElement(indentLevel int, n *parser.Element) (err error)
 			return err
 		}
 	} else {
-		attrs := parser.CopyAttributes(n.Attributes)
-		// <style type="text/css"></style>
-		if err = g.writeElementCSS(indentLevel, attrs); err != nil {
-			return err
-		}
-		// <script></script>
-		if err = g.writeElementScript(indentLevel, attrs); err != nil {
-			return err
-		}
-		// <div
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s`, html.EscapeString(n.Name))); err != nil {
-			return err
-		}
-		if err = g.writeElementAttributes(indentLevel, n.Name, mayAnimateURL(attrs), attrs); err != nil {
+		// <div class="a" ...
+		if err = g.writeOpeningTag(indentLevel, n.Name, n.Attributes); err != nil {
 			return err
 		}
 		// >
@@ -1057,111 +1045,114 @@ func (g *generator) writeElement(indentLevel int, n *parser.Element) (err error)
 	return err
 }
 
-func (g *generator) writeAttributeCSS(indentLevel int, attr *parser.ExpressionAttribute) (result *parser.ExpressionAttribute, ok bool, err error) {
-	var r parser.Range
-	name := html.EscapeString(attr.Key.String())
-	if name != "class" {
-		ok = false
-		return
-	}
-	// Create a class name for the style.
-	// The expression can either be expecting a templ.Classes call, or an expression that returns
-	// var templ_7745c5c3_CSSClasses = []any{
-	classesName := g.createVariableName()
-	if _, err = g.w.WriteIndent(indentLevel, "var "+classesName+" = []any{"); err != nil {
-		return
-	}
-	// p.Name()
-	if r, err = g.w.Write(attr.Expression.Value); err != nil {
-		return
-	}
-	g.sourceMap.Add(attr.Expression, r)
-	// }\n
-	if _, err = g.w.Write("}\n"); err != nil {
-		return
-	}
-	// Render the CSS before the element if required.
-	// templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_CSSClasses...)
-	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, "+classesName+"...)\n"); err != nil {
-		return
-	}
-	if err = g.writeErrorHandler(indentLevel); err != nil {
-		return
-	}
-	// Rewrite the ExpressionAttribute to point at the new variable.
-	newAttr := &parser.ExpressionAttribute{
-		Key: attr.Key,
-		Expression: parser.Expression{
-			Value: "templ.CSSClasses(" + classesName + ").String()",
-		},
-	}
-	return newAttr, true, nil
-}
-
-func (g *generator) writeAttributesCSS(indentLevel int, attrs []parser.Attribute) (err error) {
-	for i, attr := range attrs {
-		if attr, ok := attr.(*parser.ExpressionAttribute); ok {
-			attr, ok, err = g.writeAttributeCSS(indentLevel, attr)
-			if err != nil {
-				return err
-			}
-			if ok {
-				attrs[i] = attr
-			}
+// writeOpeningTag writes the opening tag of an element, up to the closing '>'.
+//
+// Some attribute values render a script or CSS class that must be defined
+// before the element, e.g. onclick={ handler() } renders the function of the
+// handler. Each attribute expression is evaluated once, in place, so that an
+// expression in a conditional attribute is only evaluated when its branch is
+// selected, and so that the rendered function is the one that the attribute
+// calls. The opening tag is written to an element buffer while its attributes
+// are evaluated, and the scripts and CSS classes are written to the element
+// writer, then the element buffer is written after them.
+func (g *generator) writeOpeningTag(indentLevel int, elementName string, attrs []parser.Attribute) (err error) {
+	if !g.requiresElementWriter(elementName, attrs) {
+		// <div
+		if _, err = g.w.WriteStringLiteral(indentLevel, "<"+html.EscapeString(elementName)); err != nil {
+			return err
 		}
-		if cattr, ok := attr.(*parser.ConditionalAttribute); ok {
-			err = g.writeAttributesCSS(indentLevel, cattr.Then)
-			if err != nil {
-				return err
-			}
-			err = g.writeAttributesCSS(indentLevel, cattr.Else)
-			if err != nil {
-				return err
-			}
-			attrs[i] = cattr
-		}
+		// class="a" ...
+		return g.writeElementAttributes(indentLevel, elementName, mayAnimateURL(attrs), attrs)
 	}
-	return nil
+	// {
+	if _, err = g.w.WriteIndent(indentLevel, "{\n"); err != nil {
+		return err
+	}
+	{
+		indentLevel++
+		// templ_7745c5c3_ElementWriter := templ_7745c5c3_Buffer
+		if _, err = g.w.WriteIndent(indentLevel, elementWriterVariable+" := templ_7745c5c3_Buffer\n"); err != nil {
+			return err
+		}
+		// templ_7745c5c3_Buffer := templ.GetBuffer()
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Buffer := templ.GetBuffer()\n"); err != nil {
+			return err
+		}
+		// var templ_7745c5c3_ElementScripts []templ.ComponentScript
+		if _, err = g.w.WriteIndent(indentLevel, "var "+elementScriptsVariable+" []templ.ComponentScript\n"); err != nil {
+			return err
+		}
+		// <div
+		if _, err = g.w.WriteStringLiteral(indentLevel, "<"+html.EscapeString(elementName)); err != nil {
+			return err
+		}
+		// class="a" ...
+		if err = g.writeElementAttributes(indentLevel, elementName, mayAnimateURL(attrs), attrs); err != nil {
+			return err
+		}
+		// The scripts of event handlers with constant names are rendered in a single
+		// script element.
+		// templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_ElementWriter, templ_7745c5c3_ElementScripts...)
+		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(ctx, "+elementWriterVariable+", "+elementScriptsVariable+"...)\n"); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+		// _, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo(templ_7745c5c3_ElementWriter)
+		if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteTo("+elementWriterVariable+")\n"); err != nil {
+			return err
+		}
+		if err = g.writeErrorHandler(indentLevel); err != nil {
+			return err
+		}
+		// templ.ReleaseBuffer(templ_7745c5c3_Buffer)
+		if _, err = g.w.WriteIndent(indentLevel, "templ.ReleaseBuffer(templ_7745c5c3_Buffer)\n"); err != nil {
+			return err
+		}
+		indentLevel--
+	}
+	// }
+	_, err = g.w.WriteIndent(indentLevel, "}\n")
+	return err
 }
 
-func (g *generator) writeElementCSS(indentLevel int, attrs []parser.Attribute) (err error) {
-	return g.writeAttributesCSS(indentLevel, attrs)
-}
+// elementWriterVariable is the variable that attribute values write scripts and
+// CSS classes to, before the opening tag of the element.
+const elementWriterVariable = "templ_7745c5c3_ElementWriter"
 
-func (g *generator) writeElementScript(indentLevel int, attrs []parser.Attribute) (err error) {
-	var scripts attributeScripts
+// elementScriptsVariable is the variable that event handler attributes with
+// constant names append their scripts to, so that they are rendered in a single
+// script element before the opening tag.
+const elementScriptsVariable = "templ_7745c5c3_ElementScripts"
+
+// requiresElementWriter returns true if any of attrs, including those within
+// conditional attributes, writes a script or CSS class before the opening tag
+// of the element.
+func (g *generator) requiresElementWriter(elementName string, attrs []parser.Attribute) bool {
 	for _, attr := range attrs {
-		scripts.Collect(attr)
-	}
-	// Render the scripts before the element if required.
-	if len(scripts.EventHandlers) > 0 {
-		// templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, a, b, c)
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderScriptItems(ctx, templ_7745c5c3_Buffer, "+strings.Join(scripts.EventHandlers, ", ")+")\n"); err != nil {
-			return err
-		}
-		if err = g.writeErrorHandler(indentLevel); err != nil {
-			return err
-		}
-	}
-	for _, expression := range scripts.DynamicKeyValues {
-		// templ_7745c5c3_Err = templruntime.NewAttributeExpression(a).RenderScript(ctx, templ_7745c5c3_Buffer)
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templruntime.NewAttributeExpression("+expression.Value+").RenderScript(ctx, templ_7745c5c3_Buffer)\n"); err != nil {
-			return err
-		}
-		if err = g.writeExpressionErrorHandler(indentLevel, expression); err != nil {
-			return err
+		switch attr := attr.(type) {
+		case *parser.ConditionalAttribute:
+			if g.requiresElementWriter(elementName, attr.Then) || g.requiresElementWriter(elementName, attr.Else) {
+				return true
+			}
+		case *parser.ExpressionAttribute:
+			key, ok := attr.Key.(parser.ConstantAttributeKey)
+			if !ok {
+				return true
+			}
+			if isClassAttribute(key) || htmlattr.Classify(elementName, key.Name) == htmlattr.ContextEventHandler {
+				return true
+			}
+		case *parser.SpreadAttributes:
+			return true
 		}
 	}
-	for _, expression := range scripts.Spreads {
-		// templ_7745c5c3_Err = templruntime.RenderAttributeScripts(ctx, templ_7745c5c3_Buffer, a)
-		if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templruntime.RenderAttributeScripts(ctx, templ_7745c5c3_Buffer, "+expression.Value+")\n"); err != nil {
-			return err
-		}
-		if err = g.writeErrorHandler(indentLevel); err != nil {
-			return err
-		}
-	}
-	return nil
+	return false
+}
+
+func isClassAttribute(key parser.ConstantAttributeKey) bool {
+	return strings.EqualFold(key.Name, "class")
 }
 
 func (g *generator) writeAttributeKey(indentLevel int, attr parser.AttributeKey) (err error) {
@@ -1283,7 +1274,7 @@ func (g *generator) writeExpressionAttributeValueResolved(indentLevel int, resol
 	}
 	g.sourceMap.Add(attr.Expression, r)
 	// ).Resolve(ctx)
-	if _, err = g.w.Write(")." + resolver.Method + "\n"); err != nil {
+	if _, err = g.w.Write(")." + resolver.FormatMethodCall() + "\n"); err != nil {
 		return err
 	}
 	// Attribute expression error handler.
@@ -1311,6 +1302,11 @@ func (g *generator) writeExpressionAttributeValueScript(indentLevel int, attr *p
 	}
 	g.sourceMap.Add(attr.Expression, r)
 	if _, err = g.w.Write("\n"); err != nil {
+		return err
+	}
+	// The function of the script is rendered before the element.
+	// templ_7745c5c3_ElementScripts = append(templ_7745c5c3_ElementScripts, vn)
+	if _, err = g.w.WriteIndent(indentLevel, elementScriptsVariable+" = append("+elementScriptsVariable+", "+vn+")\n"); err != nil {
 		return err
 	}
 	if _, err = g.w.WriteIndent(indentLevel, "_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("+vn+".Call)\n"); err != nil {
@@ -1364,30 +1360,72 @@ func (g *generator) writeExpressionAttribute(indentLevel int, elementName string
 		return err
 	}
 	// Value.
+	if err = g.writeExpressionAttributeValue(indentLevel, elementName, sanitizeAnimationValues, attr); err != nil {
+		return err
+	}
+	// Close quote.
+	_, err = g.w.WriteStringLiteral(indentLevel, `\"`)
+	return err
+}
+
+func (g *generator) writeExpressionAttributeValue(indentLevel int, elementName string, sanitizeAnimationValues bool, attr *parser.ExpressionAttribute) (err error) {
+	if key, ok := attr.Key.(parser.ConstantAttributeKey); ok && isClassAttribute(key) {
+		return g.writeExpressionAttributeValueClass(indentLevel, attr)
+	}
 	attrContext := htmlattr.Classify(elementName, attr.Key.String())
 	if attrContext == htmlattr.ContextAnimationValue && !sanitizeAnimationValues {
 		attrContext = htmlattr.ContextDefault
 	}
 	switch attrContext {
 	case htmlattr.ContextEventHandler:
-		err = g.writeExpressionAttributeValueScript(indentLevel, attr)
+		return g.writeExpressionAttributeValueScript(indentLevel, attr)
 	case htmlattr.ContextURL:
-		err = g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverURL, attr)
+		return g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverURL, attr)
 	case htmlattr.ContextSrcdoc:
-		err = g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverSrcdoc, attr)
+		return g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverSrcdoc, attr)
+	case htmlattr.ContextSrcset:
+		return g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverSrcset, attr)
 	case htmlattr.ContextAnimationValue:
-		err = g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverAnimationValue, attr)
+		return g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverAnimationValue, attr)
 	case htmlattr.ContextStyle:
-		err = g.writeExpressionAttributeValueStyle(indentLevel, attr)
-	default:
-		err = g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverDefault, attr)
+		return g.writeExpressionAttributeValueStyle(indentLevel, attr)
 	}
-	if err != nil {
+	return g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverDefault, attr)
+}
+
+func (g *generator) writeExpressionAttributeValueClass(indentLevel int, attr *parser.ExpressionAttribute) (err error) {
+	// Create a class name for the style.
+	// The expression can either be expecting a templ.Classes call, or an expression that returns
+	classesName := g.createVariableName()
+	// var templ_7745c5c3_Var1 = []any{
+	if _, err = g.w.WriteIndent(indentLevel, "var "+classesName+" = []any{"); err != nil {
 		return err
 	}
-	// Close quote.
-	_, err = g.w.WriteStringLiteral(indentLevel, `\"`)
-	return err
+	// p.Name()
+	var r parser.Range
+	if r, err = g.w.Write(attr.Expression.Value); err != nil {
+		return err
+	}
+	g.sourceMap.Add(attr.Expression, r)
+	// }
+	if _, err = g.w.Write("}\n"); err != nil {
+		return err
+	}
+	// Render the CSS before the element.
+	// templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_ElementWriter, templ_7745c5c3_Var1...)
+	if _, err = g.w.WriteIndent(indentLevel, "templ_7745c5c3_Err = templ.RenderCSSItems(ctx, "+elementWriterVariable+", "+classesName+"...)\n"); err != nil {
+		return err
+	}
+	if err = g.writeErrorHandler(indentLevel); err != nil {
+		return err
+	}
+	// templruntime.NewAttributeExpression(templ.CSSClasses(templ_7745c5c3_Var1).String()).Resolve(ctx)
+	return g.writeExpressionAttributeValueResolved(indentLevel, attributeResolverDefault, &parser.ExpressionAttribute{
+		Key: attr.Key,
+		Expression: parser.Expression{
+			Value: "templ.CSSClasses(" + classesName + ").String()",
+		},
+	})
 }
 
 func (g *generator) writeDynamicKeyExpressionAttribute(indentLevel int, elementName string, key parser.ExpressionAttributeKey, attr *parser.ExpressionAttribute) (err error) {
@@ -1409,8 +1447,8 @@ func (g *generator) writeDynamicKeyExpressionAttribute(indentLevel int, elementN
 }
 
 func (g *generator) writeSpreadAttributes(indentLevel int, elementName string, attr *parser.SpreadAttributes) (err error) {
-	// templruntime.RenderAttributes(ctx, w, "div", spreadAttrs)
-	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = templruntime.RenderAttributes(ctx, templ_7745c5c3_Buffer, `+strconv.Quote(elementName)+`, `); err != nil {
+	// templruntime.RenderAttributes(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_ElementWriter, "div", spreadAttrs)
+	if _, err = g.w.WriteIndent(indentLevel, `templ_7745c5c3_Err = templruntime.RenderAttributes(ctx, templ_7745c5c3_Buffer, `+elementWriterVariable+`, `+strconv.Quote(elementName)+`, `); err != nil {
 		return err
 	}
 	// spreadAttrs
@@ -1530,15 +1568,8 @@ func (g *generator) writeRawElement(indentLevel int, n *parser.RawElement) (err 
 			return err
 		}
 	} else {
-		// <script></script>
-		if err = g.writeElementScript(indentLevel, n.Attributes); err != nil {
-			return err
-		}
-		// <div
-		if _, err = g.w.WriteStringLiteral(indentLevel, fmt.Sprintf(`<%s`, html.EscapeString(n.Name))); err != nil {
-			return err
-		}
-		if err = g.writeElementAttributes(indentLevel, n.Name, mayAnimateURL(n.Attributes), n.Attributes); err != nil {
+		// <div class="a" ...
+		if err = g.writeOpeningTag(indentLevel, n.Name, n.Attributes); err != nil {
 			return err
 		}
 		// >
@@ -1564,15 +1595,8 @@ func (g *generator) writeScriptElement(indentLevel int, n *parser.ScriptElement)
 			return err
 		}
 	} else {
-		// <script></script>
-		if err = g.writeElementScript(indentLevel, n.Attributes); err != nil {
-			return err
-		}
-		// <div
-		if _, err = g.w.WriteStringLiteral(indentLevel, "<script"); err != nil {
-			return err
-		}
-		if err = g.writeElementAttributes(indentLevel, "script", mayAnimateURL(n.Attributes), n.Attributes); err != nil {
+		// <script type="module" ...
+		if err = g.writeOpeningTag(indentLevel, "script", n.Attributes); err != nil {
 			return err
 		}
 		// >
@@ -1614,6 +1638,8 @@ func (g *generator) writeScriptContents(indentLevel int, c parser.ScriptContents
 			fnCall = "templruntime.ScriptContentInsideStringLiteral"
 		case parser.ScriptContentsContextTemplateLiteral:
 			fnCall = "templruntime.ScriptContentInsideTemplateLiteral"
+		case parser.ScriptContentsContextRegexp:
+			fnCall = "templruntime.ScriptContentInsideRegexp"
 		}
 		if _, err = g.w.WriteIndent(indentLevel, vn+", templ_7745c5c3_Err := "+fnCall+"("); err != nil {
 			return err

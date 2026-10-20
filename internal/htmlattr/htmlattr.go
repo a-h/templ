@@ -31,6 +31,10 @@ const (
 	ContextAnimationValue
 	// ContextStyle values are CSS.
 	ContextStyle
+	// ContextSrcset values are comma separated lists of image candidates, each a
+	// URL followed by optional descriptors. The URL of each candidate is sanitized
+	// with templ.URL.
+	ContextSrcset
 )
 
 // Classify returns the context of the value of the attribute on the element.
@@ -75,6 +79,8 @@ func Classify(elementName, attrName string) Context {
 	switch name {
 	case "srcdoc":
 		return ContextSrcdoc
+	case "srcset", "imagesrcset":
+		return ContextSrcset
 	case "action", "archive", "background", "cite", "classid", "codebase", "data", "formaction",
 		"href", "icon", "longdesc", "manifest", "poster", "profile", "src", "usemap", "xmlns":
 		return ContextURL
