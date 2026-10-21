@@ -1,6 +1,14 @@
 name: Deploy Docs
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/docs.yaml'
+      - '.version'
+      - 'docs/**'
+      - 'flake.lock'
+      - 'flake.nix'
   release:
     types: [published]
   workflow_dispatch:
