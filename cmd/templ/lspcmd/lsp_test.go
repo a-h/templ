@@ -655,7 +655,7 @@ func TestDocumentSymbol(t *testing.T) {
 						Location: protocol.Location{
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 11, Character: 0},
-								End:   protocol.Position{Line: 50, Character: 1},
+								End:   protocol.Position{Line: 46, Character: 1},
 							},
 						},
 					},
@@ -708,7 +708,7 @@ func TestDocumentSymbol(t *testing.T) {
 						Location: protocol.Location{
 							Range: protocol.Range{
 								Start: protocol.Position{Line: 9, Character: 0},
-								End:   protocol.Position{Line: 35, Character: 1},
+								End:   protocol.Position{Line: 31, Character: 1},
 							},
 						},
 					},
@@ -719,8 +719,8 @@ func TestDocumentSymbol(t *testing.T) {
 						Kind: protocol.SymbolKindFunction,
 						Location: protocol.Location{
 							Range: protocol.Range{
-								Start: protocol.Position{Line: 37, Character: 0},
-								End:   protocol.Position{Line: 63, Character: 1},
+								Start: protocol.Position{Line: 33, Character: 0},
+								End:   protocol.Position{Line: 55, Character: 1},
 							},
 						},
 					},

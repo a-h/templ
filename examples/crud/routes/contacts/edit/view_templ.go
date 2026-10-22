@@ -23,10 +23,6 @@ func View(m Model) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
-		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>Add Contact</h1><ul><li><a href=\"/contacts\" hx-boost=\"true\">Back to Contacts</a></li></ul><form id=\"form\" method=\"post\" hx-boost=\"true\">")
 		if templ_7745c5c3_Err != nil {
@@ -187,10 +183,6 @@ func ValidationMessages(msgs []string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var9 == nil {
-			templ_7745c5c3_Var9 = templ.NopComponent
-		}
 		ctx = templ.ClearChildren(ctx)
 		if len(msgs) > 0 {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"invalid-feedback\"><ul>")

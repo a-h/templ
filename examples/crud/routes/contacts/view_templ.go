@@ -27,10 +27,6 @@ func View(contacts []db.Contact) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
-		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<h1>Contacts</h1><ul><li><a href=\"/contacts/edit\" hx-boost=\"true\">Add contact</a></li></ul>")
 		if templ_7745c5c3_Err != nil {
@@ -67,10 +63,6 @@ func ContactList(contacts []db.Contact) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var2 == nil {
-			templ_7745c5c3_Var2 = templ.NopComponent
-		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<table class=\"table\"><tr><th>Name</th><th>Email</th><th>Actions</th></tr>")
 		if templ_7745c5c3_Err != nil {

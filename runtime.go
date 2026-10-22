@@ -73,7 +73,7 @@ func GetChildren(ctx context.Context) Component {
 		return NopComponent
 	}
 	children := v.(*Component)
-	if children == nil {
+	if children == nil || *children == nil {
 		return NopComponent
 	}
 	return *children
