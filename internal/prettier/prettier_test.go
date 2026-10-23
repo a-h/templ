@@ -33,6 +33,16 @@ func Test(t *testing.T) {
 	}
 }
 
+func TestIsAvailableEmptyCommand(t *testing.T) {
+	for _, command := range []string{"", " ", "\t\r\n"} {
+		t.Run(fmt.Sprintf("%q", command), func(t *testing.T) {
+			if IsAvailable(command) {
+				t.Errorf("IsAvailable should return false for empty command %q", command)
+			}
+		})
+	}
+}
+
 func TestIsAvailable(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping IsAvailable test in short mode")

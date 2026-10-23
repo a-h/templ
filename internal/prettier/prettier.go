@@ -51,8 +51,11 @@ func defaultCommand(shell string, lookPath func(string) (string, error)) string 
 }
 
 func IsAvailable(command string) bool {
-	executable := strings.Fields(command)[0]
-	_, err := exec.LookPath(executable)
+	fields := strings.Fields(command)
+	if len(fields) == 0 {
+		return false
+	}
+	_, err := exec.LookPath(fields[0])
 	return err == nil
 }
 
