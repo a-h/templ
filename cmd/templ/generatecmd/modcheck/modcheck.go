@@ -18,9 +18,8 @@ func WalkUp(dir string) (string, error) {
 		return "", fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	var modFile string
 	for {
-		modFile = filepath.Join(dir, "go.mod")
+		modFile := filepath.Join(dir, "go.mod")
 		_, err := os.Stat(modFile)
 		if err != nil && !os.IsNotExist(err) {
 			return "", fmt.Errorf("failed to stat go.mod file: %w", err)
@@ -30,18 +29,12 @@ func WalkUp(dir string) (string, error) {
 			prev := dir
 			dir = filepath.Dir(dir)
 			if dir == prev {
-				break
+				return dir, fmt.Errorf("could not find go.mod file")
 			}
 			continue
 		}
-		break
+		return dir, nil
 	}
-
-	// No file found.
-	if modFile == "" {
-		return dir, fmt.Errorf("could not find go.mod file")
-	}
-	return dir, nil
 }
 
 func Check(dir string) error {
