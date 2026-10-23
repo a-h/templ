@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"sort"
+	"slices"
 	"testing"
 
 	"github.com/a-h/parse"
@@ -143,14 +143,10 @@ func TestSourceMapPosition(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.target, actualTarget); diff != "" {
 				lines := keys(sm.SourceLinesToTarget)
-				sort.Slice(lines, func(i, j int) bool {
-					return lines[i] < lines[j]
-				})
+				slices.Sort(lines)
 				for _, lineIndex := range lines {
 					cols := keys(sm.SourceLinesToTarget[lineIndex])
-					sort.Slice(cols, func(i, j int) bool {
-						return cols[i] < cols[j]
-					})
+					slices.Sort(cols)
 					t.Error(lineIndex, cols)
 				}
 				t.Error("TargetPositionFromSource\n\n" + diff)
