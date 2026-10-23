@@ -75,6 +75,97 @@ templ Hello(name string) {
 	}
 }
 
+func TestGeneratorChildren(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name: "templates without children do not call GetChildren",
+			input: `package main
+
+templ Hello() {
+	<div>Hello</div>
+}`,
+			expected: nil,
+		},
+		{
+			name: "templates with children call GetChildren",
+			input: `package main
+
+templ Layout() {
+	<div>{ children... }</div>
+}`,
+			expected: []string{"templ_7745c5c3_Var1 := templ.GetChildren(ctx)"},
+		},
+		{
+			name: "children inside nested if and templ element blocks call GetChildren",
+			input: `package main
+
+templ Layout(ok bool) {
+	if ok {
+		@Wrapper() {
+			{ children... }
+		}
+	}
+}`,
+			expected: []string{"templ_7745c5c3_Var1 := templ.GetChildren(ctx)"},
+		},
+		{
+			name: "children inside else if, switch, and for blocks call GetChildren",
+			input: `package main
+
+templ ElseIf(a, b bool) {
+	if a {
+	} else if b {
+		{ children... }
+	}
+}
+
+templ Switch(s string) {
+	switch s {
+		case "a":
+			{ children... }
+	}
+}
+
+templ For(items []string) {
+	for range items {
+		{ children... }
+	}
+}`,
+			expected: []string{
+				"templ_7745c5c3_Var1 := templ.GetChildren(ctx)",
+				"templ_7745c5c3_Var2 := templ.GetChildren(ctx)",
+				"templ_7745c5c3_Var3 := templ.GetChildren(ctx)",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tf, err := parser.ParseString(tt.input)
+			if err != nil {
+				t.Fatalf("failed to parse template: %v", err)
+			}
+			w := new(bytes.Buffer)
+			if _, err = Generate(tf, w); err != nil {
+				t.Fatalf("failed to generate: %v", err)
+			}
+			var actual []string
+			for line := range strings.Lines(w.String()) {
+				line = strings.TrimSpace(line)
+				if strings.Contains(line, "templ.GetChildren(ctx)") || strings.Contains(line, "templ.NopComponent") {
+					actual = append(actual, line)
+				}
+			}
+			if diff := cmp.Diff(tt.expected, actual); diff != "" {
+				t.Errorf("unexpected GetChildren calls:\n%s\ngenerated:\n%s", diff, w.String())
+			}
+		})
+	}
+}
+
 func TestIsTrailingSpaceNeeded(t *testing.T) {
 	inlineText := &parser.Text{Value: "hello", TrailingSpace: parser.SpaceHorizontal}
 	newlineText := &parser.Text{Value: "hello", TrailingSpace: parser.SpaceVertical}

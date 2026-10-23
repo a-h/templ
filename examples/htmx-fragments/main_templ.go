@@ -34,10 +34,6 @@ func Page(state PageState) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
-		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html><head><script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.6/dist/htmx.min.js\"></script><link rel=\"stylesheet\" href=\"https://unpkg.com/missing.css@1.1.3/dist/missing.min.css\"><title>Template Fragment Example</title></head><body><h1>Template Fragment Example</h1><p>This page demonstrates how to create and serve  <a href=\"https://htmx.org/essays/template-fragments/\">template fragments</a> using <a href=\"https://templ.guide\">templ</a> in Go.</p><p>This is accomplished by using the \"templ.Fragment\" component, which lets you select areas to include in the output.</p><p>Adapted from https://gist.github.com/benpate/f92b77ea9b3a8503541eb4b9eb515d8a</p><!-- Here's the fragment.  We can target it by executing the \"buttonOnly\" template. -->")
 		if templ_7745c5c3_Err != nil {

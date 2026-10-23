@@ -18,6 +18,7 @@ import (
 
 	"github.com/a-h/templ/internal/htmlattr"
 	"github.com/a-h/templ/parser/v2"
+	"github.com/a-h/templ/parser/v2/visitor"
 )
 
 type GenerateOpt func(g *generator) error
@@ -511,26 +512,20 @@ func (g *generator) writeTemplate(nodeIdx int, t *parser.HTMLTemplate) error {
 		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.InitializeContext(ctx)\n"); err != nil {
 			return err
 		}
+		// Children must be read before ClearChildren is called, but only
+		// templates that render { children... } can read them, because an unused
+		// variable does not compile. The variable name is allocated either way,
+		// so that the numbering of other generated variables does not change.
 		g.childrenVar = g.createVariableName()
+		usesChildren, err := containsChildrenExpression(t.Children)
+		if err != nil {
+			return err
+		}
 		// templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		// if templ_7745c5c3_Var1 == nil {
-		//  	templ_7745c5c3_Var1 = templ.NopComponent
-		// }
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s := templ.GetChildren(ctx)\n", g.childrenVar)); err != nil {
-			return err
-		}
-		if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("if %s == nil {\n", g.childrenVar)); err != nil {
-			return err
-		}
-		{
-			indentLevel++
-			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s = templ.NopComponent\n", g.childrenVar)); err != nil {
+		if usesChildren {
+			if _, err = g.w.WriteIndent(indentLevel, fmt.Sprintf("%s := templ.GetChildren(ctx)\n", g.childrenVar)); err != nil {
 				return err
 			}
-			indentLevel--
-		}
-		if _, err = g.w.WriteIndent(indentLevel, "}\n"); err != nil {
-			return err
 		}
 		// ctx = templ.ClearChildren(children)
 		if _, err = g.w.WriteIndent(indentLevel, "ctx = templ.ClearChildren(ctx)\n"); err != nil {
@@ -1907,4 +1902,18 @@ func stripTypes(parameters string) string {
 		variableNames = append(variableNames, strings.TrimSpace(p[0]))
 	}
 	return strings.Join(variableNames, ", ")
+}
+
+func containsChildrenExpression(nodes []parser.Node) (found bool, err error) {
+	v := visitor.New()
+	v.ChildrenExpression = func(n *parser.ChildrenExpression) error {
+		found = true
+		return nil
+	}
+	for _, node := range nodes {
+		if err = node.Visit(v); err != nil {
+			return false, err
+		}
+	}
+	return found, nil
 }

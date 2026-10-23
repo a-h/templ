@@ -23,10 +23,6 @@ func Example() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var1 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var1 == nil {
-			templ_7745c5c3_Var1 = templ.NopComponent
-		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<html><head></head><body><style>\n\t\t\t\t<!-- Some stuff -->\n\t\t\t</style><style>\n\t\t\t\t.customClass {\n\t\t\t\t\tborder: 1px solid black;\n\t\t\t\t}\n\t\t\t</style><script>\n\t\t\t\t$(\"div\").marquee();\n\t\t\t\tfunction test() {\n\t\t\t\t\twindow.open(\"https://example.com\");\n\t\t\t\t}\n\t\t\t</script><h1>Hello</h1>")
 		if templ_7745c5c3_Err != nil {
