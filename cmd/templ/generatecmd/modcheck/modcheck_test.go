@@ -1,10 +1,38 @@
 package modcheck
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"golang.org/x/mod/modfile"
 )
+
+func TestWalkUp(t *testing.T) {
+	t.Run("finds go.mod in a parent directory", func(t *testing.T) {
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/test\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		subdir := filepath.Join(dir, "child")
+		if err := os.Mkdir(subdir, 0700); err != nil {
+			t.Fatal(err)
+		}
+		got, err := WalkUp(subdir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got != dir {
+			t.Fatalf("expected module directory %q, got %q", dir, got)
+		}
+	})
+	t.Run("returns an error when go.mod is missing", func(t *testing.T) {
+		_, err := WalkUp(t.TempDir())
+		if err == nil || err.Error() != "could not find go.mod file" {
+			t.Fatalf("expected could not find go.mod file error, got %v", err)
+		}
+	})
+}
 
 func TestPatchGoVersion(t *testing.T) {
 	tests := []struct {
