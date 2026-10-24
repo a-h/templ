@@ -149,6 +149,14 @@ Run benchmarks.
 go run ./cmd/templ generate -include-version=false && go test ./... -bench=. -benchmem
 ```
 
+### benchmark-fmt
+
+Run the templ fmt benchmarks, which include the time taken by prettier.
+
+```sh
+go test ./internal/format -run '^$' -bench BenchmarkTempl -benchtime 3x
+```
+
 ### fmt
 
 Format all Go and templ code.

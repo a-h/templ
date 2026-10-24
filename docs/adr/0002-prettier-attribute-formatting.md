@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. The per-template batching is amended by ADR 0008, which batches the whole file.
 
 ## Context
 

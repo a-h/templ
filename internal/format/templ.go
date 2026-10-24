@@ -57,39 +57,39 @@ func ApplyPrettier(t *parser.TemplateFile, config Config) (err error) {
 		return nil
 	}
 
-	nodeFormatter := visitor.New()
+	batch := newPrettierBatch(config.PrettierCommand)
+	collector := visitor.New()
 	// Calculate the depth of each ScriptElement and RawElement in the tree so that the formatting is properly indented.
 	nodeToDepth := make(map[parser.Node]int)
-	nodeFormatter.HTMLTemplate = func(n *parser.HTMLTemplate) error {
+	collector.HTMLTemplate = func(n *parser.HTMLTemplate) error {
 		// Visit the children first to calculate their depth.
 		for _, child := range n.Children {
 			calculateNodeDepth(child, nodeToDepth, 1)
 		}
-		// Format constant attribute values in a single prettier batch.
-		if err := Attributes(n.Children, config.PrettierCommand); err != nil {
+		if err := batch.AddAttributes(n.Children); err != nil {
 			return err
 		}
-		// Now that we have the depth of each node, we can format them.
+		// Now that we have the depth of each node, we can collect them.
 		for _, child := range n.Children {
-			if err := child.Visit(nodeFormatter); err != nil {
+			if err := child.Visit(collector); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	nodeFormatter.ScriptElement = func(se *parser.ScriptElement) error {
-		depth := nodeToDepth[se]
-		return ScriptElement(se, depth, config.PrettierCommand)
+	collector.ScriptElement = func(se *parser.ScriptElement) error {
+		batch.AddScriptElement(se, nodeToDepth[se])
+		return nil
 	}
-	nodeFormatter.RawElement = func(re *parser.RawElement) error {
-		depth := nodeToDepth[re]
-		if re.Name != "style" {
-			return nil
-		}
-		return StyleElement(re, depth, config.PrettierCommand)
+	collector.RawElement = func(re *parser.RawElement) error {
+		batch.AddStyleElement(re, nodeToDepth[re])
+		return nil
+	}
+	if err = collector.VisitTemplateFile(t); err != nil {
+		return err
 	}
 
-	return nodeFormatter.VisitTemplateFile(t)
+	return batch.Run()
 }
 
 func calculateNodeDepth(e parser.Node, nodeToDepth map[parser.Node]int, depth int) {

@@ -357,8 +357,11 @@ func TestAttributes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Attributes(tt.children, tt.command)
-			if err != nil {
+			batch := newPrettierBatch(tt.command)
+			if err := batch.AddAttributes(tt.children); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if err := batch.Run(); err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
 			if tt.check != nil {
