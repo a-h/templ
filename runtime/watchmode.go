@@ -76,7 +76,16 @@ func normalizePath(p string) string {
 
 type watchState struct {
 	modTime time.Time
-	strings []string
+	// checkedAt is when modTime was last compared with the file on disk.
+	checkedAt time.Time
+	strings   []string
+}
+
+// resolvedPath is what a caller's _templ.go path resolves to. It doesn't change while the
+// program runs, so it's worked out once per path instead of once per string.
+type resolvedPath struct {
+	outsideWatchRoot bool
+	txtFilePath      string
 }
 
 type StringLoader struct {
@@ -84,6 +93,8 @@ type StringLoader struct {
 	watchModeRootErr error
 	cache            map[string]watchState
 	cacheMutex       sync.Mutex
+	// resolved maps a templ file path to its resolvedPath.
+	resolved sync.Map
 }
 
 func NewStringLoader(devModeWatchRootPath string) (sl *StringLoader) {
@@ -106,25 +117,43 @@ func (sl *StringLoader) GetWatchedString(templFilePath string, index int, defaul
 	if sl.watchModeRootErr != nil {
 		return "", sl.watchModeRootErr
 	}
-	path, err := filepath.EvalSymlinks(templFilePath)
+	rp, err := sl.resolve(templFilePath)
 	if err != nil {
-		return "", fmt.Errorf("templ: failed to eval symlinks for %q: %w", path, err)
+		return "", err
 	}
-	// If the file is outside the watch mode root, write the string directly.
-	// If watch mode root is not set, fall back to the previous behaviour to avoid breaking existing setups.
-	if sl.watchModeRoot != "" && !strings.HasPrefix(path, sl.watchModeRoot) {
+	if rp.outsideWatchRoot {
 		return defaultValue, nil
 	}
 
-	txtFilePath := GetDevModeTextFileName(path)
+	txtFilePath := rp.txtFilePath
 	literals, err := sl.getWatchedStrings(txtFilePath)
 	if err != nil {
-		return "", fmt.Errorf("templ: failed to get watched strings for %q: %w", path, err)
+		return "", fmt.Errorf("templ: failed to get watched strings for %q: %w", templFilePath, err)
 	}
 	if index > len(literals) {
 		return "", fmt.Errorf("templ: failed to find line %d in %s", index, txtFilePath)
 	}
 	return strconv.Unquote(`"` + literals[index-1] + `"`)
+}
+
+func (sl *StringLoader) resolve(templFilePath string) (rp resolvedPath, err error) {
+	if v, ok := sl.resolved.Load(templFilePath); ok {
+		return v.(resolvedPath), nil
+	}
+	path, err := filepath.EvalSymlinks(templFilePath)
+	if err != nil {
+		// Not cached, so a file that appears later still resolves.
+		return rp, fmt.Errorf("templ: failed to eval symlinks for %q: %w", templFilePath, err)
+	}
+	// If the file is outside the watch mode root, write the string directly.
+	// If watch mode root is not set, fall back to the previous behaviour to avoid breaking existing setups.
+	if sl.watchModeRoot != "" && !strings.HasPrefix(path, sl.watchModeRoot) {
+		rp.outsideWatchRoot = true
+	} else {
+		rp.txtFilePath = GetDevModeTextFileName(path)
+	}
+	sl.resolved.Store(templFilePath, rp)
+	return rp, nil
 }
 
 func (sl *StringLoader) getWatchedStrings(txtFilePath string) ([]string, error) {
@@ -136,7 +165,8 @@ func (sl *StringLoader) getWatchedStrings(txtFilePath string) ([]string, error) 
 		return sl.cacheStrings(txtFilePath)
 	}
 
-	if time.Since(state.modTime) < time.Millisecond*100 {
+	// Throttle on when the file was last checked. Its modTime is usually far in the past.
+	if time.Since(state.checkedAt) < time.Millisecond*100 {
 		return state.strings, nil
 	}
 
@@ -146,6 +176,8 @@ func (sl *StringLoader) getWatchedStrings(txtFilePath string) ([]string, error) 
 	}
 
 	if !info.ModTime().After(state.modTime) {
+		state.checkedAt = time.Now()
+		sl.cache[txtFilePath] = state
 		return state.strings, nil
 	}
 
@@ -173,8 +205,9 @@ func (sl *StringLoader) cacheStrings(txtFilePath string) ([]string, error) {
 
 	literals := strings.Split(string(all), "\n")
 	sl.cache[txtFilePath] = watchState{
-		modTime: info.ModTime(),
-		strings: literals,
+		modTime:   info.ModTime(),
+		checkedAt: time.Now(),
+		strings:   literals,
 	}
 
 	return literals, nil
