@@ -43,7 +43,7 @@
                 inherit system;
                 overlays = [
                   (final: prev: {
-                    gopls = pkgs-unstable.gopls;
+                    inherit (pkgs-unstable) gopls;
                     version = version.packages.${system}.default; # Used to apply version numbers to the repo.
                   })
                 ];
