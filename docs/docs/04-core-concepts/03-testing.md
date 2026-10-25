@@ -181,6 +181,113 @@ func TestPostsHandler(t *testing.T) {
 }
 ```
 
+### Testing template arguments from a handler
+
+When an HTTP handler queries a database and renders a templ component with the result, it is useful to verify that the handler is passing the right data to the template — without having to parse the rendered HTML.
+
+templ's generated code supports an opt-in mechanism: if the request context contains a `map[string]any` value under the key `"_templ_args_map"`, the generated code populates it with the arguments passed to the component. This lets you inspect them directly in your test.
+
+The complete runnable example is at https://github.com/a-h/templ/blob/main/examples/testing-args/.
+
+Consider this handler that loads a user and renders a page:
+
+```go
+// template.templ
+templ userPage(u User) {
+    <h1>{ u.Name }</h1>
+}
+```
+
+```go
+// handler.go
+type User struct {
+    ID   int
+    Name string
+}
+
+var getUser = func(id int) (User, error) {
+    return User{}, errors.New("user not found")
+}
+
+func UserPage(w http.ResponseWriter, r *http.Request) {
+    id, _ := strconv.Atoi(r.PathValue("id"))
+    user, err := getUser(id)
+    if err != nil {
+        http.Error(w, "not found", http.StatusNotFound)
+        return
+    }
+    userPage(user).Render(r.Context(), w)
+}
+
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("GET /users/{id}", UserPage)
+    http.ListenAndServe(":8080", mux)
+}
+```
+
+In the test, replace the `getUser` dependency, inject the args capture map into the context, call the mux, and read the captured arguments:
+
+```go
+// handler_test.go
+func TestUserHandlerPassesCorrectUser(t *testing.T) {
+    getUser = func(id int) (User, error) {
+        return User{ID: id, Name: "Alice"}, nil
+    }
+
+    argsMap := make(map[string]any)
+    ctx := context.WithValue(context.Background(), "_templ_args_map", argsMap)
+
+    mux := http.NewServeMux()
+    mux.HandleFunc("GET /users/{id}", UserPage)
+
+    w := httptest.NewRecorder()
+    r := httptest.NewRequest(http.MethodGet, "/users/42", nil).WithContext(ctx)
+
+    mux.ServeHTTP(w, r)
+
+    u, ok := argsMap["u"].(User)
+    if !ok {
+        t.Fatal("template was not called or argument u was not captured")
+    }
+    if u.Name != "Alice" {
+        t.Errorf("expected user name Alice, got %q", u.Name)
+    }
+}
+```
+
+The map key matches the **parameter name** in the templ function signature (`u` in `templ userPage(u User)`). For method receivers — `templ (this MyModel) Render(id int)` — the receiver variable is captured too, under its own name (`"this"`).
+
+#### Nested components and duplicate parameter names
+
+When components are nested, each one writes its arguments into the same map. If an outer and an inner component both have a parameter with the same name, **the outer component's value is kept** and the inner one is ignored.
+
+```go
+templ layout(title string) {
+    <html>
+        <head><title>{ title }</title></head>
+        <body>@page(title)</body>  // page also has a "title" parameter
+    </html>
+}
+
+templ page(title string) {
+    <h1>{ title }</h1>
+}
+```
+
+```go
+argsMap := make(map[string]any)
+ctx := context.WithValue(context.Background(), "_templ_args_map", argsMap)
+
+layout("Outer title").Render(ctx, io.Discard)
+
+// argsMap["title"] == "Outer title"  ← layout wins; page's value is discarded
+```
+
+This is intentional: in a handler test you typically call the top-level component directly, so the outermost arguments are the ones you want to inspect.
+
+This is not a test of the template output. It is a test of the **handler's logic**: confirming that it queries the right data and forwards it to the template unchanged.
+
 ### Summary
 
 - goquery can be used effectively with templ for writing component level tests.
