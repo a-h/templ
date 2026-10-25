@@ -103,6 +103,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		cmd.Args.KeepOrphanedFiles,
 		cmd.Args.FileWriter,
 		cmd.Args.Lazy,
+		cmd.Args.NoFormat,
 	)
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
