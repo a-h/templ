@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e
-	github.com/andybalholm/brotli v1.2.6
+	github.com/andybalholm/brotli v1.2.7
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cli/browser v1.3.0
 	github.com/fatih/color v1.19.0
