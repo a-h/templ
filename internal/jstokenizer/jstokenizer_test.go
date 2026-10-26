@@ -1,18 +1,21 @@
 package jstokenizer
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/a-h/parse"
+	"github.com/google/go-cmp/cmp"
 )
 
 const value = "{{ x }}"
 
 func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		expected Context
+		name        string
+		input       string
+		expected    Context
+		expectedErr error
 	}{
 		{
 			name:     "a value in code is in code context",
@@ -120,6 +123,26 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 			expected: ContextCode,
 		},
 		{
+			name:     "a hashbang at the start of the source comments out the rest of the line",
+			input:    "#! \"\nvar a = {{ x }};",
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a keyword and a line separator starts a regexp",
+			input:    "function f() { return /\"/; } var a = {{ x }};",
+			expected: ContextCode,
+		},
+		{
+			name:     "a line separator ends a single line comment",
+			input:    "// a var b = `{{ x }}`;",
+			expected: ContextTemplateLiteral,
+		},
+		{
+			name:     "a paragraph separator ends a single line comment",
+			input:    "// a var b = `{{ x }}`;",
+			expected: ContextTemplateLiteral,
+		},
+		{
 			name:     "a quote in a multi-line comment does not start a string",
 			input:    `/* ' */ var a = {{ x }};`,
 			expected: ContextCode,
@@ -145,13 +168,73 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 			expected: ContextCode,
 		},
 		{
-			name:     "a slash after a block starts a regexp",
-			input:    `if (b) {} /"/.test(s); var a = {{ x }};`,
+			name:        "a value after a slash after a closing brace is ambiguous when a block and an object literal give different contexts",
+			input:       `if (b) {} /"/.test(s); var a = {{ x }};`,
+			expectedErr: ErrAmbiguousContext,
+		},
+		{
+			name:     "a value after a slash after a closing brace is in code context once a block and an object literal give the same state",
+			input:    "if (b) {} /x/.test(s);\nvar a = {{ x }};",
 			expected: ContextCode,
+		},
+		{
+			name:        "a value after a slash after an object literal on the same line is ambiguous",
+			input:       `var a = {} / 2; var b = {{ x }};`,
+			expectedErr: ErrAmbiguousContext,
+		},
+		{
+			name:     "a value on the line after a slash after an object literal is in code context",
+			input:    "var a = {} / 2;\nvar b = {{ x }};",
+			expected: ContextCode,
+		},
+		{
+			name:        "a value after a slash after yield is ambiguous, because yield is an identifier outside a generator",
+			input:       `var a = yield / {{ x }};`,
+			expectedErr: ErrAmbiguousContext,
+		},
+		{
+			name:        "a value after a slash after await is ambiguous, because await is an identifier outside an async function",
+			input:       `var a = await /"/; var b = {{ x }};`,
+			expectedErr: ErrAmbiguousContext,
+		},
+		{
+			name:        "a value after a slash on the line after a declaration without an initializer is ambiguous",
+			input:       "var a\n/\"/.test(s); var b = {{ x }};",
+			expectedErr: ErrAmbiguousContext,
+		},
+		{
+			name:        "a comment that contains a line terminator makes a slash after an identifier ambiguous",
+			input:       "var a /*\n*/ /\"/.test(s); var b = {{ x }};",
+			expectedErr: ErrAmbiguousContext,
+		},
+		{
+			name:     "a slash after an identifier on the same line is division",
+			input:    `var a = b /\n2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a prefix increment starts a regexp",
+			input:    `++/"/.lastIndex; var a = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after an increment on the line after an identifier starts a regexp",
+			input:    "a\n++/\"/.lastIndex; var b = {{ x }};",
+			expected: ContextCode,
+		},
+		{
+			name:        "a value in a comment in one interpretation of an ambiguous slash is ambiguous",
+			input:       "var a = {}/ // {{ x }}\n;",
+			expectedErr: ErrAmbiguousContext,
 		},
 		{
 			name:     "a slash after an identifier is division",
 			input:    `var a = b / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after an identifier that ends with a combining mark is division",
+			input:    "var a = A\u05B1/\"/g, b = \"/ 1; var c = {{ x }};",
 			expected: ContextCode,
 		},
 		{
@@ -172,6 +255,11 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 		{
 			name:     "a slash after a property of a number is division",
 			input:    `var a = 1..x / 2; var c = "/"; var d = {{ x }};`,
+			expected: ContextCode,
+		},
+		{
+			name:     "a slash after a number that starts with a decimal point is division",
+			input:    `var a = .5/2; var c = "/"; var d = {{ x }};`,
 			expected: ContextCode,
 		},
 		{
@@ -345,6 +433,21 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 			expected: ContextCode,
 		},
 		{
+			name:     "a line feed ends an unterminated string",
+			input:    "var a = \"b\nvar c = {{ x }};",
+			expected: ContextCode,
+		},
+		{
+			name:     "a line separator does not end a string",
+			input:    "var a = \"b\u2028{{ x }}\";",
+			expected: ContextString,
+		},
+		{
+			name:     "a value on the line after an ambiguous slash is in code context once an unterminated string ends",
+			input:    "if (ok) {} /\"/.test(s);\nconst message = {{ x }};",
+			expected: ContextCode,
+		},
+		{
 			name:     "a line terminator ends an unterminated regexp",
 			input:    "var r = /a\nvar c = {{ x }};",
 			expected: ContextCode,
@@ -356,14 +459,15 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 			pi := parse.NewInput(tt.input)
 			tokenizer := New()
 			var actual Context
+			var actualErr error
 			var found bool
-			for {
+			for actualErr == nil {
 				peeked, ok := pi.Peek(len(value))
 				if ok && peeked == value {
+					start := pi.Index()
 					pi.Take(len(value))
-					actual = tokenizer.GetContext()
+					actual, actualErr = tokenizer.RecordValue(pi, start)
 					found = true
-					tokenizer.RecordValue()
 					continue
 				}
 				_, ok, err := tokenizer.ReadComment(pi)
@@ -384,8 +488,76 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 			if !found {
 				t.Fatalf("no value found")
 			}
-			if actual != tt.expected {
+			if !errors.Is(actualErr, tt.expectedErr) {
+				t.Fatalf("expected error %v, got %v", tt.expectedErr, actualErr)
+			}
+			if tt.expectedErr == nil && actual != tt.expected {
 				t.Errorf("expected context %v, got %v", tt.expected, actual)
+			}
+		})
+	}
+}
+
+func TestTokenizerReadsTokens(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "a number with a decimal point is one token",
+			input:    "1_000.5e3",
+			expected: []string{"1_000.5e3"},
+		},
+		{
+			name:     "a number that starts with a decimal point is one token",
+			input:    ".0.b",
+			expected: []string{".0", ".", "b"},
+		},
+		{
+			name:     "a property of an identifier that starts with an underscore is not a number",
+			input:    "_.b",
+			expected: []string{"_", ".", "b"},
+		},
+		{
+			name:     "an identifier can contain a combining mark",
+			input:    "A\u05B1/2",
+			expected: []string{"A\u05B1", "/", "2"},
+		},
+		{
+			name:     "an identifier can contain a zero width joiner",
+			input:    "a\u200db/2",
+			expected: []string{"a\u200db", "/", "2"},
+		},
+		{
+			name:     "a line separator is one token",
+			input:    "a b",
+			expected: []string{"a", " ", "b"},
+		},
+		{
+			name:     "an identifier can contain non-ASCII letters",
+			input:    "café/2",
+			expected: []string{"café", "/", "2"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			pi := parse.NewInput(tt.input)
+			tokenizer := New()
+			var actual []string
+			for {
+				token, ok, err := tokenizer.Read(pi)
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				if !ok {
+					break
+				}
+				actual = append(actual, token)
+			}
+			if diff := cmp.Diff(tt.expected, actual); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}

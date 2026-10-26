@@ -24,7 +24,16 @@ Move the scanning into a JavaScript tokenizer in `internal/jstokenizer`. The tok
 - Whether a `/` in code starts a regular expression or is a division operator, based on the previous token. A regular expression can only start an expression, i.e. at the start of the source, after an operator, `(`, `[`, `{`, `}`, `,`, `;`, or a keyword such as `return` or `typeof`. After an identifier, a number, `)`, `]`, a string, a template literal, a regular expression, an inserted value, or a postfix `++` or `--`, `/` is division.
 - A stack of open parentheses, each recording whether it opens the condition of an `if`, `while`, `for`, `for await`, or `with` statement. A statement follows the condition, so a `/` after its `)` starts a regular expression, e.g. `if (a) /x/.test(s)`, while a `/` after other parentheses is division, e.g. `(a) / 2`.
 - Whether the previous token is `.`, so that a property name such as `return` in `b.return / 2` is not treated as a keyword.
-- Whether only whitespace and comments have been read since the start of the line. A classic script treats `<!--` anywhere, and `-->` at the start of a line, as the start of a single line comment, see [HTML-like comments](https://tc39.es/ecma262/#sec-html-like-comments).
+- Whether only whitespace and comments have been read since the start of the line. A classic script treats `<!--` anywhere, and `-->` at the start of a line, as the start of a single line comment, see [HTML-like comments](https://tc39.es/ecma262/#sec-html-like-comments). Whether nothing has been read, where `#!` starts a [hashbang comment](https://tc39.es/ecma262/#sec-hashbang).
+
+A single line comment ends at any JavaScript line terminator: `\n`, `\r`, U+2028, or U+2029. The tokenizer reads UTF-8 encoded runes, so that U+2028 and U+2029 are read as line terminators, rather than as three bytes, the first of which is a Latin-1 letter.
+
+The state is split across four types:
+
+- `lexer` tracks the lexical state, i.e. the quote, the regular expression character class, and the open substitutions, and reads tokens.
+- `Tokenizer` reads the source with a `lexer`, and with the alternative lexers that ADR 0009 adds at an ambiguous `/`.
+- `slashClassifier` decides whether a `/` in code starts a regular expression, and owns the parenthesis stack, the previous token and keyword, and the keyword lists. Its decision is a heuristic, because it depends on the grammar around the `/`, which a tokenizer doesn't parse. Where the tokens don't determine it, it reports the `/` as ambiguous, see ADR 0009.
+- `commentReader` reads comments, and tracks whether the input is at the start of the source or of a line, where `#!` and `-->` start a comment.
 
 The HTML parser of a browser also treats `<!--` in a `<script>` element as the start of escaped script data, even within a JavaScript string or comment. After `<!--` and then a `<script` start tag, a `</script>` end tag doesn't end the element, see [Restrictions for contents of script elements](https://html.spec.whatwg.org/multipage/scripting.html#restrictions-for-contents-of-script-elements). templ would end the element where the browser doesn't, and escape the Go expressions that follow as HTML rather than JavaScript. The parser tracks the state of the HTML tokenizer of the browser over the script content with a transcription of the script data states of the spec, and returns an error for a `<script` start tag after an unclosed `<!--`. The browser also ends the element at `</script` followed by whitespace, `/`, or `>`, in any case, e.g. `</SCRIPT>` or `</script >` within a string, while templ only ends it at `</script>`, so the parser also returns an error for these.
 
@@ -38,9 +47,10 @@ The package is internal, so that its API is not a compatibility commitment of th
 
 - Braces in strings, comments, and regular expressions inside a substitution don't affect where the substitution ends.
 - A value after a division operator is classified by the code that follows the division, rather than by text that was misread as a regular expression.
-- The tokenizer is tested independently of the parser, by inserting a marker value into JavaScript source and asserting the context at the marker.
-- `}` followed by `/` is always treated as the start of a regular expression. This is correct after a block, e.g. `if (a) {} /x/.test(s)`, and incorrect after an object literal, e.g. `x = {} / 2`. Dividing an object literal has no practical use.
-- A `/` directly after a prefix `++` or `--` is treated as division. A prefix increment or decrement must be followed by a reference, so this only affects code such as `++/x/.lastIndex`, which has no practical use.
+- The tokenizer is tested independently of the parser, by inserting a marker value into JavaScript source and asserting the context at the marker. The tokenizer is also compared with a JavaScript parser by a differential fuzz test, see ADR 0007.
+- A `/` after `}`, `yield`, `await`, or `of`, or after an identifier at the start of a line, could be a division or the start of a regular expression. The tokenizer reads the source both ways, and a Go expression that the two readings give different contexts is a parse error, see ADR 0009.
+- A `++` or `--` is a postfix operator if it follows an expression on the same line, and a prefix operator otherwise, so a `/` after a prefix `++` or `--` starts a regular expression, e.g. `++/x/.lastIndex`.
+- A legacy octal number followed by a property access, e.g. `00.x`, is read as a number with a decimal point. A legacy octal number can't have a decimal point, and is a syntax error in strict mode and module scripts.
 - `<!--` is treated as a comment in module scripts, where it is not one. This is the same as a classic script, and differs from a module script only in code such as `a <!--b`, i.e. `a < !(--b)`, which has no practical use.
 - A Go expression directly after `<` without a space, e.g. `a <{{ b }}`, is a parse error.
 - A `<script>` element without a `</script>` end tag is always a parse error. The previous scanner accepted one when the input ended directly after a character.

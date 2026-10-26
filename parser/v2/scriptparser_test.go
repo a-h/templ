@@ -794,6 +794,11 @@ func TestScriptElementParserErrors(t *testing.T) {
 			expected: parse.Error(errScriptStartTagInEscapedScriptData, parse.Position{Index: 13, Line: 0, Col: 13}),
 		},
 		{
+			name:     "a Go expression whose context depends on an ambiguous slash is an error",
+			input:    `<script>if (b) {} /"/.test(s); var a = {{ x }};</script>`,
+			expected: parse.Error(errGoExpressionContextIsAmbiguous, parse.Position{Index: 39, Line: 0, Col: 39}),
+		},
+		{
 			name:     "a script start tag after an HTML open comment in a string is an error",
 			input:    `<script>var s = "<!--<script>";</script>`,
 			expected: parse.Error(errScriptStartTagInEscapedScriptData, parse.Position{Index: 21, Line: 0, Col: 21}),

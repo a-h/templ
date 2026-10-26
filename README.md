@@ -130,15 +130,16 @@ Run each fuzz test for FUZZTIME (default 120s).
 ./parser/v2/fuzz.sh
 ./parser/v2/goexpression/fuzz.sh
 ./runtime/fuzzing/fuzz.sh
+./internal/jstokenizer/fuzzing/fuzz.sh
 ```
 
 ### test-fuzz-corpus
 
-Run the runtime fuzz tests against their seed and committed corpora, without fuzzing. The runtime fuzz tests are in a separate module, so `go test ./...` in the root module doesn't run them. The parser fuzz tests are in the root module, so `test` and `test-cover` run their corpora.
+Run the runtime and JavaScript tokenizer fuzz tests against their seed and committed corpora, without fuzzing. These fuzz tests are in separate modules, so that their JavaScript engine and parser dependencies are not dependencies of templ, and `go test ./...` in the root module doesn't run them. The parser fuzz tests are in the root module, so `test` and `test-cover` run their corpora.
 
 ```sh
-cd runtime/fuzzing
-go test ./...
+(cd runtime/fuzzing && go test ./...) &&
+	(cd internal/jstokenizer/fuzzing && go test ./...)
 ```
 
 ### benchmark

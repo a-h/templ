@@ -241,6 +241,18 @@ The output would be:
 
 Within a regular expression literal, `{{ value }}` is escaped so that it matches itself, e.g. `/{{ "a.b" }}/` renders as `/a\.b/`.
 
+Whether a `/` starts a regular expression or is a division depends on the code around it, which templ doesn't fully parse. Where templ can't determine it, and the two readings would escape a later `{{ value }}` differently, templ returns an error rather than guessing. This happens for a `/` after `}`, `yield`, `await`, or `of`, or at the start of a line after an identifier, e.g.:
+
+```templ title="input.templ"
+templ body(msg string) {
+  <script>
+    if (ok) {} /"/.test(s); const message = {{ msg }};
+  </script>
+}
+```
+
+To fix the error, add a semicolon before a regular expression, e.g. `if (ok) {}; /"/.test(s)`, put parentheses around a division, e.g. `({}) / 2`, or move the `{{ value }}` to a later line.
+
 A `<script>` element can't contain a `<script` start tag after an unclosed `<!--`, including within a string or a comment, because the browser doesn't end the element at the next `</script>` end tag. See [Restrictions for contents of script elements](https://html.spec.whatwg.org/multipage/scripting.html#restrictions-for-contents-of-script-elements). For the same reason, `{{ value }}` can't directly follow `<`, e.g. write `a < {{ b }}` rather than `a <{{ b }}`. Within a string, write `</script` as `<\/script`, because the browser ends the element at `</script` followed by whitespace, `/`, or `>`, in any case.
 
 :::tip

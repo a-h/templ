@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/a-h/parse"
@@ -8,6 +9,11 @@ import (
 )
 
 var scriptElement = scriptElementParser{}
+
+// errGoExpressionContextIsAmbiguous is returned for a Go expression after a '/' that could be
+// a division or the start of a regular expression, where the two give the expression
+// different contexts, so it can't be escaped safely. See ADR 0009.
+const errGoExpressionContextIsAmbiguous = "<script>: can't determine how to escape the Go expression, because an earlier '/' could be a division or the start of a regular expression, e.g. after }, yield, await, or of, or at the start of a line. Add a semicolon before a regular expression, put parentheses around a division, or move the Go expression to a later line"
 
 var jsTokenizerContextToScriptContentsContext = map[jstokenizer.Context]ScriptContentsContext{
 	jstokenizer.ContextCode:            ScriptContentsContextExpression,
@@ -114,9 +120,15 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 				e.Contents = append(e.Contents, NewScriptContentsScriptCode(sb.String()))
 				sb.Reset()
 			}
-			context := jsTokenizerContextToScriptContentsContext[tokenizer.GetContext()]
+			jsContext, err := tokenizer.RecordValue(pi, codeStartIndex)
+			if errors.Is(err, jstokenizer.ErrAmbiguousContext) {
+				return nil, false, parse.Error(errGoExpressionContextIsAmbiguous, pi.PositionAt(codeStartIndex))
+			}
+			if err != nil {
+				return nil, false, err
+			}
+			context := jsTokenizerContextToScriptContentsContext[jsContext]
 			e.Contents = append(e.Contents, NewScriptContentsGo(code.(*GoCode), context))
-			tokenizer.RecordValue()
 			continue
 		}
 

@@ -12,9 +12,8 @@
 package jstokenizer
 
 import (
+	"errors"
 	"slices"
-	"strings"
-	"unicode"
 
 	"github.com/a-h/parse"
 )
@@ -49,396 +48,166 @@ const (
 	ContextRegexpStart
 )
 
-type quote string
+// ErrAmbiguousContext is returned for a value whose context depends on whether a '/'
+// before it is a division or the start of a regular expression, which the tokenizer
+// can't determine.
+var ErrAmbiguousContext = errors.New("the context of the value depends on whether a '/' before it is a division or the start of a regular expression, which can't be determined")
 
-const (
-	quoteNone     quote = ""
-	quoteSingle   quote = `'`
-	quoteDouble   quote = `"`
-	quoteBacktick quote = "`"
-	quoteRegexp   quote = "/"
-)
+// maxAlternatives limits the number of interpretations of the source that are read at
+// the same time. Each ambiguous '/' doubles the number of interpretations until they
+// converge.
+const maxAlternatives = 16
 
 // Tokenizer reads JavaScript source one token at a time, and tracks the lexical state
 // of the source read so far.
+//
+// Whether a '/' in code is a division or the start of a regular expression depends on
+// the grammar, which the tokenizer doesn't parse. When it can't be determined, the
+// tokenizer reads the source both ways, until both interpretations reach the same
+// state. A value inserted while the interpretations differ about its context is an
+// error, see ADR 0009.
 type Tokenizer struct {
-	// quote is the delimiter of the string, template literal, or regular expression being
-	// read, or quoteNone when code is being read.
-	quote quote
-	// inRegexpClass is true within a [ ] character class of a regular expression, where
-	// '/' does not end the regular expression.
-	inRegexpClass bool
-	// atRegexpStart is true when nothing has been read since the '/' that opened the
-	// regular expression being read.
-	atRegexpStart bool
-	// substitutionBraceDepths holds an entry for each open ${ ... } substitution within a
-	// template literal, innermost last. The contents of a substitution are code, so quote
-	// is quoteNone within one. Each entry counts the unmatched '{' tokens in code since
-	// the substitution opened. When the count reaches zero, the substitution ends and the
-	// enclosing template literal resumes.
-	substitutionBraceDepths []int
-	// regexpAllowed is true when a '/' in code starts a regular expression literal, and
-	// false when it is a division operator. A regular expression can only appear where an
-	// expression starts, which is determined by the previous token: `x = /a/` is a regular
-	// expression, while `x / a / b` and `(x) / a` are divisions.
-	regexpAllowed bool
-	// parenthesesCloseCondition holds an entry for each open '(' in code, innermost last.
-	// An entry is true when the parenthesis opens the condition of a statement such as
-	// if or while. A statement follows the condition, so a '/' after the ')' starts a
-	// regular expression, e.g. `if (a) /b/.test(s)`, while after other parentheses it is
-	// division, e.g. `(a) / b`.
-	parenthesesCloseCondition []bool
-	// previousToken is the previous token read in code, including whitespace, so that
-	// the second character of `++` and `--` can be recognized.
-	previousToken string
-	// previousKeyword is the previous non-whitespace token read in code if it is a
-	// keyword, or empty otherwise. An identifier after '.' is a property name, not a
-	// keyword, e.g. return in `b.return / 2`.
-	previousKeyword string
-	// previousTokenIsDot is true when the previous non-whitespace token read in code is
-	// '.', so that the next identifier is a property name.
-	previousTokenIsDot bool
-	// atLineStart is true when only whitespace and comments have been read in code since
-	// the start of the source or the last line terminator, where --> starts a comment.
-	atLineStart bool
+	// lexer reads the source at the position of the input passed to the Tokenizer.
+	lexer *lexer
+	// alternatives are the other interpretations of the source. Each reads the source
+	// in its own tokens, so it can be at a different position to lexer.
+	alternatives []alternative
+	// hasTooManyAlternatives is true once the number of interpretations exceeded
+	// maxAlternatives, after which the context of every value is ambiguous.
+	hasTooManyAlternatives bool
+}
+
+// alternative is an interpretation of the source, and the index of the input that it
+// has read up to.
+type alternative struct {
+	lexer *lexer
+	index int
+}
+
+// IsEqual returns true if the alternatives have read the source up to the same index, and
+// have the same state.
+func (a alternative) IsEqual(other alternative) bool {
+	return a.index == other.index && a.lexer.IsEqual(other.lexer)
 }
 
 // New creates a Tokenizer positioned at the start of JavaScript source.
 func New() *Tokenizer {
 	return &Tokenizer{
-		regexpAllowed: true,
-		atLineStart:   true,
+		lexer: newLexer(),
 	}
 }
 
 // GetContext returns the context of the current position in the source.
 func (t *Tokenizer) GetContext() Context {
-	switch t.quote {
-	case quoteBacktick:
-		return ContextTemplateLiteral
-	case quoteSingle, quoteDouble:
-		return ContextString
-	case quoteRegexp:
-		if t.atRegexpStart {
-			return ContextRegexpStart
+	return t.lexer.GetContext()
+}
+
+// RecordValue records that a value, such as a Go expression, has been inserted into the
+// source between start and the current position of pi, and returns the context of the
+// value. It returns ErrAmbiguousContext if the interpretations of the source differ
+// about the context of the value.
+func (t *Tokenizer) RecordValue(pi *parse.Input, start int) (context Context, err error) {
+	// The lexer has read the source up to start, so the alternatives are advanced to start
+	// before the value is recorded.
+	err = t.advanceAlternatives(pi, start)
+	if err != nil {
+		return t.lexer.GetContext(), err
+	}
+	context = t.lexer.GetContext()
+	t.lexer.RecordValue()
+	end := pi.Index()
+
+	isAmbiguous := t.hasTooManyAlternatives
+	for i := range t.alternatives {
+		if t.alternatives[i].index != start || t.alternatives[i].lexer.GetContext() != context {
+			// The interpretation read the position of the value as part of a longer token,
+			// e.g. a comment, or has the value in a different context.
+			isAmbiguous = true
+			continue
 		}
-		return ContextRegexp
+		t.alternatives[i].lexer.RecordValue()
+		t.alternatives[i].index = end
 	}
-	return ContextCode
-}
-
-// RecordValue records that a value has been inserted at the current position, such as
-// a Go expression. In code, a value ends an expression, so a '/' after it is a division.
-func (t *Tokenizer) RecordValue() {
-	t.atRegexpStart = false
-	if t.quote != quoteNone {
-		return
+	if isAmbiguous {
+		return context, ErrAmbiguousContext
 	}
-	t.regexpAllowed = false
-	t.recordCodeToken(insertedValueToken)
+	t.mergeAlternatives(end)
+	return context, nil
 }
-
-// insertedValueToken is recorded as the previous token in code when a value is
-// inserted.
-const insertedValueToken = "{{ }}"
 
 // ReadComment reads a comment, if the input is at the start of one in code. Within a
 // string, template literal, or regular expression, // and /* are data, so no comment is
 // read.
 func (t *Tokenizer) ReadComment(pi *parse.Input) (comment string, ok bool, err error) {
-	if t.quote != quoteNone {
-		return "", false, nil
-	}
-	comment, ok, err = jsComment.Parse(pi)
-	if err != nil || ok {
-		t.recordComment(comment)
+	comment, ok, err = t.lexer.ReadComment(pi)
+	if err != nil || !ok {
 		return comment, ok, err
 	}
-	if !t.atLineStart {
-		return "", false, nil
-	}
-	comment, ok, err = jsHTMLCloseComment.Parse(pi)
-	t.recordComment(comment)
-	return comment, ok, err
-}
-
-// recordComment records that comment has been read in code. A comment is whitespace,
-// so it doesn't change whether a '/' starts a regular expression, but a comment that
-// contains a line terminator starts a new line.
-func (t *Tokenizer) recordComment(comment string) {
-	if strings.ContainsAny(comment, "\n\r  ") {
-		t.atLineStart = true
-	}
+	return comment, true, t.advanceAlternatives(pi, pi.Index())
 }
 
 // Read reads the next token of JavaScript source, updates the lexical state, and returns
 // the source text of the token. It returns false at the end of the input.
 func (t *Tokenizer) Read(pi *parse.Input) (token string, ok bool, err error) {
-	switch t.quote {
-	case quoteNone:
-		return t.readCodeToken(pi)
-	case quoteRegexp:
-		return t.readRegexpToken(pi)
-	}
-	return t.readStringLiteralToken(pi)
-}
-
-func (t *Tokenizer) readStringLiteralToken(pi *parse.Input) (token string, ok bool, err error) {
-	token, ok, err = jsCharacter.Parse(pi)
+	token, ok, err = t.lexer.Read(pi)
 	if err != nil || !ok {
 		return token, ok, err
 	}
-	if t.quote == quoteBacktick && token == "$" {
-		peeked, peekOK := pi.Peek(1)
-		if peekOK && peeked == "{" {
-			pi.Take(1)
-			t.quote = quoteNone
-			t.substitutionBraceDepths = append(t.substitutionBraceDepths, 1)
-			t.regexpAllowed = true
-			t.recordCodeToken("${")
-			return "${", true, nil
-		}
-	}
-	if token == string(t.quote) {
-		t.quote = quoteNone
-		t.regexpAllowed = false
-		t.recordCodeToken(token)
-	}
-	return token, true, nil
+	t.addAlternative(t.lexer, pi.Index())
+	return token, true, t.advanceAlternatives(pi, pi.Index())
 }
 
-func (t *Tokenizer) readRegexpToken(pi *parse.Input) (token string, ok bool, err error) {
-	token, ok, err = jsCharacter.Parse(pi)
-	if err != nil || !ok {
-		return token, ok, err
-	}
-	t.atRegexpStart = false
-	switch token {
-	case "[":
-		t.inRegexpClass = true
-	case "]":
-		t.inRegexpClass = false
-	case "/":
-		if t.inRegexpClass {
-			break
-		}
-		// The flags that follow are read as an identifier, which is not a keyword, so a
-		// '/' after them is division.
-		t.quote = quoteNone
-		t.regexpAllowed = false
-		t.recordCodeToken(token)
-	case "\n", "\r", " ", " ":
-		// A line terminator in a regular expression is a syntax error. End the regular
-		// expression, so that the rest of the source is read as code.
-		t.quote = quoteNone
-		t.inRegexpClass = false
-		t.regexpAllowed = true
-		t.recordCodeToken(token)
-	}
-	return token, true, nil
-}
-
-func (t *Tokenizer) readCodeToken(pi *parse.Input) (token string, ok bool, err error) {
-	token, ok, err = t.ReadComment(pi)
-	if err != nil || ok {
-		return token, ok, err
-	}
-
-	token, ok, err = jsNumericLiteralWithDecimalPoint.Parse(pi)
-	if err != nil {
-		return token, false, err
-	}
-	if ok {
-		t.regexpAllowed = false
-		t.recordCodeToken(token)
-		return token, true, nil
-	}
-
-	token, ok, err = jsIdentifierName.Parse(pi)
-	if err != nil {
-		return token, false, err
-	}
-	if ok {
-		t.regexpAllowed = !t.previousTokenIsDot && slices.Contains(jsKeywordsPrecedingExpression, token)
-		t.recordCodeToken(token)
-		return token, true, nil
-	}
-
-	token, ok, err = jsCharacter.Parse(pi)
-	if err != nil || !ok {
-		return token, ok, err
-	}
-	recorded := token
-	switch token {
-	case string(quoteSingle), string(quoteDouble), string(quoteBacktick):
-		t.quote = quote(token)
-	case "/":
-		if t.regexpAllowed {
-			t.quote = quoteRegexp
-			t.inRegexpClass = false
-			t.atRegexpStart = true
-			break
-		}
-		t.regexpAllowed = true
-	case "{":
-		if len(t.substitutionBraceDepths) > 0 {
-			t.substitutionBraceDepths[len(t.substitutionBraceDepths)-1]++
-		}
-		t.regexpAllowed = true
-	case "}":
-		t.regexpAllowed = true
-		if len(t.substitutionBraceDepths) == 0 {
-			break
-		}
-		innermost := len(t.substitutionBraceDepths) - 1
-		t.substitutionBraceDepths[innermost]--
-		if t.substitutionBraceDepths[innermost] == 0 {
-			t.substitutionBraceDepths = t.substitutionBraceDepths[:innermost]
-			t.quote = quoteBacktick
-		}
-	case "(":
-		t.parenthesesCloseCondition = append(t.parenthesesCloseCondition, slices.Contains(jsKeywordsPrecedingCondition, t.previousKeyword))
-		t.regexpAllowed = true
-	case ")":
-		t.regexpAllowed = false
-		if len(t.parenthesesCloseCondition) == 0 {
-			break
-		}
-		innermost := len(t.parenthesesCloseCondition) - 1
-		t.regexpAllowed = t.parenthesesCloseCondition[innermost]
-		t.parenthesesCloseCondition = t.parenthesesCloseCondition[:innermost]
-	case "]":
-		t.regexpAllowed = false
-	case "+", "-":
-		// The second character of a ++ or -- operator. A postfix increment or decrement
-		// ends an expression, e.g. `i++ / 2`. A '/' can't directly follow a prefix
-		// increment or decrement, because its operand must be a reference.
-		if t.previousToken == token {
-			t.regexpAllowed = false
-			recorded = t.previousToken + token
-			break
-		}
-		t.regexpAllowed = true
-	default:
-		if strings.HasPrefix(token, `\`) {
-			t.regexpAllowed = false
-			break
-		}
-		if strings.TrimSpace(token) != "" {
-			t.regexpAllowed = true
-		}
-	}
-	t.recordCodeToken(recorded)
-	return token, true, nil
-}
-
-// recordCodeToken records token as the previous token read in code.
-func (t *Tokenizer) recordCodeToken(token string) {
-	t.previousToken = token
-	if strings.ContainsAny(token, "\n\r  ") {
-		t.atLineStart = true
+// addAlternative adds the Alternative of l, if it has one, as an interpretation of the
+// source read up to index.
+func (t *Tokenizer) addAlternative(l *lexer, index int) {
+	if l.Alternative == nil {
 		return
 	}
-	if strings.TrimSpace(token) == "" {
-		return
+	t.alternatives = append(t.alternatives, alternative{lexer: l.Alternative, index: index})
+	l.Alternative = nil
+}
+
+// advanceAlternatives reads the source with each alternative interpretation, until it
+// reaches target, and then merges the interpretations that have the same state. The
+// position of pi is restored afterwards.
+func (t *Tokenizer) advanceAlternatives(pi *parse.Input, target int) (err error) {
+	index := pi.Index()
+	defer pi.Seek(index)
+	// An alternative can add further alternatives, which are advanced in turn.
+	for i := 0; i < len(t.alternatives); i++ {
+		pi.Seek(t.alternatives[i].index)
+		for pi.Index() < target {
+			_, ok, err := t.alternatives[i].lexer.Read(pi)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				break
+			}
+			t.addAlternative(t.alternatives[i].lexer, pi.Index())
+		}
+		t.alternatives[i].index = pi.Index()
 	}
-	t.atLineStart = false
-	if token == "await" && t.previousKeyword == "for" {
-		// The condition of a for await statement follows the await keyword.
-		t.previousTokenIsDot = false
-		return
+	t.mergeAlternatives(target)
+	return nil
+}
+
+// mergeAlternatives removes each alternative at index that has the same state as the
+// lexer, or as another alternative.
+func (t *Tokenizer) mergeAlternatives(index int) {
+	var merged []alternative
+	for _, a := range t.alternatives {
+		if a.index == index && a.lexer.IsEqual(t.lexer) {
+			continue
+		}
+		if slices.ContainsFunc(merged, a.IsEqual) {
+			continue
+		}
+		merged = append(merged, a)
 	}
-	t.previousKeyword = ""
-	if !t.previousTokenIsDot && (slices.Contains(jsKeywordsPrecedingExpression, token) || slices.Contains(jsKeywordsPrecedingCondition, token)) {
-		t.previousKeyword = token
+	t.alternatives = merged
+	if len(t.alternatives) > maxAlternatives {
+		t.hasTooManyAlternatives = true
+		t.alternatives = nil
 	}
-	t.previousTokenIsDot = token == "."
 }
-
-// jsKeywordsPrecedingExpression are the keywords that can be followed by an expression,
-// so a '/' after one of them starts a regular expression rather than a division.
-var jsKeywordsPrecedingExpression = []string{
-	"await",
-	"case",
-	"delete",
-	"do",
-	"else",
-	"in",
-	"instanceof",
-	"new",
-	"of",
-	"return",
-	"throw",
-	"typeof",
-	"void",
-	"yield",
-}
-
-// jsKeywordsPrecedingCondition are the keywords that are followed by a parenthesized
-// condition and then a statement, so a '/' after the closing parenthesis of the
-// condition starts a regular expression rather than a division.
-var jsKeywordsPrecedingCondition = []string{
-	"for",
-	"if",
-	"while",
-	"with",
-}
-
-// jsNumericLiteralWithDecimalPoint reads a decimal number that contains a decimal point,
-// such as 1.5, 1., or 1.e3. Without it, the digits are read as an identifier, and the
-// '.' that follows as a property access, so a '/' after `1.` would start a regular
-// expression rather than a division.
-var jsNumericLiteralWithDecimalPoint = parse.StringFrom(
-	parse.StringFrom(parse.OneOrMore(parse.RuneWhere(isDecimalDigitOrSeparator))),
-	parse.String("."),
-	parse.StringFrom(parse.ZeroOrMore(parse.RuneWhere(isJSIdentifierRune))),
-)
-
-func isDecimalDigitOrSeparator(r rune) bool {
-	return (r >= '0' && r <= '9') || r == '_'
-}
-
-var jsIdentifierName = parse.StringFrom(parse.OneOrMore(parse.RuneWhere(isJSIdentifierRune)))
-
-func isJSIdentifierRune(r rune) bool {
-	return r == '_' || r == '$' || unicode.IsLetter(r) || unicode.IsDigit(r)
-}
-
-var jsCharacter = parse.Any(jsEscapedCharacter, parse.AnyRune)
-
-// \uXXXX	Unicode code point escape	'a' = 'a'
-var (
-	hexDigit        = parse.Any(parse.ZeroToNine, parse.RuneIn("abcdef"), parse.RuneIn("ABCDEF"))
-	jsUnicodeEscape = parse.StringFrom(parse.String("\\u"), hexDigit, hexDigit, hexDigit, hexDigit)
-)
-
-// \u{X...}	ES6+ extended Unicode escape	'\u{1F600}' = '😀'
-var jsExtendedUnicodeEscape = parse.StringFrom(parse.String("\\u{"), hexDigit, parse.StringFrom(parse.AtLeast(1, parse.ZeroOrMore(hexDigit))), parse.String("}"))
-
-// \xXX	Hex code (2-digit)	'\x41' = 'A'
-var jsHexEscape = parse.StringFrom(parse.String("\\x"), hexDigit, hexDigit)
-
-// \x Backslash escape	'\\' = '\'
-var jsBackslashEscape = parse.StringFrom(parse.String("\\"), parse.AnyRune)
-
-// All escapes.
-var jsEscapedCharacter = parse.Any(jsBackslashEscape, jsUnicodeEscape, jsHexEscape, jsExtendedUnicodeEscape)
-
-// jsComment includes <!--, which starts a single line comment in a classic script.
-var jsComment = parse.Any(jsSingleLineComment, jsMultiLineComment, jsHTMLOpenComment)
-
-var (
-	jsStartSingleLineComment = parse.String("//")
-	jsEndOfSingleLineComment = parse.StringFrom(parse.Or(parse.NewLine, parse.EOF[string]()))
-	jsSingleLineComment      = parse.StringFrom(jsStartSingleLineComment, parse.StringUntil(jsEndOfSingleLineComment), jsEndOfSingleLineComment)
-	jsHTMLOpenComment        = parse.StringFrom(parse.String("<!--"), parse.StringUntil(jsEndOfSingleLineComment), jsEndOfSingleLineComment)
-	// jsHTMLCloseComment is a comment in a classic script only at the start of a
-	// line. Elsewhere, `a --> b` is `a-- > b`.
-	jsHTMLCloseComment = parse.StringFrom(parse.String("-->"), parse.StringUntil(jsEndOfSingleLineComment), jsEndOfSingleLineComment)
-)
-
-var (
-	jsStartMultiLineComment = parse.String("/*")
-	jsEndOfMultiLineComment = parse.StringFrom(parse.Or(parse.String("*/"), parse.EOF[string]()))
-	jsMultiLineComment      = parse.StringFrom(jsStartMultiLineComment, parse.StringUntil(jsEndOfMultiLineComment), jsEndOfMultiLineComment, parse.OptionalWhitespace)
-)
