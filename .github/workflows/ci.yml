@@ -17,7 +17,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: DeterminateSystems/determinate-nix-action@96c5ee93a9dddf2830d31e1da6ec719077336c28 # v3.23.3
+      - uses: DeterminateSystems/determinate-nix-action@f296148a827001a9a82d3685b53210c06e5d3b67 # v3.24.0
         with:
           diagnostic-endpoint: ""
 
@@ -80,7 +80,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: DeterminateSystems/determinate-nix-action@96c5ee93a9dddf2830d31e1da6ec719077336c28 # v3.23.3
+      - uses: DeterminateSystems/determinate-nix-action@f296148a827001a9a82d3685b53210c06e5d3b67 # v3.24.0
         with:
           diagnostic-endpoint: ""
 
@@ -103,7 +103,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: DeterminateSystems/determinate-nix-action@e847f25223456b3058e12f7fc9d777b6a6f25060 # v3.23.2
+      - uses: DeterminateSystems/determinate-nix-action@f296148a827001a9a82d3685b53210c06e5d3b67 # v3.24.0
         with:
           diagnostic-endpoint: ""
 
@@ -126,7 +126,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: DeterminateSystems/determinate-nix-action@96c5ee93a9dddf2830d31e1da6ec719077336c28 # v3.23.3
+      - uses: DeterminateSystems/determinate-nix-action@f296148a827001a9a82d3685b53210c06e5d3b67 # v3.24.0
         with:
           diagnostic-endpoint: ""
 
@@ -149,7 +149,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: DeterminateSystems/determinate-nix-action@96c5ee93a9dddf2830d31e1da6ec719077336c28 # v3.23.3
+      - uses: DeterminateSystems/determinate-nix-action@f296148a827001a9a82d3685b53210c06e5d3b67 # v3.24.0
         with:
           diagnostic-endpoint: ""
 
@@ -172,7 +172,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: DeterminateSystems/determinate-nix-action@96c5ee93a9dddf2830d31e1da6ec719077336c28 # v3.23.3
+      - uses: DeterminateSystems/determinate-nix-action@f296148a827001a9a82d3685b53210c06e5d3b67 # v3.24.0
         with:
           diagnostic-endpoint: ""
 

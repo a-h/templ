@@ -20,7 +20,7 @@ jobs:
         with:
           ref: "${{ (inputs.tag != null) && format('refs/tags/{0}', inputs.tag) || '' }}"
           persist-credentials: false
-      - uses: "DeterminateSystems/determinate-nix-action@96c5ee93a9dddf2830d31e1da6ec719077336c28" # v3.23.3
+      - uses: "DeterminateSystems/determinate-nix-action@f296148a827001a9a82d3685b53210c06e5d3b67" # v3.24.0
         with:
           diagnostic-endpoint: ""
       - uses: "DeterminateSystems/flakehub-push@e001ee821cdb763ef120c01f1048bfb2f938bb9c" # v7
