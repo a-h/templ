@@ -1,8 +1,7 @@
 name: Deploy Docs
 
 on:
-  release:
-    types: [published]
+  workflow_call:
   workflow_dispatch:
 
 concurrency:
