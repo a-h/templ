@@ -175,6 +175,14 @@ Run the lint operations that are run as part of the CI.
 golangci-lint run --verbose
 ```
 
+### vulncheck
+
+Check for known vulnerabilities in dependencies that templ calls.
+
+```sh
+govulncheck ./...
+```
+
 ### ensure-generated
 
 Ensure that templ files have been generated with the local version of templ, and that those files have been added to git.

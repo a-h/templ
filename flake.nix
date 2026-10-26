@@ -2,8 +2,7 @@
   description = "templ";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     gitignore = {
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -18,7 +17,6 @@
     {
       self,
       nixpkgs,
-      nixpkgs-unstable,
       gitignore,
       version,
     }:
@@ -26,7 +24,6 @@
       allSystems = [
         "x86_64-linux" # 64-bit Intel/AMD Linux
         "aarch64-linux" # 64-bit ARM Linux
-        "x86_64-darwin" # 64-bit Intel macOS
         "aarch64-darwin" # 64-bit ARM macOS
       ];
       forAllSystems =
@@ -35,19 +32,14 @@
           system:
           f {
             inherit system;
-            pkgs =
-              let
-                pkgs-unstable = import nixpkgs-unstable { inherit system; };
-              in
-              import nixpkgs {
-                inherit system;
-                overlays = [
-                  (final: prev: {
-                    gopls = pkgs-unstable.gopls;
-                    version = version.packages.${system}.default; # Used to apply version numbers to the repo.
-                  })
-                ];
-              };
+            pkgs = import nixpkgs {
+              inherit system;
+              overlays = [
+                (final: prev: {
+                  version = version.packages.${system}.default; # Used to apply version numbers to the repo.
+                })
+              ];
+            };
           }
         );
     in
@@ -57,7 +49,7 @@
         rec {
           default = templ;
 
-          templ = pkgs.buildGoModule {
+          templ = pkgs.buildGo127Module {
             pname = "templ";
             version = builtins.readFile ./.version;
             subPackages = [ "cmd/templ" ];
@@ -94,7 +86,7 @@
         }
         # `nix build .#docker-image` builds the Docker image. It requires a Linux system.
         # The image runs as the nonroot user (UID 65532) and has no shell.
-        // pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
+        // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
           docker-image = pkgs.dockerTools.buildLayeredImage {
             name = "ghcr.io/a-h/templ";
             tag = "latest";
@@ -132,7 +124,7 @@
             pkgs.cosign # Used to sign container images.
             pkgs.crane # Used to push and tag Docker images.
             pkgs.esbuild # Used to package JS examples.
-            pkgs.go
+            pkgs.go_1_27
             pkgs.gopls
             pkgs.goreleaser
             pkgs.gotestsum

@@ -79,7 +79,7 @@ func Serve(ctx context.Context, ln net.Listener, server StreamServer, idleTimeou
 
 	newConns := make(chan net.Conn)
 	doneListening := make(chan error)
-	closedConns := make(chan error)
+	closedConns := make(chan struct{})
 
 	go func() {
 		for {
@@ -105,7 +105,8 @@ func Serve(ctx context.Context, ln net.Listener, server StreamServer, idleTimeou
 			stream := NewStream(netConn)
 			go func() {
 				conn := NewConn(stream)
-				closedConns <- server.ServeStream(ctx, conn)
+				_ = server.ServeStream(ctx, conn)
+				closedConns <- struct{}{}
 				_ = stream.Close()
 			}()
 
@@ -113,9 +114,6 @@ func Serve(ctx context.Context, ln net.Listener, server StreamServer, idleTimeou
 			return err
 
 		case <-closedConns:
-			// if !isClosingError(err) {
-			// }
-
 			activeConns--
 			if activeConns == 0 {
 				connTimer.Reset(idleTimeout)

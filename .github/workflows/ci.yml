@@ -96,6 +96,29 @@ jobs:
       - name: Lint
         run: nix develop --command xc lint
 
+  vulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: DeterminateSystems/determinate-nix-action@e847f25223456b3058e12f7fc9d777b6a6f25060 # v3.23.2
+        with:
+          diagnostic-endpoint: ""
+
+      - name: Restore and save Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          gc-max-store-size-linux: 1G
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-primary-key: never
+
+      - name: Vulncheck
+        run: nix develop --command xc vulncheck
+
   fuzz-corpus:
     runs-on: ubuntu-latest
     steps:
