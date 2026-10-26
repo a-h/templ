@@ -62,7 +62,7 @@
             version = builtins.readFile ./.version;
             subPackages = [ "cmd/templ" ];
             src = gitignore.lib.gitignoreSource ./.;
-            vendorHash = "sha256-WXUlbUR+5a0BRStFF4A9mMjGiYFL5ULu1yrRhIG0vwc=";
+            vendorHash = "sha256-MMAoHofeZzGNFsjxY4nrPRyaiKOk4fLYY+kIVmdAL3g=";
             env = {
               CGO_ENABLED = 0;
             };
