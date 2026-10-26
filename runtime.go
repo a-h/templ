@@ -426,7 +426,7 @@ type SafeCSS string
 
 type SafeCSSProperty string
 
-var safeCSSPropertyType = reflect.TypeOf(SafeCSSProperty(""))
+var safeCSSPropertyType = reflect.TypeFor[SafeCSSProperty]()
 
 // SanitizeCSS sanitizes CSS properties to ensure that they are safe.
 func SanitizeCSS[T ~string](property string, value T) SafeCSS {
