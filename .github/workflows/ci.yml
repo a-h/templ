@@ -66,7 +66,7 @@ jobs:
           name: coverage
 
       - name: Update coverage report
-        uses: ncruces/go-coverage-report@dfc237255099f2d25066babde51253992175e365 # v0.3.2
+        uses: ncruces/go-coverage-report@69fd9ab687d384cc6c78c31967e204abdfa21271 # v0.3.3
         with:
           coverage-file: coverage.out
           report: 'true'
