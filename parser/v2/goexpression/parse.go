@@ -15,6 +15,7 @@ import (
 var (
 	ErrContainerFuncNotFound = errors.New("parser error: templ container function not found")
 	ErrExpectedNodeNotFound  = errors.New("parser error: expected node not found")
+	ErrBlockOpeningNotFound  = errors.New("parser error: block opening brace not found")
 )
 
 var defaultRegexp = regexp.MustCompile(`^default\s*:`)
@@ -54,7 +55,7 @@ func If(content string) (start, end int, err error) {
 	if !strings.HasPrefix(content, "if") {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
-	return extract(content, func(body []ast.Stmt) (start, end int, err error) {
+	return extractBlock(content, func(body []ast.Stmt) (start, end int, err error) {
 		stmt, ok := body[0].(*ast.IfStmt)
 		if !ok {
 			return 0, 0, ErrExpectedNodeNotFound
@@ -69,7 +70,7 @@ func For(content string) (start, end int, err error) {
 	if !strings.HasPrefix(content, "for") {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
-	return extract(content, func(body []ast.Stmt) (start, end int, err error) {
+	return extractBlock(content, func(body []ast.Stmt) (start, end int, err error) {
 		stmt := body[0]
 		switch stmt := stmt.(type) {
 		case *ast.ForStmt:
@@ -89,7 +90,7 @@ func Switch(content string) (start, end int, err error) {
 	if !strings.HasPrefix(content, "switch") {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
-	return extract(content, func(body []ast.Stmt) (start, end int, err error) {
+	return extractBlock(content, func(body []ast.Stmt) (start, end int, err error) {
 		stmt := body[0]
 		switch stmt := stmt.(type) {
 		case *ast.SwitchStmt:
@@ -198,7 +199,7 @@ func SliceArgs(content string) (expr string, err error) {
 	prefix := "package main\nvar templ_args = []any{"
 	src := prefix + content + "}"
 
-	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors|parser.SkipObjectResolution)
 	if node == nil {
 		return expr, parseErr
 	}
@@ -235,15 +236,28 @@ func SliceArgs(content string) (expr string, err error) {
 }
 
 // Func returns the Go code up to the opening brace of the function body.
+//
+// When the signature parses with an empty body, only the signature is parsed,
+// not the templ code that follows it. When the signature has a syntax error,
+// the whole of content is parsed and the error is ignored, so that the Go
+// compiler reports it against the generated code, which maps back to its
+// position in the templ file.
 func Func(content string) (name, expr string, err error) {
 	prefix := "package main\n"
-	src := prefix + content
 
-	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
-	if node == nil {
-		return name, expr, parseErr
+	node, offset, err := findBlockOpening(prefix, content, "{}")
+	if err != nil {
+		src := prefix + content
+		node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors|parser.SkipObjectResolution)
+		if node == nil {
+			return name, expr, parseErr
+		}
+		return extractFuncSignature(node, src)
 	}
+	return extractFuncSignature(node, prefix+content[:offset])
+}
 
+func extractFuncSignature(node *ast.File, src string) (name, expr string, err error) {
 	inspectFirstNode(node, func(n ast.Node) bool {
 		// Find the first function declaration.
 		fn, ok := n.(*ast.FuncDecl)
@@ -297,15 +311,51 @@ func inspectFirstNode(node ast.Node, f func(ast.Node) bool) {
 // logical block.
 type Extractor func(body []ast.Stmt) (start, end int, err error)
 
-func extract(content string, extractor Extractor) (start, end int, err error) {
-	prefix := "package main\nfunc templ_container() {\n"
-	src := prefix + content
+const containerPrefix = "package main\nfunc templ_container() {\n"
 
-	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors)
+func extract(content string, extractor Extractor) (start, end int, err error) {
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", containerPrefix+content, parser.AllErrors|parser.SkipObjectResolution)
 	if node == nil {
 		return 0, 0, parseErr
 	}
+	return extractFromContainer(node, len(content), extractor)
+}
 
+func extractBlock(content string, extractor Extractor) (start, end int, err error) {
+	node, _, err := findBlockOpening(containerPrefix, content, "{}\n}")
+	if err != nil {
+		return extract(content, extractor)
+	}
+	return extractFromContainer(node, len(content), extractor)
+}
+
+func findBlockOpening(prefix, content, suffix string) (node *ast.File, offset int, err error) {
+	var s scanner.Scanner
+	fset := token.NewFileSet()
+	file := fset.AddFile("", fset.Base(), len(content))
+	s.Init(file, []byte(content), nil, 0)
+	for {
+		pos, tok, _ := s.Scan()
+		if tok == token.EOF {
+			return nil, 0, ErrBlockOpeningNotFound
+		}
+		if tok != token.LBRACE {
+			continue
+		}
+		offset = file.Offset(pos)
+		node, err = parser.ParseFile(token.NewFileSet(), "", prefix+content[:offset]+suffix, parser.SkipObjectResolution)
+		if err == nil {
+			return node, offset, nil
+		}
+		var errs scanner.ErrorList
+		if errors.As(err, &errs) && len(errs) > 0 && errs[0].Pos.Offset-len(prefix) > offset {
+			continue
+		}
+		return nil, 0, err
+	}
+}
+
+func extractFromContainer(node *ast.File, length int, extractor Extractor) (start, end int, err error) {
 	var found bool
 	inspectFirstNode(node, func(n ast.Node) bool {
 		// Find the "templ_container" function.
@@ -329,11 +379,11 @@ func extract(content string, extractor Extractor) (start, end int, err error) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 
-	start -= len(prefix)
-	end -= len(prefix)
+	start -= len(containerPrefix)
+	end -= len(containerPrefix)
 
-	if end > len(content) {
-		end = len(content)
+	if end > length {
+		end = length
 	}
 	if start > end {
 		start = end

@@ -260,3 +260,21 @@ func TestTemplateFileParserLargeFileWithManyTemplates(t *testing.T) {
 		t.Fatalf("expected large template file to parse: %v", err)
 	}
 }
+
+func TestTemplateFileParserLargeFileWithManyIfExpressions(t *testing.T) {
+	var sb strings.Builder
+	sb.WriteString("package main\n\n")
+	for i := 0; i < 300; i++ {
+		_, _ = fmt.Fprintf(&sb, "templ Component%d(variant string) {\n", i)
+		sb.WriteString("\tif variant == \"a\" {\n\t\t<p>A</p>\n")
+		for j := 0; j < 4; j++ {
+			_, _ = fmt.Fprintf(&sb, "\t} else if variant == \"%d\" {\n\t\t<p>%d</p>\n", j, j)
+		}
+		sb.WriteString("\t} else {\n\t\t<p>B</p>\n\t}\n}\n\n")
+	}
+
+	_, err := ParseString(sb.String())
+	if err != nil {
+		t.Fatalf("expected large template file to parse: %v", err)
+	}
+}
