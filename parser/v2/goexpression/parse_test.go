@@ -726,6 +726,30 @@ var funcTests = []testInput{
 		name:  "receiver func",
 		input: `(r recv) myfunc()`,
 	},
+	{
+		name:  "variadic parameter",
+		input: `myfunc(items ...string)`,
+	},
+	{
+		name:  "type parameters",
+		input: `myfunc[T, U any](t T, u U)`,
+	},
+	{
+		name:  "struct parameter",
+		input: `myfunc(v struct{ X int })`,
+	},
+	{
+		name:  "func parameter",
+		input: `myfunc(fn func(a int) error)`,
+	},
+	{
+		name:  "map of struct parameter",
+		input: `myfunc(m map[string]struct{ Y int })`,
+	},
+	{
+		name:  "generic struct parameter",
+		input: `myfunc[T any](v struct{ Items []T })`,
+	},
 }
 
 func FuzzFuncs(f *testing.F) {
@@ -757,6 +781,7 @@ func TestFunc(t *testing.T) {
 		"}",
 		"}\nvar x = []struct {}{}",
 		"}\nfunc secondFunc() {}",
+		" {\n\t<p>{ \"}\" }</p>\n}\n\ntempl next() {\n\t<p>Next</p>\n}",
 	}
 	for _, test := range funcTests {
 		for i, suffix := range suffixes {
@@ -801,5 +826,54 @@ func run(test testInput, prefix, suffix string, e extractor) func(t *testing.T) 
 		if diff := cmp.Diff(test.input, actual); diff != "" {
 			t.Error(diff)
 		}
+	}
+}
+
+func TestFindBlockOpening(t *testing.T) {
+	tests := []struct {
+		name   string
+		header string
+	}{
+		{name: "an if statement block opens at the first brace", header: `if x `},
+		{name: "a brace in a string does not open the block", header: `if a == "{" `},
+		{name: "a brace in a comment does not open the block", header: `if a /* { */ == b `},
+		{name: "a composite literal in parentheses does not open the block", header: `if x := (struct{}{}); x == y `},
+		{name: "a function literal does not open the block", header: `if f := func() bool { return true }; f() `},
+		{name: "a map literal does not open the block", header: `if x := map[string]int{"a": 1}; x["a"] == 1 `},
+		{name: "a slice literal in a range clause does not open the block", header: `for _, v := range []string{"a", "b"} `},
+		{name: "a struct slice literal in a range clause does not open the block", header: `for _, v := range []struct{ A int }{{1}} `},
+		{name: "a function literal argument does not open the block", header: `for v := range filter(items, func(s string) bool { return s != "" }) `},
+		{name: "a switch without a tag opens at the first brace", header: `switch `},
+		{name: "a type switch opens after the type assertion", header: `switch x := x.(type) `},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, offset, err := findBlockOpening(containerPrefix, tt.header+"{\n\t<p>{ v }</p>\n}\n<div>", "{}\n}")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if diff := cmp.Diff(len(tt.header), offset); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
+func TestFindBlockOpeningReturnsErrorWhenHeaderIsInvalid(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{name: "a syntax error before the brace is returned", content: "if x == == y {\n\t<p>A</p>\n}"},
+		{name: "an illegal token before the brace is returned", content: "if x # y {\n\t<p>A</p>\n}"},
+		{name: "content without a brace is not found", content: "if x"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, err := findBlockOpening(containerPrefix, tt.content, "{}\n}")
+			if err == nil {
+				t.Fatal("expected an error, got nil")
+			}
+		})
 	}
 }
