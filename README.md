@@ -116,8 +116,6 @@ go tool cover -func coverage.out | grep total
 
 ### test-cover-watch
 
-interactive: true
-
 ```sh
 gotestsum --watch -- -coverprofile=coverage.out
 ```
