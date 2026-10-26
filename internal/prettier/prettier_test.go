@@ -37,17 +37,23 @@ func TestIsAvailable(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping IsAvailable test in short mode")
 	}
-	t.Run("non-existent commands return false", func(t *testing.T) {
-		var nonExistentCommand = "templ_non_existent_command --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME"
-		if IsAvailable(nonExistentCommand) {
-			t.Errorf("IsAvailable should return false for non-existent command %q", nonExistentCommand)
-		}
-	})
-	t.Run("existing commands return true", func(t *testing.T) {
-		if !IsAvailable("ls -lah") {
-			t.Errorf("IsAvailable should return true for existing command %q", DefaultCommand())
-		}
-	})
+	tests := []struct {
+		name     string
+		command  string
+		expected bool
+	}{
+		{name: "existing commands return true", command: "ls -lah", expected: true},
+		{name: "non-existent commands return false", command: "templ_non_existent_command --use-tabs --stdin-filepath $TEMPL_PRETTIER_FILENAME", expected: false},
+		{name: "empty commands return false", command: "", expected: false},
+		{name: "whitespace-only commands return false", command: " \t\r\n", expected: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsAvailable(tt.command); got != tt.expected {
+				t.Errorf("IsAvailable(%q): got %v, expected %v", tt.command, got, tt.expected)
+			}
+		})
+	}
 }
 
 func TestDefaultCommand(t *testing.T) {
