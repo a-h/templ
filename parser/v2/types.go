@@ -1375,7 +1375,9 @@ type IfExpression struct {
 	Then       []Node
 	ElseIfs    []ElseIfExpression
 	Else       []Node
-	Range      Range
+	// ElseRange is the range of the "} else {" keyword. It is zero if there is no else clause.
+	ElseRange Range
+	Range     Range
 }
 
 type ElseIfExpression struct {
