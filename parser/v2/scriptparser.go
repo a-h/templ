@@ -35,7 +35,6 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	openTagStart := pi.PositionAt(start)
 
 	// Element name.
-	e := &ScriptElement{}
 	var name string
 	if name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
@@ -46,6 +45,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 		pi.Seek(start)
 		return n, false, nil
 	}
+	e := &ScriptElement{}
 
 	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
 		pi.Seek(start)
@@ -68,7 +68,7 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	// If there's a type attribute and it's not a JS attribute (e.g. text/javascript), we need to parse the contents as raw text.
 	if !hasJavaScriptType(e.Attributes) {
 		var contents string
-		if contents, ok, err = parse.StringUntil(jsEndTag).Parse(pi); err != nil || !ok {
+		if contents, ok, err = jsBody.Parse(pi); err != nil || !ok {
 			return e, true, parse.Error("<script>: expected end tag not present", pi.Position())
 		}
 		e.Contents = append(e.Contents, NewScriptContentsScriptCode(contents))
@@ -170,6 +170,10 @@ func (p scriptElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error)
 	return e, true, nil
 }
 
+func (p scriptElementParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}
+
 var javaScriptTypeAttributeValues = []string{
 	"", // If the type is not set, it is JavaScript.
 	"text/javascript",
@@ -205,5 +209,6 @@ func hasJavaScriptType(attrs []Attribute) bool {
 
 var (
 	jsEndTag    = parse.String("</script>")
+	jsBody      = parse.StringUntil(jsEndTag)
 	endTagStart = parse.String("</")
 )

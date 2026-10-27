@@ -41,7 +41,7 @@ func TestPackageParserErrors(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			pi := parse.NewInput(tt.input)
+			pi := parse.NewInput([]byte(tt.input))
 			_, ok, err := pkg.Parse(pi)
 			if ok {
 				t.Errorf("expected parsing to fail, but it succeeded")
@@ -84,7 +84,7 @@ func TestPackageParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			actual, ok, err := pkg.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)

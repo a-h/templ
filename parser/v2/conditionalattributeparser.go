@@ -71,6 +71,10 @@ func (conditionalAttributeParser) Parse(pi *parse.Input) (r *ConditionalAttribut
 	return r, true, nil
 }
 
+func (p conditionalAttributeParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}
+
 var attributeElseExpression parse.Parser[[]Attribute] = attributeElseExpressionParser{}
 
 type attributeElseExpressionParser struct{}
@@ -100,4 +104,8 @@ func (attributeElseExpressionParser) Parse(in *parse.Input) (r []Attribute, ok b
 	}
 
 	return r, true, nil
+}
+
+func (p attributeElseExpressionParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }

@@ -49,6 +49,8 @@ var scriptExpressionNameParser = ExpressionOf(parse.StringFrom(
 	parse.StringFrom(parse.AtMost(1000, parse.Any(parse.Letter, parse.ZeroToNine))),
 ))
 
+var scriptExpressionParameters = ExpressionOf(parse.StringUntil(closeBracket))
+
 var scriptExpressionParser = parse.Func(func(pi *parse.Input) (r scriptExpression, ok bool, err error) {
 	// Check the prefix first.
 	if _, ok, err = parse.String("script ").Parse(pi); err != nil || !ok {
@@ -70,7 +72,7 @@ var scriptExpressionParser = parse.Func(func(pi *parse.Input) (r scriptExpressio
 
 	// Read the parameters.
 	// p Person, other Other, t thing.Thing)
-	if r.Parameters, ok, err = ExpressionOf(parse.StringUntil(closeBracket)).Parse(pi); err != nil || !ok {
+	if r.Parameters, ok, err = scriptExpressionParameters.Parse(pi); err != nil || !ok {
 		err = parse.Error("script expression: parameters missing close bracket", pi.Position())
 		return
 	}

@@ -325,7 +325,7 @@ func TestForExpressionParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			actual, matched, err := forExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -352,7 +352,7 @@ func TestForExpressionParserNegatives(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			_, matched, err := forExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -432,7 +432,7 @@ func TestForExpressionParserIncomplete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			_, matched, err := forExpression.Parse(input)
 			if err == nil {
 				t.Fatal("partial for should not be parsed successfully, but got nil")

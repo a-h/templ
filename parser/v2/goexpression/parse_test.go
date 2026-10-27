@@ -2,6 +2,7 @@ package goexpression
 
 import (
 	"fmt"
+	"go/token"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -62,7 +63,7 @@ func FuzzIf(f *testing.F) {
 		}
 	}
 	f.Fuzz(func(t *testing.T, src string) {
-		start, end, err := If(src)
+		start, end, err := If([]byte(src))
 		if err != nil {
 			t.Skip()
 			return
@@ -139,7 +140,7 @@ func FuzzFor(f *testing.F) {
 		}
 	}
 	f.Fuzz(func(t *testing.T, src string) {
-		start, end, err := For(src)
+		start, end, err := For([]byte(src))
 		if err != nil {
 			t.Skip()
 			return
@@ -199,7 +200,7 @@ func FuzzSwitch(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, s string) {
 		src := "switch " + s
-		start, end, err := For(src)
+		start, end, err := For([]byte(src))
 		if err != nil {
 			t.Skip()
 			return
@@ -261,7 +262,7 @@ func FuzzCaseStandard(f *testing.F) {
 		}
 	}
 	f.Fuzz(func(t *testing.T, src string) {
-		start, end, err := Case(src)
+		start, end, err := Case([]byte(src))
 		if err != nil {
 			t.Skip()
 			return
@@ -309,7 +310,7 @@ func FuzzCaseDefault(f *testing.F) {
 		f.Add("default:" + suffix)
 	}
 	f.Fuzz(func(t *testing.T, src string) {
-		start, end, err := Case(src)
+		start, end, err := Case([]byte(src))
 		if err != nil {
 			t.Skip()
 			return
@@ -561,7 +562,7 @@ func FuzzTemplExpression(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, s string) {
 		src := "switch " + s
-		start, end, err := TemplExpression(src)
+		start, end, err := TemplExpression([]byte(src))
 		if err != nil {
 			t.Skip()
 			return
@@ -584,7 +585,7 @@ func FuzzExpression(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, s string) {
 		src := "switch " + s
-		start, end, err := Expression(src)
+		start, end, err := Expression([]byte(src))
 		if err != nil {
 			t.Skip()
 			return
@@ -644,7 +645,7 @@ func TestSliceArgs(t *testing.T) {
 	for _, test := range sliceArgsTests {
 		for i, suffix := range suffixes {
 			t.Run(fmt.Sprintf("%s_%d", test.name, i), func(t *testing.T) {
-				expr, err := SliceArgs(test.input + suffix)
+				expr, err := SliceArgs([]byte(test.input + suffix))
 				if err != nil {
 					t.Errorf("failed to parse slice args: %v", err)
 				}
@@ -669,7 +670,7 @@ func FuzzSliceArgs(f *testing.F) {
 		}
 	}
 	f.Fuzz(func(t *testing.T, s string) {
-		_, err := SliceArgs(s)
+		_, err := SliceArgs([]byte(s))
 		if err != nil {
 			t.Skip()
 			return
@@ -753,7 +754,6 @@ var funcTests = []testInput{
 }
 
 func FuzzFuncs(f *testing.F) {
-	prefix := "func "
 	suffixes := []string{
 		"",
 		"}",
@@ -762,11 +762,11 @@ func FuzzFuncs(f *testing.F) {
 	}
 	for _, test := range funcTests {
 		for _, suffix := range suffixes {
-			f.Add(prefix + test.input + suffix)
+			f.Add(test.input + suffix)
 		}
 	}
 	f.Fuzz(func(t *testing.T, s string) {
-		_, _, err := Func(s)
+		_, _, err := Func([]byte(s))
 		if err != nil {
 			t.Skip()
 			return
@@ -775,7 +775,6 @@ func FuzzFuncs(f *testing.F) {
 }
 
 func TestFunc(t *testing.T) {
-	prefix := "func "
 	suffixes := []string{
 		"",
 		"}",
@@ -786,7 +785,7 @@ func TestFunc(t *testing.T) {
 	for _, test := range funcTests {
 		for i, suffix := range suffixes {
 			t.Run(fmt.Sprintf("%s_%d", test.name, i), func(t *testing.T) {
-				name, expr, err := Func(prefix + test.input + suffix)
+				name, expr, err := Func([]byte(test.input + suffix))
 				if err != nil {
 					t.Errorf("failed to parse slice args: %v", err)
 				}
@@ -807,12 +806,12 @@ type testInput struct {
 	expectedErr error
 }
 
-type extractor func(content string) (start, end int, err error)
+type extractor func(content []byte) (start, end int, err error)
 
 func run(test testInput, prefix, suffix string, e extractor) func(t *testing.T) {
 	return func(t *testing.T) {
 		src := prefix + test.input + suffix
-		start, end, err := e(src)
+		start, end, err := e([]byte(src))
 		if test.expectedErr == nil && err != nil {
 			t.Fatalf("expected nil error got error type %T: %v", err, err)
 		}
@@ -829,7 +828,7 @@ func run(test testInput, prefix, suffix string, e extractor) func(t *testing.T) 
 	}
 }
 
-func TestFindBlockOpening(t *testing.T) {
+func TestFindTerminatingToken(t *testing.T) {
 	tests := []struct {
 		name   string
 		header string
@@ -848,7 +847,7 @@ func TestFindBlockOpening(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, offset, err := findBlockOpening(containerPrefix, tt.header+"{\n\t<p>{ v }</p>\n}\n<div>", "{}\n}")
+			_, offset, err := findTerminatingToken(containerPrefix, []byte(tt.header+"{\n\t<p>{ v }</p>\n}\n<div>"), token.LBRACE, "{}\n}")
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -859,7 +858,7 @@ func TestFindBlockOpening(t *testing.T) {
 	}
 }
 
-func TestFindBlockOpeningReturnsErrorWhenHeaderIsInvalid(t *testing.T) {
+func TestFindTerminatingTokenReturnsErrorWhenHeaderIsInvalid(t *testing.T) {
 	tests := []struct {
 		name    string
 		content string
@@ -870,9 +869,32 @@ func TestFindBlockOpeningReturnsErrorWhenHeaderIsInvalid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, err := findBlockOpening(containerPrefix, tt.content, "{}\n}")
+			_, _, err := findTerminatingToken(containerPrefix, []byte(tt.content), token.LBRACE, "{}\n}")
 			if err == nil {
 				t.Fatal("expected an error, got nil")
+			}
+		})
+	}
+}
+
+func TestFindTerminatingTokenFindsClosingBrace(t *testing.T) {
+	tests := []struct {
+		name string
+		args string
+	}{
+		{name: "a variable closes at the first brace", args: ` name `},
+		{name: "a brace in a string does not close the expression", args: ` "}" `},
+		{name: "a function literal does not close the expression", args: ` f(func() string { return "a" }) `},
+		{name: "a composite literal does not close the expression", args: ` T{A: 1}.String() `},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, offset, err := findTerminatingToken("package main\nvar templ_args = []any{", []byte(tt.args+"}</p>\n}\n<div>"), token.RBRACE, "}")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if diff := cmp.Diff(len(tt.args), offset); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 func RunParserAllocTest[T any](t *testing.T, p parse.Parser[T], expectOK bool, maxAllocs int64, input string) {
-	pi := parse.NewInput(input)
+	pi := parse.NewInput([]byte(input))
 	actual := testing.AllocsPerRun(4, func() {
 		pi.Seek(0)
 		_, ok, err := p.Parse(pi)

@@ -25,3 +25,7 @@ func (p utf8RuneParser) Parse(pi *parse.Input) (match string, ok bool, err error
 	match, _ = pi.Take(size)
 	return match, true, nil
 }
+
+func (p utf8RuneParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}

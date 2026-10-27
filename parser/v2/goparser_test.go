@@ -78,6 +78,7 @@ func BenchmarkParseStringManyComponents(b *testing.B) {
 		{name: "element", format: "\t<p>Some HTML content for component %d row %d.</p>\n"},
 		{name: "if", format: "\tif count > %d {\n\t\t<p>Row %d.</p>\n\t}\n"},
 		{name: "for range over slice literal", format: "\tfor range []string{\"%d\", \"%d\"} {\n\t\t<p>Row.</p>\n\t}\n"},
+		{name: "string expression", format: "\t<p>{ name } %d %d</p>\n"},
 	}
 	for _, row := range rows {
 		for _, components := range []int{10, 40, 80} {

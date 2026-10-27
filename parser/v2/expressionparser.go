@@ -28,6 +28,7 @@ func ExpressionOf(p parse.Parser[string]) parse.Parser[Expression] {
 
 var lt = parse.Rune('<')
 var gt = parse.Rune('>')
+var equals = parse.String("=")
 var spaceOrTab = parse.Any(parse.Rune(' '), parse.Rune('\t'))
 var spaceOrTabOrNewLine = parse.Any(spaceOrTab, parse.String("\r\n"), parse.Rune('\n'))
 var openBrace = parse.String("{")
@@ -39,6 +40,7 @@ var openBraceWithPadding = parse.StringFrom(optionalSpaces,
 	openBrace,
 	optionalSpaces)
 var openBraceWithOptionalPadding = parse.Any(openBraceWithPadding, openBrace)
+var openBraceAndNewLine = parse.All(openBraceWithOptionalPadding, parse.NewLine)
 
 var closeBrace = parse.String("}")
 var closeBraceWithOptionalPadding = parse.StringFrom(optionalSpaces, closeBrace)
@@ -156,6 +158,10 @@ loop:
 	}
 
 	return NewExpression(sb.String(), from, pi.Position()), true, nil
+}
+
+func (p expressionParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }
 
 // Letters and digits

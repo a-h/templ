@@ -93,13 +93,15 @@ var elementOpenTagParser = parse.Func(func(pi *parse.Input) (e elementOpenTag, m
 var (
 	attributeNameFirst      = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:_@"
 	attributeNameSubsequent = attributeNameFirst + "-.0123456789*"
+	attributeNameStart      = parse.RuneIn(attributeNameFirst)
+	attributeNameRest       = parse.StringUntil(parse.RuneNotIn(attributeNameSubsequent))
 	attributeNameParser     = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
 		start := in.Index()
 		var prefix, suffix string
-		if prefix, ok, err = parse.RuneIn(attributeNameFirst).Parse(in); err != nil || !ok {
+		if prefix, ok, err = attributeNameStart.Parse(in); err != nil || !ok {
 			return
 		}
-		if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(attributeNameSubsequent)).Parse(in); err != nil {
+		if suffix, ok, err = attributeNameRest.Parse(in); err != nil {
 			in.Seek(start)
 			return
 		}
@@ -162,13 +164,14 @@ var (
 		}
 
 		attrStart := pi.Index()
-		attr = &ConstantAttribute{}
 
 		// Attribute name.
-		if attr.Key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
+		key, ok, err := attributeKeyParser.Parse(pi)
+		if err != nil || !ok {
 			pi.Seek(start)
 			return
 		}
+		attr = &ConstantAttribute{Key: key}
 
 		for _, p := range attributeValueParsers {
 			var valueRange Range
@@ -247,13 +250,14 @@ var boolConstantAttributeParser = parse.Func(func(pi *parse.Input) (attr *BoolCo
 	}
 
 	attrStart := pi.Index()
-	attr = &BoolConstantAttribute{}
 
 	// Attribute name.
-	if attr.Key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
+	key, ok, err := attributeKeyParser.Parse(pi)
+	if err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
+	attr = &BoolConstantAttribute{Key: key}
 
 	// We have a name, but if we have an equals sign, it's not a constant boolean attribute.
 	next, ok := pi.Peek(1)
@@ -288,10 +292,10 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r *BoolExp
 	}
 
 	attrStart := pi.Index()
-	r = &BoolExpressionAttribute{}
 
 	// Attribute name.
-	if r.Key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
+	key, ok, err := attributeKeyParser.Parse(pi)
+	if err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
@@ -301,6 +305,7 @@ var boolExpressionAttributeParser = parse.Func(func(pi *parse.Input) (r *BoolExp
 		pi.Seek(start)
 		return
 	}
+	r = &BoolExpressionAttribute{Key: key}
 
 	// Once we have a prefix, we must have an expression that returns a boolean.
 	if r.Expression, err = parseGo("boolean attribute", pi, goexpression.Expression); err != nil {
@@ -327,10 +332,10 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 	}
 
 	attrStart := pi.Index()
-	attr = &ExpressionAttribute{}
 
 	// Attribute name.
-	if attr.Key, ok, err = attributeKeyParser.Parse(pi); err != nil || !ok {
+	key, ok, err := attributeKeyParser.Parse(pi)
+	if err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
@@ -341,7 +346,7 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 	}
 
 	initializerStartIndex := pi.Index()
-	if _, ok, err = parse.String("=").Parse(pi); err != nil || !ok {
+	if _, ok, err = equals.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return attr, false, nil
 	}
@@ -361,6 +366,7 @@ var expressionAttributeParser = parse.Func(func(pi *parse.Input) (attr *Expressi
 		return attr, false, err
 	}
 
+	attr = &ExpressionAttribute{Key: key}
 	// Expression.
 	if attr.Expression, err = parseGoSliceArgs(pi); err != nil {
 		return attr, false, err
@@ -451,6 +457,10 @@ func (attributeParser) Parse(in *parse.Input) (out Attribute, ok bool, err error
 	return
 }
 
+func (p attributeParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}
+
 var attribute attributeParser
 
 type attributesParser struct{}
@@ -495,17 +505,23 @@ func (attributesParser) Parse(in *parse.Input) (attributes []Attribute, ok bool,
 	return attributes, true, nil
 }
 
+func (p attributesParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}
+
 // Element name.
 var (
 	elementNameFirst      = "abcdefghijklmnopqrstuvwxyz"
 	elementNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-:"
+	elementNameStart      = parse.RuneIn(elementNameFirst)
+	elementNameRest       = parse.StringUntil(parse.RuneNotIn(elementNameSubsequent))
 	elementNameParser     = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
 		start := in.Index()
 		var prefix, suffix string
-		if prefix, ok, err = parse.RuneIn(elementNameFirst).Parse(in); err != nil || !ok {
+		if prefix, ok, err = elementNameStart.Parse(in); err != nil || !ok {
 			return
 		}
-		if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(elementNameSubsequent)).Parse(in); err != nil || !ok {
+		if suffix, ok, err = elementNameRest.Parse(in); err != nil || !ok {
 			in.Seek(start)
 			return
 		}
@@ -517,6 +533,20 @@ var (
 		return prefix + suffix, true, nil
 	})
 )
+
+// closeTagMatcher matches the close tag of the element with the given name.
+type closeTagMatcher struct {
+	Name string
+}
+
+func (m closeTagMatcher) Match(in *parse.Input) (ok bool, err error) {
+	tag, ok := in.Peek(len("</") + len(m.Name) + len(">"))
+	if !ok || !strings.HasPrefix(tag, "</") || !strings.HasSuffix(tag, ">") || tag[len("</"):len(tag)-len(">")] != m.Name {
+		return false, nil
+	}
+	in.Take(len(tag))
+	return true, nil
+}
 
 // Void element closer.
 var voidElementCloser voidElementCloserParser
@@ -544,6 +574,10 @@ func (voidElementCloserParser) Parse(pi *parse.Input) (n Node, ok bool, err erro
 	}
 	pi.Take(len(ve))
 	return nil, true, nil
+}
+
+func (p voidElementCloserParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }
 
 // Element.
@@ -584,13 +618,13 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	}
 
 	// Parse children.
-	closer := StripType(parse.All(parse.String("</"), parse.String(ot.Name), parse.Rune('>')))
-	tnp := newTemplateNodeParser(closer, fmt.Sprintf("<%s>: close tag", ot.Name))
+	closer := closeTagMatcher{Name: ot.Name}
+	tnp := newTemplateNodeParser(closer, "close tag")
 	nodes, _, err := tnp.Parse(pi)
 	if err != nil {
 		notFoundErr, isNotFoundError := err.(UntilNotFoundError)
 		if isNotFoundError {
-			err = notFoundErr.ParseError
+			err = parse.Error(fmt.Sprintf("<%s>: %s", ot.Name, notFoundErr.Msg), notFoundErr.Pos)
 		}
 		// If we got any nodes, take them, because the LSP might want to use them.
 		r.Children = nodes.Nodes
@@ -604,7 +638,7 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 
 	// Close tag.
 	closeTagStart := pi.Position()
-	_, ok, err = closer.Parse(pi)
+	ok, err = closer.Match(pi)
 	if err != nil {
 		return r, true, err
 	}
@@ -616,6 +650,10 @@ func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	r.CloseTagRange = &closeTagRange
 
 	return addTrailingSpaceAndValidate(start, r, pi)
+}
+
+func (p elementParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }
 
 func addTrailingSpaceAndValidate(start parse.Position, e *Element, pi *parse.Input) (n Node, ok bool, err error) {

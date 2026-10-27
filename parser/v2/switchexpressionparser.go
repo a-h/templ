@@ -6,6 +6,7 @@ import (
 )
 
 var switchExpression parse.Parser[Node] = switchExpressionParser{}
+var caseTrailingSpaces = parse.StringFrom(parse.ZeroOrMore(parse.Rune(' ')))
 
 type switchExpressionParser struct{}
 
@@ -25,7 +26,7 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err 
 	}
 
 	// Eat " {\n".
-	if _, matched, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !matched {
+	if _, matched, err = openBraceAndNewLine.Parse(pi); err != nil || !matched {
 		err = parse.Error("switch: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return r, true, err
 	}
@@ -64,6 +65,10 @@ func (switchExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err 
 
 	r.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return r, true, nil
+}
+
+func (p switchExpressionParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }
 
 const fallthroughInLastCaseError = "switch: fallthrough cannot be used in the last case of a switch statement"
@@ -108,7 +113,7 @@ var caseExpressionStartParser = parse.Func(func(pi *parse.Input) (r Expression, 
 	}
 
 	// Eat terminating newline.
-	_, _, _ = parse.ZeroOrMore(parse.String(" ")).Parse(pi)
+	_, _, _ = caseTrailingSpaces.Parse(pi)
 	_, _, _ = parse.NewLine.Parse(pi)
 
 	return r, true, nil

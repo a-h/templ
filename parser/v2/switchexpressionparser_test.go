@@ -542,7 +542,7 @@ default:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			actual, matched, err := switchExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -559,7 +559,7 @@ default:
 
 func TestIncompleteSwitch(t *testing.T) {
 	t.Run("no opening brace", func(t *testing.T) {
-		input := parse.NewInput(`switch with no brace`)
+		input := parse.NewInput([]byte(`switch with no brace`))
 		_, matched, err := switchExpression.Parse(input)
 		if err == nil {
 			t.Fatal("expected an error, got nil")
@@ -579,7 +579,7 @@ func TestIncompleteSwitch(t *testing.T) {
 		}
 	})
 	t.Run("capitalised Switch", func(t *testing.T) {
-		input := parse.NewInput(`Switch with no brace`)
+		input := parse.NewInput([]byte(`Switch with no brace`))
 		_, matched, err := switchExpression.Parse(input)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -591,12 +591,12 @@ func TestIncompleteSwitch(t *testing.T) {
 }
 
 func TestSwitchWithImproperCaseFallthrough(t *testing.T) {
-	input := parse.NewInput(`switch "stringy" {
+	input := parse.NewInput([]byte(`switch "stringy" {
 	case "a":
 		fallthrough extra tokens
 	case "b":
 		{ "B" }
-}`)
+}`))
 	_, matched, err := switchExpression.Parse(input)
 	if err == nil {
 		t.Fatal("expected an error, got nil")
@@ -614,13 +614,13 @@ func TestSwitchWithImproperCaseFallthrough(t *testing.T) {
 }
 
 func TestSwitchWithNonTerminalFallthrough(t *testing.T) {
-	input := parse.NewInput(`switch "stringy" {
+	input := parse.NewInput([]byte(`switch "stringy" {
 	case "a":
 		fallthrough
 		<span></span>
 	case "b":
 		{ "B" }
-}`)
+}`))
 	_, matched, err := switchExpression.Parse(input)
 	if err == nil {
 		t.Fatal("expected an error, got nil")
@@ -638,12 +638,12 @@ func TestSwitchWithNonTerminalFallthrough(t *testing.T) {
 }
 
 func TestSwitchWithFallthroughInFinalCase(t *testing.T) {
-	input := parse.NewInput(`switch "stringy" {
+	input := parse.NewInput([]byte(`switch "stringy" {
 	case "a":
 		{ "A" }
 	case "b":
 		fallthrough
-}`)
+}`))
 	_, matched, err := switchExpression.Parse(input)
 	if err == nil {
 		t.Fatal("expected an error, got nil")

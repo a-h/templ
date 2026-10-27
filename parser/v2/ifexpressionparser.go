@@ -30,7 +30,7 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err erro
 	}
 
 	// Eat " {\n".
-	if _, matched, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !matched {
+	if _, matched, err = openBraceAndNewLine.Parse(pi); err != nil || !matched {
 		err = parse.Error("if: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return r, true, err
 	}
@@ -52,7 +52,7 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err erro
 	r.Then = thenNodes.Nodes
 
 	// Read the optional 'ElseIf' Nodes.
-	if r.ElseIfs, _, err = parse.ZeroOrMore(elseIfExpression).Parse(pi); err != nil {
+	if r.ElseIfs, _, err = elseIfExpressions.Parse(pi); err != nil {
 		return r, true, err
 	}
 
@@ -74,7 +74,13 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err erro
 	return r, true, nil
 }
 
+func (p ifExpressionParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}
+
 var elseIfExpression parse.Parser[ElseIfExpression] = elseIfExpressionParser{}
+var elseIfExpressions = parse.ZeroOrMore(elseIfExpression)
+var elseIfPrefix = parse.All(parse.OptionalWhitespace, closeBrace, parse.OptionalWhitespace, parse.String("else if"))
 
 type elseIfExpressionParser struct{}
 
@@ -82,7 +88,7 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, matche
 	start := pi.Index()
 
 	// Check the prefix first.
-	if _, matched, err = parse.All(parse.OptionalWhitespace, closeBrace, parse.OptionalWhitespace, parse.String("else if")).Parse(pi); err != nil || !matched {
+	if _, matched, err = elseIfPrefix.Parse(pi); err != nil || !matched {
 		pi.Seek(start)
 		return
 	}
@@ -95,7 +101,7 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, matche
 	}
 
 	// Eat " {\n".
-	if _, matched, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !matched {
+	if _, matched, err = openBraceAndNewLine.Parse(pi); err != nil || !matched {
 		err = parse.Error("else if: "+unterminatedMissingCurly, pi.PositionAt(start))
 		return
 	}
@@ -117,6 +123,10 @@ func (elseIfExpressionParser) Parse(pi *parse.Input) (r ElseIfExpression, matche
 
 	r.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return r, true, nil
+}
+
+func (p elseIfExpressionParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }
 
 var endElseParser = parse.All(
@@ -147,4 +157,8 @@ func (elseExpressionParser) Parse(in *parse.Input) (r Nodes, matched bool, err e
 	}
 
 	return r, true, nil
+}
+
+func (p elseExpressionParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }

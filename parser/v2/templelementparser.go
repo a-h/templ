@@ -78,4 +78,8 @@ func (p templElementExpressionParser) Parse(pi *parse.Input) (n Node, matched bo
 	return r, true, nil
 }
 
+func (p templElementExpressionParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}
+
 var templElementExpression templElementExpressionParser

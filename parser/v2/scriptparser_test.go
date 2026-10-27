@@ -30,7 +30,7 @@ func TestScriptElementParserPlain(t *testing.T) {
 				t.Fatalf("expected 2 files, got %d", len(a.Files))
 			}
 
-			input := parse.NewInput(clean(a.Files[0].Data))
+			input := parse.NewInput([]byte(clean(a.Files[0].Data)))
 			result, ok, err := scriptElement.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
@@ -550,7 +550,7 @@ const result = call(1000 / 10, {{ data }}, 1000 / 10);
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			result, ok, err := scriptElement.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
@@ -709,7 +709,7 @@ func TestScriptElementRendersGoExpressionsWithPositionAppropriateEscaping(t *tes
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			result, ok, err := scriptElement.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
@@ -757,7 +757,7 @@ func FuzzScriptParser(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, input string) {
-		_, _, _ = scriptElement.Parse(parse.NewInput(input))
+		_, _, _ = scriptElement.Parse(parse.NewInput([]byte(input)))
 	})
 }
 
@@ -851,7 +851,7 @@ func TestScriptElementParserErrors(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, err := scriptElement.Parse(parse.NewInput(tt.input))
+			_, _, err := scriptElement.Parse(parse.NewInput([]byte(tt.input)))
 			if diff := cmp.Diff(tt.expected, err); diff != "" {
 				t.Error(diff)
 			}
@@ -909,7 +909,7 @@ func TestScriptElementParserAcceptsHTMLComments(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, ok, err := scriptElement.Parse(parse.NewInput(tt.input))
+			_, ok, err := scriptElement.Parse(parse.NewInput([]byte(tt.input)))
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}

@@ -91,7 +91,7 @@ func TestCommentReaderReadsComments(t *testing.T) {
 			for _, token := range tt.before {
 				reader.Record(token)
 			}
-			actual, ok, err := reader.Read(parse.NewInput(tt.input))
+			actual, ok, err := reader.Read(parse.NewInput([]byte(tt.input)))
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -107,7 +107,7 @@ func TestCommentReaderReadsComments(t *testing.T) {
 
 func TestCommentReaderReadsAnHTMLCloseCommentAfterAMultiLineCommentAtTheStartOfALine(t *testing.T) {
 	reader := newCommentReader()
-	pi := parse.NewInput("/* a */ --> b")
+	pi := parse.NewInput([]byte("/* a */ --> b"))
 	if _, ok, err := reader.Read(pi); err != nil || !ok {
 		t.Fatalf("expected a multi-line comment, got ok %v, err %v", ok, err)
 	}

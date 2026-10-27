@@ -6,6 +6,7 @@ import (
 
 var htmlCommentStart = parse.String("<!--")
 var htmlCommentEnd = parse.String("--")
+var htmlCommentBody = parse.StringUntil(htmlCommentEnd)
 
 type htmlCommentParser struct {
 }
@@ -22,7 +23,7 @@ func (p htmlCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	// Once we've got the comment start sequence, parse anything until the end
 	// sequence as the comment contents.
 	c := &HTMLComment{}
-	if c.Contents, ok, err = parse.StringUntil(htmlCommentEnd).Parse(pi); err != nil || !ok {
+	if c.Contents, ok, err = htmlCommentBody.Parse(pi); err != nil || !ok {
 		err = parse.Error("expected end comment literal '-->' not found", start)
 		return
 	}
@@ -37,4 +38,8 @@ func (p htmlCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 
 	c.Range = NewRange(start, pi.Position())
 	return c, true, nil
+}
+
+func (p htmlCommentParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }

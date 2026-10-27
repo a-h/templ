@@ -4,11 +4,13 @@ import (
 	"github.com/a-h/parse"
 )
 
+var stringExpressionStart = parse.Or(parse.String("{ "), parse.String("{"))
+
 var stringExpression = parse.Func(func(pi *parse.Input) (n Node, matched bool, err error) {
 	start := pi.Index()
 
 	// Check the prefix first.
-	if _, matched, err = parse.Or(parse.String("{ "), parse.String("{")).Parse(pi); err != nil || !matched {
+	if _, matched, err = stringExpressionStart.Parse(pi); err != nil || !matched {
 		return
 	}
 

@@ -88,7 +88,7 @@ var cssExpressionParser = parse.Func(func(pi *parse.Input) (r cssExpression, ok 
 	}
 
 	// Eat " {\n".
-	if _, ok, err = parse.All(openBraceWithOptionalPadding, parse.NewLine).Parse(pi); err != nil || !ok {
+	if _, ok, err = openBraceAndNewLine.Parse(pi); err != nil || !ok {
 		err = parse.Error("css expression: parameters missing open bracket", pi.PositionAt(start))
 		return
 	}
@@ -99,13 +99,18 @@ var cssExpressionParser = parse.Func(func(pi *parse.Input) (r cssExpression, ok 
 // CSS property name parser.
 var cssPropertyNameFirst = "abcdefghijklmnopqrstuvwxyz-"
 var cssPropertyNameSubsequent = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"
+var cssPropertyNameStart = parse.RuneIn(cssPropertyNameFirst)
+var cssPropertyNameRest = parse.StringUntil(parse.RuneNotIn(cssPropertyNameSubsequent))
+var cssPropertyColon = parse.All(parse.OptionalWhitespace, parse.Rune(':'), parse.OptionalWhitespace)
+var cssSemicolonAndNewLine = parse.All(parse.OptionalWhitespace, parse.Rune(';'), parse.NewLine)
+var cssPropertyValue = parse.StringUntil(cssSemicolonAndNewLine)
 var cssPropertyNameParser = parse.Func(func(in *parse.Input) (name string, ok bool, err error) {
 	start := in.Position()
 	var prefix, suffix string
-	if prefix, ok, err = parse.RuneIn(cssPropertyNameFirst).Parse(in); err != nil || !ok {
+	if prefix, ok, err = cssPropertyNameStart.Parse(in); err != nil || !ok {
 		return
 	}
-	if suffix, ok, err = parse.StringUntil(parse.RuneNotIn(cssPropertyNameSubsequent)).Parse(in); err != nil || !ok {
+	if suffix, ok, err = cssPropertyNameRest.Parse(in); err != nil || !ok {
 		in.Seek(start.Index)
 		return
 	}
@@ -132,7 +137,7 @@ var expressionCSSPropertyParser = parse.Func(func(pi *parse.Input) (r *Expressio
 		return
 	}
 	// <space>:<space>
-	if _, ok, err = parse.All(parse.OptionalWhitespace, parse.Rune(':'), parse.OptionalWhitespace).Parse(pi); err != nil || !ok {
+	if _, ok, err = cssPropertyColon.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
@@ -174,24 +179,19 @@ var constantCSSPropertyParser = parse.Func(func(pi *parse.Input) (r *ConstantCSS
 		return
 	}
 	// <space>:<space>
-	if _, ok, err = parse.All(parse.OptionalWhitespace, parse.Rune(':'), parse.OptionalWhitespace).Parse(pi); err != nil || !ok {
+	if _, ok, err = cssPropertyColon.Parse(pi); err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
 
 	// Everything until ';\n'
-	untilEnd := parse.All(
-		parse.OptionalWhitespace,
-		parse.Rune(';'),
-		parse.NewLine,
-	)
-	if r.Value, ok, err = parse.StringUntil(untilEnd).Parse(pi); err != nil || !ok {
+	if r.Value, ok, err = cssPropertyValue.Parse(pi); err != nil || !ok {
 		err = parse.Error("missing expected semicolon and linebreak (;\\n", pi.Position())
 		return
 	}
 
 	// Chomp the ;\n
-	if _, ok, err = untilEnd.Parse(pi); err != nil || !ok {
+	if _, ok, err = cssSemicolonAndNewLine.Parse(pi); err != nil || !ok {
 		err = parse.Error("failed to chomp semicolon and linebreak (;\\n)", pi.Position())
 		return
 	}

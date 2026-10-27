@@ -274,7 +274,7 @@ console.log(value);
 		suffixes := []string{"", " Trailing '", ` Trailing "`, "\n// More content."}
 		for i, suffix := range suffixes {
 			t.Run(fmt.Sprintf("%s_%d", tt.name, i), func(t *testing.T) {
-				input := parse.NewInput(tt.input + suffix)
+				input := parse.NewInput([]byte(tt.input + suffix))
 				actual, ok, err := scriptTemplateParser.Parse(input)
 				if err != nil {
 					t.Fatalf("unexpected error: %v", err)

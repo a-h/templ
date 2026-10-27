@@ -1,8 +1,8 @@
 package parser
 
 import (
+	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/a-h/parse"
 	"github.com/a-h/templ/parser/v2/goexpression"
@@ -11,9 +11,9 @@ import (
 func parseGoFuncDecl(prefix string, pi *parse.Input) (name string, expression Expression, err error) {
 	prefix = prefix + " "
 	from := pi.Index()
-	src, _ := pi.Peek(-1)
-	src = strings.TrimPrefix(src, prefix)
-	name, expr, err := goexpression.Func("func " + src)
+	src, _ := pi.PeekBytes(-1)
+	src = bytes.TrimPrefix(src, []byte(prefix))
+	name, expr, err := goexpression.Func(src)
 	if err != nil {
 		return name, expression, parse.Error(fmt.Sprintf("invalid %s declaration: %v", prefix, err.Error()), pi.Position())
 	}
@@ -32,7 +32,7 @@ func parseCSSFuncDecl(pi *parse.Input) (name string, expression Expression, err 
 
 func parseGoSliceArgs(pi *parse.Input) (r Expression, err error) {
 	from := pi.Position()
-	src, _ := pi.Peek(-1)
+	src, _ := pi.PeekBytes(-1)
 	expr, err := goexpression.SliceArgs(src)
 	if err != nil {
 		return r, err
@@ -55,16 +55,16 @@ func peekPrefix(pi *parse.Input, prefixes ...string) bool {
 	return false
 }
 
-type extractor func(content string) (start, end int, err error)
+type extractor func(content []byte) (start, end int, err error)
 
 func parseGo(name string, pi *parse.Input, e extractor) (r Expression, err error) {
 	from := pi.Index()
-	src, _ := pi.Peek(-1)
+	src, _ := pi.PeekBytes(-1)
 	start, end, err := e(src)
 	if err != nil {
 		return r, parse.Error(fmt.Sprintf("%s: invalid go expression: %v", name, err.Error()), pi.Position())
 	}
-	expr := src[start:end]
-	pi.Take(end)
+	taken, _ := pi.Take(end)
+	expr := taken[start:]
 	return NewExpression(expr, pi.PositionAt(from+start), pi.PositionAt(from+end)), nil
 }

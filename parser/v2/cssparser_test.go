@@ -73,7 +73,7 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input + "\n")
+			input := parse.NewInput([]byte(tt.input + "\n"))
 			result, ok, err := expressionCSSPropertyParser.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
@@ -114,7 +114,7 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input + "\n")
+			input := parse.NewInput([]byte(tt.input + "\n"))
 			result, ok, err := constantCSSPropertyParser.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
@@ -337,7 +337,7 @@ background-color: { prop };
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			result, ok, err := cssParser.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
