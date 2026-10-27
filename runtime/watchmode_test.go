@@ -132,43 +132,68 @@ func writeWatchFiles(t testing.TB, dir, value string) (templFile, txtFile string
 }
 
 func TestGetWatchedStringThrottle(t *testing.T) {
-	// Arrange.
-	tmpDir := t.TempDir()
-	t.Setenv("TEMPL_DEV_MODE_ROOT", tmpDir)
-	templFile, txtFile := writeWatchFiles(t, tmpDir, "first")
+	start := time.Now()
 	// Explicit mtimes keep the change visible on filesystems with coarse timestamps. The
 	// first is well in the past, like any .txt file that wasn't just written.
-	if err := os.Chtimes(txtFile, time.Now().Add(-time.Hour), time.Now().Add(-time.Hour)); err != nil {
-		t.Fatalf("failed to set txt file mtime: %v", err)
+	firstModTime := start.Add(-time.Hour)
+	tests := []struct {
+		name     string
+		elapsed  time.Duration
+		modTime  time.Time
+		expected string
+	}{
+		{
+			name:     "cached strings are returned within the check interval",
+			elapsed:  50 * time.Millisecond,
+			modTime:  start.Add(-time.Minute),
+			expected: "first",
+		},
+		{
+			name:     "changed strings are returned after the check interval",
+			elapsed:  150 * time.Millisecond,
+			modTime:  start.Add(-time.Minute),
+			expected: "second",
+		},
+		{
+			name:     "cached strings are returned after the check interval when the mod time is unchanged",
+			elapsed:  150 * time.Millisecond,
+			modTime:  firstModTime,
+			expected: "first",
+		},
 	}
-	loader := NewStringLoader(tmpDir)
-	get := func() string {
-		t.Helper()
-		actual, err := loader.GetWatchedString(templFile, 1, "templ_file_value")
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		return actual
-	}
-	if actual := get(); actual != "first" {
-		t.Fatalf("expected %q, got %q", "first", actual)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange.
+			tmpDir := t.TempDir()
+			t.Setenv("TEMPL_DEV_MODE_ROOT", tmpDir)
+			templFile, txtFile := writeWatchFiles(t, tmpDir, "first")
+			if err := os.Chtimes(txtFile, firstModTime, firstModTime); err != nil {
+				t.Fatalf("failed to set txt file mtime: %v", err)
+			}
+			loader := NewStringLoader(tmpDir)
+			loader.Now = func() time.Time { return start }
+			if _, err := loader.GetWatchedString(templFile, 1, "templ_file_value"); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
 
-	// Act.
-	if err := os.WriteFile(txtFile, []byte("second"), 0644); err != nil {
-		t.Fatalf("failed to write txt file: %v", err)
-	}
-	if err := os.Chtimes(txtFile, time.Now().Add(-time.Minute), time.Now().Add(-time.Minute)); err != nil {
-		t.Fatalf("failed to set txt file mtime: %v", err)
-	}
+			// Act.
+			if err := os.WriteFile(txtFile, []byte("second"), 0644); err != nil {
+				t.Fatalf("failed to write txt file: %v", err)
+			}
+			if err := os.Chtimes(txtFile, tt.modTime, tt.modTime); err != nil {
+				t.Fatalf("failed to set txt file mtime: %v", err)
+			}
+			loader.Now = func() time.Time { return start.Add(tt.elapsed) }
+			actual, err := loader.GetWatchedString(templFile, 1, "templ_file_value")
 
-	// Assert.
-	if actual := get(); actual != "first" {
-		t.Errorf("within 100ms of the last check: expected the cached %q, got %q", "first", actual)
-	}
-	time.Sleep(150 * time.Millisecond)
-	if actual := get(); actual != "second" {
-		t.Errorf("after 100ms: expected the changed %q, got %q", "second", actual)
+			// Assert.
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if actual != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, actual)
+			}
+		})
 	}
 }
 

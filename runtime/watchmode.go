@@ -88,18 +88,27 @@ type resolvedPath struct {
 	txtFilePath      string
 }
 
+// devModeCheckInterval is how long a StringLoader reuses a .txt file's strings before it
+// checks the file again. It must not exceed the 100ms that templ generate waits after
+// writing .txt files before it reloads the browser, or the reloaded page can render the
+// previous strings.
+const devModeCheckInterval = 100 * time.Millisecond
+
 type StringLoader struct {
+	// Now returns the current time. Tests replace it to control the check interval.
+	Now              func() time.Time
 	watchModeRoot    string
 	watchModeRootErr error
 	cache            map[string]watchState
+	resolved         map[string]resolvedPath
 	cacheMutex       sync.Mutex
-	// resolved maps a templ file path to its resolvedPath.
-	resolved sync.Map
 }
 
 func NewStringLoader(devModeWatchRootPath string) (sl *StringLoader) {
 	sl = &StringLoader{
-		cache: make(map[string]watchState),
+		Now:      time.Now,
+		cache:    make(map[string]watchState),
+		resolved: make(map[string]resolvedPath),
 	}
 	if devModeWatchRootPath == "" {
 		return sl
@@ -117,6 +126,10 @@ func (sl *StringLoader) GetWatchedString(templFilePath string, index int, defaul
 	if sl.watchModeRootErr != nil {
 		return "", sl.watchModeRootErr
 	}
+
+	sl.cacheMutex.Lock()
+	defer sl.cacheMutex.Unlock()
+
 	rp, err := sl.resolve(templFilePath)
 	if err != nil {
 		return "", err
@@ -125,20 +138,20 @@ func (sl *StringLoader) GetWatchedString(templFilePath string, index int, defaul
 		return defaultValue, nil
 	}
 
-	txtFilePath := rp.txtFilePath
-	literals, err := sl.getWatchedStrings(txtFilePath)
+	literals, err := sl.getWatchedStrings(rp.txtFilePath)
 	if err != nil {
 		return "", fmt.Errorf("templ: failed to get watched strings for %q: %w", templFilePath, err)
 	}
 	if index > len(literals) {
-		return "", fmt.Errorf("templ: failed to find line %d in %s", index, txtFilePath)
+		return "", fmt.Errorf("templ: failed to find line %d in %s", index, rp.txtFilePath)
 	}
 	return strconv.Unquote(`"` + literals[index-1] + `"`)
 }
 
 func (sl *StringLoader) resolve(templFilePath string) (rp resolvedPath, err error) {
-	if v, ok := sl.resolved.Load(templFilePath); ok {
-		return v.(resolvedPath), nil
+	rp, ok := sl.resolved[templFilePath]
+	if ok {
+		return rp, nil
 	}
 	path, err := filepath.EvalSymlinks(templFilePath)
 	if err != nil {
@@ -152,21 +165,18 @@ func (sl *StringLoader) resolve(templFilePath string) (rp resolvedPath, err erro
 	} else {
 		rp.txtFilePath = GetDevModeTextFileName(path)
 	}
-	sl.resolved.Store(templFilePath, rp)
+	sl.resolved[templFilePath] = rp
 	return rp, nil
 }
 
 func (sl *StringLoader) getWatchedStrings(txtFilePath string) ([]string, error) {
-	sl.cacheMutex.Lock()
-	defer sl.cacheMutex.Unlock()
-
 	state, cached := sl.cache[txtFilePath]
 	if !cached {
 		return sl.cacheStrings(txtFilePath)
 	}
 
 	// Throttle on when the file was last checked. Its modTime is usually far in the past.
-	if time.Since(state.checkedAt) < time.Millisecond*100 {
+	if sl.Now().Sub(state.checkedAt) < devModeCheckInterval {
 		return state.strings, nil
 	}
 
@@ -176,7 +186,7 @@ func (sl *StringLoader) getWatchedStrings(txtFilePath string) ([]string, error) 
 	}
 
 	if !info.ModTime().After(state.modTime) {
-		state.checkedAt = time.Now()
+		state.checkedAt = sl.Now()
 		sl.cache[txtFilePath] = state
 		return state.strings, nil
 	}
@@ -206,7 +216,7 @@ func (sl *StringLoader) cacheStrings(txtFilePath string) ([]string, error) {
 	literals := strings.Split(string(all), "\n")
 	sl.cache[txtFilePath] = watchState{
 		modTime:   info.ModTime(),
-		checkedAt: time.Now(),
+		checkedAt: sl.Now(),
 		strings:   literals,
 	}
 

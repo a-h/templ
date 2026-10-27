@@ -220,6 +220,8 @@ loop:
 			}
 			// Now we have received an event, wait for 100ms.
 			// If no further messages are received in that time, the timeout will trigger.
+			// The wait must be at least runtime.devModeCheckInterval, so that a reloaded page
+			// renders the .txt file strings written before the reload.
 			timeout = time.NewTimer(time.Millisecond * 100)
 		case <-timeout.C:
 			// If grouped is nil, or if no updates were made, reset the timer and continue waiting.
