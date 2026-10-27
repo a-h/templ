@@ -1,0 +1,54 @@
+-- in --
+package main
+
+templ x() {
+	<div>
+		<div>Something</div>
+
+
+
+		<div>Else</div>
+		<div>Adjacent</div>
+		<a></a>
+
+		<a>
+		</a>
+	</div>
+
+
+
+	<div>
+		<span>Hello
+
+		World
+		</span>
+
+
+
+		<span>Foo Bar </span>
+	</div>
+}
+-- out --
+package main
+
+templ x() {
+	<div>
+		<div>Something</div>
+
+		<div>Else</div>
+		<div>Adjacent</div>
+		<a></a>
+
+		<a></a>
+	</div>
+
+	<div>
+		<span>
+			Hello
+
+			World
+		</span>
+
+		<span>Foo Bar </span>
+	</div>
+}

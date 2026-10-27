@@ -1,0 +1,81 @@
+package testblanklines
+
+templ child() {
+	<i>child</i>
+}
+
+templ WithoutBlankLines(items []string) {
+	<div>
+		<span>Hello</span>
+		<span>World</span>
+		<div>Block</div>
+		Text
+		{ "expression" }
+		if len(items) > 0 {
+			<b>if</b>
+		}
+		for _, item := range items {
+			<b>{ item }</b>
+		}
+		switch len(items) {
+			case 2:
+				<b>switch</b>
+		}
+		@child()
+		<!-- comment -->
+		<span>End</span>
+	</div>
+}
+
+templ WithBlankLines(items []string) {
+	<div>
+		<span>Hello</span>
+
+		
+
+		<span>World</span>
+
+		
+
+		<div>Block</div>
+
+		
+
+		Text
+
+		
+
+		{ "expression" }
+
+		
+
+		if len(items) > 0 {
+			<b>if</b>
+		}
+
+		
+
+		for _, item := range items {
+			<b>{ item }</b>
+		}
+
+		
+
+		switch len(items) {
+			case 2:
+				<b>switch</b>
+		}
+
+		
+
+		@child()
+
+		
+
+		<!-- comment -->
+
+		
+
+		<span>End</span>
+	</div>
+}
