@@ -7,7 +7,7 @@ import (
 
 var ifExpression ifExpressionParser
 
-var untilElseIfElseOrEnd = parse.Any(StripType(elseIfExpression), StripType(elseExpression), StripType(closeBraceWithOptionalPadding))
+var untilElseIfElseOrEnd = parse.Any(StripType(elseIfExpression), StripType(elseKeyword), StripType(closeBraceWithOptionalPadding))
 
 type ifExpressionParser struct{}
 
@@ -57,13 +57,25 @@ func (ifExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err erro
 	}
 
 	// Read the optional 'Else' Nodes.
-	var elseNodes Nodes
-	if elseNodes, _, err = elseExpression.Parse(pi); err != nil {
-		// Populate the nodes anyway, so that the LSP can use them.
-		r.Else = elseNodes.Nodes
+	elseStart := pi.Position()
+	var elseMatched bool
+	if _, elseMatched, err = elseKeyword.Parse(pi); err != nil {
 		return r, true, err
 	}
-	r.Else = elseNodes.Nodes
+	if elseMatched {
+		r.ElseRange = NewRange(elseStart, pi.Position())
+		if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+			return r, true, err
+		}
+		np := newTemplateNodeParser(closeBraceWithOptionalPadding, "else expression closing brace")
+		var elseNodes Nodes
+		elseNodes, _, err = np.Parse(pi)
+		// Populate the nodes even on error, so that the LSP can use them.
+		r.Else = elseNodes.Nodes
+		if err != nil {
+			return r, true, err
+		}
+	}
 
 	// Read the required closing brace.
 	if _, matched, err = closeBraceWithOptionalPadding.Parse(pi); err != nil || !matched {
@@ -129,36 +141,9 @@ func (p elseIfExpressionParser) Match(in *parse.Input) (ok bool, err error) {
 	return parse.Match(p, in)
 }
 
-var endElseParser = parse.All(
+var elseKeyword = parse.All(
 	parse.Rune('}'),
 	parse.OptionalWhitespace,
 	parse.String("else"),
 	parse.OptionalWhitespace,
-	parse.Rune('{'),
-	parse.OptionalWhitespace)
-
-var elseExpression parse.Parser[Nodes] = elseExpressionParser{}
-
-type elseExpressionParser struct{}
-
-func (elseExpressionParser) Parse(in *parse.Input) (r Nodes, matched bool, err error) {
-	start := in.Index()
-
-	// } else {
-	if _, matched, err = endElseParser.Parse(in); err != nil || !matched {
-		in.Seek(start)
-		return
-	}
-
-	// Else contents
-	if r, matched, err = newTemplateNodeParser(closeBraceWithOptionalPadding, "else expression closing brace").Parse(in); err != nil || !matched {
-		in.Seek(start)
-		return
-	}
-
-	return r, true, nil
-}
-
-func (p elseExpressionParser) Match(in *parse.Input) (ok bool, err error) {
-	return parse.Match(p, in)
-}
+	parse.Rune('{'))
