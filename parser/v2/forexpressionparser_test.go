@@ -349,6 +349,10 @@ func TestForExpressionParserNegatives(t *testing.T) {
 			name:  "for: wrong case",
 			input: `For `, // not a for expression
 		},
+		{
+			name:  "for: leading whitespace is left for the whitespace parser",
+			input: "\n\nfor {\n}",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -139,6 +139,30 @@ func TestTextParser(t *testing.T) {
 				TrailingSpace: "\n",
 			},
 		},
+		{
+			name:  "Multiline text separated by blank lines has double vertical trailing space",
+			input: "Line 1\n\n\n\nLine 2",
+			expected: &Text{
+				Value: "Line 1",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 6, Line: 0, Col: 6},
+				},
+				TrailingSpace: SpaceVerticalDouble,
+			},
+		},
+		{
+			name:  "Multiline text separated by blank lines has double vertical trailing space (Windows)",
+			input: "Line 1\r\n\r\nLine 2",
+			expected: &Text{
+				Value: "Line 1",
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 6, Line: 0, Col: 6},
+				},
+				TrailingSpace: SpaceVerticalDouble,
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
