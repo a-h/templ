@@ -37,12 +37,13 @@ var testStringExpression = `"this string expression" }
 `
 
 func BenchmarkExpression(b *testing.B) {
+	src := []byte(testStringExpression)
 	// Baseline...
 	// BenchmarkExpression-10              6484            184862 ns/op
 	// Updated...
 	// BenchmarkExpression-10           3942538               279.6 ns/op
 	for n := 0; n < b.N; n++ {
-		start, end, err := Expression(testStringExpression)
+		start, end, err := Expression(src)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -90,11 +91,12 @@ var testTemplExpression = `templates.CallMethod(map[string]any{
 `
 
 func BenchmarkTemplExpression(b *testing.B) {
+	src := []byte(testTemplExpression)
 	// BenchmarkTemplExpression-10         2694            431934 ns/op
 	// Updated...
 	// BenchmarkTemplExpression-10      1339399               897.6 ns/op
 	for n := 0; n < b.N; n++ {
-		start, end, err := TemplExpression(testTemplExpression)
+		start, end, err := TemplExpression(src)
 		if err != nil {
 			b.Fatal(err)
 		}

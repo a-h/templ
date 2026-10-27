@@ -24,18 +24,20 @@ func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	openTagStart := pi.PositionAt(start)
 
 	// Element name.
-	e := &RawElement{}
 	nameStartIndex := pi.Index()
-	if e.Name, ok, err = elementNameParser.Parse(pi); err != nil || !ok {
+	name, ok, err := elementNameParser.Parse(pi)
+	if err != nil || !ok {
 		pi.Seek(start)
 		return
 	}
-	e.NameRange = NewRange(pi.PositionAt(nameStartIndex), pi.Position())
-
-	if e.Name != p.name {
+	if name != p.name {
 		pi.Seek(start)
 		ok = false
 		return
+	}
+	e := &RawElement{
+		Name:      name,
+		NameRange: NewRange(pi.PositionAt(nameStartIndex), pi.Position()),
 	}
 
 	if e.Attributes, ok, err = (attributesParser{}).Parse(pi); err != nil || !ok {
@@ -70,4 +72,8 @@ func (p rawElementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 
 	e.Range = NewRange(pi.PositionAt(start), pi.Position())
 	return e, true, nil
+}
+
+func (p rawElementParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }

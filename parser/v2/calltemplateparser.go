@@ -35,3 +35,7 @@ func (p callTemplateExpressionParser) Parse(pi *parse.Input) (n Node, ok bool, e
 
 	return r, true, nil
 }
+
+func (p callTemplateExpressionParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}

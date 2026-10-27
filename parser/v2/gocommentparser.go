@@ -7,6 +7,7 @@ import (
 var (
 	goSingleLineCommentStart = parse.String("//")
 	goSingleLineCommentEnd   = parse.Any(parse.NewLine, parse.EOF[string]())
+	goSingleLineCommentBody  = parse.StringUntil(goSingleLineCommentEnd)
 )
 
 type goSingleLineCommentParser struct{}
@@ -22,7 +23,7 @@ func (p goSingleLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err 
 	// Once we've got the comment start sequence, parse anything until the end
 	// sequence as the comment contents.
 	c := &GoComment{}
-	if c.Contents, ok, err = parse.StringUntil(goSingleLineCommentEnd).Parse(pi); err != nil || !ok {
+	if c.Contents, ok, err = goSingleLineCommentBody.Parse(pi); err != nil || !ok {
 		err = parse.Error("expected end comment literal '\n' not found", pi.Position())
 		return
 	}
@@ -32,9 +33,14 @@ func (p goSingleLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err 
 	return c, true, nil
 }
 
+func (p goSingleLineCommentParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}
+
 var (
 	goMultiLineCommentStart = parse.String("/*")
 	goMultiLineCommentEnd   = parse.String("*/")
+	goMultiLineCommentBody  = parse.StringUntil(goMultiLineCommentEnd)
 )
 
 type goMultiLineCommentParser struct{}
@@ -51,7 +57,7 @@ func (p goMultiLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err e
 	// Once we've got the comment start sequence, parse anything until the end
 	// sequence as the comment contents.
 	c := &GoComment{}
-	if c.Contents, ok, err = parse.StringUntil(goMultiLineCommentEnd).Parse(pi); err != nil || !ok {
+	if c.Contents, ok, err = goMultiLineCommentBody.Parse(pi); err != nil || !ok {
 		err = parse.Error("expected end comment literal '*/' not found", start)
 		return
 	}
@@ -61,6 +67,10 @@ func (p goMultiLineCommentParser) Parse(pi *parse.Input) (n Node, ok bool, err e
 	c.Multiline = true
 	c.Range = NewRange(start, pi.Position())
 	return c, true, nil
+}
+
+func (p goMultiLineCommentParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }
 
 var goComment = parse.Any(goSingleLineComment, goMultiLineComment)

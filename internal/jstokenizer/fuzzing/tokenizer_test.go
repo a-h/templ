@@ -118,7 +118,7 @@ func FuzzTokenizerMatchesParser(f *testing.F) {
 // ErrAmbiguousContext for a marker, it returns the offset of the marker, and true.
 func classifyMarkersWithTokenizer(source string, ignoredOffsets map[int]bool) (offsetToContext map[int]jstokenizer.Context, ambiguousOffset int, isAmbiguous bool, err error) {
 	offsetToContext = map[int]jstokenizer.Context{}
-	pi := parse.NewInput(source)
+	pi := parse.NewInput([]byte(source))
 	tokenizer := jstokenizer.New()
 	for {
 		peeked, ok := pi.Peek(len(marker))

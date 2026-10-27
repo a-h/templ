@@ -882,7 +882,7 @@ if test {` + " " + `
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			result, matched, err := tt.parser.Parse(input)
 			if err != nil {
 				t.Error(err)
@@ -900,7 +900,7 @@ if test {` + " " + `
 func TestVoidElementCloserParser(t *testing.T) {
 	t.Run("all void elements are parsed", func(t *testing.T) {
 		for _, input := range voidElementCloseTags {
-			_, matched, err := voidElementCloser.Parse(parse.NewInput(input))
+			_, matched, err := voidElementCloser.Parse(parse.NewInput([]byte(input)))
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -2905,7 +2905,7 @@ func TestElementParser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			result, matched, err := element.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
@@ -2970,7 +2970,7 @@ func TestElementParserErrors(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			_, _, err := element.Parse(input)
 			if diff := cmp.Diff(tt.expected, err); diff != "" {
 				t.Error(diff)
@@ -2984,7 +2984,7 @@ func TestBigElement(t *testing.T) {
 	sb.WriteString("<div>")
 	sb.WriteString(strings.Repeat("a", 16384))
 	sb.WriteString("</div>")
-	_, matched, err := element.Parse(parse.NewInput(sb.String()))
+	_, matched, err := element.Parse(parse.NewInput([]byte(sb.String())))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -3007,7 +3007,7 @@ func FuzzElement(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, input string) {
-		_, _, _ = element.Parse(parse.NewInput(input))
+		_, _, _ = element.Parse(parse.NewInput([]byte(input)))
 	})
 }
 
@@ -3057,7 +3057,7 @@ func TestElementFormatting(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			result, matched, err := element.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)

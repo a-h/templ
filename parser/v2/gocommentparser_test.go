@@ -67,7 +67,7 @@ on multiple lines */`,
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			result, ok, err := goComment.Parse(input)
 			if err != nil {
 				t.Fatalf("parser error: %v", err)
@@ -107,7 +107,7 @@ func TestCommentParserErrors(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			_, _, err := goComment.Parse(input)
 			if diff := cmp.Diff(tt.expected, err); diff != "" {
 				t.Error(diff)

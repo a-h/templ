@@ -582,7 +582,7 @@ func TestTemplElementExpressionParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			actual, matched, err := templElementExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -618,7 +618,7 @@ func TestTemplElementExpressionParserFailures(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			_, matched, err := templElementExpression.Parse(input)
 			if err == nil {
 				t.Fatalf("expected an error")

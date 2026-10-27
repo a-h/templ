@@ -456,7 +456,7 @@ func TestTokenizerDeterminesTheContextOfValues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			pi := parse.NewInput(tt.input)
+			pi := parse.NewInput([]byte(tt.input))
 			tokenizer := New()
 			var actual Context
 			var actualErr error
@@ -543,7 +543,7 @@ func TestTokenizerReadsTokens(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			pi := parse.NewInput(tt.input)
+			pi := parse.NewInput([]byte(tt.input))
 			tokenizer := New()
 			var actual []string
 			for {

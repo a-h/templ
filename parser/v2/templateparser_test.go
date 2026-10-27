@@ -1381,7 +1381,7 @@ func TestTemplateParser(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			actual, matched, err := template.Parse(input)
 			diff := cmp.Diff(tt.expected, actual)
 			switch {
@@ -1472,7 +1472,7 @@ func TestTemplateParserErrors(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			_, matched, err := template.Parse(input)
 			if err == nil {
 				t.Fatalf("expected error %q, got nil", tt.expected)

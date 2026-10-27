@@ -33,12 +33,14 @@ var templateExpressionParser = parse.Func(func(pi *parse.Input) (r templateExpre
 	}
 
 	// Eat " {\n".
-	if _, matched, err = parse.All(openBraceWithOptionalPadding, parse.StringFrom(parse.Optional(parse.NewLine))).Parse(pi); err != nil || !matched {
+	if _, matched, err = openBraceAndOptionalNewLine.Parse(pi); err != nil || !matched {
 		return r, true, parse.Error("templ: malformed templ expression, expected `templ functionName() {`", pi.PositionAt(start))
 	}
 
 	return r, true, nil
 })
+
+var openBraceAndOptionalNewLine = parse.All(openBraceWithOptionalPadding, parse.StringFrom(parse.Optional(parse.NewLine)))
 
 const (
 	unterminatedMissingCurly = `unterminated (missing closing '{\n') - to escape "for", "if", "switch" etc. with braces, e.g. '{ "for" }' - https://templ.guide/syntax-and-usage/statements#ifswitchfor-within-text`
@@ -46,15 +48,15 @@ const (
 )
 
 // Template node (element, call, if, switch, for, whitespace etc.)
-func newTemplateNodeParser[TUntil any](until parse.Parser[TUntil], untilName string) templateNodeParser[TUntil] {
-	return templateNodeParser[TUntil]{
+func newTemplateNodeParser(until parse.Matcher, untilName string) templateNodeParser {
+	return templateNodeParser{
 		until:     until,
 		untilName: untilName,
 	}
 }
 
-type templateNodeParser[TUntil any] struct {
-	until     parse.Parser[TUntil]
+type templateNodeParser struct {
+	until     parse.Matcher
 	untilName string
 }
 
@@ -83,13 +85,13 @@ var templateNodeParsers = []parse.Parser[Node]{
 	textParser,             // anything &amp; everything accepted...
 }
 
-func (p templateNodeParser[T]) Parse(pi *parse.Input) (op Nodes, matched bool, err error) {
+func (p templateNodeParser) Parse(pi *parse.Input) (op Nodes, matched bool, err error) {
 outer:
 	for {
 		// Check if we've reached the end.
 		if p.until != nil {
 			start := pi.Index()
-			_, didMatchUntilParser, err := p.until.Parse(pi)
+			didMatchUntilParser, err := p.until.Match(pi)
 			if err != nil {
 				return op, false, err
 			}
@@ -147,6 +149,10 @@ outer:
 	}
 
 	return op, true, nil
+}
+
+func (p templateNodeParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }
 
 type UntilNotFoundError struct {

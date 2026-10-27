@@ -15,7 +15,7 @@ func Parse(fileName string) (*TemplateFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ParseString(string(fc))
+	return parseInput(parse.NewInput(fc))
 }
 
 func getDefaultPackageName(fileName string) (pkg string) {
@@ -43,7 +43,11 @@ func isGoIdentifier(s string) bool {
 }
 
 func ParseString(template string) (*TemplateFile, error) {
-	tf, matched, err := NewTemplateFileParser("main").Parse(parse.NewInput(template))
+	return parseInput(parse.NewInput([]byte(template)))
+}
+
+func parseInput(pi *parse.Input) (*TemplateFile, error) {
+	tf, matched, err := NewTemplateFileParser("main").Parse(pi)
 	if err != nil {
 		return tf, err
 	}
@@ -192,4 +196,8 @@ outer:
 	}
 
 	return tf, true, nil
+}
+
+func (p TemplateFileParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
 }

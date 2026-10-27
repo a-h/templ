@@ -1,6 +1,7 @@
 package goexpression
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -13,20 +14,19 @@ import (
 )
 
 var (
-	ErrContainerFuncNotFound = errors.New("parser error: templ container function not found")
-	ErrExpectedNodeNotFound  = errors.New("parser error: expected node not found")
-	ErrBlockOpeningNotFound  = errors.New("parser error: block opening brace not found")
+	ErrContainerFuncNotFound    = errors.New("parser error: templ container function not found")
+	ErrExpectedNodeNotFound     = errors.New("parser error: expected node not found")
+	ErrTerminatingTokenNotFound = errors.New("parser error: terminating token not found")
 )
 
 var defaultRegexp = regexp.MustCompile(`^default\s*:`)
 
-func Case(content string) (start, end int, err error) {
-	if !strings.HasPrefix(content, "case ") && !defaultRegexp.MatchString(content) {
+func Case(content []byte) (start, end int, err error) {
+	if !bytes.HasPrefix(content, []byte("case ")) && !defaultRegexp.Match(content) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	prefix := "switch {\n"
-	src := prefix + content
-	start, end, err = extract(src, func(body []ast.Stmt) (start, end int, err error) {
+	start, end, err = extract(append([]byte(prefix), content...), func(body []ast.Stmt) (start, end int, err error) {
 		sw, ok := body[0].(*ast.SwitchStmt)
 		if !ok {
 			return 0, 0, ErrExpectedNodeNotFound
@@ -51,8 +51,8 @@ func Case(content string) (start, end int, err error) {
 	return start, end, nil
 }
 
-func If(content string) (start, end int, err error) {
-	if !strings.HasPrefix(content, "if") {
+func If(content []byte) (start, end int, err error) {
+	if !bytes.HasPrefix(content, []byte("if")) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	return extractBlock(content, func(body []ast.Stmt) (start, end int, err error) {
@@ -66,8 +66,8 @@ func If(content string) (start, end int, err error) {
 	})
 }
 
-func For(content string) (start, end int, err error) {
-	if !strings.HasPrefix(content, "for") {
+func For(content []byte) (start, end int, err error) {
+	if !bytes.HasPrefix(content, []byte("for")) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	return extractBlock(content, func(body []ast.Stmt) (start, end int, err error) {
@@ -86,8 +86,8 @@ func For(content string) (start, end int, err error) {
 	})
 }
 
-func Switch(content string) (start, end int, err error) {
-	if !strings.HasPrefix(content, "switch") {
+func Switch(content []byte) (start, end int, err error) {
+	if !bytes.HasPrefix(content, []byte("switch")) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	return extractBlock(content, func(body []ast.Stmt) (start, end int, err error) {
@@ -106,14 +106,14 @@ func Switch(content string) (start, end int, err error) {
 	})
 }
 
-func TemplExpression(src string) (start, end int, err error) {
+func TemplExpression(src []byte) (start, end int, err error) {
 	var s scanner.Scanner
 	fset := token.NewFileSet()
 	file := fset.AddFile("", fset.Base(), len(src))
 	errorHandler := func(pos token.Position, msg string) {
 		err = fmt.Errorf("error parsing expression: %v", msg)
 	}
-	s.Init(file, []byte(src), errorHandler, scanner.ScanComments)
+	s.Init(file, src, errorHandler, scanner.ScanComments)
 
 	// Read chains of identifiers, e.g.:
 	// components.Variable
@@ -134,14 +134,14 @@ func TemplExpression(src string) (start, end int, err error) {
 	return 0, ep.End, nil
 }
 
-func Expression(src string) (start, end int, err error) {
+func Expression(src []byte) (start, end int, err error) {
 	var s scanner.Scanner
 	fset := token.NewFileSet()
 	file := fset.AddFile("", fset.Base(), len(src))
 	errorHandler := func(pos token.Position, msg string) {
 		err = fmt.Errorf("error parsing expression: %v", msg)
 	}
-	s.Init(file, []byte(src), errorHandler, scanner.ScanComments)
+	s.Init(file, src, errorHandler, scanner.ScanComments)
 
 	// Read chains of identifiers and constants up until RBRACE, e.g.:
 	// true
@@ -195,15 +195,28 @@ loop:
 	return start, end, nil
 }
 
-func SliceArgs(content string) (expr string, err error) {
+// SliceArgs returns the Go code up to the closing brace of a templ expression.
+//
+// When the arguments parse, only the code up to the closing brace is parsed,
+// not the templ code that follows it. When the arguments have a syntax error,
+// the whole of content is parsed and the error is ignored, so that the Go
+// compiler reports it against the generated code.
+func SliceArgs(content []byte) (expr string, err error) {
 	prefix := "package main\nvar templ_args = []any{"
-	src := prefix + content + "}"
 
-	node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors|parser.SkipObjectResolution)
-	if node == nil {
-		return expr, parseErr
+	node, offset, err := findTerminatingToken(prefix, content, token.RBRACE, "}")
+	if err != nil {
+		src := prefix + string(content) + "}"
+		node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors|parser.SkipObjectResolution)
+		if node == nil {
+			return expr, parseErr
+		}
+		return extractSliceArgs(node, src), nil
 	}
+	return extractSliceArgs(node, prefix+string(content[:offset])+"}"), nil
+}
 
+func extractSliceArgs(node *ast.File, src string) (expr string) {
 	var from, to int
 	inspectFirstNode(node, func(n ast.Node) bool {
 		decl, ok := n.(*ast.CompositeLit)
@@ -231,30 +244,30 @@ func SliceArgs(content string) (expr string, err error) {
 		}
 		return false
 	})
-
-	return src[from:to], err
+	return src[from:to]
 }
 
-// Func returns the Go code up to the opening brace of the function body.
+// Func returns the Go code up to the opening brace of the function body. The
+// content starts after the "func " keyword.
 //
 // When the signature parses with an empty body, only the signature is parsed,
 // not the templ code that follows it. When the signature has a syntax error,
 // the whole of content is parsed and the error is ignored, so that the Go
 // compiler reports it against the generated code, which maps back to its
 // position in the templ file.
-func Func(content string) (name, expr string, err error) {
-	prefix := "package main\n"
+func Func(content []byte) (name, expr string, err error) {
+	prefix := "package main\nfunc "
 
-	node, offset, err := findBlockOpening(prefix, content, "{}")
+	node, offset, err := findTerminatingToken(prefix, content, token.LBRACE, "{}")
 	if err != nil {
-		src := prefix + content
+		src := prefix + string(content)
 		node, parseErr := parser.ParseFile(token.NewFileSet(), "", src, parser.AllErrors|parser.SkipObjectResolution)
 		if node == nil {
 			return name, expr, parseErr
 		}
 		return extractFuncSignature(node, src)
 	}
-	return extractFuncSignature(node, prefix+content[:offset])
+	return extractFuncSignature(node, prefix+string(content[:offset]))
 }
 
 func extractFuncSignature(node *ast.File, src string) (name, expr string, err error) {
@@ -313,37 +326,41 @@ type Extractor func(body []ast.Stmt) (start, end int, err error)
 
 const containerPrefix = "package main\nfunc templ_container() {\n"
 
-func extract(content string, extractor Extractor) (start, end int, err error) {
-	node, parseErr := parser.ParseFile(token.NewFileSet(), "", containerPrefix+content, parser.AllErrors|parser.SkipObjectResolution)
+func extract(content []byte, extractor Extractor) (start, end int, err error) {
+	node, parseErr := parser.ParseFile(token.NewFileSet(), "", containerPrefix+string(content), parser.AllErrors|parser.SkipObjectResolution)
 	if node == nil {
 		return 0, 0, parseErr
 	}
 	return extractFromContainer(node, len(content), extractor)
 }
 
-func extractBlock(content string, extractor Extractor) (start, end int, err error) {
-	node, _, err := findBlockOpening(containerPrefix, content, "{}\n}")
+func extractBlock(content []byte, extractor Extractor) (start, end int, err error) {
+	node, _, err := findTerminatingToken(containerPrefix, content, token.LBRACE, "{}\n}")
 	if err != nil {
 		return extract(content, extractor)
 	}
 	return extractFromContainer(node, len(content), extractor)
 }
 
-func findBlockOpening(prefix, content, suffix string) (node *ast.File, offset int, err error) {
+// findTerminatingToken finds the first tok in content where the code before it,
+// followed by suffix in place of tok, parses as valid Go after prefix. It
+// returns an error when the code before a tok is invalid, or when no tok ends
+// valid code.
+func findTerminatingToken(prefix string, content []byte, tok token.Token, suffix string) (node *ast.File, offset int, err error) {
 	var s scanner.Scanner
 	fset := token.NewFileSet()
 	file := fset.AddFile("", fset.Base(), len(content))
-	s.Init(file, []byte(content), nil, 0)
+	s.Init(file, content, nil, 0)
 	for {
-		pos, tok, _ := s.Scan()
-		if tok == token.EOF {
-			return nil, 0, ErrBlockOpeningNotFound
+		pos, scanned, _ := s.Scan()
+		if scanned == token.EOF {
+			return nil, 0, ErrTerminatingTokenNotFound
 		}
-		if tok != token.LBRACE {
+		if scanned != tok {
 			continue
 		}
 		offset = file.Offset(pos)
-		node, err = parser.ParseFile(token.NewFileSet(), "", prefix+content[:offset]+suffix, parser.SkipObjectResolution)
+		node, err = parser.ParseFile(token.NewFileSet(), "", prefix+string(content[:offset])+suffix, parser.SkipObjectResolution)
 		if err == nil {
 			return node, offset, nil
 		}

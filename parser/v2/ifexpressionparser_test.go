@@ -1026,7 +1026,7 @@ func TestIfExpression(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			input := parse.NewInput(tt.input)
+			input := parse.NewInput([]byte(tt.input))
 			actual, matched, err := ifExpression.Parse(input)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
@@ -1043,7 +1043,7 @@ func TestIfExpression(t *testing.T) {
 
 func TestIncompleteIf(t *testing.T) {
 	t.Run("no opening brace", func(t *testing.T) {
-		input := parse.NewInput(`if a tree falls in the woods`)
+		input := parse.NewInput([]byte(`if a tree falls in the woods`))
 		_, _, err := ifExpression.Parse(input)
 		if err == nil {
 			t.Fatal("expected an error, got nil")
@@ -1060,7 +1060,7 @@ func TestIncompleteIf(t *testing.T) {
 		}
 	})
 	t.Run("capitalised If", func(t *testing.T) {
-		input := parse.NewInput(`If a tree falls in the woods`)
+		input := parse.NewInput([]byte(`If a tree falls in the woods`))
 		_, matched, err := ifExpression.Parse(input)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)

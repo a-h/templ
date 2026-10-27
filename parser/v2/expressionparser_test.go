@@ -57,7 +57,7 @@ func TestRuneLiterals(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, ok, err := rune_lit.Parse(parse.NewInput(tt.input))
+			actual, ok, err := rune_lit.Parse(parse.NewInput([]byte(tt.input)))
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
@@ -100,7 +100,7 @@ func TestStringLiterals(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, ok, err := string_lit.Parse(parse.NewInput(tt.input))
+			actual, ok, err := string_lit.Parse(parse.NewInput([]byte(tt.input)))
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -230,7 +230,7 @@ func TestExpressions(t *testing.T) {
 				startBraceCount: tt.startBraceCount,
 			}
 			expr := tt.input[len(tt.prefix):]
-			actual, ok, err := ep.Parse(parse.NewInput(expr))
+			actual, ok, err := ep.Parse(parse.NewInput([]byte(expr)))
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
