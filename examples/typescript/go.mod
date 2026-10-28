@@ -1,7 +1,7 @@
 module github.com/a-h/templ/examples/typescript
 
-go 1.25.0
+go 1.26.0
 
 replace github.com/a-h/templ => ../../
 
-require github.com/a-h/templ v0.0.0-00010101000000-000000000000
+require github.com/a-h/templ v0.3.1100

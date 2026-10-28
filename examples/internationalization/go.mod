@@ -1,9 +1,9 @@
 module github.com/a-h/templ/examples/internationalization
 
-go 1.25.0
+go 1.26.0
 
 require (
-	github.com/a-h/templ v0.2.731
+	github.com/a-h/templ v0.2.598
 	github.com/invopop/ctxi18n v0.8.1
 )
 
