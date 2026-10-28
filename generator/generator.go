@@ -600,9 +600,15 @@ func stripLeadingAndTrailingWhitespace(nodes []parser.Node) []parser.Node {
 
 func (g *generator) writeNodes(indentLevel int, nodes []parser.Node, next parser.Node) error {
 	for i, curr := range nodes {
+		if _, isWhitespace := curr.(*parser.Whitespace); isWhitespace {
+			continue
+		}
 		var nextNode parser.Node
-		if i+1 < len(nodes) {
-			nextNode = nodes[i+1]
+		for j := i + 1; j < len(nodes); j++ {
+			if _, isWhitespace := nodes[j].(*parser.Whitespace); !isWhitespace {
+				nextNode = nodes[j]
+				break
+			}
 		}
 		if nextNode == nil {
 			nextNode = next

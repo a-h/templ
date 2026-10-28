@@ -65,6 +65,16 @@ func TestTextWhitespace(t *testing.T) {
 			input:    WhitespaceIsConsistentInFor(3),
 			expected: WhitespaceIsConsistentInForThreeExpected,
 		},
+		{
+			name:     "whitespace is preserved between sibling loops in an if statement",
+			input:    SiblingLoopsInIf(),
+			expected: SiblingLoopsInIfExpected,
+		},
+		{
+			name:     "empty nested if branches do not render whitespace",
+			input:    EmptyIfBranch(),
+			expected: EmptyIfBranchExpected,
+		},
 	} {
 		w := new(strings.Builder)
 		err := test.input.Render(context.Background(), w)
