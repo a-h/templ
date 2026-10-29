@@ -62,7 +62,7 @@ type Conn interface {
 }
 
 type conn struct {
-	seq       int32                 // access atomically
+	seq       atomic.Int32          // access atomically
 	writeMu   sync.Mutex            // protects writes to the stream
 	stream    Stream                // supplied stream
 	pendingMu sync.Mutex            // protects the pending map
@@ -85,7 +85,7 @@ func NewConn(s Stream) Conn {
 // Call implements Conn.
 func (c *conn) Call(ctx context.Context, method string, params, result any) (id ID, err error) {
 	// generate a new request identifier
-	id = NewNumberID(atomic.AddInt32(&c.seq, 1))
+	id = NewNumberID(c.seq.Add(1))
 	call, err := NewCall(id, method, params)
 	if err != nil {
 		return id, fmt.Errorf("marshaling call parameters: %w", err)
