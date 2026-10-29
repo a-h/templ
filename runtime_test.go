@@ -69,7 +69,6 @@ func TestCSSHandler(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			h := templ.NewCSSHandler(tt.input...)
@@ -129,7 +128,6 @@ func TestCSSMiddleware(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			tt.handler.ServeHTTP(w, tt.input)
@@ -245,7 +243,6 @@ func TestRenderCSS(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 			b := new(bytes.Buffer)
@@ -499,7 +496,6 @@ func TestRawComponent(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			b := new(bytes.Buffer)
 			err := tt.input.Render(context.Background(), b)

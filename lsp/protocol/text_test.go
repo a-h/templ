@@ -52,7 +52,6 @@ func TestDidOpenTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -92,7 +91,6 @@ func TestDidOpenTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -165,7 +163,6 @@ func TestDidChangeTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -205,7 +202,6 @@ func TestDidChangeTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -252,7 +248,6 @@ func TestTextDocumentSaveReason_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -320,7 +315,6 @@ func TestTextDocumentContentChangeEvent(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -360,7 +354,6 @@ func TestTextDocumentContentChangeEvent(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -421,7 +414,6 @@ func TestTextDocumentChangeRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -461,7 +453,6 @@ func TestTextDocumentChangeRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -529,7 +520,6 @@ func TestWillSaveTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -576,7 +566,6 @@ func TestWillSaveTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -644,7 +633,6 @@ func TestDidSaveTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -691,7 +679,6 @@ func TestDidSaveTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -771,7 +758,6 @@ func TestTextDocumentSaveRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -818,7 +804,6 @@ func TestTextDocumentSaveRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -872,7 +857,6 @@ func TestDidCloseTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -912,7 +896,6 @@ func TestDidCloseTextDocumentParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 

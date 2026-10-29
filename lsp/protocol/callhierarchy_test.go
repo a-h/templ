@@ -59,7 +59,6 @@ func TestCallHierarchy(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -109,7 +108,6 @@ func TestCallHierarchy(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -173,7 +171,6 @@ func TestCallHierarchyOptions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -223,7 +220,6 @@ func TestCallHierarchyOptions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -305,7 +301,6 @@ func TestCallHierarchyRegistrationOptions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -355,7 +350,6 @@ func TestCallHierarchyRegistrationOptions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -442,7 +436,6 @@ func TestCallHierarchyPrepareParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -492,7 +485,6 @@ func TestCallHierarchyPrepareParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -611,7 +603,6 @@ func TestCallHierarchyItem(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -661,7 +652,6 @@ func TestCallHierarchyItem(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -788,7 +778,6 @@ func TestCallHierarchyIncomingCallsParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -838,7 +827,6 @@ func TestCallHierarchyIncomingCallsParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -944,7 +932,6 @@ func TestCallHierarchyIncomingCall(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -987,7 +974,6 @@ func TestCallHierarchyIncomingCall(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1114,7 +1100,6 @@ func TestCallHierarchyOutgoingCallsParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1164,7 +1149,6 @@ func TestCallHierarchyOutgoingCallsParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1270,7 +1254,6 @@ func TestCallHierarchyOutgoingCall(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1313,7 +1296,6 @@ func TestCallHierarchyOutgoingCall(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 

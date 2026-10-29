@@ -73,7 +73,6 @@ func TestCompletionParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -113,7 +112,6 @@ func TestCompletionParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -172,7 +170,6 @@ func TestCompletionTriggerKind_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -219,7 +216,6 @@ func TestCompletionContext(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -259,7 +255,6 @@ func TestCompletionContext(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -346,7 +341,6 @@ func TestCompletionList(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -386,7 +380,6 @@ func TestCompletionList(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -428,7 +421,6 @@ func TestInsertTextFormat_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -486,7 +478,6 @@ func TestInsertReplaceEdit(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -519,7 +510,6 @@ func TestInsertReplaceEdit(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -561,7 +551,6 @@ func TestInsertTextMode_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -859,7 +848,6 @@ func TestCompletionItem(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -917,7 +905,6 @@ func TestCompletionItem(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1074,7 +1061,6 @@ func TestCompletionItemKind_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1105,7 +1091,6 @@ func TestCompletionItemTag_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1161,7 +1146,6 @@ func TestCompletionRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1201,7 +1185,6 @@ func TestCompletionRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1290,7 +1273,6 @@ func TestHoverParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1340,7 +1322,6 @@ func TestHoverParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1411,7 +1392,6 @@ func TestHover(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1451,7 +1431,6 @@ func TestHover(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1561,7 +1540,6 @@ func TestSignatureHelpParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1611,7 +1589,6 @@ func TestSignatureHelpParams(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1664,7 +1641,6 @@ func TestSignatureHelpTriggerKind_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1734,7 +1710,6 @@ func TestSignatureHelp(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1781,7 +1756,6 @@ func TestSignatureHelp(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1841,7 +1815,6 @@ func TestSignatureInformation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1881,7 +1854,6 @@ func TestSignatureInformation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1934,7 +1906,6 @@ func TestParameterInformation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1974,7 +1945,6 @@ func TestParameterInformation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2035,7 +2005,6 @@ func TestSignatureHelpRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2075,7 +2044,6 @@ func TestSignatureHelpRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2138,7 +2106,6 @@ func TestReferenceParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2178,7 +2145,6 @@ func TestReferenceParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2230,7 +2196,6 @@ func TestReferenceContext(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2270,7 +2235,6 @@ func TestReferenceContext(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2332,7 +2296,6 @@ func TestDocumentHighlight(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2372,7 +2335,6 @@ func TestDocumentHighlight(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2419,7 +2381,6 @@ func TestDocumentHighlightKind_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -2477,7 +2438,6 @@ func TestDocumentSymbolParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2517,7 +2477,6 @@ func TestDocumentSymbolParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2691,7 +2650,6 @@ func TestSymbolKind_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -2722,7 +2680,6 @@ func TestSymbolTag_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -2822,7 +2779,6 @@ func TestDocumentSymbol(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2862,7 +2818,6 @@ func TestDocumentSymbol(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -2959,7 +2914,6 @@ func TestSymbolInformation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3006,7 +2960,6 @@ func TestSymbolInformation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3121,7 +3074,6 @@ func TestCodeActionParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3161,7 +3113,6 @@ func TestCodeActionParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3240,7 +3191,6 @@ func TestCodeActionKind_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -3324,7 +3274,6 @@ func TestCodeActionContext(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3364,7 +3313,6 @@ func TestCodeActionContext(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3507,7 +3455,6 @@ func TestCodeAction(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3547,7 +3494,6 @@ func TestCodeAction(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3618,7 +3564,6 @@ func TestCodeActionRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3658,7 +3603,6 @@ func TestCodeActionRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3722,7 +3666,6 @@ func TestCodeLensParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3762,7 +3705,6 @@ func TestCodeLensParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3861,7 +3803,6 @@ func TestCodeLens(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3908,7 +3849,6 @@ func TestCodeLens(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -3998,7 +3938,6 @@ func TestCodeLensRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4045,7 +3984,6 @@ func TestCodeLensRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4110,7 +4048,6 @@ func TestDocumentLinkParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4150,7 +4087,6 @@ func TestDocumentLinkParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4246,7 +4182,6 @@ func TestDocumentLink(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4293,7 +4228,6 @@ func TestDocumentLink(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4357,7 +4291,6 @@ func TestDocumentColorParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4397,7 +4330,6 @@ func TestDocumentColorParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4476,7 +4408,6 @@ func TestColorInformation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4516,7 +4447,6 @@ func TestColorInformation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4571,7 +4501,6 @@ func TestColor(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4611,7 +4540,6 @@ func TestColor(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4691,7 +4619,6 @@ func TestColorPresentationParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4731,7 +4658,6 @@ func TestColorPresentationParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4834,7 +4760,6 @@ func TestColorPresentation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4881,7 +4806,6 @@ func TestColorPresentation(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4946,7 +4870,6 @@ func TestDocumentFormattingParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -4986,7 +4909,6 @@ func TestDocumentFormattingParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5051,7 +4973,6 @@ func TestFormattingOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5091,7 +5012,6 @@ func TestFormattingOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5166,7 +5086,6 @@ func TestDocumentRangeFormattingParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5206,7 +5125,6 @@ func TestDocumentRangeFormattingParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5275,7 +5193,6 @@ func TestDocumentOnTypeFormattingParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5315,7 +5232,6 @@ func TestDocumentOnTypeFormattingParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5382,7 +5298,6 @@ func TestDocumentOnTypeFormattingRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5422,7 +5337,6 @@ func TestDocumentOnTypeFormattingRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5490,7 +5404,6 @@ func TestRenameParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5530,7 +5443,6 @@ func TestRenameParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5626,7 +5538,6 @@ func TestRenameRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5673,7 +5584,6 @@ func TestRenameRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5733,7 +5643,6 @@ func TestPrepareRenameParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5773,7 +5682,6 @@ func TestPrepareRenameParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5840,7 +5748,6 @@ func TestFoldingRangeParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5880,7 +5787,6 @@ func TestFoldingRangeParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -5933,7 +5839,6 @@ func TestFoldingRangeKind_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -5995,7 +5900,6 @@ func TestFoldingRange(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -6042,7 +5946,6 @@ func TestFoldingRange(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 

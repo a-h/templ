@@ -62,7 +62,6 @@ func TestWorkDoneProgressBegin(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -109,7 +108,6 @@ func TestWorkDoneProgressBegin(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -175,7 +173,6 @@ func TestWorkDoneProgressReport(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -222,7 +219,6 @@ func TestWorkDoneProgressReport(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -286,7 +282,6 @@ func TestWorkDoneProgressEnd(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -333,7 +328,6 @@ func TestWorkDoneProgressEnd(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -377,7 +371,6 @@ func TestWorkDoneProgressParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -410,7 +403,6 @@ func TestWorkDoneProgressParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -456,7 +448,6 @@ func TestPartialResultParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -489,7 +480,6 @@ func TestPartialResultParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 

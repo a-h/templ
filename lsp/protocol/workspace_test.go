@@ -50,7 +50,6 @@ func TestWorkspaceFolder(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -90,7 +89,6 @@ func TestWorkspaceFolder(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -163,7 +161,6 @@ func TestDidChangeWorkspaceFoldersParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -203,7 +200,6 @@ func TestDidChangeWorkspaceFoldersParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -274,7 +270,6 @@ func TestWorkspaceFoldersChangeEvent(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -314,7 +309,6 @@ func TestWorkspaceFoldersChangeEvent(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -375,7 +369,6 @@ func TestDidChangeConfigurationParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -422,7 +415,6 @@ func TestDidChangeConfigurationParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -490,7 +482,6 @@ func TestConfigurationParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -537,7 +528,6 @@ func TestConfigurationParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -599,7 +589,6 @@ func TestConfigurationItem(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -646,7 +635,6 @@ func TestConfigurationItem(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -712,7 +700,6 @@ func TestDidChangeWatchedFilesParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -759,7 +746,6 @@ func TestDidChangeWatchedFilesParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -812,7 +798,6 @@ func TestFileEvent(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -852,7 +837,6 @@ func TestFileEvent(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -899,7 +883,6 @@ func TestFileChangeType_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -965,7 +948,6 @@ func TestDidChangeWatchedFilesRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1012,7 +994,6 @@ func TestDidChangeWatchedFilesRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1059,7 +1040,6 @@ func TestWatchKind_String(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1115,7 +1095,6 @@ func TestWorkspaceSymbolParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1155,7 +1134,6 @@ func TestWorkspaceSymbolParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1240,7 +1218,6 @@ func TestExecuteCommandParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1287,7 +1264,6 @@ func TestExecuteCommandParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1348,7 +1324,6 @@ func TestExecuteCommandRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1388,7 +1363,6 @@ func TestExecuteCommandRegistrationOptions(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1538,7 +1512,6 @@ func TestApplyWorkspaceEditParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1585,7 +1558,6 @@ func TestApplyWorkspaceEditParams(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1639,7 +1611,6 @@ func TestApplyWorkspaceEditResponse(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -1679,7 +1650,6 @@ func TestApplyWorkspaceEditResponse(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
