@@ -162,7 +162,7 @@ type FileOperationPattern struct {
 	Matches FileOperationPatternKind `json:"matches,omitempty"`
 
 	// Options additional options used during matching.
-	Options FileOperationPatternOptions `json:"options,omitempty"`
+	Options FileOperationPatternOptions `json:"options"`
 }
 
 // FileOperationFilter is a filter to describe in which file operation requests or notifications
