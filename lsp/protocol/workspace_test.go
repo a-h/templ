@@ -1439,7 +1439,7 @@ func TestApplyWorkspaceEditParams(t *testing.T) {
 						TextDocumentIdentifier: TextDocumentIdentifier{
 							URI: uri.File("/path/to/basic.go"),
 						},
-						Version: NewVersion(int32(10)),
+						Version: new(int32(10)),
 					},
 					Edits: []TextEdit{
 						{
@@ -1485,7 +1485,7 @@ func TestApplyWorkspaceEditParams(t *testing.T) {
 						TextDocumentIdentifier: TextDocumentIdentifier{
 							URI: uri.File("/path/to/basic.go"),
 						},
-						Version: NewVersion(int32(10)),
+						Version: new(int32(10)),
 					},
 					Edits: []TextEdit{
 						{
