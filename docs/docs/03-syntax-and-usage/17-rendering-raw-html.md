@@ -29,3 +29,25 @@ templ Example() {
 	</body>
 </html>
 ```
+
+## Escaping untrusted content inside raw HTML
+
+If raw HTML includes values from an untrusted source, such as user input, escape those values with the `html.EscapeString` function from the Go standard library before you combine them with the HTML.
+
+```templ title="component.templ"
+package main
+
+import "html"
+
+templ Greeting(name string) {
+	@templ.Raw("<b>" + html.EscapeString(name) + "</b>")
+}
+```
+
+When `name` is `<script>alert('hello!')</script>`, the component renders:
+
+```html title="Output"
+<b>&lt;script&gt;alert(&#39;hello!&#39;)&lt;/script&gt;</b>
+```
+
+If the output doesn't need raw HTML, use a string expression such as `<b>{ name }</b>` instead, because templ escapes string expressions automatically. See [Expressions](/syntax-and-usage/expressions#escaping).
