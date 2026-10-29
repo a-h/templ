@@ -81,7 +81,7 @@ func sanitizeBackgroundImage(v string) string {
 	if strings.ContainsAny(v, "<>") {
 		return InnocuousPropertyValue
 	}
-	for _, u := range strings.Split(v, ",") {
+	for u := range strings.SplitSeq(v, ",") {
 		u = strings.TrimSpace(u)
 		var found bool
 		for i, prefix := range validURLPrefixes {
@@ -116,7 +116,7 @@ func urlIsSafe(s string) bool {
 var genericFontFamilyName = regexp.MustCompile(`^[a-zA-Z][- a-zA-Z]+$`)
 
 func sanitizeFontFamily(s string) string {
-	for _, f := range strings.Split(s, ",") {
+	for f := range strings.SplitSeq(s, ",") {
 		f = strings.TrimSpace(f)
 		if strings.HasPrefix(f, `"`) {
 			if !strings.HasSuffix(f, `"`) {
