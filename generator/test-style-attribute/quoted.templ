@@ -1,0 +1,13 @@
+package teststyleattribute
+
+templ QuotedSafeCSS() {
+	<button style={ templ.SafeCSS("font-family: 'Courier New', monospace") }>Click me</button>
+}
+
+templ QuotedString() {
+	<button style={ "font-family: 'Courier New', monospace" }>Click me</button>
+}
+
+templ QuotedAttributes(attrs templ.Attributes) {
+	<button { attrs... }>Click me</button>
+}
