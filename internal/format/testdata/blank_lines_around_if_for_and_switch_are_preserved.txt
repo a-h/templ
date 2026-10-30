@@ -1,0 +1,79 @@
+-- in --
+package main
+
+templ x(items []string) {
+	<div>
+	<span></span>
+
+	if true {
+					<span>Test</span>
+		} else {
+
+					<span>Test</span>
+			}
+
+
+
+		for _, item := range items {
+
+			<div>{ item }</div>
+		}
+
+		if true {
+			<span>Test</span>
+		}
+
+		for _, item := range items {
+			<div>{ item }</div>
+		}
+		switch items[0] {
+
+
+			case "a":
+				<div>{ items[0] }</div>
+
+				<div>{ items[0] }</div>
+			case "b":
+				<div>{ items[1] }</div>
+		}
+
+
+		<span>Foo Bar </span>
+	</div>
+}
+-- out --
+package main
+
+templ x(items []string) {
+	<div>
+		<span></span>
+
+		if true {
+			<span>Test</span>
+		} else {
+			<span>Test</span>
+		}
+
+		for _, item := range items {
+			<div>{ item }</div>
+		}
+
+		if true {
+			<span>Test</span>
+		}
+
+		for _, item := range items {
+			<div>{ item }</div>
+		}
+		switch items[0] {
+			case "a":
+				<div>{ items[0] }</div>
+
+				<div>{ items[0] }</div>
+			case "b":
+				<div>{ items[1] }</div>
+		}
+
+		<span>Foo Bar </span>
+	</div>
+}

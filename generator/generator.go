@@ -600,9 +600,15 @@ func stripLeadingAndTrailingWhitespace(nodes []parser.Node) []parser.Node {
 
 func (g *generator) writeNodes(indentLevel int, nodes []parser.Node, next parser.Node) error {
 	for i, curr := range nodes {
+		if _, isWhitespace := curr.(*parser.Whitespace); isWhitespace {
+			continue
+		}
 		var nextNode parser.Node
-		if i+1 < len(nodes) {
-			nextNode = nodes[i+1]
+		for j := i + 1; j < len(nodes); j++ {
+			if _, isWhitespace := nodes[j].(*parser.Whitespace); !isWhitespace {
+				nextNode = nodes[j]
+				break
+			}
 		}
 		if nextNode == nil {
 			nextNode = next
@@ -726,7 +732,7 @@ func (g *generator) writeWhitespaceTrailer(indentLevel int, n parser.TrailingSpa
 	}
 	// Normalize whitespace for minified output. In HTML, a single space is equivalent to
 	// any number of spaces, tabs, or newlines.
-	if n == parser.SpaceVertical {
+	if n == parser.SpaceVertical || n == parser.SpaceVerticalDouble {
 		n = parser.SpaceHorizontal
 	}
 	if _, err = g.w.WriteStringLiteral(indentLevel, string(n)); err != nil {

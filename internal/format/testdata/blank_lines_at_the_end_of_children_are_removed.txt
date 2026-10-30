@@ -1,0 +1,34 @@
+-- in --
+package main
+
+templ x(items []string) {
+	<div>
+		<span></span>
+
+	</div>
+	if true {
+		<span></span>
+
+
+	}
+	for _, item := range items {
+		<div>{ item }</div>
+
+	}
+
+
+}
+-- out --
+package main
+
+templ x(items []string) {
+	<div>
+		<span></span>
+	</div>
+	if true {
+		<span></span>
+	}
+	for _, item := range items {
+		<div>{ item }</div>
+	}
+}

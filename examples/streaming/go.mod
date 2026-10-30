@@ -1,7 +1,7 @@
 module githbu.com/a-h/templ/examples/streaming
 
-go 1.25.0
+go 1.26.0
 
 replace github.com/a-h/templ => ../../
 
-require github.com/a-h/templ v0.2.707
+require github.com/a-h/templ v0.3.1100

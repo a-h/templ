@@ -421,21 +421,32 @@ const (
 	SpaceNone       TrailingSpace = ""
 	SpaceHorizontal TrailingSpace = " "
 	SpaceVertical   TrailingSpace = "\n"
+	// SpaceVerticalDouble is whitespace that contains a blank line. The formatter keeps it
+	// as a single blank line, and the generator treats it the same as SpaceVertical.
+	SpaceVerticalDouble TrailingSpace = "\n\n"
 )
 
 var ErrNonSpaceCharacter = errors.New("non space character found")
 
 func NewTrailingSpace(s string) (ts TrailingSpace, err error) {
 	var hasHorizontalSpace bool
+	var newlineCount int
 	for _, r := range s {
 		if r == '\n' {
-			return SpaceVertical, nil
+			newlineCount++
+			continue
 		}
 		if unicode.IsSpace(r) {
 			hasHorizontalSpace = true
 			continue
 		}
 		return ts, ErrNonSpaceCharacter
+	}
+	if newlineCount > 1 {
+		return SpaceVerticalDouble, nil
+	}
+	if newlineCount == 1 {
+		return SpaceVertical, nil
 	}
 	if hasHorizontalSpace {
 		return SpaceHorizontal, nil
@@ -666,7 +677,14 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 			trailing = wst.Trailing()
 		}
 		// Put a newline after the last node in indentation mode.
-		if indent && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(n)) {
+		if indent && ((nextNodeIsBlock(nodes, i) || i == len(nodes)-1) || shouldAlwaysBreakAfter(n)) && trailing != SpaceVerticalDouble {
+			trailing = SpaceVertical
+		}
+		// Keep a blank line between nodes, but not after the last node.
+		if isBlankLineAfter(nodes, i) {
+			trailing = SpaceVerticalDouble
+		}
+		if trailing == SpaceVerticalDouble && isLastNonWhitespaceNode(nodes, i) {
 			trailing = SpaceVertical
 		}
 		switch trailing {
@@ -674,7 +692,7 @@ func writeNodes(w io.Writer, level int, nodes []Node, indent bool) error {
 			level = 0
 		case SpaceHorizontal:
 			level = 0
-		case SpaceVertical:
+		case SpaceVertical, SpaceVerticalDouble:
 			level = startLevel
 		}
 		if _, err := w.Write([]byte(trailing)); err != nil {
@@ -689,6 +707,23 @@ func shouldAlwaysBreakAfter(node Node) bool {
 		return strings.EqualFold(el.Name, "br") || strings.EqualFold(el.Name, "hr")
 	}
 	return false
+}
+
+func isBlankLineAfter(nodes []Node, i int) bool {
+	if i+1 >= len(nodes) {
+		return false
+	}
+	ws, isWhitespace := nodes[i+1].(*Whitespace)
+	return isWhitespace && strings.Count(ws.Value, "\n") > 1
+}
+
+func isLastNonWhitespaceNode(nodes []Node, i int) bool {
+	for _, n := range nodes[i+1:] {
+		if _, isWhitespace := n.(*Whitespace); !isWhitespace {
+			return false
+		}
+	}
+	return true
 }
 
 func nextNodeIsBlock(nodes []Node, i int) bool {

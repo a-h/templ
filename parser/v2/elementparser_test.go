@@ -1676,6 +1676,27 @@ func TestElementParser(t *testing.T) {
 			},
 		},
 		{
+			name:  "element: followed by blank lines has double vertical trailing space",
+			input: "<hr/>\n\n\n<hr/>",
+			expected: &Element{
+				Name: "hr",
+				NameRange: Range{
+					From: Position{Index: 1, Line: 0, Col: 1},
+					To:   Position{Index: 3, Line: 0, Col: 3},
+				},
+				OpenTagRange: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 5, Line: 0, Col: 5},
+				},
+				Range: Range{
+					From: Position{Index: 0, Line: 0, Col: 0},
+					To:   Position{Index: 8, Line: 3, Col: 0},
+				},
+				SelfClosing:   true,
+				TrailingSpace: SpaceVerticalDouble,
+			},
+		},
+		{
 			name:  "element: self-closing with attribute",
 			input: `<hr style="padding: 10px" />`,
 			expected: &Element{
