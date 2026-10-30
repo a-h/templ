@@ -39,11 +39,9 @@ func TestIdleTimeout(t *testing.T) {
 		runErr error
 		wg     sync.WaitGroup
 	)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		runErr = jsonrpc2.Serve(ctx, ln, server, 100*time.Millisecond)
-	}()
+	})
 
 	// Exercise some connection/disconnection patterns, and then assert that when
 	// our timer fires, the server exits.

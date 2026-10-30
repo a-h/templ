@@ -36,11 +36,9 @@ func Recursive(
 		timers:        make(map[timerKey]*time.Timer),
 		loopComplete:  sync.WaitGroup{},
 	}
-	w.loopComplete.Add(1)
-	go func() {
-		defer w.loopComplete.Done()
+	w.loopComplete.Go(func() {
 		w.loop()
-	}()
+	})
 	return w, nil
 }
 

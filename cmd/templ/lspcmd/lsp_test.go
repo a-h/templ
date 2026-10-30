@@ -1008,9 +1008,7 @@ func Setup(ctx context.Context, log *slog.Logger, args Arguments) (clientCtx con
 	client = NewTestClient(log)
 	ctx, _, server = protocol.NewClient(ctx, client, clientStream, log)
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		log.Info("Running")
 		// Create the server that the client needs.
 		cmdErr = run(ctx, log, serverStream, args)
@@ -1018,7 +1016,7 @@ func Setup(ctx context.Context, log *slog.Logger, args Arguments) (clientCtx con
 			log.Error("Failed to run", slog.Any("error", cmdErr))
 		}
 		log.Info("Stopped")
-	}()
+	})
 
 	// Initialize.
 	ir, err := server.Initialize(ctx, &protocol.InitializeParams{
