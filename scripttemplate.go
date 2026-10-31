@@ -76,19 +76,24 @@ func RenderScriptItems(ctx context.Context, w io.Writer, scripts ...ComponentScr
 		return nil
 	}
 	_, v := getContext(ctx)
-	sb := new(strings.Builder)
+	// Write the script element only if there is a function to write, without
+	// buffering the functions first.
+	var written bool
 	for _, s := range scripts {
-		if v.shouldRenderScript(s.Name) {
-			sb.WriteString(s.Function)
+		if !v.shouldRenderScript(s.Name) || s.Function == "" {
+			continue
+		}
+		if !written {
+			if err = writeScriptHeader(ctx, w); err != nil {
+				return err
+			}
+			written = true
+		}
+		if _, err = io.WriteString(w, s.Function); err != nil {
+			return err
 		}
 	}
-	if sb.Len() > 0 {
-		if err = writeScriptHeader(ctx, w); err != nil {
-			return err
-		}
-		if _, err = io.WriteString(w, sb.String()); err != nil {
-			return err
-		}
+	if written {
 		if _, err = io.WriteString(w, `</script>`); err != nil {
 			return err
 		}

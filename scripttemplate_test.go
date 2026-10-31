@@ -119,6 +119,66 @@ func TestRenderScriptItemsWithNonce(t *testing.T) {
 	})
 }
 
+func TestRenderScriptItemsDeduplication(t *testing.T) {
+	s1 := templ.ComponentScript{
+		Name:     "s1",
+		Function: "function s1() { return 'hello1'; }",
+	}
+	empty := templ.ComponentScript{
+		Name: "empty",
+	}
+	t.Run("scripts without a function don't render a script element", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		b := new(bytes.Buffer)
+		if err := templ.RenderScriptItems(ctx, b, empty); err != nil {
+			t.Fatalf("failed to render scripts: %v", err)
+		}
+		if b.Len() != 0 {
+			t.Errorf("expected no output, got %q", b.String())
+		}
+	})
+	t.Run("scripts without a function are skipped", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		b := new(bytes.Buffer)
+		if err := templ.RenderScriptItems(ctx, b, empty, s1, empty); err != nil {
+			t.Fatalf("failed to render scripts: %v", err)
+		}
+		if diff := cmp.Diff(`<script>`+s1.Function+`</script>`, b.String()); diff != "" {
+			t.Error(diff)
+		}
+	})
+	t.Run("a CSS class and a script with the same name are both rendered", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		b := new(bytes.Buffer)
+		class := templ.ComponentCSSClass{ID: "same", Class: ".same{color:red}"}
+		script := templ.ComponentScript{Name: "same", Function: "function same() {}"}
+		if err := templ.RenderCSSItems(ctx, b, class); err != nil {
+			t.Fatalf("failed to render CSS: %v", err)
+		}
+		if err := templ.RenderScriptItems(ctx, b, script); err != nil {
+			t.Fatalf("failed to render scripts: %v", err)
+		}
+		expected := `<style type="text/css">` + string(class.Class) + `</style><script>` + script.Function + `</script>`
+		if diff := cmp.Diff(expected, b.String()); diff != "" {
+			t.Error(diff)
+		}
+	})
+	t.Run("scripts that have already been rendered do not require allocations", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		if err := templ.RenderScriptItems(ctx, io.Discard, s1, empty); err != nil {
+			t.Fatalf("failed to render scripts: %v", err)
+		}
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if err := templ.RenderScriptItems(ctx, io.Discard, s1, empty); err != nil {
+				t.Fatalf("failed to render scripts: %v", err)
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+}
+
 func TestJSExpression(t *testing.T) {
 	expected := "myJSFunction(\"StringValue\",123,event,1 + 2)"
 	actual := templ.SafeScriptInline("myJSFunction", "StringValue", 123, templ.JSExpression("event"), templ.JSExpression("1 + 2"))
