@@ -55,6 +55,9 @@ func Check(dir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse go.mod file: %w", err)
 	}
+	if mf.Module == nil {
+		return fmt.Errorf("go.mod file is missing a module directive")
+	}
 	if mf.Module.Mod.Path == "github.com/a-h/templ" {
 		// The go.mod file is for templ itself.
 		return nil

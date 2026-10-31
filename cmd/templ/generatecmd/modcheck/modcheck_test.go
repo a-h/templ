@@ -34,6 +34,33 @@ func TestWalkUp(t *testing.T) {
 	})
 }
 
+func TestCheckMissingModuleDirective(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		contents string
+	}{
+		{name: "empty file"},
+		{name: "go directive only", contents: "go 1.26.0\n"},
+		{name: "templ dependency without module", contents: "require github.com/a-h/templ v0.3.0\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			dir := t.TempDir()
+			if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte(tt.contents), 0600); err != nil {
+				t.Fatal(err)
+			}
+			err := Check(dir)
+			if err == nil || err.Error() != "go.mod file is missing a module directive" {
+				t.Fatalf("expected missing module directive error, got %v", err)
+			}
+		})
+	}
+}
+
 func TestPatchGoVersion(t *testing.T) {
 	tests := []struct {
 		input    string
