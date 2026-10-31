@@ -1144,6 +1144,11 @@ func (g *generator) requiresElementWriter(elementName string, attrs []parser.Att
 			if g.requiresElementWriter(elementName, attr.Then) || g.requiresElementWriter(elementName, attr.Else) {
 				return true
 			}
+			for _, elseIf := range attr.ElseIfs {
+				if g.requiresElementWriter(elementName, elseIf.Then) {
+					return true
+				}
+			}
 		case *parser.ExpressionAttribute:
 			key, ok := attr.Key.(parser.ConstantAttributeKey)
 			if !ok {
@@ -1496,6 +1501,21 @@ func (g *generator) writeConditionalAttribute(indentLevel int, elementName strin
 			return err
 		}
 		indentLevel--
+	}
+	for _, elseIf := range attr.ElseIfs {
+		if _, err = g.w.WriteIndent(indentLevel, "} else if "); err != nil {
+			return err
+		}
+		if r, err = g.w.Write(elseIf.Expression.Value); err != nil {
+			return err
+		}
+		g.sourceMap.Add(elseIf.Expression, r)
+		if _, err = g.w.Write(" {\n"); err != nil {
+			return err
+		}
+		if err = g.writeElementAttributes(indentLevel+1, elementName, sanitizeAnimationValues, elseIf.Then); err != nil {
+			return err
+		}
 	}
 	if len(attr.Else) > 0 {
 		// } else {

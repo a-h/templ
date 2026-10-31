@@ -202,6 +202,17 @@ func TestAttributes(t *testing.T) {
 									Value: "then-class",
 								},
 							},
+							ElseIfs: []parser.ConditionalElseIfAttribute{
+								{
+									Expression: parser.Expression{Value: "elseIfCondition"},
+									Then: []parser.Attribute{
+										&parser.ConstantAttribute{
+											Key:   parser.ConstantAttributeKey{Name: "class"},
+											Value: "else-if-class",
+										},
+									},
+								},
+							},
 							Else: []parser.Attribute{
 								&parser.ConstantAttribute{
 									Key:   parser.ConstantAttributeKey{Name: "class"},
@@ -216,10 +227,17 @@ func TestAttributes(t *testing.T) {
 			check: func(t *testing.T, children []parser.Node) {
 				t.Helper()
 				cond := children[0].(*parser.Element).Attributes[0].(*parser.ConditionalAttribute)
+				if got := cond.ElseIfs[0].Expression.Value; got != "elseIfCondition" {
+					t.Errorf("else if expression: got %q, expected %q", got, "elseIfCondition")
+				}
 				thenAttr := cond.Then[0].(*parser.ConstantAttribute)
+				elseIfAttr := cond.ElseIfs[0].Then[0].(*parser.ConstantAttribute)
 				elseAttr := cond.Else[0].(*parser.ConstantAttribute)
 				if thenAttr.Value != "then-class" {
 					t.Errorf("then branch: got %q, expected %q", thenAttr.Value, "then-class")
+				}
+				if elseIfAttr.Value != "else-if-class" {
+					t.Errorf("else if branch: got %q, expected %q", elseIfAttr.Value, "else-if-class")
 				}
 				if elseAttr.Value != "else-class" {
 					t.Errorf("else branch: got %q, expected %q", elseAttr.Value, "else-class")

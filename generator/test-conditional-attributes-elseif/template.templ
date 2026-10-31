@@ -1,0 +1,77 @@
+package conditionalattributeselseif
+
+templ branches(check func(int) bool) {
+	<div
+		if check(0) {
+			data-branch="if"
+		} else if check(1) {
+			data-branch="first"
+		} else if check(2) {
+			data-branch="second"
+		} else {
+			data-branch="else"
+		}
+	></div>
+}
+
+templ withoutElse(value string) {
+	<div
+		if false {
+			data-value="unused"
+		} else if label := value; label != "" {
+			if len(label) > 1 {
+				data-value={ label }
+			} else {
+				data-value="short"
+			}
+		}
+	></div>
+}
+
+css highlight() {
+	color: red;
+}
+
+templ withCSS(selected bool) {
+	<div
+		if false {
+			id="unused"
+		} else if selected {
+			class={ highlight() }
+		}
+	></div>
+}
+
+script clicked() {
+	alert("clicked");
+}
+
+templ withScript(selected bool) {
+	<button
+		if false {
+			id="unused"
+		} else if selected {
+			onclick={ clicked() }
+		}
+	></button>
+}
+
+templ withSpread(selected bool, attrs templ.Attributes) {
+	<div
+		if false {
+			id="unused"
+		} else if selected {
+			{ attrs... }
+		}
+	></div>
+}
+
+templ withDynamicKey(selected bool, key string, value string) {
+	<a
+		if false {
+			id="unused"
+		} else if selected {
+			{ key }={ value }
+		}
+	></a>
+}
