@@ -60,6 +60,11 @@ func WithChildren(ctx context.Context, children Component) context.Context {
 }
 
 func ClearChildren(ctx context.Context) context.Context {
+	// Every generated component calls ClearChildren, so avoid adding a context
+	// layer when there are no children to clear.
+	if ctx.Value(childrenKey) == nil {
+		return ctx
+	}
 	return context.WithValue(ctx, childrenKey, nil)
 }
 

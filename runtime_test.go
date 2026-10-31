@@ -662,4 +662,15 @@ func TestGetChildren(t *testing.T) {
 			}
 		})
 	}
+	t.Run("ClearChildren does not require allocations without children", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if templ.ClearChildren(ctx) != ctx {
+				t.Fatalf("expected the context to be returned unchanged")
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
 }
