@@ -1053,7 +1053,7 @@ func TestTextDocumentEdit(t *testing.T) {
 			TextDocumentIdentifier: TextDocumentIdentifier{
 				URI: "file:///path/to/basic.go",
 			},
-			Version: NewVersion(int32(10)),
+			Version: new(int32(10)),
 		},
 		Edits: []TextEdit{
 			{
@@ -1076,7 +1076,7 @@ func TestTextDocumentEdit(t *testing.T) {
 			TextDocumentIdentifier: TextDocumentIdentifier{
 				URI: "file:///path/to/basic.go",
 			},
-			Version: NewVersion(int32(10)),
+			Version: new(int32(10)),
 		},
 		Edits: []TextEdit{
 			{
@@ -2056,7 +2056,7 @@ func TestWorkspaceEdit(t *testing.T) {
 					TextDocumentIdentifier: TextDocumentIdentifier{
 						URI: uri.File("/path/to/basic.go"),
 					},
-					Version: NewVersion(int32(10)),
+					Version: new(int32(10)),
 				},
 				Edits: []TextEdit{
 					{
@@ -2090,7 +2090,7 @@ func TestWorkspaceEdit(t *testing.T) {
 					TextDocumentIdentifier: TextDocumentIdentifier{
 						URI: uri.File("/path/to/basic.go"),
 					},
-					Version: NewVersion(int32(10)),
+					Version: new(int32(10)),
 				},
 				Edits: []TextEdit{
 					{
@@ -2621,7 +2621,7 @@ func TestOptionalVersionedTextDocumentIdentifier(t *testing.T) {
 		TextDocumentIdentifier: TextDocumentIdentifier{
 			URI: uri.File("/path/to/basic.go"),
 		},
-		Version: NewVersion(10),
+		Version: new(int32(10)),
 	}
 	wantTypeNullVersion := OptionalVersionedTextDocumentIdentifier{
 		TextDocumentIdentifier: TextDocumentIdentifier{

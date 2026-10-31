@@ -20,9 +20,9 @@ func Test(t *testing.T) {
 		// Should not render, as the conditional render value is false.
 		"bool-disabled": templ.KV(true, false),
 		// Should render non-nil string values.
-		"data-attr": ptr("value"),
+		"data-attr": new("value"),
 		// Should render non-nil boolean values that evaluate to true.
-		"data-attr-bool": ptr(true),
+		"data-attr-bool": new(true),
 		// Should render as `dateId="my-custom-id"`.
 		"dateId": "my-custom-id",
 		// Should render as `hx-get="/page"`.
@@ -71,9 +71,9 @@ func TestOrderedAttributes(t *testing.T) {
 		// Should not render, as the conditional render value is false.
 		{Key: "bool-disabled", Value: templ.KV(true, false)},
 		// Should render non-nil string values.
-		{Key: "data-attr", Value: ptr("value")},
+		{Key: "data-attr", Value: new("value")},
 		// Should render non-nil boolean values that evaluate to true.
-		{Key: "data-attr-bool", Value: ptr(true)},
+		{Key: "data-attr-bool", Value: new(true)},
 		// Should render as `dateId="my-custom-id"`.
 		{Key: "dateId", Value: "my-custom-id"},
 		// Should render as `hx-get="/page"`.
@@ -114,10 +114,6 @@ func TestOrderedAttributes(t *testing.T) {
 
 func nilPtr[T any]() *T {
 	return nil
-}
-
-func ptr[T any](x T) *T {
-	return &x
 }
 
 //go:embed expected_numeric_attributes.html

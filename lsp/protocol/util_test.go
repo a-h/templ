@@ -24,9 +24,9 @@ func TestNewVersion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			want := NewVersion(tt.i)
-			if got := NewVersion(tt.i); *got != *want {
-				t.Errorf("NewVersion(%v) = %v, want %v", tt.i, *got, *want)
+			want := tt.i
+			if got := NewVersion(tt.i); *got != want {
+				t.Errorf("NewVersion(%v) = %v, want %v", tt.i, *got, want)
 			}
 		})
 	}

@@ -3,7 +3,11 @@
 
 package protocol
 
-// NewVersion returns the int32 pointer converted i.
+// NewVersion returns a pointer to i.
+//
+// Deprecated: use new(i) instead.
+//
+//go:fix inline
 func NewVersion(i int32) *int32 {
-	return &i
+	return new(i)
 }
