@@ -11,7 +11,6 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -451,12 +450,10 @@ type SafeCSS string
 
 type SafeCSSProperty string
 
-var safeCSSPropertyType = reflect.TypeFor[SafeCSSProperty]()
-
 // SanitizeCSS sanitizes CSS properties to ensure that they are safe.
 func SanitizeCSS[T ~string](property string, value T) SafeCSS {
-	if reflect.TypeOf(value) == safeCSSPropertyType {
-		return SafeCSS(safehtml.SanitizeCSSProperty(property) + ":" + string(value) + ";")
+	if v, ok := any(value).(SafeCSSProperty); ok {
+		return SafeCSS(safehtml.SanitizeCSSProperty(property) + ":" + string(v) + ";")
 	}
 	p, v := safehtml.SanitizeCSS(property, string(value))
 	return SafeCSS(p + ":" + v + ";")
