@@ -95,9 +95,19 @@ func Classify(elementName, attrName string) Context {
 // HTML tokenizer lowercases element and attribute names. strings.ToLower also
 // lowercases other letters, e.g. the Kelvin sign is lowercased to "k".
 func toLowerASCII(s string) string {
+	// Element and attribute names are almost always lowercase already, so
+	// return s unchanged unless it contains an uppercase ASCII letter.
+	i := 0
+	for i < len(s) && (s[i] < 'A' || s[i] > 'Z') {
+		i++
+	}
+	if i == len(s) {
+		return s
+	}
 	var sb strings.Builder
 	sb.Grow(len(s))
-	for i := range len(s) {
+	sb.WriteString(s[:i])
+	for ; i < len(s); i++ {
 		c := s[i]
 		if 'A' <= c && c <= 'Z' {
 			c += 'a' - 'A'
