@@ -3,6 +3,7 @@ package templ_test
 import (
 	"bytes"
 	"context"
+	"io"
 	"testing"
 
 	"github.com/a-h/templ"
@@ -85,6 +86,37 @@ func TestRenderScriptItems(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRenderScriptItemsWithNonce(t *testing.T) {
+	ctx := templ.WithNonce(context.Background(), `test"nonce`)
+	b := new(bytes.Buffer)
+	s := templ.ComponentScript{
+		Name:     "s1",
+		Function: "function s1() { return 'hello1'; }",
+	}
+	err := templ.RenderScriptItems(ctx, b, s)
+	if err != nil {
+		t.Fatalf("failed to render scripts: %v", err)
+	}
+	// Should include the escaped nonce attribute on the <script> tag.
+	expected := `<script nonce="test&#34;nonce">` + s.Function + `</script>`
+	if diff := cmp.Diff(expected, b.String()); diff != "" {
+		t.Error(diff)
+	}
+	t.Run("rendering a script call with a nonce requires one allocation", func(t *testing.T) {
+		// Nonces are base64, so they don't need escaping, which would allocate.
+		ctx := templ.WithNonce(context.Background(), "dGVzdG5vbmNl")
+		call := templ.JSFuncCall("alert", 1)
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if err := call.Render(ctx, io.Discard); err != nil {
+				t.Fatalf("failed to render script call: %v", err)
+			}
+		})
+		if actualAllocs > 1 {
+			t.Errorf("expected 1 alloc, got %v", actualAllocs)
+		}
+	})
 }
 
 func TestJSExpression(t *testing.T) {

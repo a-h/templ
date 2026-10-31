@@ -3,7 +3,6 @@ package templ
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"html"
 	"io"
 	"regexp"
@@ -45,11 +44,10 @@ type ComponentScript struct {
 var _ Component = ComponentScript{}
 
 func writeScriptHeader(ctx context.Context, w io.Writer) (err error) {
-	var nonceAttr string
 	if nonce := GetNonce(ctx); nonce != "" {
-		nonceAttr = " nonce=\"" + EscapeString(nonce) + "\""
+		return writeStrings(w, `<script nonce="`, EscapeString(nonce), `">`)
 	}
-	_, err = fmt.Fprintf(w, `<script%s>`, nonceAttr)
+	_, err = io.WriteString(w, `<script>`)
 	return err
 }
 
