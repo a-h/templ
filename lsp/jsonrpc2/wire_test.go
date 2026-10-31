@@ -45,7 +45,6 @@ func TestIDFormat(t *testing.T) {
 	t.Parallel()
 
 	for _, tt := range wireIDTestData {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -63,7 +62,6 @@ func TestIDEncode(t *testing.T) {
 	t.Parallel()
 
 	for _, tt := range wireIDTestData {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -80,7 +78,6 @@ func TestIDDecode(t *testing.T) {
 	t.Parallel()
 
 	for _, tt := range wireIDTestData {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

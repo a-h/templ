@@ -39,7 +39,6 @@ func TestPackageParserErrors(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			pi := parse.NewInput([]byte(tt.input))
 			_, ok, err := pkg.Parse(pi)
@@ -82,7 +81,6 @@ func TestPackageParser(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput([]byte(tt.input))
 			actual, ok, err := pkg.Parse(input)
