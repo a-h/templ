@@ -9,6 +9,7 @@ import (
 	"io"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -585,8 +586,7 @@ func stripLeadingWhitespace(nodes []parser.Node) []parser.Node {
 }
 
 func stripTrailingWhitespace(nodes []parser.Node) []parser.Node {
-	for i := len(nodes) - 1; i >= 0; i-- {
-		n := nodes[i]
+	for i, n := range slices.Backward(nodes) {
 		if _, isWhiteSpace := n.(*parser.Whitespace); !isWhiteSpace {
 			return nodes[0 : i+1]
 		}
