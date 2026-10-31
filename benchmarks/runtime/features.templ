@@ -1,0 +1,93 @@
+package runtimebench
+
+type Page struct {
+	Title string
+	Rows  []Row
+}
+
+type Row struct {
+	ID      string
+	Name    string
+	URL     string
+	Mail    string
+	Class   string
+	Count   int
+	Active  bool
+	Done    bool
+	Locked  bool
+	Odd     bool
+	Note    string
+	Tags    []string
+	Cells   []Cell
+	Attrs   templ.Attributes
+	Ordered templ.OrderedAttributes
+}
+
+type Cell struct {
+	Text string
+	Neg  bool
+}
+
+const icon = `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"></circle></svg>`
+
+templ Render(p Page) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<title>{ p.Title }</title>
+		</head>
+		<body>
+			@card(p.Title) {
+				<table>
+					<tbody>
+						for _, r := range p.Rows {
+							@row(r)
+						}
+					</tbody>
+				</table>
+			}
+		</body>
+	</html>
+}
+
+templ card(title string) {
+	<section class="card">
+		<h1>{ title }</h1>
+		{ children... }
+	</section>
+}
+
+templ row(r Row) {
+	<tr id={ r.ID } class={ "row", templ.KV("odd", r.Odd) } data-count={ r.Count } { r.Attrs... }>
+		<td class={ r.Class }>
+			<a href={ r.URL } title={ r.Name }>{ r.Name }</a>
+			<a href={ templ.SafeURL(r.Mail) }>{ r.Mail }</a>
+			@templ.Raw(icon)
+		</td>
+		for _, c := range r.Cells {
+			@cell(c)
+		}
+		<td { r.Ordered... }>{ r.Count } { r.Active }</td>
+		<td>
+			if r.Note != "" {
+				<p>{ r.Note }</p>
+			}
+			<ul>
+				for _, t := range r.Tags {
+					<li>{ t }</li>
+				}
+			</ul>
+		</td>
+		<td>
+			<input type="checkbox" checked?={ r.Done } disabled?={ r.Locked }/>
+		</td>
+	</tr>
+}
+
+templ cell(c Cell) {
+	<td
+		if c.Neg {
+			data-neg="true"
+		}
+	>{ c.Text }</td>
+}
