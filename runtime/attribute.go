@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -182,6 +183,15 @@ func formatAttributeValue(v any) (s string, ok bool) {
 		return v, true
 	case templ.ComponentScript:
 		return v.Call, true
+	// Predeclared types are formatted without reflect and fmt. Other types,
+	// such as a named type with a String method, are formatted by fmt.Sprint
+	// below, which calls that method.
+	case int:
+		return strconv.Itoa(v), true
+	case int64:
+		return strconv.FormatInt(v, 10), true
+	case bool:
+		return strconv.FormatBool(v), true
 	}
 	switch reflect.ValueOf(v).Kind() {
 	case reflect.String, reflect.Bool,
