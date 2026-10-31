@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -622,7 +623,25 @@ type stringable interface {
 
 // JoinStringErrs joins an optional list of errors.
 func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
-	return fmt.Sprint(s), errors.Join(errs...)
+	return stringOf(s), errors.Join(errs...)
+}
+
+// stringOf formats s in the same way as fmt.Sprint. Predeclared types are
+// formatted without fmt, because every text expression in a template is passed
+// through here. Other types, such as a named type with a String method, are
+// still formatted by fmt.Sprint, which calls that method.
+func stringOf[T stringable](s T) string {
+	switch v := any(s).(type) {
+	case string:
+		return v
+	case int:
+		return strconv.Itoa(v)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case bool:
+		return strconv.FormatBool(v)
+	}
+	return fmt.Sprint(s)
 }
 
 // Error returned during template rendering.
