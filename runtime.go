@@ -525,10 +525,25 @@ const childrenKey = childrenKeyType(0)
 
 type contextValue struct {
 	mu          sync.Mutex
-	ss          map[string]struct{} // Deduplication for scripts and CSS classes
+	ss          map[renderedKey]struct{} // Deduplication for scripts and CSS classes
 	onceHandles map[*OnceHandle]struct{}
 	nonce       string
 }
+
+// renderedKey identifies a script or CSS class that has been rendered. The
+// kind keeps a script and a CSS class with the same name apart, without
+// building a prefixed string for every check.
+type renderedKey struct {
+	kind renderedKind
+	name string
+}
+
+type renderedKind uint8
+
+const (
+	renderedScript renderedKind = iota
+	renderedClass
+)
 
 func (v *contextValue) shouldRenderOnce(h *OnceHandle) (render bool) {
 	v.mu.Lock()
@@ -545,28 +560,20 @@ func (v *contextValue) shouldRenderOnce(h *OnceHandle) (render bool) {
 }
 
 func (v *contextValue) shouldRenderScript(s string) (render bool) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-
-	if v.ss == nil {
-		v.ss = make(map[string]struct{})
-	}
-	key := "script_" + s
-	if _, rendered := v.ss[key]; rendered {
-		return false
-	}
-	v.ss[key] = struct{}{}
-	return true
+	return v.shouldRender(renderedKey{kind: renderedScript, name: s})
 }
 
 func (v *contextValue) shouldRenderClass(s string) (render bool) {
+	return v.shouldRender(renderedKey{kind: renderedClass, name: s})
+}
+
+func (v *contextValue) shouldRender(key renderedKey) (render bool) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
 	if v.ss == nil {
-		v.ss = make(map[string]struct{})
+		v.ss = make(map[renderedKey]struct{})
 	}
-	key := "class_" + s
 	if _, rendered := v.ss[key]; rendered {
 		return false
 	}
