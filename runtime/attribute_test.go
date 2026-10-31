@@ -927,3 +927,29 @@ func TestAttributeExpressionResolveSrcset(t *testing.T) {
 		}
 	})
 }
+
+func TestAttributeExpressionResolveAllocs(t *testing.T) {
+	ctx := context.Background()
+	t.Run("strings that don't need escaping do not require allocations", func(t *testing.T) {
+		v := strings.Clone("value")
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if s, err := NewAttributeExpression(v).Resolve(ctx); err != nil || s != v {
+				t.Fatalf("unexpected result %q, %v", s, err)
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+	t.Run("safe URLs that don't need escaping do not require allocations", func(t *testing.T) {
+		v := templ.SafeURL(strings.Clone("/a/b?c=d"))
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if s, err := NewAttributeExpression(v).ResolveURL(ctx); err != nil || s != string(v) {
+				t.Fatalf("unexpected result %q, %v", s, err)
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+}
