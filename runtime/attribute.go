@@ -63,7 +63,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if !v {
 				continue
 			}
-			if _, err = io.WriteString(w, " "+templ.EscapeString(name)); err != nil {
+			if err = writeStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -71,7 +71,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if v == nil || !*v {
 				continue
 			}
-			if _, err = io.WriteString(w, " "+templ.EscapeString(name)); err != nil {
+			if err = writeStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -79,7 +79,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if !v.Key || !v.Value {
 				continue
 			}
-			if _, err = io.WriteString(w, " "+templ.EscapeString(name)); err != nil {
+			if err = writeStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -87,7 +87,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if !v() {
 				continue
 			}
-			if _, err = io.WriteString(w, " "+templ.EscapeString(name)); err != nil {
+			if err = writeStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -99,7 +99,18 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 		if err != nil {
 			return err
 		}
-		if _, err = io.WriteString(w, " "+templ.EscapeString(name)+`="`+resolved+`"`); err != nil {
+		if err = writeStrings(w, " ", templ.EscapeString(name), `="`, resolved, `"`); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// writeStrings writes each string to w, which avoids allocating a
+// concatenated string.
+func writeStrings(w io.Writer, ss ...string) (err error) {
+	for _, s := range ss {
+		if _, err = io.WriteString(w, s); err != nil {
 			return err
 		}
 	}

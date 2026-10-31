@@ -12,7 +12,7 @@ import (
 	"io"
 	"net/http"
 	"reflect"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -154,7 +154,7 @@ func (cp *cssProcessor) Add(item any) {
 			keys[i] = key
 			i++
 		}
-		sort.Strings(keys)
+		slices.Sort(keys)
 		for _, className := range keys {
 			cp.AddClassName(className, c[className])
 		}
@@ -165,8 +165,8 @@ func (cp *cssProcessor) Add(item any) {
 		for key := range c {
 			keys = append(keys, key)
 		}
-		sort.Slice(keys, func(i, j int) bool {
-			return keys[i].ClassName() < keys[j].ClassName()
+		slices.SortFunc(keys, func(a, b CSSClass) int {
+			return strings.Compare(a.ClassName(), b.ClassName())
 		})
 		for _, key := range keys {
 			cp.AddClassName(key.ClassName(), c[key])
@@ -481,8 +481,8 @@ func (a Attributes) Items() []KeyValue[string, any] {
 		items[i] = KeyValue[string, any]{Key: k, Value: v}
 		i++
 	}
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Key < items[j].Key
+	slices.SortFunc(items, func(a, b KeyValue[string, any]) int {
+		return strings.Compare(a.Key, b.Key)
 	})
 	return items
 }
