@@ -8,6 +8,7 @@ import (
 	stdlog "log"
 	"log/slog"
 	"math"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -280,7 +281,7 @@ func New(log *slog.Logger, scheme string, bind string, port int, target *url.URL
 	}
 	h = &Handler{
 		log:    log,
-		URL:    fmt.Sprintf("%s://%s:%d", scheme, bind, port),
+		URL:    (&url.URL{Scheme: scheme, Host: net.JoinHostPort(bind, strconv.Itoa(port))}).String(),
 		Target: target,
 		p:      p,
 		sse:    sse.New(),
@@ -375,8 +376,12 @@ func (rt *roundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 func NotifyProxy(host string, port int) error {
-	urlStr := fmt.Sprintf("http://%s:%d/_templ/reload/events", host, port)
-	req, err := http.NewRequest(http.MethodPost, urlStr, nil)
+	proxyURL := url.URL{
+		Scheme: "http",
+		Host:   net.JoinHostPort(host, strconv.Itoa(port)),
+		Path:   "/_templ/reload/events",
+	}
+	req, err := http.NewRequest(http.MethodPost, proxyURL.String(), nil)
 	if err != nil {
 		return err
 	}
