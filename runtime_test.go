@@ -419,6 +419,16 @@ func TestClassesFunction(t *testing.T) {
 			},
 			expected: "a",
 		},
+		{
+			name:     "a single class name is returned unchanged",
+			input:    []any{"a b a"},
+			expected: "a b a",
+		},
+		{
+			name:     "a single empty class name renders nothing",
+			input:    []any{""},
+			expected: "",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -428,6 +438,33 @@ func TestClassesFunction(t *testing.T) {
 			}
 		})
 	}
+	t.Run("a single class name does not require allocations", func(t *testing.T) {
+		classes := templ.Classes(strings.Clone("a b"))
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if classes.String() != "a b" {
+				t.Fatalf("unexpected value")
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+	t.Run("class names render no CSS and do not require allocations", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		classes := []any{"a", templ.KV("b", true)}
+		var w bytes.Buffer
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if err := templ.RenderCSSItems(ctx, &w, classes...); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+		if w.Len() != 0 {
+			t.Errorf("expected no output, got %q", w.String())
+		}
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
 }
 
 type baseError struct {

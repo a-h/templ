@@ -109,6 +109,12 @@ func (classes CSSClasses) String() string {
 	if len(classes) == 0 {
 		return ""
 	}
+	// A single class name, e.g. class={ name }, has nothing to deduplicate.
+	if len(classes) == 1 {
+		if s, ok := classes[0].(string); ok {
+			return s
+		}
+	}
 	cp := newCSSProcessor()
 	for _, v := range classes {
 		cp.Add(v)
@@ -353,7 +359,7 @@ func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // RenderCSSItems renders the CSS to the writer, if the items haven't already been rendered.
 func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error) {
-	if len(classes) == 0 {
+	if len(classes) == 0 || onlyClassNames(classes) {
 		return nil
 	}
 	_, v := getContext(ctx)
@@ -371,6 +377,19 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 		}
 	}
 	return writeStrings(w, `>`, sb.String(), `</style>`)
+}
+
+// onlyClassNames returns true if classes only contains class names, which
+// renderCSSItemsToBuilder skips, so there is no CSS to render.
+func onlyClassNames(classes []any) bool {
+	for _, c := range classes {
+		switch c.(type) {
+		case string, KeyValue[string, bool]:
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...any) {
