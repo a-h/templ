@@ -1,0 +1,27 @@
+version: "2"
+
+run:
+  modules-download-mode: readonly
+
+linters:
+  default: none
+  enable:
+    - asasalint
+    - bidichk
+    - durationcheck
+    - errcheck
+    - fatcontext
+    - gocheckcompilerdirectives
+    - govet
+    - ineffassign
+    - loggercheck
+    - makezero
+    - nilnesserr
+    - staticcheck
+    - unused
+  exclusions:
+    generated: lax
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
