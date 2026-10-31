@@ -1896,8 +1896,7 @@ func functionName(name string, body string) string {
 
 func stripTypes(parameters string) string {
 	variableNames := []string{}
-	params := strings.Split(parameters, ",")
-	for _, param := range params {
+	for param := range strings.SplitSeq(parameters, ",") {
 		p := strings.Split(strings.TrimSpace(param), " ")
 		variableNames = append(variableNames, strings.TrimSpace(p[0]))
 	}

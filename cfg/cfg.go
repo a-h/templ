@@ -12,7 +12,7 @@ var Experiment = parse()
 
 func parse() *Flags {
 	m := map[string]bool{}
-	for _, f := range strings.Split(os.Getenv("TEMPL_EXPERIMENT"), ",") {
+	for f := range strings.SplitSeq(os.Getenv("TEMPL_EXPERIMENT"), ",") {
 		m[strings.ToLower(f)] = true
 	}
 
