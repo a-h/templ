@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	"github.com/a-h/templ"
 	"golang.org/x/mod/modfile"
@@ -38,6 +39,11 @@ func WalkUp(dir string) (string, error) {
 }
 
 func Check(dir string) error {
+	info, _ := debug.ReadBuildInfo()
+	return check(dir, info)
+}
+
+func check(dir string, info *debug.BuildInfo) error {
 	dir, err := WalkUp(dir)
 	if err != nil {
 		return err
@@ -59,14 +65,19 @@ func Check(dir string) error {
 		// The go.mod file is for templ itself.
 		return nil
 	}
+	generatorVersion := templ.Version()
+	if info != nil && info.Main.Path == "github.com/a-h/templ" && semver.IsValid(info.Main.Version) {
+		// Module builds can have a pseudo-version that differs from the embedded version.
+		generatorVersion = info.Main.Version
+	}
 	for _, r := range mf.Require {
 		if r.Mod.Path == "github.com/a-h/templ" {
-			cmp := semver.Compare(r.Mod.Version, templ.Version())
+			cmp := semver.Compare(r.Mod.Version, generatorVersion)
 			if cmp < 0 {
-				return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get -u github.com/a-h/templ` to upgrade", templ.Version(), r.Mod.Version)
+				return fmt.Errorf("generator %v is newer than templ version %v found in go.mod file, consider running `go get -u github.com/a-h/templ` to upgrade", generatorVersion, r.Mod.Version)
 			}
 			if cmp > 0 {
-				return fmt.Errorf("generator %v is older than templ version %v found in go.mod file, consider upgrading templ CLI", templ.Version(), r.Mod.Version)
+				return fmt.Errorf("generator %v is older than templ version %v found in go.mod file, consider upgrading templ CLI", generatorVersion, r.Mod.Version)
 			}
 			return nil
 		}
