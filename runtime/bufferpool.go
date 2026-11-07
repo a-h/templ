@@ -26,13 +26,14 @@ func GetBuffer(w io.Writer) (b *Buffer, existing bool) {
 	return b, false
 }
 
-// ReleaseBuffer flushes the buffer and returns it to the pool.
+// ReleaseBuffer writes buffered data to the underlying writer and returns the
+// buffer to the pool.
 func ReleaseBuffer(w io.Writer) (err error) {
 	b, ok := w.(*Buffer)
 	if !ok {
 		return nil
 	}
-	err = b.Flush()
+	err = b.b.Flush()
 	bufferPool.Put(b)
 	return err
 }

@@ -1,6 +1,7 @@
 package testtext
 
 import (
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -13,9 +14,15 @@ import (
 var expected string
 
 func Test(t *testing.T) {
-	component := BasicTemplate("Luiz Bonfa")
+	w := httptest.NewRecorder()
+	if err := BasicTemplate("Luiz Bonfa").Render(t.Context(), w); err != nil {
+		t.Fatal(err)
+	}
+	if w.Flushed {
+		t.Error("rendering to an HTTP writer flushed the response")
+	}
 
-	actual, diff, err := htmldiff.Diff(component, expected)
+	actual, diff, err := htmldiff.DiffStrings(expected, w.Body.String())
 	if err != nil {
 		t.Fatal(err)
 	}

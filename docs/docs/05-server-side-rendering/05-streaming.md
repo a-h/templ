@@ -47,6 +47,11 @@ templ.Handler(component, templ.WithStreaming()).ServeHTTP(w, r)
 
 When streaming is enabled, sections of the template can be forcefully pushed to the client using the `templ.Flush()` component.
 
+When calling `component.Render(ctx, w)` directly, templ writes the remaining
+buffered bytes to the response writer when rendering completes. Use
+`templ.Flush()` with a writer that implements `http.Flusher` to push a response
+to the client before the HTTP handler returns.
+
 This enables interesting use cases. For example, here, the `Page` template is rendered with a channel that is populated by a background goroutine.
 
 By using `templ.Flush()` to create a flushable area, the data is pushed to the client as soon as it is available, rather than waiting for the entire template to render before sending a response.
