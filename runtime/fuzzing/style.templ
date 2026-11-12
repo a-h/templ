@@ -1,0 +1,18 @@
+package fuzzing
+
+// The components below write a fuzzed style value through each path that templ
+// uses to render a style attribute. The fuzz tests parse the output with an
+// HTML5 parser, and then parse the style attribute with a CSS parser, the same
+// way that a browser does.
+
+templ ConstantNameStyle(value any) {
+	<div style={ value }></div>
+}
+
+templ DynamicNameStyle[T ~string](value T) {
+	<div { "style" }={ value }></div>
+}
+
+templ SpreadStyle(value any) {
+	<div { templ.Attributes{"style": value}... }></div>
+}

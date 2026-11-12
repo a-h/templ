@@ -76,6 +76,11 @@ var validURLSuffixes = []string{
 	`)`,
 }
 
+// cssURLTerminators are the characters that end a url() function or the string
+// inside it, or escape the character that ends it. A URL that contains one of
+// them could end the declaration and start another.
+const cssURLTerminators = "\"'()\\ \t\n\r\f"
+
 func sanitizeBackgroundImage(v string) string {
 	// Check for <> as per https://github.com/google/safehtml/blob/be23134998433fcf0135dda53593fc8f8bf4df7c/style.go#L87C2-L89C3
 	if strings.ContainsAny(v, "<>") {
@@ -85,14 +90,14 @@ func sanitizeBackgroundImage(v string) string {
 		u = strings.TrimSpace(u)
 		var found bool
 		for i, prefix := range validURLPrefixes {
-			if strings.HasPrefix(u, prefix) && strings.HasSuffix(u, validURLSuffixes[i]) {
+			if len(u) >= len(prefix)+len(validURLSuffixes[i]) && strings.HasPrefix(u, prefix) && strings.HasSuffix(u, validURLSuffixes[i]) {
 				found = true
 				u = strings.TrimPrefix(u, validURLPrefixes[i])
 				u = strings.TrimSuffix(u, validURLSuffixes[i])
 				break
 			}
 		}
-		if !found || !urlIsSafe(u) {
+		if !found || strings.ContainsAny(u, cssURLTerminators) || !urlIsSafe(u) {
 			return InnocuousPropertyValue
 		}
 	}
@@ -113,13 +118,18 @@ func urlIsSafe(s string) bool {
 	return true
 }
 
+// cssStringTerminators are the characters that end a double quoted CSS string,
+// or escape the quote that ends it. A font family name that contains one of
+// them could end the declaration and start another.
+const cssStringTerminators = "\"\\\n\r\f"
+
 var genericFontFamilyName = regexp.MustCompile(`^[a-zA-Z][- a-zA-Z]+$`)
 
 func sanitizeFontFamily(s string) string {
 	for f := range strings.SplitSeq(s, ",") {
 		f = strings.TrimSpace(f)
 		if strings.HasPrefix(f, `"`) {
-			if !strings.HasSuffix(f, `"`) {
+			if len(f) < 2 || !strings.HasSuffix(f, `"`) || strings.ContainsAny(f[1:len(f)-1], cssStringTerminators) {
 				return InnocuousPropertyValue
 			}
 			continue

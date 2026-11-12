@@ -131,10 +131,7 @@ func resolveValue(ctx context.Context, attrContext htmlattr.Context, v any) (str
 		if err != nil {
 			return "", err
 		}
-		// Already HTML-escaped by SanitizeStyleAttributeValues. Escaping again
-		// would turn "&#39;" into "&amp;#39;", which breaks quoted CSS values
-		// like font-family: 'Courier New', monospace.
-		return s, nil
+		return templ.EscapeString(s), nil
 	case htmlattr.ContextURL, htmlattr.ContextAnimationValue, htmlattr.ContextSrcset:
 		if safeURL, ok := v.(templ.SafeURL); ok {
 			return templ.EscapeString(safeURL), nil
