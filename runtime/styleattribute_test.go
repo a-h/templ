@@ -147,18 +147,18 @@ func TestSanitizeStyleAttribute(t *testing.T) {
 		// templ.KeyValue[string, templ.SafeCSSProperty]
 		{
 			name:     "KeyValue[string, templ.SafeCSSProperty]: is allowed",
-			input:    []any{templ.KV("color", "red"), templ.KV("background-color", "blue")},
+			input:    []any{templ.KV("color", templ.SafeCSSProperty("red")), templ.KV("background-color", templ.SafeCSSProperty("blue"))},
 			expected: "color:red;background-color:blue;",
 		},
 		{
 			name:     "KeyValue[string, templ.SafeCSSProperty]: keys are sanitized, but not values",
-			input:    []any{templ.KV("color", "</style>"), templ.KV("</style>", "blue")},
-			expected: "color:zTemplUnsafeCSSPropertyValue;zTemplUnsafeCSSPropertyName:zTemplUnsafeCSSPropertyValue;",
+			input:    []any{templ.KV("color", templ.SafeCSSProperty("</style>")), templ.KV("</style>", templ.SafeCSSProperty("blue"))},
+			expected: "color:&lt;/style&gt;;zTemplUnsafeCSSPropertyName:blue;",
 		},
 		{
 			name:     "KeyValue[string, templ.SafeCSSProperty]: empty names are invalid",
-			input:    []any{templ.KV("", "red"), templ.KV("background-color", "blue")},
-			expected: "zTemplUnsafeCSSPropertyName:zTemplUnsafeCSSPropertyValue;background-color:blue;",
+			input:    []any{templ.KV("", templ.SafeCSSProperty("red")), templ.KV("background-color", templ.SafeCSSProperty("blue"))},
+			expected: "zTemplUnsafeCSSPropertyName:red;background-color:blue;",
 		},
 
 		// templ.KeyValue[string, bool]

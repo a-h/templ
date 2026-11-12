@@ -65,6 +65,9 @@ func sanitizeStyleAttributeValue(sb *strings.Builder, v any) error {
 	case templ.KeyValue[string, string]:
 		return processStringKV(sb, v)
 
+	case templ.KeyValue[string, templ.SafeCSSProperty]:
+		return processSafeCSS(sb, templ.SanitizeCSS(v.Key, v.Value))
+
 	case templ.KeyValue[string, bool]:
 		if v.Value {
 			return processString(sb, v.Key)
