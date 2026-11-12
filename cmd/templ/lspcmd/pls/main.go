@@ -80,7 +80,7 @@ func GoplsVersion(location string) (version string, err error) {
 		return "", fmt.Errorf("failed to run gopls version: %w", err)
 	}
 	// Output is like: "golang.org/x/tools/gopls v0.21.1"
-	for _, line := range strings.Split(string(out), "\n") {
+	for line := range strings.SplitSeq(string(out), "\n") {
 		_, v, ok := strings.Cut(line, "golang.org/x/tools/gopls ")
 		if ok {
 			return strings.TrimSpace(v), nil

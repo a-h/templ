@@ -880,7 +880,6 @@ if test {` + " " + `
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput([]byte(tt.input))
 			result, matched, err := tt.parser.Parse(input)
@@ -2968,7 +2967,6 @@ func TestElementParserErrors(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput([]byte(tt.input))
 			_, _, err := element.Parse(input)

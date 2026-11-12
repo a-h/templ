@@ -71,7 +71,6 @@ func TestExpressionCSSPropertyParser(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput([]byte(tt.input + "\n"))
 			result, ok, err := expressionCSSPropertyParser.Parse(input)
@@ -112,7 +111,6 @@ func TestConstantCSSPropertyParser(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput([]byte(tt.input + "\n"))
 			result, ok, err := constantCSSPropertyParser.Parse(input)
@@ -335,7 +333,6 @@ background-color: { prop };
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput([]byte(tt.input))
 			result, ok, err := cssParser.Parse(input)

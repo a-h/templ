@@ -65,7 +65,6 @@ on multiple lines */`,
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput([]byte(tt.input))
 			result, ok, err := goComment.Parse(input)
@@ -105,7 +104,6 @@ func TestCommentParserErrors(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			input := parse.NewInput([]byte(tt.input))
 			_, _, err := goComment.Parse(input)

@@ -348,7 +348,6 @@ func TestSanitizeCSS(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			actualProperty, actualValue := SanitizeCSS(tt.inputProperty, tt.inputValue)
 			if actualProperty != tt.expectedProperty {

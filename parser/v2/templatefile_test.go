@@ -247,9 +247,9 @@ func TestDefaultPackageName(t *testing.T) {
 func TestTemplateFileParserLargeFileWithManyTemplates(t *testing.T) {
 	var sb strings.Builder
 	sb.WriteString("package main\n\n")
-	for i := 0; i < 80; i++ {
+	for i := range 80 {
 		_, _ = fmt.Fprintf(&sb, "templ Component%d() {\n", i)
-		for j := 0; j < 40; j++ {
+		for j := range 40 {
 			_, _ = fmt.Fprintf(&sb, "\t<p>Some HTML content for component %d row %d.</p>\n", i, j)
 		}
 		sb.WriteString("}\n\n")
@@ -264,10 +264,10 @@ func TestTemplateFileParserLargeFileWithManyTemplates(t *testing.T) {
 func TestTemplateFileParserLargeFileWithManyIfExpressions(t *testing.T) {
 	var sb strings.Builder
 	sb.WriteString("package main\n\n")
-	for i := 0; i < 300; i++ {
+	for i := range 300 {
 		_, _ = fmt.Fprintf(&sb, "templ Component%d(variant string) {\n", i)
 		sb.WriteString("\tif variant == \"a\" {\n\t\t<p>A</p>\n")
-		for j := 0; j < 4; j++ {
+		for j := range 4 {
 			_, _ = fmt.Fprintf(&sb, "\t} else if variant == \"%d\" {\n\t\t<p>%d</p>\n", j, j)
 		}
 		sb.WriteString("\t} else {\n\t\t<p>B</p>\n\t}\n}\n\n")

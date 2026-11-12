@@ -135,7 +135,7 @@ func handleFuncWithReflection(sb *strings.Builder, v any) (bool, error) {
 	if t.NumOut() == 2 {
 		// Ensure the second return value is of type `error`
 		secondReturnType := t.Out(1)
-		if !secondReturnType.Implements(reflect.TypeOf((*error)(nil)).Elem()) {
+		if !secondReturnType.Implements(reflect.TypeFor[error]()) {
 			return false, fmt.Errorf("second return value must be of type error, got %v", secondReturnType)
 		}
 	}

@@ -9,6 +9,7 @@ import (
 	"io"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -585,8 +586,8 @@ func stripLeadingWhitespace(nodes []parser.Node) []parser.Node {
 }
 
 func stripTrailingWhitespace(nodes []parser.Node) []parser.Node {
-	for i := len(nodes) - 1; i >= 0; i-- {
-		n := nodes[i]
+	for i, n := range slices.Backward(nodes) {
+
 		if _, isWhiteSpace := n.(*parser.Whitespace); !isWhiteSpace {
 			return nodes[0 : i+1]
 		}
@@ -1896,8 +1897,8 @@ func functionName(name string, body string) string {
 
 func stripTypes(parameters string) string {
 	variableNames := []string{}
-	params := strings.Split(parameters, ",")
-	for _, param := range params {
+	params := strings.SplitSeq(parameters, ",")
+	for param := range params {
 		p := strings.Split(strings.TrimSpace(param), " ")
 		variableNames = append(variableNames, strings.TrimSpace(p[0]))
 	}

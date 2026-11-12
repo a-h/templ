@@ -250,7 +250,7 @@ func (h *Handler) modifyResponse(r *http.Response) error {
 
 func parseNonce(csp string) (nonce string) {
 outer:
-	for _, rawDirective := range strings.Split(csp, ";") {
+	for rawDirective := range strings.SplitSeq(csp, ";") {
 		parts := strings.Fields(rawDirective)
 		if len(parts) < 2 {
 			continue

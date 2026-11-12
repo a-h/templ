@@ -32,7 +32,6 @@ func (s *Handler) Send(eventType string, data string) {
 	s.m.Lock()
 	defer s.m.Unlock()
 	for _, f := range s.requests {
-		f := f
 		go func(f chan event) {
 			f <- event{
 				Type: eventType,

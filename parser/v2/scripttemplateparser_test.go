@@ -270,7 +270,6 @@ console.log(value);
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		suffixes := []string{"", " Trailing '", ` Trailing "`, "\n// More content."}
 		for i, suffix := range suffixes {
 			t.Run(fmt.Sprintf("%s_%d", tt.name, i), func(t *testing.T) {
