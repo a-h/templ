@@ -97,18 +97,14 @@ func Classify(elementName, attrName string) Context {
 func toLowerASCII(s string) string {
 	// Element and attribute names are almost always lowercase already, so
 	// return s unchanged unless it contains an uppercase ASCII letter.
-	i := 0
-	for i < len(s) && (s[i] < 'A' || s[i] > 'Z') {
-		i++
-	}
-	if i == len(s) {
+	i := strings.IndexFunc(s, func(r rune) bool { return 'A' <= r && r <= 'Z' })
+	if i < 0 {
 		return s
 	}
 	var sb strings.Builder
 	sb.Grow(len(s))
 	sb.WriteString(s[:i])
-	for ; i < len(s); i++ {
-		c := s[i]
+	for _, c := range []byte(s[i:]) {
 		if 'A' <= c && c <= 'Z' {
 			c += 'a' - 'A'
 		}

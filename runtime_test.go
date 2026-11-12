@@ -728,14 +728,14 @@ func TestJoinStringErrs(t *testing.T) {
 			actual   func() (string, error)
 			expected string
 		}{
-			{name: "string", actual: func() (string, error) { return templ.JoinStringErrs("a <b>") }, expected: "a <b>"},
-			{name: "int", actual: func() (string, error) { return templ.JoinStringErrs(-123) }, expected: fmt.Sprint(-123)},
-			{name: "int64", actual: func() (string, error) { return templ.JoinStringErrs(int64(1) << 40) }, expected: fmt.Sprint(int64(1) << 40)},
-			{name: "bool", actual: func() (string, error) { return templ.JoinStringErrs(true) }, expected: fmt.Sprint(true)},
-			{name: "float64", actual: func() (string, error) { return templ.JoinStringErrs(1.5e21) }, expected: fmt.Sprint(1.5e21)},
-			{name: "uint8", actual: func() (string, error) { return templ.JoinStringErrs(uint8(7)) }, expected: fmt.Sprint(uint8(7))},
-			{name: "named string with String method", actual: func() (string, error) { return templ.JoinStringErrs(stringerString("x")) }, expected: "stringer:x"},
-			{name: "named int with String method", actual: func() (string, error) { return templ.JoinStringErrs(stringerInt(3)) }, expected: "stringer:3"},
+			{name: "strings are returned unchanged", actual: func() (string, error) { return templ.JoinStringErrs("a <b>") }, expected: "a <b>"},
+			{name: "ints are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(-123) }, expected: fmt.Sprint(-123)},
+			{name: "int64s are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(int64(1) << 40) }, expected: fmt.Sprint(int64(1) << 40)},
+			{name: "bools are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(true) }, expected: fmt.Sprint(true)},
+			{name: "floats are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(1.5e21) }, expected: fmt.Sprint(1.5e21)},
+			{name: "uint8s are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(uint8(7)) }, expected: fmt.Sprint(uint8(7))},
+			{name: "named strings are formatted with their String method", actual: func() (string, error) { return templ.JoinStringErrs(stringerString("x")) }, expected: "stringer:x"},
+			{name: "named ints are formatted with their String method", actual: func() (string, error) { return templ.JoinStringErrs(stringerInt(3)) }, expected: "stringer:3"},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
@@ -759,7 +759,11 @@ func TestJoinStringErrs(t *testing.T) {
 	t.Run("strings do not require allocations", func(t *testing.T) {
 		s := strings.Clone("a <b>")
 		actualAllocs := testing.AllocsPerRun(4, func() {
-			if actual, _ := templ.JoinStringErrs(s); actual != s {
+			actual, err := templ.JoinStringErrs(s)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if actual != s {
 				t.Fatalf("unexpected value %q", actual)
 			}
 		})

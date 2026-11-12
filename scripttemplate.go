@@ -7,6 +7,8 @@ import (
 	"io"
 	"regexp"
 	"strings"
+
+	"github.com/a-h/templ/internal/stringwriter"
 )
 
 // ComponentScript is a templ Script template.
@@ -45,7 +47,7 @@ var _ Component = ComponentScript{}
 
 func writeScriptHeader(ctx context.Context, w io.Writer) (err error) {
 	if nonce := GetNonce(ctx); nonce != "" {
-		return writeStrings(w, `<script nonce="`, EscapeString(nonce), `">`)
+		return stringwriter.WriteStrings(w, `<script nonce="`, EscapeString(nonce), `">`)
 	}
 	_, err = io.WriteString(w, `<script>`)
 	return err

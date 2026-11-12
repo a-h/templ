@@ -12,10 +12,11 @@ import (
 	"io"
 	"net/http"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/a-h/templ/internal/predeclared"
+	"github.com/a-h/templ/internal/stringwriter"
 	"github.com/a-h/templ/safehtml"
 )
 
@@ -358,64 +359,62 @@ func (cssh CSSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // RenderCSSItems renders the CSS to the writer, if the items haven't already been rendered.
 func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error) {
-	if len(classes) == 0 || onlyClassNames(classes) {
+	if len(classes) == 0 {
 		return nil
 	}
-	_, v := getContext(ctx)
-	sb := new(strings.Builder)
-	renderCSSItemsToBuilder(sb, v, classes...)
-	if sb.Len() == 0 {
+	r := cssItemsRenderer{ctx: ctx}
+	r.Render(classes...)
+	if r.sb.Len() == 0 {
 		return nil
 	}
 	if _, err = io.WriteString(w, `<style type="text/css"`); err != nil {
 		return err
 	}
-	if v.nonce != "" {
-		if err = writeStrings(w, ` nonce="`, EscapeString(v.nonce), `"`); err != nil {
+	if r.v.nonce != "" {
+		if err = stringwriter.WriteStrings(w, ` nonce="`, EscapeString(r.v.nonce), `"`); err != nil {
 			return err
 		}
 	}
-	return writeStrings(w, `>`, sb.String(), `</style>`)
+	return stringwriter.WriteStrings(w, `>`, r.sb.String(), `</style>`)
 }
 
-// onlyClassNames returns true if classes only contains class names, which
-// renderCSSItemsToBuilder skips, so there is no CSS to render.
-func onlyClassNames(classes []any) bool {
-	for _, c := range classes {
-		switch c.(type) {
-		case string, KeyValue[string, bool]:
-		default:
-			return false
-		}
-	}
-	return true
+// cssItemsRenderer looks up the context value when it reaches the first CSS
+// class. Class names do not render CSS, so they do not cost a context lookup or
+// an allocation.
+type cssItemsRenderer struct {
+	ctx context.Context
+	v   *contextValue
+	sb  strings.Builder
 }
 
-func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...any) {
+func (r *cssItemsRenderer) Render(classes ...any) {
 	for _, c := range classes {
 		switch ccc := c.(type) {
 		case ComponentCSSClass:
-			if v.shouldRenderClass(ccc.ID) {
-				sb.WriteString(string(ccc.Class))
+			if r.v == nil {
+				_, r.v = getContext(r.ctx)
+			}
+			if r.v.shouldRenderClass(ccc.ID) {
+				r.sb.WriteString(string(ccc.Class))
 			}
 		case KeyValue[ComponentCSSClass, bool]:
 			if !ccc.Value {
 				continue
 			}
-			renderCSSItemsToBuilder(sb, v, ccc.Key)
+			r.Render(ccc.Key)
 		case KeyValue[CSSClass, bool]:
 			if !ccc.Value {
 				continue
 			}
-			renderCSSItemsToBuilder(sb, v, ccc.Key)
+			r.Render(ccc.Key)
 		case CSSClasses:
-			renderCSSItemsToBuilder(sb, v, ccc...)
+			r.Render(ccc...)
 		case []CSSClass:
 			for _, item := range ccc {
-				renderCSSItemsToBuilder(sb, v, item)
+				r.Render(item)
 			}
 		case func() CSSClass:
-			renderCSSItemsToBuilder(sb, v, ccc())
+			r.Render(ccc())
 		case []string:
 			// Skip. These are class names, not CSS classes.
 		case string:
@@ -431,7 +430,7 @@ func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...an
 				if !enabled {
 					continue
 				}
-				renderCSSItemsToBuilder(sb, v, key)
+				r.Render(key)
 			}
 		case KeyValue[string, bool]:
 			// Skip. These are class names, not CSS classes.
@@ -493,15 +492,6 @@ func (a OrderedAttributes) Items() []KeyValue[string, any] {
 	return a
 }
 
-func writeStrings(w io.Writer, ss ...string) (err error) {
-	for _, s := range ss {
-		if _, err = io.WriteString(w, s); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // FailedSanitizationJS replaces the value of an event handler attribute, such
 // as onclick, that has a name that is only known at render time, if the value
 // is not a ComponentScript. Use JSFuncCall to call a JavaScript function with
@@ -524,10 +514,10 @@ type childrenKeyType int
 const childrenKey = childrenKeyType(0)
 
 type contextValue struct {
-	mu          sync.Mutex
-	ss          map[renderedKey]struct{} // Deduplication for scripts and CSS classes
-	onceHandles map[*OnceHandle]struct{}
-	nonce       string
+	mu           sync.Mutex
+	renderedKeys map[renderedKey]struct{}
+	onceHandles  map[*OnceHandle]struct{}
+	nonce        string
 }
 
 // renderedKey identifies a script or CSS class that has been rendered. The
@@ -571,13 +561,13 @@ func (v *contextValue) shouldRender(key renderedKey) (render bool) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
-	if v.ss == nil {
-		v.ss = make(map[renderedKey]struct{})
+	if v.renderedKeys == nil {
+		v.renderedKeys = make(map[renderedKey]struct{})
 	}
-	if _, rendered := v.ss[key]; rendered {
+	if _, rendered := v.renderedKeys[key]; rendered {
 		return false
 	}
-	v.ss[key] = struct{}{}
+	v.renderedKeys[key] = struct{}{}
 	return true
 }
 
@@ -646,23 +636,15 @@ type stringable interface {
 
 // JoinStringErrs joins an optional list of errors.
 func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
-	return stringOf(s), errors.Join(errs...)
+	return convertToString(s), errors.Join(errs...)
 }
 
-// stringOf formats s in the same way as fmt.Sprint. Predeclared types are
-// formatted without fmt, because every text expression in a template is passed
-// through here. Other types, such as a named type with a String method, are
-// still formatted by fmt.Sprint, which calls that method.
-func stringOf[T stringable](s T) string {
-	switch v := any(s).(type) {
-	case string:
+// convertToString formats s in the same way as fmt.Sprint. Predeclared types
+// are formatted without fmt, because every text expression in a template is
+// passed through here.
+func convertToString[T stringable](s T) string {
+	if v, ok := predeclared.FormatString(s); ok {
 		return v
-	case int:
-		return strconv.Itoa(v)
-	case int64:
-		return strconv.FormatInt(v, 10)
-	case bool:
-		return strconv.FormatBool(v)
 	}
 	return fmt.Sprint(s)
 }

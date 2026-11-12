@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/internal/htmlattr"
+	"github.com/a-h/templ/internal/predeclared"
+	"github.com/a-h/templ/internal/stringwriter"
 )
 
 // SanitizeAttributeName returns name if it can be written as an HTML attribute
@@ -64,7 +65,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if !v {
 				continue
 			}
-			if err = writeStrings(w, " ", templ.EscapeString(name)); err != nil {
+			if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -72,7 +73,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if v == nil || !*v {
 				continue
 			}
-			if err = writeStrings(w, " ", templ.EscapeString(name)); err != nil {
+			if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -80,7 +81,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if !v.Key || !v.Value {
 				continue
 			}
-			if err = writeStrings(w, " ", templ.EscapeString(name)); err != nil {
+			if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -88,7 +89,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if !v() {
 				continue
 			}
-			if err = writeStrings(w, " ", templ.EscapeString(name)); err != nil {
+			if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -100,18 +101,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 		if err != nil {
 			return err
 		}
-		if err = writeStrings(w, " ", templ.EscapeString(name), `="`, resolved, `"`); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// writeStrings writes each string to w, which avoids allocating a
-// concatenated string.
-func writeStrings(w io.Writer, ss ...string) (err error) {
-	for _, s := range ss {
-		if _, err = io.WriteString(w, s); err != nil {
+		if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name), `="`, resolved, `"`); err != nil {
 			return err
 		}
 	}
@@ -178,20 +168,12 @@ func resolveValue(ctx context.Context, attrContext htmlattr.Context, v any) (str
 // that have one of them as the underlying type, e.g. type ID string. It returns
 // false for any other type.
 func formatAttributeValue(v any) (s string, ok bool) {
-	switch v := v.(type) {
-	case string:
-		return v, true
-	case templ.ComponentScript:
+	// Predeclared types are formatted without reflect and fmt.
+	if s, ok = predeclared.FormatString(v); ok {
+		return s, true
+	}
+	if v, ok := v.(templ.ComponentScript); ok {
 		return v.Call, true
-	// Predeclared types are formatted without reflect and fmt. Other types,
-	// such as a named type with a String method, are formatted by fmt.Sprint
-	// below, which calls that method.
-	case int:
-		return strconv.Itoa(v), true
-	case int64:
-		return strconv.FormatInt(v, 10), true
-	case bool:
-		return strconv.FormatBool(v), true
 	}
 	switch reflect.ValueOf(v).Kind() {
 	case reflect.String, reflect.Bool,
