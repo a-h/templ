@@ -87,5 +87,21 @@ func (e AttributeExpression[T]) resolve(ctx context.Context, attrContext htmlatt
 	if e.Err != nil {
 		return "", e.Err
 	}
+	// Strings are the most common attribute values. Resolve them in the same
+	// way as resolveValue, but without converting the value to any, which
+	// allocates.
+	switch v := any(e.Value).(type) {
+	case string:
+		switch attrContext {
+		case htmlattr.ContextDefault:
+			return templ.EscapeString(v), nil
+		case htmlattr.ContextURL:
+			return templ.EscapeString(templ.URL(v)), nil
+		}
+	case templ.SafeURL:
+		if attrContext == htmlattr.ContextURL {
+			return templ.EscapeString(v), nil
+		}
+	}
 	return resolveValue(ctx, attrContext, e.Value)
 }

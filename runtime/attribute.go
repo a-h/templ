@@ -9,6 +9,8 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/a-h/templ/internal/htmlattr"
+	"github.com/a-h/templ/internal/predeclared"
+	"github.com/a-h/templ/internal/stringwriter"
 )
 
 // SanitizeAttributeName returns name if it can be written as an HTML attribute
@@ -63,7 +65,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if !v {
 				continue
 			}
-			if _, err = io.WriteString(w, " "+templ.EscapeString(name)); err != nil {
+			if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -71,7 +73,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if v == nil || !*v {
 				continue
 			}
-			if _, err = io.WriteString(w, " "+templ.EscapeString(name)); err != nil {
+			if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -79,7 +81,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if !v.Key || !v.Value {
 				continue
 			}
-			if _, err = io.WriteString(w, " "+templ.EscapeString(name)); err != nil {
+			if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -87,7 +89,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if !v() {
 				continue
 			}
-			if _, err = io.WriteString(w, " "+templ.EscapeString(name)); err != nil {
+			if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name)); err != nil {
 				return err
 			}
 			continue
@@ -99,7 +101,7 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 		if err != nil {
 			return err
 		}
-		if _, err = io.WriteString(w, " "+templ.EscapeString(name)+`="`+resolved+`"`); err != nil {
+		if err = stringwriter.WriteStrings(w, " ", templ.EscapeString(name), `="`, resolved, `"`); err != nil {
 			return err
 		}
 	}
@@ -166,10 +168,11 @@ func resolveValue(ctx context.Context, attrContext htmlattr.Context, v any) (str
 // that have one of them as the underlying type, e.g. type ID string. It returns
 // false for any other type.
 func formatAttributeValue(v any) (s string, ok bool) {
-	switch v := v.(type) {
-	case string:
-		return v, true
-	case templ.ComponentScript:
+	// Predeclared types are formatted without reflect and fmt.
+	if s, ok = predeclared.FormatString(v); ok {
+		return s, true
+	}
+	if v, ok := v.(templ.ComponentScript); ok {
 		return v.Call, true
 	}
 	switch reflect.ValueOf(v).Kind() {

@@ -3,8 +3,9 @@ package templ
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
+
+	"github.com/a-h/templ/internal/stringwriter"
 )
 
 var _ Component = JSONScriptElement{}
@@ -58,17 +59,17 @@ func (j JSONScriptElement) Render(ctx context.Context, w io.Writer) (err error) 
 		return err
 	}
 	if j.ID != "" {
-		if _, err = fmt.Fprintf(w, " id=\"%s\"", EscapeString(j.ID)); err != nil {
+		if err = stringwriter.WriteStrings(w, ` id="`, EscapeString(j.ID), `"`); err != nil {
 			return err
 		}
 	}
 	if j.Type != "" {
-		if _, err = fmt.Fprintf(w, " type=\"%s\"", EscapeString(j.Type)); err != nil {
+		if err = stringwriter.WriteStrings(w, ` type="`, EscapeString(j.Type), `"`); err != nil {
 			return err
 		}
 	}
 	if nonce := j.Nonce(ctx); nonce != "" {
-		if _, err = fmt.Fprintf(w, " nonce=\"%s\"", EscapeString(nonce)); err != nil {
+		if err = stringwriter.WriteStrings(w, ` nonce="`, EscapeString(nonce), `"`); err != nil {
 			return err
 		}
 	}

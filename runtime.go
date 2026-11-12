@@ -11,11 +11,12 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"reflect"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 
+	"github.com/a-h/templ/internal/predeclared"
+	"github.com/a-h/templ/internal/stringwriter"
 	"github.com/a-h/templ/safehtml"
 )
 
@@ -60,6 +61,11 @@ func WithChildren(ctx context.Context, children Component) context.Context {
 }
 
 func ClearChildren(ctx context.Context) context.Context {
+	// Every generated component calls ClearChildren, so avoid adding a context
+	// layer when there are no children to clear.
+	if ctx.Value(childrenKey) == nil {
+		return ctx
+	}
 	return context.WithValue(ctx, childrenKey, nil)
 }
 
@@ -103,6 +109,12 @@ func (classes CSSClasses) String() string {
 	if len(classes) == 0 {
 		return ""
 	}
+	// A single class name, e.g. class={ name }, has nothing to deduplicate.
+	if len(classes) == 1 {
+		if s, ok := classes[0].(string); ok {
+			return s
+		}
+	}
 	cp := newCSSProcessor()
 	for _, v := range classes {
 		cp.Add(v)
@@ -142,7 +154,7 @@ func (cp *cssProcessor) Add(item any) {
 			keys[i] = key
 			i++
 		}
-		sort.Strings(keys)
+		slices.Sort(keys)
 		for _, className := range keys {
 			cp.AddClassName(className, c[className])
 		}
@@ -153,8 +165,8 @@ func (cp *cssProcessor) Add(item any) {
 		for key := range c {
 			keys = append(keys, key)
 		}
-		sort.Slice(keys, func(i, j int) bool {
-			return keys[i].ClassName() < keys[j].ClassName()
+		slices.SortFunc(keys, func(a, b CSSClass) int {
+			return strings.Compare(a.ClassName(), b.ClassName())
 		})
 		for _, key := range keys {
 			cp.AddClassName(key.ClassName(), c[key])
@@ -350,48 +362,59 @@ func RenderCSSItems(ctx context.Context, w io.Writer, classes ...any) (err error
 	if len(classes) == 0 {
 		return nil
 	}
-	_, v := getContext(ctx)
-	sb := new(strings.Builder)
-	renderCSSItemsToBuilder(sb, v, classes...)
-	if sb.Len() == 0 {
+	r := cssItemsRenderer{ctx: ctx}
+	r.Render(classes...)
+	if r.sb.Len() == 0 {
 		return nil
 	}
 	if _, err = io.WriteString(w, `<style type="text/css"`); err != nil {
 		return err
 	}
-	if v.nonce != "" {
-		if err = writeStrings(w, ` nonce="`, EscapeString(v.nonce), `"`); err != nil {
+	if r.v.nonce != "" {
+		if err = stringwriter.WriteStrings(w, ` nonce="`, EscapeString(r.v.nonce), `"`); err != nil {
 			return err
 		}
 	}
-	return writeStrings(w, `>`, sb.String(), `</style>`)
+	return stringwriter.WriteStrings(w, `>`, r.sb.String(), `</style>`)
 }
 
-func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...any) {
+// cssItemsRenderer looks up the context value when it reaches the first CSS
+// class. Class names do not render CSS, so they do not cost a context lookup or
+// an allocation.
+type cssItemsRenderer struct {
+	ctx context.Context
+	v   *contextValue
+	sb  strings.Builder
+}
+
+func (r *cssItemsRenderer) Render(classes ...any) {
 	for _, c := range classes {
 		switch ccc := c.(type) {
 		case ComponentCSSClass:
-			if v.shouldRenderClass(ccc.ID) {
-				sb.WriteString(string(ccc.Class))
+			if r.v == nil {
+				_, r.v = getContext(r.ctx)
+			}
+			if r.v.shouldRenderClass(ccc.ID) {
+				r.sb.WriteString(string(ccc.Class))
 			}
 		case KeyValue[ComponentCSSClass, bool]:
 			if !ccc.Value {
 				continue
 			}
-			renderCSSItemsToBuilder(sb, v, ccc.Key)
+			r.Render(ccc.Key)
 		case KeyValue[CSSClass, bool]:
 			if !ccc.Value {
 				continue
 			}
-			renderCSSItemsToBuilder(sb, v, ccc.Key)
+			r.Render(ccc.Key)
 		case CSSClasses:
-			renderCSSItemsToBuilder(sb, v, ccc...)
+			r.Render(ccc...)
 		case []CSSClass:
 			for _, item := range ccc {
-				renderCSSItemsToBuilder(sb, v, item)
+				r.Render(item)
 			}
 		case func() CSSClass:
-			renderCSSItemsToBuilder(sb, v, ccc())
+			r.Render(ccc())
 		case []string:
 			// Skip. These are class names, not CSS classes.
 		case string:
@@ -407,7 +430,7 @@ func renderCSSItemsToBuilder(sb *strings.Builder, v *contextValue, classes ...an
 				if !enabled {
 					continue
 				}
-				renderCSSItemsToBuilder(sb, v, key)
+				r.Render(key)
 			}
 		case KeyValue[string, bool]:
 			// Skip. These are class names, not CSS classes.
@@ -426,12 +449,10 @@ type SafeCSS string
 
 type SafeCSSProperty string
 
-var safeCSSPropertyType = reflect.TypeFor[SafeCSSProperty]()
-
 // SanitizeCSS sanitizes CSS properties to ensure that they are safe.
 func SanitizeCSS[T ~string](property string, value T) SafeCSS {
-	if reflect.TypeOf(value) == safeCSSPropertyType {
-		return SafeCSS(safehtml.SanitizeCSSProperty(property) + ":" + string(value) + ";")
+	if v, ok := any(value).(SafeCSSProperty); ok {
+		return SafeCSS(safehtml.SanitizeCSSProperty(property) + ":" + string(v) + ";")
 	}
 	p, v := safehtml.SanitizeCSS(property, string(value))
 	return SafeCSS(p + ":" + v + ";")
@@ -456,8 +477,8 @@ func (a Attributes) Items() []KeyValue[string, any] {
 		items[i] = KeyValue[string, any]{Key: k, Value: v}
 		i++
 	}
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Key < items[j].Key
+	slices.SortFunc(items, func(a, b KeyValue[string, any]) int {
+		return strings.Compare(a.Key, b.Key)
 	})
 	return items
 }
@@ -469,15 +490,6 @@ var _ Attributer = OrderedAttributes{}
 
 func (a OrderedAttributes) Items() []KeyValue[string, any] {
 	return a
-}
-
-func writeStrings(w io.Writer, ss ...string) (err error) {
-	for _, s := range ss {
-		if _, err = io.WriteString(w, s); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // FailedSanitizationJS replaces the value of an event handler attribute, such
@@ -502,11 +514,26 @@ type childrenKeyType int
 const childrenKey = childrenKeyType(0)
 
 type contextValue struct {
-	mu          sync.Mutex
-	ss          map[string]struct{} // Deduplication for scripts and CSS classes
-	onceHandles map[*OnceHandle]struct{}
-	nonce       string
+	mu           sync.Mutex
+	renderedKeys map[renderedKey]struct{}
+	onceHandles  map[*OnceHandle]struct{}
+	nonce        string
 }
+
+// renderedKey identifies a script or CSS class that has been rendered. The
+// kind keeps a script and a CSS class with the same name apart, without
+// building a prefixed string for every check.
+type renderedKey struct {
+	kind renderedKind
+	name string
+}
+
+type renderedKind uint8
+
+const (
+	renderedScript renderedKind = iota
+	renderedClass
+)
 
 func (v *contextValue) shouldRenderOnce(h *OnceHandle) (render bool) {
 	v.mu.Lock()
@@ -523,32 +550,24 @@ func (v *contextValue) shouldRenderOnce(h *OnceHandle) (render bool) {
 }
 
 func (v *contextValue) shouldRenderScript(s string) (render bool) {
-	v.mu.Lock()
-	defer v.mu.Unlock()
-
-	if v.ss == nil {
-		v.ss = make(map[string]struct{})
-	}
-	key := "script_" + s
-	if _, rendered := v.ss[key]; rendered {
-		return false
-	}
-	v.ss[key] = struct{}{}
-	return true
+	return v.shouldRender(renderedKey{kind: renderedScript, name: s})
 }
 
 func (v *contextValue) shouldRenderClass(s string) (render bool) {
+	return v.shouldRender(renderedKey{kind: renderedClass, name: s})
+}
+
+func (v *contextValue) shouldRender(key renderedKey) (render bool) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 
-	if v.ss == nil {
-		v.ss = make(map[string]struct{})
+	if v.renderedKeys == nil {
+		v.renderedKeys = make(map[renderedKey]struct{})
 	}
-	key := "class_" + s
-	if _, rendered := v.ss[key]; rendered {
+	if _, rendered := v.renderedKeys[key]; rendered {
 		return false
 	}
-	v.ss[key] = struct{}{}
+	v.renderedKeys[key] = struct{}{}
 	return true
 }
 
@@ -617,7 +636,17 @@ type stringable interface {
 
 // JoinStringErrs joins an optional list of errors.
 func JoinStringErrs[T stringable](s T, errs ...error) (string, error) {
-	return fmt.Sprint(s), errors.Join(errs...)
+	return convertToString(s), errors.Join(errs...)
+}
+
+// convertToString formats s in the same way as fmt.Sprint. Predeclared types
+// are formatted without fmt, because every text expression in a template is
+// passed through here.
+func convertToString[T stringable](s T) string {
+	if v, ok := predeclared.FormatString(s); ok {
+		return v
+	}
+	return fmt.Sprint(s)
 }
 
 // Error returned during template rendering.

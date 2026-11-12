@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/a-h/templ"
@@ -418,6 +419,16 @@ func TestClassesFunction(t *testing.T) {
 			},
 			expected: "a",
 		},
+		{
+			name:     "a single class name is returned unchanged",
+			input:    []any{"a b a"},
+			expected: "a b a",
+		},
+		{
+			name:     "a single empty class name renders nothing",
+			input:    []any{""},
+			expected: "",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -427,6 +438,33 @@ func TestClassesFunction(t *testing.T) {
 			}
 		})
 	}
+	t.Run("a single class name does not require allocations", func(t *testing.T) {
+		classes := templ.Classes(strings.Clone("a b"))
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if classes.String() != "a b" {
+				t.Fatalf("unexpected value")
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+	t.Run("class names render no CSS and do not require allocations", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		classes := []any{"a", templ.KV("b", true)}
+		var w bytes.Buffer
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if err := templ.RenderCSSItems(ctx, &w, classes...); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+		if w.Len() != 0 {
+			t.Errorf("expected no output, got %q", w.String())
+		}
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
 }
 
 type baseError struct {
@@ -662,4 +700,75 @@ func TestGetChildren(t *testing.T) {
 			}
 		})
 	}
+	t.Run("ClearChildren does not require allocations without children", func(t *testing.T) {
+		ctx := templ.InitializeContext(context.Background())
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if templ.ClearChildren(ctx) != ctx {
+				t.Fatalf("expected the context to be returned unchanged")
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+}
+
+type stringerString string
+
+func (s stringerString) String() string { return "stringer:" + string(s) }
+
+type stringerInt int
+
+func (i stringerInt) String() string { return "stringer:" + fmt.Sprint(int(i)) }
+
+func TestJoinStringErrs(t *testing.T) {
+	t.Run("values are formatted like fmt.Sprint", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			actual   func() (string, error)
+			expected string
+		}{
+			{name: "strings are returned unchanged", actual: func() (string, error) { return templ.JoinStringErrs("a <b>") }, expected: "a <b>"},
+			{name: "ints are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(-123) }, expected: fmt.Sprint(-123)},
+			{name: "int64s are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(int64(1) << 40) }, expected: fmt.Sprint(int64(1) << 40)},
+			{name: "bools are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(true) }, expected: fmt.Sprint(true)},
+			{name: "floats are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(1.5e21) }, expected: fmt.Sprint(1.5e21)},
+			{name: "uint8s are formatted like fmt.Sprint", actual: func() (string, error) { return templ.JoinStringErrs(uint8(7)) }, expected: fmt.Sprint(uint8(7))},
+			{name: "named strings are formatted with their String method", actual: func() (string, error) { return templ.JoinStringErrs(stringerString("x")) }, expected: "stringer:x"},
+			{name: "named ints are formatted with their String method", actual: func() (string, error) { return templ.JoinStringErrs(stringerInt(3)) }, expected: "stringer:3"},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				actual, err := tt.actual()
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+				if actual != tt.expected {
+					t.Errorf("expected %q, got %q", tt.expected, actual)
+				}
+			})
+		}
+	})
+	t.Run("errors are joined", func(t *testing.T) {
+		expectedErr := errors.New("test error")
+		_, err := templ.JoinStringErrs("a", nil, expectedErr)
+		if !errors.Is(err, expectedErr) {
+			t.Errorf("expected %v, got %v", expectedErr, err)
+		}
+	})
+	t.Run("strings do not require allocations", func(t *testing.T) {
+		s := strings.Clone("a <b>")
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			actual, err := templ.JoinStringErrs(s)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if actual != s {
+				t.Fatalf("unexpected value %q", actual)
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
 }

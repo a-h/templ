@@ -1,6 +1,9 @@
 package htmlattr
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // TestClassify covers GHSA-94c2-xg24-pwhv: every attribute whose value can
 // execute JavaScript in the context of the page must be classified, regardless
@@ -105,6 +108,9 @@ func TestToLowerASCII(t *testing.T) {
 		{name: "ASCII letters are lowercased", input: "HREF", expected: "href"},
 		{name: "lowercase letters and punctuation are unchanged", input: "hx-on:click", expected: "hx-on:click"},
 		{name: "non-ASCII letters are unchanged, as in the HTML tokenizer", input: "Key", expected: "Key"},
+		{name: "letters after a lowercase prefix are lowercased", input: "data-Foo", expected: "data-foo"},
+		{name: "a lowercase prefix before non-ASCII letters is kept", input: "data-\u212Aey-X", expected: "data-\u212Aey-x"},
+		{name: "empty strings are unchanged", input: "", expected: ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -113,6 +119,17 @@ func TestToLowerASCII(t *testing.T) {
 			}
 		})
 	}
+	t.Run("lowercase names do not require allocations", func(t *testing.T) {
+		name := strings.Clone("aria-selected")
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if toLowerASCII(name) != name {
+				t.Fatalf("unexpected value")
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
 }
 
 func TestIsAnimationTargetURL(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 	"unicode"
 
 	"github.com/a-h/parse"
+	"github.com/a-h/templ/internal/stringwriter"
 )
 
 // package parser
@@ -795,7 +796,7 @@ func (se *ScriptElement) Write(w io.Writer, indent int) error {
 	// Contents.
 	for _, c := range se.Contents {
 		if c.Value != nil {
-			if err := writeStrings(w, *c.Value); err != nil {
+			if err := stringwriter.WriteStrings(w, *c.Value); err != nil {
 				return err
 			}
 			continue
@@ -807,7 +808,7 @@ func (se *ScriptElement) Write(w io.Writer, indent int) error {
 		if isWhitespace(c.GoCode.Expression.Value) {
 			c.GoCode.Expression.Value = ""
 		}
-		if err := writeStrings(w, `{{ `, c.GoCode.Expression.Value, ` }}`, string(c.GoCode.TrailingSpace)); err != nil {
+		if err := stringwriter.WriteStrings(w, `{{ `, c.GoCode.Expression.Value, ` }}`, string(c.GoCode.TrailingSpace)); err != nil {
 			return err
 		}
 	}
@@ -820,15 +821,6 @@ func (se *ScriptElement) Write(w io.Writer, indent int) error {
 
 func (se *ScriptElement) Visit(v Visitor) error {
 	return v.VisitScriptElement(se)
-}
-
-func writeStrings(w io.Writer, ss ...string) error {
-	for _, s := range ss {
-		if _, err := io.WriteString(w, s); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 type RawElement struct {

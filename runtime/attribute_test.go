@@ -660,6 +660,8 @@ func TestFormatAttributeValue(t *testing.T) {
 		{name: "booleans are formatted", value: true, expected: "true"},
 		{name: "custom boolean types are formatted", value: customBool(false), expected: "false"},
 		{name: "integers are formatted", value: int64(-42), expected: "-42"},
+		{name: "ints are formatted", value: -12345, expected: "-12345"},
+		{name: "false is formatted", value: false, expected: "false"},
 		{name: "custom integer types are formatted", value: customInt(42), expected: "42"},
 		{name: "unsigned integers are formatted", value: uint8(8), expected: "8"},
 		{name: "floats are formatted", value: 1.5, expected: "1.5"},
@@ -693,6 +695,28 @@ func TestFormatAttributeValue(t *testing.T) {
 			}
 		})
 	}
+	t.Run("ints require one allocation for the formatted value", func(t *testing.T) {
+		v := any(12345)
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if s, ok := formatAttributeValue(v); !ok || s != "12345" {
+				t.Fatalf("unexpected value %q", s)
+			}
+		})
+		if actualAllocs > 1 {
+			t.Errorf("expected 1 alloc, got %v", actualAllocs)
+		}
+	})
+	t.Run("booleans do not require allocations", func(t *testing.T) {
+		v := any(true)
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if s, ok := formatAttributeValue(v); !ok || s != "true" {
+				t.Fatalf("unexpected value %q", s)
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
 }
 
 func TestAttributeExpressionResolve(t *testing.T) {
@@ -924,6 +948,32 @@ func TestAttributeExpressionResolveSrcset(t *testing.T) {
 		}
 		if diff := cmp.Diff(` srcset="https://example.com/a.png 1x, about:invalid#TemplFailedSanitizationURL"`, w.String()); diff != "" {
 			t.Error(diff)
+		}
+	})
+}
+
+func TestAttributeExpressionResolveAllocs(t *testing.T) {
+	ctx := context.Background()
+	t.Run("strings that don't need escaping do not require allocations", func(t *testing.T) {
+		v := strings.Clone("value")
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if s, err := NewAttributeExpression(v).Resolve(ctx); err != nil || s != v {
+				t.Fatalf("unexpected result %q, %v", s, err)
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
+		}
+	})
+	t.Run("safe URLs that don't need escaping do not require allocations", func(t *testing.T) {
+		v := templ.SafeURL(strings.Clone("/a/b?c=d"))
+		actualAllocs := testing.AllocsPerRun(4, func() {
+			if s, err := NewAttributeExpression(v).ResolveURL(ctx); err != nil || s != string(v) {
+				t.Fatalf("unexpected result %q, %v", s, err)
+			}
+		})
+		if actualAllocs > 0 {
+			t.Errorf("expected no allocs, got %v", actualAllocs)
 		}
 	})
 }
