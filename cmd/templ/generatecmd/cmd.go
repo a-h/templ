@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -423,7 +425,7 @@ func (cmd *Generate) startProxy() (p *proxy.Handler, err error) {
 	go func() {
 		cmd.Log.Info("Proxying", slog.String("from", p.URL), slog.String("to", p.Target.String()))
 		server := &http.Server{
-			Addr:    fmt.Sprintf("%s:%d", cmd.Args.ProxyBind, cmd.Args.ProxyPort),
+			Addr:    net.JoinHostPort(cmd.Args.ProxyBind, strconv.Itoa(cmd.Args.ProxyPort)),
 			Handler: p,
 		}
 		// Configure TLS if certificates are provided.
