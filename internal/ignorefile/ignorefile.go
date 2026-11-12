@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -71,18 +72,21 @@ func ShouldSkipFunc(root, filename string) (func(string) bool, error) {
 // Matches reports whether the given path matches any pattern. It checks the
 // full path and each directory prefix so that a pattern like "generator/test-*"
 // matches "generator/test-foo/bar.templ".
-func (p Patterns) Matches(path string) bool {
+func (p Patterns) Matches(name string) bool {
 	if len(p) == 0 {
 		return false
 	}
-	path = filepath.ToSlash(path)
-	parts := strings.Split(path, "/")
+	name = filepath.ToSlash(name)
+	parts := strings.Split(name, "/")
 	for _, pattern := range p {
 		pattern = filepath.ToSlash(pattern)
 		// Check progressively longer directory prefixes, then the full path.
 		for i := range parts {
 			prefix := strings.Join(parts[:i+1], "/")
-			if matched, _ := filepath.Match(pattern, prefix); matched {
+			// Both sides use "/" here. path.Match always splits on "/"; on Windows
+			// filepath.Match only splits on the backslash, so "*" and "?" would
+			// also match "/".
+			if matched, _ := path.Match(pattern, prefix); matched {
 				return true
 			}
 		}
