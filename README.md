@@ -180,6 +180,18 @@ Check for known vulnerabilities in dependencies that templ calls.
 govulncheck ./...
 ```
 
+### bump-deps
+
+Update Go dependencies in the root module and the fuzzing modules, then update the vendor hash in flake.nix. The fuzzing modules replace templ with the root module, so they must be tidied whenever the root module's dependencies change.
+
+```sh
+go get -u ./...
+go mod tidy
+(cd runtime/fuzzing && go get -u ./... && go mod tidy)
+(cd internal/jstokenizer/fuzzing && go get -u ./... && go mod tidy)
+nix-update --flake --version=skip templ
+```
+
 ### ensure-generated
 
 Ensure that templ files have been generated with the local version of templ, and that those files have been added to git.

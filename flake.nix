@@ -129,6 +129,7 @@
             pkgs.goreleaser
             pkgs.gotestsum
             pkgs.govulncheck
+            pkgs.nix-update # Used to update the Go vendor hash.
             pkgs.nodejs # Used to build templ-docs.
             pkgs.prettier # Used for formatting JS and CSS.
             pkgs.syft # Used to generate SBOMs for Docker images.
