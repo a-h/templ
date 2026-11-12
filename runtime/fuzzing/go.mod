@@ -7,6 +7,11 @@ require (
 	golang.org/x/net v0.62.0
 )
 
-require rogchap.com/v8go v0.9.0
+require (
+	github.com/google/go-cmp v0.7.0
+	rogchap.com/v8go v0.9.0
+)
+
+require github.com/tdewolff/parse/v2 v2.8.20
 
 replace github.com/a-h/templ => ../..

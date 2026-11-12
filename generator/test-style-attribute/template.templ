@@ -6,6 +6,10 @@ templ Button[T any](style T, text string) {
 	<button STYLE={ style }>{ text }</button>
 }
 
+templ QuotedButton[T any](style T) {
+	<button style={ style }>Click me</button>
+}
+
 func getFunctionResult() (string, error) {
 	return "background-color: red", nil
 }

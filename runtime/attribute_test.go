@@ -27,6 +27,20 @@ func TestRenderAttributes(t *testing.T) {
 			expected: ` class="test-class" id="test-id"`,
 		},
 		{
+			name: "style values are HTML-escaped once",
+			attributes: templ.Attributes{
+				"style": templ.SafeCSS(`font-family: 'Courier New'; background-image: url("a.png?x=1&y=2")`),
+			},
+			expected: ` style="font-family: &#39;Courier New&#39;; background-image: url(&#34;a.png?x=1&amp;y=2&#34;);"`,
+		},
+		{
+			name: "style strings cannot end the attribute value",
+			attributes: templ.Attributes{
+				"style": `color: red'"><script>`,
+			},
+			expected: ` style="color: red&#39;\000022&gt;\00003Cscript&gt;;"`,
+		},
+		{
 			name: "integer types are rendered as strings",
 			attributes: templ.Attributes{
 				"int":   42,

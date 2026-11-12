@@ -3,7 +3,6 @@ package runtime
 import (
 	"errors"
 	"fmt"
-	"html"
 	"maps"
 	"reflect"
 	"slices"
@@ -31,6 +30,8 @@ import (
 // All other types are sanitized before rendering.
 //
 // If an error is returned by any function, or a non-nil error is included in the input, the error is returned.
+//
+// The returned CSS is not HTML-escaped. Callers must escape it before writing it to an attribute value.
 func SanitizeStyleAttributeValues(values ...any) (string, error) {
 	if err := getJoinedErrorsFromValues(values...); err != nil {
 		return "", err
@@ -95,10 +96,10 @@ func sanitizeStyleAttributeValue(sb *strings.Builder, v any) error {
 }
 
 func processSafeCSS(sb *strings.Builder, v templ.SafeCSS) error {
-	if v == "" {
+	if strings.TrimSpace(string(v)) == "" {
 		return nil
 	}
-	sb.WriteString(html.EscapeString(string(v)))
+	sb.WriteString(string(v))
 	if !strings.HasSuffix(string(v), ";") {
 		sb.WriteRune(';')
 	}
@@ -106,11 +107,11 @@ func processSafeCSS(sb *strings.Builder, v templ.SafeCSS) error {
 }
 
 func processString(sb *strings.Builder, v string) error {
-	if v == "" {
+	sanitized := safehtml.SanitizeStyleValue(strings.TrimSpace(v))
+	if sanitized == "" {
 		return nil
 	}
-	sanitized := strings.TrimSpace(safehtml.SanitizeStyleValue(v))
-	sb.WriteString(html.EscapeString(sanitized))
+	sb.WriteString(sanitized)
 	if !strings.HasSuffix(sanitized, ";") {
 		sb.WriteRune(';')
 	}
@@ -173,9 +174,9 @@ func handleSliceWithReflection(sb *strings.Builder, v any) (bool, error) {
 func processStringMap(sb *strings.Builder, m map[string]string) error {
 	for _, name := range slices.Sorted(maps.Keys(m)) {
 		name, value := safehtml.SanitizeCSS(name, m[name])
-		sb.WriteString(html.EscapeString(name))
+		sb.WriteString(name)
 		sb.WriteRune(':')
-		sb.WriteString(html.EscapeString(value))
+		sb.WriteString(value)
 		sb.WriteRune(';')
 	}
 	return nil
@@ -184,9 +185,9 @@ func processStringMap(sb *strings.Builder, m map[string]string) error {
 // processSafeCSSPropertyMap processes a map[string]templ.SafeCSSProperty.
 func processSafeCSSPropertyMap(sb *strings.Builder, m map[string]templ.SafeCSSProperty) error {
 	for _, name := range slices.Sorted(maps.Keys(m)) {
-		sb.WriteString(html.EscapeString(safehtml.SanitizeCSSProperty(name)))
+		sb.WriteString(safehtml.SanitizeCSSProperty(name))
 		sb.WriteRune(':')
-		sb.WriteString(html.EscapeString(string(m[name])))
+		sb.WriteString(string(m[name]))
 		sb.WriteRune(';')
 	}
 	return nil
@@ -195,9 +196,9 @@ func processSafeCSSPropertyMap(sb *strings.Builder, m map[string]templ.SafeCSSPr
 // processStringKV processes a templ.KeyValue[string, string].
 func processStringKV(sb *strings.Builder, kv templ.KeyValue[string, string]) error {
 	name, value := safehtml.SanitizeCSS(kv.Key, kv.Value)
-	sb.WriteString(html.EscapeString(name))
+	sb.WriteString(name)
 	sb.WriteRune(':')
-	sb.WriteString(html.EscapeString(value))
+	sb.WriteString(value)
 	sb.WriteRune(';')
 	return nil
 }

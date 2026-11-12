@@ -56,9 +56,14 @@ func TestSanitizeStyleAttribute(t *testing.T) {
 			expected: "",
 		},
 		{
+			name:     "strings: whitespace-only strings are elided",
+			input:    []any{" \t\n"},
+			expected: "",
+		},
+		{
 			name:     "strings: are sanitized",
 			input:    []any{"</style><script>alert('xss')</script>"},
-			expected: `\00003C/style&gt;\00003Cscript&gt;alert(&#39;xss&#39;)\00003C/script&gt;;`,
+			expected: `\00003C/style>\00003Cscript>alert('xss')\00003C/script>;`,
 		},
 
 		// templ.SafeCSS
@@ -78,9 +83,14 @@ func TestSanitizeStyleAttribute(t *testing.T) {
 			expected: "",
 		},
 		{
-			name:     "SafeCSS: is escaped, but not sanitized",
+			name:     "SafeCSS: whitespace-only strings are elided",
+			input:    []any{templ.SafeCSS(" \t\n")},
+			expected: "",
+		},
+		{
+			name:     "SafeCSS: is not sanitized",
 			input:    []any{templ.SafeCSS("</style>")},
-			expected: `&lt;/style&gt;;`,
+			expected: `</style>;`,
 		},
 
 		// map[string]string
@@ -124,7 +134,7 @@ func TestSanitizeStyleAttribute(t *testing.T) {
 		{
 			name:     "map[string]templ.SafeCSSProperty: keys are sanitized, but not values",
 			input:    []any{map[string]templ.SafeCSSProperty{"color": "</style>", "</style>": "blue"}},
-			expected: "zTemplUnsafeCSSPropertyName:blue;color:&lt;/style&gt;;",
+			expected: "zTemplUnsafeCSSPropertyName:blue;color:</style>;",
 		},
 
 		// templ.KeyValue[string, string]
@@ -175,7 +185,7 @@ func TestSanitizeStyleAttribute(t *testing.T) {
 		{
 			name:     "KeyValue[string, bool]: keys are sanitized as per strings",
 			input:    []any{templ.KV("</style>", true), templ.KV("background-color:blue", true)},
-			expected: "\\00003C/style&gt;;background-color:blue;",
+			expected: "\\00003C/style>;background-color:blue;",
 		},
 
 		// templ.KeyValue[templ.SafeCSS, bool]
@@ -192,7 +202,7 @@ func TestSanitizeStyleAttribute(t *testing.T) {
 		{
 			name:     "KeyValue[templ.SafeCSS, bool]: keys are not sanitized",
 			input:    []any{templ.KV(templ.SafeCSS("</style>"), true), templ.KV(templ.SafeCSS("background-color:blue"), true)},
-			expected: "&lt;/style&gt;;background-color:blue;",
+			expected: "</style>;background-color:blue;",
 		},
 
 		// Functions.
