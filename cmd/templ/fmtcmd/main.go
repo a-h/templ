@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -71,9 +72,17 @@ func Run(log *slog.Logger, stdin io.Reader, stdout io.Writer, args Arguments) (e
 		return nil, true
 	}
 	dir := args.Files[0]
-	shouldSkip, err := ignorefile.ShouldSkipFunc(dir, ".templignore_fmt")
+	ignoreRoot, err := filepath.Abs(dir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+	skipAbsolutePath, err := ignorefile.ShouldSkipFunc(ignoreRoot, ".templignore_fmt")
 	if err != nil {
 		return fmt.Errorf("failed to parse .templignore_fmt: %w", err)
+	}
+	shouldSkip := func(path string) bool {
+		absPath, err := filepath.Abs(path)
+		return err == nil && skipAbsolutePath(absPath)
 	}
 	return NewFormatter(log, dir, process, args.WorkerCount, args.FailIfChanged, shouldSkip).Run()
 }

@@ -184,3 +184,59 @@ func TestFormat(t *testing.T) {
 		}
 	})
 }
+
+func TestFormatRespectsIgnoreFile(t *testing.T) {
+	for _, tt := range []struct {
+		name     string
+		absolute bool
+		file     bool
+	}{
+		{name: "relative directory"},
+		{name: "absolute directory", absolute: true},
+		{name: "relative file", file: true},
+		{name: "absolute file", absolute: true, file: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			base := t.TempDir()
+			t.Chdir(base)
+			if err := os.MkdirAll(filepath.Join("views", "fixtures"), 0755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join("views", ".templignore_fmt"), []byte("ignored.templ\nfixtures\n"), 0644); err != nil {
+				t.Fatal(err)
+			}
+			const input = "package test\n\ntempl example() {\n  <div>Example</div>\n}\n"
+			const formatted = "package test\n\ntempl example() {\n\t<div>Example</div>\n}\n"
+			files := []string{"ignored.templ", filepath.Join("fixtures", "example.templ"), "included.templ"}
+			for _, name := range files {
+				if err := os.WriteFile(filepath.Join("views", name), []byte(input), 0644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			path := "views"
+			if tt.file {
+				path = filepath.Join(path, "ignored.templ")
+			}
+			if tt.absolute {
+				path = filepath.Join(base, path)
+			}
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
+			if err := Run(log, nil, io.Discard, Arguments{Files: []string{path}, PrettierCommand: "cat"}); err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range files {
+				got, err := os.ReadFile(filepath.Join("views", name))
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := input
+				if name == "included.templ" && !tt.file {
+					want = formatted
+				}
+				if diff := cmp.Diff(want, string(got)); diff != "" {
+					t.Errorf("%s (-want +got):\n%s", name, diff)
+				}
+			}
+		})
+	}
+}
