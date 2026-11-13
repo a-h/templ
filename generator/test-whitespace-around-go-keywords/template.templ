@@ -64,3 +64,28 @@ templ WhitespaceIsConsistentInFor(i int) {
 const WhitespaceIsConsistentInForZeroExpected = `<button>Start</button> <button>End</button>`
 const WhitespaceIsConsistentInForOneExpected = `<button>Start</button> <button>0</button> <button>End</button>`
 const WhitespaceIsConsistentInForThreeExpected = `<button>Start</button> <button>0</button> <button>1</button> <button>2</button> <button>End</button>`
+
+templ SiblingLoopsInIf() {
+	if true {
+		for i := 0; i < 1; i++ {
+			word
+		}
+		for i := 0; i < 1; i++ {
+			word
+		}
+	}
+}
+
+templ EmptyIfBranch() {
+	if true {
+		if false {
+			word
+		}
+		for i := 0; i < 1; i++ {
+			word
+		}
+	}
+}
+
+const SiblingLoopsInIfExpected = `word word`
+const EmptyIfBranchExpected = `word`

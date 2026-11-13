@@ -1,7 +1,7 @@
 module github.com/a-h/templ/examples/external-libraries
 
-go 1.25.0
-
-require github.com/a-h/templ v0.2.304
+go 1.26.0
 
 replace github.com/a-h/templ => ../../
+
+require github.com/a-h/templ v0.3.1100

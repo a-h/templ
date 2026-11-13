@@ -12,12 +12,7 @@ type forExpressionParser struct{}
 func (forExpressionParser) Parse(pi *parse.Input) (n Node, matched bool, err error) {
 	start := pi.Index()
 
-	// Strip leading whitespace and look for `for `.
-	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
-		return nil, false, err
-	}
 	if !peekPrefix(pi, "for ") {
-		pi.Seek(start)
 		return nil, false, nil
 	}
 	r := &ForExpression{}
