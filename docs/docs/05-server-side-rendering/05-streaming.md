@@ -49,7 +49,8 @@ When streaming is enabled, sections of the template can be forcefully pushed to 
 
 This enables interesting use cases. For example, here, the `Page` template is rendered with a channel that is populated by a background goroutine.
 
-By using `templ.Flush()` to create a flushable area, the data is pushed to the client as soon as it is available, rather than waiting for the entire template to render before sending a response.
+Call `templ.Flush()` before the loop to send the page header before the first
+channel value is ready. The flush inside the loop sends each item as it arrives.
 
 ```templ
 templ Page(data chan string) {
@@ -60,6 +61,7 @@ templ Page(data chan string) {
 		</head>
 		<body>
 			<h1>Page</h1>
+			@templ.Flush()
 			for d := range data {
 				@templ.Flush() {
 					<div>{ d }</div>

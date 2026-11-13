@@ -43,6 +43,7 @@ templ Page(data chan string) {
 		</head>
 		<body>
 			<h1>Page</h1>
+			@templ.Flush()
 			for d := range data {
 				@templ.Flush() {
 					<div>{ d }</div>
