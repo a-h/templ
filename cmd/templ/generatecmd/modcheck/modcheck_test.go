@@ -3,10 +3,94 @@ package modcheck
 import (
 	"os"
 	"path/filepath"
+	"runtime/debug"
+	"strings"
 	"testing"
 
+	"github.com/a-h/templ"
 	"golang.org/x/mod/modfile"
 )
+
+func TestCheckVersion(t *testing.T) {
+	const pseudoVersion = "v0.3.1101-0.20261030160437-dd6c9861fa78"
+	buildInfo := func(path, version string) *debug.BuildInfo {
+		return &debug.BuildInfo{Main: debug.Module{Path: path, Version: version}}
+	}
+	tests := []struct {
+		name        string
+		info        *debug.BuildInfo
+		required    string
+		wantWarning string
+	}{
+		{
+			name:     "matching pseudo-versions despite a different embedded version",
+			info:     buildInfo("github.com/a-h/templ", pseudoVersion),
+			required: pseudoVersion,
+		},
+		{
+			name:        "newer generator pseudo-version",
+			info:        buildInfo("github.com/a-h/templ", pseudoVersion),
+			required:    "v0.3.1101-0.20261029160437-abcdef123456",
+			wantWarning: "generator " + pseudoVersion + " is newer",
+		},
+		{
+			name:        "older generator pseudo-version",
+			info:        buildInfo("github.com/a-h/templ", pseudoVersion),
+			required:    "v0.3.1101-0.20261031160437-abcdef123456",
+			wantWarning: "generator " + pseudoVersion + " is older",
+		},
+		{
+			name:     "matching installed release",
+			info:     buildInfo("github.com/a-h/templ", "v0.3.1100"),
+			required: "v0.3.1100",
+		},
+		{
+			name:        "newer installed release",
+			info:        buildInfo("github.com/a-h/templ", "v0.3.1100"),
+			required:    "v0.3.1070",
+			wantWarning: "generator v0.3.1100 is newer",
+		},
+		{
+			name:        "older installed release",
+			info:        buildInfo("github.com/a-h/templ", "v0.3.1070"),
+			required:    "v0.3.1100",
+			wantWarning: "generator v0.3.1070 is older",
+		},
+		{
+			name:     "local build falls back to embedded version",
+			info:     buildInfo("github.com/a-h/templ", "(devel)"),
+			required: templ.Version(),
+		},
+		{
+			name:     "missing build info falls back to embedded version",
+			required: templ.Version(),
+		},
+		{
+			name:     "unrelated main module falls back to embedded version",
+			info:     buildInfo("example.com/app", "v1.0.0"),
+			required: templ.Version(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			mod := "module example.com/test\n\nrequire github.com/a-h/templ " + tt.required + "\n"
+			if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte(mod), 0600); err != nil {
+				t.Fatal(err)
+			}
+			err := check(dir, tt.info)
+			if tt.wantWarning == "" {
+				if err != nil {
+					t.Fatal(err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tt.wantWarning) {
+				t.Fatalf("expected warning containing %q, got %v", tt.wantWarning, err)
+			}
+		})
+	}
+}
 
 func TestWalkUp(t *testing.T) {
 	t.Run("finds go.mod in a parent directory", func(t *testing.T) {
