@@ -56,6 +56,10 @@ func RenderAttributes(ctx context.Context, w io.Writer, scriptWriter io.Writer, 
 			if htmlattr.Classify(elementName, name) != htmlattr.ContextSrcdoc {
 				continue
 			}
+		case map[string]string, map[string]templ.SafeCSSProperty, templ.KeyValue[string, string]:
+			if htmlattr.Classify(elementName, name) != htmlattr.ContextStyle {
+				continue
+			}
 		case templ.KeyValue[string, bool]:
 			if !v.Value {
 				continue
