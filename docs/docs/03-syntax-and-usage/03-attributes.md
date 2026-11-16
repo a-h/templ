@@ -203,6 +203,7 @@ It's possible to spread any variable of type `templ.Attributes`. `templ.Attribut
 * If the value is a `templ.KeyValue[bool, bool]`, the attribute is added if both boolean values are true, as `<div name>`.
 * If the value is a `templ.SafeURL`, the attribute is added with the URL value, without URL sanitization.
 * If the value is a `templ.ComponentScript`, i.e. the result of `templ.JSFuncCall` or `templ.JSUnsafeFuncCall`, the attribute is added with the JavaScript as the value.
+* If the name is `style`, and the value is a `map[string]string`, `map[string]templ.SafeCSSProperty`, or `templ.KeyValue[string, string]`, the attribute is added with the CSS properties as the value, sanitized in the same way as a [style attribute](/syntax-and-usage/css-style-management#style-attribute).
 
 Spread attributes are sanitized in the same way as [attribute key expressions](#attribute-key-expressions), so `templ.Attributes{"href": url}` is sanitized as a URL, and `templ.Attributes{"onclick": "alert(1)"}` is replaced, because the value is a `string`, not a `templ.ComponentScript`. To set an event handler, use `templ.JSFuncCall` to call a JavaScript function with Go data, e.g. `templ.Attributes{"onclick": templ.JSFuncCall("alert", message)}`, or `templ.JSUnsafeFuncCall` for JavaScript from a trusted source, e.g. `templ.Attributes{"onclick": templ.JSUnsafeFuncCall("alert('hello')")}`.
 

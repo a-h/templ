@@ -41,6 +41,50 @@ func TestRenderAttributes(t *testing.T) {
 			expected: ` style="color: red&#39;\000022&gt;\00003Cscript&gt;;"`,
 		},
 		{
+			name: "style maps are rendered as CSS",
+			attributes: templ.Attributes{
+				"style": map[string]string{
+					"color":        "red",
+					"aspect-ratio": "210/297",
+				},
+			},
+			expected: ` style="aspect-ratio:210/297;color:red;"`,
+		},
+		{
+			name: "style map values are sanitized",
+			attributes: templ.Attributes{
+				"style": map[string]string{
+					"color": "</style>",
+				},
+			},
+			expected: ` style="color:zTemplUnsafeCSSPropertyValue;"`,
+		},
+		{
+			name: "style SafeCSSProperty maps are rendered as CSS",
+			attributes: templ.Attributes{
+				"style": map[string]templ.SafeCSSProperty{
+					"color": "red",
+				},
+			},
+			expected: ` style="color:red;"`,
+		},
+		{
+			name: "style KeyValue[string, string] values are rendered as CSS",
+			attributes: templ.Attributes{
+				"style": templ.KV("color", "red"),
+			},
+			expected: ` style="color:red;"`,
+		},
+		{
+			name: "style maps are ignored on other attributes",
+			attributes: templ.Attributes{
+				"data-style": map[string]string{
+					"color": "red",
+				},
+			},
+			expected: ``,
+		},
+		{
 			name: "integer types are rendered as strings",
 			attributes: templ.Attributes{
 				"int":   42,
