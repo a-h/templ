@@ -19,3 +19,12 @@ func GeneratedTemplate(f func(GeneratedComponentInput) error) templ.Component {
 		return f(GeneratedComponentInput{ctx, w})
 	})
 }
+
+// SetTemplArg stores value in m under key only if the key is not already set.
+// This ensures that when components are nested, the outermost (first) component's
+// arguments take precedence over any inner components with same-named parameters.
+func SetTemplArg(m map[string]any, key string, value any) {
+	if _, exists := m[key]; !exists {
+		m[key] = value
+	}
+}
