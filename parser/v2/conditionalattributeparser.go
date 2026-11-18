@@ -49,7 +49,12 @@ func (conditionalAttributeParser) Parse(pi *parse.Input) (r *ConditionalAttribut
 		return
 	}
 
-	// Read the optional 'Else' Nodes.
+	// Read the optional 'ElseIf' attributes.
+	if r.ElseIfs, _, err = parse.ZeroOrMore(attributeElseIfExpression).Parse(pi); err != nil {
+		return
+	}
+
+	// Read the optional 'Else' attributes.
 	if r.Else, ok, err = attributeElseExpression.Parse(pi); err != nil {
 		return
 	}
@@ -72,6 +77,57 @@ func (conditionalAttributeParser) Parse(pi *parse.Input) (r *ConditionalAttribut
 }
 
 func (p conditionalAttributeParser) Match(in *parse.Input) (ok bool, err error) {
+	return parse.Match(p, in)
+}
+
+var attributeElseIfExpression parse.Parser[ConditionalElseIfAttribute] = attributeElseIfExpressionParser{}
+
+type attributeElseIfExpressionParser struct{}
+
+func (attributeElseIfExpressionParser) Parse(pi *parse.Input) (r ConditionalElseIfAttribute, matched bool, err error) {
+	start := pi.Index()
+
+	// Check the prefix first.
+	if _, matched, err = elseIfPrefix.Parse(pi); err != nil || !matched {
+		pi.Seek(start)
+		return
+	}
+
+	// Rewind to the start of the `if` statement.
+	pi.Seek(pi.Index() - len("if"))
+	// Parse the Go if expression.
+	if r.Expression, err = parseGo("attribute else if", pi, goexpression.If); err != nil {
+		return
+	}
+
+	// Eat " {".
+	if _, matched, err = openBraceWithOptionalPadding.Parse(pi); err != nil || !matched {
+		err = parse.Error("attribute else if: expected opening '{'", pi.PositionAt(start))
+		return
+	}
+	if _, _, err = parse.OptionalWhitespace.Parse(pi); err != nil {
+		return
+	}
+
+	// Read the 'Then' attributes.
+	if r.Then, matched, err = (attributesParser{}).Parse(pi); err != nil {
+		return
+	}
+	if !matched {
+		err = parse.Error("attribute else if: expected attributes in block, but none were found", pi.Position())
+		return
+	}
+
+	if len(r.Then) == 0 {
+		err = parse.Error("attribute else if: invalid content or no attributes were found in the block", pi.Position())
+		return
+	}
+
+	r.Range = NewRange(pi.PositionAt(start), pi.Position())
+	return r, true, nil
+}
+
+func (p attributeElseIfExpressionParser) Match(in *parse.Input) (ok bool, err error) {
 	return parse.Match(p, in)
 }
 

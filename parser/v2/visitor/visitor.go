@@ -114,6 +114,13 @@ func New() *Visitor {
 				return err
 			}
 		}
+		for _, elseIf := range n.ElseIfs {
+			for _, child := range elseIf.Then {
+				if err := child.Visit(v); err != nil {
+					return err
+				}
+			}
+		}
 		for _, child := range n.Else {
 			if err := child.Visit(v); err != nil {
 				return err
