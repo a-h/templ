@@ -114,6 +114,18 @@ func TestMatches(t *testing.T) {
 			path:     "dir/foo.bak",
 			expected: false,
 		},
+		{
+			name:     "star in a directory pattern does not match files in nested subdirectories",
+			patterns: Patterns{"legacy/*.templ"},
+			path:     "legacy/widgets/card.templ",
+			expected: false,
+		},
+		{
+			name:     "question mark does not match a slash",
+			patterns: Patterns{"a?b"},
+			path:     "a/b",
+			expected: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -149,6 +161,22 @@ func TestShouldSkipFunc(t *testing.T) {
 		}
 		if skip("generator/real-code") {
 			t.Error("expected skip to return false for non-matching path")
+		}
+	})
+	t.Run("absolute paths are matched relative to root", func(t *testing.T) {
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, ".templignore_fmt"), []byte("legacy/*.templ\n"), 0644); err != nil {
+			t.Fatalf("failed to write test file: %v", err)
+		}
+		skip, err := ShouldSkipFunc(dir, ".templignore_fmt")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !skip(filepath.Join(dir, "legacy", "card.templ")) {
+			t.Error("expected skip to return true for a file in the matched directory")
+		}
+		if skip(filepath.Join(dir, "legacy", "widgets", "card.templ")) {
+			t.Error("expected skip to return false for a file in a subdirectory")
 		}
 	})
 }
