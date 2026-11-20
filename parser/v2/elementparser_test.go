@@ -3052,6 +3052,11 @@ func TestElementFormatting(t *testing.T) {
 			input:    `<div id=main></div>`,
 			expected: `<div id="main"></div>`,
 		},
+		{
+			name:     "element names can start with script",
+			input:    `<script-loader src="a.js"></script-loader>`,
+			expected: `<script-loader src="a.js"></script-loader>`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
