@@ -242,6 +242,17 @@ func TestRenderCSS(t *testing.T) {
 			toRender: cssInputs,
 			expected: `<style type="text/css">.e{color:red}.j{color:red}</style>`,
 		},
+		{
+			name:     "enabled CSS classes in a slice of KV types are rendered",
+			toIgnore: nil,
+			toRender: []any{
+				[]templ.KeyValue[templ.CSSClass, bool]{
+					templ.KV(templ.CSSClass(c1), true),
+					templ.KV(templ.CSSClass(c2), false),
+				},
+			},
+			expected: `<style type="text/css">.c1{color:red}</style>`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
