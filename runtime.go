@@ -407,6 +407,10 @@ func (r *cssItemsRenderer) Render(classes ...any) {
 				continue
 			}
 			r.Render(ccc.Key)
+		case []KeyValue[CSSClass, bool]:
+			for _, kv := range ccc {
+				r.Render(kv)
+			}
 		case CSSClasses:
 			r.Render(ccc...)
 		case []CSSClass:
