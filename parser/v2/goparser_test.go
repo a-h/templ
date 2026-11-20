@@ -79,6 +79,7 @@ func BenchmarkParseStringManyComponents(b *testing.B) {
 		{name: "if", format: "\tif count > %d {\n\t\t<p>Row %d.</p>\n\t}\n"},
 		{name: "for range over slice literal", format: "\tfor range []string{\"%d\", \"%d\"} {\n\t\t<p>Row.</p>\n\t}\n"},
 		{name: "string expression", format: "\t<p>{ name } %d %d</p>\n"},
+		{name: "switch", format: "\tswitch count {\n\tcase %d:\n\t\t<p>Row %d.</p>\n\t}\n"},
 	}
 	for _, row := range rows {
 		for _, components := range []int{10, 40, 80} {

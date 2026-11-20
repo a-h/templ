@@ -26,7 +26,7 @@ func Case(content []byte) (start, end int, err error) {
 		return 0, 0, ErrExpectedNodeNotFound
 	}
 	prefix := "switch {\n"
-	start, end, err = extract(append([]byte(prefix), content...), func(body []ast.Stmt) (start, end int, err error) {
+	start, end, err = extractClause(prefix, content, func(body []ast.Stmt) (start, end int, err error) {
 		sw, ok := body[0].(*ast.SwitchStmt)
 		if !ok {
 			return 0, 0, ErrExpectedNodeNotFound
@@ -340,6 +340,16 @@ func extractBlock(content []byte, extractor Extractor) (start, end int, err erro
 		return extract(content, extractor)
 	}
 	return extractFromContainer(node, len(content), extractor)
+}
+
+// extractClause is like extractBlock, but for a case or default clause after
+// prefix. It parses only up to the clause's colon, not the rest of the file.
+func extractClause(prefix string, content []byte, extractor Extractor) (start, end int, err error) {
+	node, _, err := findTerminatingToken(containerPrefix+prefix, content, token.COLON, ":\n}\n}")
+	if err != nil {
+		return extract(append([]byte(prefix), content...), extractor)
+	}
+	return extractFromContainer(node, len(prefix)+len(content), extractor)
 }
 
 // findTerminatingToken finds the first tok in content where the code before it,
