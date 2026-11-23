@@ -588,9 +588,11 @@ type elementParser struct{}
 func (elementParser) Parse(pi *parse.Input) (n Node, ok bool, err error) {
 	start := pi.Position()
 
-	if prefix, _ := pi.Peek(len("<script")); prefix == "<script" {
+	rest, _ := pi.Peek(-1)
+	if after, found := strings.CutPrefix(rest, "<script"); found && (after == "" || !strings.ContainsRune(elementNameSubsequent, rune(after[0]))) {
 		// This is a script element, which has special handling and should
-		// be parsed by a different parser to this one.
+		// be parsed by a different parser to this one. Elements with names
+		// that only start with script, e.g. script-loader, are not.
 		return nil, false, nil
 	}
 
