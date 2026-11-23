@@ -111,6 +111,7 @@ type FSEventHandler struct {
 	genSourceMapVis       bool
 	Errors                []error
 	keepOrphanedFiles     bool
+	checkOnly             bool
 	writer                FileWriterFunc
 	lazy                  bool
 }
@@ -136,6 +137,9 @@ func (h *FSEventHandler) HandleEvent(ctx context.Context, event fsnotify.Event) 
 		// File is orphaned.
 		if h.keepOrphanedFiles {
 			return GenerateResult{}, nil
+		}
+		if h.checkOnly {
+			return GenerateResult{}, fmt.Errorf("orphaned generated file %q", event.Name)
 		}
 		h.Log.Debug("Deleting orphaned Go file", slog.String("file", event.Name))
 		if err = os.Remove(event.Name); err != nil {

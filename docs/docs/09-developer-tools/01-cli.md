@@ -58,6 +58,9 @@ Args:
     Port to run the pprof server on.
   -keep-orphaned-files
     Keeps orphaned generated templ files. (default false)
+  -check
+    Checks that generated files are up to date, without writing changes.
+    Returns a non-zero exit code if files need regenerating or orphaned files need removing.
   -v
     Set log verbosity level to "debug". (default "info")
   -log-level
