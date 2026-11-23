@@ -106,6 +106,7 @@ func (cmd Generate) Run(ctx context.Context) (err error) {
 		cmd.Args.FileWriter,
 		cmd.Args.Lazy,
 	)
+	fseh.checkOnly = cmd.Args.Check
 
 	// If we're processing a single file, don't bother setting up the channels/multithreaing.
 	if cmd.Args.FileName != "" {
